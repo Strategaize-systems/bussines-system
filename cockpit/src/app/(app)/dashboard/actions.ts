@@ -1,0 +1,143 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+
+export type DashboardStats = {
+  totalContacts: number;
+  totalCompanies: number;
+  openDeals: number;
+  totalPipelineValue: number;
+};
+
+export type PipelineSummary = {
+  pipeline: { id: string; name: string };
+  stages: { id: string; name: string; color: string | null; dealCount: number; dealValue: number }[];
+  totalDeals: number;
+  totalValue: number;
+};
+
+export type UpcomingAction = {
+  dealId: string;
+  dealTitle: string;
+  nextAction: string;
+  nextActionDate: string;
+  contactName: string | null;
+  companyName: string | null;
+  isOverdue: boolean;
+};
+
+export async function getDashboardStats(): Promise<DashboardStats> {
+  const supabase = await createClient();
+
+  const [contacts, companies, deals] = await Promise.all([
+    supabase.from("contacts").select("id", { count: "exact", head: true }),
+    supabase.from("companies").select("id", { count: "exact", head: true }),
+    supabase.from("deals").select("value").eq("status", "active"),
+  ]);
+
+  const totalPipelineValue = (deals.data || []).reduce(
+    (sum, d) => sum + (d.value ?? 0),
+    0
+  );
+
+  return {
+    totalContacts: contacts.count ?? 0,
+    totalCompanies: companies.count ?? 0,
+    openDeals: deals.data?.length ?? 0,
+    totalPipelineValue,
+  };
+}
+
+export async function getPipelineSummaries(): Promise<PipelineSummary[]> {
+  const supabase = await createClient();
+
+  // Get pipelines with stages
+  const { data: pipelines } = await supabase
+    .from("pipelines")
+    .select("id, name")
+    .order("sort_order");
+
+  if (!pipelines) return [];
+
+  const summaries: PipelineSummary[] = [];
+
+  for (const pipeline of pipelines) {
+    const [stagesResult, dealsResult] = await Promise.all([
+      supabase
+        .from("pipeline_stages")
+        .select("id, name, color")
+        .eq("pipeline_id", pipeline.id)
+        .order("sort_order"),
+      supabase
+        .from("deals")
+        .select("stage_id, value")
+        .eq("pipeline_id", pipeline.id)
+        .eq("status", "active"),
+    ]);
+
+    const stages = (stagesResult.data || []).map((stage) => {
+      const stageDeals = (dealsResult.data || []).filter(
+        (d) => d.stage_id === stage.id
+      );
+      return {
+        ...stage,
+        dealCount: stageDeals.length,
+        dealValue: stageDeals.reduce((sum, d) => sum + (d.value ?? 0), 0),
+      };
+    });
+
+    summaries.push({
+      pipeline,
+      stages,
+      totalDeals: dealsResult.data?.length ?? 0,
+      totalValue: (dealsResult.data || []).reduce(
+        (sum, d) => sum + (d.value ?? 0),
+        0
+      ),
+    });
+  }
+
+  return summaries;
+}
+
+export async function getRecentActivities(limit = 20) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("activities")
+    .select("*, contacts(first_name, last_name), companies(name)")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function getUpcomingActions(limit = 10): Promise<UpcomingAction[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("deals")
+    .select("id, title, next_action, next_action_date, contacts(first_name, last_name), companies(name)")
+    .eq("status", "active")
+    .not("next_action", "is", null)
+    .not("next_action_date", "is", null)
+    .order("next_action_date", { ascending: true })
+    .limit(limit);
+
+  if (error) throw new Error(error.message);
+
+  const today = new Date().toISOString().split("T")[0];
+
+  return (data || []).map((d) => ({
+    dealId: d.id,
+    dealTitle: d.title,
+    nextAction: d.next_action!,
+    nextActionDate: d.next_action_date!,
+    contactName: d.contacts
+      ? `${(d.contacts as any).first_name} ${(d.contacts as any).last_name}`
+      : null,
+    companyName: d.companies ? (d.companies as any).name : null,
+    isOverdue: d.next_action_date! < today,
+  }));
+}

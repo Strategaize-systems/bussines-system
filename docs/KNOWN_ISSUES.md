@@ -147,11 +147,11 @@
 ## Low
 
 ### ISSUE-010 — Dashboard ist nur Stub
-- Status: open
+- Status: resolved
 - Severity: Low
 - Area: Frontend / Dashboard
 - Summary: Dashboard-Seite zeigt nur "Willkommen im Business Cockpit". Geplant für SLC-006.
-- Next Action: SLC-006 implementieren.
+- Next Action: Erledigt — Dashboard mit Stats, Pipeline-Summary, Aktivitäten-Feed, Upcoming Actions (2026-03-27).
 
 ### ISSUE-011 — .env.local enthält Platzhalter-Werte
 - Status: open
