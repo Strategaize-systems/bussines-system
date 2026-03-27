@@ -265,21 +265,3 @@ export async function deleteStage(id: string) {
   return { error: "" };
 }
 
-export async function reorderStages(stageIds: string[]) {
-  const supabase = await createClient();
-
-  const updates = stageIds.map((id, index) =>
-    supabase
-      .from("pipeline_stages")
-      .update({ sort_order: index + 1 })
-      .eq("id", id)
-  );
-
-  const results = await Promise.all(updates);
-  const firstError = results.find((r) => r.error);
-  if (firstError?.error) return { error: firstError.error.message };
-
-  revalidatePath("/pipeline");
-  revalidatePath("/settings");
-  return { error: "" };
-}

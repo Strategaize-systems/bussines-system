@@ -21,21 +21,25 @@ interface ContactSheetProps {
 
 export function ContactSheet({ companies, contact, trigger }: ContactSheetProps) {
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const handleSubmit = (formData: FormData) => {
+    setError("");
     startTransition(async () => {
       const result = contact
         ? await updateContact(contact.id, formData)
         : await createContact(formData);
-      if (!result.error) {
+      if (result.error) {
+        setError(result.error);
+      } else {
         setOpen(false);
       }
     });
   };
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (!v) setError(""); }}>
       <SheetTrigger>
         {trigger ?? (
           <Button size="sm">
@@ -51,6 +55,9 @@ export function ContactSheet({ companies, contact, trigger }: ContactSheetProps)
           </SheetTitle>
         </SheetHeader>
         <div className="mt-4">
+          {error && (
+            <p className="mb-3 text-sm text-destructive">{error}</p>
+          )}
           <ContactForm
             contact={contact}
             companies={companies}

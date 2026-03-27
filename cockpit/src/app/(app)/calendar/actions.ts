@@ -33,7 +33,8 @@ export async function getEntries(params?: {
   if (params?.month) {
     const start = `${params.month}-01`;
     const [y, m] = params.month.split("-").map(Number);
-    const end = new Date(y, m, 0).toISOString().split("T")[0]; // last day of month
+    const lastDay = new Date(y, m, 0).getDate();
+    const end = `${params.month}-${String(lastDay).padStart(2, "0")}`;
     query = query.gte("planned_date", start).lte("planned_date", end);
   }
 

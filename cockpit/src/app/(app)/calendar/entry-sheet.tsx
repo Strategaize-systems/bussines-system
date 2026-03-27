@@ -20,19 +20,25 @@ interface EntrySheetProps {
 
 export function EntrySheet({ entry, trigger }: EntrySheetProps) {
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const handleSubmit = (formData: FormData) => {
+    setError("");
     startTransition(async () => {
       const result = entry
         ? await updateEntry(entry.id, formData)
         : await createEntry(formData);
-      if (!result.error) setOpen(false);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setOpen(false);
+      }
     });
   };
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (!v) setError(""); }}>
       <SheetTrigger>
         {trigger ?? (
           <Button size="sm">
@@ -48,6 +54,9 @@ export function EntrySheet({ entry, trigger }: EntrySheetProps) {
           </SheetTitle>
         </SheetHeader>
         <div className="mt-4">
+          {error && (
+            <p className="mb-3 text-sm text-destructive">{error}</p>
+          )}
           <EntryForm
             entry={entry}
             onSubmit={handleSubmit}

@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LogOut } from "lucide-react";
+import { signout } from "@/app/(auth)/login/actions";
 
 export function TopBar() {
   return (
@@ -22,10 +23,14 @@ export function TopBar() {
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem>
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-          </DropdownMenuItem>
+          <form action={signout}>
+            <button type="submit" className="w-full">
+              <DropdownMenuItem>
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </DropdownMenuItem>
+            </button>
+          </form>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>

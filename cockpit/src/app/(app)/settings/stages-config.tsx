@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Plus, GripVertical } from "lucide-react";
+import { Trash2, Plus } from "lucide-react";
 import {
   createStage,
   updateStage,
@@ -88,7 +88,6 @@ function StageRow({ stage }: { stage: PipelineStage }) {
   if (editing) {
     return (
       <form action={handleUpdate} className="flex items-center gap-2 rounded-md border p-2">
-        <GripVertical className="h-4 w-4 text-muted-foreground" />
         <input
           type="color"
           name="color"
@@ -117,7 +116,6 @@ function StageRow({ stage }: { stage: PipelineStage }) {
 
   return (
     <div className="flex items-center gap-2 rounded-md border p-2">
-      <GripVertical className="h-4 w-4 text-muted-foreground" />
       <div
         className="h-4 w-4 rounded-full"
         style={{ backgroundColor: stage.color || "#6366f1" }}

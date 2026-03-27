@@ -17,8 +17,17 @@ const TYPE_ICONS: Record<string, typeof StickyNote> = {
   stage_change: ArrowRightLeft,
 };
 
+type DashboardActivity = {
+  id: string;
+  type: string;
+  title: string | null;
+  created_at: string;
+  contacts: { first_name: string; last_name: string } | null;
+  companies: { name: string } | null;
+};
+
 interface RecentActivitiesProps {
-  activities: any[];
+  activities: DashboardActivity[];
 }
 
 export function RecentActivities({ activities }: RecentActivitiesProps) {

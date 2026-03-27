@@ -34,3 +34,23 @@ BEGIN
     EXECUTE format('CREATE POLICY "authenticated_full_access" ON %I FOR ALL TO authenticated USING (true) WITH CHECK (true)', tbl);
   END LOOP;
 END $$;
+
+-- ============================================================
+-- Storage Bucket for Documents
+-- ============================================================
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('documents', 'documents', false)
+ON CONFLICT (id) DO NOTHING;
+
+-- Authenticated users can upload/download/delete in documents bucket
+CREATE POLICY "authenticated_upload_documents" ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'documents');
+
+CREATE POLICY "authenticated_read_documents" ON storage.objects
+  FOR SELECT TO authenticated
+  USING (bucket_id = 'documents');
+
+CREATE POLICY "authenticated_delete_documents" ON storage.objects
+  FOR DELETE TO authenticated
+  USING (bucket_id = 'documents');

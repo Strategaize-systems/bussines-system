@@ -31,15 +31,21 @@ export function PipelineView({
   companies,
 }: PipelineViewProps) {
   const [editDeal, setEditDeal] = useState<Deal | null>(null);
+  const [editError, setEditError] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const totalValue = deals.reduce((sum, d) => sum + (d.value ?? 0), 0);
 
   const handleEditSubmit = (formData: FormData) => {
     if (!editDeal) return;
+    setEditError("");
     startTransition(async () => {
       const result = await updateDeal(editDeal.id, formData);
-      if (!result.error) setEditDeal(null);
+      if (result.error) {
+        setEditError(result.error);
+      } else {
+        setEditDeal(null);
+      }
     });
   };
 
@@ -83,7 +89,7 @@ export function PipelineView({
       />
 
       {/* Edit Deal Sheet (controlled) */}
-      <Sheet open={!!editDeal} onOpenChange={(open) => !open && setEditDeal(null)}>
+      <Sheet open={!!editDeal} onOpenChange={(open) => { if (!open) { setEditDeal(null); setEditError(""); } }}>
         <SheetContent className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Deal bearbeiten</SheetTitle>
@@ -91,6 +97,9 @@ export function PipelineView({
           <div className="mt-4">
             {editDeal && (
               <>
+                {editError && (
+                  <p className="mb-3 text-sm text-destructive">{editError}</p>
+                )}
                 <DealForm
                   deal={editDeal}
                   stages={stages}

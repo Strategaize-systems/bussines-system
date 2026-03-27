@@ -116,3 +116,14 @@ export async function deleteContact(id: string) {
   revalidatePath("/contacts");
   return { error: "" };
 }
+
+export async function getContactsForSelect() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("contacts")
+    .select("id, first_name, last_name")
+    .order("last_name");
+
+  if (error) throw new Error(error.message);
+  return data as { id: string; first_name: string; last_name: string }[];
+}

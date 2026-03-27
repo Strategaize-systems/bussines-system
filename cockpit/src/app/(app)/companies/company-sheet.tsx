@@ -20,21 +20,25 @@ interface CompanySheetProps {
 
 export function CompanySheet({ company, trigger }: CompanySheetProps) {
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const handleSubmit = (formData: FormData) => {
+    setError("");
     startTransition(async () => {
       const result = company
         ? await updateCompany(company.id, formData)
         : await createCompany(formData);
-      if (!result.error) {
+      if (result.error) {
+        setError(result.error);
+      } else {
         setOpen(false);
       }
     });
   };
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (!v) setError(""); }}>
       <SheetTrigger>
         {trigger ?? (
           <Button size="sm">
@@ -50,6 +54,9 @@ export function CompanySheet({ company, trigger }: CompanySheetProps) {
           </SheetTitle>
         </SheetHeader>
         <div className="mt-4">
+          {error && (
+            <p className="mb-3 text-sm text-destructive">{error}</p>
+          )}
           <CompanyForm
             company={company}
             onSubmit={handleSubmit}
