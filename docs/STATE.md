@@ -10,13 +10,13 @@ Interne Business-Operations-Plattform die Marketing, Lead Generation und CRM in 
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: QA-Korrekturrunde abgeschlossen (ISSUE-001 bis 006 resolved). Bereit für SLC-004 Pipeline + Kanban.
-- Current Phase: V1 Implementation — nächster Slice
+- Current Focus: SLC-004 Pipeline + Kanban abgeschlossen. 6 von 11 Slices done. Nächster: SLC-005.
+- Current Phase: V1 Implementation
 
 ## Immediate Next Steps
-1. SLC-004: Pipeline + Kanban implementieren
-2. SLC-005: Aktivitäten + Dokumente
-3. SLC-006: Dashboard
+1. SLC-005: Aktivitäten + Dokumente
+2. SLC-006: Dashboard
+3. SLC-007: Redaktionskalender
 
 ## Active Scope
 V1 Scope (5 Features, 11 Slices):

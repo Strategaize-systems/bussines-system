@@ -25,7 +25,7 @@
       "title": "Pipeline-Management: Dual-Kanban (Endkunden + Multiplikatoren)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V1",
       "description": "FEAT-002: Zwei Pipelines mit Drag&Drop, konfigurierbare Stages, Deal-Karten, Aktivitäts-Protokoll.",
       "createdAt": "2026-03-27"
