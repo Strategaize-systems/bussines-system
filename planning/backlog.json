@@ -1,0 +1,204 @@
+{
+  "items": [
+    {
+      "id": "BL-001",
+      "title": "NextCRM evaluieren und Prisma→Supabase Migration planen",
+      "type": "feature",
+      "priority": "high",
+      "status": "done",
+      "version": "V1",
+      "description": "NextCRM als CRM-Grundlage evaluiert und bestätigt (DEC-005). Prisma wird durch Supabase ersetzt (DEC-006).",
+      "createdAt": "2026-03-26"
+    },
+    {
+      "id": "BL-002",
+      "title": "CRM-Datenbasis: Kontakte, Firmen, Tags, Notizen, Aktivitäten, Dateien",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V1",
+      "description": "FEAT-001: Supabase-Schema, CRUD-Operationen, Kontakt-Detailseite. NextCRM als Codequelle.",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-003",
+      "title": "Pipeline-Management: Dual-Kanban (Endkunden + Multiplikatoren)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V1",
+      "description": "FEAT-002: Zwei Pipelines mit Drag&Drop, konfigurierbare Stages, Deal-Karten, Aktivitäts-Protokoll.",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-004",
+      "title": "Business Cockpit Dashboard",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V1",
+      "description": "FEAT-003: Pipeline-Zusammenfassung, letzte Aktivitäten, nächste Aktionen, Redaktionskalender, Navigation.",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-005",
+      "title": "Kern-Marketing-Skills (8 Skills adaptieren)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V1",
+      "description": "FEAT-004: content-strategy, copywriting, blog-post, linkedin-post, cold-email, sales-enablement, create-proposal, competitor-analysis ins Strategaize-Format.",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-006",
+      "title": "Brand System: /create-brand-system Skill",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V1",
+      "description": "FEAT-005: Brand Guide + Style Guide + Design Tokens + Canva Brand Kit pro Firma. Basierend auf ui-ux-pro-max-skill mit Strategaize-Format-Adapter.",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-007",
+      "title": "Supabase-Projekt einrichten + Schema-Migration",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V1",
+      "description": "Supabase-Instanz aufsetzen (self-hosted oder Cloud), NextCRM-Schema migrieren, Auth konfigurieren.",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-008",
+      "title": "Hetzner-Server für Business System einrichten",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V1",
+      "description": "Separater Hetzner-Server mit Coolify, Docker, Supabase/PostgreSQL. Basis-Infrastruktur für V1.",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-009",
+      "title": "Volle Marketing-Skill-Bibliothek (20+ Skills)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V2",
+      "description": "FEAT-006: Restliche Best-Of-Skills aus den drei Repositories adaptieren.",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-010",
+      "title": "LinkedIn API / Postiz Publishing",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2",
+      "description": "FEAT-007: LinkedIn MCP-Server + Postiz self-hosted für Multi-Channel Publishing.",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-011",
+      "title": "Cockpit-Aktionen (einzelne Skills auslösen)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2",
+      "description": "FEAT-008: Buttons im Cockpit die einzelne Skills auslösen (noch keine Ketten).",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-012",
+      "title": "E-Mail-Marketing (Listmonk)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2",
+      "description": "FEAT-009: Listmonk self-hosted einrichten für Newsletter und E-Mail-Sequenzen.",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-013",
+      "title": "Lead-Recherche & Scoring",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-010: Externe APIs (Apollo.io, Hunter.io), automatisches Scoring, DSGVO-konform.",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-014",
+      "title": "Outreach-Tracking & Follow-ups",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-011: Wer kontaktiert, Status, automatische Follow-up-Reminder.",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-015",
+      "title": "n8n Workflow-Orchestrierung",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-012: n8n self-hosted, Skill-Ketten, Cockpit↔n8n↔Skills Feedback-Loop.",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-016",
+      "title": "Rechnungen & Buchhaltungs-Übergabe",
+      "type": "feature",
+      "priority": "low",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-013: PDF-Rechnungen generieren, Zahlungsstatus, Buchhaltungs-API.",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-017",
+      "title": "Kunden-Übergabe an operatives System",
+      "type": "feature",
+      "priority": "low",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-014: Konfigurierbare API-Übergabe wenn Kunde bezahlt (pro Firma/Projekt).",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-018",
+      "title": "Intelligence Layer",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V4",
+      "description": "FEAT-015/016: AI-Vorschläge, Content-Performance-Tracking, Pipeline-Analyse.",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-019",
+      "title": "Spracheingabe / Lokales LLM",
+      "type": "feature",
+      "priority": "low",
+      "status": "open",
+      "version": "V4",
+      "description": "FEAT-017: Ollama o.ä. für Sprache→Text, Ideen einsprechen.",
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-020",
+      "title": "Cockpit-driven Workflows (Modus B)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V4",
+      "description": "FEAT-018: Vollwertiges Work-Cockpit mit automatischen Skill-Ketten, Rückfragen, Freigaben.",
+      "createdAt": "2026-03-27"
+    }
+  ]
+}

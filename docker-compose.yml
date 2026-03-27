@@ -1,0 +1,235 @@
+version: "3.8"
+
+# Strategaize Business System — Docker Compose
+# Self-hosted Supabase + Next.js Cockpit
+# Pattern: Blueprint-Plattform (bewährt)
+
+networks:
+  business-net:
+    driver: bridge
+
+volumes:
+  db-data:
+    driver: local
+  storage-data:
+    driver: local
+
+services:
+
+  # ============================================================
+  # WEB APPLICATION (Next.js Cockpit)
+  # ============================================================
+  app:
+    build:
+      context: ./cockpit
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      NODE_ENV: production
+      SUPABASE_URL: http://supabase-kong:8000
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+      supabase-kong:
+        condition: service_started
+    networks:
+      - business-net
+
+  # ============================================================
+  # SUPABASE STACK
+  # ============================================================
+
+  supabase-db:
+    image: supabase/postgres:15.6.1.145
+    restart: unless-stopped
+    expose:
+      - "5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+      POSTGRES_HOST: /var/run/postgresql
+      POSTGRES_USER: postgres
+      PGPORT: 5432
+    networks:
+      - business-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  supabase-auth:
+    image: supabase/gotrue:v2.160.0
+    restart: unless-stopped
+    expose:
+      - "9999"
+    environment:
+      GOTRUE_API_HOST: "0.0.0.0"
+      GOTRUE_API_PORT: 9999
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@supabase-db:5432/postgres?search_path=auth
+      GOTRUE_SITE_URL: ${NEXT_PUBLIC_APP_URL}
+      GOTRUE_URI_ALLOW_LIST: ${NEXT_PUBLIC_APP_URL}
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      API_EXTERNAL_URL: ${NEXT_PUBLIC_APP_URL}/auth/v1
+      GOTRUE_API_EXTERNAL_URL: ${NEXT_PUBLIC_APP_URL}/auth/v1
+      GOTRUE_SMTP_HOST: ${SMTP_HOST:-smtp.example.com}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT:-587}
+      GOTRUE_SMTP_USER: ${SMTP_USER:-unused}
+      GOTRUE_SMTP_PASS: ${SMTP_PASS:-unused}
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_FROM:-noreply@example.com}
+      GOTRUE_SMTP_SENDER_NAME: "Business Cockpit"
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_LOG_LEVEL: warn
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    networks:
+      - business-net
+
+  supabase-rest:
+    image: postgrest/postgrest:v12.2.3
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@supabase-db:5432/postgres
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
+      PGRST_APP_SETTINGS_JWT_EXP: 3600
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    networks:
+      - business-net
+
+  supabase-storage:
+    image: supabase/storage-api:v1.11.13
+    restart: unless-stopped
+    expose:
+      - "5000"
+    volumes:
+      - storage-data:/var/lib/storage
+    environment:
+      ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      POSTGREST_URL: http://supabase-rest:3000
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@supabase-db:5432/postgres
+      FILE_SIZE_LIMIT: ${STORAGE_FILE_SIZE_LIMIT:-209715200}
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: stub
+      GLOBAL_S3_BUCKET: stub
+      UPLOAD_FILE_SIZE_LIMIT: ${STORAGE_FILE_SIZE_LIMIT:-209715200}
+      UPLOAD_FILE_SIZE_LIMIT_STANDARD: ${STORAGE_FILE_SIZE_LIMIT:-209715200}
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+      supabase-rest:
+        condition: service_started
+    networks:
+      - business-net
+
+  supabase-kong:
+    image: kong:2.8.1
+    restart: unless-stopped
+    expose:
+      - "8000"
+    volumes:
+      - ./config/kong.yml:/var/lib/kong/kong.yml
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /var/lib/kong/kong.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+      KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
+      KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: 160k
+      KONG_NGINX_PROXY_PROXY_BUFFERS: 64 160k
+      KONG_LOG_LEVEL: warn
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+    depends_on:
+      supabase-auth:
+        condition: service_started
+      supabase-rest:
+        condition: service_started
+    networks:
+      - business-net
+
+  supabase-meta:
+    image: supabase/postgres-meta:v0.84.2
+    restart: unless-stopped
+    expose:
+      - "8080"
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: supabase-db
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: postgres
+      PG_META_DB_USER: supabase_admin
+      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    networks:
+      - business-net
+
+  supabase-studio:
+    image: supabase/studio:20241028-a265374
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      STUDIO_PG_META_URL: http://supabase-meta:8080
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DEFAULT_ORGANIZATION_NAME: Strategaize
+      DEFAULT_PROJECT_NAME: "Business System"
+      SUPABASE_URL: http://supabase-kong:8000
+      SUPABASE_PUBLIC_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      LOGFLARE_API_KEY: ""
+      LOGFLARE_URL: ""
+      NEXT_PUBLIC_ENABLE_LOGS: "false"
+    depends_on:
+      supabase-meta:
+        condition: service_started
+    networks:
+      - business-net
+
+  # ============================================================
+  # V3: FIRECRAWL (deaktiviert)
+  # ============================================================
+  # firecrawl:
+  #   image: mendableai/firecrawl:latest
+  #   restart: unless-stopped
+  #   expose:
+  #     - "3002"
+  #   depends_on:
+  #     - firecrawl-redis
+  #   networks:
+  #     - business-net
+  # firecrawl-redis:
+  #   image: redis:7-alpine
+  #   restart: unless-stopped
+  #   networks:
+  #     - business-net
