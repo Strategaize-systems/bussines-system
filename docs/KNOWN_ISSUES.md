@@ -146,6 +146,27 @@
 
 ## Low
 
+### ISSUE-023 — Monatsende-Berechnung ist Zeitzonen-abhängig
+- Status: open
+- Severity: Medium
+- Area: Backend / Calendar
+- Summary: `new Date(y, m, 0).toISOString()` in getEntries month filter gibt UTC zurück. In CET kann der Vortag resultieren, wodurch Einträge am Monatsletzten nicht angezeigt werden.
+- Next Action: String-basierte Datumsberechnung statt Date-Objekt verwenden.
+
+### ISSUE-024 — Keine Filter-UI in Kalender-Tabellenansicht
+- Status: open
+- Severity: Medium
+- Area: Frontend / Calendar
+- Summary: Spec verlangt Filter nach Typ, Status, Kanal. Server Action unterstützt Filter, aber Table-UI hat keine Filter-Dropdowns.
+- Next Action: Filter-Dropdowns über der Tabelle einbauen.
+
+### ISSUE-025 — Status-Advance hat kein Undo
+- Status: open
+- Severity: Low
+- Area: Frontend / Calendar
+- Summary: Status-Badge-Klick geht nur vorwärts. Kein Zurücksetzen möglich. Akzeptabel für internal-tool.
+- Next Action: Optional als Improvement einplanen.
+
 ### ISSUE-021 — any-Typ in RecentActivities
 - Status: open
 - Severity: Medium
