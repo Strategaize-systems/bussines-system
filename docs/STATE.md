@@ -10,16 +10,13 @@ Interne Business-Operations-Plattform die Marketing, Lead Generation und CRM in 
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: 5 von 11 Slices gebaut, QA hat 2 Blocker + 4 High Issues gefunden. Blocker fixen vor weiterem Fortschritt.
-- Current Phase: V1 Implementation — QA-Korrekturrunde
+- Current Focus: QA-Korrekturrunde abgeschlossen (ISSUE-001 bis 006 resolved). Bereit für SLC-004 Pipeline + Kanban.
+- Current Phase: V1 Implementation — nächster Slice
 
 ## Immediate Next Steps
-1. ISSUE-001 fixen: Dockerfile für Cockpit erstellen
-2. ISSUE-002 fixen: Dockerfile.kong für Kong Env-Substitution
-3. ISSUE-003 fixen: Dockerfile.db für Supabase-Rollen
-4. ISSUE-004/005 fixen: Edit-UI für Kontakte und Firmen
-5. ISSUE-006 klären: Skill-Registrierung (.claude/skills/ vs /skills/)
-6. Dann SLC-004: Pipeline + Kanban
+1. SLC-004: Pipeline + Kanban implementieren
+2. SLC-005: Aktivitäten + Dokumente
+3. SLC-006: Dashboard
 
 ## Active Scope
 V1 Scope (5 Features, 11 Slices):
@@ -33,9 +30,7 @@ V1 Scope (5 Features, 11 Slices):
 - Hosting: Hetzner CX31, Coolify, business.strategaizetransition.com
 
 ## Blockers
-- ISSUE-001: Dockerfile für Cockpit fehlt (Docker Compose kann nicht bauen)
-- ISSUE-002: Dockerfile.kong fehlt (Kong Auth-Keys nicht substituiert)
-- ISSUE-003: Supabase DB Init-Scripts werden überschrieben (Rollen fehlen)
+- aktuell keine
 
 ## Last Stable Version
 - none yet
