@@ -10,13 +10,13 @@ Interne Business-Operations-Plattform die Marketing, Lead Generation und CRM in 
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: SLC-006 Dashboard abgeschlossen. 8 von 11 Slices done. Nächster: SLC-007.
+- Current Focus: SLC-007 Redaktionskalender abgeschlossen. 9 von 11 Slices done. Nächster: SLC-010.
 - Current Phase: V1 Implementation
 
 ## Immediate Next Steps
-1. SLC-007: Redaktionskalender
-2. SLC-010: Brand System Skill
-3. SLC-011: Hetzner Deployment
+1. SLC-010: Brand System Skill
+2. SLC-011: Hetzner Deployment
+3. Gesamt-QA über alle Slices
 
 ## Active Scope
 V1 Scope (5 Features, 11 Slices):
