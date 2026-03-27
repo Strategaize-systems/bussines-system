@@ -122,6 +122,28 @@
 - Summary: Gleiche Funktion `getContactsForSelect` in endkunden/page.tsx und multiplikatoren/page.tsx statt in shared actions.
 - Next Action: In contacts/actions.ts oder pipeline/actions.ts auslagern.
 
+### ISSUE-018 — Supabase Storage Bucket "documents" wird nirgends erstellt
+- Status: open
+- Severity: High
+- Area: Infrastructure / Storage
+- Summary: `uploadDocument` referenziert `supabase.storage.from("documents")`, aber kein Storage Bucket existiert in Init-Scripts oder Migrations. Upload schlägt zur Laufzeit fehl.
+- Impact: Dokument-Upload funktioniert nicht ohne manuelles Erstellen des Buckets.
+- Next Action: Bei SLC-011 (Deployment) als Post-Deploy-Step oder SQL-Migration adressieren.
+
+### ISSUE-019 — Aktivitäten + Dokumente fehlen auf Deal-Ebene
+- Status: open
+- Severity: Medium
+- Area: Frontend / Pipeline
+- Summary: Actions unterstützen dealId, aber kein Deal-Detail-View existiert. Deal-bezogene Aktivitäten/Dokumente können nicht eingesehen werden.
+- Next Action: Deal-Detail-Seite als eigenen Slice oder Erweiterung planen.
+
+### ISSUE-020 — deleteDocument prüft Storage-Delete-Ergebnis nicht
+- Status: open
+- Severity: Medium
+- Area: Backend / Storage
+- Summary: Storage-Remove Ergebnis wird in document-actions.ts ignoriert. DB-Record wird gelöscht auch wenn Storage-Delete fehlschlägt.
+- Next Action: Storage-Delete Ergebnis prüfen oder zumindest loggen.
+
 ## Low
 
 ### ISSUE-010 — Dashboard ist nur Stub
