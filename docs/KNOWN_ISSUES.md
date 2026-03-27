@@ -146,6 +146,20 @@
 
 ## Low
 
+### ISSUE-021 — any-Typ in RecentActivities
+- Status: open
+- Severity: Medium
+- Area: Frontend / TypeScript
+- Summary: `activities: any[]` in recent-activities.tsx statt typisiert. Funktional korrekt, schwächt TypeScript-Schutz.
+- Next Action: Typ aus activity-actions.ts verwenden oder eigenen Dashboard-Activity-Typ definieren.
+
+### ISSUE-022 — getPipelineSummaries hat N+1 Query-Pattern
+- Status: open
+- Severity: Low
+- Area: Backend / Performance
+- Summary: Pro Pipeline 2 separate Queries (Stages + Deals). Bei 2 Pipelines = 5 Queries total. Akzeptabel für V1.
+- Next Action: Bei Skalierung auf eine aggregierte Query umstellen.
+
 ### ISSUE-010 — Dashboard ist nur Stub
 - Status: resolved
 - Severity: Low
