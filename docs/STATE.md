@@ -10,12 +10,12 @@ Interne Business-Operations-Plattform die Marketing, Lead Generation und CRM in 
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: SLC-010 Brand System Skill abgeschlossen. 10 von 11 Slices done. Nur noch SLC-011 (Deployment).
-- Current Phase: V1 Implementation — Pre-Deployment
+- Current Focus: Gesamt-QA + Korrekturrunde abgeschlossen. 10 von 11 Slices done, 19 von 28 Issues resolved. Bereit für /final-check.
+- Current Phase: V1 Pre-Deployment
 
 ## Immediate Next Steps
-1. Gesamt-QA über alle 10 Slices
-2. /final-check
+1. /final-check
+2. /go-live
 3. SLC-011: Hetzner Deployment
 
 ## Active Scope
