@@ -24,6 +24,11 @@ COPY tsconfig.json ./
 COPY postcss.config.mjs ./
 COPY components.json ./
 
+# NEXT_PUBLIC_* must be available at build time (inlined into client bundle)
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ARG NEXT_PUBLIC_APP_URL
+
 # Build Next.js (standalone output)
 RUN npm run build
 

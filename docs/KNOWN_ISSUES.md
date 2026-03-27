@@ -181,6 +181,14 @@
 - Summary: Logout DropdownMenuItem hatte weder onClick noch Form Action. Klick auf Logout machte nichts.
 - Next Action: Erledigt — signout Action als Form Action im DropdownMenu verdrahtet (2026-03-27).
 
+### ISSUE-029 — NEXT_PUBLIC_* Variablen fehlen beim Docker Build
+- Status: resolved
+- Severity: Blocker
+- Area: Infrastructure / Docker
+- Summary: NEXT_PUBLIC_SUPABASE_URL und NEXT_PUBLIC_SUPABASE_ANON_KEY werden client-seitig verwendet und beim Next.js Build inline. Dockerfile hatte keine ARG-Deklarationen, Build lief mit undefined Werten.
+- Impact: Supabase-Verbindung im Browser funktioniert nicht.
+- Next Action: Erledigt — ARG im Dockerfile + args in docker-compose.yml (2026-03-27).
+
 ### ISSUE-027 — /auth/set-password Route fehlt
 - Status: open
 - Severity: Medium
