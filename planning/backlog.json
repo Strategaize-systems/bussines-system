@@ -199,6 +199,16 @@
       "version": "V4",
       "description": "FEAT-018: Vollwertiges Work-Cockpit mit automatischen Skill-Ketten, Rückfragen, Freigaben.",
       "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-021",
+      "title": "QA-Fixes SLC-004: updateDeal stage_id, Drag-Cancel, Click-vs-Drag",
+      "type": "fix",
+      "priority": "high",
+      "status": "done",
+      "version": "V1",
+      "description": "ISSUE-012: updateDeal fehlt stage_id. ISSUE-013: Drag-Cancel revertiert State nicht. ISSUE-014: onClick feuert nach Drag.",
+      "createdAt": "2026-03-27"
     }
   ]
 }

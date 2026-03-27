@@ -28,6 +28,12 @@ export function KanbanCard({ deal, onClick }: KanbanCardProps) {
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    // Only fire onClick if no drag occurred (pointer stayed within activation distance)
+    if (isDragging) return;
+    onClick?.();
+  };
+
   return (
     <Card
       ref={setNodeRef}
@@ -35,7 +41,7 @@ export function KanbanCard({ deal, onClick }: KanbanCardProps) {
       {...attributes}
       {...listeners}
       className="cursor-grab active:cursor-grabbing"
-      onClick={onClick}
+      onClick={handleClick}
     >
       <CardContent className="p-3 space-y-2">
         <div className="font-medium text-sm leading-tight">{deal.title}</div>

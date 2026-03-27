@@ -88,7 +88,11 @@ export function KanbanBoard({ stages, deals: initialDeals, onDealClick }: Kanban
     const { active, over } = event;
     setActiveId(null);
 
-    if (!over) return;
+    if (!over) {
+      // Drag cancelled — revert optimistic state
+      setDeals(initialDeals);
+      return;
+    }
 
     const deal = deals.find((d) => d.id === active.id);
     if (!deal) return;

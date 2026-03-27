@@ -138,6 +138,7 @@ export async function updateDeal(id: string, formData: FormData) {
   const { error } = await supabase
     .from("deals")
     .update({
+      stage_id: (formData.get("stage_id") as string) || null,
       contact_id: (formData.get("contact_id") as string) || null,
       company_id: (formData.get("company_id") as string) || null,
       title: formData.get("title") as string,

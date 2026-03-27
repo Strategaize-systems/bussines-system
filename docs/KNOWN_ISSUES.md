@@ -75,6 +75,53 @@
 - Summary: Contact-Sheet und Company-Sheet prüfen Fehler für Close-Logik, zeigen aber keinen Fehler-Text an. User bekommt bei fehlgeschlagenem Create/Update kein Feedback.
 - Next Action: Fehler-Anzeige in Sheets einbauen.
 
+### ISSUE-012 — updateDeal setzt stage_id nicht
+- Status: resolved
+- Severity: High
+- Area: Frontend / Pipeline
+- Summary: `updateDeal` in `pipeline/actions.ts` enthält `stage_id` nicht im Update-Objekt. Stage-Änderung über das Bearbeiten-Formular wird ignoriert.
+- Impact: Acceptance Criterion "Deals bearbeiten" teilweise nicht erfüllt.
+- Next Action: Erledigt — stage_id in updateDeal aufgenommen (2026-03-27).
+
+### ISSUE-013 — Drag-Cancel revertiert optimistischen State nicht
+- Status: resolved
+- Severity: High
+- Area: Frontend / Kanban
+- Summary: Wenn ein Drag abgebrochen wird (Drop außerhalb aller Columns), wird der optimistische State nicht zurückgesetzt. Card bleibt visuell in der falschen Column bis Page-Refresh.
+- Impact: UX-Vertrauen in Kanban-Board.
+- Next Action: Erledigt — State-Reset auf initialDeals bei !over in handleDragEnd (2026-03-27).
+
+### ISSUE-014 — Click vs. Drag Konflikt auf Deal-Cards
+- Status: resolved
+- Severity: High
+- Area: Frontend / Kanban
+- Summary: KanbanCard hat sowohl Drag-Listeners als auch onClick. Nach einem Drag könnte onClick zusätzlich feuern. Kein Tracking ob Drag stattfand.
+- Impact: Unbeabsichtigtes Öffnen des Edit-Sheets nach Drag.
+- Next Action: Erledigt — isDragging-Check vor onClick (2026-03-27).
+
+## Medium
+
+### ISSUE-015 — Letzte Aktivität fehlt auf Deal-Cards
+- Status: open
+- Severity: Medium
+- Area: Frontend / Pipeline
+- Summary: Slice-Spec verlangt "letzte Aktivität" auf Deal-Karten. getDealsForPipeline jointed nicht die activities-Tabelle. Deferred auf SLC-005 (Aktivitäten).
+- Next Action: Mit SLC-005 implementieren.
+
+### ISSUE-016 — reorderStages definiert aber nie aufgerufen
+- Status: open
+- Severity: Medium
+- Area: Frontend / Settings
+- Summary: `reorderStages()` existiert in actions.ts, wird aber nie aufgerufen. GripVertical-Icon in Settings ist rein dekorativ.
+- Next Action: DnD-Reorder in Settings einbauen oder Icon entfernen.
+
+### ISSUE-017 — getContactsForSelect dupliziert in Pipeline-Seiten
+- Status: open
+- Severity: Medium
+- Area: Frontend / Code Quality
+- Summary: Gleiche Funktion `getContactsForSelect` in endkunden/page.tsx und multiplikatoren/page.tsx statt in shared actions.
+- Next Action: In contacts/actions.ts oder pipeline/actions.ts auslagern.
+
 ## Low
 
 ### ISSUE-010 — Dashboard ist nur Stub
