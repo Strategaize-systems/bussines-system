@@ -1,5 +1,9 @@
 import { getCompany, getCompanyContacts, deleteCompany } from "../actions";
 import { CompanySheet } from "../company-sheet";
+import { getActivities } from "@/lib/actions/activity-actions";
+import { getDocuments } from "@/lib/actions/document-actions";
+import { ActivityTimeline } from "@/components/activities/activity-timeline";
+import { DocumentList } from "@/components/documents/document-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,9 +26,11 @@ export default async function CompanyDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [company, contacts] = await Promise.all([
+  const [company, contacts, activities, documents] = await Promise.all([
     getCompany(id),
     getCompanyContacts(id),
+    getActivities({ companyId: id }),
+    getDocuments({ companyId: id }),
   ]);
 
   async function handleDelete() {
@@ -180,6 +186,11 @@ export default async function CompanyDetailPage({
           )}
         </CardContent>
       </Card>
+      {/* Activities */}
+      <ActivityTimeline activities={activities} companyId={id} />
+
+      {/* Documents */}
+      <DocumentList documents={documents} companyId={id} />
     </div>
   );
 }

@@ -15,7 +15,7 @@
       "title": "CRM-Datenbasis: Kontakte, Firmen, Tags, Notizen, Aktivitäten, Dateien",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V1",
       "description": "FEAT-001: Supabase-Schema, CRUD-Operationen, Kontakt-Detailseite. NextCRM als Codequelle.",
       "createdAt": "2026-03-27"

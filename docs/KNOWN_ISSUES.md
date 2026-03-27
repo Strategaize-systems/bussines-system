@@ -55,11 +55,11 @@
 ## Medium
 
 ### ISSUE-007 — Kontakt-Detail enthält Stub für Aktivitäten
-- Status: open
+- Status: resolved
 - Severity: Medium
 - Area: Frontend / CRM
 - Summary: Platzhalter-Text "Aktivitäten-Timeline wird in SLC-005 implementiert" in Production-Code.
-- Next Action: Nach SLC-005 entfernen.
+- Next Action: Erledigt — Stub ersetzt durch ActivityTimeline + DocumentList (2026-03-27).
 
 ### ISSUE-008 — Native select statt shadcn Select im Kontakt-Formular
 - Status: open
@@ -105,8 +105,8 @@
 - Status: open
 - Severity: Medium
 - Area: Frontend / Pipeline
-- Summary: Slice-Spec verlangt "letzte Aktivität" auf Deal-Karten. getDealsForPipeline jointed nicht die activities-Tabelle. Deferred auf SLC-005 (Aktivitäten).
-- Next Action: Mit SLC-005 implementieren.
+- Summary: Slice-Spec verlangt "letzte Aktivität" auf Deal-Karten. getDealsForPipeline jointed nicht die activities-Tabelle. Activity-Infrastruktur existiert jetzt (SLC-005), aber Join auf Deal-Cards fehlt noch.
+- Next Action: getDealsForPipeline um activities-Join erweitern, KanbanCard um letzte Aktivität ergänzen.
 
 ### ISSUE-016 — reorderStages definiert aber nie aufgerufen
 - Status: open

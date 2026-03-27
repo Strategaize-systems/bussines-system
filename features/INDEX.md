@@ -4,7 +4,7 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-001 | CRM-Datenbasis | in_progress | [Spec](FEAT-001-crm-datenbasis.md) | 2026-03-27 |
+| FEAT-001 | CRM-Datenbasis | done | [Spec](FEAT-001-crm-datenbasis.md) | 2026-03-27 |
 | FEAT-002 | Pipeline-Management | done | [Spec](FEAT-002-pipeline-management.md) | 2026-03-27 |
 | FEAT-003 | Business Cockpit Dashboard | in_progress | [Spec](FEAT-003-cockpit-dashboard.md) | 2026-03-27 |
 | FEAT-004 | Kern-Marketing-Skills | done | [Spec](FEAT-004-kern-marketing-skills.md) | 2026-03-27 |

@@ -1,6 +1,10 @@
 import { getContact, deleteContact } from "../actions";
 import { getCompaniesForSelect } from "../../companies/actions";
 import { ContactSheet } from "../contact-sheet";
+import { getActivities } from "@/lib/actions/activity-actions";
+import { getDocuments } from "@/lib/actions/document-actions";
+import { ActivityTimeline } from "@/components/activities/activity-timeline";
+import { DocumentList } from "@/components/documents/document-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,9 +18,11 @@ export default async function ContactDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [contact, companies] = await Promise.all([
+  const [contact, companies, activities, documents] = await Promise.all([
     getContact(id),
     getCompaniesForSelect(),
+    getActivities({ contactId: id }),
+    getDocuments({ contactId: id }),
   ]);
 
   async function handleDelete() {
@@ -136,17 +142,11 @@ export default async function ContactDetailPage({
         </Card>
       </div>
 
-      {/* Placeholder for Activities (SLC-005) and Documents (SLC-005) */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Aktivitäten</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Aktivitäten-Timeline wird in SLC-005 implementiert.
-          </p>
-        </CardContent>
-      </Card>
+      {/* Activities */}
+      <ActivityTimeline activities={activities} contactId={id} />
+
+      {/* Documents */}
+      <DocumentList documents={documents} contactId={id} />
     </div>
   );
 }
