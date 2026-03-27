@@ -8,7 +8,7 @@
 | FEAT-002 | Pipeline-Management | done | [Spec](FEAT-002-pipeline-management.md) | 2026-03-27 |
 | FEAT-003 | Business Cockpit Dashboard | done | [Spec](FEAT-003-cockpit-dashboard.md) | 2026-03-27 |
 | FEAT-004 | Kern-Marketing-Skills | done | [Spec](FEAT-004-kern-marketing-skills.md) | 2026-03-27 |
-| FEAT-005 | Brand System | planned | [Spec](FEAT-005-brand-system.md) | 2026-03-27 |
+| FEAT-005 | Brand System | done | [Spec](FEAT-005-brand-system.md) | 2026-03-27 |
 
 ## V2 Features (geplant)
 

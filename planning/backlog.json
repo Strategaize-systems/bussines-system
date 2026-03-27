@@ -55,7 +55,7 @@
       "title": "Brand System: /create-brand-system Skill",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V1",
       "description": "FEAT-005: Brand Guide + Style Guide + Design Tokens + Canva Brand Kit pro Firma. Basierend auf ui-ux-pro-max-skill mit Strategaize-Format-Adapter.",
       "createdAt": "2026-03-27"
