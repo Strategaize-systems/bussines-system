@@ -15,7 +15,7 @@
       "title": "CRM-Datenbasis: Kontakte, Firmen, Tags, Notizen, Aktivitäten, Dateien",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V1",
       "description": "FEAT-001: Supabase-Schema, CRUD-Operationen, Kontakt-Detailseite. NextCRM als Codequelle.",
       "createdAt": "2026-03-27"
@@ -35,7 +35,7 @@
       "title": "Business Cockpit Dashboard",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V1",
       "description": "FEAT-003: Pipeline-Zusammenfassung, letzte Aktivitäten, nächste Aktionen, Redaktionskalender, Navigation.",
       "createdAt": "2026-03-27"
@@ -45,7 +45,7 @@
       "title": "Kern-Marketing-Skills (8 Skills adaptieren)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V1",
       "description": "FEAT-004: content-strategy, copywriting, blog-post, linkedin-post, cold-email, sales-enablement, create-proposal, competitor-analysis ins Strategaize-Format.",
       "createdAt": "2026-03-27"
@@ -65,7 +65,7 @@
       "title": "Supabase-Projekt einrichten + Schema-Migration",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V1",
       "description": "Supabase-Instanz aufsetzen (self-hosted oder Cloud), NextCRM-Schema migrieren, Auth konfigurieren.",
       "createdAt": "2026-03-27"
