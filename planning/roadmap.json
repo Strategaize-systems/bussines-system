@@ -8,25 +8,32 @@
       "order": 1
     },
     {
+      "id": "v1-1",
+      "name": "V1.1",
+      "status": "planned",
+      "summary": "Voice Guide Skill für zielgruppen-spezifische Sprachprofile, Anti-Slop-Integration, Content-Qualitätsverbesserungen",
+      "order": 2
+    },
+    {
       "id": "v2",
       "name": "V2",
       "status": "planned",
       "summary": "Content & Marketing Engine: volle Skill-Bibliothek, LinkedIn/Postiz Publishing, Cockpit-Aktionen, E-Mail-Marketing",
-      "order": 2
+      "order": 3
     },
     {
       "id": "v3",
       "name": "V3",
       "status": "planned",
       "summary": "Lead Generation & Outreach: Lead-Scoring, Recherche, Firecrawl, n8n-Orchestrierung, Rechnungen, Kunden-Übergabe",
-      "order": 3
+      "order": 4
     },
     {
       "id": "v4",
       "name": "V4",
       "status": "planned",
       "summary": "Intelligence Layer: AI-Vorschläge, Performance-Tracking, Spracheingabe, Cockpit-driven Workflows (Modus B)",
-      "order": 4
+      "order": 5
     }
   ]
 }

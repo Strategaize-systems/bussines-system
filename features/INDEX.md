@@ -10,6 +10,12 @@
 | FEAT-004 | Kern-Marketing-Skills | done | [Spec](FEAT-004-kern-marketing-skills.md) | 2026-03-27 |
 | FEAT-005 | Brand System | done | [Spec](FEAT-005-brand-system.md) | 2026-03-27 |
 
+## V1.1 Features (geplant)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-019 | Voice Guide + Anti-Slop | planned | — | 2026-03-30 |
+
 ## V2 Features (geplant)
 
 | ID | Feature | Status | Spec | Created |

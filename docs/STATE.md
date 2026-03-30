@@ -9,14 +9,14 @@
 Interne Business-Operations-Plattform die Marketing, Lead Generation und CRM in einem Skill-gesteuerten System vereint. Claude Code Skills erledigen die Arbeit, ein Next.js Cockpit liefert Sichtbarkeit. Pro Firma anpassbar.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: Gesamt-QA + Korrekturrunde abgeschlossen. 10 von 11 Slices done, 19 von 28 Issues resolved. Bereit für /final-check.
-- Current Phase: V1 Pre-Deployment
+- High-Level State: go-live
+- Current Focus: Final-Check + Go-Live bestanden. Deploy Prerequisites-Phase aktiv (Phase 1). Warte auf Hetzner/DNS/Env-Var Bestätigung.
+- Current Phase: V1 Deployment — Prerequisites
 
 ## Immediate Next Steps
-1. /final-check
-2. /go-live
-3. SLC-011: Hetzner Deployment
+1. SLC-011: Deploy Prerequisites bestätigen (Hetzner, DNS, Env Vars, Coolify)
+2. SLC-011: Build + Deploy auf Hetzner
+3. Post-Launch Verifikation
 
 ## Active Scope
 V1 Scope (5 Features, 11 Slices):
@@ -36,4 +36,4 @@ V1 Scope (5 Features, 11 Slices):
 - none yet
 
 ## Notes
-Projekt folgt dem gleichen Pattern wie das Strategaize Dev System (Skills + Cockpit). Recherche hat ergeben, dass ~70% der Bausteine als Open Source existieren (Skill-Libraries, MCP-Server, Self-Hosted-Tools). ~30% muss selbst gebaut werden (Cockpit, Skill-Orchestrierung, Datenmodell).
+Projekt folgt dem gleichen Pattern wie das Strategaize Dev System (Skills + Cockpit). 10 von 11 V1 Slices done, 20 von 29 Issues resolved, 0 Blocker. Zusätzlich: Voice Guide Skill + Anti-Slop-Regeln als V1.1 Backlog-Items. Deploy Skill wurde auf 3-Phasen-Modell (Prerequisites → Execute → Learn) umgebaut.
