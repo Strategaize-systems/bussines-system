@@ -54,6 +54,14 @@ Before writing the post, check if a brand guide exists:
    - Ask the user if the post should be formal or conversational
    - Note in the output that a brand guide via `/create-brand-system` would improve consistency across posts
 
+### Voice Guide + Anti-Slop Rules
+
+After loading the brand guide, also check:
+
+1. Does a voice guide exist at `/brand/{firmenname}/voice/{zielgruppe}.md`? If the user specifies a target audience, load the matching voice guide for tone, vocabulary, and channel-specific rules.
+2. Always apply the anti-slop rules from `/skills/brand/reference/anti-slop-rules.md` — no AI-tell phrases, active voice, concrete examples, varied sentence structure.
+3. Priority: Anti-Slop Rules (baseline) → Brand Guide (tone) → Voice Guide (audience-specific). Voice Guide wins on conflicts.
+
 ## Process
 
 ### Step 1: Define the Post's Job

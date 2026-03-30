@@ -209,6 +209,36 @@
       "version": "V1",
       "description": "ISSUE-012: updateDeal fehlt stage_id. ISSUE-013: Drag-Cancel revertiert State nicht. ISSUE-014: onClick feuert nach Drag.",
       "createdAt": "2026-03-27"
+    },
+    {
+      "id": "BL-022",
+      "title": "Voice Guide Skill: Zielgruppen-spezifische Sprach-/Schreibstil-Guides",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V1.1",
+      "description": "/create-voice-guide Skill. Pro Firma + Zielgruppe: Sprachmuster, Anti-Slop-Regeln, Kanal-Anpassungen. Wird von Marketing-Skills als Kontext gelesen.",
+      "createdAt": "2026-03-30"
+    },
+    {
+      "id": "BL-023",
+      "title": "Banner-Design Skill (aus ui-ux-pro-max-skill)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2",
+      "description": "/create-banner Skill für Social Media Grafiken, Google Ads, Website Heroes. Basiert auf ui-ux-pro-max-skill banner-design.",
+      "createdAt": "2026-03-30"
+    },
+    {
+      "id": "BL-024",
+      "title": "Präsentations-Skill (aus ui-ux-pro-max-skill)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2",
+      "description": "/create-presentation Skill für Investor Pitches, Sales Decks, Product Demos. Ergänzt /sales-enablement. Basiert auf ui-ux-pro-max-skill slides.",
+      "createdAt": "2026-03-30"
     }
   ]
 }
