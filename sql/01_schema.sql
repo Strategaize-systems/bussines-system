@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS companies (
   address_country TEXT,
   notes TEXT,
   tags TEXT[] DEFAULT '{}',
-  created_by UUID REFERENCES auth.users(id),
+  created_by UUID,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS contacts (
   linkedin_url TEXT,
   tags TEXT[] DEFAULT '{}',
   notes TEXT,
-  created_by UUID REFERENCES auth.users(id),
+  created_by UUID,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS deals (
   status TEXT DEFAULT 'active',
   lost_reason TEXT,
   tags TEXT[] DEFAULT '{}',
-  created_by UUID REFERENCES auth.users(id),
+  created_by UUID,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS activities (
   description TEXT,
   due_date TIMESTAMPTZ,
   completed_at TIMESTAMPTZ,
-  created_by UUID REFERENCES auth.users(id),
+  created_by UUID,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS documents (
   file_type TEXT,
   file_size BIGINT,
   category TEXT,
-  created_by UUID REFERENCES auth.users(id),
+  created_by UUID,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS content_calendar (
   planned_date DATE,
   published_date DATE,
   tags TEXT[] DEFAULT '{}',
-  created_by UUID REFERENCES auth.users(id),
+  created_by UUID,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
