@@ -11,13 +11,13 @@ import { useState } from "react";
 export default function LoginPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [state, formAction, isPending] = useActionState(
-    async (_prev: { error: string; success?: string }, formData: FormData) => {
+    async (_prev: { error: string; success: string }, formData: FormData) => {
       const result = mode === "signup"
         ? await signup(formData)
         : await login(formData);
-      return result ?? { error: "" };
+      return { error: result?.error ?? "", success: (result as any)?.success ?? "" };
     },
-    { error: "" }
+    { error: "", success: "" }
   );
 
   return (
@@ -50,7 +50,7 @@ export default function LoginPage() {
             {state.error !== "" && (
               <p className="text-sm text-destructive">{state.error}</p>
             )}
-            {"success" in state && state.success && (
+            {state.success !== "" && (
               <p className="text-sm text-green-600">{state.success}</p>
             )}
             <Button type="submit" className="w-full" disabled={isPending}>
