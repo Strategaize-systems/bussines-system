@@ -4,13 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { login } from "./actions";
+import { login, signup } from "./actions";
 import { useActionState } from "react";
+import { useState } from "react";
 
 export default function LoginPage() {
+  const [mode, setMode] = useState<"login" | "signup">("login");
   const [state, formAction, isPending] = useActionState(
-    async (_prev: { error: string }, formData: FormData) => {
-      const result = await login(formData);
+    async (_prev: { error: string; success?: string }, formData: FormData) => {
+      const result = mode === "signup"
+        ? await signup(formData)
+        : await login(formData);
       return result ?? { error: "" };
     },
     { error: "" }
@@ -46,8 +50,19 @@ export default function LoginPage() {
             {state.error !== "" && (
               <p className="text-sm text-destructive">{state.error}</p>
             )}
+            {"success" in state && state.success && (
+              <p className="text-sm text-green-600">{state.success}</p>
+            )}
             <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? "Anmelden..." : "Anmelden"}
+              {isPending ? "..." : mode === "signup" ? "Account erstellen" : "Anmelden"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full text-xs"
+              onClick={() => setMode(mode === "login" ? "signup" : "login")}
+            >
+              {mode === "login" ? "Ersten Account erstellen" : "Zurück zum Login"}
             </Button>
           </form>
         </CardContent>
