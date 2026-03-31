@@ -6,17 +6,17 @@
 - Delivery Mode: internal-tool
 
 ## Purpose
-Interne Business-Operations-Plattform die Marketing, Lead Generation und CRM in einem Skill-gesteuerten System vereint. Claude Code Skills erledigen die Arbeit, ein Next.js Cockpit liefert Sichtbarkeit. Pro Firma anpassbar.
+Strategaize-spezifische Business-Development-Instanz: CRM, Pipeline, Marketing-Cockpit, Redaktionskalender. Gebaut mit dem Dev System. Marketing-/Brand-Skills werden im Dev System gepflegt (Master) und hier als Kopien genutzt.
 
 ## Current State
-- High-Level State: go-live
-- Current Focus: Final-Check + Go-Live bestanden. Deploy Prerequisites-Phase aktiv (Phase 1). Warte auf Hetzner/DNS/Env-Var Bestätigung.
-- Current Phase: V1 Deployment — Prerequisites
+- High-Level State: deployed
+- Current Focus: V1 deployed auf Hetzner. Pipeline-Fehler + Seed-Daten prüfen. Skills in Dev System als Master verschoben.
+- Current Phase: V1 Post-Launch
 
 ## Immediate Next Steps
-1. SLC-011: Deploy Prerequisites bestätigen (Hetzner, DNS, Env Vars, Coolify)
-2. SLC-011: Build + Deploy auf Hetzner
-3. Post-Launch Verifikation
+1. Pipeline-Fehler debuggen (Seed-Daten fehlen?)
+2. Temporäre Signup-Route entfernen
+3. Post-Launch Verifikation aller Features
 
 ## Active Scope
 V1 Scope (5 Features, 11 Slices):
@@ -36,4 +36,4 @@ V1 Scope (5 Features, 11 Slices):
 - none yet
 
 ## Notes
-Projekt folgt dem gleichen Pattern wie das Strategaize Dev System (Skills + Cockpit). 10 von 11 V1 Slices done, 20 von 29 Issues resolved, 0 Blocker. Zusätzlich: Voice Guide Skill + Anti-Slop-Regeln als V1.1 Backlog-Items. Deploy Skill wurde auf 3-Phasen-Modell (Prerequisites → Execute → Learn) umgebaut.
+V1 deployed auf Hetzner (business.strategaizetransition.com). Login funktioniert, Dashboard lädt. Marketing-/Brand-/Voice-Skills sind jetzt im Dev System als Master — Business System behält Kopien in .claude/commands/ für lokale Nutzung. Wiederverwendbare Teile (Skills, SQL-Templates, Referenz-Daten) leben im Dev System unter .claude/skills-business/ und .claude/templates/crm-stack/.
