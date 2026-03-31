@@ -15,21 +15,14 @@ ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE content_calendar ENABLE ROW LEVEL SECURITY;
 
--- Profiles: user can read/update own profile
-CREATE POLICY "users_read_own_profile" ON profiles
-  FOR SELECT TO authenticated
-  USING (id = auth.uid());
-
-CREATE POLICY "users_update_own_profile" ON profiles
-  FOR UPDATE TO authenticated
-  USING (id = auth.uid());
-
--- All other tables: authenticated user has full access (V1)
+-- V1: ALL tables get simple authenticated full access (including profiles)
+-- auth.uid() is not available during DB init (GoTrue creates it later)
+-- V2+: Replace profiles policy with auth.uid() check after GoTrue is running
 DO $$
 DECLARE
   tbl TEXT;
 BEGIN
-  FOREACH tbl IN ARRAY ARRAY['companies', 'contacts', 'pipelines', 'pipeline_stages', 'deals', 'activities', 'documents', 'content_calendar']
+  FOREACH tbl IN ARRAY ARRAY['profiles', 'companies', 'contacts', 'pipelines', 'pipeline_stages', 'deals', 'activities', 'documents', 'content_calendar']
   LOOP
     EXECUTE format('CREATE POLICY "authenticated_full_access" ON %I FOR ALL TO authenticated USING (true) WITH CHECK (true)', tbl);
   END LOOP;
