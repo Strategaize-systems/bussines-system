@@ -76,6 +76,17 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
   CREATE SCHEMA IF NOT EXISTS auth AUTHORIZATION supabase_auth_admin;
   GRANT ALL ON SCHEMA auth TO supabase_auth_admin;
 
+  -- Minimale auth.users Tabelle (GoTrue ergaenzt diese beim ersten Start)
+  CREATE TABLE IF NOT EXISTS auth.users (
+    id UUID PRIMARY KEY,
+    email TEXT,
+    raw_user_meta_data JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+  );
+  ALTER TABLE auth.users OWNER TO supabase_auth_admin;
+  GRANT ALL ON TABLE auth.users TO supabase_auth_admin;
+
   -- Storage-Schema
   CREATE SCHEMA IF NOT EXISTS storage AUTHORIZATION supabase_storage_admin;
   GRANT ALL ON SCHEMA storage TO supabase_storage_admin;
