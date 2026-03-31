@@ -3,7 +3,7 @@
     {
       "id": "v1",
       "name": "V1",
-      "status": "active",
+      "status": "released",
       "summary": "CRM-Kern + Cockpit + Kern-Marketing-Skills + Brand System. 11 Slices, ~50 Micro-Tasks. Arbeitsweise: Claude Code direkt.",
       "order": 1
     },

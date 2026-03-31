@@ -75,7 +75,7 @@
       "title": "Hetzner-Server für Business System einrichten",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V1",
       "description": "Separater Hetzner-Server mit Coolify, Docker, Supabase/PostgreSQL. Basis-Infrastruktur für V1.",
       "createdAt": "2026-03-27"

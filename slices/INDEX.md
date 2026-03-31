@@ -14,4 +14,4 @@
 | SLC-008 | [Marketing-Skills Batch 1](SLC-008-skills-batch-1.md) | FEAT-004 | done | High | 2026-03-27 |
 | SLC-009 | [Marketing-Skills Batch 2](SLC-009-skills-batch-2.md) | FEAT-004 | done | Medium | 2026-03-27 |
 | SLC-010 | [Brand System Skill](SLC-010-brand-system.md) | FEAT-005 | done | High | 2026-03-27 |
-| SLC-011 | [Hetzner Deployment](SLC-011-deployment.md) | FEAT-001..005 | planned | High | 2026-03-27 |
+| SLC-011 | [Hetzner Deployment](SLC-011-deployment.md) | FEAT-001..005 | done | High | 2026-03-27 |
