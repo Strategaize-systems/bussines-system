@@ -1,17 +1,25 @@
 # Slice Index
 
-## V1 Slices
+## V1 Slices (Legacy — deployed, wird durch V2 ersetzt)
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-001 | [Next.js Scaffolding + Layout](SLC-001-scaffolding.md) | FEAT-003 | done | Blocker | 2026-03-27 |
-| SLC-002 | [Supabase Stack + Schema + Auth](SLC-002-supabase-auth.md) | FEAT-001 | done | Blocker | 2026-03-27 |
-| SLC-003 | [Kontakte + Firmen CRUD](SLC-003-contacts-companies.md) | FEAT-001 | done | Blocker | 2026-03-27 |
-| SLC-004 | [Pipeline + Kanban](SLC-004-pipeline-kanban.md) | FEAT-002 | done | Blocker | 2026-03-27 |
-| SLC-005 | [Aktivitäten + Dokumente](SLC-005-activities-documents.md) | FEAT-001 | done | High | 2026-03-27 |
-| SLC-006 | [Dashboard](SLC-006-dashboard.md) | FEAT-003 | done | High | 2026-03-27 |
-| SLC-007 | [Redaktionskalender](SLC-007-content-calendar.md) | FEAT-003 | done | High | 2026-03-27 |
-| SLC-008 | [Marketing-Skills Batch 1](SLC-008-skills-batch-1.md) | FEAT-004 | done | High | 2026-03-27 |
-| SLC-009 | [Marketing-Skills Batch 2](SLC-009-skills-batch-2.md) | FEAT-004 | done | Medium | 2026-03-27 |
-| SLC-010 | [Brand System Skill](SLC-010-brand-system.md) | FEAT-005 | done | High | 2026-03-27 |
-| SLC-011 | [Hetzner Deployment](SLC-011-deployment.md) | FEAT-001..005 | done | High | 2026-03-27 |
+| SLC-001..011 | V1 Slices (Marketing+CRM) | V1 | replaced | — | 2026-03-27 |
+
+## V2 Slices (Revenue & Relationship System)
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-101 | Schema-Migration + Cleanup | Alle | planned | Blocker | 2026-04-01 |
+| SLC-102 | Kontakte + Firmen erweitern | FEAT-101, FEAT-102 | planned | Blocker | 2026-04-01 |
+| SLC-103 | Pipeline-Rebuild (2 Boards, neue Stages) | FEAT-104 | planned | Blocker | 2026-04-01 |
+| SLC-104 | Multiplikator-Management | FEAT-103 | planned | High | 2026-04-01 |
+| SLC-105 | Strukturierte Gespräche | FEAT-105 | planned | High | 2026-04-01 |
+| SLC-106 | Aufgaben-Modul | FEAT-109 | planned | High | 2026-04-01 |
+| SLC-107 | E-Mail-Management (SMTP) | FEAT-106 | planned | High | 2026-04-01 |
+| SLC-108 | Angebots-/Proposal-Steuerung | FEAT-107 | planned | High | 2026-04-01 |
+| SLC-109 | Fit-Gates + Signale | FEAT-108, FEAT-112 | planned | High | 2026-04-01 |
+| SLC-110 | Referral Tracking + Deal Loss | FEAT-113, FEAT-114 | planned | Medium | 2026-04-01 |
+| SLC-111 | Übergabe an System 1 | FEAT-110 | planned | Medium | 2026-04-01 |
+| SLC-112 | BD Dashboard + Timeline | FEAT-115, FEAT-112 | planned | High | 2026-04-01 |
+| SLC-113 | Meeting/Kalender-Integration | FEAT-111 | planned | Medium | 2026-04-01 |
