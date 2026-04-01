@@ -9,12 +9,12 @@
 Internes, KI-gestütztes Revenue- und Relationship-System für beratungsintensives B2B-Geschäft. Steuert Multiplikatoren, Leads, Gespräche, Angebote und Übergaben datenfundiert. KEIN generisches CRM, KEINE Marketing-Suite — ein fokussiertes Vertriebs- und Akquise-System.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: Slice-Planning abgeschlossen. 13 Slices definiert (SLC-101..113). Schema-Migration (SLC-101) ist Blocker. Bereit für Implementation.
-- Current Phase: V2 Slice Planning → Implementation
+- High-Level State: implementing
+- Current Focus: SLC-101 Schema-Migration done. 1 von 13 V2 Slices. Nächster: SLC-102.
+- Current Phase: V2 Implementation
 
 ## Immediate Next Steps
-1. SLC-101: Schema-Migration + Cleanup (Blocker)
+1. /qa für SLC-101
 2. SLC-102: Kontakte + Firmen erweitern
 3. SLC-103: Pipeline-Rebuild
 

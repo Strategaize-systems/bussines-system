@@ -10,7 +10,7 @@
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-101 | Schema-Migration + Cleanup | Alle | planned | Blocker | 2026-04-01 |
+| SLC-101 | Schema-Migration + Cleanup | Alle | done | Blocker | 2026-04-01 |
 | SLC-102 | Kontakte + Firmen erweitern | FEAT-101, FEAT-102 | planned | Blocker | 2026-04-01 |
 | SLC-103 | Pipeline-Rebuild (2 Boards, neue Stages) | FEAT-104 | planned | Blocker | 2026-04-01 |
 | SLC-104 | Multiplikator-Management | FEAT-103 | planned | High | 2026-04-01 |
