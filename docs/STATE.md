@@ -1,39 +1,46 @@
 # STATE
 
 ## Project
-- Name: Strategaize Business System
+- Name: Strategaize Business Development System
 - Repository: strategaize-business-system
 - Delivery Mode: internal-tool
 
 ## Purpose
-Strategaize-spezifische Business-Development-Instanz: CRM, Pipeline, Marketing-Cockpit, Redaktionskalender. Gebaut mit dem Dev System. Marketing-/Brand-Skills werden im Dev System gepflegt (Master) und hier als Kopien genutzt.
+Internes, KI-gestütztes Revenue- und Relationship-System für beratungsintensives B2B-Geschäft. Steuert Multiplikatoren, Leads, Gespräche, Angebote und Übergaben datenfundiert. KEIN generisches CRM, KEINE Marketing-Suite — ein fokussiertes Vertriebs- und Akquise-System.
 
 ## Current State
-- High-Level State: deployed
-- Current Focus: V1 deployed auf Hetzner. Pipeline-Fehler + Seed-Daten prüfen. Skills in Dev System als Master verschoben.
-- Current Phase: V1 Post-Launch
+- High-Level State: requirements
+- Current Focus: Fundamentale Neuausrichtung — von Marketing+CRM zu Revenue & Relationship System. Discovery abgeschlossen (2026-04-01), Requirements-Phase gestartet.
+- Current Phase: V2 Requirements (Neuausrichtung)
 
 ## Immediate Next Steps
-1. Pipeline-Fehler debuggen (Seed-Daten fehlen?)
-2. Temporäre Signup-Route entfernen
-3. Post-Launch Verifikation aller Features
+1. /requirements — Neues PRD basierend auf 10-Modul-Blueprint
+2. Features + Slices neu schneiden
+3. Schema-Redesign planen
 
 ## Active Scope
-V1 Scope (5 Features, 11 Slices):
-- FEAT-001: CRM-Datenbasis → SLC-002, SLC-003, SLC-005
-- FEAT-002: Pipeline-Management → SLC-004
-- FEAT-003: Business Cockpit Dashboard → SLC-001, SLC-006, SLC-007
-- FEAT-004: Kern-Marketing-Skills → SLC-008, SLC-009
-- FEAT-005: Brand System → SLC-010
-- Deployment → SLC-011
-- Tech: Fresh Next.js + Supabase (Blueprint-Pattern), NextCRM als Referenz
-- Hosting: Hetzner CX31, Coolify, business.strategaizetransition.com
+V2 Scope (Neuausrichtung — 11 Module):
+- Modul 1: Kontakte & Organisationen (erweitert — Beziehungstypen, Rollen, Qualität)
+- Modul 2: Firmen/Accounts (erweitert — Eignungssicht, Fit-Kriterien)
+- Modul 3: Multiplikator-Management (NEU — Kern-Modul)
+- Modul 4: Opportunity/Deal Engine (umgebaut — geschäftsspezifische Stufen)
+- Modul 5: Gesprächsmanagement (erweitert — strukturierte Notizen, V2: Call Intelligence)
+- Modul 6: E-Mail-Management (NEU — SMTP-Versand, Logging, Follow-ups)
+- Modul 7: Angebots-/Proposal-Steuerung (NEU)
+- Modul 8: Qualifizierung/Fit-Gates (NEU)
+- Modul 9: Aufgaben/Follow-ups (erweitert)
+- Modul 10: Übergabe an System 1 (NEU)
+- Modul 11: Kalender/Meeting-Buchung (NEU — Cal.com Integration)
+- Sonderfunktionen: Relationship Timeline, Referral Tracking, Deal Loss Analysis
+- ENTFERNT: Content-Kalender, Marketing-Skills, Brand System (→ System 4)
+- Tech: Next.js + Supabase (bestehende Infrastruktur wiederverwendbar)
+- Hosting: Hetzner CPX32, Coolify, business.strategaizetransition.com
 
 ## Blockers
 - aktuell keine
 
 ## Last Stable Version
-- none yet
+- V1 — 2026-03-31 — deployed auf Hetzner (Marketing+CRM Version, wird durch V2 ersetzt)
 
 ## Notes
-V1 deployed auf Hetzner (business.strategaizetransition.com). Login funktioniert, Dashboard lädt. Marketing-/Brand-/Voice-Skills sind jetzt im Dev System als Master — Business System behält Kopien in .claude/commands/ für lokale Nutzung. Wiederverwendbare Teile (Skills, SQL-Templates, Referenz-Daten) leben im Dev System unter .claude/skills-business/ und .claude/templates/crm-stack/.
+V1 war als Marketing+CRM-Plattform deployed. Fundamentale Neuausrichtung nach User-Review (2026-04-01): System ist ein Revenue & Relationship System, NICHT eine Marketing-Suite. Content-Produktion gehört zu System 4 (Intelligence Studio). Discovery mit 10-Modul-Blueprint abgeschlossen. 4-System-Landschaft: System 1 (Blueprint/Onboarding), System 2 (Operating System), System 3 (Business Development = dieses System), System 4 (Intelligence Studio).
