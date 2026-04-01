@@ -1,39 +1,32 @@
 {
   "versions": [
     {
-      "id": "v1",
-      "name": "V1",
+      "id": "v1-legacy",
+      "name": "V1 (Legacy)",
       "status": "released",
-      "summary": "CRM-Kern + Cockpit + Kern-Marketing-Skills + Brand System. 11 Slices, ~50 Micro-Tasks. Arbeitsweise: Claude Code direkt.",
+      "summary": "Marketing+CRM Version — deployed, ersetzt durch V2 Neuausrichtung",
       "order": 1
-    },
-    {
-      "id": "v1-1",
-      "name": "V1.1",
-      "status": "planned",
-      "summary": "Voice Guide Skill für zielgruppen-spezifische Sprachprofile, Anti-Slop-Integration, Content-Qualitätsverbesserungen",
-      "order": 2
     },
     {
       "id": "v2",
       "name": "V2",
-      "status": "planned",
-      "summary": "Content & Marketing Engine: volle Skill-Bibliothek, LinkedIn/Postiz Publishing, Cockpit-Aktionen, E-Mail-Marketing",
-      "order": 3
+      "status": "active",
+      "summary": "Revenue & Relationship System: 11 Module (Kontakte, Firmen, Multiplikatoren, Pipelines, Gespräche, E-Mail, Angebote, Fit-Gates, Aufgaben, Übergabe, Kalender) + Sonderfunktionen (Timeline, Referral, Loss Analysis, Dashboard)",
+      "order": 2
     },
     {
       "id": "v3",
       "name": "V3",
       "status": "planned",
-      "summary": "Lead Generation & Outreach: Lead-Scoring, Recherche, Firecrawl, n8n-Orchestrierung, Rechnungen, Kunden-Übergabe",
-      "order": 4
+      "summary": "Intelligence Layer: Call Intelligence (Notetaker, Transkript, KI-Summary), Signal-Extraktion, tiefe Mail-Integration, Handoff System 4",
+      "order": 3
     },
     {
       "id": "v4",
       "name": "V4",
       "status": "planned",
-      "summary": "Intelligence Layer: AI-Vorschläge, Performance-Tracking, Spracheingabe, Cockpit-driven Workflows (Modus B)",
-      "order": 5
+      "summary": "Automation: Kalender-Sync, semi-automatische Workflows, Reporting/Analytics",
+      "order": 4
     }
   ]
 }

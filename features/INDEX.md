@@ -1,45 +1,48 @@
 # Feature Index
 
-## V1 Features
+## V1 (Legacy — replaced by V2)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-001 | CRM-Datenbasis | done | [Spec](FEAT-001-crm-datenbasis.md) | 2026-03-27 |
-| FEAT-002 | Pipeline-Management | done | [Spec](FEAT-002-pipeline-management.md) | 2026-03-27 |
-| FEAT-003 | Business Cockpit Dashboard | done | [Spec](FEAT-003-cockpit-dashboard.md) | 2026-03-27 |
-| FEAT-004 | Kern-Marketing-Skills | done | [Spec](FEAT-004-kern-marketing-skills.md) | 2026-03-27 |
-| FEAT-005 | Brand System | done | [Spec](FEAT-005-brand-system.md) | 2026-03-27 |
+| ~~FEAT-001~~ | ~~CRM-Datenbasis~~ | replaced | — | 2026-03-27 |
+| ~~FEAT-002~~ | ~~Pipeline-Management~~ | replaced | — | 2026-03-27 |
+| ~~FEAT-003~~ | ~~Business Cockpit Dashboard~~ | replaced | — | 2026-03-27 |
+| ~~FEAT-004~~ | ~~Kern-Marketing-Skills~~ | moved-to-system-4 | — | 2026-03-27 |
+| ~~FEAT-005~~ | ~~Brand System~~ | moved-to-system-4 | — | 2026-03-27 |
 
-## V1.1 Features (geplant)
+## V2 Features (Neuausrichtung — Revenue & Relationship System)
 
-| ID | Feature | Status | Spec | Created |
-|----|---------|--------|------|---------|
-| FEAT-019 | Voice Guide + Anti-Slop | planned | — | 2026-03-30 |
+| ID | Feature | Status | Created |
+|----|---------|--------|---------|
+| FEAT-101 | Kontakte & Organisationen (erweitert) | planned | 2026-04-01 |
+| FEAT-102 | Firmen/Account-Sicht (Eignungsbewertung) | planned | 2026-04-01 |
+| FEAT-103 | Multiplikator-Management | planned | 2026-04-01 |
+| FEAT-104 | Opportunity/Deal Engine (2 Pipelines) | planned | 2026-04-01 |
+| FEAT-105 | Gesprächsmanagement (strukturiert) | planned | 2026-04-01 |
+| FEAT-106 | E-Mail-Management (SMTP) | planned | 2026-04-01 |
+| FEAT-107 | Angebots-/Proposal-Steuerung | planned | 2026-04-01 |
+| FEAT-108 | Qualifizierung/Fit-Gates | planned | 2026-04-01 |
+| FEAT-109 | Aufgaben/Follow-ups | planned | 2026-04-01 |
+| FEAT-110 | Übergabe an System 1 | planned | 2026-04-01 |
+| FEAT-111 | Kalender/Meeting-Buchung | planned | 2026-04-01 |
+| FEAT-112 | Relationship Timeline | planned | 2026-04-01 |
+| FEAT-113 | Referral Tracking | planned | 2026-04-01 |
+| FEAT-114 | Deal Loss Analysis | planned | 2026-04-01 |
+| FEAT-115 | BD Dashboard (neue Metriken) | planned | 2026-04-01 |
 
-## V2 Features (geplant)
+## V3 Features (Intelligence Layer)
 
-| ID | Feature | Status | Spec | Created |
-|----|---------|--------|------|---------|
-| FEAT-006 | Volle Marketing-Skill-Bibliothek | planned | — | 2026-03-27 |
-| FEAT-007 | LinkedIn API / Postiz Publishing | planned | — | 2026-03-27 |
-| FEAT-008 | Cockpit-Aktionen (einzelne Skills auslösen) | planned | — | 2026-03-27 |
-| FEAT-009 | E-Mail-Marketing (Listmonk) | planned | — | 2026-03-27 |
+| ID | Feature | Status | Created |
+|----|---------|--------|---------|
+| FEAT-201 | Call Intelligence (Notetaker, Transkript, KI-Summary) | planned | 2026-04-01 |
+| FEAT-202 | Signal-Extraktion (automatisch) | planned | 2026-04-01 |
+| FEAT-203 | Tiefe Mail-Integration (IMAP) | planned | 2026-04-01 |
+| FEAT-204 | Handoff an System 4 | planned | 2026-04-01 |
 
-## V3 Features (geplant)
+## V4 Features (Automation)
 
-| ID | Feature | Status | Spec | Created |
-|----|---------|--------|------|---------|
-| FEAT-010 | Lead-Recherche & Scoring | planned | — | 2026-03-27 |
-| FEAT-011 | Outreach-Tracking & Follow-ups | planned | — | 2026-03-27 |
-| FEAT-012 | n8n Workflow-Orchestrierung | planned | — | 2026-03-27 |
-| FEAT-013 | Rechnungen & Buchhaltungs-Übergabe | planned | — | 2026-03-27 |
-| FEAT-014 | Kunden-Übergabe an operatives System | planned | — | 2026-03-27 |
-
-## V4 Features (geplant)
-
-| ID | Feature | Status | Spec | Created |
-|----|---------|--------|------|---------|
-| FEAT-015 | Intelligence Layer (AI-Vorschläge) | planned | — | 2026-03-27 |
-| FEAT-016 | Content-Performance-Tracking | planned | — | 2026-03-27 |
-| FEAT-017 | Spracheingabe / Lokales LLM | planned | — | 2026-03-27 |
-| FEAT-018 | Cockpit-driven Workflows (Modus B) | planned | — | 2026-03-27 |
+| ID | Feature | Status | Created |
+|----|---------|--------|---------|
+| FEAT-301 | Kalender-Sync (Google/Outlook) | planned | 2026-04-01 |
+| FEAT-302 | Semi-automatische Workflows | planned | 2026-04-01 |
+| FEAT-303 | Reporting/Analytics Dashboard | planned | 2026-04-01 |

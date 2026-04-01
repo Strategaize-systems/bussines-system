@@ -1,244 +1,204 @@
 {
   "items": [
     {
-      "id": "BL-001",
-      "title": "NextCRM evaluieren und Prisma→Supabase Migration planen",
-      "type": "feature",
-      "priority": "high",
-      "status": "done",
-      "version": "V1",
-      "description": "NextCRM als CRM-Grundlage evaluiert und bestätigt (DEC-005). Prisma wird durch Supabase ersetzt (DEC-006).",
-      "createdAt": "2026-03-26"
-    },
-    {
-      "id": "BL-002",
-      "title": "CRM-Datenbasis: Kontakte, Firmen, Tags, Notizen, Aktivitäten, Dateien",
-      "type": "feature",
-      "priority": "high",
-      "status": "done",
-      "version": "V1",
-      "description": "FEAT-001: Supabase-Schema, CRUD-Operationen, Kontakt-Detailseite. NextCRM als Codequelle.",
-      "createdAt": "2026-03-27"
-    },
-    {
-      "id": "BL-003",
-      "title": "Pipeline-Management: Dual-Kanban (Endkunden + Multiplikatoren)",
-      "type": "feature",
-      "priority": "high",
-      "status": "done",
-      "version": "V1",
-      "description": "FEAT-002: Zwei Pipelines mit Drag&Drop, konfigurierbare Stages, Deal-Karten, Aktivitäts-Protokoll.",
-      "createdAt": "2026-03-27"
-    },
-    {
-      "id": "BL-004",
-      "title": "Business Cockpit Dashboard",
-      "type": "feature",
-      "priority": "high",
-      "status": "done",
-      "version": "V1",
-      "description": "FEAT-003: Pipeline-Zusammenfassung, letzte Aktivitäten, nächste Aktionen, Redaktionskalender, Navigation.",
-      "createdAt": "2026-03-27"
-    },
-    {
-      "id": "BL-005",
-      "title": "Kern-Marketing-Skills (8 Skills adaptieren)",
-      "type": "feature",
-      "priority": "high",
-      "status": "done",
-      "version": "V1",
-      "description": "FEAT-004: content-strategy, copywriting, blog-post, linkedin-post, cold-email, sales-enablement, create-proposal, competitor-analysis ins Strategaize-Format.",
-      "createdAt": "2026-03-27"
-    },
-    {
-      "id": "BL-006",
-      "title": "Brand System: /create-brand-system Skill",
-      "type": "feature",
-      "priority": "high",
-      "status": "done",
-      "version": "V1",
-      "description": "FEAT-005: Brand Guide + Style Guide + Design Tokens + Canva Brand Kit pro Firma. Basierend auf ui-ux-pro-max-skill mit Strategaize-Format-Adapter.",
-      "createdAt": "2026-03-27"
-    },
-    {
-      "id": "BL-007",
-      "title": "Supabase-Projekt einrichten + Schema-Migration",
-      "type": "feature",
-      "priority": "high",
-      "status": "done",
-      "version": "V1",
-      "description": "Supabase-Instanz aufsetzen (self-hosted oder Cloud), NextCRM-Schema migrieren, Auth konfigurieren.",
-      "createdAt": "2026-03-27"
-    },
-    {
-      "id": "BL-008",
-      "title": "Hetzner-Server für Business System einrichten",
-      "type": "feature",
-      "priority": "high",
-      "status": "done",
-      "version": "V1",
-      "description": "Separater Hetzner-Server mit Coolify, Docker, Supabase/PostgreSQL. Basis-Infrastruktur für V1.",
-      "createdAt": "2026-03-27"
-    },
-    {
-      "id": "BL-009",
-      "title": "Volle Marketing-Skill-Bibliothek (20+ Skills)",
+      "id": "BL-101",
+      "title": "Kontakte erweitern: Beziehungstypen, Rollen, Qualitätsfelder",
       "type": "feature",
       "priority": "high",
       "status": "open",
       "version": "V2",
-      "description": "FEAT-006: Restliche Best-Of-Skills aus den drei Repositories adaptieren.",
-      "createdAt": "2026-03-27"
+      "description": "FEAT-101: Beziehungstypen (Steuerberater, M&A, Bank, etc.), Empfehlungsfähigkeit, Vertrauen, thematische Relevanz. Bestehende Kontakt-Tabelle erweitern.",
+      "createdAt": "2026-04-01"
     },
     {
-      "id": "BL-010",
-      "title": "LinkedIn API / Postiz Publishing",
+      "id": "BL-102",
+      "title": "Firmen-Sicht: Eignungsbewertung + Blueprint-Fit",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V2",
+      "description": "FEAT-102: Exit-Bezug, KI-Reife, Eigentümerstruktur, Budgetpotenzial, Champion. Firmen-Tabelle erweitern + Eignungs-UI.",
+      "createdAt": "2026-04-01"
+    },
+    {
+      "id": "BL-103",
+      "title": "Multiplikator-Management: Eigenes Modul + Pipeline",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V2",
+      "description": "FEAT-103: Multiplikator-Typ, Vertrauen, Empfehlungsstatistiken, vermittelte Leads + Qualität, 10-Stufen-Pipeline.",
+      "createdAt": "2026-04-01"
+    },
+    {
+      "id": "BL-104",
+      "title": "Opportunity/Deal Engine: Geschäftsspezifische Pipelines",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V2",
+      "description": "FEAT-104: Zwei separate Kanban-Boards (10 Stufen Multiplikatoren, 12 Stufen Kunden). Opportunity-Typen. Bestehende Pipeline umbauen.",
+      "createdAt": "2026-04-01"
+    },
+    {
+      "id": "BL-105",
+      "title": "Gesprächsmanagement: Strukturierte Dokumentation",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V2",
+      "description": "FEAT-105: Gesprächsart, Teilnehmer, strukturierte Notizen (Einwände, Chancen, Risiken, nächste Schritte). Bestehende Aktivitäten erweitern.",
+      "createdAt": "2026-04-01"
+    },
+    {
+      "id": "BL-106",
+      "title": "E-Mail-Management: SMTP-Versand + Logging",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V2",
+      "description": "FEAT-106: E-Mail verfassen + senden via SMTP, automatisches Logging, Follow-up-Status, Vorlagen-Referenz.",
+      "createdAt": "2026-04-01"
+    },
+    {
+      "id": "BL-107",
+      "title": "Angebots-/Proposal-Steuerung",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V2",
+      "description": "FEAT-107: Angebotsversionen, Status, Won/Lost mit strukturierten Gründen, Verknüpfung zu Deal.",
+      "createdAt": "2026-04-01"
+    },
+    {
+      "id": "BL-108",
+      "title": "Qualifizierung/Fit-Gates mit Ampel-System",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V2",
+      "description": "FEAT-108: Fit-Kriterien Firmen (8 Felder), Fit-Kriterien Multiplikatoren (7 Felder), Ampel-Bewertung.",
+      "createdAt": "2026-04-01"
+    },
+    {
+      "id": "BL-109",
+      "title": "Aufgaben/Follow-ups: Eigenständiges Modul",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V2",
+      "description": "FEAT-109: Nächste Aktion, Fristen, Prioritäten, Waiting-Status, Verantwortlicher. Überfällige rot markiert.",
+      "createdAt": "2026-04-01"
+    },
+    {
+      "id": "BL-110",
+      "title": "Übergabe an System 1 (Onboarding)",
       "type": "feature",
       "priority": "medium",
       "status": "open",
       "version": "V2",
-      "description": "FEAT-007: LinkedIn MCP-Server + Postiz self-hosted für Multi-Channel Publishing.",
-      "createdAt": "2026-03-27"
+      "description": "FEAT-110: Übergabe-Status, Einstiegsschiene, Ansprechpartner, Vorinformationen, Checkliste.",
+      "createdAt": "2026-04-01"
     },
     {
-      "id": "BL-011",
-      "title": "Cockpit-Aktionen (einzelne Skills auslösen)",
+      "id": "BL-111",
+      "title": "Kalender/Meeting-Buchung (Cal.com/Calendly)",
       "type": "feature",
       "priority": "medium",
       "status": "open",
       "version": "V2",
-      "description": "FEAT-008: Buttons im Cockpit die einzelne Skills auslösen (noch keine Ketten).",
-      "createdAt": "2026-03-27"
+      "description": "FEAT-111: Meeting-Buchungs-Link pro Kontakt, gebuchte Meetings in Timeline.",
+      "createdAt": "2026-04-01"
     },
     {
-      "id": "BL-012",
-      "title": "E-Mail-Marketing (Listmonk)",
+      "id": "BL-112",
+      "title": "Relationship Timeline (quer über Module)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V2",
+      "description": "FEAT-112: Chronologische Sicht pro Kontakt/Firma: Gespräche, E-Mails, Notizen, Angebote, Empfehlungen, Aufgaben.",
+      "createdAt": "2026-04-01"
+    },
+    {
+      "id": "BL-113",
+      "title": "Referral Tracking",
       "type": "feature",
       "priority": "medium",
       "status": "open",
       "version": "V2",
-      "description": "FEAT-009: Listmonk self-hosted einrichten für Newsletter und E-Mail-Sequenzen.",
-      "createdAt": "2026-03-27"
+      "description": "FEAT-113: Wer hat wen empfohlen, wann, was wurde daraus. Kanal-Auswertung.",
+      "createdAt": "2026-04-01"
     },
     {
-      "id": "BL-013",
-      "title": "Lead-Recherche & Scoring",
+      "id": "BL-114",
+      "title": "Deal Loss Analysis",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2",
+      "description": "FEAT-114: Strukturierte Verlustgründe bei verlorenen Deals, auswertbar über Zeit.",
+      "createdAt": "2026-04-01"
+    },
+    {
+      "id": "BL-115",
+      "title": "BD Dashboard (neue Metriken)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V2",
+      "description": "FEAT-115: BD-relevante Metriken statt generischer CRM-Zahlen. Pipeline-Werte, Multiplikator-Performance, offene Follow-ups, Übergabe-Status.",
+      "createdAt": "2026-04-01"
+    },
+    {
+      "id": "BL-116",
+      "title": "Content-Kalender + Marketing-Skills entfernen",
+      "type": "improvement",
+      "priority": "high",
+      "status": "open",
+      "version": "V2",
+      "description": "Content-Kalender, Marketing-Skills-Verweise aus Navigation + Code entfernen. Gehören zu System 4.",
+      "createdAt": "2026-04-01"
+    },
+    {
+      "id": "BL-201",
+      "title": "Call Intelligence (Notetaker, Transkript, KI-Summary)",
       "type": "feature",
       "priority": "high",
       "status": "open",
       "version": "V3",
-      "description": "FEAT-010: Externe APIs (Apollo.io, Hunter.io), automatisches Scoring, DSGVO-konform.",
-      "createdAt": "2026-03-27"
+      "description": "FEAT-201: Audio-Aufnahme, Whisper-Transkription, KI-Zusammenfassung, automatische Action-Extraktion.",
+      "createdAt": "2026-04-01"
     },
     {
-      "id": "BL-014",
-      "title": "Outreach-Tracking & Follow-ups",
+      "id": "BL-202",
+      "title": "Automatische Signal-Extraktion",
       "type": "feature",
       "priority": "medium",
       "status": "open",
       "version": "V3",
-      "description": "FEAT-011: Wer kontaktiert, Status, automatische Follow-up-Reminder.",
-      "createdAt": "2026-03-27"
+      "description": "FEAT-202: KI erkennt Signale in Gesprächen/Mails automatisch.",
+      "createdAt": "2026-04-01"
     },
     {
-      "id": "BL-015",
-      "title": "n8n Workflow-Orchestrierung",
+      "id": "BL-203",
+      "title": "Tiefe Mail-Integration (IMAP)",
       "type": "feature",
       "priority": "medium",
       "status": "open",
       "version": "V3",
-      "description": "FEAT-012: n8n self-hosted, Skill-Ketten, Cockpit↔n8n↔Skills Feedback-Loop.",
-      "createdAt": "2026-03-27"
+      "description": "FEAT-203: Empfangene Mails automatisch synchronisieren und zuordnen.",
+      "createdAt": "2026-04-01"
     },
     {
-      "id": "BL-016",
-      "title": "Rechnungen & Buchhaltungs-Übergabe",
+      "id": "BL-204",
+      "title": "Handoff an System 4 (Intelligence Studio)",
       "type": "feature",
-      "priority": "low",
+      "priority": "medium",
       "status": "open",
       "version": "V3",
-      "description": "FEAT-013: PDF-Rechnungen generieren, Zahlungsstatus, Buchhaltungs-API.",
-      "createdAt": "2026-03-27"
-    },
-    {
-      "id": "BL-017",
-      "title": "Kunden-Übergabe an operatives System",
-      "type": "feature",
-      "priority": "low",
-      "status": "open",
-      "version": "V3",
-      "description": "FEAT-014: Konfigurierbare API-Übergabe wenn Kunde bezahlt (pro Firma/Projekt).",
-      "createdAt": "2026-03-27"
-    },
-    {
-      "id": "BL-018",
-      "title": "Intelligence Layer",
-      "type": "feature",
-      "priority": "medium",
-      "status": "open",
-      "version": "V4",
-      "description": "FEAT-015/016: AI-Vorschläge, Content-Performance-Tracking, Pipeline-Analyse.",
-      "createdAt": "2026-03-27"
-    },
-    {
-      "id": "BL-019",
-      "title": "Spracheingabe / Lokales LLM",
-      "type": "feature",
-      "priority": "low",
-      "status": "open",
-      "version": "V4",
-      "description": "FEAT-017: Ollama o.ä. für Sprache→Text, Ideen einsprechen.",
-      "createdAt": "2026-03-27"
-    },
-    {
-      "id": "BL-020",
-      "title": "Cockpit-driven Workflows (Modus B)",
-      "type": "feature",
-      "priority": "medium",
-      "status": "open",
-      "version": "V4",
-      "description": "FEAT-018: Vollwertiges Work-Cockpit mit automatischen Skill-Ketten, Rückfragen, Freigaben.",
-      "createdAt": "2026-03-27"
-    },
-    {
-      "id": "BL-021",
-      "title": "QA-Fixes SLC-004: updateDeal stage_id, Drag-Cancel, Click-vs-Drag",
-      "type": "fix",
-      "priority": "high",
-      "status": "done",
-      "version": "V1",
-      "description": "ISSUE-012: updateDeal fehlt stage_id. ISSUE-013: Drag-Cancel revertiert State nicht. ISSUE-014: onClick feuert nach Drag.",
-      "createdAt": "2026-03-27"
-    },
-    {
-      "id": "BL-022",
-      "title": "Voice Guide Skill: Zielgruppen-spezifische Sprach-/Schreibstil-Guides",
-      "type": "feature",
-      "priority": "high",
-      "status": "open",
-      "version": "V1.1",
-      "description": "/create-voice-guide Skill. Pro Firma + Zielgruppe: Sprachmuster, Anti-Slop-Regeln, Kanal-Anpassungen. Wird von Marketing-Skills als Kontext gelesen.",
-      "createdAt": "2026-03-30"
-    },
-    {
-      "id": "BL-023",
-      "title": "Banner-Design Skill (aus ui-ux-pro-max-skill)",
-      "type": "feature",
-      "priority": "medium",
-      "status": "open",
-      "version": "V2",
-      "description": "/create-banner Skill für Social Media Grafiken, Google Ads, Website Heroes. Basiert auf ui-ux-pro-max-skill banner-design.",
-      "createdAt": "2026-03-30"
-    },
-    {
-      "id": "BL-024",
-      "title": "Präsentations-Skill (aus ui-ux-pro-max-skill)",
-      "type": "feature",
-      "priority": "medium",
-      "status": "open",
-      "version": "V2",
-      "description": "/create-presentation Skill für Investor Pitches, Sales Decks, Product Demos. Ergänzt /sales-enablement. Basiert auf ui-ux-pro-max-skill slides.",
-      "createdAt": "2026-03-30"
+      "description": "FEAT-204: Strukturierte Daten aus BD-System an Intelligence Studio übergeben.",
+      "createdAt": "2026-04-01"
     }
   ]
 }
