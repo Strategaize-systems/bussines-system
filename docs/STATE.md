@@ -9,14 +9,14 @@
 Internes, KI-gestütztes Revenue- und Relationship-System für beratungsintensives B2B-Geschäft. Steuert Multiplikatoren, Leads, Gespräche, Angebote und Übergaben datenfundiert. KEIN generisches CRM, KEINE Marketing-Suite — ein fokussiertes Vertriebs- und Akquise-System.
 
 ## Current State
-- High-Level State: requirements
-- Current Focus: Fundamentale Neuausrichtung — von Marketing+CRM zu Revenue & Relationship System. Discovery abgeschlossen (2026-04-01), Requirements-Phase gestartet.
-- Current Phase: V2 Requirements (Neuausrichtung)
+- High-Level State: architecture
+- Current Focus: Requirements + Architektur abgeschlossen. 15 Tabellen (8 erweitert, 7 neu), 15 Features, 2 Pipelines. Bereit für Slice-Planning.
+- Current Phase: V2 Architecture → Slice Planning
 
 ## Immediate Next Steps
-1. /requirements — Neues PRD basierend auf 10-Modul-Blueprint
-2. Features + Slices neu schneiden
-3. Schema-Redesign planen
+1. /slice-planning — Module in implementierbare Slices schneiden
+2. Implementation starten (Schema-Migration zuerst)
+3. Content-Kalender + Marketing-Bezüge aus Code entfernen
 
 ## Active Scope
 V2 Scope (Neuausrichtung — 11 Module):
