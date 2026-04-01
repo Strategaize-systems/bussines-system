@@ -52,13 +52,13 @@ export default async function DashboardPage() {
           label="Offene Deals"
           value={stats.openDeals}
           icon={Kanban}
-          href="/pipeline/endkunden"
+          href="/pipeline/unternehmer"
         />
         <StatCard
           label="Pipeline-Wert"
           value={fmt.format(stats.totalPipelineValue)}
           icon={Banknote}
-          href="/pipeline/endkunden"
+          href="/pipeline/unternehmer"
         />
       </div>
 

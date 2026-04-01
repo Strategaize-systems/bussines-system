@@ -3,7 +3,7 @@
 ## Meta
 - Feature: Alle
 - Priority: Blocker
-- Status: planned
+- Status: done
 - Dependencies: keine (muss zuerst laufen)
 
 ## Goal
