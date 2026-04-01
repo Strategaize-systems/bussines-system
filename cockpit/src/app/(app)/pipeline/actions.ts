@@ -42,8 +42,8 @@ export type Deal = {
 // ── Pipeline queries ─────────────────────────────────────────────────
 
 const PIPELINE_SLUGS: Record<string, string> = {
-  endkunden: "Endkunden",
   multiplikatoren: "Multiplikatoren",
+  unternehmer: "Unternehmer-Chancen",
 };
 
 export async function getPipelines() {

@@ -6,8 +6,9 @@ import {
   LayoutDashboard,
   Users,
   Building2,
+  Handshake,
   Kanban,
-  Calendar,
+  CheckSquare,
   Settings,
   ChevronLeft,
 } from "lucide-react";
@@ -20,9 +21,10 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Kontakte", href: "/contacts", icon: Users },
   { name: "Firmen", href: "/companies", icon: Building2 },
-  { name: "Pipeline: Endkunden", href: "/pipeline/endkunden", icon: Kanban },
+  { name: "Multiplikatoren", href: "/multipliers", icon: Handshake },
   { name: "Pipeline: Multiplikatoren", href: "/pipeline/multiplikatoren", icon: Kanban },
-  { name: "Kalender", href: "/calendar", icon: Calendar },
+  { name: "Pipeline: Unternehmer", href: "/pipeline/unternehmer", icon: Kanban },
+  { name: "Aufgaben", href: "/tasks", icon: CheckSquare },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
