@@ -3,7 +3,7 @@
 ## Meta
 - Feature: FEAT-104
 - Priority: Blocker
-- Status: planned
+- Status: done
 - Dependencies: SLC-101
 
 ## Goal

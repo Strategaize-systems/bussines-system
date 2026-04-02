@@ -35,7 +35,7 @@
       "title": "Opportunity/Deal Engine: Geschäftsspezifische Pipelines",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2",
       "description": "FEAT-104: Zwei separate Kanban-Boards (10 Stufen Multiplikatoren, 12 Stufen Kunden). Opportunity-Typen. Bestehende Pipeline umbauen.",
       "createdAt": "2026-04-01"
