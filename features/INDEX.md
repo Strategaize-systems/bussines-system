@@ -14,8 +14,8 @@
 
 | ID | Feature | Status | Created |
 |----|---------|--------|---------|
-| FEAT-101 | Kontakte & Organisationen (erweitert) | planned | 2026-04-01 |
-| FEAT-102 | Firmen/Account-Sicht (Eignungsbewertung) | planned | 2026-04-01 |
+| FEAT-101 | Kontakte & Organisationen (erweitert) | done | 2026-04-01 |
+| FEAT-102 | Firmen/Account-Sicht (Eignungsbewertung) | done | 2026-04-01 |
 | FEAT-103 | Multiplikator-Management | planned | 2026-04-01 |
 | FEAT-104 | Opportunity/Deal Engine (2 Pipelines) | planned | 2026-04-01 |
 | FEAT-105 | Gesprächsmanagement (strukturiert) | planned | 2026-04-01 |

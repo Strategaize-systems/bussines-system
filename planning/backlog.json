@@ -5,7 +5,7 @@
       "title": "Kontakte erweitern: Beziehungstypen, Rollen, Qualitätsfelder",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2",
       "description": "FEAT-101: Beziehungstypen (Steuerberater, M&A, Bank, etc.), Empfehlungsfähigkeit, Vertrauen, thematische Relevanz. Bestehende Kontakt-Tabelle erweitern.",
       "createdAt": "2026-04-01"
@@ -15,7 +15,7 @@
       "title": "Firmen-Sicht: Eignungsbewertung + Blueprint-Fit",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2",
       "description": "FEAT-102: Exit-Bezug, KI-Reife, Eigentümerstruktur, Budgetpotenzial, Champion. Firmen-Tabelle erweitern + Eignungs-UI.",
       "createdAt": "2026-04-01"

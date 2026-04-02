@@ -10,13 +10,13 @@ Internes, KI-gestütztes Revenue- und Relationship-System für beratungsintensiv
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: SLC-101 QA bestanden. 1 von 13 V2 Slices done. Nächster: SLC-102 Kontakte + Firmen erweitern.
+- Current Focus: SLC-102 done (Kontakte + Firmen erweitert). 2 von 13 V2 Slices done. Nächster: SLC-103 Pipeline-Rebuild.
 - Current Phase: V2 Implementation
 
 ## Immediate Next Steps
-1. SLC-102: Kontakte + Firmen erweitern (UI-Formulare um V2-Felder)
-2. SLC-103: Pipeline-Rebuild (2 Boards, neue Stages)
-3. SLC-104: Multiplikator-Management
+1. SLC-103: Pipeline-Rebuild (2 Boards, neue Stages)
+2. SLC-104: Multiplikator-Management
+3. SLC-105: Strukturierte Gespräche
 
 ## Active Scope
 V2 Scope (Neuausrichtung — 11 Module):
