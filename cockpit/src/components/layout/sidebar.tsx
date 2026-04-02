@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   Handshake,
   ListTodo,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ const navigation = [
   { name: "Pipeline: Multiplikatoren", href: "/pipeline/multiplikatoren", icon: Kanban },
   { name: "Pipeline: Unternehmer", href: "/pipeline/unternehmer", icon: Kanban },
   { name: "Aufgaben", href: "/aufgaben", icon: ListTodo },
+  { name: "E-Mails", href: "/emails", icon: Mail },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

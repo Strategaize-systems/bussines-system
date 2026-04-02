@@ -1,6 +1,7 @@
 import { getContact, deleteContact } from "../actions";
 import { getCompaniesForSelect } from "../../companies/actions";
 import { ContactSheet } from "../contact-sheet";
+import { EmailSheet } from "../../emails/email-sheet";
 import { getActivities } from "@/lib/actions/activity-actions";
 import { getDocuments } from "@/lib/actions/document-actions";
 import { ActivityTimeline } from "@/components/activities/activity-timeline";
@@ -106,6 +107,13 @@ export default async function ContactDetailPage({
             <p className="text-muted-foreground">{contact.position}</p>
           )}
         </div>
+        {contact.email && (
+          <EmailSheet
+            defaultTo={contact.email}
+            contactId={contact.id}
+            companyId={contact.company_id ?? undefined}
+          />
+        )}
         <ContactSheet
           companies={companies}
           contact={contact}
