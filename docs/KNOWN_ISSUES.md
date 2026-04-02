@@ -154,18 +154,18 @@
 - Next Action: Erledigt — String-basierte Berechnung mit getDate() (2026-03-27).
 
 ### ISSUE-024 — Keine Filter-UI in Kalender-Tabellenansicht
-- Status: open
+- Status: wontfix
 - Severity: Medium
 - Area: Frontend / Calendar
 - Summary: Spec verlangt Filter nach Typ, Status, Kanal. Server Action unterstützt Filter, aber Table-UI hat keine Filter-Dropdowns.
-- Next Action: Filter-Dropdowns über der Tabelle einbauen.
+- Next Action: Content-Kalender in V2 entfernt (zu System 4 verschoben). Issue obsolet.
 
 ### ISSUE-025 — Status-Advance hat kein Undo
-- Status: open
+- Status: wontfix
 - Severity: Low
 - Area: Frontend / Calendar
 - Summary: Status-Badge-Klick geht nur vorwärts. Kein Zurücksetzen möglich. Akzeptabel für internal-tool.
-- Next Action: Optional als Improvement einplanen.
+- Next Action: Content-Kalender in V2 entfernt. Issue obsolet.
 
 ### ISSUE-021 — any-Typ in RecentActivities
 - Status: resolved

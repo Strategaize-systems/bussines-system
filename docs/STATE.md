@@ -9,7 +9,7 @@
 Internes, KI-gestütztes Revenue- und Relationship-System für beratungsintensives B2B-Geschäft. Steuert Multiplikatoren, Leads, Gespräche, Angebote und Übergaben datenfundiert. KEIN generisches CRM, KEINE Marketing-Suite — ein fokussiertes Vertriebs- und Akquise-System.
 
 ## Current State
-- High-Level State: implementing
+- High-Level State: qa
 - Current Focus: Alle 13 V2 Slices implementiert. Nächster Schritt: Gesamt-QA über V2.
 - Current Phase: V2 Implementation
 
