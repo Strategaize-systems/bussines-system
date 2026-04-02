@@ -13,6 +13,14 @@ export type Activity = {
   description: string | null;
   due_date: string | null;
   completed_at: string | null;
+  conversation_type: string | null;
+  participants: string | null;
+  summary: string | null;
+  objections: string | null;
+  opportunities: string | null;
+  risks: string | null;
+  next_steps: string | null;
+  qualification_signals: string | null;
   created_at: string;
 };
 
@@ -52,6 +60,14 @@ export async function createActivity(formData: FormData) {
     title: (formData.get("title") as string) || null,
     description: (formData.get("description") as string) || null,
     due_date: (formData.get("due_date") as string) || null,
+    conversation_type: (formData.get("conversation_type") as string) || null,
+    participants: (formData.get("participants") as string) || null,
+    summary: (formData.get("summary") as string) || null,
+    objections: (formData.get("objections") as string) || null,
+    opportunities: (formData.get("opportunities") as string) || null,
+    risks: (formData.get("risks") as string) || null,
+    next_steps: (formData.get("next_steps") as string) || null,
+    qualification_signals: (formData.get("qualification_signals") as string) || null,
   });
 
   if (error) return { error: error.message };
