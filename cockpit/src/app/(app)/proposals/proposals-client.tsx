@@ -18,6 +18,19 @@ import { ProposalSheet } from "./proposal-sheet";
 import { deleteProposal, type Proposal } from "./actions";
 import Link from "next/link";
 
+const wonLostLabels: Record<string, string> = {
+  price: "Preis",
+  timing: "Timing",
+  wrong_fit: "Falscher Fit",
+  no_priority: "Keine Priorität",
+  no_trust: "Kein Vertrauen",
+  partner_unsuitable: "Partner ungeeignet",
+  internally_blocked: "Intern blockiert",
+  no_champion: "Kein Champion",
+  no_budget: "Kein Budget",
+  other: "Sonstiges",
+};
+
 const selectClass =
   "flex h-8 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
@@ -197,7 +210,7 @@ function ProposalItem({
             )}
             {proposal.won_lost_reason && (
               <span className={`font-medium ${proposal.status === "won" ? "text-green-600" : "text-red-600"}`}>
-                Grund: {proposal.won_lost_reason}
+                Grund: {wonLostLabels[proposal.won_lost_reason] ?? proposal.won_lost_reason}
               </span>
             )}
           </div>
