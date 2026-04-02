@@ -55,7 +55,7 @@
       "title": "E-Mail-Management: SMTP-Versand + Logging",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2",
       "description": "FEAT-106: E-Mail verfassen + senden via SMTP, automatisches Logging, Follow-up-Status, Vorlagen-Referenz.",
       "createdAt": "2026-04-01"

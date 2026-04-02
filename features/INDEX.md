@@ -19,7 +19,7 @@
 | FEAT-103 | Multiplikator-Management | done | 2026-04-01 |
 | FEAT-104 | Opportunity/Deal Engine (2 Pipelines) | done | 2026-04-01 |
 | FEAT-105 | Gesprächsmanagement (strukturiert) | done | 2026-04-01 |
-| FEAT-106 | E-Mail-Management (SMTP) | planned | 2026-04-01 |
+| FEAT-106 | E-Mail-Management (SMTP) | done | 2026-04-01 |
 | FEAT-107 | Angebots-/Proposal-Steuerung | planned | 2026-04-01 |
 | FEAT-108 | Qualifizierung/Fit-Gates | planned | 2026-04-01 |
 | FEAT-109 | Aufgaben/Follow-ups | done | 2026-04-01 |
