@@ -3,7 +3,7 @@
 ## Meta
 - Feature: FEAT-109
 - Priority: High
-- Status: planned
+- Status: done
 - Dependencies: SLC-101
 
 ## Goal

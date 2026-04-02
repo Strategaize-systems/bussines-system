@@ -15,7 +15,7 @@
 | SLC-103 | [Pipeline-Rebuild (2 Boards, neue Stages)](SLC-103-pipeline-rebuild.md) | FEAT-104 | done | Blocker | 2026-04-01 |
 | SLC-104 | [Multiplikator-Management](SLC-104-multiplikator-management.md) | FEAT-103 | done | High | 2026-04-01 |
 | SLC-105 | [Strukturierte Gespräche](SLC-105-structured-conversations.md) | FEAT-105 | done | High | 2026-04-01 |
-| SLC-106 | Aufgaben-Modul | FEAT-109 | planned | High | 2026-04-01 |
+| SLC-106 | [Aufgaben-Modul](SLC-106-tasks-module.md) | FEAT-109 | done | High | 2026-04-01 |
 | SLC-107 | E-Mail-Management (SMTP) | FEAT-106 | planned | High | 2026-04-01 |
 | SLC-108 | Angebots-/Proposal-Steuerung | FEAT-107 | planned | High | 2026-04-01 |
 | SLC-109 | Fit-Gates + Signale | FEAT-108, FEAT-112 | planned | High | 2026-04-01 |

@@ -85,7 +85,7 @@
       "title": "Aufgaben/Follow-ups: Eigenständiges Modul",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2",
       "description": "FEAT-109: Nächste Aktion, Fristen, Prioritäten, Waiting-Status, Verantwortlicher. Überfällige rot markiert.",
       "createdAt": "2026-04-01"
