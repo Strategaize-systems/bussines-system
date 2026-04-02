@@ -45,7 +45,7 @@
       "title": "Gesprächsmanagement: Strukturierte Dokumentation",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2",
       "description": "FEAT-105: Gesprächsart, Teilnehmer, strukturierte Notizen (Einwände, Chancen, Risiken, nächste Schritte). Bestehende Aktivitäten erweitern.",
       "createdAt": "2026-04-01"
