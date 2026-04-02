@@ -13,7 +13,7 @@
 | SLC-101 | [Schema-Migration + Cleanup](SLC-101-schema-migration.md) | Alle | done | Blocker | 2026-04-01 |
 | SLC-102 | [Kontakte + Firmen erweitern](SLC-102-contacts-companies-extended.md) | FEAT-101, FEAT-102 | done | Blocker | 2026-04-01 |
 | SLC-103 | [Pipeline-Rebuild (2 Boards, neue Stages)](SLC-103-pipeline-rebuild.md) | FEAT-104 | done | Blocker | 2026-04-01 |
-| SLC-104 | Multiplikator-Management | FEAT-103 | planned | High | 2026-04-01 |
+| SLC-104 | [Multiplikator-Management](SLC-104-multiplikator-management.md) | FEAT-103 | done | High | 2026-04-01 |
 | SLC-105 | Strukturierte Gespräche | FEAT-105 | planned | High | 2026-04-01 |
 | SLC-106 | Aufgaben-Modul | FEAT-109 | planned | High | 2026-04-01 |
 | SLC-107 | E-Mail-Management (SMTP) | FEAT-106 | planned | High | 2026-04-01 |

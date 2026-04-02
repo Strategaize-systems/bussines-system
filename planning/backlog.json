@@ -25,7 +25,7 @@
       "title": "Multiplikator-Management: Eigenes Modul + Pipeline",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2",
       "description": "FEAT-103: Multiplikator-Typ, Vertrauen, Empfehlungsstatistiken, vermittelte Leads + Qualität, 10-Stufen-Pipeline.",
       "createdAt": "2026-04-01"
