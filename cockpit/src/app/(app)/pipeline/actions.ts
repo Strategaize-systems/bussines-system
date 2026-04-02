@@ -202,6 +202,18 @@ export async function moveDealToStage(dealId: string, newStageId: string, stageN
   return { error: "" };
 }
 
+export async function getDealsForSelect() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("deals")
+    .select("id, title")
+    .eq("status", "active")
+    .order("title");
+
+  if (error) throw new Error(error.message);
+  return data as { id: string; title: string }[];
+}
+
 export async function deleteDeal(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("deals").delete().eq("id", id);

@@ -13,6 +13,7 @@ interface TaskFormProps {
   task?: Task;
   contacts: { id: string; first_name: string; last_name: string }[];
   companies: { id: string; name: string }[];
+  deals: { id: string; title: string }[];
   onSubmit: (formData: FormData) => void;
   isPending?: boolean;
 }
@@ -21,6 +22,7 @@ export function TaskForm({
   task,
   contacts,
   companies,
+  deals,
   onSubmit,
   isPending,
 }: TaskFormProps) {
@@ -37,7 +39,7 @@ export function TaskForm({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="due_date">Fällig am</Label>
           <Input
@@ -60,6 +62,21 @@ export function TaskForm({
             <option value="low">Niedrig</option>
           </select>
         </div>
+        {task && (
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <select
+              id="status"
+              name="status"
+              defaultValue={task.status}
+              className={selectClass}
+            >
+              <option value="open">Offen</option>
+              <option value="waiting">Wartet</option>
+              <option value="completed">Erledigt</option>
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -95,6 +112,23 @@ export function TaskForm({
             ))}
           </select>
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="deal_id">Deal</Label>
+        <select
+          id="deal_id"
+          name="deal_id"
+          defaultValue={task?.deal_id ?? ""}
+          className={selectClass}
+        >
+          <option value="">— Kein Deal —</option>
+          {deals.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.title}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="space-y-2">

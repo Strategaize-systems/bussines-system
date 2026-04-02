@@ -16,11 +16,12 @@ import { useState, useTransition } from "react";
 interface TaskSheetProps {
   contacts: { id: string; first_name: string; last_name: string }[];
   companies: { id: string; name: string }[];
+  deals: { id: string; title: string }[];
   task?: Task;
   trigger?: React.ReactNode;
 }
 
-export function TaskSheet({ contacts, companies, task, trigger }: TaskSheetProps) {
+export function TaskSheet({ contacts, companies, deals, task, trigger }: TaskSheetProps) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -63,6 +64,7 @@ export function TaskSheet({ contacts, companies, task, trigger }: TaskSheetProps
             task={task}
             contacts={contacts}
             companies={companies}
+            deals={deals}
             onSubmit={handleSubmit}
             isPending={isPending}
           />

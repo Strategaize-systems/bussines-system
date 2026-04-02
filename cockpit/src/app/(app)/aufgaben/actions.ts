@@ -66,6 +66,8 @@ export async function createTask(formData: FormData) {
 export async function updateTask(id: string, formData: FormData) {
   const supabase = await createClient();
 
+  const status = (formData.get("status") as string) || undefined;
+
   const { error } = await supabase
     .from("tasks")
     .update({
@@ -73,6 +75,8 @@ export async function updateTask(id: string, formData: FormData) {
       description: (formData.get("description") as string) || null,
       due_date: (formData.get("due_date") as string) || null,
       priority: (formData.get("priority") as string) || "medium",
+      status: status ?? "open",
+      completed_at: status === "completed" ? new Date().toISOString() : status === "open" || status === "waiting" ? null : undefined,
       contact_id: (formData.get("contact_id") as string) || null,
       company_id: (formData.get("company_id") as string) || null,
       deal_id: (formData.get("deal_id") as string) || null,

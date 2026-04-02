@@ -33,9 +33,10 @@ interface AufgabenClientProps {
   tasks: Task[];
   contacts: { id: string; first_name: string; last_name: string }[];
   companies: { id: string; name: string }[];
+  deals: { id: string; title: string }[];
 }
 
-export function AufgabenClient({ tasks, contacts, companies }: AufgabenClientProps) {
+export function AufgabenClient({ tasks, contacts, companies, deals }: AufgabenClientProps) {
   const [statusFilter, setStatusFilter] = useState("open");
   const [priorityFilter, setPriorityFilter] = useState("");
 
@@ -62,7 +63,7 @@ export function AufgabenClient({ tasks, contacts, companies }: AufgabenClientPro
             {tasks.length} Aufgaben gesamt
           </p>
         </div>
-        <TaskSheet contacts={contacts} companies={companies} />
+        <TaskSheet contacts={contacts} companies={companies} deals={deals} />
       </div>
 
       {/* Stats */}
@@ -133,6 +134,7 @@ export function AufgabenClient({ tasks, contacts, companies }: AufgabenClientPro
               today={today}
               contacts={contacts}
               companies={companies}
+              deals={deals}
             />
           ))
         ) : (
@@ -152,11 +154,13 @@ function TaskItem({
   today,
   contacts,
   companies,
+  deals,
 }: {
   task: Task;
   today: string;
   contacts: { id: string; first_name: string; last_name: string }[];
   companies: { id: string; name: string }[];
+  deals: { id: string; title: string }[];
 }) {
   const [isPending, startTransition] = useTransition();
   const isOverdue = task.status === "open" && task.due_date && task.due_date < today;
@@ -244,6 +248,7 @@ function TaskItem({
           <TaskSheet
             contacts={contacts}
             companies={companies}
+            deals={deals}
             task={task}
             trigger={
               <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
