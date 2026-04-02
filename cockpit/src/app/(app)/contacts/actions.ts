@@ -145,6 +145,18 @@ export async function deleteContact(id: string) {
   return { error: "" };
 }
 
+export async function getMultipliers() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("contacts")
+    .select("*, companies(id, name)")
+    .eq("is_multiplier", true)
+    .order("last_name");
+
+  if (error) throw new Error(error.message);
+  return data as Contact[];
+}
+
 export async function getContactsForSelect() {
   const supabase = await createClient();
   const { data, error } = await supabase

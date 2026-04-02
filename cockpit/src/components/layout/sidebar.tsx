@@ -9,6 +9,7 @@ import {
   Kanban,
   Settings,
   ChevronLeft,
+  Handshake,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Kontakte", href: "/contacts", icon: Users },
   { name: "Firmen", href: "/companies", icon: Building2 },
+  { name: "Multiplikatoren", href: "/multiplikatoren", icon: Handshake },
   { name: "Pipeline: Multiplikatoren", href: "/pipeline/multiplikatoren", icon: Kanban },
   { name: "Pipeline: Unternehmer", href: "/pipeline/unternehmer", icon: Kanban },
   { name: "Settings", href: "/settings", icon: Settings },
