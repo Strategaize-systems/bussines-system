@@ -33,10 +33,9 @@ export function EmailSheet({ defaultTo, contactId, companyId, trigger }: EmailSh
       const result = await sendEmail(formData);
       if (result.error) {
         setError(result.error);
+      } else if ("warning" in result && result.warning) {
+        setWarning(result.warning as string);
       } else {
-        if ("warning" in result && result.warning) {
-          setWarning(result.warning as string);
-        }
         setOpen(false);
       }
     });
