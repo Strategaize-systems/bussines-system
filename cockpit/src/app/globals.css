@@ -128,3 +128,54 @@
     @apply font-sans;
   }
 }
+
+/* Brand Colors & Utilities */
+:root {
+  --brand-primary-dark: #120774;
+  --brand-primary: #4454b8;
+  --brand-success-dark: #00a84f;
+  --brand-success: #4dcb8b;
+  --brand-warning: #f2b705;
+}
+
+.gradient-primary {
+  background: linear-gradient(to right, #120774, #4454b8);
+}
+
+.gradient-success {
+  background: linear-gradient(to right, #00a84f, #4dcb8b);
+}
+
+.gradient-warning {
+  background: linear-gradient(to right, #f2b705, #ffd54f);
+}
+
+.gradient-sidebar {
+  background: linear-gradient(to bottom, #0f172a, #0f172a, #020617);
+}
+
+.card-shadow {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.card-shadow-hover {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+.card-shadow-brand {
+  box-shadow: 0 8px 16px rgba(68, 84, 184, 0.15);
+}
+
+.gradient-text-success {
+  background: linear-gradient(to right, #00a84f, #4dcb8b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-primary {
+  background: linear-gradient(to right, #120774, #4454b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

@@ -28,9 +28,9 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Business Cockpit — Übersicht
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-sm font-medium text-muted-foreground">
+          Revenue & Relationship System
         </p>
       </div>
 
@@ -41,24 +41,28 @@ export default async function DashboardPage() {
           value={stats.totalContacts}
           icon={Users}
           href="/contacts"
+          accent="primary"
         />
         <StatCard
           label="Firmen"
           value={stats.totalCompanies}
           icon={Building2}
           href="/companies"
+          accent="primary"
         />
         <StatCard
           label="Multiplikatoren"
           value={stats.multiplierCount}
           icon={Handshake}
           href="/multiplikatoren"
+          accent="success"
         />
         <StatCard
           label="Pipeline-Wert"
           value={fmt.format(stats.totalPipelineValue)}
           icon={Banknote}
           href="/pipeline/unternehmer"
+          accent="success"
         />
       </div>
 
@@ -75,12 +79,14 @@ export default async function DashboardPage() {
           value={stats.openTasks}
           icon={ListTodo}
           href="/aufgaben"
+          accent="warning"
         />
         <StatCard
           label="Überfällige Aufgaben"
           value={stats.overdueTasks}
           icon={AlertCircle}
           href="/aufgaben"
+          accent="danger"
         />
         <StatCard
           label="Offene Übergaben"
@@ -107,20 +113,40 @@ function StatCard({
   value,
   icon: Icon,
   href,
+  accent,
 }: {
   label: string;
   value: string | number;
   icon: typeof Users;
   href: string;
+  accent?: "primary" | "success" | "warning" | "danger";
 }) {
+  const accentColors = {
+    primary: "from-[#120774] to-[#4454b8]",
+    success: "from-[#00a84f] to-[#4dcb8b]",
+    warning: "from-[#f2b705] to-[#ffd54f]",
+    danger: "from-red-500 to-red-400",
+  };
+  const iconColors = {
+    primary: "text-[#4454b8]",
+    success: "text-[#00a84f]",
+    warning: "text-[#f2b705]",
+    danger: "text-red-500",
+  };
+
   return (
     <Link href={href}>
-      <Card className="hover:bg-muted/50 transition-colors">
-        <CardContent className="flex items-center gap-4 p-4">
-          <Icon className="h-8 w-8 text-muted-foreground" />
+      <Card className="relative overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+        {accent && (
+          <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${accentColors[accent]}`} />
+        )}
+        <CardContent className="flex items-center gap-4 p-5">
+          <div className={`rounded-lg bg-slate-50 p-2.5 ${accent ? iconColors[accent] : "text-muted-foreground"}`}>
+            <Icon className="h-6 w-6" />
+          </div>
           <div>
             <p className="text-2xl font-bold tabular-nums">{value}</p>
-            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className="text-xs font-medium text-muted-foreground">{label}</p>
           </div>
         </CardContent>
       </Card>

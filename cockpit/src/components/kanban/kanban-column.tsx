@@ -18,22 +18,26 @@ export function KanbanColumn({ stage, deals, onDealClick }: KanbanColumnProps) {
   return (
     <div className="flex w-72 shrink-0 flex-col">
       {/* Column Header */}
-      <div className="mb-2 flex items-center gap-2 px-1">
+      <div className="mb-3 flex items-center gap-2.5 px-1">
         <div
-          className="h-3 w-3 rounded-full"
+          className="h-3.5 w-3.5 rounded-full ring-2 ring-white shadow-sm"
           style={{ backgroundColor: stage.color || "#6366f1" }}
         />
-        <span className="text-sm font-medium">{stage.name}</span>
-        <span className="text-xs text-muted-foreground">({deals.length})</span>
+        <span className="text-sm font-semibold">{stage.name}</span>
+        <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+          {deals.length}
+        </span>
       </div>
 
       {/* Drop Zone */}
       <div
         ref={setNodeRef}
-        className={`flex-1 space-y-2 rounded-lg border border-dashed p-2 transition-colors ${
-          isOver ? "border-primary bg-primary/5" : "border-transparent"
+        className={`flex-1 space-y-2.5 rounded-xl p-2 transition-all duration-200 ${
+          isOver
+            ? "bg-blue-50 ring-2 ring-blue-300"
+            : "bg-slate-50/50"
         }`}
-        style={{ minHeight: 100 }}
+        style={{ minHeight: 120 }}
       >
         <SortableContext items={deals.map((d) => d.id)} strategy={verticalListSortingStrategy}>
           {deals.map((deal) => (
