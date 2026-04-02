@@ -19,7 +19,7 @@
 | SLC-107 | [E-Mail-Management (SMTP)](SLC-107-email-management.md) | FEAT-106 | done | High | 2026-04-01 |
 | SLC-108 | [Angebots-/Proposal-Steuerung](SLC-108-proposals.md) | FEAT-107 | done | High | 2026-04-01 |
 | SLC-109 | [Fit-Gates + Signale](SLC-109-fit-gates-signals.md) | FEAT-108, FEAT-112 | done | High | 2026-04-01 |
-| SLC-110 | Referral Tracking + Deal Loss | FEAT-113, FEAT-114 | planned | Medium | 2026-04-01 |
-| SLC-111 | Übergabe an System 1 | FEAT-110 | planned | Medium | 2026-04-01 |
-| SLC-112 | BD Dashboard + Timeline | FEAT-115, FEAT-112 | planned | High | 2026-04-01 |
-| SLC-113 | Meeting/Kalender-Integration | FEAT-111 | planned | Medium | 2026-04-01 |
+| SLC-110 | [Referral Tracking + Deal Loss](SLC-110-referral-tracking-deal-loss.md) | FEAT-113, FEAT-114 | done | Medium | 2026-04-01 |
+| SLC-111 | [Übergabe an System 1](SLC-111-handoff-system1.md) | FEAT-110 | done | Medium | 2026-04-01 |
+| SLC-112 | [BD Dashboard + Timeline](SLC-112-bd-dashboard-timeline.md) | FEAT-115, FEAT-112 | done | High | 2026-04-01 |
+| SLC-113 | [Meeting/Kalender-Integration](SLC-113-meeting-calendar.md) | FEAT-111 | done | Medium | 2026-04-01 |

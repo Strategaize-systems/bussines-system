@@ -3,7 +3,7 @@
 ## Meta
 - Feature: FEAT-113, FEAT-114
 - Priority: Medium
-- Status: planned
+- Status: done
 - Dependencies: SLC-104
 
 ## Goal

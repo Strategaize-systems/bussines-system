@@ -95,7 +95,7 @@
       "title": "Übergabe an System 1 (Onboarding)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V2",
       "description": "FEAT-110: Übergabe-Status, Einstiegsschiene, Ansprechpartner, Vorinformationen, Checkliste.",
       "createdAt": "2026-04-01"
@@ -105,7 +105,7 @@
       "title": "Kalender/Meeting-Buchung (Cal.com/Calendly)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V2",
       "description": "FEAT-111: Meeting-Buchungs-Link pro Kontakt, gebuchte Meetings in Timeline.",
       "createdAt": "2026-04-01"
@@ -115,7 +115,7 @@
       "title": "Relationship Timeline (quer über Module)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2",
       "description": "FEAT-112: Chronologische Sicht pro Kontakt/Firma: Gespräche, E-Mails, Notizen, Angebote, Empfehlungen, Aufgaben.",
       "createdAt": "2026-04-01"
@@ -125,7 +125,7 @@
       "title": "Referral Tracking",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V2",
       "description": "FEAT-113: Wer hat wen empfohlen, wann, was wurde daraus. Kanal-Auswertung.",
       "createdAt": "2026-04-01"
@@ -135,7 +135,7 @@
       "title": "Deal Loss Analysis",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V2",
       "description": "FEAT-114: Strukturierte Verlustgründe bei verlorenen Deals, auswertbar über Zeit.",
       "createdAt": "2026-04-01"
@@ -145,7 +145,7 @@
       "title": "BD Dashboard (neue Metriken)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2",
       "description": "FEAT-115: BD-relevante Metriken statt generischer CRM-Zahlen. Pipeline-Werte, Multiplikator-Performance, offene Follow-ups, Übergabe-Status.",
       "createdAt": "2026-04-01"

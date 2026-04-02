@@ -23,12 +23,12 @@
 | FEAT-107 | Angebots-/Proposal-Steuerung | done | 2026-04-01 |
 | FEAT-108 | Qualifizierung/Fit-Gates | done | 2026-04-01 |
 | FEAT-109 | Aufgaben/Follow-ups | done | 2026-04-01 |
-| FEAT-110 | Übergabe an System 1 | planned | 2026-04-01 |
-| FEAT-111 | Kalender/Meeting-Buchung | planned | 2026-04-01 |
-| FEAT-112 | Relationship Timeline | planned | 2026-04-01 |
-| FEAT-113 | Referral Tracking | planned | 2026-04-01 |
-| FEAT-114 | Deal Loss Analysis | planned | 2026-04-01 |
-| FEAT-115 | BD Dashboard (neue Metriken) | planned | 2026-04-01 |
+| FEAT-110 | Übergabe an System 1 | done | 2026-04-01 |
+| FEAT-111 | Kalender/Meeting-Buchung | done | 2026-04-01 |
+| FEAT-112 | Relationship Timeline | done | 2026-04-01 |
+| FEAT-113 | Referral Tracking | done | 2026-04-01 |
+| FEAT-114 | Deal Loss Analysis | done | 2026-04-01 |
+| FEAT-115 | BD Dashboard (neue Metriken) | done | 2026-04-01 |
 
 ## V3 Features (Intelligence Layer)
 
