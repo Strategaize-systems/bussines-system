@@ -5,8 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TagInput } from "@/components/ui/tag-input";
+import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import type { Company } from "./actions";
+
+const selectClass =
+  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 interface CompanyFormProps {
   company?: Company;
@@ -104,6 +108,188 @@ export function CompanyForm({ company, onSubmit, isPending }: CompanyFormProps) 
           defaultValue={company?.address_country ?? "Deutschland"}
         />
       </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="employee_count">Mitarbeiterzahl</Label>
+          <select
+            id="employee_count"
+            name="employee_count"
+            defaultValue={company?.employee_count ?? ""}
+            className={selectClass}
+          >
+            <option value="">— Auswählen —</option>
+            <option value="1-10">1–10</option>
+            <option value="11-50">11–50</option>
+            <option value="51-200">51–200</option>
+            <option value="201-500">201–500</option>
+            <option value="500+">500+</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="revenue_range">Umsatzklasse</Label>
+          <select
+            id="revenue_range"
+            name="revenue_range"
+            defaultValue={company?.revenue_range ?? ""}
+            className={selectClass}
+          >
+            <option value="">— Auswählen —</option>
+            <option value="<1M">&lt; 1 Mio.</option>
+            <option value="1-5M">1–5 Mio.</option>
+            <option value="5-20M">5–20 Mio.</option>
+            <option value="20-50M">20–50 Mio.</option>
+            <option value="50M+">50+ Mio.</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="ownership_structure">Eigentümerstruktur</Label>
+        <Input
+          id="ownership_structure"
+          name="ownership_structure"
+          placeholder="z.B. Inhaber-geführt, PE-backed, Family Office"
+          defaultValue={company?.ownership_structure ?? ""}
+        />
+      </div>
+
+      <Separator />
+      <p className="text-sm font-medium text-muted-foreground">Eignungsbewertung</p>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="blueprint_fit">Blueprint-Fit</Label>
+          <select
+            id="blueprint_fit"
+            name="blueprint_fit"
+            defaultValue={company?.blueprint_fit ?? ""}
+            className={selectClass}
+          >
+            <option value="">— Auswählen —</option>
+            <option value="ideal">Ideal</option>
+            <option value="gut">Gut</option>
+            <option value="möglich">Möglich</option>
+            <option value="ungeeignet">Ungeeignet</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="exit_relevance">Exit-Relevanz</Label>
+          <select
+            id="exit_relevance"
+            name="exit_relevance"
+            defaultValue={company?.exit_relevance ?? ""}
+            className={selectClass}
+          >
+            <option value="">— Auswählen —</option>
+            <option value="hoch">Hoch</option>
+            <option value="mittel">Mittel</option>
+            <option value="niedrig">Niedrig</option>
+            <option value="unbekannt">Unbekannt</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="ai_readiness">KI-Reife</Label>
+          <select
+            id="ai_readiness"
+            name="ai_readiness"
+            defaultValue={company?.ai_readiness ?? ""}
+            className={selectClass}
+          >
+            <option value="">— Auswählen —</option>
+            <option value="hoch">Hoch</option>
+            <option value="mittel">Mittel</option>
+            <option value="niedrig">Niedrig</option>
+            <option value="unbekannt">Unbekannt</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="budget_potential">Budget-Potential</Label>
+          <select
+            id="budget_potential"
+            name="budget_potential"
+            defaultValue={company?.budget_potential ?? ""}
+            className={selectClass}
+          >
+            <option value="">— Auswählen —</option>
+            <option value="hoch">Hoch</option>
+            <option value="mittel">Mittel</option>
+            <option value="niedrig">Niedrig</option>
+            <option value="unbekannt">Unbekannt</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="strategic_relevance">Strategische Relevanz</Label>
+        <select
+          id="strategic_relevance"
+          name="strategic_relevance"
+          defaultValue={company?.strategic_relevance ?? ""}
+          className={selectClass}
+        >
+          <option value="">— Auswählen —</option>
+          <option value="hoch">Hoch</option>
+          <option value="mittel">Mittel</option>
+          <option value="niedrig">Niedrig</option>
+        </select>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            id="decision_maker_access"
+            name="decision_maker_access"
+            defaultChecked={company?.decision_maker_access ?? false}
+            className="h-4 w-4 rounded border-input"
+          />
+          <Label htmlFor="decision_maker_access" className="mb-0">
+            Zugang zum Entscheider
+          </Label>
+        </div>
+        <div className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            id="complexity_fit"
+            name="complexity_fit"
+            defaultChecked={company?.complexity_fit ?? false}
+            className="h-4 w-4 rounded border-input"
+          />
+          <Label htmlFor="complexity_fit" className="mb-0">
+            Komplexitäts-Fit
+          </Label>
+        </div>
+        <div className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            id="willingness"
+            name="willingness"
+            defaultChecked={company?.willingness ?? false}
+            className="h-4 w-4 rounded border-input"
+          />
+          <Label htmlFor="willingness" className="mb-0">
+            Veränderungsbereitschaft
+          </Label>
+        </div>
+        <div className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            id="champion_potential"
+            name="champion_potential"
+            defaultChecked={company?.champion_potential ?? false}
+            className="h-4 w-4 rounded border-input"
+          />
+          <Label htmlFor="champion_potential" className="mb-0">
+            Champion-Potential
+          </Label>
+        </div>
+      </div>
+
+      <Separator />
 
       <div className="space-y-2">
         <Label>Tags</Label>

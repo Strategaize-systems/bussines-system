@@ -16,6 +16,18 @@ export type Company = {
   address_country: string | null;
   notes: string | null;
   tags: string[];
+  exit_relevance: string | null;
+  ai_readiness: string | null;
+  ownership_structure: string | null;
+  decision_maker_access: boolean;
+  budget_potential: string | null;
+  complexity_fit: boolean;
+  willingness: boolean;
+  champion_potential: boolean;
+  strategic_relevance: string | null;
+  blueprint_fit: string | null;
+  employee_count: string | null;
+  revenue_range: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -83,6 +95,18 @@ export async function createCompany(formData: FormData) {
     address_country: (formData.get("address_country") as string) || null,
     tags,
     notes: (formData.get("notes") as string) || null,
+    exit_relevance: (formData.get("exit_relevance") as string) || null,
+    ai_readiness: (formData.get("ai_readiness") as string) || null,
+    ownership_structure: (formData.get("ownership_structure") as string) || null,
+    decision_maker_access: formData.get("decision_maker_access") === "on",
+    budget_potential: (formData.get("budget_potential") as string) || null,
+    complexity_fit: formData.get("complexity_fit") === "on",
+    willingness: formData.get("willingness") === "on",
+    champion_potential: formData.get("champion_potential") === "on",
+    strategic_relevance: (formData.get("strategic_relevance") as string) || null,
+    blueprint_fit: (formData.get("blueprint_fit") as string) || null,
+    employee_count: (formData.get("employee_count") as string) || null,
+    revenue_range: (formData.get("revenue_range") as string) || null,
   });
 
   if (error) return { error: error.message };
@@ -113,6 +137,18 @@ export async function updateCompany(id: string, formData: FormData) {
       address_country: (formData.get("address_country") as string) || null,
       tags,
       notes: (formData.get("notes") as string) || null,
+      exit_relevance: (formData.get("exit_relevance") as string) || null,
+      ai_readiness: (formData.get("ai_readiness") as string) || null,
+      ownership_structure: (formData.get("ownership_structure") as string) || null,
+      decision_maker_access: formData.get("decision_maker_access") === "on",
+      budget_potential: (formData.get("budget_potential") as string) || null,
+      complexity_fit: formData.get("complexity_fit") === "on",
+      willingness: formData.get("willingness") === "on",
+      champion_potential: formData.get("champion_potential") === "on",
+      strategic_relevance: (formData.get("strategic_relevance") as string) || null,
+      blueprint_fit: (formData.get("blueprint_fit") as string) || null,
+      employee_count: (formData.get("employee_count") as string) || null,
+      revenue_range: (formData.get("revenue_range") as string) || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);

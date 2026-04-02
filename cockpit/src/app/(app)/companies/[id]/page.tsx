@@ -16,9 +16,57 @@ import {
   Pencil,
   Trash2,
   User,
+  Building,
+  TrendingUp,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+
+const blueprintFitColors: Record<string, string> = {
+  ideal: "bg-green-500",
+  gut: "bg-green-400",
+  "möglich": "bg-yellow-400",
+  ungeeignet: "bg-red-500",
+};
+
+const blueprintFitLabels: Record<string, string> = {
+  ideal: "Ideal",
+  gut: "Gut",
+  "möglich": "Möglich",
+  ungeeignet: "Ungeeignet",
+};
+
+const levelColors: Record<string, string> = {
+  hoch: "bg-green-100 text-green-800",
+  mittel: "bg-yellow-100 text-yellow-800",
+  niedrig: "bg-red-100 text-red-800",
+  unbekannt: "bg-gray-100 text-gray-800",
+};
+
+function LevelBadge({ value }: { value: string | null }) {
+  if (!value) return <span className="text-muted-foreground">—</span>;
+  const colors = levelColors[value] ?? "bg-gray-100 text-gray-800";
+  return (
+    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${colors}`}>
+      {value.charAt(0).toUpperCase() + value.slice(1)}
+    </span>
+  );
+}
+
+function BoolIndicator({ value, label }: { value: boolean; label: string }) {
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      {value ? (
+        <CheckCircle2 className="h-4 w-4 text-green-600" />
+      ) : (
+        <XCircle className="h-4 w-4 text-muted-foreground" />
+      )}
+      <span className={value ? "" : "text-muted-foreground"}>{label}</span>
+    </div>
+  );
+}
 
 export default async function CompanyDetailPage({
   params,
@@ -48,9 +96,19 @@ export default async function CompanyDetailPage({
           </Button>
         </Link>
         <div className="flex-1">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {company.name}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {company.name}
+            </h1>
+            {company.blueprint_fit && (
+              <div className="flex items-center gap-1.5">
+                <span className={`inline-block h-3 w-3 rounded-full ${blueprintFitColors[company.blueprint_fit] ?? "bg-gray-400"}`} />
+                <span className="text-sm font-medium">
+                  {blueprintFitLabels[company.blueprint_fit] ?? company.blueprint_fit}
+                </span>
+              </div>
+            )}
+          </div>
           {company.industry && (
             <p className="text-muted-foreground">{company.industry}</p>
           )}
@@ -145,6 +203,76 @@ export default async function CompanyDetailPage({
                 {company.notes}
               </p>
             )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Suitability Assessment */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Eignungsbewertung</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-2 gap-y-3 text-sm">
+              <span className="text-muted-foreground">Blueprint-Fit</span>
+              {company.blueprint_fit ? (
+                <div className="flex items-center gap-1.5">
+                  <span className={`inline-block h-2.5 w-2.5 rounded-full ${blueprintFitColors[company.blueprint_fit] ?? "bg-gray-400"}`} />
+                  <span className="font-medium">{blueprintFitLabels[company.blueprint_fit] ?? company.blueprint_fit}</span>
+                </div>
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
+
+              <span className="text-muted-foreground">Exit-Relevanz</span>
+              <LevelBadge value={company.exit_relevance} />
+
+              <span className="text-muted-foreground">KI-Reife</span>
+              <LevelBadge value={company.ai_readiness} />
+
+              <span className="text-muted-foreground">Budget-Potential</span>
+              <LevelBadge value={company.budget_potential} />
+
+              <span className="text-muted-foreground">Strategische Relevanz</span>
+              <LevelBadge value={company.strategic_relevance} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Firmendetails & Bereitschaft</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {(company.employee_count || company.revenue_range || company.ownership_structure) && (
+              <div className="space-y-2 text-sm">
+                {company.employee_count && (
+                  <div className="flex items-center gap-2">
+                    <Building className="h-4 w-4 text-muted-foreground" />
+                    <span>{company.employee_count} Mitarbeiter</span>
+                  </div>
+                )}
+                {company.revenue_range && (
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    <span>Umsatz: {company.revenue_range}</span>
+                  </div>
+                )}
+                {company.ownership_structure && (
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>{company.ownership_structure}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="space-y-2 pt-1">
+              <BoolIndicator value={company.decision_maker_access} label="Zugang zum Entscheider" />
+              <BoolIndicator value={company.complexity_fit} label="Komplexitäts-Fit" />
+              <BoolIndicator value={company.willingness} label="Veränderungsbereitschaft" />
+              <BoolIndicator value={company.champion_potential} label="Champion-Potential" />
+            </div>
           </CardContent>
         </Card>
       </div>

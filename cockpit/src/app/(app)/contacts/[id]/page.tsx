@@ -8,9 +8,56 @@ import { DocumentList } from "@/components/documents/document-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Building2, Mail, Phone, LinkIcon, Pencil, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Building2,
+  Mail,
+  Phone,
+  LinkIcon,
+  Pencil,
+  Trash2,
+  Users,
+  Shield,
+  Star,
+  Globe,
+  MapPin,
+  CalendarDays,
+} from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+
+const relationshipLabels: Record<string, string> = {
+  multiplikator: "Multiplikator",
+  kunde: "Kunde",
+  partner: "Partner",
+  interessent: "Interessent",
+  netzwerk: "Netzwerk",
+  empfehler: "Empfehler",
+};
+
+const roleLabels: Record<string, string> = {
+  entscheider: "Entscheider",
+  beeinflusser: "Beeinflusser",
+  umsetzer: "Umsetzer",
+  champion: "Champion",
+  gatekeeper: "Gatekeeper",
+};
+
+const trustColors: Record<string, string> = {
+  hoch: "bg-green-100 text-green-800",
+  mittel: "bg-yellow-100 text-yellow-800",
+  niedrig: "bg-red-100 text-red-800",
+  unbekannt: "bg-gray-100 text-gray-800",
+};
+
+const multiplierTypeLabels: Record<string, string> = {
+  berater: "Berater",
+  banker: "Banker",
+  anwalt: "Anwalt",
+  steuerberater: "Steuerberater",
+  makler: "Makler",
+  branchenexperte: "Branchenexperte",
+};
 
 export default async function ContactDetailPage({
   params,
@@ -40,9 +87,21 @@ export default async function ContactDetailPage({
           </Button>
         </Link>
         <div className="flex-1">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {contact.first_name} {contact.last_name}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {contact.first_name} {contact.last_name}
+            </h1>
+            {contact.relationship_type && (
+              <Badge variant="secondary">
+                {relationshipLabels[contact.relationship_type] ?? contact.relationship_type}
+              </Badge>
+            )}
+            {contact.is_multiplier && (
+              <Badge className="bg-purple-100 text-purple-800">
+                Multiplikator
+              </Badge>
+            )}
+          </div>
           {contact.position && (
             <p className="text-muted-foreground">{contact.position}</p>
           )}
@@ -110,9 +169,76 @@ export default async function ContactDetailPage({
                 </a>
               </div>
             )}
+            {contact.region && (
+              <div className="flex items-center gap-2 text-sm">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <span>{contact.region}</span>
+              </div>
+            )}
+            {contact.language && (
+              <div className="flex items-center gap-2 text-sm">
+                <Globe className="h-4 w-4 text-muted-foreground" />
+                <span>{contact.language === "de" ? "Deutsch" : contact.language === "en" ? "Englisch" : contact.language === "fr" ? "Französisch" : contact.language}</span>
+              </div>
+            )}
+            {contact.last_interaction_date && (
+              <div className="flex items-center gap-2 text-sm">
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                <span>Letzte Interaktion: {new Date(contact.last_interaction_date).toLocaleDateString("de-DE")}</span>
+              </div>
+            )}
           </CardContent>
         </Card>
 
+        {/* Relationship & Assessment */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Beziehung & Einschätzung</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {contact.role_in_process && (
+              <div className="flex items-center gap-2 text-sm">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span>Rolle: {roleLabels[contact.role_in_process] ?? contact.role_in_process}</span>
+              </div>
+            )}
+            {contact.source && (
+              <div className="flex items-center gap-2 text-sm">
+                <Star className="h-4 w-4 text-muted-foreground" />
+                <span>Quelle: {contact.source}</span>
+              </div>
+            )}
+            {contact.trust_level && (
+              <div className="flex items-center gap-2 text-sm">
+                <Shield className="h-4 w-4 text-muted-foreground" />
+                <span>Vertrauen:</span>
+                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${trustColors[contact.trust_level] ?? "bg-gray-100 text-gray-800"}`}>
+                  {contact.trust_level.charAt(0).toUpperCase() + contact.trust_level.slice(1)}
+                </span>
+              </div>
+            )}
+            {contact.referral_capability && (
+              <div className="flex items-center gap-2 text-sm">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span>Empfehlungsfähigkeit: {contact.referral_capability.charAt(0).toUpperCase() + contact.referral_capability.slice(1)}</span>
+              </div>
+            )}
+            {contact.is_multiplier && contact.multiplier_type && (
+              <div className="flex items-center gap-2 text-sm">
+                <Star className="h-4 w-4 text-muted-foreground" />
+                <span>Multiplikator-Typ: {multiplierTypeLabels[contact.multiplier_type] ?? contact.multiplier_type}</span>
+              </div>
+            )}
+            {!contact.role_in_process && !contact.trust_level && !contact.referral_capability && !contact.source && (
+              <p className="text-sm text-muted-foreground">
+                Keine Beziehungsdaten hinterlegt.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
         {/* Tags + Notes */}
         <Card>
           <CardHeader>

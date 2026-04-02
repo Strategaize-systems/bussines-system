@@ -14,6 +14,16 @@ export type Contact = {
   linkedin_url: string | null;
   tags: string[];
   notes: string | null;
+  relationship_type: string | null;
+  role_in_process: string | null;
+  source: string | null;
+  language: string | null;
+  region: string | null;
+  trust_level: string | null;
+  referral_capability: string | null;
+  is_multiplier: boolean;
+  multiplier_type: string | null;
+  last_interaction_date: string | null;
   created_at: string;
   updated_at: string;
   companies?: { id: string; name: string } | null;
@@ -68,6 +78,15 @@ export async function createContact(formData: FormData) {
     company_id: (formData.get("company_id") as string) || null,
     tags,
     notes: (formData.get("notes") as string) || null,
+    relationship_type: (formData.get("relationship_type") as string) || null,
+    role_in_process: (formData.get("role_in_process") as string) || null,
+    source: (formData.get("source") as string) || null,
+    language: (formData.get("language") as string) || "de",
+    region: (formData.get("region") as string) || null,
+    trust_level: (formData.get("trust_level") as string) || null,
+    referral_capability: (formData.get("referral_capability") as string) || null,
+    is_multiplier: formData.get("is_multiplier") === "on",
+    multiplier_type: (formData.get("multiplier_type") as string) || null,
   });
 
   if (error) return { error: error.message };
@@ -96,6 +115,15 @@ export async function updateContact(id: string, formData: FormData) {
       company_id: (formData.get("company_id") as string) || null,
       tags,
       notes: (formData.get("notes") as string) || null,
+      relationship_type: (formData.get("relationship_type") as string) || null,
+      role_in_process: (formData.get("role_in_process") as string) || null,
+      source: (formData.get("source") as string) || null,
+      language: (formData.get("language") as string) || "de",
+      region: (formData.get("region") as string) || null,
+      trust_level: (formData.get("trust_level") as string) || null,
+      referral_capability: (formData.get("referral_capability") as string) || null,
+      is_multiplier: formData.get("is_multiplier") === "on",
+      multiplier_type: (formData.get("multiplier_type") as string) || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);

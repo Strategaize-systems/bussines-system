@@ -4,16 +4,44 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import type { Contact } from "./actions";
 
+const relationshipLabels: Record<string, string> = {
+  multiplikator: "Multiplikator",
+  kunde: "Kunde",
+  partner: "Partner",
+  interessent: "Interessent",
+  netzwerk: "Netzwerk",
+  empfehler: "Empfehler",
+};
+
 export const columns: ColumnDef<Contact>[] = [
   {
     accessorFn: (row) => `${row.first_name} ${row.last_name}`,
     id: "name",
     header: "Name",
     cell: ({ row }) => (
-      <span className="font-medium">
-        {row.original.first_name} {row.original.last_name}
-      </span>
+      <div className="flex items-center gap-2">
+        <span className="font-medium">
+          {row.original.first_name} {row.original.last_name}
+        </span>
+        {row.original.is_multiplier && (
+          <Badge className="bg-purple-100 text-purple-800 text-[10px] px-1.5 py-0">M</Badge>
+        )}
+      </div>
     ),
+  },
+  {
+    accessorKey: "relationship_type",
+    header: "Typ",
+    cell: ({ row }) => {
+      const rt = row.original.relationship_type;
+      return rt ? (
+        <Badge variant="outline" className="text-xs">
+          {relationshipLabels[rt] ?? rt}
+        </Badge>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      );
+    },
   },
   {
     accessorKey: "email",
