@@ -75,7 +75,7 @@
       "title": "Qualifizierung/Fit-Gates mit Ampel-System",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2",
       "description": "FEAT-108: Fit-Kriterien Firmen (8 Felder), Fit-Kriterien Multiplikatoren (7 Felder), Ampel-Bewertung.",
       "createdAt": "2026-04-01"

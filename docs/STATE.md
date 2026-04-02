@@ -10,13 +10,13 @@ Internes, KI-gestütztes Revenue- und Relationship-System für beratungsintensiv
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: SLC-108 done (Angebots-/Proposal-Steuerung). 8 von 13 V2 Slices done. Nächster: SLC-109 Fit-Gates + Signale.
+- Current Focus: SLC-109 done (Fit-Gates + Signale). 9 von 13 V2 Slices done. Nächster: SLC-110 Referral Tracking + Deal Loss.
 - Current Phase: V2 Implementation
 
 ## Immediate Next Steps
-1. SLC-109: Fit-Gates + Signale
-2. SLC-110: Referral Tracking + Deal Loss
-3. SLC-111: Übergabe an System 1
+1. SLC-110: Referral Tracking + Deal Loss
+2. SLC-111: Übergabe an System 1
+3. SLC-112: BD Dashboard + Timeline
 
 ## Active Scope
 V2 Scope (Neuausrichtung — 11 Module):
