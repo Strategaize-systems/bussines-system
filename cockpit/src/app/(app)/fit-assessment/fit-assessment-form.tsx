@@ -6,8 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useTransition } from "react";
 import { saveFitAssessment, type FitAssessment } from "./actions";
 
-const selectClass =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
+const selectClass = "select-premium";
 
 const SCORE_OPTIONS = [
   { value: "", label: "—" },

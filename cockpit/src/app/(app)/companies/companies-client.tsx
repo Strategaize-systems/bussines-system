@@ -7,8 +7,7 @@ import { CompanySheet } from "./company-sheet";
 import { columns } from "./columns";
 import type { Company } from "./actions";
 
-const selectClass =
-  "flex h-8 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
+const selectClass = "select-premium";
 
 const blueprintFitOptions = [
   { value: "", label: "Alle Blueprint-Fits" },

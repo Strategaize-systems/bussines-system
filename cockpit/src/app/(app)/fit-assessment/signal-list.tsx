@@ -20,8 +20,7 @@ const SIGNAL_TYPES = [
   { value: "hoher_multiplikatorwert", label: "Hoher Multiplikatorwert" },
 ];
 
-const selectClass =
-  "flex h-8 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
+const selectClass = "select-premium";
 
 const signalColors: Record<string, string> = {
   hohes_interesse: "bg-green-100 text-green-800",

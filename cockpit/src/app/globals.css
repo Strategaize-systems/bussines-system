@@ -179,3 +179,85 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* Premium Select */
+.select-premium {
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  background: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #334155;
+  transition: all 200ms;
+  cursor: pointer;
+  appearance: auto;
+}
+
+.select-premium:focus {
+  border-color: #4454b8;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(68, 84, 184, 0.1);
+}
+
+.select-premium:hover {
+  border-color: #94a3b8;
+}
+
+/* Premium Page Title */
+.page-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.025em;
+}
+
+.page-subtitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+/* Premium Stat Card */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: white;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  transition: all 300ms;
+}
+
+.stat-card:hover {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  transform: translateY(-2px);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.stat-card-primary::before {
+  background: linear-gradient(to right, #120774, #4454b8);
+}
+
+.stat-card-success::before {
+  background: linear-gradient(to right, #00a84f, #4dcb8b);
+}
+
+.stat-card-warning::before {
+  background: linear-gradient(to right, #f2b705, #ffd54f);
+}
+
+.stat-card-danger::before {
+  background: linear-gradient(to right, #ef4444, #f87171);
+}

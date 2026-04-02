@@ -16,8 +16,7 @@ import {
 import { createHandoff, updateHandoffStatus, deleteHandoff, type Handoff } from "./actions";
 import Link from "next/link";
 
-const selectClass =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
+const selectClass = "select-premium";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   pending: { label: "Ausstehend", color: "bg-yellow-100 text-yellow-800" },

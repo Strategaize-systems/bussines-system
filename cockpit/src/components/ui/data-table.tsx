@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { Search } from "lucide-react";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -54,33 +55,38 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <Input
-        placeholder={searchPlaceholder}
-        value={
-          searchColumn
-            ? (table.getColumn(searchColumn)?.getFilterValue() as string) ?? ""
-            : globalFilter
-        }
-        onChange={(e) => {
-          if (searchColumn) {
-            table.getColumn(searchColumn)?.setFilterValue(e.target.value);
-          } else {
-            setGlobalFilter(e.target.value);
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <Input
+          placeholder={searchPlaceholder}
+          value={
+            searchColumn
+              ? (table.getColumn(searchColumn)?.getFilterValue() as string) ?? ""
+              : globalFilter
           }
-        }}
-        className="max-w-sm"
-      />
-      <div className="rounded-md border">
+          onChange={(e) => {
+            if (searchColumn) {
+              table.getColumn(searchColumn)?.setFilterValue(e.target.value);
+            } else {
+              setGlobalFilter(e.target.value);
+            }
+          }}
+          className="pl-9 h-10 bg-white border-slate-200 focus:border-[#4454b8] focus:ring-[#4454b8]/10"
+        />
+      </div>
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        {/* Gradient top border */}
+        <div className="h-1 bg-gradient-to-r from-[#120774] via-[#4454b8] to-[#00a84f]" />
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="hover:bg-transparent border-0">
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
                     className={
                       header.column.getCanSort()
-                        ? "cursor-pointer select-none"
+                        ? "cursor-pointer select-none hover:text-slate-900"
                         : ""
                     }
                     onClick={header.column.getToggleSortingHandler()}
@@ -121,7 +127,7 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
+                  className="h-32 text-center text-muted-foreground"
                 >
                   Keine Einträge gefunden.
                 </TableCell>
