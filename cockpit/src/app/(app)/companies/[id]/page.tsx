@@ -2,6 +2,10 @@ import { getCompany, getCompanyContacts, deleteCompany } from "../actions";
 import { CompanySheet } from "../company-sheet";
 import { getActivities } from "@/lib/actions/activity-actions";
 import { getDocuments } from "@/lib/actions/document-actions";
+import { getFitAssessment } from "../../fit-assessment/actions";
+import { getSignals } from "../../fit-assessment/signal-actions";
+import { FitAssessmentForm } from "../../fit-assessment/fit-assessment-form";
+import { SignalList } from "../../fit-assessment/signal-list";
 import { ActivityTimeline } from "@/components/activities/activity-timeline";
 import { DocumentList } from "@/components/documents/document-list";
 import { Badge } from "@/components/ui/badge";
@@ -74,11 +78,13 @@ export default async function CompanyDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [company, contacts, activities, documents] = await Promise.all([
+  const [company, contacts, activities, documents, fitAssessment, signals] = await Promise.all([
     getCompany(id),
     getCompanyContacts(id),
     getActivities({ companyId: id }),
     getDocuments({ companyId: id }),
+    getFitAssessment("company", id),
+    getSignals({ companyId: id }),
   ]);
 
   async function handleDelete() {
@@ -276,6 +282,23 @@ export default async function CompanyDetailPage({
           </CardContent>
         </Card>
       </div>
+
+      {/* Fit Assessment */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Fit-Bewertung</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FitAssessmentForm
+            entityType="company"
+            entityId={id}
+            assessment={fitAssessment}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Signals */}
+      <SignalList signals={signals} companyId={id} />
 
       {/* Assigned Contacts */}
       <Card>

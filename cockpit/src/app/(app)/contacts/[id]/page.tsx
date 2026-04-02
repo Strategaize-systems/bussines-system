@@ -4,6 +4,10 @@ import { ContactSheet } from "../contact-sheet";
 import { EmailSheet } from "../../emails/email-sheet";
 import { getActivities } from "@/lib/actions/activity-actions";
 import { getDocuments } from "@/lib/actions/document-actions";
+import { getFitAssessment } from "../../fit-assessment/actions";
+import { getSignals } from "../../fit-assessment/signal-actions";
+import { FitAssessmentForm } from "../../fit-assessment/fit-assessment-form";
+import { SignalList } from "../../fit-assessment/signal-list";
 import { ActivityTimeline } from "@/components/activities/activity-timeline";
 import { DocumentList } from "@/components/documents/document-list";
 import { Badge } from "@/components/ui/badge";
@@ -66,11 +70,13 @@ export default async function ContactDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [contact, companies, activities, documents] = await Promise.all([
+  const [contact, companies, activities, documents, fitAssessment, signals] = await Promise.all([
     getContact(id),
     getCompaniesForSelect(),
     getActivities({ contactId: id }),
     getDocuments({ contactId: id }),
+    getFitAssessment("multiplier", id),
+    getSignals({ contactId: id }),
   ]);
 
   async function handleDelete() {
@@ -275,6 +281,25 @@ export default async function ContactDetailPage({
           </CardContent>
         </Card>
       </div>
+
+      {/* Fit Assessment (only for multipliers) */}
+      {contact.is_multiplier && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Multiplikator Fit-Bewertung</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FitAssessmentForm
+              entityType="multiplier"
+              entityId={id}
+              assessment={fitAssessment}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Signals */}
+      <SignalList signals={signals} contactId={id} />
 
       {/* Activities */}
       <ActivityTimeline activities={activities} contactId={id} />
