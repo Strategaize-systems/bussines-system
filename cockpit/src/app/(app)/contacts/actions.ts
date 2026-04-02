@@ -24,6 +24,7 @@ export type Contact = {
   is_multiplier: boolean;
   multiplier_type: string | null;
   last_interaction_date: string | null;
+  meeting_link: string | null;
   created_at: string;
   updated_at: string;
   companies?: { id: string; name: string } | null;
@@ -87,6 +88,7 @@ export async function createContact(formData: FormData) {
     referral_capability: (formData.get("referral_capability") as string) || null,
     is_multiplier: formData.get("is_multiplier") === "on",
     multiplier_type: (formData.get("multiplier_type") as string) || null,
+    meeting_link: (formData.get("meeting_link") as string) || null,
   });
 
   if (error) return { error: error.message };
@@ -124,6 +126,7 @@ export async function updateContact(id: string, formData: FormData) {
       referral_capability: (formData.get("referral_capability") as string) || null,
       is_multiplier: formData.get("is_multiplier") === "on",
       multiplier_type: (formData.get("multiplier_type") as string) || null,
+      meeting_link: (formData.get("meeting_link") as string) || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);

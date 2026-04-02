@@ -183,6 +183,19 @@ export default async function ContactDetailPage({
                 </a>
               </div>
             )}
+            {contact.meeting_link && (
+              <div className="flex items-center gap-2 text-sm">
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                <a
+                  href={contact.meeting_link.startsWith("http") ? contact.meeting_link : `https://${contact.meeting_link}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline text-primary"
+                >
+                  Meeting buchen
+                </a>
+              </div>
+            )}
             {contact.region && (
               <div className="flex items-center gap-2 text-sm">
                 <MapPin className="h-4 w-4 text-muted-foreground" />

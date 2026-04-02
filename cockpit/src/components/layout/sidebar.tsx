@@ -13,6 +13,8 @@ import {
   ListTodo,
   Mail,
   FileText,
+  GitBranch,
+  ArrowRightLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,8 @@ const navigation = [
   { name: "Aufgaben", href: "/aufgaben", icon: ListTodo },
   { name: "E-Mails", href: "/emails", icon: Mail },
   { name: "Angebote", href: "/proposals", icon: FileText },
+  { name: "Empfehlungen", href: "/referrals", icon: GitBranch },
+  { name: "Übergaben", href: "/handoffs", icon: ArrowRightLeft },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

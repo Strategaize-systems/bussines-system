@@ -8,7 +8,7 @@ import { PipelineSummaryCards } from "./pipeline-summary";
 import { RecentActivities } from "./recent-activities";
 import { UpcomingActions } from "./upcoming-actions";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, Building2, Kanban, Banknote } from "lucide-react";
+import { Users, Building2, Kanban, Banknote, Handshake, ListTodo, AlertCircle, ArrowRightLeft } from "lucide-react";
 import Link from "next/link";
 
 const fmt = new Intl.NumberFormat("de-DE", {
@@ -34,7 +34,7 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats Row */}
+      {/* Stats Row 1 */}
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard
           label="Kontakte"
@@ -49,16 +49,44 @@ export default async function DashboardPage() {
           href="/companies"
         />
         <StatCard
-          label="Offene Deals"
-          value={stats.openDeals}
-          icon={Kanban}
-          href="/pipeline/unternehmer"
+          label="Multiplikatoren"
+          value={stats.multiplierCount}
+          icon={Handshake}
+          href="/multiplikatoren"
         />
         <StatCard
           label="Pipeline-Wert"
           value={fmt.format(stats.totalPipelineValue)}
           icon={Banknote}
           href="/pipeline/unternehmer"
+        />
+      </div>
+
+      {/* Stats Row 2 */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <StatCard
+          label="Offene Deals"
+          value={stats.openDeals}
+          icon={Kanban}
+          href="/pipeline/unternehmer"
+        />
+        <StatCard
+          label="Offene Aufgaben"
+          value={stats.openTasks}
+          icon={ListTodo}
+          href="/aufgaben"
+        />
+        <StatCard
+          label="Überfällige Aufgaben"
+          value={stats.overdueTasks}
+          icon={AlertCircle}
+          href="/aufgaben"
+        />
+        <StatCard
+          label="Offene Übergaben"
+          value={stats.pendingHandoffs}
+          icon={ArrowRightLeft}
+          href="/handoffs"
         />
       </div>
 

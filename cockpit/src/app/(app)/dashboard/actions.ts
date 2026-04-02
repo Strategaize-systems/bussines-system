@@ -7,6 +7,10 @@ export type DashboardStats = {
   totalCompanies: number;
   openDeals: number;
   totalPipelineValue: number;
+  multiplierCount: number;
+  openTasks: number;
+  overdueTasks: number;
+  pendingHandoffs: number;
 };
 
 export type PipelineSummary = {
@@ -29,10 +33,16 @@ export type UpcomingAction = {
 export async function getDashboardStats(): Promise<DashboardStats> {
   const supabase = await createClient();
 
-  const [contacts, companies, deals] = await Promise.all([
+  const today = new Date().toISOString().split("T")[0];
+
+  const [contacts, companies, deals, multipliers, tasks, overdueTasks, handoffs] = await Promise.all([
     supabase.from("contacts").select("id", { count: "exact", head: true }),
     supabase.from("companies").select("id", { count: "exact", head: true }),
     supabase.from("deals").select("value").eq("status", "active"),
+    supabase.from("contacts").select("id", { count: "exact", head: true }).eq("is_multiplier", true),
+    supabase.from("tasks").select("id", { count: "exact", head: true }).eq("status", "open"),
+    supabase.from("tasks").select("id", { count: "exact", head: true }).eq("status", "open").lt("due_date", today),
+    supabase.from("handoffs").select("id", { count: "exact", head: true }).eq("status", "pending"),
   ]);
 
   const totalPipelineValue = (deals.data || []).reduce(
@@ -45,6 +55,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     totalCompanies: companies.count ?? 0,
     openDeals: deals.data?.length ?? 0,
     totalPipelineValue,
+    multiplierCount: multipliers.count ?? 0,
+    openTasks: tasks.count ?? 0,
+    overdueTasks: overdueTasks.count ?? 0,
+    pendingHandoffs: handoffs.count ?? 0,
   };
 }
 

@@ -96,13 +96,24 @@ export function ContactForm({
         </select>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="linkedin_url">LinkedIn URL</Label>
-        <Input
-          id="linkedin_url"
-          name="linkedin_url"
-          defaultValue={contact?.linkedin_url ?? ""}
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="linkedin_url">LinkedIn URL</Label>
+          <Input
+            id="linkedin_url"
+            name="linkedin_url"
+            defaultValue={contact?.linkedin_url ?? ""}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="meeting_link">Meeting-Link</Label>
+          <Input
+            id="meeting_link"
+            name="meeting_link"
+            placeholder="z.B. calendly.com/..."
+            defaultValue={contact?.meeting_link ?? ""}
+          />
+        </div>
       </div>
 
       <Separator />
