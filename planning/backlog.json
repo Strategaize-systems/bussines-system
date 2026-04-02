@@ -65,7 +65,7 @@
       "title": "Angebots-/Proposal-Steuerung",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2",
       "description": "FEAT-107: Angebotsversionen, Status, Won/Lost mit strukturierten Gründen, Verknüpfung zu Deal.",
       "createdAt": "2026-04-01"
