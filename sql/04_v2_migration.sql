@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS fit_assessments (
   cooperation_score INT,
   conflict_score INT,
   brand_fit_score INT,
-  overall_score INT,
+  overall_score NUMERIC(3,1),
   traffic_light TEXT,
   verdict TEXT,
   reason TEXT,

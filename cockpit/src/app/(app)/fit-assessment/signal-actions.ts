@@ -57,6 +57,28 @@ export async function createSignal(formData: FormData) {
   return { error: "" };
 }
 
+export async function createSignalForActivity(
+  activityId: string,
+  contactId: string | null,
+  companyId: string | null,
+  signalType: string
+) {
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("signals").insert({
+    activity_id: activityId,
+    contact_id: contactId,
+    company_id: companyId,
+    signal_type: signalType,
+  });
+
+  if (error) return { error: error.message };
+
+  if (contactId) revalidatePath(`/contacts/${contactId}`);
+  if (companyId) revalidatePath(`/companies/${companyId}`);
+  return { error: "" };
+}
+
 export async function deleteSignal(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("signals").delete().eq("id", id);

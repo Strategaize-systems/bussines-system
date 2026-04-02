@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -19,6 +19,7 @@ import {
   Zap,
 } from "lucide-react";
 import { completeActivity, deleteActivity } from "@/lib/actions/activity-actions";
+import { createSignalForActivity } from "@/app/(app)/fit-assessment/signal-actions";
 import type { Activity } from "@/lib/actions/activity-actions";
 
 const TYPE_CONFIG: Record<string, { icon: typeof StickyNote; label: string; color: string }> = {
@@ -30,13 +31,27 @@ const TYPE_CONFIG: Record<string, { icon: typeof StickyNote; label: string; colo
   stage_change: { icon: ArrowRightLeft, label: "Stage-Wechsel", color: "text-muted-foreground" },
 };
 
+const SIGNAL_OPTIONS = [
+  { value: "hohes_interesse", label: "Hohes Interesse" },
+  { value: "budgetsignal", label: "Budget" },
+  { value: "einwand", label: "Einwand" },
+  { value: "interne_blockade", label: "Blockade" },
+  { value: "champion_vorhanden", label: "Champion" },
+  { value: "timing_ungeeignet", label: "Timing" },
+  { value: "falscher_fit", label: "Kein Fit" },
+  { value: "akuter_druck", label: "Druck" },
+  { value: "hoher_multiplikatorwert", label: "Multi-Wert" },
+];
+
 export function ActivityItem({ activity }: { activity: Activity }) {
   const [isPending, startTransition] = useTransition();
+  const [showSignalPicker, setShowSignalPicker] = useState(false);
   const config = TYPE_CONFIG[activity.type] || TYPE_CONFIG.note;
   const Icon = config.icon;
 
   const isCompleted = !!activity.completed_at;
   const isTask = activity.type === "task";
+  const isConversation = activity.type === "call" || activity.type === "meeting";
   const hasConversationData = !!(
     activity.summary ||
     activity.objections ||
@@ -148,6 +163,44 @@ export function ActivityItem({ activity }: { activity: Activity }) {
 
       {/* Actions */}
       <div className="flex items-start gap-1 shrink-0">
+        {isConversation && (
+          <div className="relative">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0"
+              onClick={() => setShowSignalPicker(!showSignalPicker)}
+              disabled={isPending}
+              title="Signal setzen"
+            >
+              <Zap className="h-3.5 w-3.5 text-purple-500" />
+            </Button>
+            {showSignalPicker && (
+              <div className="absolute right-0 top-8 z-10 w-40 rounded-md border bg-background p-1 shadow-md">
+                {SIGNAL_OPTIONS.map((s) => (
+                  <button
+                    key={s.value}
+                    className="w-full rounded-sm px-2 py-1 text-left text-xs hover:bg-muted"
+                    onClick={() => {
+                      startTransition(async () => {
+                        await createSignalForActivity(
+                          activity.id,
+                          activity.contact_id,
+                          activity.company_id,
+                          s.value
+                        );
+                        setShowSignalPicker(false);
+                      });
+                    }}
+                    disabled={isPending}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {isTask && !isCompleted && (
           <Button
             size="sm"
