@@ -3,9 +3,16 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { TagInput } from "@/components/ui/tag-input";
+import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import type { Deal, PipelineStage } from "./actions";
+
+const selectClass =
+  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
+
+const LOST_STAGE_NAMES = ["Verloren", "Inaktiv / disqualifiziert"];
 
 interface DealFormProps {
   deal?: Deal;
@@ -27,6 +34,14 @@ export function DealForm({
   isPending,
 }: DealFormProps) {
   const [tags, setTags] = useState<string[]>(deal?.tags ?? []);
+  const [selectedStageId, setSelectedStageId] = useState(
+    deal?.stage_id ?? stages[0]?.id ?? ""
+  );
+
+  const selectedStage = stages.find((s) => s.id === selectedStageId);
+  const isLostStage = selectedStage
+    ? LOST_STAGE_NAMES.includes(selectedStage.name)
+    : false;
 
   return (
     <form action={onSubmit} className="space-y-4">
@@ -58,9 +73,10 @@ export function DealForm({
           <select
             id="stage_id"
             name="stage_id"
-            defaultValue={deal?.stage_id ?? stages[0]?.id ?? ""}
+            value={selectedStageId}
+            onChange={(e) => setSelectedStageId(e.target.value)}
             required
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className={selectClass}
           >
             {stages.map((s) => (
               <option key={s.id} value={s.id}>
@@ -71,6 +87,24 @@ export function DealForm({
         </div>
       </div>
 
+      <div className="space-y-2">
+        <Label htmlFor="opportunity_type">Opportunity-Typ</Label>
+        <select
+          id="opportunity_type"
+          name="opportunity_type"
+          defaultValue={deal?.opportunity_type ?? ""}
+          className={selectClass}
+        >
+          <option value="">— Auswählen —</option>
+          <option value="empfehlung">Empfehlung</option>
+          <option value="direktansprache">Direktansprache</option>
+          <option value="inbound">Inbound</option>
+          <option value="netzwerk">Netzwerk</option>
+          <option value="event">Event</option>
+          <option value="bestandskunde">Bestandskunde</option>
+        </select>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="contact_id">Kontakt</Label>
@@ -78,7 +112,7 @@ export function DealForm({
             id="contact_id"
             name="contact_id"
             defaultValue={deal?.contact_id ?? ""}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className={selectClass}
           >
             <option value="">— Kein Kontakt —</option>
             {contacts.map((c) => (
@@ -94,7 +128,7 @@ export function DealForm({
             id="company_id"
             name="company_id"
             defaultValue={deal?.company_id ?? ""}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className={selectClass}
           >
             <option value="">— Keine Firma —</option>
             {companies.map((c) => (
@@ -136,6 +170,45 @@ export function DealForm({
           placeholder="z.B. Angebot nachfassen"
         />
       </div>
+
+      {isLostStage && (
+        <>
+          <Separator />
+          <p className="text-sm font-medium text-destructive">Verloren / Inaktiv</p>
+
+          <div className="space-y-2">
+            <Label htmlFor="won_lost_reason">Verlustgrund</Label>
+            <select
+              id="won_lost_reason"
+              name="won_lost_reason"
+              defaultValue={deal?.won_lost_reason ?? ""}
+              className={selectClass}
+            >
+              <option value="">— Auswählen —</option>
+              <option value="kein_budget">Kein Budget</option>
+              <option value="kein_bedarf">Kein Bedarf erkannt</option>
+              <option value="timing">Falscher Zeitpunkt</option>
+              <option value="wettbewerb">Wettbewerber gewählt</option>
+              <option value="entscheider">Kein Zugang zum Entscheider</option>
+              <option value="fit">Kein Fit (Komplexität/Branche)</option>
+              <option value="ghosting">Ghosting / keine Rückmeldung</option>
+              <option value="intern">Interne Gründe beim Kunden</option>
+              <option value="sonstiges">Sonstiges</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="won_lost_details">Details zum Verlust</Label>
+            <Textarea
+              id="won_lost_details"
+              name="won_lost_details"
+              rows={2}
+              defaultValue={deal?.won_lost_details ?? ""}
+              placeholder="Was war der konkrete Grund?"
+            />
+          </div>
+        </>
+      )}
 
       <div className="space-y-2">
         <Label>Tags</Label>

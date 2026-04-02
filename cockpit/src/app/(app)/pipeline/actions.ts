@@ -32,6 +32,9 @@ export type Deal = {
   next_action_date: string | null;
   status: string;
   lost_reason: string | null;
+  opportunity_type: string | null;
+  won_lost_reason: string | null;
+  won_lost_details: string | null;
   tags: string[];
   created_at: string;
   updated_at: string;
@@ -118,6 +121,9 @@ export async function createDeal(formData: FormData) {
     expected_close_date: (formData.get("expected_close_date") as string) || null,
     next_action: (formData.get("next_action") as string) || null,
     next_action_date: (formData.get("next_action_date") as string) || null,
+    opportunity_type: (formData.get("opportunity_type") as string) || null,
+    won_lost_reason: (formData.get("won_lost_reason") as string) || null,
+    won_lost_details: (formData.get("won_lost_details") as string) || null,
     tags,
   });
 
@@ -146,6 +152,9 @@ export async function updateDeal(id: string, formData: FormData) {
       expected_close_date: (formData.get("expected_close_date") as string) || null,
       next_action: (formData.get("next_action") as string) || null,
       next_action_date: (formData.get("next_action_date") as string) || null,
+      opportunity_type: (formData.get("opportunity_type") as string) || null,
+      won_lost_reason: (formData.get("won_lost_reason") as string) || null,
+      won_lost_details: (formData.get("won_lost_details") as string) || null,
       tags,
       updated_at: new Date().toISOString(),
     })

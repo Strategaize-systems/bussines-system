@@ -7,6 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Building2, User, Calendar } from "lucide-react";
 import type { Deal } from "@/app/(app)/pipeline/actions";
 
+const opportunityTypeLabels: Record<string, string> = {
+  empfehlung: "Empfehlung",
+  direktansprache: "Direkt",
+  inbound: "Inbound",
+  netzwerk: "Netzwerk",
+  event: "Event",
+  bestandskunde: "Bestand",
+};
+
 interface KanbanCardProps {
   deal: Deal;
   onClick?: () => void;
@@ -44,7 +53,14 @@ export function KanbanCard({ deal, onClick }: KanbanCardProps) {
       onClick={handleClick}
     >
       <CardContent className="p-3 space-y-2">
-        <div className="font-medium text-sm leading-tight">{deal.title}</div>
+        <div className="flex items-start justify-between gap-1">
+          <div className="font-medium text-sm leading-tight">{deal.title}</div>
+          {deal.opportunity_type && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">
+              {opportunityTypeLabels[deal.opportunity_type] ?? deal.opportunity_type}
+            </Badge>
+          )}
+        </div>
 
         {deal.value != null && (
           <div className="text-sm font-semibold text-primary">
