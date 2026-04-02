@@ -12,6 +12,7 @@ import {
   Handshake,
   ListTodo,
   Mail,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ const navigation = [
   { name: "Pipeline: Unternehmer", href: "/pipeline/unternehmer", icon: Kanban },
   { name: "Aufgaben", href: "/aufgaben", icon: ListTodo },
   { name: "E-Mails", href: "/emails", icon: Mail },
+  { name: "Angebote", href: "/proposals", icon: FileText },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
