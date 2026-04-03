@@ -9,14 +9,14 @@
 Internes, KI-gestütztes Revenue- und Relationship-System für beratungsintensives B2B-Geschäft. Steuert Multiplikatoren, Leads, Gespräche, Angebote und Übergaben datenfundiert. KEIN generisches CRM, KEINE Marketing-Suite — ein fokussiertes Vertriebs- und Akquise-System.
 
 ## Current State
-- High-Level State: final-check
-- Current Focus: Final Check bestanden (RPT-017). Nächster Schritt: /go-live.
-- Current Phase: V2 Implementation
+- High-Level State: released
+- Current Focus: V2 released (REL-002, 2026-04-03). Nächste Phase: V2.1 Pipeline-Hardening.
+- Current Phase: V2 Released
 
 ## Immediate Next Steps
-1. /go-live Readiness-Check
-2. Deploy V2 auf Hetzner
-3. /post-launch Monitoring
+1. SSH-Zugang zum Server wiederherstellen
+2. MIG-002 ausführen (overall_score NUMERIC)
+3. V2.1 Slice-Planning starten (13 Backlog-Items)
 
 ## Active Scope
 V2 Scope (Neuausrichtung — 11 Module):
@@ -40,7 +40,7 @@ V2 Scope (Neuausrichtung — 11 Module):
 - aktuell keine
 
 ## Last Stable Version
-- V1 — 2026-03-31 — deployed auf Hetzner (Marketing+CRM Version, wird durch V2 ersetzt)
+- V2 — 2026-04-03 — deployed auf Hetzner (Revenue & Relationship System)
 
 ## Notes
 V1 war als Marketing+CRM-Plattform deployed. Fundamentale Neuausrichtung nach User-Review (2026-04-01): System ist ein Revenue & Relationship System, NICHT eine Marketing-Suite. Content-Produktion gehört zu System 4 (Intelligence Studio). Discovery mit 10-Modul-Blueprint abgeschlossen. 4-System-Landschaft: System 1 (Blueprint/Onboarding), System 2 (Operating System), System 3 (Business Development = dieses System), System 4 (Intelligence Studio).
