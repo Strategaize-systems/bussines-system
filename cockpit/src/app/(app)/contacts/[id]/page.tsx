@@ -95,7 +95,7 @@ export default async function ContactDetailPage({
         </Link>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
               {contact.first_name} {contact.last_name}
             </h1>
             {contact.relationship_type && (

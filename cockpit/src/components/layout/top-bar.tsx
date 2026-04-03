@@ -12,7 +12,7 @@ import { signout } from "@/app/(auth)/login/actions";
 
 export function TopBar() {
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center border-b bg-background px-6">
+    <header className="sticky top-0 z-20 flex h-14 items-center border-b border-slate-200/60 bg-white/95 backdrop-blur-xl shadow-sm px-6 lg:px-8">
       <div className="flex-1" />
       <DropdownMenu>
         <DropdownMenuTrigger

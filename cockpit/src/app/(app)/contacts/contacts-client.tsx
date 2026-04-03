@@ -36,7 +36,7 @@ export function ContactsClient({ contacts, companies }: ContactsClientProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Kontakte</h1>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Kontakte</h1>
         <ContactSheet companies={companies} />
       </div>
       <div className="flex items-center gap-3">
@@ -52,7 +52,7 @@ export function ContactsClient({ contacts, companies }: ContactsClientProps) {
           ))}
         </select>
         {relationshipFilter && (
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm font-medium text-slate-500">
             {filtered.length} von {contacts.length}
           </span>
         )}

@@ -51,8 +51,8 @@ export function HandoffsClient({ handoffs, deals, companies }: HandoffsClientPro
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Übergaben</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Übergaben</h1>
+          <p className="text-sm font-medium text-slate-500">
             {handoffs.length} gesamt · {pendingCount} ausstehend · {completedCount} abgeschlossen
           </p>
         </div>

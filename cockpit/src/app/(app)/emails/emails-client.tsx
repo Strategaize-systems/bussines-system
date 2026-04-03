@@ -61,8 +61,8 @@ export function EmailsClient({ emails }: EmailsClientProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">E-Mails</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">E-Mails</h1>
+          <p className="text-sm font-medium text-slate-500">
             {emails.length} E-Mails gesamt
           </p>
         </div>
@@ -114,7 +114,7 @@ export function EmailsClient({ emails }: EmailsClientProps) {
           <option value="none">Kein Follow-up</option>
         </select>
         {followUpFilter && (
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm font-medium text-slate-500">
             {filtered.length} von {emails.length}
           </span>
         )}

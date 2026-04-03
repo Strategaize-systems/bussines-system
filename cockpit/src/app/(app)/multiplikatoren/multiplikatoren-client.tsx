@@ -58,8 +58,8 @@ export function MultiplikatorenClient({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Multiplikatoren</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Multiplikatoren</h1>
+          <p className="text-sm font-medium text-slate-500">
             {multipliers.length} Multiplikatoren im System
           </p>
         </div>
@@ -130,7 +130,7 @@ export function MultiplikatorenClient({
           ))}
         </select>
         {(typeFilter || trustFilter) && (
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm font-medium text-slate-500">
             {filtered.length} von {multipliers.length}
           </span>
         )}

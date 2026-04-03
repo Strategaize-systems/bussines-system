@@ -62,10 +62,10 @@ export function PipelineView({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
             {pipeline.name}
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm font-medium text-slate-500">
             {deals.length} Deals · {new Intl.NumberFormat("de-DE", {
               style: "currency",
               currency: "EUR",

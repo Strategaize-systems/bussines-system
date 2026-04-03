@@ -103,7 +103,7 @@ export default async function CompanyDetailPage({
         </Link>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
               {company.name}
             </h1>
             {company.blueprint_fit && (

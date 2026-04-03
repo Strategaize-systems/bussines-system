@@ -44,8 +44,8 @@ export function ReferralsClient({ referrals, contacts, companies, deals }: Refer
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Empfehlungen</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Empfehlungen</h1>
+          <p className="text-sm font-medium text-slate-500">
             {referrals.length} Empfehlungen · {wonCount} gewonnen · {openCount} offen
           </p>
         </div>

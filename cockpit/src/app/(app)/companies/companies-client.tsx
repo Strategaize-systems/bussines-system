@@ -33,7 +33,7 @@ export function CompaniesClient({ companies }: CompaniesClientProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Firmen</h1>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Firmen</h1>
         <CompanySheet />
       </div>
       <div className="flex items-center gap-3">
@@ -49,7 +49,7 @@ export function CompaniesClient({ companies }: CompaniesClientProps) {
           ))}
         </select>
         {bpFilter && (
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm font-medium text-slate-500">
             {filtered.length} von {companies.length}
           </span>
         )}

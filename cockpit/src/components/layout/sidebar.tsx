@@ -17,8 +17,6 @@ import {
   ArrowRightLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState } from "react";
 
 type NavItem = {
@@ -73,44 +71,40 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-30 flex h-screen flex-col gradient-sidebar text-white transition-all duration-200",
-        collapsed ? "w-16" : "w-60",
-        "max-md:hidden"
+        "fixed left-0 top-0 z-30 flex h-screen flex-col transition-all duration-300 max-md:hidden",
+        collapsed ? "w-16" : "w-60"
       )}
+      style={{ background: "linear-gradient(to bottom, #0f172a, #0f172a, #020617)" }}
     >
-      {/* Logo / Brand */}
-      <div className="flex h-14 items-center border-b border-white/10 px-4">
-        {!collapsed && (
-          <span className="text-lg font-bold tracking-tight gradient-text-success">
-            Strategaize
-          </span>
-        )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className={cn("ml-auto h-8 w-8 text-slate-400 hover:text-white hover:bg-white/10", collapsed && "mx-auto")}
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          <ChevronLeft
-            className={cn(
-              "h-4 w-4 transition-transform",
-              collapsed && "rotate-180"
-            )}
-          />
-        </Button>
+      {/* Logo Block */}
+      <div className={cn("mx-3 mt-3 rounded-xl bg-gradient-to-b from-slate-800/80 to-slate-900/50 border border-white/[0.06]", collapsed ? "px-2 py-3" : "px-5 py-4")}>
+        <div className="flex items-center justify-between">
+          {!collapsed && (
+            <div>
+              <div className="text-sm font-bold text-white tracking-tight">Strategaize</div>
+              <div className="text-[11px] text-slate-500">Business Development</div>
+            </div>
+          )}
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className={cn("text-slate-500 hover:text-white transition-colors", collapsed && "mx-auto")}
+          >
+            <ChevronLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
+          </button>
+        </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-2 space-y-4">
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
         {navGroups.map((group) => (
           <div key={group.label || "root"}>
             {group.label && !collapsed && (
-              <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+              <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">
                 {group.label}
               </div>
             )}
             {collapsed && group.label && (
-              <div className="mx-auto my-1 h-px w-8 bg-white/10" />
+              <div className="mx-auto my-2 h-px w-6 bg-white/10" />
             )}
             <div className="space-y-0.5">
               {group.items.map((item) => {
@@ -118,35 +112,22 @@ export function Sidebar() {
                   pathname === item.href ||
                   (item.href !== "/dashboard" && pathname.startsWith(item.href));
 
-                const linkContent = (
+                return (
                   <Link
+                    key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+                      "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-200",
                       isActive
-                        ? "gradient-primary text-white shadow-lg"
-                        : "text-slate-400 hover:text-white hover:bg-white/5",
+                        ? "bg-gradient-to-r from-[#4454b8] to-[#120774] text-white shadow-[0_8px_16px_-4px_rgba(68,84,184,0.35)]"
+                        : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-200",
                       collapsed && "justify-center px-2"
                     )}
-                    style={isActive ? { boxShadow: "0 10px 15px -3px rgba(68, 84, 184, 0.25)" } : undefined}
                   >
                     <item.icon className="h-4 w-4 shrink-0" />
                     {!collapsed && <span>{item.name}</span>}
                   </Link>
                 );
-
-                if (collapsed) {
-                  return (
-                    <Tooltip key={item.href}>
-                      <TooltipTrigger render={<div />}>
-                        {linkContent}
-                      </TooltipTrigger>
-                      <TooltipContent side="right">{item.name}</TooltipContent>
-                    </Tooltip>
-                  );
-                }
-
-                return <div key={item.href}>{linkContent}</div>;
               })}
             </div>
           </div>
@@ -154,38 +135,20 @@ export function Sidebar() {
       </nav>
 
       {/* Settings Footer */}
-      <div className="border-t border-white/10 p-2">
-        {(() => {
-          const isActive = pathname === "/settings";
-          const linkContent = (
-            <Link
-              href="/settings"
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
-                isActive
-                  ? "gradient-primary text-white"
-                  : "text-slate-400 hover:text-white hover:bg-white/5",
-                collapsed && "justify-center px-2"
-              )}
-            >
-              <Settings className="h-4 w-4 shrink-0" />
-              {!collapsed && <span>Settings</span>}
-            </Link>
-          );
-
-          if (collapsed) {
-            return (
-              <Tooltip>
-                <TooltipTrigger render={<div />}>
-                  {linkContent}
-                </TooltipTrigger>
-                <TooltipContent side="right">Settings</TooltipContent>
-              </Tooltip>
-            );
-          }
-
-          return linkContent;
-        })()}
+      <div className="px-3 pb-3">
+        <Link
+          href="/settings"
+          className={cn(
+            "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-200",
+            pathname === "/settings"
+              ? "bg-gradient-to-r from-[#4454b8] to-[#120774] text-white"
+              : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-200",
+            collapsed && "justify-center px-2"
+          )}
+        >
+          <Settings className="h-4 w-4 shrink-0" />
+          {!collapsed && <span>Settings</span>}
+        </Link>
       </div>
     </aside>
   );

@@ -57,8 +57,8 @@ export function AufgabenClient({ tasks, contacts, companies, deals }: AufgabenCl
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Aufgaben</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Aufgaben</h1>
+          <p className="text-sm font-medium text-slate-500">
             {tasks.length} Aufgaben gesamt
           </p>
         </div>
@@ -118,7 +118,7 @@ export function AufgabenClient({ tasks, contacts, companies, deals }: AufgabenCl
           <option value="medium">Mittel</option>
           <option value="low">Niedrig</option>
         </select>
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm font-medium text-slate-500">
           {filtered.length} Aufgaben
         </span>
       </div>
