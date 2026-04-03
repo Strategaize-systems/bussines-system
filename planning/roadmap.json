@@ -15,18 +15,25 @@
       "order": 2
     },
     {
+      "id": "v2-1",
+      "name": "V2.1",
+      "status": "planned",
+      "summary": "Pipeline-Hardening: Deal-Status-Workflow, Deal-Detail-Seite, Pipeline-Filter, Activity-Logging, Forecast, Referral-Integration",
+      "order": 3
+    },
+    {
       "id": "v3",
       "name": "V3",
       "status": "planned",
       "summary": "Intelligence Layer: Call Intelligence (Notetaker, Transkript, KI-Summary), Signal-Extraktion, tiefe Mail-Integration, Handoff System 4",
-      "order": 3
+      "order": 4
     },
     {
       "id": "v4",
       "name": "V4",
       "status": "planned",
       "summary": "Automation: Kalender-Sync, semi-automatische Workflows, Reporting/Analytics",
-      "order": 4
+      "order": 5
     }
   ]
 }

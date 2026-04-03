@@ -161,6 +161,76 @@
       "createdAt": "2026-04-01"
     },
     {
+      "id": "BL-117",
+      "title": "Deal-Status-Workflow (active → won/lost) + Auto-Status bei Stage-Wechsel",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V2.1",
+      "description": "Deals automatisch auf won/lost setzen wenn in Gewonnen/Verloren-Stage gezogen. Status-Feld im Edit-Sheet sichtbar. closed_at Timestamp.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-118",
+      "title": "Deal-Detail-Seite mit Activities, Proposals, Dokumenten",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V2.1",
+      "description": "Eigene Detail-Seite pro Deal mit Tab-Navigation: Details, Aktivitäten, Angebote, Dokumente, History. Ersetzt das Edit-Sheet für komplexere Ansichten.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-119",
+      "title": "Pipeline-Filter (Status, Wert, Kontakt, Typ)",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2.1",
+      "description": "Filter-Leiste über dem Kanban: Status (active/won/lost), Wert-Range, Kontakt, Opportunity-Typ, Tags. Auch als Liste-Ansicht toggle.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-120",
+      "title": "Activity-Logging für Deal Create/Update/Delete",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2.1",
+      "description": "Alle Deal-Mutationen (nicht nur Stage-Wechsel) als Activities loggen. Deal-Erstellung, Feld-Änderungen, Löschung nachvollziehbar.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-121",
+      "title": "Probability-gewichtete Umsatzprognose",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2.1",
+      "description": "Stage-Probability × Deal-Wert = gewichteter Forecast. Auf Dashboard und Pipeline-Header anzeigen.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-122",
+      "title": "Referral-Source auf Deals verknüpfen",
+      "type": "improvement",
+      "priority": "low",
+      "status": "open",
+      "version": "V2.1",
+      "description": "referral_source_id Feld im Deal-Form nutzbar machen. FK-Constraint auf referrals-Tabelle. Referral-Conversion tracking.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-123",
+      "title": "DB-Cleanup: lost_reason entfernen, orphaned Fields bereinigen",
+      "type": "fix",
+      "priority": "low",
+      "status": "open",
+      "version": "V2.1",
+      "description": "lost_reason Spalte entfernen (ersetzt durch won_lost_reason). referral_source_id FK-Constraint hinzufügen. created_by bei Deal-Erstellung setzen.",
+      "createdAt": "2026-04-03"
+    },
+    {
       "id": "BL-201",
       "title": "Call Intelligence (Notetaker, Transkript, KI-Summary)",
       "type": "feature",
