@@ -9,14 +9,14 @@
 Internes, KI-gestütztes Revenue- und Relationship-System für beratungsintensives B2B-Geschäft. Steuert Multiplikatoren, Leads, Gespräche, Angebote und Übergaben datenfundiert. KEIN generisches CRM, KEINE Marketing-Suite — ein fokussiertes Vertriebs- und Akquise-System.
 
 ## Current State
-- High-Level State: qa
-- Current Focus: Alle 13 V2 Slices implementiert. Nächster Schritt: Gesamt-QA über V2.
+- High-Level State: final-check
+- Current Focus: Final Check bestanden (RPT-017). Nächster Schritt: /go-live.
 - Current Phase: V2 Implementation
 
 ## Immediate Next Steps
-1. Gesamt-QA über alle V2 Slices
-2. /final-check
-3. /go-live + Deploy
+1. /go-live Readiness-Check
+2. Deploy V2 auf Hetzner
+3. /post-launch Monitoring
 
 ## Active Scope
 V2 Scope (Neuausrichtung — 11 Module):
