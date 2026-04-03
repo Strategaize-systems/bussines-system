@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   StickyNote,
   Phone,
@@ -8,13 +7,13 @@ import {
   ArrowRightLeft,
 } from "lucide-react";
 
-const TYPE_ICONS: Record<string, typeof StickyNote> = {
-  note: StickyNote,
-  call: Phone,
-  email: Mail,
-  meeting: Users,
-  task: CheckSquare,
-  stage_change: ArrowRightLeft,
+const TYPE_CONFIG: Record<string, { icon: typeof StickyNote; color: string; bg: string }> = {
+  note: { icon: StickyNote, color: "text-blue-600", bg: "bg-blue-50" },
+  call: { icon: Phone, color: "text-green-600", bg: "bg-green-50" },
+  email: { icon: Mail, color: "text-purple-600", bg: "bg-purple-50" },
+  meeting: { icon: Users, color: "text-orange-600", bg: "bg-orange-50" },
+  task: { icon: CheckSquare, color: "text-yellow-600", bg: "bg-yellow-50" },
+  stage_change: { icon: ArrowRightLeft, color: "text-slate-500", bg: "bg-slate-50" },
 };
 
 type DashboardActivity = {
@@ -32,29 +31,31 @@ interface RecentActivitiesProps {
 
 export function RecentActivities({ activities }: RecentActivitiesProps) {
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">Letzte Aktivitäten</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden"
+      style={{ boxShadow: "0 1px 3px rgb(0 0 0 / 0.1)" }}
+    >
+      <div className="h-1 bg-gradient-to-r from-[#120774] to-[#4454b8]" />
+      <div className="p-5">
+        <h3 className="text-sm font-bold text-slate-900 mb-4">Letzte Aktivitäten</h3>
         {activities.length > 0 ? (
           <div className="space-y-3">
             {activities.map((a) => {
-              const Icon = TYPE_ICONS[a.type] || StickyNote;
+              const config = TYPE_CONFIG[a.type] || TYPE_CONFIG.note;
+              const Icon = config.icon;
               const contactName = a.contacts
                 ? `${a.contacts.first_name} ${a.contacts.last_name}`
                 : null;
               return (
-                <div key={a.id} className="flex items-start gap-2">
-                  <Icon className="mt-0.5 h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <div key={a.id} className="flex items-start gap-3">
+                  <div className={`rounded-lg p-1.5 ${config.bg} ${config.color} shrink-0`}>
+                    <Icon className="h-3.5 w-3.5" />
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm leading-tight">
+                    <p className="text-[13px] font-medium text-slate-700 leading-tight">
                       {a.title || a.type}
-                      {contactName && (
-                        <span className="text-muted-foreground"> — {contactName}</span>
-                      )}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      {contactName && <span>{contactName} · </span>}
                       {new Date(a.created_at).toLocaleDateString("de-DE", {
                         day: "2-digit",
                         month: "2-digit",
@@ -68,9 +69,9 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
             })}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Noch keine Aktivitäten.</p>
+          <p className="text-sm text-slate-400">Noch keine Aktivitäten.</p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
