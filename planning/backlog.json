@@ -331,6 +331,26 @@
       "createdAt": "2026-04-03"
     },
     {
+      "id": "BL-141",
+      "title": "Voice-Input für Gesprächsnotizen (Whisper im Activity-Form)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V2.1",
+      "description": "Mikrofon-Button im Activity-Form (bei Anruf/Meeting). Whisper-Transkription → Text wird in Summary-Feld eingefügt. Kein voller Notetaker, nur Sprache-zu-Text für schnelles Erfassen. Wie beim Blueprint Voice-Input. Server-seitig via Whisper API oder lokales Modell.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-142",
+      "title": "Insight an System 4 senden (Feedback-Button auf Deals/Activities)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V2.1",
+      "description": "Button 'An Intelligence senden' auf: (1) Verlorene Deals → won_lost_reason + won_lost_details als strukturierter Insight, (2) Gesprächsnotizen → Summary + Objections + Opportunities als Feedback, (3) Manuelle Notizen → Freitext-Insight. Sendet strukturiertes JSON an System 4 Inbox (REST-Endpoint oder lokale Datei). Kategorie: Marktfeedback, Produktfeedback, Wettbewerb, Prozess-Insight.",
+      "createdAt": "2026-04-03"
+    },
+    {
       "id": "BL-133",
       "title": "Funnel-Report (Conversion pro Stage)",
       "type": "feature",
