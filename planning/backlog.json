@@ -371,6 +371,36 @@
       "createdAt": "2026-04-03"
     },
     {
+      "id": "BL-138",
+      "title": "Eingehende E-Mail-Zuordnung (Auto-Match + KI-Wahrscheinlichkeit)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3+",
+      "description": "Eingehende E-Mails (IMAP) automatisch an Kontakte zuordnen. Stufe 1: E-Mail-Adresse matcht Kontakt → 100% Zuordnung. Stufe 2: Name in E-Mail-Body/Signatur → KI-Wahrscheinlichkeit (z.B. 85%). Stufe 3: Nicht zuordenbar → 'Unbekannt'-Queue zur täglichen manuellen Prüfung. Im E-Mail-Postfach sichtbar: zugeordneter Kontakt + Confidence-Level. Abhängig von BL-203 (IMAP-Integration).",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-139",
+      "title": "Kampagnen-Attribution (Lead-Quelle + Kampagnen-Tracking)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V3+",
+      "description": "Kampagnen als eigenes Objekt: Name, Typ (E-Mail, LinkedIn, Event, Ads), Start/Ende, Zielgruppe. Kontakte/Firmen bekommen Feld 'Kampagnen-Quelle' (welche Kampagne hat den Lead gebracht). UTM-Parameter oder Tracking-Links für digitale Kampagnen. Auswertung: Leads pro Kampagne, Conversion-Rate, Won-Deals pro Kampagne. Kampagnen-Erstellung bleibt in System 4, Attribution wird hier im Business System getrackt. Feedback-Loop zurück zu System 4 (was war erfolgreich).",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-140",
+      "title": "Source/Attribution-Feld erweitern (Kontakte + Firmen)",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2.2",
+      "description": "Das bestehende 'source' Freitext-Feld auf Kontakten durch strukturiertes Feld ersetzen: Dropdown (Empfehlung, LinkedIn, Event, Kaltakquise, Inbound, Kampagne) + optionaler Kampagnen-Verweis. Auch auf Firmen-Ebene hinzufügen. Für Auswertung: wie viele Leads pro Quelle, Conversion pro Kanal.",
+      "createdAt": "2026-04-03"
+    },
+    {
       "id": "BL-201",
       "title": "Call Intelligence (Notetaker, Transkript, KI-Summary)",
       "type": "feature",
