@@ -75,33 +75,39 @@ export function ProposalsClient({ proposals, deals, contacts, companies }: Propo
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <Clock className="h-5 w-5 text-blue-500" />
-            <div>
-              <div className="text-2xl font-bold">{activeCount}</div>
-              <div className="text-xs text-muted-foreground">Aktiv</div>
+        <div className="stat-card stat-card-primary">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-slate-50 p-2">
+              <Clock className="h-5 w-5 text-blue-500" />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <Trophy className="h-5 w-5 text-green-500" />
             <div>
-              <div className="text-2xl font-bold">{wonCount}</div>
-              <div className="text-xs text-muted-foreground">Gewonnen</div>
+              <div className="text-2xl font-bold tabular-nums">{activeCount}</div>
+              <div className="text-[11px] font-medium text-slate-500">Aktiv</div>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <XCircle className="h-5 w-5 text-red-500" />
+          </div>
+        </div>
+        <div className="stat-card stat-card-success">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-slate-50 p-2">
+              <Trophy className="h-5 w-5 text-green-500" />
+            </div>
             <div>
-              <div className="text-2xl font-bold">{lostCount}</div>
-              <div className="text-xs text-muted-foreground">Verloren</div>
+              <div className="text-2xl font-bold tabular-nums">{wonCount}</div>
+              <div className="text-[11px] font-medium text-slate-500">Gewonnen</div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+        <div className="stat-card stat-card-danger">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-slate-50 p-2">
+              <XCircle className="h-5 w-5 text-red-500" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold tabular-nums">{lostCount}</div>
+              <div className="text-[11px] font-medium text-slate-500">Verloren</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}

@@ -77,22 +77,39 @@ export function Sidebar() {
       style={{ background: "linear-gradient(to bottom, #0f172a, #0f172a, #020617)" }}
     >
       {/* Logo Block */}
-      <div className={cn("mx-3 mt-3 rounded-xl bg-gradient-to-b from-slate-800/80 to-slate-900/50 border border-white/[0.06]", collapsed ? "px-2 py-3" : "px-5 py-4")}>
-        <div className="flex items-center justify-between">
-          {!collapsed && (
-            <div>
-              <div className="text-sm font-bold text-white tracking-tight">Strategaize</div>
-              <div className="text-[11px] text-slate-500">Business Development</div>
-            </div>
-          )}
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className={cn("text-slate-500 hover:text-white transition-colors", collapsed && "mx-auto")}
-          >
-            <ChevronLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
-          </button>
-        </div>
+      <div className={cn("mx-3 mt-3 rounded-xl bg-gradient-to-b from-slate-800/80 to-slate-900/50 border border-white/[0.06]", collapsed ? "px-2 py-3" : "px-5 py-5 text-center")}>
+        {!collapsed ? (
+          <div className="mx-auto w-fit rounded-2xl bg-white p-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/logo-full.png" alt="StrategAIze" className="h-12 w-auto" />
+          </div>
+        ) : (
+          <div className="mx-auto w-fit rounded-xl bg-white p-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/logo-symbol.png" alt="S" className="h-6 w-6" />
+          </div>
+        )}
       </div>
+
+      {/* Title Block */}
+      <div className={cn("mx-3 mt-2 rounded-xl bg-gradient-to-b from-slate-800/80 to-slate-900/50 border border-white/[0.06]", collapsed ? "hidden" : "px-5 py-3 text-center")}>
+        <div className="text-sm font-bold text-white">Business Development</div>
+        <div className="text-[11px] text-slate-500 mt-0.5">Revenue & Relationship System</div>
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="mt-2 text-slate-500 hover:text-white transition-colors"
+        >
+          <ChevronLeft className="h-3.5 w-3.5 mx-auto" />
+        </button>
+      </div>
+      {collapsed && (
+        <button
+          onClick={() => setCollapsed(false)}
+          className="mx-auto mt-2 text-slate-500 hover:text-white transition-colors"
+        >
+          <ChevronLeft className="h-3.5 w-3.5 rotate-180" />
+        </button>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">

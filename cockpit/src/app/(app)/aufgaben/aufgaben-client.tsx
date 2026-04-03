@@ -67,33 +67,39 @@ export function AufgabenClient({ tasks, contacts, companies, deals }: AufgabenCl
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <ListTodo className="h-5 w-5 text-blue-500" />
-            <div>
-              <div className="text-2xl font-bold">{openCount}</div>
-              <div className="text-xs text-muted-foreground">Offen</div>
+        <div className="stat-card stat-card-primary">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-slate-50 p-2">
+              <ListTodo className="h-5 w-5 text-blue-500" />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <AlertCircle className="h-5 w-5 text-red-500" />
             <div>
-              <div className="text-2xl font-bold">{overdueCount}</div>
-              <div className="text-xs text-muted-foreground">Überfällig</div>
+              <div className="text-2xl font-bold tabular-nums">{openCount}</div>
+              <div className="text-[11px] font-medium text-slate-500">Offen</div>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <CheckCircle2 className="h-5 w-5 text-green-500" />
+          </div>
+        </div>
+        <div className="stat-card stat-card-danger">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-slate-50 p-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+            </div>
             <div>
-              <div className="text-2xl font-bold">{completedCount}</div>
-              <div className="text-xs text-muted-foreground">Erledigt</div>
+              <div className="text-2xl font-bold tabular-nums">{overdueCount}</div>
+              <div className="text-[11px] font-medium text-slate-500">Überfällig</div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+        <div className="stat-card stat-card-success">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-slate-50 p-2">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold tabular-nums">{completedCount}</div>
+              <div className="text-[11px] font-medium text-slate-500">Erledigt</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}

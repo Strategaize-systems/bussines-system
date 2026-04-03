@@ -52,12 +52,12 @@ export function KanbanCard({ deal, onClick }: KanbanCardProps) {
       }}
       {...attributes}
       {...listeners}
-      className="cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md transition-shadow duration-200 border-l-[3px]"
+      className="cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md transition-all duration-200 border-l-2 hover:-translate-y-0.5"
       onClick={handleClick}
     >
-      <CardContent className="p-3.5 space-y-2">
+      <CardContent className="p-3 space-y-1.5">
         <div className="flex items-start justify-between gap-1">
-          <div className="font-semibold text-sm leading-tight">{deal.title}</div>
+          <div className="font-semibold text-[13px] leading-tight text-slate-800">{deal.title}</div>
           {deal.opportunity_type && (
             <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">
               {opportunityTypeLabels[deal.opportunity_type] ?? deal.opportunity_type}
@@ -66,7 +66,7 @@ export function KanbanCard({ deal, onClick }: KanbanCardProps) {
         </div>
 
         {deal.value != null && (
-          <div className="text-sm font-bold gradient-text-success">
+          <div className="text-xs font-bold gradient-text-success">
             {new Intl.NumberFormat("de-DE", {
               style: "currency",
               currency: "EUR",

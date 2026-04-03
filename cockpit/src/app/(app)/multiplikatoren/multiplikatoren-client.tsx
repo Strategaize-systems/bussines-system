@@ -5,7 +5,6 @@ import { useState, useMemo } from "react";
 import { DataTable } from "@/components/ui/data-table";
 import { ContactSheet } from "../contacts/contact-sheet";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Kanban, Users, Shield, Star } from "lucide-react";
 import { columns } from "./columns";
 import type { Contact } from "../contacts/actions";
@@ -76,33 +75,39 @@ export function MultiplikatorenClient({
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <Users className="h-5 w-5 text-muted-foreground" />
-            <div>
-              <div className="text-2xl font-bold">{multipliers.length}</div>
-              <div className="text-xs text-muted-foreground">Gesamt</div>
+        <div className="stat-card stat-card-primary">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-slate-50 p-2">
+              <Users className="h-5 w-5 text-blue-500" />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <Shield className="h-5 w-5 text-green-600" />
             <div>
-              <div className="text-2xl font-bold">{highTrust}</div>
-              <div className="text-xs text-muted-foreground">Hohes Vertrauen</div>
+              <div className="text-2xl font-bold tabular-nums">{multipliers.length}</div>
+              <div className="text-[11px] font-medium text-slate-500">Gesamt</div>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <Star className="h-5 w-5 text-yellow-500" />
+          </div>
+        </div>
+        <div className="stat-card stat-card-success">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-slate-50 p-2">
+              <Shield className="h-5 w-5 text-green-600" />
+            </div>
             <div>
-              <div className="text-2xl font-bold">{highReferral}</div>
-              <div className="text-xs text-muted-foreground">Hohe Empfehlungsfähigkeit</div>
+              <div className="text-2xl font-bold tabular-nums">{highTrust}</div>
+              <div className="text-[11px] font-medium text-slate-500">Hohes Vertrauen</div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+        <div className="stat-card stat-card-warning">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-slate-50 p-2">
+              <Star className="h-5 w-5 text-yellow-500" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold tabular-nums">{highReferral}</div>
+              <div className="text-[11px] font-medium text-slate-500">Hohe Empfehlungsfähigkeit</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
