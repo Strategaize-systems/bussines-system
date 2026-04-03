@@ -205,7 +205,7 @@ export default async function ContactDetailPage({
             {contact.language && (
               <div className="flex items-center gap-2 text-sm">
                 <Globe className="h-4 w-4 text-muted-foreground" />
-                <span>{contact.language === "de" ? "Deutsch" : contact.language === "en" ? "Englisch" : contact.language === "fr" ? "Französisch" : contact.language}</span>
+                <span>{contact.language === "de" ? "Deutsch" : contact.language === "nl" ? "Niederländisch" : contact.language === "en" ? "Englisch" : contact.language}</span>
               </div>
             )}
             {contact.last_interaction_date && (

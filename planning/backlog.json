@@ -282,12 +282,12 @@
     },
     {
       "id": "BL-129",
-      "title": "E-Mail-Templates (Vorlagen mit Platzhaltern)",
+      "title": "E-Mail-Templates in 3 Sprachen (DE/NL/EN) mit Platzhaltern",
       "type": "feature",
       "priority": "medium",
       "status": "open",
       "version": "V2.2",
-      "description": "Textbausteine für Cold-E-Mails, Follow-ups, Angebots-Begleitung. Platzhalter wie {{vorname}}, {{firma}}. Auswählbar im E-Mail-Compose.",
+      "description": "Textbausteine für Cold-E-Mails, Follow-ups, Angebots-Begleitung. Platzhalter wie {{vorname}}, {{firma}}. Pro Template 3 Sprachversionen (DE/NL/EN). Sprache wird automatisch aus Kontakt-Sprache vorgeschlagen.",
       "createdAt": "2026-04-03"
     },
     {
@@ -318,6 +318,16 @@
       "status": "open",
       "version": "V2.2",
       "description": "Dedizierte Ansicht: 'Arbeite deine nächsten 5 Aktionen ab'. Zeigt Deal + Kontakt + was zu tun ist. Nach Erledigung springt zur nächsten. Wie Pipedrive Focus View.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-137",
+      "title": "Angebots-Vorlagen in 3 Sprachen (DE/NL/EN)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2.2",
+      "description": "Proposal-Templates in DE/NL/EN. Beim Erstellen eines Angebots wird Sprache basierend auf Kontakt/Firma vorgeschlagen. Scope-Texte, Standard-Formulierungen pro Sprache.",
       "createdAt": "2026-04-03"
     },
     {

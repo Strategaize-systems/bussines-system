@@ -185,8 +185,8 @@ export function ContactForm({
             className={selectClass}
           >
             <option value="de">Deutsch</option>
+            <option value="nl">Niederländisch</option>
             <option value="en">Englisch</option>
-            <option value="fr">Französisch</option>
           </select>
         </div>
         <div className="space-y-2">
