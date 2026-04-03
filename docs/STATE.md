@@ -10,13 +10,14 @@ Internes, KI-gestütztes Revenue- und Relationship-System für beratungsintensiv
 
 ## Current State
 - High-Level State: released
-- Current Focus: V2 released (REL-002, 2026-04-03). Nächste Phase: V2.1 Pipeline-Hardening.
-- Current Phase: V2 Released
+- Current Focus: V2.1 Slice-Planning done. 8 Slices geplant (SLC-201 bis SLC-208). Nächster: SLC-201 implementieren.
+- Current Phase: V2.1 Implementation
 
 ## Immediate Next Steps
-1. SSH-Zugang zum Server wiederherstellen
-2. MIG-002 ausführen (overall_score NUMERIC)
-3. V2.1 Slice-Planning starten (13 Backlog-Items)
+1. SSH-Zugang zum Server wiederherstellen + MIG-002 ausführen
+2. SLC-201: Deal-Status-Workflow + Activity-Logging
+3. SLC-202: Deal-Detail-Popup
+4. SLC-205: "Mein Tag" Tagesplanungs-Übersicht
 
 ## Active Scope
 V2 Scope (Neuausrichtung — 11 Module):

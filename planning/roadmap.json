@@ -17,8 +17,8 @@
     {
       "id": "v2-1",
       "name": "V2.1",
-      "status": "planned",
-      "summary": "Pipeline-Hardening: Deal-Status-Workflow, Deal-Detail-Seite, Pipeline-Filter, Activity-Logging, Forecast, Referral-Integration",
+      "status": "active",
+      "summary": "Pipeline-Hardening + Daily Ops: Deal-Status-Workflow, Deal-Detail-Popup, Deal-Rotting, Mein Tag, Voice-Input, Insight-Button, Lead-Pipeline, Pipeline-Filter, Forecast",
       "order": 3
     },
     {
