@@ -2,6 +2,7 @@
 
 import { type ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
+import { ChevronRight } from "lucide-react";
 import type { Contact } from "./actions";
 
 const relationshipLabels: Record<string, string> = {
@@ -78,6 +79,14 @@ export const columns: ColumnDef<Contact>[] = [
           </Badge>
         ))}
       </div>
+    ),
+  },
+  {
+    id: "actions",
+    header: "",
+    enableSorting: false,
+    cell: () => (
+      <ChevronRight className="h-4 w-4 text-slate-300 opacity-0 group-hover/row:opacity-100 transition-opacity" />
     ),
   },
 ];

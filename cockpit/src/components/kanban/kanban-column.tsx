@@ -1,10 +1,17 @@
 "use client";
 
+import { useMemo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { KanbanCard } from "./kanban-card";
 import type { Deal } from "@/app/(app)/pipeline/actions";
 import type { PipelineStage } from "@/app/(app)/pipeline/actions";
+
+const fmt = new Intl.NumberFormat("de-DE", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 0,
+});
 
 interface KanbanColumnProps {
   stage: PipelineStage;
@@ -15,22 +22,34 @@ interface KanbanColumnProps {
 export function KanbanColumn({ stage, deals, onDealClick }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
 
+  const totalValue = useMemo(
+    () => deals.reduce((sum, d) => sum + (d.value ?? 0), 0),
+    [deals]
+  );
+
   return (
     <div className="flex w-56 shrink-0 flex-col">
       {/* Column Header */}
-      <div className="mb-3 rounded-xl bg-white border border-slate-200 px-3 py-2.5 shadow-sm">
-        <div className="flex items-center gap-2">
-          <div
-            className="h-2.5 w-2.5 rounded-full shadow-sm"
-            style={{
-              backgroundColor: stage.color || "#6366f1",
-              boxShadow: `0 0 6px ${stage.color || "#6366f1"}40`,
-            }}
-          />
-          <span className="text-xs font-bold text-slate-700 truncate flex-1">{stage.name}</span>
-          <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500 tabular-nums">
-            {deals.length}
-          </span>
+      <div
+        className="mb-3 rounded-xl bg-white border border-slate-200 overflow-hidden shadow-sm"
+      >
+        {/* Color accent bar */}
+        <div
+          className="h-1"
+          style={{ backgroundColor: stage.color || "#6366f1" }}
+        />
+        <div className="px-3 py-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-800 truncate flex-1">{stage.name}</span>
+            <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500 tabular-nums">
+              {deals.length}
+            </span>
+          </div>
+          {totalValue > 0 && (
+            <div className="mt-1 text-[11px] font-semibold text-slate-400 tabular-nums">
+              {fmt.format(totalValue)}
+            </div>
+          )}
         </div>
       </div>
 
@@ -49,6 +68,7 @@ export function KanbanColumn({ stage, deals, onDealClick }: KanbanColumnProps) {
             <KanbanCard
               key={deal.id}
               deal={deal}
+              stageColor={stage.color || "#6366f1"}
               onClick={() => onDealClick?.(deal)}
             />
           ))}
