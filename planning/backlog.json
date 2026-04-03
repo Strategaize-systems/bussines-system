@@ -172,12 +172,12 @@
     },
     {
       "id": "BL-118",
-      "title": "Deal-Detail-Seite mit Activities, Proposals, Dokumenten",
+      "title": "Deal-Detail-Popup mit Kontaktdaten, History, E-Mails, Angeboten",
       "type": "feature",
       "priority": "high",
       "status": "open",
       "version": "V2.1",
-      "description": "Eigene Detail-Seite pro Deal mit Tab-Navigation: Details, Aktivitäten, Angebote, Dokumente, History. Ersetzt das Edit-Sheet für komplexere Ansichten.",
+      "description": "Klick auf Kanban-Card öffnet großes Sheet/Modal mit: Kontaktdaten, Firma, alle Interaktionen (Gespräche, E-Mails, Angebote), Dokumente, Signale, Stage-History. Direkt bearbeitbar. Nach Schließen wird Pipeline aktualisiert. Wie bei Pipedrive/HubSpot.",
       "createdAt": "2026-04-03"
     },
     {
@@ -228,6 +228,136 @@
       "status": "open",
       "version": "V2.1",
       "description": "lost_reason Spalte entfernen (ersetzt durch won_lost_reason). referral_source_id FK-Constraint hinzufügen. created_by bei Deal-Erstellung setzen.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-124",
+      "title": "Deal-Rotting: Farbwarnung wenn Deal zu lange in Stage",
+      "type": "improvement",
+      "priority": "high",
+      "status": "open",
+      "version": "V2.1",
+      "description": "Deals die >X Tage in einer Stage sind werden farbig markiert (gelb >7d, rot >14d). Konfigurierbar pro Stage. Zeigt wo Beziehungen einschlafen.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-125",
+      "title": "Required Fields per Stage (Validierung bei Stage-Wechsel)",
+      "type": "improvement",
+      "priority": "high",
+      "status": "open",
+      "version": "V2.1",
+      "description": "Pflichtfelder pro Stage: z.B. Wert muss gesetzt sein wenn Deal in 'Angebot vorbereitet'. Validierung beim Drag-and-Drop und im Form.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-126",
+      "title": "Activity-Reminder auf Dashboard (überfällige Aktionen)",
+      "type": "improvement",
+      "priority": "high",
+      "status": "open",
+      "version": "V2.1",
+      "description": "Prominenter Hinweis auf Dashboard: 'X überfällige Aktionen'. Banner oder Card mit direktem Link zu den betroffenen Deals.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-127",
+      "title": "Lead-Management-Pipeline (Marketing-Outreach)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2.1",
+      "description": "Dritte Pipeline für Lead-Management: Outreach-Aktionen tracken (z.B. 150 Leute angeschrieben → wer meldet sich → wer wird qualifiziert). Stages: Identifiziert → Angeschrieben → Follow-up 1 → Follow-up 2 → Reagiert → Qualifiziert → In Pipeline verschoben.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-128",
+      "title": "Pipeline Liste-Ansicht Toggle (Kanban ↔ Tabelle)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2.2",
+      "description": "Toggle zwischen Kanban-Board und Tabellen-Ansicht der gleichen Deals. Tabelle mit sortierbaren Spalten, Filtern, Bulk-Actions.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-129",
+      "title": "E-Mail-Templates (Vorlagen mit Platzhaltern)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2.2",
+      "description": "Textbausteine für Cold-E-Mails, Follow-ups, Angebots-Begleitung. Platzhalter wie {{vorname}}, {{firma}}. Auswählbar im E-Mail-Compose.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-130",
+      "title": "Unified Timeline (alle Objekte chronologisch pro Kontakt/Firma)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2.2",
+      "description": "Eine Timeline die Activities + E-Mails + Proposals + Signals + Referrals chronologisch zusammenführt. Pro Kontakt und pro Firma sichtbar.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-131",
+      "title": "Duplikat-Erkennung bei Kontakt-/Firmen-Anlage",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2.2",
+      "description": "Warnung wenn Kontakt mit gleicher E-Mail oder Firma mit gleichem Namen bereits existiert. Merge-Option.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-132",
+      "title": "Activity-Queue / Focus View (nächste Aktionen abarbeiten)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2.2",
+      "description": "Dedizierte Ansicht: 'Arbeite deine nächsten 5 Aktionen ab'. Zeigt Deal + Kontakt + was zu tun ist. Nach Erledigung springt zur nächsten. Wie Pipedrive Focus View.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-133",
+      "title": "Funnel-Report (Conversion pro Stage)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V3+",
+      "description": "Pipeline als Trichter-Grafik: zeigt wie viele Deals von Stage zu Stage konvertieren. Conversion-Rate pro Stufe.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-134",
+      "title": "Win/Loss-Analyse Dashboard",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V3+",
+      "description": "Aggregierte Ansicht der won_lost_reasons über Zeit. Welche Verlustgründe häufen sich? Trend-Analyse.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-135",
+      "title": "Workflow-Automation (Wenn X dann Y)",
+      "type": "feature",
+      "priority": "low",
+      "status": "open",
+      "version": "V3+",
+      "description": "Regel-basierte Automation: z.B. 'Wenn Deal in Stage Angebot → E-Mail-Template senden + Aufgabe erstellen'. Visueller Rule Builder.",
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-136",
+      "title": "E-Mail Open/Click-Tracking",
+      "type": "feature",
+      "priority": "low",
+      "status": "open",
+      "version": "V3+",
+      "description": "Tracking-Pixel und Link-Wrapping für gesendete E-Mails. Zeigt ob und wann eine E-Mail geöffnet/geklickt wurde.",
       "createdAt": "2026-04-03"
     },
     {

@@ -22,18 +22,25 @@
       "order": 3
     },
     {
+      "id": "v2-2",
+      "name": "V2.2",
+      "status": "planned",
+      "summary": "Usability & Effizienz: Pipeline Liste-Toggle, E-Mail-Templates, Unified Timeline, Duplikat-Erkennung, Activity-Queue/Focus View",
+      "order": 4
+    },
+    {
       "id": "v3",
       "name": "V3",
       "status": "planned",
-      "summary": "Intelligence Layer: Call Intelligence (Notetaker, Transkript, KI-Summary), Signal-Extraktion, tiefe Mail-Integration, Handoff System 4",
-      "order": 4
+      "summary": "Intelligence Layer: Call Intelligence, Signal-Extraktion, Mail-Integration, Funnel-Reports, Win/Loss-Analyse, Workflow-Automation",
+      "order": 5
     },
     {
       "id": "v4",
       "name": "V4",
       "status": "planned",
       "summary": "Automation: Kalender-Sync, semi-automatische Workflows, Reporting/Analytics",
-      "order": 5
+      "order": 6
     }
   ]
 }
