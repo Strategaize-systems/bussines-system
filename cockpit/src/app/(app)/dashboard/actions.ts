@@ -114,6 +114,31 @@ export async function getPipelineSummaries(): Promise<PipelineSummary[]> {
   return summaries;
 }
 
+export async function getForecastValue(): Promise<number> {
+  const supabase = await createClient();
+
+  const [dealsResult, stagesResult] = await Promise.all([
+    supabase
+      .from("deals")
+      .select("value, stage_id")
+      .eq("status", "active")
+      .not("value", "is", null),
+    supabase
+      .from("pipeline_stages")
+      .select("id, probability"),
+  ]);
+
+  const stageMap = new Map<string, number>();
+  for (const s of stagesResult.data || []) {
+    stageMap.set(s.id, s.probability);
+  }
+
+  return (dealsResult.data || []).reduce((sum, d) => {
+    const prob = d.stage_id ? (stageMap.get(d.stage_id) ?? 0) / 100 : 0;
+    return sum + (d.value ?? 0) * prob;
+  }, 0);
+}
+
 export async function getRecentActivities(limit = 20) {
   const supabase = await createClient();
 

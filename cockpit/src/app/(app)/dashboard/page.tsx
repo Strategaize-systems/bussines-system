@@ -3,12 +3,13 @@ import {
   getPipelineSummaries,
   getRecentActivities,
   getUpcomingActions,
+  getForecastValue,
 } from "./actions";
 import { getOverdueCount } from "../mein-tag/actions";
 import { PipelineSummaryCards } from "./pipeline-summary";
 import { RecentActivities } from "./recent-activities";
 import { UpcomingActions } from "./upcoming-actions";
-import { Users, Building2, Kanban, Banknote, Handshake, ListTodo, AlertCircle, ArrowRightLeft, AlertTriangle } from "lucide-react";
+import { Users, Building2, Kanban, Banknote, Handshake, ListTodo, AlertCircle, ArrowRightLeft, AlertTriangle, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
 const fmt = new Intl.NumberFormat("de-DE", {
@@ -18,12 +19,13 @@ const fmt = new Intl.NumberFormat("de-DE", {
 });
 
 export default async function DashboardPage() {
-  const [stats, pipelines, activities, upcoming, overdueTotal] = await Promise.all([
+  const [stats, pipelines, activities, upcoming, overdueTotal, forecastValue] = await Promise.all([
     getDashboardStats(),
     getPipelineSummaries(),
     getRecentActivities(15),
     getUpcomingActions(10),
     getOverdueCount(),
+    getForecastValue(),
   ]);
 
   return (
@@ -126,12 +128,13 @@ export default async function DashboardPage() {
           alert={stats.overdueTasks > 0}
         />
         <KPICard
-          label="Offene Übergaben"
-          value={stats.pendingHandoffs}
-          icon={ArrowRightLeft}
-          href="/handoffs"
-          gradient="from-slate-500 to-slate-600"
-          glow="rgba(100, 116, 139, 0.1)"
+          label="Forecast"
+          value={fmt.format(forecastValue)}
+          icon={TrendingUp}
+          href="/pipeline/unternehmer"
+          gradient="from-[#00a84f] to-[#4dcb8b]"
+          glow="rgba(0, 168, 79, 0.15)"
+          large
         />
       </div>
 

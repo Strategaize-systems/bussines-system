@@ -19,6 +19,7 @@ interface DealFormProps {
   pipelineId: string;
   contacts: { id: string; first_name: string; last_name: string }[];
   companies: { id: string; name: string }[];
+  referrals?: { id: string; label: string }[];
   onSubmit: (formData: FormData) => void;
   isPending?: boolean;
 }
@@ -29,6 +30,7 @@ export function DealForm({
   pipelineId,
   contacts,
   companies,
+  referrals,
   onSubmit,
   isPending,
 }: DealFormProps) {
@@ -119,6 +121,23 @@ export function DealForm({
           <option value="bestandskunde">Bestandskunde</option>
         </select>
       </div>
+
+      {referrals && referrals.length > 0 && (
+        <div className="space-y-2">
+          <Label htmlFor="referral_source_id">Empfehlungsquelle</Label>
+          <select
+            id="referral_source_id"
+            name="referral_source_id"
+            defaultValue={(deal as any)?.referral_source_id ?? ""}
+            className={selectClass}
+          >
+            <option value="">— Keine Empfehlung —</option>
+            {referrals.map((r) => (
+              <option key={r.id} value={r.id}>{r.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">

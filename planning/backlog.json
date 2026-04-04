@@ -185,7 +185,7 @@
       "title": "Pipeline-Filter (Status, Wert, Kontakt, Typ)",
       "type": "improvement",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V2.1",
       "description": "Filter-Leiste über dem Kanban: Status (active/won/lost), Wert-Range, Kontakt, Opportunity-Typ, Tags. Auch als Liste-Ansicht toggle.",
       "createdAt": "2026-04-03"
@@ -205,7 +205,7 @@
       "title": "Probability-gewichtete Umsatzprognose",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V2.1",
       "description": "Stage-Probability × Deal-Wert = gewichteter Forecast. Auf Dashboard und Pipeline-Header anzeigen.",
       "createdAt": "2026-04-03"
@@ -215,7 +215,7 @@
       "title": "Referral-Source auf Deals verknüpfen",
       "type": "improvement",
       "priority": "low",
-      "status": "open",
+      "status": "done",
       "version": "V2.1",
       "description": "referral_source_id Feld im Deal-Form nutzbar machen. FK-Constraint auf referrals-Tabelle. Referral-Conversion tracking.",
       "createdAt": "2026-04-03"

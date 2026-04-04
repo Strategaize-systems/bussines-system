@@ -19,6 +19,7 @@ interface DealSheetProps {
   pipelineId: string;
   contacts: { id: string; first_name: string; last_name: string }[];
   companies: { id: string; name: string }[];
+  referrals?: { id: string; label: string }[];
   trigger?: React.ReactNode;
 }
 
@@ -28,6 +29,7 @@ export function DealSheet({
   pipelineId,
   contacts,
   companies,
+  referrals,
   trigger,
 }: DealSheetProps) {
   const [open, setOpen] = useState(false);
@@ -74,6 +76,7 @@ export function DealSheet({
             pipelineId={pipelineId}
             contacts={contacts}
             companies={companies}
+            referrals={referrals}
             onSubmit={handleSubmit}
             isPending={isPending}
           />

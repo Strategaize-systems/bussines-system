@@ -172,6 +172,7 @@ export async function createDeal(formData: FormData) {
     next_action: (formData.get("next_action") as string) || null,
     next_action_date: (formData.get("next_action_date") as string) || null,
     opportunity_type: (formData.get("opportunity_type") as string) || null,
+    referral_source_id: (formData.get("referral_source_id") as string) || null,
     won_lost_reason: (formData.get("won_lost_reason") as string) || null,
     won_lost_details: (formData.get("won_lost_details") as string) || null,
     tags,
@@ -219,6 +220,7 @@ export async function updateDeal(id: string, formData: FormData) {
       next_action: (formData.get("next_action") as string) || null,
       next_action_date: (formData.get("next_action_date") as string) || null,
       opportunity_type: (formData.get("opportunity_type") as string) || null,
+      referral_source_id: (formData.get("referral_source_id") as string) || null,
       won_lost_reason: (formData.get("won_lost_reason") as string) || null,
       won_lost_details: (formData.get("won_lost_details") as string) || null,
       status,
@@ -383,6 +385,24 @@ export async function deleteDeal(id: string) {
   revalidatePath("/pipeline");
   revalidatePath("/dashboard");
   return { error: "" };
+}
+
+export async function getReferralsForSelect() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("referrals")
+    .select("id, referrer:referrer_id(first_name, last_name), referred_contact:referred_contact_id(first_name, last_name), referred_company:referred_company_id(name)")
+    .order("created_at", { ascending: false });
+
+  if (error) return [];
+
+  return (data || []).map((r: any) => {
+    const referrer = r.referrer ? `${r.referrer.first_name} ${r.referrer.last_name}` : "Unbekannt";
+    const target = r.referred_contact
+      ? `${r.referred_contact.first_name} ${r.referred_contact.last_name}`
+      : r.referred_company?.name ?? "—";
+    return { id: r.id, label: `${referrer} → ${target}` };
+  });
 }
 
 // ── Stage mutations (Settings) ───────────────────────────────────────
