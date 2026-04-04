@@ -3,7 +3,7 @@
 ## Meta
 - Feature: BL-118
 - Priority: Blocker
-- Status: planned
+- Status: done
 - Dependencies: SLC-201
 
 ## Goal

@@ -175,7 +175,7 @@
       "title": "Deal-Detail-Popup mit Kontaktdaten, History, E-Mails, Angeboten",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2.1",
       "description": "Klick auf Kanban-Card öffnet großes Sheet/Modal mit: Kontaktdaten, Firma, alle Interaktionen (Gespräche, E-Mails, Angebote), Dokumente, Signale, Stage-History. Direkt bearbeitbar. Nach Schließen wird Pipeline aktualisiert. Wie bei Pipedrive/HubSpot.",
       "createdAt": "2026-04-03"
