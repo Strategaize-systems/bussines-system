@@ -148,9 +148,9 @@ export function DealDetailSheet({
           ) : tab === "details" ? (
             <DetailsTab deal={d} relations={relations} stageName={stageName} />
           ) : tab === "activities" ? (
-            <ActivitiesTab activities={relations?.activities ?? []} />
+            <ActivitiesTab activities={relations?.activities ?? []} emails={relations?.emails ?? []} />
           ) : tab === "proposals" ? (
-            <ProposalsTab proposals={relations?.proposals ?? []} emails={relations?.emails ?? []} />
+            <ProposalsTab proposals={relations?.proposals ?? []} />
           ) : (
             <div className="space-y-4">
               {editError && <p className="text-sm text-destructive">{editError}</p>}
@@ -299,7 +299,7 @@ function DetailsTab({ deal, relations, stageName }: { deal: any; relations: any;
 
 /* ── Activities Tab ──────────────────────────────────────── */
 
-function ActivitiesTab({ activities }: { activities: any[] }) {
+function ActivitiesTab({ activities, emails }: { activities: any[]; emails: any[] }) {
   const typeIcons: Record<string, typeof MessageSquare> = {
     note: MessageSquare,
     call: Phone,
@@ -309,14 +309,30 @@ function ActivitiesTab({ activities }: { activities: any[] }) {
     task: Clock,
   };
 
+  // Merge activities + emails into one timeline
+  const emailItems = emails.map((e: any) => ({
+    id: `email-${e.id}`,
+    type: "email" as const,
+    title: e.subject || "(Kein Betreff)",
+    summary: `An: ${e.to_address}`,
+    created_at: e.sent_at || e.created_at,
+  }));
+
+  const allItems = [
+    ...activities.map((a: any) => ({ ...a, id: `act-${a.id}` })),
+    ...emailItems,
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
   return (
     <div className="space-y-3">
-      {activities.length > 0 ? (
-        activities.map((a: any) => {
+      {allItems.length > 0 ? (
+        allItems.map((a) => {
           const Icon = typeIcons[a.type] || MessageSquare;
           return (
             <div key={a.id} className="flex gap-3 py-2 border-b border-slate-50 last:border-0">
-              <div className="rounded-lg bg-slate-50 p-1.5 shrink-0 text-slate-500">
+              <div className={`rounded-lg p-1.5 shrink-0 ${
+                a.type === "email" ? "bg-blue-50 text-blue-600" : "bg-slate-50 text-slate-500"
+              }`}>
                 <Icon className="h-3.5 w-3.5" />
               </div>
               <div className="flex-1 min-w-0">
@@ -341,55 +357,33 @@ function ActivitiesTab({ activities }: { activities: any[] }) {
 
 /* ── Proposals + Emails Tab ──────────────────────────────── */
 
-function ProposalsTab({ proposals, emails }: { proposals: any[]; emails: any[] }) {
+function ProposalsTab({ proposals }: { proposals: any[] }) {
   const proposalStatus: Record<string, string> = {
     draft: "Entwurf", sent: "Versendet", open: "Offen",
     negotiation: "Verhandlung", won: "Gewonnen", lost: "Verloren",
   };
 
   return (
-    <div className="space-y-6">
-      {/* Proposals */}
-      <div className="space-y-2">
-        <div className="text-[10px] font-bold uppercase tracking-wider text-[#4454b8]">Angebote</div>
-        {proposals.length > 0 ? (
-          proposals.map((p: any) => (
-            <div key={p.id} className="flex items-center justify-between rounded-xl border border-slate-200 p-3">
-              <div>
-                <span className="text-sm font-medium">{p.title}</span>
-                <span className="ml-2 text-xs text-slate-400">V{p.version}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {p.price_range && <span className="text-xs text-slate-500">{p.price_range}</span>}
-                <Badge variant="outline" className="text-[10px]">
-                  {proposalStatus[p.status] ?? p.status}
-                </Badge>
-              </div>
+    <div className="space-y-2">
+      <div className="text-[10px] font-bold uppercase tracking-wider text-[#4454b8]">Angebote</div>
+      {proposals.length > 0 ? (
+        proposals.map((p: any) => (
+          <div key={p.id} className="flex items-center justify-between rounded-xl border border-slate-200 p-3">
+            <div>
+              <span className="text-sm font-medium">{p.title}</span>
+              <span className="ml-2 text-xs text-slate-400">V{p.version}</span>
             </div>
-          ))
-        ) : (
-          <p className="text-xs text-slate-400">Keine Angebote.</p>
-        )}
-      </div>
-
-      {/* Emails */}
-      <div className="space-y-2">
-        <div className="text-[10px] font-bold uppercase tracking-wider text-[#4454b8]">E-Mails</div>
-        {emails.length > 0 ? (
-          emails.map((e: any) => (
-            <div key={e.id} className="flex items-center justify-between rounded-xl border border-slate-200 p-3">
-              <div className="min-w-0 flex-1">
-                <span className="text-sm font-medium truncate">{e.subject || "(Kein Betreff)"}</span>
-                <div className="text-xs text-slate-400 mt-0.5">
-                  An: {e.to_address} · {e.sent_at ? new Date(e.sent_at).toLocaleDateString("de-DE") : "Entwurf"}
-                </div>
-              </div>
+            <div className="flex items-center gap-2">
+              {p.price_range && <span className="text-xs text-slate-500">{p.price_range}</span>}
+              <Badge variant="outline" className="text-[10px]">
+                {proposalStatus[p.status] ?? p.status}
+              </Badge>
             </div>
-          ))
-        ) : (
-          <p className="text-xs text-slate-400">Keine E-Mails.</p>
-        )}
-      </div>
+          </div>
+        ))
+      ) : (
+        <p className="text-xs text-slate-400">Keine Angebote.</p>
+      )}
     </div>
   );
 }

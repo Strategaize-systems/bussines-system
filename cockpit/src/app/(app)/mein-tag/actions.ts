@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 export type TodayItemType = "task" | "deal_action" | "overdue_task" | "overdue_deal";
 
@@ -120,6 +121,82 @@ export async function getTodayItems(): Promise<TodayData> {
       todayCount: todayItems.length,
       upcomingCount: upcomingItems.length,
     },
+  };
+}
+
+// ── Actions for completing items from "Mein Tag" ────────────
+
+export async function completeTaskFromMeinTag(taskId: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("tasks")
+    .update({ status: "completed", completed_at: new Date().toISOString() })
+    .eq("id", taskId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/mein-tag");
+  revalidatePath("/aufgaben");
+  revalidatePath("/dashboard");
+  return { error: "" };
+}
+
+export async function completeDealActionFromMeinTag(dealId: string) {
+  const supabase = await createClient();
+
+  // Get current deal info for activity log
+  const { data: deal } = await supabase
+    .from("deals")
+    .select("title, next_action, contact_id, company_id")
+    .eq("id", dealId)
+    .single();
+
+  // Clear next_action (done for today)
+  const { error } = await supabase
+    .from("deals")
+    .update({
+      next_action: null,
+      next_action_date: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", dealId);
+
+  if (error) return { error: error.message };
+
+  // Log as activity
+  if (deal) {
+    await supabase.from("activities").insert({
+      contact_id: deal.contact_id,
+      company_id: deal.company_id,
+      deal_id: dealId,
+      type: "note",
+      title: `Aktion erledigt: "${deal.next_action}" (${deal.title})`,
+    });
+  }
+
+  revalidatePath("/mein-tag");
+  revalidatePath("/pipeline");
+  revalidatePath("/dashboard");
+  return { error: "" };
+}
+
+// Data needed for DealDetailSheet on Mein Tag page
+export async function getMeinTagContext() {
+  const supabase = await createClient();
+
+  const [stagesResult, contactsResult, companiesResult, pipelinesResult] = await Promise.all([
+    supabase.from("pipeline_stages").select("*").order("sort_order"),
+    supabase.from("contacts").select("id, first_name, last_name").order("last_name"),
+    supabase.from("companies").select("id, name").order("name"),
+    supabase.from("pipelines").select("id, name").order("sort_order"),
+  ]);
+
+  return {
+    stages: stagesResult.data ?? [],
+    contacts: contactsResult.data ?? [],
+    companies: companiesResult.data ?? [],
+    pipelines: pipelinesResult.data ?? [],
   };
 }
 
