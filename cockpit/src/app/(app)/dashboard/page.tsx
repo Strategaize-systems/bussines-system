@@ -4,10 +4,11 @@ import {
   getRecentActivities,
   getUpcomingActions,
 } from "./actions";
+import { getOverdueCount } from "../mein-tag/actions";
 import { PipelineSummaryCards } from "./pipeline-summary";
 import { RecentActivities } from "./recent-activities";
 import { UpcomingActions } from "./upcoming-actions";
-import { Users, Building2, Kanban, Banknote, Handshake, ListTodo, AlertCircle, ArrowRightLeft } from "lucide-react";
+import { Users, Building2, Kanban, Banknote, Handshake, ListTodo, AlertCircle, ArrowRightLeft, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 
 const fmt = new Intl.NumberFormat("de-DE", {
@@ -17,11 +18,12 @@ const fmt = new Intl.NumberFormat("de-DE", {
 });
 
 export default async function DashboardPage() {
-  const [stats, pipelines, activities, upcoming] = await Promise.all([
+  const [stats, pipelines, activities, upcoming, overdueTotal] = await Promise.all([
     getDashboardStats(),
     getPipelineSummaries(),
     getRecentActivities(15),
     getUpcomingActions(10),
+    getOverdueCount(),
   ]);
 
   return (
@@ -33,6 +35,31 @@ export default async function DashboardPage() {
           Revenue & Relationship System — Übersicht
         </p>
       </div>
+
+      {/* Overdue Reminder Banner */}
+      {overdueTotal > 0 && (
+        <Link href="/mein-tag" className="group block">
+          <div className="relative overflow-hidden rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-white p-4 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 to-red-400" />
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-gradient-to-br from-red-500 to-red-400 p-2.5 text-white shadow-[0_4px_12px_rgba(239,68,68,0.25)]">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-red-800">
+                  {overdueTotal} überfällige {overdueTotal === 1 ? "Aktion" : "Aktionen"}
+                </p>
+                <p className="text-xs text-red-600/70 mt-0.5">
+                  Aufgaben und Deal-Aktionen, die sofortige Aufmerksamkeit benötigen
+                </p>
+              </div>
+              <span className="text-xs font-semibold text-red-600 group-hover:text-red-800 transition-colors">
+                Mein Tag öffnen →
+              </span>
+            </div>
+          </div>
+        </Link>
+      )}
 
       {/* KPI Row 1 — Primary Metrics */}
       <div className="grid gap-5 md:grid-cols-4">

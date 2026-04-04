@@ -255,7 +255,7 @@
       "title": "Activity-Reminder auf Dashboard (überfällige Aktionen)",
       "type": "improvement",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2.1",
       "description": "Prominenter Hinweis auf Dashboard: 'X überfällige Aktionen'. Banner oder Card mit direktem Link zu den betroffenen Deals.",
       "createdAt": "2026-04-03"
@@ -275,7 +275,7 @@
       "title": "Mein Tag — Tagesplanungs-Übersicht",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2.1",
       "description": "Dedizierte Seite 'Mein Tag': Was steht heute an? Zusammengeführt aus: (1) Fällige Aufgaben heute, (2) Deals mit next_action_date heute, (3) Geplante Meetings/Rückrufe, (4) Überfällige Items von gestern. Später erweiterbar um Zeitblöcke (10-12 Rückrufe, 14-16 Meetings) und Verfügbarkeit ('Donnerstag ganzer Tag unterwegs'). Morgens als Erstes öffnen → wissen was zu tun ist.",
       "createdAt": "2026-04-03"

@@ -15,6 +15,7 @@ import {
   FileText,
   GitBranch,
   ArrowRightLeft,
+  Sun,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -35,6 +36,7 @@ const navGroups: NavGroup[] = [
     label: "",
     items: [
       { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { name: "Mein Tag", href: "/mein-tag", icon: Sun },
     ],
   },
   {
