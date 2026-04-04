@@ -243,8 +243,55 @@ export async function updateDeal(id: string, formData: FormData) {
   return { error: "" };
 }
 
+// Required fields per stage (hardcoded mapping)
+const STAGE_REQUIRED_FIELDS: Record<string, { fields: string[]; labels: Record<string, string> }> = {
+  "Angebot vorbereitet": {
+    fields: ["value"],
+    labels: { value: "Deal-Wert" },
+  },
+  "Angebot offen": {
+    fields: ["value"],
+    labels: { value: "Deal-Wert" },
+  },
+  "Verhandlung / Einwände": {
+    fields: ["value", "contact_id"],
+    labels: { value: "Deal-Wert", contact_id: "Kontakt" },
+  },
+  "Gewonnen": {
+    fields: ["value"],
+    labels: { value: "Deal-Wert" },
+  },
+  "Verloren": {
+    fields: ["won_lost_reason"],
+    labels: { won_lost_reason: "Verlustgrund" },
+  },
+};
+
 export async function moveDealToStage(dealId: string, newStageId: string, stageName: string) {
   const supabase = await createClient();
+
+  // Validate required fields for target stage
+  const requirements = STAGE_REQUIRED_FIELDS[stageName];
+  if (requirements) {
+    const { data: deal } = await supabase
+      .from("deals")
+      .select("value, contact_id, company_id, won_lost_reason")
+      .eq("id", dealId)
+      .single();
+
+    if (deal) {
+      const missing: string[] = [];
+      for (const field of requirements.fields) {
+        const val = (deal as any)[field];
+        if (val === null || val === undefined || val === "") {
+          missing.push(requirements.labels[field] ?? field);
+        }
+      }
+      if (missing.length > 0) {
+        return { error: `Pflichtfelder für "${stageName}": ${missing.join(", ")}` };
+      }
+    }
+  }
 
   // Determine auto-status based on stage name
   let autoStatus: string | undefined;

@@ -235,7 +235,7 @@
       "title": "Deal-Rotting: Farbwarnung wenn Deal zu lange in Stage",
       "type": "improvement",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2.1",
       "description": "Deals die >X Tage in einer Stage sind werden farbig markiert (gelb >7d, rot >14d). Konfigurierbar pro Stage. Zeigt wo Beziehungen einschlafen.",
       "createdAt": "2026-04-03"
@@ -245,7 +245,7 @@
       "title": "Required Fields per Stage (Validierung bei Stage-Wechsel)",
       "type": "improvement",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2.1",
       "description": "Pflichtfelder pro Stage: z.B. Wert muss gesetzt sein wenn Deal in 'Angebot vorbereitet'. Validierung beim Drag-and-Drop und im Form.",
       "createdAt": "2026-04-03"

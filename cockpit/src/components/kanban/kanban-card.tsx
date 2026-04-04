@@ -3,7 +3,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Badge } from "@/components/ui/badge";
-import { Building2, User, Calendar } from "lucide-react";
+import { Building2, User, Calendar, AlertTriangle, Clock } from "lucide-react";
 import type { Deal } from "@/app/(app)/pipeline/actions";
 
 const fmt = new Intl.NumberFormat("de-DE", {
@@ -27,6 +27,12 @@ interface KanbanCardProps {
   onClick?: () => void;
 }
 
+function getDaysInStage(updatedAt: string): number {
+  const updated = new Date(updatedAt);
+  const now = new Date();
+  return Math.floor((now.getTime() - updated.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 export function KanbanCard({ deal, stageColor, onClick }: KanbanCardProps) {
   const {
     attributes,
@@ -36,6 +42,10 @@ export function KanbanCard({ deal, stageColor, onClick }: KanbanCardProps) {
     transition,
     isDragging,
   } = useSortable({ id: deal.id });
+
+  const daysInStage = getDaysInStage(deal.updated_at);
+  const isRotting = daysInStage >= 7;
+  const isCritical = daysInStage >= 14;
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -60,8 +70,10 @@ export function KanbanCard({ deal, stageColor, onClick }: KanbanCardProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className={`cursor-grab active:cursor-grabbing rounded-xl bg-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 ${
-        isDragging ? "ring-2 ring-[#4454b8]/40" : ""
+      className={`cursor-grab active:cursor-grabbing rounded-xl bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 ${
+        isDragging ? "ring-2 ring-[#4454b8]/40 border border-slate-200" : ""
+      } ${
+        isCritical ? "border-2 border-red-300 ring-1 ring-red-100" : isRotting ? "border-2 border-amber-300 ring-1 ring-amber-100" : "border border-slate-200"
       }`}
       onClick={handleClick}
     >
@@ -127,6 +139,16 @@ export function KanbanCard({ deal, stageColor, onClick }: KanbanCardProps) {
                 {tag}
               </Badge>
             ))}
+          </div>
+        )}
+
+        {/* Rotting Indicator */}
+        {isRotting && (
+          <div className={`flex items-center gap-1.5 text-[10px] font-bold rounded-lg px-2 py-1 ${
+            isCritical ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"
+          }`}>
+            {isCritical ? <AlertTriangle className="h-3 w-3 shrink-0" /> : <Clock className="h-3 w-3 shrink-0" />}
+            <span>Stagniert {daysInStage} Tage</span>
           </div>
         )}
       </div>

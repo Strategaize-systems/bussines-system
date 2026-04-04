@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useCallback } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -18,6 +18,7 @@ import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
 import { moveDealToStage } from "@/app/(app)/pipeline/actions";
 import type { Deal, PipelineStage } from "@/app/(app)/pipeline/actions";
+import { AlertTriangle, X } from "lucide-react";
 
 interface KanbanBoardProps {
   stages: PipelineStage[];
@@ -28,6 +29,7 @@ interface KanbanBoardProps {
 export function KanbanBoard({ stages, deals: initialDeals, onDealClick }: KanbanBoardProps) {
   const [deals, setDeals] = useState(initialDeals);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   const sensors = useSensors(
@@ -112,8 +114,14 @@ export function KanbanBoard({ stages, deals: initialDeals, onDealClick }: Kanban
     if (targetStageId && originalDeal && targetStageId !== originalDeal.stage_id) {
       const targetStage = stages.find((s) => s.id === targetStageId);
       if (targetStage) {
+        setValidationError(null);
         startTransition(async () => {
-          await moveDealToStage(deal.id, targetStageId!, targetStage.name);
+          const result = await moveDealToStage(deal.id, targetStageId!, targetStage.name);
+          if (result.error) {
+            // Revert optimistic update on validation failure
+            setDeals(initialDeals);
+            setValidationError(result.error);
+          }
         });
       }
     }
@@ -127,6 +135,16 @@ export function KanbanBoard({ stages, deals: initialDeals, onDealClick }: Kanban
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
+      {/* Validation Error Banner */}
+      {validationError && (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-3">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-red-600" />
+          <p className="flex-1 text-sm font-medium text-red-800">{validationError}</p>
+          <button onClick={() => setValidationError(null)} className="shrink-0 text-red-400 hover:text-red-600">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
       <div className="flex gap-4 overflow-x-auto pb-4">
         {stages.map((stage) => (
           <KanbanColumn
