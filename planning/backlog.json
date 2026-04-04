@@ -469,6 +469,46 @@
       "version": "V3",
       "description": "FEAT-204: Strukturierte Daten aus BD-System an Intelligence Studio übergeben.",
       "createdAt": "2026-04-01"
+    },
+    {
+      "id": "BL-205",
+      "title": "Jitsi Meet — Self-Hosted Video-Meeting-Plattform",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "Self-hosted Jitsi Meet auf Hetzner für Browser-basierte Video-Meetings. Kein Download nötig. Integration mit Cal.com für Terminplanung. Jibri für Recording. Meetings direkt aus 'Mein Tag' und Deal-Detail starten. Aufnahmen fließen in Call Intelligence Pipeline (BL-201).",
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "BL-206",
+      "title": "Jigasi — Telefon-Integration für Jitsi (SIP/PSTN Gateway)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V3+",
+      "description": "Jigasi als SIP-Gateway für Jitsi: Telefonnummern direkt aus dem System anrufen, Gespräche aufnehmen + transkribieren. Benötigt SIP-Trunk-Provider (z.B. sipgate). Telefonate durchlaufen gleiche Pipeline wie Video-Meetings: Aufnahme → Whisper → LLM-Summary → Deal-Activity.",
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "BL-207",
+      "title": "LLM-Infrastruktur-Entscheidung: AWS Bedrock (Frankfurt) vs. lokales Ollama",
+      "type": "idea",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "Grundsatzentscheidung: LLM-Aufrufe (Meeting-Summaries, Signal-Extraktion, E-Mail-Zuordnung) über AWS Bedrock API (Claude, Frankfurt eu-central-1, DSGVO-konform, Pay-per-use) oder Ollama auf eigenem Server (fixe Kosten, volle Kontrolle, größerer Server nötig). Aktuell kein LLM im Business System — Entscheidung wird relevant sobald Call Intelligence (BL-201) oder Auto-Signale (BL-202) implementiert werden.",
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "BL-208",
+      "title": "Cal.com — Self-Hosted Kalender + Terminbuchung",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "Cal.com self-hosted auf Hetzner. Buchungsseiten für Kunden, Google/Outlook Calendar Sync, Standard .ics-Einladungen. Integration in 'Mein Tag' (Termine heute sehen). Meeting-Links automatisch mit Jitsi (BL-205). Ersetzt den Kalender-Platzhalter in Mein Tag.",
+      "createdAt": "2026-04-04"
     }
   ]
 }
