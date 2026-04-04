@@ -90,11 +90,11 @@ export function PipelineView({
 
       {/* Edit Deal Sheet (controlled) */}
       <Sheet open={!!editDeal} onOpenChange={(open) => { if (!open) { setEditDeal(null); setEditError(""); } }}>
-        <SheetContent className="overflow-y-auto">
+        <SheetContent>
           <SheetHeader>
             <SheetTitle>Deal bearbeiten</SheetTitle>
           </SheetHeader>
-          <div className="mt-4">
+          <div className="px-8 pb-8">
             {editDeal && (
               <>
                 {editError && (

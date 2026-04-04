@@ -51,11 +51,11 @@ export function EmailSheet({ defaultTo, contactId, companyId, trigger }: EmailSh
           </Button>
         )}
       </SheetTrigger>
-      <SheetContent className="overflow-y-auto sm:max-w-lg">
+      <SheetContent>
         <SheetHeader>
           <SheetTitle>E-Mail verfassen</SheetTitle>
         </SheetHeader>
-        <div className="mt-4">
+        <div className="px-8 pb-8">
           {error && (
             <p className="mb-3 text-sm text-destructive">{error}</p>
           )}

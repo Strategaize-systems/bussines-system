@@ -63,11 +63,11 @@ export function HandoffsClient({ handoffs, deals, companies }: HandoffsClientPro
               Übergabe starten
             </Button>
           </SheetTrigger>
-          <SheetContent className="overflow-y-auto">
+          <SheetContent>
             <SheetHeader>
               <SheetTitle>Neue Übergabe</SheetTitle>
             </SheetHeader>
-            <div className="mt-4">
+            <div className="px-8 pb-8">
               {error && <p className="mb-3 text-sm text-destructive">{error}</p>}
               <form action={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">

@@ -48,13 +48,13 @@ export function ContactSheet({ companies, contact, trigger }: ContactSheetProps)
           </Button>
         )}
       </SheetTrigger>
-      <SheetContent className="overflow-y-auto">
+      <SheetContent>
         <SheetHeader>
           <SheetTitle>
             {contact ? "Kontakt bearbeiten" : "Neuer Kontakt"}
           </SheetTitle>
         </SheetHeader>
-        <div className="mt-4">
+        <div className="px-8 pb-8">
           {error && (
             <p className="mb-3 text-sm text-destructive">{error}</p>
           )}

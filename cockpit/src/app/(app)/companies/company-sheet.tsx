@@ -47,13 +47,13 @@ export function CompanySheet({ company, trigger }: CompanySheetProps) {
           </Button>
         )}
       </SheetTrigger>
-      <SheetContent className="overflow-y-auto">
+      <SheetContent>
         <SheetHeader>
           <SheetTitle>
             {company ? "Firma bearbeiten" : "Neue Firma"}
           </SheetTitle>
         </SheetHeader>
-        <div className="mt-4">
+        <div className="px-8 pb-8">
           {error && (
             <p className="mb-3 text-sm text-destructive">{error}</p>
           )}

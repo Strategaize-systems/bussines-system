@@ -42,11 +42,11 @@ export function ReferralSheet({ contacts, companies, deals, defaultReferrerId }:
           Empfehlung erfassen
         </Button>
       </SheetTrigger>
-      <SheetContent className="overflow-y-auto">
+      <SheetContent>
         <SheetHeader>
           <SheetTitle>Neue Empfehlung</SheetTitle>
         </SheetHeader>
-        <div className="mt-4">
+        <div className="px-8 pb-8">
           {error && <p className="mb-3 text-sm text-destructive">{error}</p>}
           <form action={handleSubmit} className="space-y-4">
             <div className="space-y-2">
