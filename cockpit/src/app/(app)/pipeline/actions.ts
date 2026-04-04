@@ -31,16 +31,19 @@ export type Deal = {
   next_action: string | null;
   next_action_date: string | null;
   status: string;
-  lost_reason: string | null;
   opportunity_type: string | null;
   won_lost_reason: string | null;
   won_lost_details: string | null;
+  closed_at: string | null;
   tags: string[];
   created_at: string;
   updated_at: string;
   contacts?: { id: string; first_name: string; last_name: string } | null;
   companies?: { id: string; name: string } | null;
 };
+
+const WON_STAGE_NAMES = ["Gewonnen"];
+const LOST_STAGE_NAMES = ["Verloren", "Inaktiv / disqualifiziert"];
 
 // ── Pipeline queries ─────────────────────────────────────────────────
 
@@ -111,12 +114,16 @@ export async function createDeal(formData: FormData) {
     .map((t) => t.trim())
     .filter(Boolean) ?? [];
 
-  const { error } = await supabase.from("deals").insert({
+  const contactId = (formData.get("contact_id") as string) || null;
+  const companyId = (formData.get("company_id") as string) || null;
+  const title = formData.get("title") as string;
+
+  const { data: newDeal, error } = await supabase.from("deals").insert({
     pipeline_id: formData.get("pipeline_id") as string,
     stage_id: formData.get("stage_id") as string,
-    contact_id: (formData.get("contact_id") as string) || null,
-    company_id: (formData.get("company_id") as string) || null,
-    title: formData.get("title") as string,
+    contact_id: contactId,
+    company_id: companyId,
+    title,
     value: formData.get("value") ? Number(formData.get("value")) : null,
     expected_close_date: (formData.get("expected_close_date") as string) || null,
     next_action: (formData.get("next_action") as string) || null,
@@ -125,9 +132,20 @@ export async function createDeal(formData: FormData) {
     won_lost_reason: (formData.get("won_lost_reason") as string) || null,
     won_lost_details: (formData.get("won_lost_details") as string) || null,
     tags,
-  });
+  }).select("id").single();
 
   if (error) return { error: error.message };
+
+  // Log deal creation
+  if (newDeal) {
+    await supabase.from("activities").insert({
+      contact_id: contactId,
+      company_id: companyId,
+      deal_id: newDeal.id,
+      type: "note",
+      title: `Deal "${title}" erstellt`,
+    });
+  }
 
   revalidatePath("/pipeline");
   return { error: "" };
@@ -141,13 +159,18 @@ export async function updateDeal(id: string, formData: FormData) {
     .map((t) => t.trim())
     .filter(Boolean) ?? [];
 
+  const status = (formData.get("status") as string) || "active";
+  const title = formData.get("title") as string;
+  const contactId = (formData.get("contact_id") as string) || null;
+  const companyId = (formData.get("company_id") as string) || null;
+
   const { error } = await supabase
     .from("deals")
     .update({
       stage_id: (formData.get("stage_id") as string) || null,
-      contact_id: (formData.get("contact_id") as string) || null,
-      company_id: (formData.get("company_id") as string) || null,
-      title: formData.get("title") as string,
+      contact_id: contactId,
+      company_id: companyId,
+      title,
       value: formData.get("value") ? Number(formData.get("value")) : null,
       expected_close_date: (formData.get("expected_close_date") as string) || null,
       next_action: (formData.get("next_action") as string) || null,
@@ -155,12 +178,23 @@ export async function updateDeal(id: string, formData: FormData) {
       opportunity_type: (formData.get("opportunity_type") as string) || null,
       won_lost_reason: (formData.get("won_lost_reason") as string) || null,
       won_lost_details: (formData.get("won_lost_details") as string) || null,
+      status,
+      closed_at: status === "won" || status === "lost" ? new Date().toISOString() : null,
       tags,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
 
   if (error) return { error: error.message };
+
+  // Log deal update
+  await supabase.from("activities").insert({
+    contact_id: contactId,
+    company_id: companyId,
+    deal_id: id,
+    type: "note",
+    title: `Deal "${title}" aktualisiert${status !== "active" ? ` (${status})` : ""}`,
+  });
 
   revalidatePath("/pipeline");
   return { error: "" };
@@ -169,11 +203,28 @@ export async function updateDeal(id: string, formData: FormData) {
 export async function moveDealToStage(dealId: string, newStageId: string, stageName: string) {
   const supabase = await createClient();
 
-  // Update deal stage
+  // Determine auto-status based on stage name
+  let autoStatus: string | undefined;
+  let closedAt: string | null | undefined;
+
+  if (WON_STAGE_NAMES.includes(stageName)) {
+    autoStatus = "won";
+    closedAt = new Date().toISOString();
+  } else if (LOST_STAGE_NAMES.includes(stageName)) {
+    autoStatus = "lost";
+    closedAt = new Date().toISOString();
+  } else {
+    autoStatus = "active";
+    closedAt = null;
+  }
+
+  // Update deal stage + status
   const { error: dealError } = await supabase
     .from("deals")
     .update({
       stage_id: newStageId,
+      status: autoStatus,
+      closed_at: closedAt,
       updated_at: new Date().toISOString(),
     })
     .eq("id", dealId);
@@ -194,11 +245,12 @@ export async function moveDealToStage(dealId: string, newStageId: string, stageN
       company_id: deal.company_id,
       deal_id: dealId,
       type: "stage_change",
-      title: `Deal "${deal.title}" → ${stageName}`,
+      title: `Deal "${deal.title}" → ${stageName}${autoStatus !== "active" ? ` (${autoStatus})` : ""}`,
     });
   }
 
   revalidatePath("/pipeline");
+  revalidatePath("/dashboard");
   return { error: "" };
 }
 
@@ -216,11 +268,30 @@ export async function getDealsForSelect() {
 
 export async function deleteDeal(id: string) {
   const supabase = await createClient();
+
+  // Get deal info for activity log before deleting
+  const { data: deal } = await supabase
+    .from("deals")
+    .select("title, contact_id, company_id")
+    .eq("id", id)
+    .single();
+
   const { error } = await supabase.from("deals").delete().eq("id", id);
 
   if (error) return { error: error.message };
 
+  // Log deletion (without deal_id since deal is gone)
+  if (deal) {
+    await supabase.from("activities").insert({
+      contact_id: deal.contact_id,
+      company_id: deal.company_id,
+      type: "note",
+      title: `Deal "${deal.title}" gelöscht`,
+    });
+  }
+
   revalidatePath("/pipeline");
+  revalidatePath("/dashboard");
   return { error: "" };
 }
 
