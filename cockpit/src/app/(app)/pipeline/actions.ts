@@ -104,6 +104,49 @@ export async function getDealsForPipeline(pipelineId: string) {
   return data as Deal[];
 }
 
+export async function getDealWithRelations(dealId: string) {
+  const supabase = await createClient();
+
+  const [dealResult, activitiesResult, proposalsResult, signalsResult, emailsResult] = await Promise.all([
+    supabase
+      .from("deals")
+      .select("*, contacts(id, first_name, last_name, email, phone, position), companies(id, name, industry, email, phone)")
+      .eq("id", dealId)
+      .single(),
+    supabase
+      .from("activities")
+      .select("*")
+      .eq("deal_id", dealId)
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("proposals")
+      .select("*")
+      .eq("deal_id", dealId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("signals")
+      .select("*")
+      .eq("deal_id", dealId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("emails")
+      .select("*")
+      .eq("deal_id", dealId)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  if (dealResult.error) throw new Error(dealResult.error.message);
+
+  return {
+    deal: dealResult.data,
+    activities: activitiesResult.data ?? [],
+    proposals: proposalsResult.data ?? [],
+    signals: signalsResult.data ?? [],
+    emails: emailsResult.data ?? [],
+  };
+}
+
 // ── Deal mutations ───────────────────────────────────────────────────
 
 export async function createDeal(formData: FormData) {

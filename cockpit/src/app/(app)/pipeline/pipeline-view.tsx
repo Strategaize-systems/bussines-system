@@ -1,19 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { DealSheet } from "./deal-sheet";
-import { DealForm } from "./deal-form";
-import { updateDeal, deleteDeal } from "./actions";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { DealDetailSheet } from "./deal-detail-sheet";
 import type { Deal, Pipeline, PipelineStage } from "./actions";
+
+const fmt = new Intl.NumberFormat("de-DE", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 0,
+});
 
 interface PipelineViewProps {
   pipeline: Pipeline;
@@ -30,32 +27,9 @@ export function PipelineView({
   contacts,
   companies,
 }: PipelineViewProps) {
-  const [editDeal, setEditDeal] = useState<Deal | null>(null);
-  const [editError, setEditError] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
 
   const totalValue = deals.reduce((sum, d) => sum + (d.value ?? 0), 0);
-
-  const handleEditSubmit = (formData: FormData) => {
-    if (!editDeal) return;
-    setEditError("");
-    startTransition(async () => {
-      const result = await updateDeal(editDeal.id, formData);
-      if (result.error) {
-        setEditError(result.error);
-      } else {
-        setEditDeal(null);
-      }
-    });
-  };
-
-  const handleDelete = () => {
-    if (!editDeal) return;
-    startTransition(async () => {
-      const result = await deleteDeal(editDeal.id);
-      if (!result.error) setEditDeal(null);
-    });
-  };
 
   return (
     <div className="space-y-4">
@@ -66,11 +40,7 @@ export function PipelineView({
             {pipeline.name}
           </h1>
           <p className="text-sm font-medium text-slate-500">
-            {deals.length} Deals · {new Intl.NumberFormat("de-DE", {
-              style: "currency",
-              currency: "EUR",
-              maximumFractionDigits: 0,
-            }).format(totalValue)} Gesamtwert
+            {deals.length} Deals · {fmt.format(totalValue)} Gesamtwert
           </p>
         </div>
         <DealSheet
@@ -85,47 +55,19 @@ export function PipelineView({
       <KanbanBoard
         stages={stages}
         deals={deals}
-        onDealClick={setEditDeal}
+        onDealClick={setSelectedDeal}
       />
 
-      {/* Edit Deal Sheet (controlled) */}
-      <Sheet open={!!editDeal} onOpenChange={(open) => { if (!open) { setEditDeal(null); setEditError(""); } }}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Deal bearbeiten</SheetTitle>
-          </SheetHeader>
-          <div className="px-8 pb-8">
-            {editDeal && (
-              <>
-                {editError && (
-                  <p className="mb-3 text-sm text-destructive">{editError}</p>
-                )}
-                <DealForm
-                  deal={editDeal}
-                  stages={stages}
-                  pipelineId={pipeline.id}
-                  contacts={contacts}
-                  companies={companies}
-                  onSubmit={handleEditSubmit}
-                  isPending={isPending}
-                />
-                <div className="mt-4 border-t pt-4">
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="w-full"
-                    onClick={handleDelete}
-                    disabled={isPending}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Deal löschen
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
+      {/* Deal Detail Modal */}
+      <DealDetailSheet
+        deal={selectedDeal}
+        stages={stages}
+        pipelineId={pipeline.id}
+        contacts={contacts}
+        companies={companies}
+        open={!!selectedDeal}
+        onClose={() => setSelectedDeal(null)}
+      />
     </div>
   );
 }
