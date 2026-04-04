@@ -15,3 +15,11 @@
 - Affected Areas: fit_assessments Tabelle, Fit-Assessment Anzeige
 - Risk: Gering — ALTER COLUMN TYPE ist verlustfrei für bestehende INT-Werte
 - Rollback Notes: ALTER TABLE fit_assessments ALTER COLUMN overall_score TYPE INT;
+
+### MIG-003 — Deal-Status-Workflow (V2.1)
+- Date: 2026-04-04
+- Scope: deals Tabelle — closed_at Timestamp hinzugefügt, lost_reason entfernt, Indexes auf status und closed_at
+- Reason: Deal-Status-Lifecycle (active → won/lost) mit Auto-Status bei Stage-Wechsel. DB-Cleanup orphaned Fields.
+- Affected Areas: Pipeline, Deal-CRUD, Dashboard
+- Risk: Gering — lost_reason war nie in Benutzung (orphaned Field)
+- Rollback Notes: ALTER TABLE deals DROP COLUMN closed_at; ALTER TABLE deals ADD COLUMN lost_reason TEXT;

@@ -28,7 +28,7 @@
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-201 | [Deal-Status-Workflow + Activity-Logging](SLC-201-deal-status-workflow.md) | BL-117, BL-120, BL-123 | planned | Blocker | 2026-04-03 |
+| SLC-201 | [Deal-Status-Workflow + Activity-Logging](SLC-201-deal-status-workflow.md) | BL-117, BL-120, BL-123 | done | Blocker | 2026-04-03 |
 | SLC-202 | [Deal-Detail-Popup](SLC-202-deal-detail-popup.md) | BL-118 | planned | Blocker | 2026-04-03 |
 | SLC-203 | [Deal-Rotting + Required Fields](SLC-203-deal-rotting-required-fields.md) | BL-124, BL-125 | planned | High | 2026-04-03 |
 | SLC-204 | [Pipeline-Filter + Forecast](SLC-204-pipeline-filter-forecast.md) | BL-119, BL-121, BL-122 | planned | High | 2026-04-03 |

@@ -165,7 +165,7 @@
       "title": "Deal-Status-Workflow (active → won/lost) + Auto-Status bei Stage-Wechsel",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2.1",
       "description": "Deals automatisch auf won/lost setzen wenn in Gewonnen/Verloren-Stage gezogen. Status-Feld im Edit-Sheet sichtbar. closed_at Timestamp.",
       "createdAt": "2026-04-03"
@@ -195,7 +195,7 @@
       "title": "Activity-Logging für Deal Create/Update/Delete",
       "type": "improvement",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V2.1",
       "description": "Alle Deal-Mutationen (nicht nur Stage-Wechsel) als Activities loggen. Deal-Erstellung, Feld-Änderungen, Löschung nachvollziehbar.",
       "createdAt": "2026-04-03"
@@ -225,7 +225,7 @@
       "title": "DB-Cleanup: lost_reason entfernen, orphaned Fields bereinigen",
       "type": "fix",
       "priority": "low",
-      "status": "open",
+      "status": "done",
       "version": "V2.1",
       "description": "lost_reason Spalte entfernen (ersetzt durch won_lost_reason). referral_source_id FK-Constraint hinzufügen. created_by bei Deal-Erstellung setzen.",
       "createdAt": "2026-04-03"
