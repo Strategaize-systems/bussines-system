@@ -189,7 +189,7 @@ export function DealForm({
       {isLostStage && (
         <>
           <Separator />
-          <p className="text-sm font-medium text-destructive">Verloren / Inaktiv</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-red-600">Verloren / Inaktiv</p>
 
           <div className="space-y-2">
             <Label htmlFor="won_lost_reason">Verlustgrund</Label>

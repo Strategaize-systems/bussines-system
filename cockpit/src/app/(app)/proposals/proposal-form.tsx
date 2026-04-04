@@ -176,7 +176,7 @@ export function ProposalForm({
       {isOutcome && (
         <>
           <Separator />
-          <p className="text-sm font-medium text-muted-foreground">
+          <p className="text-xs font-bold uppercase tracking-wider text-[#4454b8]">
             {status === "won" ? "Gewonnen" : "Verloren"} — Analyse
           </p>
 

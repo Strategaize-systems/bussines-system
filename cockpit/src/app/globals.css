@@ -182,23 +182,24 @@
 
 /* Premium Select */
 .select-premium {
-  height: 2.25rem;
+  height: 2.5rem;
   padding: 0 0.75rem;
   border-radius: 0.5rem;
   border: 1px solid #e2e8f0;
   background: white;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #334155;
+  color: #0f172a;
   transition: all 200ms;
   cursor: pointer;
   appearance: auto;
+  width: 100%;
 }
 
 .select-premium:focus {
   border-color: #4454b8;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(68, 84, 184, 0.1);
+  box-shadow: 0 0 0 2px rgba(68, 84, 184, 0.1);
 }
 
 .select-premium:hover {

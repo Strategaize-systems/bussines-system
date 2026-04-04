@@ -154,7 +154,7 @@ export function CompanyForm({ company, onSubmit, isPending }: CompanyFormProps) 
       </div>
 
       <Separator />
-      <p className="text-sm font-medium text-muted-foreground">Eignungsbewertung</p>
+      <p className="text-xs font-bold uppercase tracking-wider text-[#4454b8]">Eignungsbewertung</p>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">

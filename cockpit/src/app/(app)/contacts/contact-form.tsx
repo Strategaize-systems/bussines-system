@@ -116,7 +116,7 @@ export function ContactForm({
       </div>
 
       <Separator />
-      <p className="text-sm font-medium text-muted-foreground">Beziehung & Rolle</p>
+      <p className="text-xs font-bold uppercase tracking-wider text-[#4454b8]">Beziehung & Rolle</p>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
@@ -222,7 +222,7 @@ export function ContactForm({
       </div>
 
       <Separator />
-      <p className="text-sm font-medium text-muted-foreground">Multiplikator</p>
+      <p className="text-xs font-bold uppercase tracking-wider text-[#4454b8]">Multiplikator</p>
 
       <div className="flex items-center gap-3">
         <input
