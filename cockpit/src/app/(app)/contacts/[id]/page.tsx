@@ -140,7 +140,8 @@ export default async function ContactDetailPage({
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Contact Info */}
-        <Card>
+        <Card className="overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-[#120774] to-[#4454b8]" />
           <CardHeader>
             <CardTitle className="text-base">Kontaktdaten</CardTitle>
           </CardHeader>
@@ -218,7 +219,8 @@ export default async function ContactDetailPage({
         </Card>
 
         {/* Relationship & Assessment */}
-        <Card>
+        <Card className="overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-[#00a84f] to-[#4dcb8b]" />
           <CardHeader>
             <CardTitle className="text-base">Beziehung & Einschätzung</CardTitle>
           </CardHeader>
@@ -267,7 +269,8 @@ export default async function ContactDetailPage({
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Tags + Notes */}
-        <Card>
+        <Card className="overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-slate-400 to-slate-300" />
           <CardHeader>
             <CardTitle className="text-base">Tags & Notizen</CardTitle>
           </CardHeader>
@@ -297,7 +300,8 @@ export default async function ContactDetailPage({
 
       {/* Fit Assessment (only for multipliers) */}
       {contact.is_multiplier && (
-        <Card>
+        <Card className="overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-[#f2b705] to-[#ffd54f]" />
           <CardHeader>
             <CardTitle className="text-base">Multiplikator Fit-Bewertung</CardTitle>
           </CardHeader>

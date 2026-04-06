@@ -67,7 +67,7 @@ export function FitAssessmentForm({ entityType, entityId, assessment }: FitAsses
 
       {/* Current score display */}
       {assessment && assessment.overall_score !== null && (
-        <div className="flex items-center gap-3 rounded-lg border p-3">
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <span className={`inline-block h-4 w-4 rounded-full ${trafficLightColors[assessment.traffic_light ?? ""] ?? "bg-gray-300"}`} />
           <div>
             <span className="text-sm font-medium">Score: {assessment.overall_score}/5</span>
@@ -82,7 +82,7 @@ export function FitAssessmentForm({ entityType, entityId, assessment }: FitAsses
       <div className="grid grid-cols-2 gap-3">
         {criteria.map((c) => (
           <div key={c.field} className="space-y-1">
-            <Label className="text-xs">{c.label}</Label>
+            <Label className="text-xs font-semibold text-slate-700">{c.label}</Label>
             <select
               name={c.field}
               defaultValue={assessment?.[c.field as keyof FitAssessment]?.toString() ?? ""}

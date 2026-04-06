@@ -138,7 +138,8 @@ export default async function CompanyDetailPage({
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Company Info */}
-        <Card>
+        <Card className="overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-[#120774] to-[#4454b8]" />
           <CardHeader>
             <CardTitle className="text-base">Firmendaten</CardTitle>
           </CardHeader>
@@ -190,7 +191,8 @@ export default async function CompanyDetailPage({
         </Card>
 
         {/* Tags + Notes */}
-        <Card>
+        <Card className="overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-slate-400 to-slate-300" />
           <CardHeader>
             <CardTitle className="text-base">Tags & Notizen</CardTitle>
           </CardHeader>
@@ -215,7 +217,8 @@ export default async function CompanyDetailPage({
 
       {/* Suitability Assessment */}
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+        <Card className="overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-[#00a84f] to-[#4dcb8b]" />
           <CardHeader>
             <CardTitle className="text-base">Eignungsbewertung</CardTitle>
           </CardHeader>
@@ -246,7 +249,8 @@ export default async function CompanyDetailPage({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-[#00a84f] to-[#4dcb8b]" />
           <CardHeader>
             <CardTitle className="text-base">Firmendetails & Bereitschaft</CardTitle>
           </CardHeader>
@@ -284,7 +288,8 @@ export default async function CompanyDetailPage({
       </div>
 
       {/* Fit Assessment */}
-      <Card>
+      <Card className="overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-[#f2b705] to-[#ffd54f]" />
         <CardHeader>
           <CardTitle className="text-base">Fit-Bewertung</CardTitle>
         </CardHeader>
@@ -301,7 +306,8 @@ export default async function CompanyDetailPage({
       <SignalList signals={signals} companyId={id} />
 
       {/* Assigned Contacts */}
-      <Card>
+      <Card className="overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-[#120774] to-[#4454b8]" />
         <CardHeader>
           <CardTitle className="text-base">
             Kontakte ({contacts.length})

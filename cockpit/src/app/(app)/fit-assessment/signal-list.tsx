@@ -76,7 +76,7 @@ export function SignalList({ signals, contactId, companyId, dealId }: SignalList
       </CardHeader>
       <CardContent className="space-y-3">
         {showForm && (
-          <form action={handleSubmit} className="space-y-2 rounded-lg border p-3">
+          <form action={handleSubmit} className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             {contactId && <input type="hidden" name="contact_id" value={contactId} />}
             {companyId && <input type="hidden" name="company_id" value={companyId} />}
             {dealId && <input type="hidden" name="deal_id" value={dealId} />}
