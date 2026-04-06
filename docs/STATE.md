@@ -10,13 +10,13 @@ Internes, KI-gestütztes Revenue- und Relationship-System für beratungsintensiv
 
 ## Current State
 - High-Level State: released
-- Current Focus: SLC-206 done (Voice-Input Whisper). 6 von 8 V2.1 Slices done. Nächster: SLC-207 Insight.
+- Current Focus: SLC-207 done (Insight an System 4). 7 von 8 V2.1 Slices done. Nächster: SLC-208 Lead-Pipeline.
 - Current Phase: V2.1 Implementation
 
 ## Immediate Next Steps
-1. SLC-207: Insight an System 4
-2. SLC-208: Lead-Management-Pipeline
-3. Gesamt-QA V2.1
+1. SLC-208: Lead-Management-Pipeline
+2. Gesamt-QA V2.1
+3. UI-Polish Sprint
 
 ## Active Scope
 V2 Scope (Neuausrichtung — 11 Module):

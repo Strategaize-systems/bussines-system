@@ -18,6 +18,7 @@ import {
   MessageSquare, Clock,
 } from "lucide-react";
 import Link from "next/link";
+import { InsightSheet } from "@/components/insights/insight-sheet";
 
 const fmt = new Intl.NumberFormat("de-DE", {
   style: "currency",
@@ -119,9 +120,19 @@ export function DealDetailSheet({
             )}
           </div>
           {deal && (
-            <p className="text-sm text-slate-500">
-              {stageName} · {deal.value != null ? fmt.format(deal.value) : "Kein Wert"}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-slate-500">
+                {stageName} · {deal.value != null ? fmt.format(deal.value) : "Kein Wert"}
+              </p>
+              {(deal.status === "won" || deal.status === "lost") && (
+                <InsightSheet
+                  sourceType="deal"
+                  sourceId={deal.id}
+                  sourceTitle={`${deal.title} (${st.label})`}
+                  sourceContent={d?.won_lost_reason ? `Grund: ${d.won_lost_reason}` : undefined}
+                />
+              )}
+            </div>
           )}
         </SheetHeader>
 

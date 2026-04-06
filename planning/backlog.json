@@ -355,7 +355,7 @@
       "title": "Insight an System 4 senden (Feedback-Button auf Deals/Activities)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2.1",
       "description": "Button 'An Intelligence senden' auf: (1) Verlorene Deals → won_lost_reason + won_lost_details als strukturierter Insight, (2) Gesprächsnotizen → Summary + Objections + Opportunities als Feedback, (3) Manuelle Notizen → Freitext-Insight. Sendet strukturiertes JSON an System 4 Inbox (REST-Endpoint oder lokale Datei). Kategorie: Marktfeedback, Produktfeedback, Wettbewerb, Prozess-Insight.",
       "createdAt": "2026-04-03"

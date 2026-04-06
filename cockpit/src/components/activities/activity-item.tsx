@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { completeActivity, deleteActivity } from "@/lib/actions/activity-actions";
 import { createSignalForActivity } from "@/app/(app)/fit-assessment/signal-actions";
+import { InsightSheet } from "@/components/insights/insight-sheet";
 import type { Activity } from "@/lib/actions/activity-actions";
 
 const TYPE_CONFIG: Record<string, { icon: typeof StickyNote; label: string; color: string }> = {
@@ -163,6 +164,19 @@ export function ActivityItem({ activity }: { activity: Activity }) {
 
       {/* Actions */}
       <div className="flex items-start gap-1 shrink-0">
+        {isConversation && hasConversationData && (
+          <InsightSheet
+            sourceType="activity"
+            sourceId={activity.id}
+            sourceTitle={activity.title || config.label}
+            sourceContent={activity.summary ?? undefined}
+            trigger={
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Insight senden">
+                <Lightbulb className="h-3.5 w-3.5 text-[#f2b705]" />
+              </Button>
+            }
+          />
+        )}
         {isConversation && (
           <div className="relative">
             <Button
