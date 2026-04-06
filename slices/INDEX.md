@@ -33,6 +33,6 @@
 | SLC-203 | [Deal-Rotting + Required Fields](SLC-203-deal-rotting-required-fields.md) | BL-124, BL-125 | done | High | 2026-04-03 |
 | SLC-204 | [Pipeline-Filter + Forecast](SLC-204-pipeline-filter-forecast.md) | BL-119, BL-121, BL-122 | done | High | 2026-04-03 |
 | SLC-205 | [Mein Tag + Activity-Reminder](SLC-205-mein-tag-activity-reminder.md) | BL-143, BL-126 | done | Blocker | 2026-04-03 |
-| SLC-206 | [Voice-Input (Whisper)](SLC-206-voice-input.md) | BL-141 | planned | High | 2026-04-03 |
+| SLC-206 | [Voice-Input (Whisper)](SLC-206-voice-input.md) | BL-141 | done | High | 2026-04-03 |
 | SLC-207 | [Insight an System 4](SLC-207-insight-button.md) | BL-142 | planned | High | 2026-04-03 |
 | SLC-208 | [Lead-Management-Pipeline](SLC-208-lead-pipeline.md) | BL-127 | planned | Medium | 2026-04-03 |

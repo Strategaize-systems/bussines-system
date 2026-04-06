@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
 import { createActivity } from "@/lib/actions/activity-actions";
+import { VoiceRecordButton } from "@/components/voice/voice-record-button";
 
 const selectClass =
   "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
@@ -42,6 +43,7 @@ export function ActivityForm({ contactId, companyId, dealId }: ActivityFormProps
   const [showForm, setShowForm] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [activityType, setActivityType] = useState("note");
+  const [summaryValue, setSummaryValue] = useState("");
 
   const isConversation = CONVERSATION_ACTIVITY_TYPES.includes(activityType);
 
@@ -51,6 +53,7 @@ export function ActivityForm({ contactId, companyId, dealId }: ActivityFormProps
       if (!result.error) {
         setShowForm(false);
         setActivityType("note");
+        setSummaryValue("");
       }
     });
   };
@@ -110,11 +113,18 @@ export function ActivityForm({ contactId, companyId, dealId }: ActivityFormProps
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Zusammenfassung</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Zusammenfassung</Label>
+              <VoiceRecordButton
+                onTranscript={(text) => setSummaryValue((prev) => prev ? `${prev}\n${text}` : text)}
+              />
+            </div>
             <Textarea
               name="summary"
-              placeholder="Kernaussagen des Gesprächs"
-              rows={2}
+              placeholder="Kernaussagen des Gesprächs — oder diktieren"
+              rows={3}
+              value={summaryValue}
+              onChange={(e) => setSummaryValue(e.target.value)}
             />
           </div>
 

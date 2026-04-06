@@ -345,7 +345,7 @@
       "title": "Voice-Input für Gesprächsnotizen (Whisper im Activity-Form)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2.1",
       "description": "Mikrofon-Button im Activity-Form (bei Anruf/Meeting). Whisper-Transkription → Text wird in Summary-Feld eingefügt. Kein voller Notetaker, nur Sprache-zu-Text für schnelles Erfassen. Wie beim Blueprint Voice-Input. Server-seitig via Whisper API oder lokales Modell.",
       "createdAt": "2026-04-03"
