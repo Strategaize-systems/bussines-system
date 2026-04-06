@@ -41,7 +41,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
       return NextResponse.json(
         { error: `Whisper API Fehler: ${response.status}` },
         { status: 502 }

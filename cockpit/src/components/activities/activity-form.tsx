@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,8 +9,7 @@ import { Plus } from "lucide-react";
 import { createActivity } from "@/lib/actions/activity-actions";
 import { VoiceRecordButton } from "@/components/voice/voice-record-button";
 
-const selectClass =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
+const selectClass = "select-premium";
 
 const ACTIVITY_TYPES = [
   { value: "note", label: "Notiz" },
@@ -68,7 +67,7 @@ export function ActivityForm({ contactId, companyId, dealId }: ActivityFormProps
   }
 
   return (
-    <form action={handleSubmit} className="space-y-3 rounded-lg border p-3">
+    <form action={handleSubmit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       {contactId && <input type="hidden" name="contact_id" value={contactId} />}
       {companyId && <input type="hidden" name="company_id" value={companyId} />}
       {dealId && <input type="hidden" name="deal_id" value={dealId} />}
@@ -94,7 +93,7 @@ export function ActivityForm({ contactId, companyId, dealId }: ActivityFormProps
         <>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label className="text-xs">Gesprächstyp</Label>
+              <Label className="text-xs font-semibold text-slate-700">Gesprächstyp</Label>
               <select name="conversation_type" className={selectClass}>
                 <option value="">— Auswählen —</option>
                 {CONVERSATION_TYPES.map((ct) => (
@@ -103,7 +102,7 @@ export function ActivityForm({ contactId, companyId, dealId }: ActivityFormProps
               </select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Teilnehmer</Label>
+              <Label className="text-xs font-semibold text-slate-700">Teilnehmer</Label>
               <Input
                 name="participants"
                 placeholder="z.B. Hr. Müller, Fr. Schmidt"
@@ -114,7 +113,7 @@ export function ActivityForm({ contactId, companyId, dealId }: ActivityFormProps
 
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <Label className="text-xs">Zusammenfassung</Label>
+              <Label className="text-xs font-semibold text-slate-700">Zusammenfassung</Label>
               <VoiceRecordButton
                 onTranscript={(text) => setSummaryValue((prev) => prev ? `${prev}\n${text}` : text)}
               />
@@ -130,7 +129,7 @@ export function ActivityForm({ contactId, companyId, dealId }: ActivityFormProps
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label className="text-xs">Einwände</Label>
+              <Label className="text-xs font-semibold text-slate-700">Einwände</Label>
               <Input
                 name="objections"
                 placeholder="z.B. Budget, Timing"
@@ -138,7 +137,7 @@ export function ActivityForm({ contactId, companyId, dealId }: ActivityFormProps
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Chancen</Label>
+              <Label className="text-xs font-semibold text-slate-700">Chancen</Label>
               <Input
                 name="opportunities"
                 placeholder="z.B. Upsell, Empfehlung"
@@ -149,7 +148,7 @@ export function ActivityForm({ contactId, companyId, dealId }: ActivityFormProps
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label className="text-xs">Risiken</Label>
+              <Label className="text-xs font-semibold text-slate-700">Risiken</Label>
               <Input
                 name="risks"
                 placeholder="z.B. Entscheider unsicher"
@@ -157,7 +156,7 @@ export function ActivityForm({ contactId, companyId, dealId }: ActivityFormProps
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Nächste Schritte</Label>
+              <Label className="text-xs font-semibold text-slate-700">Nächste Schritte</Label>
               <Input
                 name="next_steps"
                 placeholder="z.B. Angebot senden"
@@ -167,7 +166,7 @@ export function ActivityForm({ contactId, companyId, dealId }: ActivityFormProps
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Qualifikationssignale</Label>
+            <Label className="text-xs font-semibold text-slate-700">Qualifikationssignale</Label>
             <Input
               name="qualification_signals"
               placeholder="z.B. Budget bestätigt, Champion identifiziert"
