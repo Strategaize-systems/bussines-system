@@ -122,19 +122,9 @@ export function DealDetailSheet({
             )}
           </div>
           {deal && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500">
-                {stageName} · {deal.value != null ? fmt.format(deal.value) : "Kein Wert"}
-              </p>
-              {(d?.status === "won" || d?.status === "lost" || deal.status === "won" || deal.status === "lost") && (
-                <InsightSheet
-                  sourceType="deal"
-                  sourceId={deal.id}
-                  sourceTitle={`${d?.title || deal.title} (${d?.status === "won" ? "Gewonnen" : d?.status === "lost" ? "Verloren" : st.label})`}
-                  sourceContent={d?.won_lost_reason ? `Grund: ${d.won_lost_reason}` : undefined}
-                />
-              )}
-            </div>
+            <p className="text-sm text-slate-500">
+              {stageName} · {deal.value != null ? fmt.format(deal.value) : "Kein Wert"}
+            </p>
           )}
         </SheetHeader>
 
@@ -177,6 +167,18 @@ export function DealDetailSheet({
                   onSubmit={handleEditSubmit}
                   isPending={isPending}
                 />
+              )}
+              {/* Insight Button for won/lost deals */}
+              {deal && (d?.status === "won" || d?.status === "lost" || deal.status === "won" || deal.status === "lost") && (
+                <div className="border-t pt-4 space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#f2b705]">Insight</p>
+                  <InsightSheet
+                    sourceType="deal"
+                    sourceId={deal.id}
+                    sourceTitle={`${d?.title || deal.title} (${d?.status === "won" ? "Gewonnen" : "Verloren"})`}
+                    sourceContent={d?.won_lost_reason ? `Grund: ${d.won_lost_reason}` : undefined}
+                  />
+                </div>
               )}
               {/* Move to Pipeline */}
               {allPipelines.filter((p) => p.id !== pipelineId).length > 0 && (
