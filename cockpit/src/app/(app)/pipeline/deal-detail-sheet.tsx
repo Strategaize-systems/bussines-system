@@ -126,11 +126,11 @@ export function DealDetailSheet({
               <p className="text-sm text-slate-500">
                 {stageName} · {deal.value != null ? fmt.format(deal.value) : "Kein Wert"}
               </p>
-              {(deal.status === "won" || deal.status === "lost") && (
+              {(d?.status === "won" || d?.status === "lost" || deal.status === "won" || deal.status === "lost") && (
                 <InsightSheet
                   sourceType="deal"
                   sourceId={deal.id}
-                  sourceTitle={`${deal.title} (${st.label})`}
+                  sourceTitle={`${d?.title || deal.title} (${d?.status === "won" ? "Gewonnen" : d?.status === "lost" ? "Verloren" : st.label})`}
                   sourceContent={d?.won_lost_reason ? `Grund: ${d.won_lost_reason}` : undefined}
                 />
               )}
