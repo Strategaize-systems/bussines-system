@@ -52,6 +52,7 @@ const navGroups: NavGroup[] = [
     items: [
       { name: "Multiplikatoren", href: "/pipeline/multiplikatoren", icon: Kanban },
       { name: "Unternehmer", href: "/pipeline/unternehmer", icon: Kanban },
+      { name: "Leads", href: "/pipeline/leads", icon: Kanban },
     ],
   },
   {

@@ -10,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DealForm } from "./deal-form";
-import { getDealWithRelations, updateDeal, deleteDeal } from "./actions";
+import { getDealWithRelations, updateDeal, deleteDeal, moveDealToPipeline, getPipelines } from "./actions";
 import type { Deal, PipelineStage } from "./actions";
 import {
   User, Building2, Mail, Phone, Briefcase, Calendar,
@@ -65,6 +65,7 @@ export function DealDetailSheet({
 }: DealDetailSheetProps) {
   const [tab, setTab] = useState<"details" | "activities" | "proposals" | "edit">("details");
   const [relations, setRelations] = useState<Awaited<ReturnType<typeof getDealWithRelations>> | null>(null);
+  const [allPipelines, setAllPipelines] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [editError, setEditError] = useState("");
@@ -73,8 +74,9 @@ export function DealDetailSheet({
     if (deal && open) {
       setLoading(true);
       setTab("details");
-      getDealWithRelations(deal.id).then((data) => {
+      Promise.all([getDealWithRelations(deal.id), getPipelines()]).then(([data, pipes]) => {
         setRelations(data);
+        setAllPipelines(pipes);
         setLoading(false);
       });
     } else {
@@ -175,6 +177,34 @@ export function DealDetailSheet({
                   onSubmit={handleEditSubmit}
                   isPending={isPending}
                 />
+              )}
+              {/* Move to Pipeline */}
+              {allPipelines.filter((p) => p.id !== pipelineId).length > 0 && (
+                <div className="border-t pt-4 space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#4454b8]">In andere Pipeline verschieben</p>
+                  <div className="flex gap-2">
+                    {allPipelines
+                      .filter((p) => p.id !== pipelineId)
+                      .map((p) => (
+                        <Button
+                          key={p.id}
+                          size="sm"
+                          variant="outline"
+                          className="text-xs"
+                          disabled={isPending}
+                          onClick={() => {
+                            if (!deal) return;
+                            startTransition(async () => {
+                              const result = await moveDealToPipeline(deal.id, p.id);
+                              if (!result.error) onClose();
+                            });
+                          }}
+                        >
+                          → {p.name}
+                        </Button>
+                      ))}
+                  </div>
+                </div>
               )}
               <div className="border-t pt-4">
                 <Button variant="destructive" size="sm" className="w-full" onClick={handleDelete} disabled={isPending}>

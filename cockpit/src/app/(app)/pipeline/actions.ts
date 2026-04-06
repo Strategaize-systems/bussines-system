@@ -50,6 +50,7 @@ const LOST_STAGE_NAMES = ["Verloren", "Inaktiv / disqualifiziert"];
 const PIPELINE_SLUGS: Record<string, string> = {
   multiplikatoren: "Multiplikatoren",
   unternehmer: "Unternehmer-Chancen",
+  leads: "Lead-Management",
 };
 
 export async function getPipelines() {
@@ -338,6 +339,63 @@ export async function moveDealToStage(dealId: string, newStageId: string, stageN
       deal_id: dealId,
       type: "stage_change",
       title: `Deal "${deal.title}" → ${stageName}${autoStatus !== "active" ? ` (${autoStatus})` : ""}`,
+    });
+  }
+
+  revalidatePath("/pipeline");
+  revalidatePath("/dashboard");
+  return { error: "" };
+}
+
+export async function moveDealToPipeline(dealId: string, targetPipelineId: string) {
+  const supabase = await createClient();
+
+  // Get first stage of target pipeline
+  const { data: firstStage } = await supabase
+    .from("pipeline_stages")
+    .select("id, name")
+    .eq("pipeline_id", targetPipelineId)
+    .order("sort_order", { ascending: true })
+    .limit(1)
+    .single();
+
+  if (!firstStage) return { error: "Ziel-Pipeline hat keine Stages" };
+
+  // Get deal info for activity log
+  const { data: deal } = await supabase
+    .from("deals")
+    .select("title, contact_id, company_id")
+    .eq("id", dealId)
+    .single();
+
+  // Get target pipeline name
+  const { data: pipeline } = await supabase
+    .from("pipelines")
+    .select("name")
+    .eq("id", targetPipelineId)
+    .single();
+
+  // Move deal
+  const { error } = await supabase
+    .from("deals")
+    .update({
+      pipeline_id: targetPipelineId,
+      stage_id: firstStage.id,
+      status: "active",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", dealId);
+
+  if (error) return { error: error.message };
+
+  // Log activity
+  if (deal && pipeline) {
+    await supabase.from("activities").insert({
+      contact_id: deal.contact_id,
+      company_id: deal.company_id,
+      deal_id: dealId,
+      type: "stage_change",
+      title: `Deal "${deal.title}" → Pipeline "${pipeline.name}" (${firstStage.name})`,
     });
   }
 
