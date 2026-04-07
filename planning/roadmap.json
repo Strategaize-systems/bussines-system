@@ -17,7 +17,7 @@
     {
       "id": "v2-1",
       "name": "V2.1",
-      "status": "active",
+      "status": "released",
       "summary": "Pipeline-Hardening + Daily Ops: Deal-Status-Workflow, Deal-Detail-Popup, Deal-Rotting, Mein Tag, Voice-Input, Insight-Button, Lead-Pipeline, Pipeline-Filter, Forecast",
       "order": 3
     },

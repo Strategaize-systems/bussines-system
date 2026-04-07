@@ -10,13 +10,13 @@ Internes, KI-gestütztes Revenue- und Relationship-System für beratungsintensiv
 
 ## Current State
 - High-Level State: released
-- Current Focus: Go-Live approved (RPT-030). Nächster Schritt: /deploy V2.1.
-- Current Phase: V2.1 Go-Live
+- Current Focus: V2.1 deployed. Nächster Schritt: /post-launch.
+- Current Phase: V2.1 Released
 
 ## Immediate Next Steps
-1. /deploy V2.1 (Redeploy via Coolify)
-2. /post-launch (Live-Verification)
-3. UI-Polish Sprint
+1. /post-launch (Live-Verification)
+2. UI-Polish Sprint
+3. V2.2 Planning
 
 ## Active Scope
 V2 Scope (Neuausrichtung — 11 Module):
@@ -40,7 +40,7 @@ V2 Scope (Neuausrichtung — 11 Module):
 - aktuell keine
 
 ## Last Stable Version
-- V2 — 2026-04-03 — deployed auf Hetzner (Revenue & Relationship System)
+- V2.1 — 2026-04-07 — deployed auf Hetzner (Pipeline-Hardening + Daily Ops)
 
 ## Notes
 V1 war als Marketing+CRM-Plattform deployed. Fundamentale Neuausrichtung nach User-Review (2026-04-01): System ist ein Revenue & Relationship System, NICHT eine Marketing-Suite. Content-Produktion gehört zu System 4 (Intelligence Studio). Discovery mit 10-Modul-Blueprint abgeschlossen. 4-System-Landschaft: System 1 (Blueprint/Onboarding), System 2 (Operating System), System 3 (Business Development = dieses System), System 4 (Intelligence Studio).
