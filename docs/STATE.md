@@ -10,13 +10,13 @@ Internes, KI-gestütztes Revenue- und Relationship-System für beratungsintensiv
 
 ## Current State
 - High-Level State: released
-- Current Focus: Gesamt-QA + Final-Check bestanden. Nächster Schritt: /go-live V2.1.
-- Current Phase: V2.1 Implementation
+- Current Focus: Go-Live approved (RPT-030). Nächster Schritt: /deploy V2.1.
+- Current Phase: V2.1 Go-Live
 
 ## Immediate Next Steps
-1. /go-live V2.1
-2. UI-Polish Sprint
-3. /deploy + /post-launch
+1. /deploy V2.1 (Redeploy via Coolify)
+2. /post-launch (Live-Verification)
+3. UI-Polish Sprint
 
 ## Active Scope
 V2 Scope (Neuausrichtung — 11 Module):
