@@ -131,11 +131,10 @@
 - Next Action: Erledigt — Storage Bucket + RLS Policies in 02_rls.sql hinzugefügt (2026-03-27).
 
 ### ISSUE-019 — Aktivitäten + Dokumente fehlen auf Deal-Ebene
-- Status: open
+- Status: resolved
 - Severity: Medium
 - Area: Frontend / Pipeline
-- Summary: Actions unterstützen dealId, aber kein Deal-Detail-View existiert. Deal-bezogene Aktivitäten/Dokumente können nicht eingesehen werden.
-- Next Action: Deal-Detail-Seite als eigenen Slice oder Erweiterung planen.
+- Summary: Behoben durch SLC-202 (Deal-Detail-Popup mit 4 Tabs: Übersicht, Aktivitäten, Angebote, Bearbeiten). getDealWithRelations lädt Activities, Proposals, Emails, Signals parallel.
 
 ### ISSUE-020 — deleteDocument prüft Storage-Delete-Ergebnis nicht
 - Status: open
