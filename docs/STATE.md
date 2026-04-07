@@ -10,13 +10,13 @@ Internes, KI-gestütztes Revenue- und Relationship-System für beratungsintensiv
 
 ## Current State
 - High-Level State: released
-- Current Focus: ALLE 8 V2.1 Slices done. Nächster Schritt: Gesamt-QA V2.1.
+- Current Focus: Gesamt-QA + Final-Check bestanden. Nächster Schritt: /go-live V2.1.
 - Current Phase: V2.1 Implementation
 
 ## Immediate Next Steps
-1. Gesamt-QA V2.1
-2. /final-check
-3. UI-Polish Sprint → Go-Live V2.1
+1. /go-live V2.1
+2. UI-Polish Sprint
+3. /deploy + /post-launch
 
 ## Active Scope
 V2 Scope (Neuausrichtung — 11 Module):

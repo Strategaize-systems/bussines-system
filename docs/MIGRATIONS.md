@@ -23,3 +23,11 @@
 - Affected Areas: Pipeline, Deal-CRUD, Dashboard
 - Risk: Gering — lost_reason war nie in Benutzung (orphaned Field)
 - Rollback Notes: ALTER TABLE deals DROP COLUMN closed_at; ALTER TABLE deals ADD COLUMN lost_reason TEXT;
+
+### MIG-004 — Lead-Management-Pipeline (V2.1)
+- Date: 2026-04-06
+- Scope: Neue Pipeline "Lead-Management" mit 7 Stages (Identifiziert → Qualifiziert)
+- Reason: Dritte Pipeline für Marketing-Outreach und Lead-Qualifizierung (SLC-208)
+- Affected Areas: Pipelines, Pipeline-Stages, Sidebar, /pipeline/leads Route
+- Risk: Gering — additive Änderung, kein Impact auf bestehende Pipelines
+- Rollback Notes: DELETE FROM pipeline_stages WHERE pipeline_id = 'b0000000-0000-0000-0000-000000000003'; DELETE FROM pipelines WHERE id = 'b0000000-0000-0000-0000-000000000003';

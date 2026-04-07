@@ -53,6 +53,8 @@ USER nextjs
 
 EXPOSE 3000
 
+RUN apk add --no-cache wget
+
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/ || exit 1
 
