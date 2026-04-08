@@ -82,14 +82,14 @@ export function Sidebar() {
       {/* Logo Block */}
       <div className={cn("mx-3 mt-4 mb-2", collapsed ? "px-1" : "px-3")}>
         {!collapsed ? (
-          <div className="rounded-2xl bg-gradient-to-br from-[#120774] to-[#4454b8] p-4 flex items-center justify-center shadow-[0_8px_16px_-4px_rgba(68,84,184,0.4)]">
+          <div className="rounded-2xl bg-white p-4 flex items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/logo-full.svg" alt="StrategAIze" className="h-8 w-auto brightness-0 invert" />
+            <img src="/brand/logo-full.png" alt="StrategAIze" className="h-10 w-auto" />
           </div>
         ) : (
-          <div className="mx-auto w-fit rounded-xl bg-gradient-to-br from-[#120774] to-[#4454b8] p-2 shadow-[0_4px_12px_-2px_rgba(68,84,184,0.4)]">
+          <div className="mx-auto w-fit rounded-xl bg-white p-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/logo-symbol.svg" alt="S" className="h-6 w-6 brightness-0 invert" />
+            <img src="/brand/logo-symbol.png" alt="S" className="h-6 w-6" />
           </div>
         )}
       </div>
