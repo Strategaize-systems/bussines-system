@@ -3,9 +3,10 @@
 import { useState, useMemo, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  CheckSquare,
-  AlertCircle,
+  ClipboardList,
+  Timer,
   CheckCircle2,
+  CheckSquare,
   Phone,
   FileText,
   Mail,
@@ -94,14 +95,14 @@ export function AufgabenClient({ tasks, contacts, companies, deals }: AufgabenCl
             <KPICard
               label="Offen"
               value={openCount}
-              icon={CheckSquare}
+              icon={ClipboardList}
               gradient="blue"
               href="/aufgaben"
             />
             <KPICard
               label="Überfällig"
               value={overdueCount}
-              icon={AlertCircle}
+              icon={Timer}
               gradient="red"
               href="/aufgaben"
             />

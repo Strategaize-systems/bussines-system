@@ -7,7 +7,7 @@ import { DealDetailSheet } from "./deal-detail-sheet";
 import { PageHeader } from "@/components/ui/page-header";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import type { Deal, Pipeline, PipelineStage } from "./actions";
-import { Search, Filter, TrendingUp, Kanban, Target, Percent, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Filter, TrendingUp, ClipboardList, Target, Percent, Plus, ChevronLeft, ChevronRight, LayoutList } from "lucide-react";
 
 const fmt = new Intl.NumberFormat("de-DE", {
   style: "currency",
@@ -106,7 +106,7 @@ export function PipelineView({
             <KPICard
               label="Aktive Deals"
               value={activeDeals.length}
-              icon={Kanban}
+              icon={ClipboardList}
               gradient="blue"
             />
             <KPICard
@@ -168,7 +168,7 @@ export function PipelineView({
           {/* Stage Info Bar */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 text-sm text-slate-600">
-              <Kanban size={16} className="text-slate-400" />
+              <LayoutList size={16} className="text-slate-400" />
               <span className="font-bold">{stages.length} Stages</span>
               <span className="text-slate-400">← Scrollen Sie horizontal →</span>
             </div>

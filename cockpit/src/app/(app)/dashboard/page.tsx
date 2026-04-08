@@ -7,7 +7,8 @@ import {
 import { getOverdueCount } from "../mein-tag/actions";
 import { PageHeader } from "@/components/ui/page-header";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
-import { Banknote, Kanban, AlertCircle, TrendingUp, Handshake, ChevronRight } from "lucide-react";
+import { DashboardSearch } from "./dashboard-search";
+import { Euro, ClipboardList, Timer, TrendingUp, Handshake, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 const fmt = new Intl.NumberFormat("de-DE", {
@@ -58,12 +59,15 @@ export default async function DashboardPage() {
             </div>
           </div>
 
+          {/* Search Bar with Voice + KI */}
+          <DashboardSearch />
+
           {/* KPI Cards */}
           <KPIGrid columns={4}>
             <KPICard
               label="Pipeline Wert"
               value={fmt.format(stats.totalPipelineValue)}
-              icon={Banknote}
+              icon={Euro}
               gradient="blue"
               href="/pipeline/unternehmer"
               comparison="+18% vs Vormonat"
@@ -72,7 +76,7 @@ export default async function DashboardPage() {
             <KPICard
               label="Offene Deals"
               value={stats.openDeals}
-              icon={Kanban}
+              icon={ClipboardList}
               gradient="blue"
               href="/pipeline/unternehmer"
               comparison="+12% vs Vormonat"
@@ -81,7 +85,7 @@ export default async function DashboardPage() {
             <KPICard
               label="Überfällig"
               value={overdueTotal}
-              icon={AlertCircle}
+              icon={Timer}
               gradient="red"
               href="/mein-tag"
               comparison={overdueTotal > 0 ? "-25% vs Vorwoche" : undefined}

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
-import { Building2, Users as UsersIcon, TrendingUp, Target, MapPin } from "lucide-react";
+import { Building2, Smile, Euro, TrendingUp, MapPin } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
@@ -98,19 +98,19 @@ export function CompaniesClient({ companies, stats }: CompaniesClientProps) {
             <KPICard
               label="Umsatzpotenzial"
               value={fmt.format(stats.totalPotential)}
-              icon={TrendingUp}
+              icon={Euro}
               gradient="green"
             />
             <KPICard
               label="Pipeline-Wert"
               value={fmt.format(stats.pipelineValue)}
-              icon={Target}
+              icon={TrendingUp}
               gradient="yellow"
             />
             <KPICard
               label="Kunden"
               value={stats.kundenCount}
-              icon={UsersIcon}
+              icon={Smile}
               gradient="emerald"
             />
           </KPIGrid>
