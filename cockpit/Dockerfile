@@ -40,6 +40,9 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
+# Install wget for healthcheck (must be before USER switch)
+RUN apk add --no-cache wget
+
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
@@ -52,8 +55,6 @@ COPY --from=builder /app/public ./public
 USER nextjs
 
 EXPOSE 3000
-
-RUN apk add --no-cache wget
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/ || exit 1
