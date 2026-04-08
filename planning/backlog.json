@@ -531,6 +531,56 @@
       "createdAt": "2026-04-08"
     },
     {
+      "id": "BL-212",
+      "title": "Pipeline-Seiten V2.2 Style Guide Nacharbeit",
+      "type": "fix",
+      "priority": "high",
+      "status": "open",
+      "version": "V2.2",
+      "description": "Pipeline-Seiten (Multiplikatoren, Unternehmer, Leads) haben nach V2.2 Redesign Probleme: KPI-Kacheln sehen nicht nach Style Guide V2 aus, 'Scrollen Sie horizontal' funktioniert nicht korrekt, rechte Kachel wird abgeschnitten. Gesamtes Layout muss an V2.2 Standard angeglichen werden.",
+      "createdAt": "2026-04-08"
+    },
+    {
+      "id": "BL-213",
+      "title": "Multiplikatoren: Standort-Filter fehlt",
+      "type": "fix",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2.2",
+      "description": "Firmen-Seite hat Standort-Filter, Multiplikatoren-Seite nicht. Standort-Filter muss auch auf Multiplikatoren-Seite eingebaut werden (Konsistenz).",
+      "createdAt": "2026-04-08"
+    },
+    {
+      "id": "BL-214",
+      "title": "Fehlende Seiten nach V2.2 Redesign: E-Mail, Termine, etc.",
+      "type": "fix",
+      "priority": "high",
+      "status": "open",
+      "version": "V2.2",
+      "description": "Beim V2.2 UI-Redesign sind Seiten weggefallen oder nicht migriert worden (E-Mail, Termine, ggf. weitere). Bestandsaufnahme machen: Was war vorher da? Was fehlt jetzt? Gezielt entscheiden: Wiederherstellen, zusammenfassen, oder bewusst entfernen. Ziel: So wenige separate Seiten wie möglich, möglichst viel über 'Mein Tag' + KI-Assistent abwickeln.",
+      "createdAt": "2026-04-08"
+    },
+    {
+      "id": "BL-215",
+      "title": "Seiten-Konsolidierung: Weniger Klicks, mehr über Mein Tag",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2.2",
+      "description": "Vision: Mit 2-3 Seiten alles machen können dank KI-Unterstützung. Prüfen ob separate Seiten (E-Mail, Aufgaben, Termine, etc.) in eine Übersichtsseite mit aufklappbaren Bereichen zusammengefasst werden können. Alternativ: Alles über Mein Tag + KI-Assistent zugänglich machen. Für Nicht-KI-Nutzer: Eine Übersichtsseite mit Accordion-Bereichen als Fallback.",
+      "createdAt": "2026-04-08"
+    },
+    {
+      "id": "BL-216",
+      "title": "Mobile PWA: Mein Tag als installierbare App",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V3",
+      "description": "Mein Tag als Progressive Web App (PWA) für Smartphone/Tablet. Abgespeckte mobile Version: Aufgaben, KI-Assistent mit Voice, Kalender. Kein kompletter Nachbau der Desktop-Version. PWA-Manifest + Service Worker + mobile-optimiertes Layout. Voice-Input funktioniert nativ über Browser. Whisper API ist bereits server-seitig verfügbar. Vorteil: Kein App Store nötig, direkt aus Browser installierbar, funktioniert auf iOS + Android.",
+      "createdAt": "2026-04-08"
+    },
+    {
       "id": "BL-209",
       "title": "Kontakt-Karte mit Leaflet + OpenStreetMap (PLZ-basierte Pins)",
       "type": "feature",
