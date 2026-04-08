@@ -509,6 +509,16 @@
       "version": "V3",
       "description": "Cal.com self-hosted auf Hetzner. Buchungsseiten für Kunden, Google/Outlook Calendar Sync, Standard .ics-Einladungen. Integration in 'Mein Tag' (Termine heute sehen). Meeting-Links automatisch mit Jitsi (BL-205). Ersetzt den Kalender-Platzhalter in Mein Tag.",
       "createdAt": "2026-04-04"
+    },
+    {
+      "id": "BL-209",
+      "title": "Kontakt-Karte mit Leaflet + OpenStreetMap (PLZ-basierte Pins)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V2.2",
+      "description": "Interaktive Karte auf Kontakte-, Firmen- und Multiplikatoren-Seiten. Tech: react-leaflet + OpenStreetMap (kostenlos, kein API-Key). Deutschland-Ausschnitt, einzoombar, verschiebbar. Farbige Pins pro Kontakttyp (Kontakte blau, Firmen grün, Multiplikatoren lila). Clustering bei vielen Pins ('23 Kontakte in München'). Suchfeld oben. Geocoding über PLZ-Koordinaten-Tabelle (Open Data DE/NL/AT, einmalig importiert — kein Live-API-Call). Heatmap-Effekt optional. Dependency: npm install react-leaflet leaflet @types/leaflet. PLZ-Tabelle als JSON oder DB-Seed.",
+      "createdAt": "2026-04-07"
     }
   ]
 }
