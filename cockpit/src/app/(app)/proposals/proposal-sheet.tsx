@@ -19,12 +19,16 @@ interface ProposalSheetProps {
   companies: { id: string; name: string }[];
   proposal?: Proposal;
   trigger?: React.ReactNode;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function ProposalSheet({ deals, contacts, companies, proposal, trigger }: ProposalSheetProps) {
-  const [open, setOpen] = useState(false);
+export function ProposalSheet({ deals, contacts, companies, proposal, trigger, defaultOpen, onOpenChange: externalOnOpenChange }: ProposalSheetProps) {
+  const [open, setOpen] = useState(defaultOpen ?? false);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  const handleOpenChange = (v: boolean) => { setOpen(v); if (!v) setError(""); externalOnOpenChange?.(v); };
 
   const handleSubmit = (formData: FormData) => {
     setError("");
@@ -35,21 +39,23 @@ export function ProposalSheet({ deals, contacts, companies, proposal, trigger }:
       if (result.error) {
         setError(result.error);
       } else {
-        setOpen(false);
+        handleOpenChange(false);
       }
     });
   };
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (!v) setError(""); }}>
-      <SheetTrigger>
-        {trigger ?? (
-          <Button size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            Angebot erstellen
-          </Button>
-        )}
-      </SheetTrigger>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      {trigger !== undefined && (
+        <SheetTrigger>
+          {trigger ?? (
+            <Button size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Angebot erstellen
+            </Button>
+          )}
+        </SheetTrigger>
+      )}
       <SheetContent>
         <SheetHeader>
           <SheetTitle>

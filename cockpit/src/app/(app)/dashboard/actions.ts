@@ -152,6 +152,63 @@ export async function getRecentActivities(limit = 20) {
   return data;
 }
 
+export type TopMultiplikator = {
+  id: string;
+  name: string;
+  companyName: string | null;
+  trustLevel: number | null;
+};
+
+export type TopChance = {
+  id: string;
+  companyName: string | null;
+  value: number;
+  probability: number;
+  stageName: string | null;
+};
+
+export async function getTopMultiplikatoren(limit = 5): Promise<TopMultiplikator[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .select("id, first_name, last_name, trust_level, companies(name)")
+    .eq("is_multiplier", true)
+    .order("trust_level", { ascending: false, nullsFirst: false })
+    .limit(limit);
+
+  if (error) return [];
+
+  return (data || []).map((c) => ({
+    id: c.id,
+    name: `${c.first_name} ${c.last_name}`.trim(),
+    companyName: c.companies ? (c.companies as any).name : null,
+    trustLevel: c.trust_level,
+  }));
+}
+
+export async function getTopChancen(limit = 5): Promise<TopChance[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("deals")
+    .select("id, title, value, companies(name), pipeline_stages(name, probability)")
+    .eq("status", "active")
+    .not("value", "is", null)
+    .order("value", { ascending: false })
+    .limit(limit);
+
+  if (error) return [];
+
+  return (data || []).map((d) => ({
+    id: d.id,
+    companyName: d.companies ? (d.companies as any).name : (d.title || "Unbekannt"),
+    value: d.value ?? 0,
+    probability: d.pipeline_stages ? (d.pipeline_stages as any).probability ?? 0 : 0,
+    stageName: d.pipeline_stages ? (d.pipeline_stages as any).name : null,
+  }));
+}
+
 export async function getUpcomingActions(limit = 10): Promise<UpcomingAction[]> {
   const supabase = await createClient();
 

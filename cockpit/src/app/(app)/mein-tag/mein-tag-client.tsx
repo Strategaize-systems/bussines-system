@@ -4,18 +4,25 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
-  CalendarClock,
   ListTodo,
   Kanban,
   ChevronRight,
   Clock,
   CheckCircle2,
-  Sun,
   Check,
   Calendar,
-  Video,
+  Users,
+  Building2,
+  Handshake,
+  Target,
+  Mail,
+  Phone,
+  StickyNote,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
 import { DealDetailSheet } from "../pipeline/deal-detail-sheet";
 import { completeTaskFromMeinTag, completeDealActionFromMeinTag } from "./actions";
 import type { TodayData, TodayItem, TodayItemType } from "./actions";
@@ -36,149 +43,230 @@ const typeConfig: Record<TodayItemType, { icon: typeof ListTodo; bg: string }> =
   deal_action: { icon: Kanban, bg: "bg-emerald-50 text-[#00a84f]" },
 };
 
-const priorityColors: Record<string, string> = {
-  high: "bg-red-100 text-red-700",
-  medium: "bg-amber-100 text-amber-700",
-  low: "bg-slate-100 text-slate-600",
+const priorityColors: Record<string, { bg: string; label: string }> = {
+  high: { bg: "bg-red-100 text-red-700 border-red-200", label: "Hoch" },
+  medium: { bg: "bg-amber-100 text-amber-700 border-amber-200", label: "Mittel" },
+  low: { bg: "bg-green-100 text-green-700 border-green-200", label: "Niedrig" },
 };
+
+const statusStyles: Record<string, string> = {
+  open: "bg-blue-100 text-blue-700 border-blue-200",
+  in_arbeit: "bg-amber-100 text-amber-700 border-amber-200",
+};
+
+const quickActions = [
+  { label: "Neuer Kontakt", icon: Users, color: "from-[#120774] to-[#4454b8]", href: "/contacts" },
+  { label: "Neue Firma", icon: Building2, color: "from-[#00a84f] to-[#4dcb8b]", href: "/companies" },
+  { label: "Multiplikator", icon: Handshake, color: "from-purple-500 to-purple-600", href: "/multiplikatoren" },
+  { label: "Neues Lead", icon: Target, color: "from-orange-500 to-orange-600", href: "/pipeline/leads" },
+  { label: "Neue Aufgabe", icon: ListTodo, color: "from-[#120774] to-[#4454b8]", href: "/aufgaben" },
+  { label: "Neue E-Mail", icon: Mail, color: "from-sky-500 to-sky-600", href: "/emails" },
+  { label: "Telefonat", icon: Phone, color: "from-emerald-500 to-emerald-600", href: "#" },
+  { label: "Notiz", icon: StickyNote, color: "from-amber-500 to-amber-600", href: "#" },
+];
+
+const calendarSlots = [
+  { time: "09:00 - 09:30", title: "Team Standup", sub: "5 Personen", color: "bg-blue-500", type: "Meeting" },
+  { time: "10:00 - 10:30", title: "Call: Max Mustermann", sub: "Max Mustermann", color: "bg-emerald-500", type: "Call" },
+  { time: "11:00 - 12:30", title: "Fokus-Zeit: Angebote", sub: "", color: "bg-orange-500", type: "Block" },
+  { time: "12:30 - 13:30", title: "Mittagspause", sub: "", color: "bg-purple-500", type: "External" },
+  { time: "14:00 - 15:00", title: "Demo: Innovation Labs", sub: "3 Personen", color: "bg-blue-500", type: "Meeting" },
+  { time: "16:00 - 17:00", title: "Strategiegespräch", sub: "2 Personen", color: "bg-teal-500", type: "Meeting" },
+];
 
 export function MeinTagClient({ data, stages, contacts, companies, pipelines }: MeinTagClientProps) {
   const totalItems = data.stats.overdueCount + data.stats.todayCount + data.stats.upcomingCount;
+  const completedItems = 0;
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
+  const [showQuickActions, setShowQuickActions] = useState(true);
+  const [activeTab, setActiveTab] = useState<"alle" | "heute" | "überfällig" | "erledigt">("alle");
 
-  // Build a minimal Deal object for the DealDetailSheet
+  const allItems = [...data.overdue, ...data.today, ...data.upcoming];
+  const filteredItems = activeTab === "alle" ? allItems
+    : activeTab === "überfällig" ? data.overdue
+    : activeTab === "heute" ? data.today
+    : [];
+
   const selectedDeal: Deal | null = selectedDealId
     ? {
-        id: selectedDealId,
-        pipeline_id: pipelines[0]?.id ?? "",
-        stage_id: null,
-        contact_id: null,
-        company_id: null,
-        title: "",
-        value: null,
-        expected_close_date: null,
-        next_action: null,
-        next_action_date: null,
-        status: "active",
-        opportunity_type: null,
-        won_lost_reason: null,
-        won_lost_details: null,
-        closed_at: null,
-        tags: [],
-        created_at: "",
-        updated_at: "",
+        id: selectedDealId, pipeline_id: pipelines[0]?.id ?? "", stage_id: null,
+        contact_id: null, company_id: null, title: "", value: null,
+        expected_close_date: null, next_action: null, next_action_date: null,
+        status: "active", opportunity_type: null, won_lost_reason: null,
+        won_lost_details: null, closed_at: null, tags: [], created_at: "", updated_at: "",
       }
     : null;
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-gradient-to-br from-[#f2b705] to-[#ffd54f] p-2.5 text-white shadow-[0_4px_12px_rgba(242,183,5,0.3)]">
-            <Sun className="h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Mein Tag</h1>
-            <p className="text-sm font-medium text-slate-500 mt-0.5">
-              {new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <SummaryCard
-          label="Überfällig"
-          count={data.stats.overdueCount}
-          gradient="from-red-500 to-red-400"
-          glow="rgba(239, 68, 68, 0.15)"
-          icon={AlertTriangle}
-          alert={data.stats.overdueCount > 0}
-        />
-        <SummaryCard
-          label="Heute fällig"
-          count={data.stats.todayCount}
-          gradient="from-[#120774] to-[#4454b8]"
-          glow="rgba(68, 84, 184, 0.15)"
-          icon={CalendarClock}
-        />
-        <SummaryCard
-          label="Nächste 2 Tage"
-          count={data.stats.upcomingCount}
-          gradient="from-[#00a84f] to-[#4dcb8b]"
-          glow="rgba(0, 168, 79, 0.15)"
-          icon={Clock}
-        />
-      </div>
-
-      {/* Calendar Placeholder */}
-      <div
-        className="rounded-2xl border border-slate-200 bg-white overflow-hidden"
-        style={{ boxShadow: "0 1px 3px rgb(0 0 0 / 0.1)" }}
+    <div className="min-h-screen">
+      <PageHeader
+        title="Mein Tag"
+        subtitle={new Date().toLocaleDateString("de-DE", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }) + " · Dein Operations-Cockpit"}
       >
-        <div className="h-1 bg-gradient-to-r from-[#4454b8] to-[#120774]" />
-        <div className="p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-[#4454b8]" />
-              <h3 className="text-sm font-bold text-slate-900">Termine heute</h3>
-            </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Cal.com — bald verfügbar</span>
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 text-xs font-bold text-emerald-700">
+          <CheckCircle2 size={14} />
+          {completedItems}/{totalItems} Erledigt
+        </span>
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-blue-200 bg-blue-50 text-xs font-bold text-blue-700">
+          <Clock size={14} />
+          4h 30min frei
+        </span>
+      </PageHeader>
+
+      <main className="px-8 py-8">
+        <div className="max-w-[1800px] mx-auto space-y-6">
+          {/* Schnellaktionen */}
+          <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
+            <button
+              onClick={() => setShowQuickActions(!showQuickActions)}
+              className="w-full flex items-center justify-between px-6 py-4"
+            >
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
+                <span className="text-lg">+</span>
+                SCHNELLAKTIONEN
+              </div>
+              {showQuickActions ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+            </button>
+            {showQuickActions && (
+              <div className="px-6 pb-6">
+                <div className="grid grid-cols-8 gap-4">
+                  {quickActions.map((action) => (
+                    <Link
+                      key={action.label}
+                      href={action.href}
+                      className="flex flex-col items-center gap-2 group"
+                    >
+                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${action.color} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform`}>
+                        <action.icon size={24} strokeWidth={2} />
+                      </div>
+                      <span className="text-[11px] font-semibold text-slate-600 text-center leading-tight">
+                        {action.label}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-6 text-center">
-            <div className="mx-auto mb-3 rounded-xl bg-gradient-to-br from-[#4454b8]/10 to-[#120774]/10 p-3 w-fit">
-              <Video className="h-5 w-5 text-[#4454b8]" />
+
+          {/* 2-Column: Aufgaben + Kalender */}
+          <div className="grid grid-cols-12 gap-6">
+            {/* AUFGABEN (8 cols) */}
+            <div className="col-span-8">
+              <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
+                {/* Section Header */}
+                <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#120774] to-[#4454b8] flex items-center justify-center">
+                    <CheckCircle2 size={16} className="text-white" strokeWidth={2.5} />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+                    Aufgaben
+                  </h3>
+                  <span className="text-xs font-bold text-orange-600 bg-orange-100 rounded-full px-2 py-0.5">
+                    {totalItems} Offen
+                  </span>
+                </div>
+
+                {/* Tabs */}
+                <div className="px-6 py-3 border-b border-slate-100 flex items-center gap-2">
+                  {(["alle", "heute", "überfällig", "erledigt"] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                        activeTab === tab
+                          ? "bg-[#4454b8] text-white"
+                          : "text-slate-600 hover:bg-slate-100"
+                      )}
+                    >
+                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Task List */}
+                <div className="divide-y divide-slate-50">
+                  {filteredItems.length > 0 ? (
+                    filteredItems.map((item) => (
+                      <TaskItem key={item.id} item={item} onDealClick={setSelectedDealId} />
+                    ))
+                  ) : (
+                    <div className="p-8 text-center">
+                      <CheckCircle2 size={32} className="mx-auto text-emerald-400 mb-2" />
+                      <p className="text-sm text-slate-500">Keine Aufgaben in dieser Ansicht</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-3 border-t border-slate-100">
+                  <Link
+                    href="/aufgaben"
+                    className="text-sm font-semibold text-[#4454b8] hover:text-[#120774] flex items-center gap-1 transition-colors"
+                  >
+                    Aufgabe hinzufügen <ChevronRight size={14} />
+                  </Link>
+                </div>
+              </div>
             </div>
-            <p className="text-sm font-medium text-slate-500">Kalender-Integration kommt bald</p>
-            <p className="text-xs text-slate-400 mt-1">Termine, Meetings und Verfügbarkeit direkt hier sehen</p>
+
+            {/* KALENDER (4 cols) */}
+            <div className="col-span-4">
+              <div className="sticky top-32 space-y-4">
+                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
+                  <div className="px-5 py-4 border-b border-slate-200 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00a84f] to-[#4dcb8b] flex items-center justify-center">
+                      <Calendar size={16} className="text-white" strokeWidth={2.5} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Kalender</h3>
+                      <p className="text-[11px] text-slate-500">
+                        {new Date().toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" })}.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 space-y-2">
+                    {calendarSlots.map((slot, i) => (
+                      <div
+                        key={i}
+                        className={`${slot.color} rounded-xl p-3 text-white`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-bold opacity-90">{slot.time}</span>
+                          <span className="text-[9px] font-bold bg-white/20 rounded px-1.5 py-0.5">
+                            {slot.type}
+                          </span>
+                        </div>
+                        <div className="text-sm font-bold">{slot.title}</div>
+                        {slot.sub && (
+                          <div className="text-[11px] opacity-80 mt-0.5">{slot.sub}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Verfügbare Zeit */}
+                <div className="bg-gradient-to-br from-emerald-50 to-white rounded-2xl border-2 border-emerald-200 shadow-lg p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 size={16} className="text-emerald-600" />
+                    <span className="text-xs font-bold text-emerald-700 uppercase tracking-wide">Verfügbare Zeit</span>
+                  </div>
+                  <div className="text-3xl font-bold text-emerald-700">4h 30m</div>
+                  <div className="text-xs text-emerald-600 mt-1">330 Minuten verplant von 600 Minuten</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* All Done State */}
-      {totalItems === 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center"
-          style={{ boxShadow: "0 1px 3px rgb(0 0 0 / 0.1)" }}
-        >
-          <div className="mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#00a84f] to-[#4dcb8b] p-4 text-white w-fit">
-            <CheckCircle2 className="h-8 w-8" />
-          </div>
-          <h3 className="text-lg font-bold text-slate-900">Alles erledigt!</h3>
-          <p className="text-sm text-slate-500 mt-1">Keine offenen Aufgaben oder Deal-Aktionen für die nächsten Tage.</p>
-        </div>
-      )}
-
-      {/* Overdue Section */}
-      {data.overdue.length > 0 && (
-        <ItemSection
-          title="Überfällig"
-          items={data.overdue}
-          accentGradient="from-red-500 to-red-400"
-          onDealClick={setSelectedDealId}
-        />
-      )}
-
-      {/* Today Section */}
-      {data.today.length > 0 && (
-        <ItemSection
-          title="Heute"
-          items={data.today}
-          accentGradient="from-[#120774] to-[#4454b8]"
-          onDealClick={setSelectedDealId}
-        />
-      )}
-
-      {/* Upcoming Section */}
-      {data.upcoming.length > 0 && (
-        <ItemSection
-          title="Nächste Tage"
-          items={data.upcoming}
-          accentGradient="from-[#00a84f] to-[#4dcb8b]"
-          onDealClick={setSelectedDealId}
-        />
-      )}
+      </main>
 
       {/* Deal Detail Popup */}
       <DealDetailSheet
@@ -194,94 +282,15 @@ export function MeinTagClient({ data, stages, contacts, companies, pipelines }: 
   );
 }
 
-function SummaryCard({
-  label,
-  count,
-  gradient,
-  glow,
-  icon: Icon,
-  alert,
-}: {
-  label: string;
-  count: number;
-  gradient: string;
-  glow: string;
-  icon: typeof AlertTriangle;
-  alert?: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-300",
-        alert && "ring-2 ring-red-200"
-      )}
-      style={{ boxShadow: `0 1px 3px rgb(0 0 0 / 0.1), 0 8px 20px -4px ${glow}` }}
-    >
-      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${gradient}`} />
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">{label}</p>
-          <p
-            className={`text-3xl font-bold tabular-nums bg-gradient-to-r ${gradient} bg-clip-text`}
-            style={{ WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
-          >
-            {count}
-          </p>
-        </div>
-        <div
-          className={`rounded-xl bg-gradient-to-br ${gradient} p-2.5 text-white`}
-          style={{ boxShadow: `0 4px 12px ${glow}` }}
-        >
-          <Icon className="h-5 w-5" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ItemSection({
-  title,
-  items,
-  accentGradient,
-  onDealClick,
-}: {
-  title: string;
-  items: TodayItem[];
-  accentGradient: string;
-  onDealClick: (dealId: string) => void;
-}) {
-  if (items.length === 0) return null;
-
-  return (
-    <div
-      className="rounded-2xl border border-slate-200 bg-white overflow-hidden"
-      style={{ boxShadow: "0 1px 3px rgb(0 0 0 / 0.1)" }}
-    >
-      <div className={`h-1 bg-gradient-to-r ${accentGradient}`} />
-      <div className="p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-slate-900">{title}</h3>
-          <span className="text-xs font-medium text-slate-400">{items.length} Einträge</span>
-        </div>
-        <div className="space-y-2">
-          {items.map((item) => (
-            <ItemCard key={item.id} item={item} onDealClick={onDealClick} />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ItemCard({ item, onDealClick }: { item: TodayItem; onDealClick: (dealId: string) => void }) {
+function TaskItem({ item, onDealClick }: { item: TodayItem; onDealClick: (dealId: string) => void }) {
   const config = typeConfig[item.type];
   const Icon = config.icon;
   const [isPending, startTransition] = useTransition();
   const [completed, setCompleted] = useState(false);
-
   const isTask = item.type === "task" || item.type === "overdue_task";
   const isDeal = item.type === "deal_action" || item.type === "overdue_deal";
   const rawId = item.id.replace(/^(task-|deal-)/, "");
+  const prio = priorityColors[item.priority || "medium"] || priorityColors.medium;
 
   const handleComplete = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -293,97 +302,63 @@ function ItemCard({ item, onDealClick }: { item: TodayItem; onDealClick: (dealId
     });
   };
 
-  const handleClick = () => {
-    if (isDeal) {
-      onDealClick(rawId);
-    }
-    // Tasks: navigate to /aufgaben (via Link fallback below)
-  };
-
   if (completed) {
     return (
-      <div className="flex items-center gap-3 rounded-xl px-3 py-3 bg-green-50/60">
-        <div className="rounded-lg p-2 shrink-0 bg-green-100 text-green-600">
-          <CheckCircle2 className="h-4 w-4" />
+      <div className="flex items-center gap-4 px-6 py-4 bg-emerald-50/50">
+        <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+          <Check size={14} className="text-emerald-600" />
         </div>
-        <p className="text-[13px] font-medium text-green-700 line-through">{item.title}</p>
-        <span className="text-[11px] text-green-600 ml-auto">Erledigt ✓</span>
+        <span className="text-sm text-emerald-700 font-medium line-through">{item.title}</span>
+        <span className="ml-auto text-[11px] text-emerald-600 font-bold">Erledigt</span>
       </div>
     );
   }
 
-  const content = (
+  return (
     <div
       className={cn(
-        "group flex items-center gap-3 rounded-xl px-3 py-3 transition-all cursor-pointer",
-        item.isOverdue ? "bg-red-50/60 hover:bg-red-50" : "hover:bg-slate-50"
+        "flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors cursor-pointer",
+        item.isOverdue && "bg-red-50/30"
       )}
-      onClick={isDeal ? handleClick : undefined}
+      onClick={() => isDeal ? onDealClick(rawId) : undefined}
     >
-      {/* Complete Button */}
+      {/* Complete circle */}
       <button
         onClick={handleComplete}
         disabled={isPending}
-        className={cn(
-          "rounded-lg p-2 shrink-0 transition-all",
-          isPending
-            ? "bg-slate-100 text-slate-400"
-            : "hover:bg-green-100 hover:text-green-600",
-          config.bg
-        )}
-        title="Als erledigt markieren"
+        className="w-8 h-8 rounded-full border-2 border-slate-300 hover:border-emerald-500 hover:bg-emerald-50 flex items-center justify-center shrink-0 transition-colors"
       >
-        {isPending ? (
-          <Clock className="h-4 w-4 animate-spin" />
-        ) : (
-          <Icon className="h-4 w-4 group-hover:hidden" />
-        )}
-        {!isPending && <Check className="h-4 w-4 hidden group-hover:block text-green-600" />}
+        {isPending && <Clock size={12} className="text-slate-400 animate-spin" />}
       </button>
 
+      {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold text-slate-800 leading-tight truncate">
-          {item.title}
-        </p>
-        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          {item.dealTitle && isTask && (
-            <span className="text-[11px] text-slate-400">{item.dealTitle}</span>
-          )}
-          {item.subtitle && isDeal && (
-            <span className="text-[11px] text-slate-400">Deal: {item.subtitle}</span>
-          )}
-          {item.contactName && (
-            <span className="text-[11px] text-slate-400">· {item.contactName}</span>
+        <p className="text-sm font-bold text-slate-900">{item.title}</p>
+        <div className="flex items-center gap-2 mt-1">
+          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${prio.bg}`}>
+            🏁 {prio.label}
+          </span>
+          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
+            item.isOverdue ? "bg-red-100 text-red-700 border-red-200" : statusStyles.open
+          }`}>
+            {item.isOverdue ? "Überfällig" : "Offen"}
+          </span>
+          {item.dueDate && (
+            <span className="text-[11px] text-slate-500 flex items-center gap-1">
+              <Clock size={10} />
+              {new Date(item.dueDate + "T00:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
+            </span>
           )}
           {item.companyName && (
-            <span className="text-[11px] text-slate-400">· {item.companyName}</span>
+            <span className="text-[11px] text-slate-400 flex items-center gap-1">
+              <Building2 size={10} />
+              {item.companyName}
+            </span>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
-        {item.priority && (
-          <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold uppercase", priorityColors[item.priority] ?? priorityColors.medium)}>
-            {item.priority}
-          </span>
-        )}
-        {item.dueDate && (
-          <span className={cn(
-            "text-[11px] font-medium whitespace-nowrap",
-            item.isOverdue ? "text-red-600" : "text-slate-400"
-          )}>
-            {new Date(item.dueDate + "T00:00:00").toLocaleDateString("de-DE", { day: "numeric", month: "short" })}
-          </span>
-        )}
-        <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
-      </div>
+      <ChevronRight size={16} className="text-slate-300 shrink-0" />
     </div>
   );
-
-  // Tasks without deals link to /aufgaben, deals open popup (handled by onClick)
-  if (isTask) {
-    return <Link href="/aufgaben">{content}</Link>;
-  }
-
-  return content;
 }

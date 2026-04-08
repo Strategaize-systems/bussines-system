@@ -17,12 +17,20 @@ interface ContactSheetProps {
   companies: { id: string; name: string }[];
   contact?: Contact;
   trigger?: React.ReactNode;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function ContactSheet({ companies, contact, trigger }: ContactSheetProps) {
-  const [open, setOpen] = useState(false);
+export function ContactSheet({ companies, contact, trigger, defaultOpen, onOpenChange: externalOnOpenChange }: ContactSheetProps) {
+  const [open, setOpen] = useState(defaultOpen ?? false);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  const handleOpenChange = (v: boolean) => {
+    setOpen(v);
+    if (!v) setError("");
+    externalOnOpenChange?.(v);
+  };
 
   const handleSubmit = (formData: FormData) => {
     setError("");
@@ -33,21 +41,23 @@ export function ContactSheet({ companies, contact, trigger }: ContactSheetProps)
       if (result.error) {
         setError(result.error);
       } else {
-        setOpen(false);
+        handleOpenChange(false);
       }
     });
   };
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (!v) setError(""); }}>
-      <SheetTrigger>
-        {trigger ?? (
-          <Button size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            Kontakt erstellen
-          </Button>
-        )}
-      </SheetTrigger>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      {trigger !== undefined && (
+        <SheetTrigger>
+          {trigger ?? (
+            <Button size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Kontakt erstellen
+            </Button>
+          )}
+        </SheetTrigger>
+      )}
       <SheetContent>
         <SheetHeader>
           <SheetTitle>

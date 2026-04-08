@@ -1,45 +1,21 @@
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  FileText,
-  Pencil,
-  Trash2,
-  User,
-  Building2,
-  Trophy,
-  XCircle,
-  Clock,
-} from "lucide-react";
+import { FileText, Pencil, Trash2, Trophy, XCircle, Clock, Plus } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
+import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
 import { ProposalSheet } from "./proposal-sheet";
 import { deleteProposal, type Proposal } from "./actions";
 import Link from "next/link";
 
-const wonLostLabels: Record<string, string> = {
-  price: "Preis",
-  timing: "Timing",
-  wrong_fit: "Falscher Fit",
-  no_priority: "Keine Priorität",
-  no_trust: "Kein Vertrauen",
-  partner_unsuitable: "Partner ungeeignet",
-  internally_blocked: "Intern blockiert",
-  no_champion: "Kein Champion",
-  no_budget: "Kein Budget",
-  other: "Sonstiges",
-};
-
-const selectClass = "select-premium";
-
-const statusConfig: Record<string, { label: string; color: string }> = {
-  draft: { label: "Entwurf", color: "bg-gray-100 text-gray-800" },
-  sent: { label: "Versendet", color: "bg-blue-100 text-blue-800" },
-  open: { label: "Offen", color: "bg-yellow-100 text-yellow-800" },
-  negotiation: { label: "Verhandlung", color: "bg-purple-100 text-purple-800" },
-  won: { label: "Gewonnen", color: "bg-green-100 text-green-800" },
-  lost: { label: "Verloren", color: "bg-red-100 text-red-800" },
+const statusConfig: Record<string, { label: string; variant: string }> = {
+  draft: { label: "Entwurf", variant: "bg-slate-100 text-slate-600 border-slate-200" },
+  sent: { label: "Versendet", variant: "bg-blue-100 text-blue-700 border-blue-200" },
+  open: { label: "Offen", variant: "bg-amber-100 text-amber-700 border-amber-200" },
+  negotiation: { label: "Verhandlung", variant: "bg-purple-100 text-purple-700 border-purple-200" },
+  won: { label: "Gewonnen", variant: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+  lost: { label: "Verloren", variant: "bg-red-100 text-red-700 border-red-200" },
 };
 
 interface ProposalsClientProps {
@@ -50,201 +26,79 @@ interface ProposalsClientProps {
 }
 
 export function ProposalsClient({ proposals, deals, contacts, companies }: ProposalsClientProps) {
+  const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [showNew, setShowNew] = useState(false);
 
   const filtered = useMemo(() => {
-    if (!statusFilter) return proposals;
-    return proposals.filter((p) => p.status === statusFilter);
-  }, [proposals, statusFilter]);
-
-  const wonCount = proposals.filter((p) => p.status === "won").length;
-  const lostCount = proposals.filter((p) => p.status === "lost").length;
-  const activeCount = proposals.filter((p) => !["won", "lost"].includes(p.status)).length;
+    let result = proposals;
+    if (searchQuery) { const q = searchQuery.toLowerCase(); result = result.filter((p) => p.title.toLowerCase().includes(q)); }
+    if (statusFilter) result = result.filter((p) => p.status === statusFilter);
+    return result;
+  }, [proposals, searchQuery, statusFilter]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Angebote</h1>
-          <p className="text-sm font-medium text-slate-500">
-            {proposals.length} Angebote gesamt
-          </p>
-        </div>
-        <ProposalSheet deals={deals} contacts={contacts} companies={companies} />
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="stat-card stat-card-primary">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-slate-50 p-2">
-              <Clock className="h-5 w-5 text-blue-500" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold tabular-nums">{activeCount}</div>
-              <div className="text-[11px] font-medium text-slate-500">Aktiv</div>
-            </div>
+    <div className="min-h-screen">
+      <PageHeader title="Angebote" subtitle={`${proposals.length} Angebote gesamt`}>
+        <button onClick={() => setShowNew(true)} className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2">
+          <Plus size={16} strokeWidth={2.5} /> Neues Angebot
+        </button>
+      </PageHeader>
+      <main className="px-8 py-8">
+        <div className="max-w-[1800px] mx-auto space-y-6">
+          <KPIGrid columns={3}>
+            <KPICard label="Aktiv" value={proposals.filter((p) => !["won", "lost"].includes(p.status)).length} icon={Clock} gradient="blue" />
+            <KPICard label="Gewonnen" value={proposals.filter((p) => p.status === "won").length} icon={Trophy} gradient="green" />
+            <KPICard label="Verloren" value={proposals.filter((p) => p.status === "lost").length} icon={XCircle} gradient="red" />
+          </KPIGrid>
+          <FilterBar searchPlaceholder="Angebot suchen..." searchValue={searchQuery} onSearchChange={setSearchQuery}>
+            <FilterSelect value={statusFilter} onChange={setStatusFilter} options={[
+              { value: "", label: "Alle Status" }, { value: "draft", label: "Entwurf" }, { value: "sent", label: "Versendet" },
+              { value: "open", label: "Offen" }, { value: "won", label: "Gewonnen" }, { value: "lost", label: "Verloren" },
+            ]} />
+          </FilterBar>
+          <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
+            {filtered.length > 0 ? (
+              <div className="divide-y divide-slate-100">
+                {filtered.map((p) => <ProposalRow key={p.id} proposal={p} deals={deals} contacts={contacts} companies={companies} />)}
+              </div>
+            ) : (
+              <div className="p-12 text-center">
+                <FileText size={40} className="mx-auto text-slate-300 mb-3" />
+                <p className="text-sm font-medium text-slate-500">Keine Angebote gefunden</p>
+              </div>
+            )}
           </div>
         </div>
-        <div className="stat-card stat-card-success">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-slate-50 p-2">
-              <Trophy className="h-5 w-5 text-green-500" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold tabular-nums">{wonCount}</div>
-              <div className="text-[11px] font-medium text-slate-500">Gewonnen</div>
-            </div>
-          </div>
-        </div>
-        <div className="stat-card stat-card-danger">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-slate-50 p-2">
-              <XCircle className="h-5 w-5 text-red-500" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold tabular-nums">{lostCount}</div>
-              <div className="text-[11px] font-medium text-slate-500">Verloren</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex items-center gap-3">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className={selectClass}
-        >
-          <option value="">Alle Status</option>
-          <option value="draft">Entwurf</option>
-          <option value="sent">Versendet</option>
-          <option value="open">Offen</option>
-          <option value="negotiation">Verhandlung</option>
-          <option value="won">Gewonnen</option>
-          <option value="lost">Verloren</option>
-        </select>
-        {statusFilter && (
-          <span className="text-sm font-medium text-slate-500">
-            {filtered.length} von {proposals.length}
-          </span>
-        )}
-      </div>
-
-      {/* Proposal List */}
-      <div className="space-y-2">
-        {filtered.length > 0 ? (
-          filtered.map((proposal) => (
-            <ProposalItem
-              key={proposal.id}
-              proposal={proposal}
-              deals={deals}
-              contacts={contacts}
-              companies={companies}
-            />
-          ))
-        ) : (
-          <Card>
-            <CardContent className="p-8 text-center text-sm text-muted-foreground">
-              Keine Angebote gefunden.
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      </main>
+      {showNew && <ProposalSheet deals={deals} contacts={contacts} companies={companies} defaultOpen onOpenChange={(open: boolean) => { if (!open) setShowNew(false); }} />}
     </div>
   );
 }
 
-function ProposalItem({
-  proposal,
-  deals,
-  contacts,
-  companies,
-}: {
-  proposal: Proposal;
-  deals: { id: string; title: string }[];
-  contacts: { id: string; first_name: string; last_name: string }[];
-  companies: { id: string; name: string }[];
-}) {
+function ProposalRow({ proposal, deals, contacts, companies }: { proposal: Proposal; deals: any[]; contacts: any[]; companies: any[] }) {
   const [isPending, startTransition] = useTransition();
   const st = statusConfig[proposal.status] ?? statusConfig.draft;
-
-  const handleDelete = () => {
-    startTransition(async () => {
-      await deleteProposal(proposal.id);
-    });
-  };
-
   return (
-    <Card>
-      <CardContent className="flex items-start gap-3 p-3">
-        <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{proposal.title}</span>
-            <Badge variant="outline" className="text-[10px]">V{proposal.version}</Badge>
-            <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${st.color}`}>
-              {st.label}
-            </span>
-          </div>
-
-          {proposal.price_range && (
-            <p className="text-xs text-muted-foreground mt-0.5">{proposal.price_range}</p>
-          )}
-
-          <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-muted-foreground">
-            {proposal.deals && (
-              <span className="flex items-center gap-1">
-                <FileText className="h-3 w-3" />
-                {proposal.deals.title}
-              </span>
-            )}
-            {proposal.contacts && (
-              <Link href={`/contacts/${proposal.contacts.id}`} className="flex items-center gap-1 hover:underline">
-                <User className="h-3 w-3" />
-                {proposal.contacts.first_name} {proposal.contacts.last_name}
-              </Link>
-            )}
-            {proposal.companies && (
-              <Link href={`/companies/${proposal.companies.id}`} className="flex items-center gap-1 hover:underline">
-                <Building2 className="h-3 w-3" />
-                {proposal.companies.name}
-              </Link>
-            )}
-            {proposal.won_lost_reason && (
-              <span className={`font-medium ${proposal.status === "won" ? "text-green-600" : "text-red-600"}`}>
-                Grund: {wonLostLabels[proposal.won_lost_reason] ?? proposal.won_lost_reason}
-              </span>
-            )}
-          </div>
+    <div className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors group">
+      <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center shrink-0"><FileText size={18} strokeWidth={2} /></div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold text-slate-900">{proposal.title}</span>
+          <span className="text-[10px] font-bold text-slate-400 bg-slate-100 rounded px-1.5 py-0.5">V{proposal.version}</span>
         </div>
-
-        {/* Actions */}
-        <div className="flex items-start gap-1 shrink-0">
-          <ProposalSheet
-            deals={deals}
-            contacts={contacts}
-            companies={companies}
-            proposal={proposal}
-            trigger={
-              <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-            }
-          />
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 w-7 p-0"
-            onClick={handleDelete}
-            disabled={isPending}
-          >
-            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-          </Button>
+        <div className="flex items-center gap-2 mt-1">
+          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${st.variant}`}>{st.label}</span>
+          {proposal.price_range && <span className="text-[11px] font-semibold text-slate-600">{proposal.price_range}</span>}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      {proposal.contacts && <Link href={`/contacts/${proposal.contacts.id}`} className="text-xs font-medium text-slate-600 shrink-0" onClick={(e) => e.stopPropagation()}>{proposal.contacts.first_name} {proposal.contacts.last_name}</Link>}
+      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <ProposalSheet deals={deals} contacts={contacts} companies={companies} proposal={proposal} trigger={
+          <button className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"><Pencil size={14} /></button>
+        } />
+        <button onClick={() => startTransition(async () => { await deleteProposal(proposal.id); })} disabled={isPending} className="p-1.5 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><Trash2 size={14} /></button>
+      </div>
+    </div>
   );
 }

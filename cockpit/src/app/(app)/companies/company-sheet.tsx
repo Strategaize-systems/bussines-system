@@ -16,12 +16,20 @@ import { useState, useTransition } from "react";
 interface CompanySheetProps {
   company?: Company;
   trigger?: React.ReactNode;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function CompanySheet({ company, trigger }: CompanySheetProps) {
-  const [open, setOpen] = useState(false);
+export function CompanySheet({ company, trigger, defaultOpen, onOpenChange: externalOnOpenChange }: CompanySheetProps) {
+  const [open, setOpen] = useState(defaultOpen ?? false);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  const handleOpenChange = (v: boolean) => {
+    setOpen(v);
+    if (!v) setError("");
+    externalOnOpenChange?.(v);
+  };
 
   const handleSubmit = (formData: FormData) => {
     setError("");
@@ -32,21 +40,23 @@ export function CompanySheet({ company, trigger }: CompanySheetProps) {
       if (result.error) {
         setError(result.error);
       } else {
-        setOpen(false);
+        handleOpenChange(false);
       }
     });
   };
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (!v) setError(""); }}>
-      <SheetTrigger>
-        {trigger ?? (
-          <Button size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            Firma erstellen
-          </Button>
-        )}
-      </SheetTrigger>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      {trigger !== undefined && (
+        <SheetTrigger>
+          {trigger ?? (
+            <Button size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Firma erstellen
+            </Button>
+          )}
+        </SheetTrigger>
+      )}
       <SheetContent>
         <SheetHeader>
           <SheetTitle>

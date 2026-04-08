@@ -2,30 +2,46 @@
 
 import { useState, useMemo, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import {
-  Check,
-  Trash2,
-  Pencil,
-  User,
-  Building2,
-  Calendar,
+  CheckSquare,
   AlertCircle,
-  ListTodo,
-  Clock,
   CheckCircle2,
+  Phone,
+  FileText,
+  Mail,
+  ChevronRight,
+  Pencil,
+  Trash2,
+  Eye,
+  Clock,
+  Calendar,
+  Plus,
 } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
+import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
 import { TaskSheet } from "./task-sheet";
 import { completeTask, deleteTask, type Task } from "./actions";
 import Link from "next/link";
 
-const selectClass = "select-premium";
+const priorityConfig: Record<string, { label: string; variant: string }> = {
+  high: { label: "Hoch", variant: "bg-red-100 text-red-700 border-red-200" },
+  medium: { label: "Mittel", variant: "bg-amber-100 text-amber-700 border-amber-200" },
+  low: { label: "Niedrig", variant: "bg-green-100 text-green-700 border-green-200" },
+};
 
-const priorityConfig: Record<string, { label: string; color: string }> = {
-  high: { label: "Hoch", color: "bg-red-100 text-red-800" },
-  medium: { label: "Mittel", color: "bg-yellow-100 text-yellow-800" },
-  low: { label: "Niedrig", color: "bg-green-100 text-green-800" },
+const statusConfig: Record<string, { label: string; variant: string }> = {
+  open: { label: "Offen", variant: "bg-blue-100 text-blue-700 border-blue-200" },
+  completed: { label: "Erledigt", variant: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+  waiting: { label: "Wartet", variant: "bg-slate-100 text-slate-600 border-slate-200" },
+};
+
+const typeIcons: Record<string, typeof Phone> = {
+  call: Phone,
+  email: Mail,
+  task: CheckSquare,
+  proposal: FileText,
+  meeting: Calendar,
 };
 
 interface AufgabenClientProps {
@@ -36,15 +52,10 @@ interface AufgabenClientProps {
 }
 
 export function AufgabenClient({ tasks, contacts, companies, deals }: AufgabenClientProps) {
-  const [statusFilter, setStatusFilter] = useState("open");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
-
-  const filtered = useMemo(() => {
-    let result = tasks;
-    if (statusFilter) result = result.filter((t) => t.status === statusFilter);
-    if (priorityFilter) result = result.filter((t) => t.priority === priorityFilter);
-    return result;
-  }, [tasks, statusFilter, priorityFilter]);
+  const [showNewTask, setShowNewTask] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
   const openCount = tasks.filter((t) => t.status === "open").length;
@@ -53,108 +64,124 @@ export function AufgabenClient({ tasks, contacts, companies, deals }: AufgabenCl
   ).length;
   const completedCount = tasks.filter((t) => t.status === "completed").length;
 
+  const filtered = useMemo(() => {
+    let result = tasks;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((t) => t.title.toLowerCase().includes(q));
+    }
+    if (statusFilter) result = result.filter((t) => t.status === statusFilter);
+    if (priorityFilter) result = result.filter((t) => t.priority === priorityFilter);
+    return result;
+  }, [tasks, searchQuery, statusFilter, priorityFilter]);
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Aufgaben</h1>
-          <p className="text-sm font-medium text-slate-500">
-            {tasks.length} Aufgaben gesamt
-          </p>
-        </div>
-        <TaskSheet contacts={contacts} companies={companies} deals={deals} />
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="stat-card stat-card-primary">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-slate-50 p-2">
-              <ListTodo className="h-5 w-5 text-blue-500" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold tabular-nums">{openCount}</div>
-              <div className="text-[11px] font-medium text-slate-500">Offen</div>
-            </div>
-          </div>
-        </div>
-        <div className="stat-card stat-card-danger">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-slate-50 p-2">
-              <AlertCircle className="h-5 w-5 text-red-500" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold tabular-nums">{overdueCount}</div>
-              <div className="text-[11px] font-medium text-slate-500">Überfällig</div>
-            </div>
-          </div>
-        </div>
-        <div className="stat-card stat-card-success">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-slate-50 p-2">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold tabular-nums">{completedCount}</div>
-              <div className="text-[11px] font-medium text-slate-500">Erledigt</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex items-center gap-3">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className={selectClass}
+    <div className="min-h-screen">
+      <PageHeader title="Aufgaben" subtitle={`${tasks.length} Aufgaben gesamt`}>
+        <button
+          onClick={() => setShowNewTask(true)}
+          className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2"
         >
-          <option value="">Alle Status</option>
-          <option value="open">Offen</option>
-          <option value="completed">Erledigt</option>
-          <option value="waiting">Wartet</option>
-        </select>
-        <select
-          value={priorityFilter}
-          onChange={(e) => setPriorityFilter(e.target.value)}
-          className={selectClass}
-        >
-          <option value="">Alle Prioritäten</option>
-          <option value="high">Hoch</option>
-          <option value="medium">Mittel</option>
-          <option value="low">Niedrig</option>
-        </select>
-        <span className="text-sm font-medium text-slate-500">
-          {filtered.length} Aufgaben
-        </span>
-      </div>
+          <Plus size={16} strokeWidth={2.5} />
+          Aufgabe erstellen
+        </button>
+      </PageHeader>
 
-      {/* Task List */}
-      <div className="space-y-2">
-        {filtered.length > 0 ? (
-          filtered.map((task) => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              today={today}
-              contacts={contacts}
-              companies={companies}
-              deals={deals}
+      <main className="px-8 py-8">
+        <div className="max-w-[1800px] mx-auto space-y-6">
+          {/* KPI Cards */}
+          <KPIGrid columns={3}>
+            <KPICard
+              label="Offen"
+              value={openCount}
+              icon={CheckSquare}
+              gradient="blue"
+              href="/aufgaben"
             />
-          ))
-        ) : (
-          <Card>
-            <CardContent className="p-8 text-center text-sm text-muted-foreground">
-              Keine Aufgaben gefunden.
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            <KPICard
+              label="Überfällig"
+              value={overdueCount}
+              icon={AlertCircle}
+              gradient="red"
+              href="/aufgaben"
+            />
+            <KPICard
+              label="Erledigt"
+              value={completedCount}
+              icon={CheckCircle2}
+              gradient="green"
+              href="/aufgaben"
+            />
+          </KPIGrid>
+
+          {/* Filter Bar */}
+          <FilterBar
+            searchPlaceholder="Aufgaben durchsuchen..."
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+          >
+            <FilterSelect
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { value: "", label: "Alle Status" },
+                { value: "open", label: "Offen" },
+                { value: "completed", label: "Erledigt" },
+                { value: "waiting", label: "Wartet" },
+              ]}
+            />
+            <FilterSelect
+              value={priorityFilter}
+              onChange={setPriorityFilter}
+              options={[
+                { value: "", label: "Alle Prioritäten" },
+                { value: "high", label: "Hoch" },
+                { value: "medium", label: "Mittel" },
+                { value: "low", label: "Niedrig" },
+              ]}
+            />
+          </FilterBar>
+
+          {/* Task List */}
+          <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
+            {filtered.length > 0 ? (
+              <div className="divide-y divide-slate-100">
+                {filtered.map((task) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    today={today}
+                    contacts={contacts}
+                    companies={companies}
+                    deals={deals}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="p-12 text-center">
+                <CheckSquare size={40} className="mx-auto text-slate-300 mb-3" />
+                <p className="text-sm font-medium text-slate-500">Keine Aufgaben gefunden</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+
+      {/* New Task Sheet */}
+      {showNewTask && (
+        <TaskSheet
+          contacts={contacts}
+          companies={companies}
+          deals={deals}
+          defaultOpen
+          onOpenChange={(open) => { if (!open) setShowNewTask(false); }}
+        />
+      )}
     </div>
   );
 }
 
-function TaskItem({
+function TaskRow({
   task,
   today,
   contacts,
@@ -169,8 +196,9 @@ function TaskItem({
 }) {
   const [isPending, startTransition] = useTransition();
   const isOverdue = task.status === "open" && task.due_date && task.due_date < today;
-  const isCompleted = task.status === "completed";
-  const prio = priorityConfig[task.priority] ?? priorityConfig.medium;
+  const prio = priorityConfig[task.priority] || priorityConfig.medium;
+  const status = statusConfig[task.status] || statusConfig.open;
+  const TypeIcon = typeIcons["task"] || CheckSquare;
 
   const handleComplete = () => {
     startTransition(async () => {
@@ -185,93 +213,107 @@ function TaskItem({
   };
 
   return (
-    <Card className={isOverdue ? "border-red-300 bg-red-50/50" : ""}>
-      <CardContent className="flex items-start gap-3 p-3">
-        {/* Complete button */}
-        <button
-          onClick={handleComplete}
-          disabled={isPending || isCompleted}
-          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-            isCompleted
-              ? "border-green-500 bg-green-500 text-white"
-              : "border-muted-foreground/30 hover:border-green-500"
-          }`}
-        >
-          {isCompleted && <Check className="h-3 w-3" />}
-        </button>
+    <div className={`flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors group ${isOverdue ? "bg-red-50/30" : ""}`}>
+      {/* Type Icon */}
+      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+        isOverdue ? "bg-red-100 text-red-600" : "bg-slate-100 text-slate-500"
+      }`}>
+        <TypeIcon size={18} strokeWidth={2} />
+      </div>
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className={`text-sm font-medium ${isCompleted ? "line-through text-muted-foreground" : ""}`}>
-              {task.title}
+      {/* Title + Badges */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className={`text-sm font-bold text-slate-900 ${task.status === "completed" ? "line-through text-slate-400" : ""}`}>
+            {task.title}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 mt-1">
+          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${status.variant}`}>
+            {status.label}
+          </span>
+          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${prio.variant}`}>
+            🏁 {prio.label}
+          </span>
+          {isOverdue && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border bg-red-100 text-red-700 border-red-200">
+              Überfällig
             </span>
-            <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${prio.color}`}>
-              {prio.label}
-            </span>
-            {isOverdue && (
-              <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                Überfällig
-              </Badge>
-            )}
-          </div>
-
-          {task.description && (
-            <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>
           )}
-
-          <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-muted-foreground">
-            {task.due_date && (
-              <span className={`flex items-center gap-1 ${isOverdue ? "text-red-600 font-medium" : ""}`}>
-                <Calendar className="h-3 w-3" />
-                {new Date(task.due_date).toLocaleDateString("de-DE")}
-              </span>
-            )}
-            {task.contacts && (
-              <Link href={`/contacts/${task.contacts.id}`} className="flex items-center gap-1 hover:underline">
-                <User className="h-3 w-3" />
-                {task.contacts.first_name} {task.contacts.last_name}
-              </Link>
-            )}
-            {task.companies && (
-              <Link href={`/companies/${task.companies.id}`} className="flex items-center gap-1 hover:underline">
-                <Building2 className="h-3 w-3" />
-                {task.companies.name}
-              </Link>
-            )}
-            {task.deals && (
-              <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {task.deals.title}
-              </span>
-            )}
-          </div>
         </div>
+      </div>
 
-        {/* Actions */}
-        <div className="flex items-start gap-1 shrink-0">
-          <TaskSheet
-            contacts={contacts}
-            companies={companies}
-            deals={deals}
-            task={task}
-            trigger={
-              <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-            }
-          />
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 w-7 p-0"
-            onClick={handleDelete}
-            disabled={isPending}
+      {/* Due Date */}
+      <div className="text-right shrink-0 w-24">
+        {task.due_date && (
+          <>
+            <div className="text-[10px] font-bold text-slate-400 uppercase">Fällig</div>
+            <div className={`text-xs font-semibold ${isOverdue ? "text-red-600" : "text-slate-700"}`}>
+              {new Date(task.due_date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}.
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Duration */}
+      <div className="text-right shrink-0 w-16">
+        <div className="text-[10px] font-bold text-slate-400 uppercase">Dauer</div>
+        <div className="text-xs font-semibold text-slate-600 flex items-center gap-1 justify-end">
+          <Clock size={10} />
+          30 Min
+        </div>
+      </div>
+
+      {/* Linked Company */}
+      <div className="shrink-0">
+        {task.companies ? (
+          <Link
+            href={`/companies/${task.companies.id}`}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-xs font-bold text-blue-700 hover:bg-blue-100 transition-colors"
+            onClick={(e) => e.stopPropagation()}
           >
-            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+            {task.companies.name}
+          </Link>
+        ) : (
+          <span className="text-xs text-slate-300">–</span>
+        )}
+      </div>
+
+      {/* Assignee */}
+      <div className="shrink-0 w-28 text-right">
+        {task.contacts ? (
+          <span className="text-xs font-medium text-slate-600">
+            {task.contacts.first_name} {task.contacts.last_name}
+          </span>
+        ) : (
+          <span className="text-xs text-slate-300">–</span>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+          <Eye size={14} />
+        </button>
+        <TaskSheet
+          contacts={contacts}
+          companies={companies}
+          deals={deals}
+          task={task}
+          trigger={
+            <button className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+              <Pencil size={14} />
+            </button>
+          }
+        />
+        <button
+          onClick={handleDelete}
+          disabled={isPending}
+          className="p-1.5 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+    </div>
   );
 }

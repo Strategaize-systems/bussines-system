@@ -18,30 +18,36 @@ interface ReferralSheetProps {
   companies: { id: string; name: string }[];
   deals: { id: string; title: string }[];
   defaultReferrerId?: string;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function ReferralSheet({ contacts, companies, deals, defaultReferrerId }: ReferralSheetProps) {
-  const [open, setOpen] = useState(false);
+export function ReferralSheet({ contacts, companies, deals, defaultReferrerId, defaultOpen, onOpenChange: externalOnOpenChange }: ReferralSheetProps) {
+  const [open, setOpen] = useState(defaultOpen ?? false);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  const handleOpenChange = (v: boolean) => { setOpen(v); if (!v) setError(""); externalOnOpenChange?.(v); };
 
   const handleSubmit = (formData: FormData) => {
     setError("");
     startTransition(async () => {
       const result = await createReferral(formData);
       if (result.error) setError(result.error);
-      else setOpen(false);
+      else handleOpenChange(false);
     });
   };
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (!v) setError(""); }}>
-      <SheetTrigger>
-        <Button size="sm">
-          <Plus className="mr-2 h-4 w-4" />
-          Empfehlung erfassen
-        </Button>
-      </SheetTrigger>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      {!defaultOpen && (
+        <SheetTrigger>
+          <Button size="sm">
+            <Plus className="mr-2 h-4 w-4" />
+            Empfehlung erfassen
+          </Button>
+        </SheetTrigger>
+      )}
       <SheetContent>
         <SheetHeader>
           <SheetTitle>Neue Empfehlung</SheetTitle>

@@ -1,250 +1,121 @@
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import {
-  Mail,
-  Send,
-  Clock,
-  AlertCircle,
-  CheckCircle2,
-  Trash2,
-  User,
-  Building2,
-  Calendar,
+  Mail, Send, Clock, AlertCircle, CheckCircle2, Trash2, Plus, Calendar,
 } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
+import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
 import { EmailSheet } from "./email-sheet";
 import { updateFollowUpStatus, deleteEmail, type Email } from "./actions";
 import Link from "next/link";
 
-const selectClass = "select-premium";
-
-const followUpConfig: Record<string, { label: string; color: string }> = {
-  none: { label: "Kein Follow-up", color: "" },
-  pending: { label: "Offen", color: "bg-yellow-100 text-yellow-800" },
-  replied: { label: "Beantwortet", color: "bg-green-100 text-green-800" },
-  overdue: { label: "Überfällig", color: "bg-red-100 text-red-800" },
+const followUpConfig: Record<string, { label: string; variant: string }> = {
+  none: { label: "Kein Follow-up", variant: "bg-slate-100 text-slate-600 border-slate-200" },
+  pending: { label: "Offen", variant: "bg-amber-100 text-amber-700 border-amber-200" },
+  replied: { label: "Beantwortet", variant: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+  overdue: { label: "Überfällig", variant: "bg-red-100 text-red-700 border-red-200" },
 };
 
-interface EmailsClientProps {
-  emails: Email[];
-}
+interface EmailsClientProps { emails: Email[]; }
 
 export function EmailsClient({ emails }: EmailsClientProps) {
+  const [searchQuery, setSearchQuery] = useState("");
   const [followUpFilter, setFollowUpFilter] = useState("");
-
+  const [showNewEmail, setShowNewEmail] = useState(false);
   const today = new Date().toISOString().split("T")[0];
 
-  // Mark overdue follow-ups client-side
-  const emailsWithOverdue = useMemo(() => {
-    return emails.map((e) => ({
-      ...e,
-      follow_up_status:
-        e.follow_up_status === "pending" && e.follow_up_date && e.follow_up_date < today
-          ? "overdue"
-          : e.follow_up_status,
-    }));
-  }, [emails, today]);
+  const emailsWithOverdue = useMemo(() => emails.map((e) => ({
+    ...e,
+    follow_up_status: e.follow_up_status === "pending" && e.follow_up_date && e.follow_up_date < today ? "overdue" : e.follow_up_status,
+  })), [emails, today]);
 
   const filtered = useMemo(() => {
-    if (!followUpFilter) return emailsWithOverdue;
-    return emailsWithOverdue.filter((e) => e.follow_up_status === followUpFilter);
-  }, [emailsWithOverdue, followUpFilter]);
-
-  const sentCount = emails.filter((e) => e.status === "sent").length;
-  const pendingFollowUps = emailsWithOverdue.filter((e) => e.follow_up_status === "pending").length;
-  const overdueFollowUps = emailsWithOverdue.filter((e) => e.follow_up_status === "overdue").length;
+    let result = emailsWithOverdue;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((e) => (e.subject || "").toLowerCase().includes(q) || (e.to_address || "").toLowerCase().includes(q));
+    }
+    if (followUpFilter) result = result.filter((e) => e.follow_up_status === followUpFilter);
+    return result;
+  }, [emailsWithOverdue, searchQuery, followUpFilter]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">E-Mails</h1>
-          <p className="text-sm font-medium text-slate-500">
-            {emails.length} E-Mails gesamt
-          </p>
-        </div>
-        <EmailSheet />
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="stat-card stat-card-primary">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-slate-50 p-2">
-              <Send className="h-5 w-5 text-blue-500" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold tabular-nums">{sentCount}</div>
-              <div className="text-[11px] font-medium text-slate-500">Gesendet</div>
-            </div>
+    <div className="min-h-screen">
+      <PageHeader title="E-Mails" subtitle={`${emails.length} E-Mails gesamt`}>
+        <button onClick={() => setShowNewEmail(true)} className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2">
+          <Plus size={16} strokeWidth={2.5} /> Neue E-Mail
+        </button>
+      </PageHeader>
+      <main className="px-8 py-8">
+        <div className="max-w-[1800px] mx-auto space-y-6">
+          <KPIGrid columns={3}>
+            <KPICard label="Gesendet" value={emails.filter((e) => e.status === "sent").length} icon={Send} gradient="blue" />
+            <KPICard label="Follow-ups offen" value={emailsWithOverdue.filter((e) => e.follow_up_status === "pending").length} icon={Clock} gradient="yellow" />
+            <KPICard label="Überfällig" value={emailsWithOverdue.filter((e) => e.follow_up_status === "overdue").length} icon={AlertCircle} gradient="red" />
+          </KPIGrid>
+          <FilterBar searchPlaceholder="E-Mail suchen..." searchValue={searchQuery} onSearchChange={setSearchQuery}>
+            <FilterSelect value={followUpFilter} onChange={setFollowUpFilter} options={[
+              { value: "", label: "Alle E-Mails" }, { value: "pending", label: "Follow-up offen" },
+              { value: "overdue", label: "Überfällig" }, { value: "replied", label: "Beantwortet" },
+            ]} />
+          </FilterBar>
+          <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
+            {filtered.length > 0 ? (
+              <div className="divide-y divide-slate-100">
+                {filtered.map((email) => <EmailRow key={email.id} email={email} />)}
+              </div>
+            ) : (
+              <div className="p-12 text-center">
+                <Mail size={40} className="mx-auto text-slate-300 mb-3" />
+                <p className="text-sm font-medium text-slate-500">Keine E-Mails gefunden</p>
+              </div>
+            )}
           </div>
         </div>
-        <div className="stat-card stat-card-warning">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-slate-50 p-2">
-              <Clock className="h-5 w-5 text-yellow-500" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold tabular-nums">{pendingFollowUps}</div>
-              <div className="text-[11px] font-medium text-slate-500">Follow-ups offen</div>
-            </div>
-          </div>
-        </div>
-        <div className="stat-card stat-card-danger">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-slate-50 p-2">
-              <AlertCircle className="h-5 w-5 text-red-500" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold tabular-nums">{overdueFollowUps}</div>
-              <div className="text-[11px] font-medium text-slate-500">Überfällig</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex items-center gap-3">
-        <select
-          value={followUpFilter}
-          onChange={(e) => setFollowUpFilter(e.target.value)}
-          className={selectClass}
-        >
-          <option value="">Alle E-Mails</option>
-          <option value="pending">Follow-up offen</option>
-          <option value="overdue">Überfällig</option>
-          <option value="replied">Beantwortet</option>
-          <option value="none">Kein Follow-up</option>
-        </select>
-        {followUpFilter && (
-          <span className="text-sm font-medium text-slate-500">
-            {filtered.length} von {emails.length}
-          </span>
-        )}
-      </div>
-
-      {/* Email List */}
-      <div className="space-y-2">
-        {filtered.length > 0 ? (
-          filtered.map((email) => (
-            <EmailItem key={email.id} email={email} />
-          ))
-        ) : (
-          <Card>
-            <CardContent className="p-8 text-center text-sm text-muted-foreground">
-              Keine E-Mails gefunden.
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      </main>
+      {showNewEmail && <EmailSheet defaultOpen onOpenChange={(open: boolean) => { if (!open) setShowNewEmail(false); }} />}
     </div>
   );
 }
 
-function EmailItem({ email }: { email: Email }) {
+function EmailRow({ email }: { email: Email }) {
   const [isPending, startTransition] = useTransition();
   const fu = followUpConfig[email.follow_up_status] ?? followUpConfig.none;
-
-  const handleMarkReplied = () => {
-    startTransition(async () => {
-      await updateFollowUpStatus(email.id, "replied");
-    });
-  };
-
-  const handleDelete = () => {
-    startTransition(async () => {
-      await deleteEmail(email.id);
-    });
-  };
-
   return (
-    <Card className={email.follow_up_status === "overdue" ? "border-red-300 bg-red-50/50" : ""}>
-      <CardContent className="flex items-start gap-3 p-3">
-        <Mail className={`mt-0.5 h-4 w-4 shrink-0 ${email.status === "sent" ? "text-blue-500" : "text-muted-foreground"}`} />
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium truncate">{email.subject || "(Kein Betreff)"}</span>
-            {email.status === "draft" && (
-              <Badge variant="outline" className="text-[10px]">Entwurf</Badge>
-            )}
-            {fu.color && (
-              <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${fu.color}`}>
-                {fu.label}
-              </span>
-            )}
-          </div>
-
-          <p className="text-xs text-muted-foreground mt-0.5 truncate">
-            An: {email.to_address}
-          </p>
-
-          {email.body && (
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-              {email.body}
-            </p>
-          )}
-
-          <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-muted-foreground">
-            {email.sent_at && (
-              <span className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                {new Date(email.sent_at).toLocaleDateString("de-DE", {
-                  day: "2-digit", month: "2-digit", year: "numeric",
-                  hour: "2-digit", minute: "2-digit",
-                })}
-              </span>
-            )}
-            {email.contacts && (
-              <Link href={`/contacts/${email.contacts.id}`} className="flex items-center gap-1 hover:underline">
-                <User className="h-3 w-3" />
-                {email.contacts.first_name} {email.contacts.last_name}
-              </Link>
-            )}
-            {email.companies && (
-              <Link href={`/companies/${email.companies.id}`} className="flex items-center gap-1 hover:underline">
-                <Building2 className="h-3 w-3" />
-                {email.companies.name}
-              </Link>
-            )}
-            {email.follow_up_date && (
-              <span className={`flex items-center gap-1 ${email.follow_up_status === "overdue" ? "text-red-600 font-medium" : ""}`}>
-                <Clock className="h-3 w-3" />
-                Follow-up: {new Date(email.follow_up_date).toLocaleDateString("de-DE")}
-              </span>
-            )}
-          </div>
+    <div className={`flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors group ${email.follow_up_status === "overdue" ? "bg-red-50/30" : ""}`}>
+      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${email.status === "sent" ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"}`}>
+        <Mail size={18} strokeWidth={2} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-bold text-slate-900 truncate">{email.subject || "(Kein Betreff)"}</div>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-[11px] text-slate-500 truncate">An: {email.to_address}</span>
+          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${fu.variant}`}>{fu.label}</span>
         </div>
-
-        {/* Actions */}
-        <div className="flex items-start gap-1 shrink-0">
-          {(email.follow_up_status === "pending" || email.follow_up_status === "overdue") && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 w-7 p-0"
-              onClick={handleMarkReplied}
-              disabled={isPending}
-              title="Als beantwortet markieren"
-            >
-              <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-            </Button>
-          )}
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 w-7 p-0"
-            onClick={handleDelete}
-            disabled={isPending}
-            title="Löschen"
-          >
-            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-          </Button>
+      </div>
+      {email.sent_at && (
+        <div className="text-right shrink-0 w-24">
+          <div className="text-[10px] font-bold text-slate-400 uppercase">Gesendet</div>
+          <div className="text-xs font-semibold text-slate-600">{new Date(email.sent_at).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+      {email.contacts && (
+        <Link href={`/contacts/${email.contacts.id}`} className="text-xs font-medium text-slate-600 shrink-0 hover:text-[#4454b8]" onClick={(e) => e.stopPropagation()}>
+          {email.contacts.first_name} {email.contacts.last_name}
+        </Link>
+      )}
+      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        {(email.follow_up_status === "pending" || email.follow_up_status === "overdue") && (
+          <button onClick={() => startTransition(async () => { await updateFollowUpStatus(email.id, "replied"); })} disabled={isPending} className="p-1.5 rounded-md hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition-colors">
+            <CheckCircle2 size={14} />
+          </button>
+        )}
+        <button onClick={() => startTransition(async () => { await deleteEmail(email.id); })} disabled={isPending} className="p-1.5 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors">
+          <Trash2 size={14} />
+        </button>
+      </div>
+    </div>
   );
 }

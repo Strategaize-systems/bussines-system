@@ -2,15 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
-import { DataTable } from "@/components/ui/data-table";
+import { Handshake, Users, Shield, Star, MapPin, UserPlus } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
+import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
+import { ViewToggle } from "@/components/ui/view-toggle";
 import { ContactSheet } from "../contacts/contact-sheet";
-import { Button } from "@/components/ui/button";
-import { Kanban, Users, Shield, Star } from "lucide-react";
-import { columns } from "./columns";
 import type { Contact } from "../contacts/actions";
-import Link from "next/link";
-
-const selectClass = "select-premium";
 
 const typeOptions = [
   { value: "", label: "Alle Typen" },
@@ -27,7 +25,6 @@ const trustOptions = [
   { value: "hoch", label: "Hoch" },
   { value: "mittel", label: "Mittel" },
   { value: "niedrig", label: "Niedrig" },
-  { value: "unbekannt", label: "Unbekannt" },
 ];
 
 interface MultiplikatorenClientProps {
@@ -35,118 +32,164 @@ interface MultiplikatorenClientProps {
   companies: { id: string; name: string }[];
 }
 
-export function MultiplikatorenClient({
-  multipliers,
-  companies,
-}: MultiplikatorenClientProps) {
+export function MultiplikatorenClient({ multipliers, companies }: MultiplikatorenClientProps) {
   const router = useRouter();
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [trustFilter, setTrustFilter] = useState("");
+  const [showNewContact, setShowNewContact] = useState(false);
 
   const filtered = useMemo(() => {
     let result = multipliers;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (m) =>
+          `${m.first_name} ${m.last_name}`.toLowerCase().includes(q) ||
+          (m.multiplier_type || "").toLowerCase().includes(q)
+      );
+    }
     if (typeFilter) result = result.filter((m) => m.multiplier_type === typeFilter);
     if (trustFilter) result = result.filter((m) => m.trust_level === trustFilter);
     return result;
-  }, [multipliers, typeFilter, trustFilter]);
+  }, [multipliers, searchQuery, typeFilter, trustFilter]);
 
   const highTrust = multipliers.filter((m) => m.trust_level === "hoch").length;
   const highReferral = multipliers.filter((m) => m.referral_capability === "hoch").length;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Multiplikatoren</h1>
-          <p className="text-sm font-medium text-slate-500">
-            {multipliers.length} Multiplikatoren im System
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link href="/pipeline/multiplikatoren">
-            <Button variant="outline" size="sm">
-              <Kanban className="mr-2 h-4 w-4" />
-              Pipeline
-            </Button>
-          </Link>
-          <ContactSheet companies={companies} />
-        </div>
-      </div>
+    <div className="min-h-screen">
+      <PageHeader title="Multiplikatoren" subtitle="Beziehungsmanagement · Steuerberater, Banker, Verbände">
+        <ViewToggle mode={viewMode} onChange={setViewMode} />
+      </PageHeader>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="stat-card stat-card-primary">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-slate-50 p-2">
-              <Users className="h-5 w-5 text-blue-500" />
+      <main className="px-8 py-8">
+        <div className="max-w-[1800px] mx-auto space-y-6">
+          {/* KPI Cards */}
+          <KPIGrid columns={4}>
+            <KPICard label="Multiplikatoren" value={multipliers.length} icon={Handshake} gradient="blue" />
+            <KPICard label="Hohes Vertrauen" value={highTrust} icon={Shield} gradient="green" />
+            <KPICard label="Hohe Empfehlungsfähigkeit" value={highReferral} icon={Star} gradient="yellow" />
+            <KPICard label="Aktiv" value={multipliers.filter((m) => m.relationship_type && m.relationship_type !== "inaktiv").length} icon={Users} gradient="emerald" />
+          </KPIGrid>
+
+          {/* Filter Bar */}
+          <FilterBar
+            searchPlaceholder="Multiplikator suchen..."
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            actionLabel="Multiplikator"
+            actionIcon={UserPlus}
+            onAction={() => setShowNewContact(true)}
+          >
+            <FilterSelect value={typeFilter} onChange={setTypeFilter} options={typeOptions} />
+            <FilterSelect value={trustFilter} onChange={setTrustFilter} options={trustOptions} />
+          </FilterBar>
+
+          {/* Cards Grid */}
+          <div className="grid grid-cols-12 gap-6">
+            <div className="col-span-8">
+              <div className="grid grid-cols-2 gap-6">
+                {filtered.map((m) => (
+                  <div
+                    key={m.id}
+                    onClick={() => router.push(`/contacts/${m.id}`)}
+                    className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden hover:border-[#4454b8] hover:shadow-xl transition-all group cursor-pointer"
+                  >
+                    <div className="p-5 border-b border-slate-200 bg-gradient-to-br from-slate-50 to-white">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
+                          {m.first_name.charAt(0)}{m.last_name.charAt(0)}
+                        </div>
+                        <div>
+                          <h3 className="text-base font-bold text-slate-900 group-hover:text-[#120774] transition-colors">
+                            {m.first_name} {m.last_name}
+                          </h3>
+                          {m.position && <p className="text-xs text-slate-500">{m.position}</p>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-3 flex-wrap">
+                        {m.multiplier_type && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border bg-purple-50 text-purple-700 border-purple-200">
+                            {m.multiplier_type}
+                          </span>
+                        )}
+                        {m.trust_level && (
+                          <TrustBadge level={m.trust_level} />
+                        )}
+                        {m.referral_capability && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border bg-amber-50 text-amber-700 border-amber-200">
+                            ⭐ Empf: {m.referral_capability}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="p-4 space-y-1.5">
+                      {m.companies && (
+                        <p className="text-xs text-slate-600">🏢 {(m.companies as any).name}</p>
+                      )}
+                      {m.email && <p className="text-xs text-slate-600 truncate">📧 {m.email}</p>}
+                      {m.region && (
+                        <p className="text-xs text-slate-500 flex items-center gap-1">
+                          <MapPin size={10} /> {m.region}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {filtered.length === 0 && (
+                  <div className="col-span-2 bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-12 text-center">
+                    <Handshake size={40} className="mx-auto text-slate-300 mb-3" />
+                    <p className="text-sm font-medium text-slate-500">Keine Multiplikatoren gefunden</p>
+                  </div>
+                )}
+              </div>
             </div>
-            <div>
-              <div className="text-2xl font-bold tabular-nums">{multipliers.length}</div>
-              <div className="text-[11px] font-medium text-slate-500">Gesamt</div>
+
+            {/* Map Sidebar */}
+            <div className="col-span-4">
+              <div className="sticky top-32 space-y-4">
+                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
+                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 mb-3">
+                    <MapPin size={16} className="text-[#4454b8]" strokeWidth={2.5} />
+                    Deutschland
+                  </h3>
+                  <div className="rounded-xl border-2 border-slate-200 bg-gradient-to-br from-blue-50/50 to-slate-50 aspect-[3/4] flex items-center justify-center">
+                    <div className="text-center">
+                      <MapPin size={32} className="mx-auto text-slate-300 mb-2" />
+                      <p className="text-xs text-slate-400 font-medium">Karte wird geladen...</p>
+                      <p className="text-[10px] text-slate-300 mt-1">{filtered.length} Multiplikatoren</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div className="stat-card stat-card-success">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-slate-50 p-2">
-              <Shield className="h-5 w-5 text-green-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold tabular-nums">{highTrust}</div>
-              <div className="text-[11px] font-medium text-slate-500">Hohes Vertrauen</div>
-            </div>
-          </div>
-        </div>
-        <div className="stat-card stat-card-warning">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-slate-50 p-2">
-              <Star className="h-5 w-5 text-yellow-500" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold tabular-nums">{highReferral}</div>
-              <div className="text-[11px] font-medium text-slate-500">Hohe Empfehlungsfähigkeit</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      </main>
 
-      {/* Filters */}
-      <div className="flex items-center gap-3">
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className={selectClass}
-        >
-          {typeOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={trustFilter}
-          onChange={(e) => setTrustFilter(e.target.value)}
-          className={selectClass}
-        >
-          {trustOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        {(typeFilter || trustFilter) && (
-          <span className="text-sm font-medium text-slate-500">
-            {filtered.length} von {multipliers.length}
-          </span>
-        )}
-      </div>
-
-      <DataTable
-        columns={columns}
-        data={filtered}
-        searchPlaceholder="Multiplikatoren suchen..."
-        onRowClick={(contact) => router.push(`/contacts/${contact.id}`)}
-      />
+      {showNewContact && (
+        <ContactSheet
+          companies={companies}
+          defaultOpen
+          onOpenChange={(open) => { if (!open) setShowNewContact(false); }}
+        />
+      )}
     </div>
+  );
+}
+
+function TrustBadge({ level }: { level: string }) {
+  const styles: Record<string, string> = {
+    hoch: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    mittel: "bg-blue-50 text-blue-700 border-blue-200",
+    niedrig: "bg-slate-50 text-slate-600 border-slate-200",
+    unbekannt: "bg-slate-50 text-slate-400 border-slate-200",
+  };
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${styles[level] || styles.unbekannt}`}>
+      🛡️ Vertrauen: {level}
+    </span>
   );
 }

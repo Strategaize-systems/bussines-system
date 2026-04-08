@@ -18,13 +18,17 @@ interface EmailSheetProps {
   contactId?: string;
   companyId?: string;
   trigger?: React.ReactNode;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function EmailSheet({ defaultTo, contactId, companyId, trigger }: EmailSheetProps) {
-  const [open, setOpen] = useState(false);
+export function EmailSheet({ defaultTo, contactId, companyId, trigger, defaultOpen, onOpenChange: externalOnOpenChange }: EmailSheetProps) {
+  const [open, setOpen] = useState(defaultOpen ?? false);
   const [error, setError] = useState("");
   const [warning, setWarning] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  const handleOpenChange = (v: boolean) => { setOpen(v); if (!v) { setError(""); setWarning(""); } externalOnOpenChange?.(v); };
 
   const handleSubmit = (formData: FormData) => {
     setError("");
@@ -36,21 +40,23 @@ export function EmailSheet({ defaultTo, contactId, companyId, trigger }: EmailSh
       } else if ("warning" in result && result.warning) {
         setWarning(result.warning as string);
       } else {
-        setOpen(false);
+        handleOpenChange(false);
       }
     });
   };
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setError(""); setWarning(""); } }}>
-      <SheetTrigger>
-        {trigger ?? (
-          <Button size="sm" variant="outline">
-            <Mail className="mr-2 h-4 w-4" />
-            E-Mail senden
-          </Button>
-        )}
-      </SheetTrigger>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      {trigger !== undefined && (
+        <SheetTrigger>
+          {trigger ?? (
+            <Button size="sm" variant="outline">
+              <Mail className="mr-2 h-4 w-4" />
+              E-Mail senden
+            </Button>
+          )}
+        </SheetTrigger>
+      )}
       <SheetContent>
         <SheetHeader>
           <SheetTitle>E-Mail verfassen</SheetTitle>

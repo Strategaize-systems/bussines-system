@@ -4,8 +4,10 @@ import { useState, useMemo } from "react";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { DealSheet } from "./deal-sheet";
 import { DealDetailSheet } from "./deal-detail-sheet";
+import { PageHeader } from "@/components/ui/page-header";
+import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import type { Deal, Pipeline, PipelineStage } from "./actions";
-import { Filter, TrendingUp } from "lucide-react";
+import { Search, Filter, TrendingUp, Kanban, Target, Percent, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 
 const fmt = new Intl.NumberFormat("de-DE", {
   style: "currency",
@@ -13,22 +15,12 @@ const fmt = new Intl.NumberFormat("de-DE", {
   maximumFractionDigits: 0,
 });
 
-const statusOptions = [
-  { value: "all", label: "Alle Status" },
-  { value: "active", label: "Aktiv" },
-  { value: "won", label: "Gewonnen" },
-  { value: "lost", label: "Verloren" },
-];
-
-const opportunityTypeOptions = [
-  { value: "all", label: "Alle Typen" },
-  { value: "empfehlung", label: "Empfehlung" },
-  { value: "direktansprache", label: "Direktansprache" },
-  { value: "inbound", label: "Inbound" },
-  { value: "netzwerk", label: "Netzwerk" },
-  { value: "event", label: "Event" },
-  { value: "bestandskunde", label: "Bestandskunde" },
-];
+const fmtCompact = new Intl.NumberFormat("de-DE", {
+  style: "currency",
+  currency: "EUR",
+  notation: "compact",
+  maximumFractionDigits: 0,
+});
 
 interface PipelineViewProps {
   pipeline: Pipeline;
@@ -48,103 +40,156 @@ export function PipelineView({
   referrals,
 }: PipelineViewProps) {
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [stageFilter, setStageFilter] = useState("all");
+  const [showNewDeal, setShowNewDeal] = useState(false);
 
   const filteredDeals = useMemo(() => {
     return deals.filter((d) => {
-      if (statusFilter !== "all" && d.status !== statusFilter) return false;
-      if (typeFilter !== "all" && d.opportunity_type !== typeFilter) return false;
+      if (d.status !== "active") return false;
+      if (stageFilter !== "all" && d.stage_id !== stageFilter) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const matchTitle = d.title?.toLowerCase().includes(q);
+        const matchCompany = (d.companies as any)?.name?.toLowerCase().includes(q);
+        const matchContact = d.contacts
+          ? `${(d.contacts as any).first_name} ${(d.contacts as any).last_name}`.toLowerCase().includes(q)
+          : false;
+        if (!matchTitle && !matchCompany && !matchContact) return false;
+      }
       return true;
     });
-  }, [deals, statusFilter, typeFilter]);
+  }, [deals, searchQuery, stageFilter]);
 
-  const totalValue = filteredDeals.reduce((sum, d) => sum + (d.value ?? 0), 0);
+  const activeDeals = deals.filter((d) => d.status === "active");
+  const totalValue = activeDeals.reduce((sum, d) => sum + (d.value ?? 0), 0);
 
-  // Weighted forecast: stage probability × deal value
   const forecast = useMemo(() => {
-    return filteredDeals
-      .filter((d) => d.status === "active" && d.value && d.stage_id)
+    return activeDeals
+      .filter((d) => d.value && d.stage_id)
       .reduce((sum, d) => {
         const stage = stages.find((s) => s.id === d.stage_id);
         const prob = stage ? stage.probability / 100 : 0;
         return sum + (d.value ?? 0) * prob;
       }, 0);
-  }, [filteredDeals, stages]);
+  }, [activeDeals, stages]);
 
-  const hasFilters = statusFilter !== "all" || typeFilter !== "all";
+  const avgChance = useMemo(() => {
+    const withProb = activeDeals.filter((d) => d.stage_id);
+    if (withProb.length === 0) return 0;
+    const total = withProb.reduce((sum, d) => {
+      const stage = stages.find((s) => s.id === d.stage_id);
+      return sum + (stage?.probability ?? 0);
+    }, 0);
+    return Math.round(total / withProb.length);
+  }, [activeDeals, stages]);
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            {pipeline.name}
-          </h1>
-          <p className="text-sm font-medium text-slate-500">
-            {filteredDeals.length} Deals · {fmt.format(totalValue)} Gesamtwert
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Forecast */}
-          <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
-            <TrendingUp className="h-4 w-4 text-[#00a84f]" />
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Forecast</p>
-              <p className="text-sm font-bold text-[#00a84f]">{fmt.format(forecast)}</p>
+    <div className="min-h-screen">
+      <PageHeader
+        title="Pipeline"
+        subtitle={`Sales Pipeline · Deals & Opportunities Management`}
+      >
+        <button
+          onClick={() => setShowNewDeal(true)}
+          className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2"
+        >
+          <Plus size={16} strokeWidth={2.5} />
+          Neuer Deal
+        </button>
+      </PageHeader>
+
+      <main className="px-8 py-8">
+        <div className="max-w-[1800px] mx-auto space-y-6">
+          {/* KPI Cards */}
+          <KPIGrid columns={4}>
+            <KPICard
+              label="Aktive Deals"
+              value={activeDeals.length}
+              icon={Kanban}
+              gradient="blue"
+            />
+            <KPICard
+              label="Pipeline Wert"
+              value={fmt.format(totalValue)}
+              icon={TrendingUp}
+              gradient="green"
+            />
+            <KPICard
+              label="Gewichtet"
+              value={fmt.format(forecast)}
+              icon={Target}
+              gradient="yellow"
+            />
+            <KPICard
+              label="Ø Chance"
+              value={`${avgChance}%`}
+              icon={Percent}
+              gradient="emerald"
+            />
+          </KPIGrid>
+
+          {/* Search + Filter */}
+          <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
+            <div className="flex items-center gap-4">
+              {/* Search */}
+              <div className="flex-1 max-w-lg">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} strokeWidth={2.5} />
+                  <input
+                    type="text"
+                    placeholder="Deal, Firma oder Ansprechpartner suchen..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border-2 border-slate-200 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#4454b8] focus:ring-2 focus:ring-[#4454b8]/20 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Stage Filter */}
+              <select
+                value={stageFilter}
+                onChange={(e) => setStageFilter(e.target.value)}
+                className="px-4 py-2.5 rounded-lg border-2 border-slate-200 text-sm font-semibold text-slate-700 focus:outline-none focus:border-[#4454b8] cursor-pointer"
+              >
+                <option value="all">Alle Stages</option>
+                {stages.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+
+              {/* Filter icon */}
+              <button className="p-2.5 rounded-lg border-2 border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors">
+                <Filter size={18} strokeWidth={2.5} />
+              </button>
             </div>
           </div>
-          <DealSheet
+
+          {/* Stage Info Bar */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 text-sm text-slate-600">
+              <Kanban size={16} className="text-slate-400" />
+              <span className="font-bold">{stages.length} Stages</span>
+              <span className="text-slate-400">← Scrollen Sie horizontal →</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className="p-2 rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors">
+                <ChevronLeft size={16} />
+              </button>
+              <button className="p-2 rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors">
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+
+          {/* Kanban Board */}
+          <KanbanBoard
             stages={stages}
-            pipelineId={pipeline.id}
-            contacts={contacts}
-            companies={companies}
-            referrals={referrals}
+            deals={filteredDeals}
+            onDealClick={setSelectedDeal}
           />
         </div>
-      </div>
-
-      {/* Filter Bar */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-          <Filter className="h-3.5 w-3.5" />
-          Filter:
-        </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="select-premium text-xs"
-        >
-          {statusOptions.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="select-premium text-xs"
-        >
-          {opportunityTypeOptions.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-        {hasFilters && (
-          <button
-            onClick={() => { setStatusFilter("all"); setTypeFilter("all"); }}
-            className="text-xs font-medium text-[#4454b8] hover:underline"
-          >
-            Filter zurücksetzen
-          </button>
-        )}
-      </div>
-
-      {/* Kanban Board */}
-      <KanbanBoard
-        stages={stages}
-        deals={filteredDeals}
-        onDealClick={setSelectedDeal}
-      />
+      </main>
 
       {/* Deal Detail Modal */}
       <DealDetailSheet
@@ -156,6 +201,19 @@ export function PipelineView({
         open={!!selectedDeal}
         onClose={() => setSelectedDeal(null)}
       />
+
+      {/* New Deal Sheet */}
+      {showNewDeal && (
+        <DealSheet
+          stages={stages}
+          pipelineId={pipeline.id}
+          contacts={contacts}
+          companies={companies}
+          referrals={referrals}
+          defaultOpen
+          onOpenChange={(open) => { if (!open) setShowNewDeal(false); }}
+        />
+      )}
     </div>
   );
 }

@@ -170,6 +170,86 @@ export async function deleteCompany(id: string) {
   return { error: "" };
 }
 
+export type CompanyStats = {
+  total: number;
+  pipelineValue: number;
+  totalPotential: number;
+  kundenCount: number;
+};
+
+export async function getCompanyStats(): Promise<CompanyStats> {
+  const supabase = await createClient();
+
+  const [companiesResult, dealsResult, kundenResult] = await Promise.all([
+    supabase.from("companies").select("id", { count: "exact", head: true }),
+    supabase.from("deals").select("value").eq("status", "active"),
+    supabase.from("deals").select("id", { count: "exact", head: true }).eq("status", "won"),
+  ]);
+
+  const pipelineValue = (dealsResult.data || []).reduce(
+    (sum, d) => sum + (d.value ?? 0),
+    0
+  );
+
+  // Estimate potential as pipeline + 3x (rough heuristic)
+  const totalPotential = pipelineValue * 3;
+
+  return {
+    total: companiesResult.count ?? 0,
+    pipelineValue,
+    totalPotential,
+    kundenCount: kundenResult.count ?? 0,
+  };
+}
+
+export type CompanyEnriched = Company & {
+  contactName: string | null;
+  pipelineValue: number;
+  lastActivity: string | null;
+  region: string | null;
+};
+
+function plzToRegion(plz: string | null): string | null {
+  if (!plz) return null;
+  const first = parseInt(plz.charAt(0), 10);
+  if (first <= 1) return "Ost";
+  if (first === 2) return "Nord";
+  if (first <= 4) return "West";
+  if (first <= 6) return "West";
+  if (first === 7) return "Süd-West";
+  if (first === 8) return "Süd";
+  return "Süd-Ost";
+}
+
+export async function getCompaniesEnriched(): Promise<CompanyEnriched[]> {
+  const supabase = await createClient();
+
+  const [companiesResult, dealsResult, contactsResult] = await Promise.all([
+    supabase.from("companies").select("*").order("created_at", { ascending: false }),
+    supabase.from("deals").select("company_id, value, status"),
+    supabase.from("contacts").select("company_id, first_name, last_name").order("created_at", { ascending: false }),
+  ]);
+
+  const companies = (companiesResult.data || []) as Company[];
+  const deals = dealsResult.data || [];
+  const contacts = contactsResult.data || [];
+
+  return companies.map((c) => {
+    const companyDeals = deals.filter((d) => d.company_id === c.id && d.status === "active");
+    const pipelineValue = companyDeals.reduce((sum, d) => sum + (d.value ?? 0), 0);
+    const contact = contacts.find((ct) => ct.company_id === c.id);
+    const contactName = contact ? `${contact.first_name} ${contact.last_name}`.trim() : null;
+
+    return {
+      ...c,
+      contactName,
+      pipelineValue,
+      lastActivity: null,
+      region: plzToRegion(c.address_zip),
+    };
+  });
+}
+
 export async function getCompaniesForSelect() {
   const supabase = await createClient();
   const { data, error } = await supabase

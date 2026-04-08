@@ -1,7 +1,10 @@
-import { getCompanies } from "./actions";
+import { getCompaniesEnriched, getCompanyStats } from "./actions";
 import { CompaniesClient } from "./companies-client";
 
 export default async function CompaniesPage() {
-  const companies = await getCompanies();
-  return <CompaniesClient companies={companies} />;
+  const [companies, stats] = await Promise.all([
+    getCompaniesEnriched(),
+    getCompanyStats(),
+  ]);
+  return <CompaniesClient companies={companies} stats={stats} />;
 }
