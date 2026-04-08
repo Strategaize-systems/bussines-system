@@ -24,8 +24,8 @@
     {
       "id": "v2-2",
       "name": "V2.2",
-      "status": "planned",
-      "summary": "Usability & Effizienz: Pipeline Liste-Toggle, E-Mail-Templates, Unified Timeline, Duplikat-Erkennung, Activity-Queue/Focus View",
+      "status": "active",
+      "summary": "UI-Redesign (Style Guide V2) + Usability & Effizienz: Kompletter UI-Umbau aller Seiten, Pipeline Liste-Toggle, E-Mail-Templates, Unified Timeline, Duplikat-Erkennung, Activity-Queue/Focus View",
       "order": 4
     },
     {

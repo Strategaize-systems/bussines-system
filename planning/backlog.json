@@ -511,6 +511,26 @@
       "createdAt": "2026-04-04"
     },
     {
+      "id": "BL-210",
+      "title": "UI-Redesign: Alle Seiten nach Style Guide V2 / Figma",
+      "type": "improvement",
+      "priority": "high",
+      "status": "done",
+      "version": "V2.2",
+      "description": "Kompletter UI-Umbau aller Seiten: Neue Sidebar (5 Sektionen), Shared Components (PageHeader, KPICard, FilterBar, StatusBadge, ViewToggle), Dashboard mit 4 KPIs + 2 Tabellen, Firmen/Kontakte/Multiplikatoren mit Grid-Cards + Karten-Sidebar, Pipeline mit KPIs + Stage-Navigation, Aufgaben + alle operativen Seiten mit neuer FilterBar + gestylten Zeilen. System-UI Fonts, korrigierte Icons.",
+      "createdAt": "2026-04-08"
+    },
+    {
+      "id": "BL-211",
+      "title": "KI/Voice Suchfunktion — Placeholder UI auf allen Seiten",
+      "type": "feature",
+      "priority": "medium",
+      "status": "done",
+      "version": "V2.2",
+      "description": "Voice (Mikrofon) + KI (Sparkles) Buttons in FilterBar auf allen Seiten als Placeholder. Funktionalität (LLM-gestützte Datenabfragen, Whisper-Sprachsuche) kommt als V3 Feature. Dashboard-Suchleiste für zukünftige intelligente Reports.",
+      "createdAt": "2026-04-08"
+    },
+    {
       "id": "BL-209",
       "title": "Kontakt-Karte mit Leaflet + OpenStreetMap (PLZ-basierte Pins)",
       "type": "feature",

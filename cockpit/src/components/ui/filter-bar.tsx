@@ -33,7 +33,7 @@ export function FilterBar({
     <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-6">
       <div className="flex items-center gap-4">
         {/* Search */}
-        <div className="w-[300px]">
+        <div className="flex-1 min-w-0">
           <div className="relative">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"

@@ -9,14 +9,15 @@
 Internes, KI-gestütztes Revenue- und Relationship-System für beratungsintensives B2B-Geschäft. Steuert Multiplikatoren, Leads, Gespräche, Angebote und Übergaben datenfundiert. KEIN generisches CRM, KEINE Marketing-Suite — ein fokussiertes Vertriebs- und Akquise-System.
 
 ## Current State
-- High-Level State: released
-- Current Focus: V2.1 stable. Post-Launch bestanden. Nächster Schritt: UI-Polish Sprint.
-- Current Phase: Stable (V2.1)
+- High-Level State: implementing
+- Current Focus: V2.2 UI-Redesign nach Style Guide V2 (Figma). Alle Seiten umgebaut. Deployment läuft.
+- Current Phase: V2.2 Implementation
 
 ## Immediate Next Steps
-1. UI-Polish Sprint (alle Seiten, dediziert)
-2. V2.2 Planning
+1. V2.2 Redeploy auf Hetzner verifizieren (UI live prüfen)
+2. Feintuning: Icons, Spacing, Karten-Integration (Leaflet)
 3. Echtdaten-Phase (System im Tagesgeschäft nutzen)
+4. V2.2 weitere Items: Pipeline Liste-Toggle, E-Mail-Templates, Unified Timeline
 
 ## Active Scope
 V2 Scope (Neuausrichtung — 11 Module):
@@ -41,6 +42,7 @@ V2 Scope (Neuausrichtung — 11 Module):
 
 ## Last Stable Version
 - V2.1 — 2026-04-07 — deployed auf Hetzner (Pipeline-Hardening + Daily Ops)
+- V2.2 — 2026-04-08 — UI-Redesign nach Style Guide V2 (Deployment pending)
 
 ## Notes
 V1 war als Marketing+CRM-Plattform deployed. Fundamentale Neuausrichtung nach User-Review (2026-04-01): System ist ein Revenue & Relationship System, NICHT eine Marketing-Suite. Content-Produktion gehört zu System 4 (Intelligence Studio). Discovery mit 10-Modul-Blueprint abgeschlossen. 4-System-Landschaft: System 1 (Blueprint/Onboarding), System 2 (Operating System), System 3 (Business Development = dieses System), System 4 (Intelligence Studio).
