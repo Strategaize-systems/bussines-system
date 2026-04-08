@@ -20,6 +20,11 @@ import {
   StickyNote,
   ChevronDown,
   ChevronUp,
+  Sparkles,
+  Mic,
+  Search,
+  Send,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
@@ -154,10 +159,11 @@ export function MeinTagClient({ data, stages, contacts, companies, pipelines }: 
             )}
           </div>
 
-          {/* 2-Column: Aufgaben + Kalender */}
+          {/* 2-Column: Aufgaben + KI-Assistent (left) | Kalender (right, sticky) */}
           <div className="grid grid-cols-12 gap-6">
-            {/* AUFGABEN (8 cols) */}
-            <div className="col-span-8">
+            {/* LEFT COLUMN: Aufgaben + KI-Assistent */}
+            <div className="col-span-8 space-y-6">
+              {/* AUFGABEN */}
               <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
                 {/* Section Header */}
                 <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3">
@@ -214,6 +220,9 @@ export function MeinTagClient({ data, stages, contacts, companies, pipelines }: 
                   </Link>
                 </div>
               </div>
+
+              {/* KI-ASSISTENT */}
+              <KIAssistent />
             </div>
 
             {/* KALENDER (4 cols) */}
@@ -359,6 +368,108 @@ function TaskItem({ item, onDealClick }: { item: TodayItem; onDealClick: (dealId
       </div>
 
       <ChevronRight size={16} className="text-slate-300 shrink-0" />
+    </div>
+  );
+}
+
+function KIAssistent() {
+  const [query, setQuery] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+
+  const exampleQueries = [
+    "Wieviel Zeit hab ich nächsten Donnerstag?",
+    "Wo passt ein 30min Meeting rein?",
+    "Verschieb Aufgabe X auf Freitag",
+    "Was steht diese Woche noch an?",
+  ];
+
+  return (
+    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden flex flex-col">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#120774] to-[#4454b8] flex items-center justify-center">
+          <MessageSquare size={16} className="text-white" strokeWidth={2.5} />
+        </div>
+        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+          KI-Assistent
+        </h3>
+        <span className="text-xs font-medium text-slate-400">
+          Frag mich etwas über deinen Tag
+        </span>
+      </div>
+
+      {/* Chat / Empty State */}
+      <div className="flex-1 min-h-[280px] flex flex-col items-center justify-center px-8">
+        <div className="text-center max-w-md">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#120774]/10 to-[#4454b8]/10 flex items-center justify-center mx-auto mb-4">
+            <Sparkles size={28} className="text-[#4454b8]" strokeWidth={1.5} />
+          </div>
+          <p className="text-sm text-slate-500 leading-relaxed mb-5">
+            Stell eine Frage zu deinem Tag, deinen Aufgaben oder deiner Zeitplanung. Ich kann Termine prüfen, Aufgaben umplanen und Vorschläge machen.
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {exampleQueries.map((q) => (
+              <button
+                key={q}
+                onClick={() => setQuery(q)}
+                className="px-3 py-1.5 rounded-full bg-slate-50 text-xs font-medium text-slate-500 border border-slate-200 hover:bg-slate-100 hover:text-slate-700 hover:border-slate-300 transition-all cursor-pointer"
+              >
+                &ldquo;{q}&rdquo;
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Input Bar (at bottom, like a chat) */}
+      <div className="px-4 py-4 border-t border-slate-200 bg-slate-50/50">
+        <div className="flex items-center gap-2">
+          <div className="flex-1 relative">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              size={16}
+              strokeWidth={2.5}
+            />
+            <input
+              type="text"
+              placeholder="Frag mich etwas..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && query.trim()) {
+                  // Future: send query to KI
+                  setQuery("");
+                }
+              }}
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl border-2 border-slate-200 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#4454b8] focus:ring-2 focus:ring-[#4454b8]/20 transition-all bg-white"
+            />
+          </div>
+
+          {/* Voice */}
+          <button
+            onClick={() => setIsRecording(!isRecording)}
+            className={cn(
+              "p-2.5 rounded-xl border-2 transition-all shrink-0",
+              isRecording
+                ? "bg-red-50 border-red-300 text-red-600 animate-pulse"
+                : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:border-slate-300"
+            )}
+          >
+            <Mic size={16} strokeWidth={2.5} />
+          </button>
+
+          {/* Send / KI */}
+          <button
+            className="p-2.5 rounded-xl bg-gradient-to-r from-[#120774] to-[#4454b8] text-white shadow-md hover:shadow-lg transition-all shrink-0"
+          >
+            {query.trim() ? (
+              <Send size={16} strokeWidth={2.5} />
+            ) : (
+              <Sparkles size={16} strokeWidth={2.5} />
+            )}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
