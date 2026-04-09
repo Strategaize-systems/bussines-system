@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { logAudit } from "@/lib/audit";
 
 export type Pipeline = {
   id: string;
@@ -190,6 +191,15 @@ export async function createDeal(formData: FormData) {
       type: "note",
       title: `Deal "${title}" erstellt`,
     });
+
+    // Audit trail — fire and forget
+    logAudit({
+      action: "create",
+      entityType: "deal",
+      entityId: newDeal.id,
+      changes: { after: { title, value: formData.get("value") ? Number(formData.get("value")) : null, contact_id: contactId, company_id: companyId } },
+      context: "Deal erstellt",
+    }).catch(() => {});
   }
 
   revalidatePath("/pipeline");
@@ -198,6 +208,13 @@ export async function createDeal(formData: FormData) {
 
 export async function updateDeal(id: string, formData: FormData) {
   const supabase = await createClient();
+
+  // Fetch old deal data for audit trail before update
+  const { data: oldDeal } = await supabase
+    .from("deals")
+    .select("title, value, status, contact_id, company_id, stage_id, opportunity_type")
+    .eq("id", id)
+    .single();
 
   const tags = (formData.get("tags") as string)
     ?.split(",")
@@ -209,26 +226,28 @@ export async function updateDeal(id: string, formData: FormData) {
   const contactId = (formData.get("contact_id") as string) || null;
   const companyId = (formData.get("company_id") as string) || null;
 
+  const updatePayload = {
+    stage_id: (formData.get("stage_id") as string) || null,
+    contact_id: contactId,
+    company_id: companyId,
+    title,
+    value: formData.get("value") ? Number(formData.get("value")) : null,
+    expected_close_date: (formData.get("expected_close_date") as string) || null,
+    next_action: (formData.get("next_action") as string) || null,
+    next_action_date: (formData.get("next_action_date") as string) || null,
+    opportunity_type: (formData.get("opportunity_type") as string) || null,
+    referral_source_id: (formData.get("referral_source_id") as string) || null,
+    won_lost_reason: (formData.get("won_lost_reason") as string) || null,
+    won_lost_details: (formData.get("won_lost_details") as string) || null,
+    status,
+    closed_at: status === "won" || status === "lost" ? new Date().toISOString() : null,
+    tags,
+    updated_at: new Date().toISOString(),
+  };
+
   const { error } = await supabase
     .from("deals")
-    .update({
-      stage_id: (formData.get("stage_id") as string) || null,
-      contact_id: contactId,
-      company_id: companyId,
-      title,
-      value: formData.get("value") ? Number(formData.get("value")) : null,
-      expected_close_date: (formData.get("expected_close_date") as string) || null,
-      next_action: (formData.get("next_action") as string) || null,
-      next_action_date: (formData.get("next_action_date") as string) || null,
-      opportunity_type: (formData.get("opportunity_type") as string) || null,
-      referral_source_id: (formData.get("referral_source_id") as string) || null,
-      won_lost_reason: (formData.get("won_lost_reason") as string) || null,
-      won_lost_details: (formData.get("won_lost_details") as string) || null,
-      status,
-      closed_at: status === "won" || status === "lost" ? new Date().toISOString() : null,
-      tags,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq("id", id);
 
   if (error) return { error: error.message };
@@ -241,6 +260,18 @@ export async function updateDeal(id: string, formData: FormData) {
     type: "note",
     title: `Deal "${title}" aktualisiert${status !== "active" ? ` (${status})` : ""}`,
   });
+
+  // Audit trail — fire and forget
+  logAudit({
+    action: "update",
+    entityType: "deal",
+    entityId: id,
+    changes: {
+      before: oldDeal ? { title: oldDeal.title, value: oldDeal.value, status: oldDeal.status } : undefined,
+      after: { title, value: updatePayload.value, status },
+    },
+    context: "Deal aktualisiert",
+  }).catch(() => {});
 
   revalidatePath("/pipeline");
   return { error: "" };
@@ -273,28 +304,30 @@ const STAGE_REQUIRED_FIELDS: Record<string, { fields: string[]; labels: Record<s
 export async function moveDealToStage(dealId: string, newStageId: string, stageName: string) {
   const supabase = await createClient();
 
+  // Fetch current deal state for validation + audit trail
+  const { data: currentDeal } = await supabase
+    .from("deals")
+    .select("title, value, status, contact_id, company_id, won_lost_reason, stage_id, pipeline_stages(name)")
+    .eq("id", dealId)
+    .single();
+
   // Validate required fields for target stage
   const requirements = STAGE_REQUIRED_FIELDS[stageName];
-  if (requirements) {
-    const { data: deal } = await supabase
-      .from("deals")
-      .select("value, contact_id, company_id, won_lost_reason")
-      .eq("id", dealId)
-      .single();
-
-    if (deal) {
-      const missing: string[] = [];
-      for (const field of requirements.fields) {
-        const val = (deal as any)[field];
-        if (val === null || val === undefined || val === "") {
-          missing.push(requirements.labels[field] ?? field);
-        }
-      }
-      if (missing.length > 0) {
-        return { error: `Pflichtfelder für "${stageName}": ${missing.join(", ")}` };
+  if (requirements && currentDeal) {
+    const missing: string[] = [];
+    for (const field of requirements.fields) {
+      const val = (currentDeal as any)[field];
+      if (val === null || val === undefined || val === "") {
+        missing.push(requirements.labels[field] ?? field);
       }
     }
+    if (missing.length > 0) {
+      return { error: `Pflichtfelder für "${stageName}": ${missing.join(", ")}` };
+    }
   }
+
+  const oldStageName = (currentDeal?.pipeline_stages as any)?.name ?? "Unbekannt";
+  const oldStatus = currentDeal?.status ?? "active";
 
   // Determine auto-status based on stage name
   let autoStatus: string | undefined;
@@ -324,22 +357,41 @@ export async function moveDealToStage(dealId: string, newStageId: string, stageN
 
   if (dealError) return { error: dealError.message };
 
-  // Get deal for activity log context
-  const { data: deal } = await supabase
-    .from("deals")
-    .select("title, contact_id, company_id")
-    .eq("id", dealId)
-    .single();
-
   // Log stage change as activity
-  if (deal) {
+  if (currentDeal) {
     await supabase.from("activities").insert({
-      contact_id: deal.contact_id,
-      company_id: deal.company_id,
+      contact_id: currentDeal.contact_id,
+      company_id: currentDeal.company_id,
       deal_id: dealId,
       type: "stage_change",
-      title: `Deal "${deal.title}" → ${stageName}${autoStatus !== "active" ? ` (${autoStatus})` : ""}`,
+      title: `Deal "${currentDeal.title}" → ${stageName}${autoStatus !== "active" ? ` (${autoStatus})` : ""}`,
     });
+  }
+
+  // Audit trail: stage change — fire and forget
+  logAudit({
+    action: "stage_change",
+    entityType: "deal",
+    entityId: dealId,
+    changes: {
+      before: { stage: oldStageName },
+      after: { stage: stageName },
+    },
+    context: `Pipeline Stage: ${oldStageName} → ${stageName}`,
+  }).catch(() => {});
+
+  // Audit trail: status change (won/lost) — separate entry, fire and forget
+  if (autoStatus !== oldStatus && autoStatus !== "active") {
+    logAudit({
+      action: "status_change",
+      entityType: "deal",
+      entityId: dealId,
+      changes: {
+        before: { status: oldStatus },
+        after: { status: autoStatus },
+      },
+      context: `Status: ${oldStatus} → ${autoStatus}`,
+    }).catch(() => {});
   }
 
   revalidatePath("/pipeline");
@@ -419,10 +471,10 @@ export async function getDealsForSelect() {
 export async function deleteDeal(id: string) {
   const supabase = await createClient();
 
-  // Get deal info for activity log before deleting
+  // Get deal info for activity log + audit trail before deleting
   const { data: deal } = await supabase
     .from("deals")
-    .select("title, contact_id, company_id")
+    .select("title, value, status, contact_id, company_id")
     .eq("id", id)
     .single();
 
@@ -439,6 +491,17 @@ export async function deleteDeal(id: string) {
       title: `Deal "${deal.title}" gelöscht`,
     });
   }
+
+  // Audit trail — fire and forget
+  logAudit({
+    action: "delete",
+    entityType: "deal",
+    entityId: id,
+    changes: {
+      before: deal ? { title: deal.title, value: deal.value, status: deal.status } : undefined,
+    },
+    context: `Deal "${deal?.title ?? id}" gelöscht`,
+  }).catch(() => {});
 
   revalidatePath("/pipeline");
   revalidatePath("/dashboard");
