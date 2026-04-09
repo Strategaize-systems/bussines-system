@@ -286,7 +286,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": "V2.2",
+      "version": "V3",
       "description": "Toggle zwischen Kanban-Board und Tabellen-Ansicht der gleichen Deals. Tabelle mit sortierbaren Spalten, Filtern, Bulk-Actions.",
       "createdAt": "2026-04-03"
     },
@@ -296,7 +296,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": "V2.2",
+      "version": "V3.1",
       "description": "Textbausteine für Cold-E-Mails, Follow-ups, Angebots-Begleitung. Platzhalter wie {{vorname}}, {{firma}}. Pro Template 3 Sprachversionen (DE/NL/EN). Sprache wird automatisch aus Kontakt-Sprache vorgeschlagen.",
       "createdAt": "2026-04-03"
     },
@@ -306,7 +306,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": "V2.2",
+      "version": "V3",
       "description": "Eine Timeline die Activities + E-Mails + Proposals + Signals + Referrals chronologisch zusammenführt. Pro Kontakt und pro Firma sichtbar.",
       "createdAt": "2026-04-03"
     },
@@ -316,17 +316,17 @@
       "type": "improvement",
       "priority": "medium",
       "status": "open",
-      "version": "V2.2",
+      "version": "V3.1",
       "description": "Warnung wenn Kontakt mit gleicher E-Mail oder Firma mit gleichem Namen bereits existiert. Merge-Option.",
       "createdAt": "2026-04-03"
     },
     {
       "id": "BL-132",
-      "title": "Activity-Queue / Focus View (nächste Aktionen abarbeiten)",
+      "title": "Activity-Queue / Focus View (naechste Aktionen abarbeiten)",
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": "V2.2",
+      "version": "V3",
       "description": "Dedizierte Ansicht: 'Arbeite deine nächsten 5 Aktionen ab'. Zeigt Deal + Kontakt + was zu tun ist. Nach Erledigung springt zur nächsten. Wie Pipedrive Focus View.",
       "createdAt": "2026-04-03"
     },
@@ -336,7 +336,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": "V2.2",
+      "version": "V3.1",
       "description": "Proposal-Templates in DE/NL/EN. Beim Erstellen eines Angebots wird Sprache basierend auf Kontakt/Firma vorgeschlagen. Scope-Texte, Standard-Formulierungen pro Sprache.",
       "createdAt": "2026-04-03"
     },
@@ -426,7 +426,7 @@
       "type": "improvement",
       "priority": "medium",
       "status": "open",
-      "version": "V2.2",
+      "version": "V3.1",
       "description": "Das bestehende 'source' Freitext-Feld auf Kontakten durch strukturiertes Feld ersetzen: Dropdown (Empfehlung, LinkedIn, Event, Kaltakquise, Inbound, Kampagne) + optionaler Kampagnen-Verweis. Auch auf Firmen-Ebene hinzufügen. Für Auswertung: wie viele Leads pro Quelle, Conversion pro Kanal.",
       "createdAt": "2026-04-03"
     },
@@ -436,7 +436,7 @@
       "type": "feature",
       "priority": "high",
       "status": "open",
-      "version": "V3",
+      "version": "V4",
       "description": "FEAT-201: Audio-Aufnahme, Whisper-Transkription, KI-Zusammenfassung, automatische Action-Extraktion.",
       "createdAt": "2026-04-01"
     },
@@ -446,7 +446,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": "V3",
+      "version": "V4",
       "description": "FEAT-202: KI erkennt Signale in Gesprächen/Mails automatisch.",
       "createdAt": "2026-04-01"
     },
@@ -456,7 +456,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": "V3",
+      "version": "V4",
       "description": "FEAT-203: Empfangene Mails automatisch synchronisieren und zuordnen.",
       "createdAt": "2026-04-01"
     },
@@ -466,7 +466,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": "V3",
+      "version": "V5",
       "description": "FEAT-204: Strukturierte Daten aus BD-System an Intelligence Studio übergeben.",
       "createdAt": "2026-04-01"
     },
@@ -476,7 +476,7 @@
       "type": "feature",
       "priority": "high",
       "status": "open",
-      "version": "V3",
+      "version": "V4",
       "description": "Self-hosted Jitsi Meet auf Hetzner für Browser-basierte Video-Meetings. Kein Download nötig. Integration mit Cal.com für Terminplanung. Jibri für Recording. Meetings direkt aus 'Mein Tag' und Deal-Detail starten. Aufnahmen fließen in Call Intelligence Pipeline (BL-201).",
       "createdAt": "2026-04-04"
     },
@@ -495,7 +495,7 @@
       "title": "LLM-Infrastruktur-Entscheidung: AWS Bedrock (Frankfurt) vs. lokales Ollama",
       "type": "idea",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "Grundsatzentscheidung: LLM-Aufrufe (Meeting-Summaries, Signal-Extraktion, E-Mail-Zuordnung) über AWS Bedrock API (Claude, Frankfurt eu-central-1, DSGVO-konform, Pay-per-use) oder Ollama auf eigenem Server (fixe Kosten, volle Kontrolle, größerer Server nötig). Aktuell kein LLM im Business System — Entscheidung wird relevant sobald Call Intelligence (BL-201) oder Auto-Signale (BL-202) implementiert werden.",
       "createdAt": "2026-04-04"
@@ -506,7 +506,7 @@
       "type": "feature",
       "priority": "high",
       "status": "open",
-      "version": "V3",
+      "version": "V4",
       "description": "Cal.com self-hosted auf Hetzner. Buchungsseiten für Kunden, Google/Outlook Calendar Sync, Standard .ics-Einladungen. Integration in 'Mein Tag' (Termine heute sehen). Meeting-Links automatisch mit Jitsi (BL-205). Ersetzt den Kalender-Platzhalter in Mein Tag.",
       "createdAt": "2026-04-04"
     },
@@ -536,7 +536,7 @@
       "type": "fix",
       "priority": "high",
       "status": "open",
-      "version": "V2.2",
+      "version": "V3",
       "description": "Pipeline-Seiten (Multiplikatoren, Unternehmer, Leads) haben nach V2.2 Redesign Probleme: KPI-Kacheln sehen nicht nach Style Guide V2 aus, 'Scrollen Sie horizontal' funktioniert nicht korrekt, rechte Kachel wird abgeschnitten. Gesamtes Layout muss an V2.2 Standard angeglichen werden.",
       "createdAt": "2026-04-08"
     },
@@ -546,7 +546,7 @@
       "type": "fix",
       "priority": "medium",
       "status": "open",
-      "version": "V2.2",
+      "version": "V3",
       "description": "Firmen-Seite hat Standort-Filter, Multiplikatoren-Seite nicht. Standort-Filter muss auch auf Multiplikatoren-Seite eingebaut werden (Konsistenz).",
       "createdAt": "2026-04-08"
     },
@@ -555,17 +555,17 @@
       "title": "Fehlende Seiten nach V2.2 Redesign: E-Mail, Termine, etc.",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V2.2",
       "description": "Beim V2.2 UI-Redesign sind Seiten weggefallen oder nicht migriert worden (E-Mail, Termine, ggf. weitere). Bestandsaufnahme machen: Was war vorher da? Was fehlt jetzt? Gezielt entscheiden: Wiederherstellen, zusammenfassen, oder bewusst entfernen. Ziel: So wenige separate Seiten wie möglich, möglichst viel über 'Mein Tag' + KI-Assistent abwickeln.",
       "createdAt": "2026-04-08"
     },
     {
       "id": "BL-215",
-      "title": "Seiten-Konsolidierung: Weniger Klicks, mehr über Mein Tag",
+      "title": "Seiten-Konsolidierung: Weniger Klicks, mehr ueber Mein Tag",
       "type": "improvement",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V2.2",
       "description": "Vision: Mit 2-3 Seiten alles machen können dank KI-Unterstützung. Prüfen ob separate Seiten (E-Mail, Aufgaben, Termine, etc.) in eine Übersichtsseite mit aufklappbaren Bereichen zusammengefasst werden können. Alternativ: Alles über Mein Tag + KI-Assistent zugänglich machen. Für Nicht-KI-Nutzer: Eine Übersichtsseite mit Accordion-Bereichen als Fallback.",
       "createdAt": "2026-04-08"
@@ -576,7 +576,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": "V3",
+      "version": "V3.1",
       "description": "Mein Tag als Progressive Web App (PWA) für Smartphone/Tablet. Abgespeckte mobile Version: Aufgaben, KI-Assistent mit Voice, Kalender. Kein kompletter Nachbau der Desktop-Version. PWA-Manifest + Service Worker + mobile-optimiertes Layout. Voice-Input funktioniert nativ über Browser. Whisper API ist bereits server-seitig verfügbar. Vorteil: Kein App Store nötig, direkt aus Browser installierbar, funktioniert auf iOS + Android.",
       "createdAt": "2026-04-08"
     },
@@ -586,9 +586,169 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": "V2.2",
+      "version": "V3.1",
       "description": "Interaktive Karte auf Kontakte-, Firmen- und Multiplikatoren-Seiten. Tech: react-leaflet + OpenStreetMap (kostenlos, kein API-Key). Deutschland-Ausschnitt, einzoombar, verschiebbar. Farbige Pins pro Kontakttyp (Kontakte blau, Firmen grün, Multiplikatoren lila). Clustering bei vielen Pins ('23 Kontakte in München'). Suchfeld oben. Geocoding über PLZ-Koordinaten-Tabelle (Open Data DE/NL/AT, einmalig importiert — kein Live-API-Call). Heatmap-Effekt optional. Dependency: npm install react-leaflet leaflet @types/leaflet. PLZ-Tabelle als JSON oder DB-Seed.",
       "createdAt": "2026-04-07"
+    },
+    {
+      "id": "BL-301",
+      "title": "Deal-Workspace: Eigene Route /deals/[id]",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-301: DealDetailSheet durch eigene Workspace-Seite ersetzen. Deal-Header, Timeline, Tasks, Proposals, Signals, Direktaktionen.",
+      "createdAt": "2026-04-09"
+    },
+    {
+      "id": "BL-302",
+      "title": "Deal KI-Briefing via Bedrock",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-301: LLM-generierte Deal-Zusammenfassung im Workspace. Nutzt FEAT-305 LLM-Service.",
+      "createdAt": "2026-04-09"
+    },
+    {
+      "id": "BL-303",
+      "title": "Deal Prozess-Check (regelbasiert)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-301: Welche Pflichtschritte fehlen fuer aktuelle Stage? Wiederverwendung der Required-Fields-Logik aus moveDealToStage.",
+      "createdAt": "2026-04-09"
+    },
+    {
+      "id": "BL-304",
+      "title": "Mein Tag: Echte Kalender-Daten + Verfuegbare Zeit",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-302: Kalender-Panel mit echten Events aus calendar_events. Verfuegbare-Zeit-Berechnung. Abhaengig von FEAT-309.",
+      "createdAt": "2026-04-09"
+    },
+    {
+      "id": "BL-305",
+      "title": "Mein Tag: Meeting-Prep + Exception-Hinweise",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-302: Naechstes Meeting mit Deal-/Kontakt-Kontext. Stagnierte Deals + ueberfaellige Tasks als Warnung.",
+      "createdAt": "2026-04-09"
+    },
+    {
+      "id": "BL-306",
+      "title": "Mein Tag: KI-Tages-Summary via Bedrock",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-302: LLM-generierte Tageseinschaetzung. Nutzt FEAT-305 LLM-Service.",
+      "createdAt": "2026-04-09"
+    },
+    {
+      "id": "BL-307",
+      "title": "Firmen-Workspace: Deal-Liste im Firmenkontext",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-303: Aktive + vergangene Deals mit Status/Wert/Phase auf /companies/[id].",
+      "createdAt": "2026-04-09"
+    },
+    {
+      "id": "BL-308",
+      "title": "Kontakt-Workspace: Deals im Kontakt-Kontext",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-304: Aktive + vergangene Deals auf /contacts/[id].",
+      "createdAt": "2026-04-09"
+    },
+    {
+      "id": "BL-309",
+      "title": "Bedrock LLM-Service Layer (/lib/ai/)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-305: AWS Bedrock Client, Prompt-Templates, Response-Parser, API-Route /api/ai/query. Zentrale KI-Infrastruktur.",
+      "createdAt": "2026-04-09"
+    },
+    {
+      "id": "BL-310",
+      "title": "Confirm-before-write Pattern (UI + API)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-305: Bestaetigungsdialog bevor KI schreibende Aktionen ausfuehrt. Human-in-the-loop Kernprinzip.",
+      "createdAt": "2026-04-09"
+    },
+    {
+      "id": "BL-311",
+      "title": "Navigation-Umbau: 5-Schichten-Sidebar",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-306: Operativ > Workspaces > Analyse > Verwaltung. Sidebar umstrukturieren.",
+      "createdAt": "2026-04-09"
+    },
+    {
+      "id": "BL-312",
+      "title": "Rollen-System: operator/admin in profiles",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-307: profiles.role + profiles.team. RLS-Policies anpassen.",
+      "createdAt": "2026-04-09"
+    },
+    {
+      "id": "BL-313",
+      "title": "Audit-Log Tabelle + Logging bei kritischen Mutations",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-307: audit_log Tabelle (actor_id, action, entity_type, entity_id, changes JSONB). Logging bei Stage-Wechsel, Deal-Status.",
+      "createdAt": "2026-04-09"
+    },
+    {
+      "id": "BL-314",
+      "title": "Meetings-Tabelle + CRUD",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-308: Eigene meetings Tabelle. Meeting-Erstellung aus Deal-Workspace + Mein Tag. Timeline-Integration via source_type.",
+      "createdAt": "2026-04-09"
+    },
+    {
+      "id": "BL-315",
+      "title": "Calendar-Events Tabelle + CRUD + Mein Tag Integration",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "FEAT-309: calendar_events Tabelle. CRUD-UI. Integration in Mein Tag Kalender-Panel.",
+      "createdAt": "2026-04-09"
+    },
+    {
+      "id": "BL-316",
+      "title": "Activities erweitern: source_type + source_id",
+      "type": "improvement",
+      "priority": "high",
+      "status": "open",
+      "version": "V3",
+      "description": "DEC-021: activities Tabelle bekommt source_type + source_id fuer Rueckverlinkung zu Meetings, Calls etc.",
+      "createdAt": "2026-04-09"
     }
   ]
 }
