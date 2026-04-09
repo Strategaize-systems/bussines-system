@@ -625,7 +625,7 @@
       "title": "Mein Tag: Echte Kalender-Daten + Verfuegbare Zeit",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "FEAT-302: Kalender-Panel mit echten Events aus calendar_events. Verfuegbare-Zeit-Berechnung. Abhaengig von FEAT-309.",
       "createdAt": "2026-04-09"
@@ -635,7 +635,7 @@
       "title": "Mein Tag: Meeting-Prep + Exception-Hinweise",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "FEAT-302: Naechstes Meeting mit Deal-/Kontakt-Kontext. Stagnierte Deals + ueberfaellige Tasks als Warnung.",
       "createdAt": "2026-04-09"
@@ -645,7 +645,7 @@
       "title": "Mein Tag: KI-Tages-Summary via Bedrock",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "FEAT-302: LLM-generierte Tageseinschaetzung. Nutzt FEAT-305 LLM-Service.",
       "createdAt": "2026-04-09"

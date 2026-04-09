@@ -10,19 +10,19 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V3 Phase 3 Workspaces — SLC-306+307 done (Deal-Workspace komplett), SLC-308 als naechstes (Mein Tag V2)
-- Current Phase: V3 Implementation — Phase 3 Workspaces (8 von 10 Slices done)
+- Current Focus: V3 Phase 3 Workspaces — SLC-308 done (Mein Tag V2), SLC-309 als naechstes (Firmen + Kontakt Workspace)
+- Current Phase: V3 Implementation — Phase 3 Workspaces (9 von 10 Slices done)
 
 ## Immediate Next Steps
-1. SLC-308 /frontend — Mein Tag V2 (echte Kalender, Meeting-Prep, Exceptions, KI-Summary)
-2. SLC-309 /frontend — Firmen + Kontakt Workspace
-3. SLC-310 — V2.2 Nacharbeit + Extras
-4. /qa nach jedem Slice
+1. SLC-309 /frontend — Firmen + Kontakt Workspace
+2. SLC-310 — V2.2 Nacharbeit + Extras
+3. /qa nach jedem Slice
+4. Gesamt-QA nach allen Slices
 
 ## Active Scope
 V3 Scope — Operative Kontextlogik (9 Features):
 - FEAT-301: Deal-Workspace — done (SLC-306 Basis + SLC-307 KI+Prozess)
-- FEAT-302: Mein Tag V2 (SLC-308 — echte Kalender, Meeting-Prep, Exceptions, KI-Summary)
+- FEAT-302: Mein Tag V2 — done (SLC-308: echte Kalender, Meeting-Prep, Exceptions, KI-Summary)
 - FEAT-303: Firmen-Workspace Upgrade (SLC-309)
 - FEAT-304: Kontakt-Workspace Upgrade (SLC-309)
 - FEAT-305: Bedrock LLM-Integration Layer — done (SLC-304)
@@ -38,4 +38,4 @@ V3 Scope — Operative Kontextlogik (9 Features):
 - V2.2 — 2026-04-09 — deployed auf Hetzner (UI-Redesign + KI-Cockpit UI-Shells)
 
 ## Notes
-8 von 10 V3-Slices done. FEAT-301 (Deal-Workspace) vollstaendig abgeschlossen mit SLC-306 (Basis) und SLC-307 (KI-Briefing + Prozess-Check). QA RPT-041 + RPT-042 beide PASS. Verbleibend: SLC-308 (Mein Tag V2), SLC-309 (Firmen+Kontakt Workspace), SLC-310 (Nacharbeit).
+9 von 10 V3-Slices done. SLC-308 (Mein Tag V2) komplett: echte Kalender-Daten, Meeting-Prep Card, Exception-Hinweise, KI-Tages-Summary via Bedrock, berechnete verfuegbare Zeit. QA RPT-043 PASS. Verbleibend: SLC-309 (Firmen+Kontakt Workspace), SLC-310 (Nacharbeit).
