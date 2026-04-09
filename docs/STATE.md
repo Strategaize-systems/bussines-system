@@ -10,14 +10,14 @@ Internes, KI-gestütztes Revenue- und Relationship-System für beratungsintensiv
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V2.2 UI-Redesign nach Style Guide V2 (Figma). Alle Seiten umgebaut. Deployment läuft.
-- Current Phase: V2.2 Implementation
+- Current Focus: V2.2 deployed. Dashboard + Mein Tag KI-Cockpit UI-Shells fertig. Nächste Phase: Discovery für Seitenkonsolidierung + KI-driven CRM-Konzept.
+- Current Phase: V2.2 Implementation + Discovery V3-Konzept
 
 ## Immediate Next Steps
-1. V2.2 Redeploy auf Hetzner verifizieren (UI live prüfen)
-2. Feintuning: Icons, Spacing, Karten-Integration (Leaflet)
-3. Echtdaten-Phase (System im Tagesgeschäft nutzen)
-4. V2.2 weitere Items: Pipeline Liste-Toggle, E-Mail-Templates, Unified Timeline
+1. Discovery: Seitenkonsolidierung — von 15 Seiten auf ~4 Kernseiten (Mein Tag, Dashboard, Pipeline, 360°-Ansicht)
+2. Pipeline-Seiten V2.2 Style Guide Nacharbeit (BL-212)
+3. Fehlende/versteckte Seiten: Entscheidung was rein, raus, zusammengefasst wird (BL-214, BL-215)
+4. KI-Integration: Bedrock Frankfurt für LLM-Abfragen (DEC-018)
 
 ## Active Scope
 V2 Scope (Neuausrichtung — 11 Module):
