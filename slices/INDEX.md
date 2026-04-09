@@ -36,3 +36,18 @@
 | SLC-206 | [Voice-Input (Whisper)](SLC-206-voice-input.md) | BL-141 | done | High | 2026-04-03 |
 | SLC-207 | [Insight an System 4](SLC-207-insight-button.md) | BL-142 | done | High | 2026-04-03 |
 | SLC-208 | [Lead-Management-Pipeline](SLC-208-lead-pipeline.md) | BL-127 | done | Medium | 2026-04-03 |
+
+## V3 Slices (Operative Kontextlogik)
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-301 | [V3 Schema-Migration (MIG-005)](SLC-301-v3-schema-migration.md) | FEAT-307..309 | planned | Blocker | 2026-04-09 |
+| SLC-302 | [Governance (Audit + Rollen)](SLC-302-governance-audit-rollen.md) | FEAT-307 | planned | High | 2026-04-09 |
+| SLC-303 | [Navigation-Umbau (4-Gruppen)](SLC-303-navigation-umbau.md) | FEAT-306 | planned | High | 2026-04-09 |
+| SLC-304 | [Bedrock LLM-Service Layer](SLC-304-bedrock-llm-service.md) | FEAT-305 | planned | High | 2026-04-09 |
+| SLC-305 | [Meeting + Calendar CRUD](SLC-305-meeting-calendar-crud.md) | FEAT-308, FEAT-309 | planned | High | 2026-04-09 |
+| SLC-306 | [Deal-Workspace Basis](SLC-306-deal-workspace-basis.md) | FEAT-301 | planned | High | 2026-04-09 |
+| SLC-307 | [Deal-Workspace KI + Prozess](SLC-307-deal-workspace-ki-prozess.md) | FEAT-301 | planned | High | 2026-04-09 |
+| SLC-308 | [Mein Tag V2](SLC-308-mein-tag-v2.md) | FEAT-302 | planned | High | 2026-04-09 |
+| SLC-309 | [Firmen + Kontakt Workspace](SLC-309-firmen-kontakt-workspace.md) | FEAT-303, FEAT-304 | planned | Medium | 2026-04-09 |
+| SLC-310 | [V2.2 Nacharbeit + Extras](SLC-310-v22-nacharbeit.md) | BL-212, BL-213 | planned | Medium | 2026-04-09 |

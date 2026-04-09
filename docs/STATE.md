@@ -9,14 +9,15 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: architecture
-- Current Focus: V3 Architecture abgeschlossen. Naechster Schritt: /slice-planning.
-- Current Phase: V3 Architecture done → Slice-Planning
+- High-Level State: slice-planning
+- Current Focus: V3 Slice-Planning abgeschlossen. 10 Slices definiert. Naechster Schritt: Implementation (SLC-301 Schema-Migration zuerst).
+- Current Phase: V3 Slice-Planning done → Implementation
 
 ## Immediate Next Steps
-1. /slice-planning fuer V3 — 9 Features in implementierbare Slices schneiden
-2. Implementation nach Slice-Planning
-3. /qa nach jedem Slice
+1. SLC-301 /backend — V3 Schema-Migration (MIG-005) auf Hetzner ausfuehren
+2. SLC-303 /frontend — Navigation-Umbau (parallel zu SLC-301 moeglich)
+3. SLC-304 /backend — Bedrock LLM-Service Layer (parallel zu SLC-301 moeglich)
+4. /qa nach jedem Slice
 
 ## Active Scope
 V3 Scope — Operative Kontextlogik (9 Features):
@@ -37,4 +38,4 @@ V3 Scope — Operative Kontextlogik (9 Features):
 - V2.2 — 2026-04-09 — deployed auf Hetzner (UI-Redesign + KI-Cockpit UI-Shells)
 
 ## Notes
-V3 Discovery (RPT-033), Requirements (RPT-034) und Architecture (RPT-035) abgeschlossen. 6 Architekturentscheidungen (DEC-021 bis DEC-026) bestaetigt und in ARCHITECTURE.md technisch ausgearbeitet. Schema-Erweiterungen (MIG-005, MIG-006), LLM-Layer (/lib/ai/), Workspace-Pattern, RLS-Strategie und Audit-Trail definiert. Naechster Schritt: /slice-planning.
+V3 Discovery (RPT-033), Requirements (RPT-034), Architecture (RPT-035) und Slice-Planning (RPT-036) abgeschlossen. 10 Slices definiert (SLC-301 bis SLC-310) in 4 Phasen: Foundation → Data Layer → Workspaces → Polish. Empfohlener Start: SLC-301 (Schema-Migration), SLC-303 (Navigation) und SLC-304 (LLM-Service) parallel.
