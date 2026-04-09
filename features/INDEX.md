@@ -34,7 +34,7 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-301 | Deal-Workspace | in_progress | [Spec](FEAT-301-deal-workspace.md) | 2026-04-09 |
+| FEAT-301 | Deal-Workspace | done | [Spec](FEAT-301-deal-workspace.md) | 2026-04-09 |
 | FEAT-302 | Mein Tag V2 (Kalender, Meeting-Prep, KI) | planned | [Spec](FEAT-302-mein-tag-v2.md) | 2026-04-09 |
 | FEAT-303 | Firmen-Workspace Upgrade | planned | — | 2026-04-09 |
 | FEAT-304 | Kontakt-Workspace Upgrade | planned | — | 2026-04-09 |

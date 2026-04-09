@@ -605,7 +605,7 @@
       "title": "Deal KI-Briefing via Bedrock",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "FEAT-301: LLM-generierte Deal-Zusammenfassung im Workspace. Nutzt FEAT-305 LLM-Service.",
       "createdAt": "2026-04-09"
@@ -615,7 +615,7 @@
       "title": "Deal Prozess-Check (regelbasiert)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "FEAT-301: Welche Pflichtschritte fehlen fuer aktuelle Stage? Wiederverwendung der Required-Fields-Logik aus moveDealToStage.",
       "createdAt": "2026-04-09"

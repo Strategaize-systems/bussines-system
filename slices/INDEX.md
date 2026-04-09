@@ -47,7 +47,7 @@
 | SLC-304 | [Bedrock LLM-Service Layer](SLC-304-bedrock-llm-service.md) | FEAT-305 | done | High | 2026-04-09 |
 | SLC-305 | [Meeting + Calendar CRUD](SLC-305-meeting-calendar-crud.md) | FEAT-308, FEAT-309 | done | High | 2026-04-09 |
 | SLC-306 | [Deal-Workspace Basis](SLC-306-deal-workspace-basis.md) | FEAT-301 | done | High | 2026-04-09 |
-| SLC-307 | [Deal-Workspace KI + Prozess](SLC-307-deal-workspace-ki-prozess.md) | FEAT-301 | planned | High | 2026-04-09 |
+| SLC-307 | [Deal-Workspace KI + Prozess](SLC-307-deal-workspace-ki-prozess.md) | FEAT-301 | done | High | 2026-04-09 |
 | SLC-308 | [Mein Tag V2](SLC-308-mein-tag-v2.md) | FEAT-302 | planned | High | 2026-04-09 |
 | SLC-309 | [Firmen + Kontakt Workspace](SLC-309-firmen-kontakt-workspace.md) | FEAT-303, FEAT-304 | planned | Medium | 2026-04-09 |
 | SLC-310 | [V2.2 Nacharbeit + Extras](SLC-310-v22-nacharbeit.md) | BL-212, BL-213 | planned | Medium | 2026-04-09 |
