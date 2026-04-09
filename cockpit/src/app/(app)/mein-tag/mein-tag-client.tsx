@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -238,7 +238,7 @@ export function MeinTagClient({ data, stages, contacts, companies, pipelines, ca
               </div>
 
               {/* KI-TAGES-SUMMARY */}
-              <KIDailyPanel />
+              <KIDailyPanel data={data} calendarSlots={calendarSlots} exceptions={exceptions} />
             </div>
 
             {/* RIGHT COLUMN (4 cols): Kalender + Meeting-Prep + Exceptions + Zeit */}
@@ -577,7 +577,7 @@ function ExceptionPanel({ exceptions }: { exceptions: ExceptionData }) {
 
 // ── KI Daily Summary Panel ────────────────────────────────
 
-function KIDailyPanel() {
+function KIDailyPanel({ data, calendarSlots, exceptions }: { data: TodayData; calendarSlots: CalendarSlot[]; exceptions: ExceptionData }) {
   const [summary, setSummary] = useState<DailySummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -586,11 +586,47 @@ function KIDailyPanel() {
   const loadSummary = async () => {
     setLoading(true);
     setError(null);
+
+    // Assemble real context from existing data
+    const allItems = [...data.overdue, ...data.today, ...data.upcoming];
+    const context = {
+      todaysTasks: allItems.map((item) => ({
+        title: item.title,
+        priority: item.priority ?? undefined,
+        dueDate: item.dueDate ?? undefined,
+      })),
+      upcomingMeetings: calendarSlots
+        .filter((s) => s.type === "Meeting" || s.type === "Call")
+        .map((s) => ({
+          title: s.title,
+          time: s.time,
+          attendees: s.sub ? [s.sub] : undefined,
+        })),
+      stagnantDeals: exceptions.stagnantDeals.map((d) => ({
+        name: d.title,
+        daysSinceLastActivity: d.daysSinceUpdate,
+        value: d.value ?? undefined,
+        stage: d.stage ?? undefined,
+      })),
+      overdueItems: [
+        ...exceptions.overdueTasks.map((t) => ({
+          title: t.title,
+          dueDate: t.dueDate,
+          type: "task" as const,
+        })),
+        ...exceptions.overdueDeals.map((d) => ({
+          title: `${d.nextAction} (${d.title})`,
+          dueDate: d.nextActionDate,
+          type: "deal_action" as const,
+        })),
+      ],
+    };
+
     try {
       const res = await fetch("/api/ai/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "daily-summary", context: {} }),
+        body: JSON.stringify({ type: "daily-summary", context }),
       });
 
       if (res.status === 429) {
