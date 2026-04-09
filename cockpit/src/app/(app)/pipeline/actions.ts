@@ -203,6 +203,7 @@ export async function createDeal(formData: FormData) {
   }
 
   revalidatePath("/pipeline");
+  revalidatePath("/deals");
   return { error: "" };
 }
 
@@ -274,6 +275,7 @@ export async function updateDeal(id: string, formData: FormData) {
   }).catch(() => {});
 
   revalidatePath("/pipeline");
+  revalidatePath("/deals");
   return { error: "" };
 }
 
@@ -395,6 +397,7 @@ export async function moveDealToStage(dealId: string, newStageId: string, stageN
   }
 
   revalidatePath("/pipeline");
+  revalidatePath("/deals");
   revalidatePath("/dashboard");
   return { error: "" };
 }
@@ -452,6 +455,7 @@ export async function moveDealToPipeline(dealId: string, targetPipelineId: strin
   }
 
   revalidatePath("/pipeline");
+  revalidatePath("/deals");
   revalidatePath("/dashboard");
   return { error: "" };
 }
@@ -504,6 +508,7 @@ export async function deleteDeal(id: string) {
   }).catch(() => {});
 
   revalidatePath("/pipeline");
+  revalidatePath("/deals");
   revalidatePath("/dashboard");
   return { error: "" };
 }

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { DealSheet } from "./deal-sheet";
-import { DealDetailSheet } from "./deal-detail-sheet";
 import { PageHeader } from "@/components/ui/page-header";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import type { Deal, Pipeline, PipelineStage } from "./actions";
@@ -39,7 +39,7 @@ export function PipelineView({
   companies,
   referrals,
 }: PipelineViewProps) {
-  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [stageFilter, setStageFilter] = useState("all");
   const [showNewDeal, setShowNewDeal] = useState(false);
@@ -186,21 +186,10 @@ export function PipelineView({
           <KanbanBoard
             stages={stages}
             deals={filteredDeals}
-            onDealClick={setSelectedDeal}
+            onDealClick={(deal) => router.push(`/deals/${deal.id}`)}
           />
         </div>
       </main>
-
-      {/* Deal Detail Modal */}
-      <DealDetailSheet
-        deal={selectedDeal}
-        stages={stages}
-        pipelineId={pipeline.id}
-        contacts={contacts}
-        companies={companies}
-        open={!!selectedDeal}
-        onClose={() => setSelectedDeal(null)}
-      />
 
       {/* New Deal Sheet */}
       {showNewDeal && (

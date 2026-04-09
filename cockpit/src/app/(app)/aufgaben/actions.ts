@@ -23,6 +23,7 @@ export type Task = {
 export async function getTasks(filter?: {
   status?: string;
   priority?: string;
+  dealId?: string;
 }) {
   const supabase = await createClient();
 
@@ -36,6 +37,9 @@ export async function getTasks(filter?: {
   }
   if (filter?.priority && filter.priority !== "all") {
     query = query.eq("priority", filter.priority);
+  }
+  if (filter?.dealId) {
+    query = query.eq("deal_id", filter.dealId);
   }
 
   const { data, error } = await query;
@@ -60,6 +64,7 @@ export async function createTask(formData: FormData) {
   if (error) return { error: error.message };
 
   revalidatePath("/aufgaben");
+  revalidatePath("/deals");
   return { error: "" };
 }
 
@@ -86,6 +91,7 @@ export async function updateTask(id: string, formData: FormData) {
   if (error) return { error: error.message };
 
   revalidatePath("/aufgaben");
+  revalidatePath("/deals");
   return { error: "" };
 }
 
@@ -103,6 +109,7 @@ export async function completeTask(id: string) {
   if (error) return { error: error.message };
 
   revalidatePath("/aufgaben");
+  revalidatePath("/deals");
   return { error: "" };
 }
 
@@ -120,6 +127,7 @@ export async function reopenTask(id: string) {
   if (error) return { error: error.message };
 
   revalidatePath("/aufgaben");
+  revalidatePath("/deals");
   return { error: "" };
 }
 
@@ -130,5 +138,6 @@ export async function deleteTask(id: string) {
   if (error) return { error: error.message };
 
   revalidatePath("/aufgaben");
+  revalidatePath("/deals");
   return { error: "" };
 }
