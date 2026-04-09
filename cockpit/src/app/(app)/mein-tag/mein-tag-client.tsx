@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -25,13 +25,18 @@ import {
   Search,
   Send,
   MessageSquare,
+  MapPin,
+  TrendingDown,
+  Loader2,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { DealDetailSheet } from "../pipeline/deal-detail-sheet";
 import { completeTaskFromMeinTag, completeDealActionFromMeinTag } from "./actions";
-import type { TodayData, TodayItem, TodayItemType } from "./actions";
+import type { TodayData, TodayItem, TodayItemType, CalendarSlot, ExceptionData, NextMeetingPrep } from "./actions";
 import type { Deal, PipelineStage } from "../pipeline/actions";
+import type { DailySummary } from "@/lib/ai/types";
 
 interface MeinTagClientProps {
   data: TodayData;
@@ -39,6 +44,9 @@ interface MeinTagClientProps {
   contacts: { id: string; first_name: string; last_name: string }[];
   companies: { id: string; name: string }[];
   pipelines: { id: string; name: string }[];
+  calendarSlots: CalendarSlot[];
+  exceptions: ExceptionData;
+  nextMeeting: NextMeetingPrep;
 }
 
 const typeConfig: Record<TodayItemType, { icon: typeof ListTodo; bg: string }> = {
@@ -70,21 +78,23 @@ const quickActions = [
   { label: "Notiz", icon: StickyNote, color: "from-amber-500 to-amber-600", href: "#" },
 ];
 
-const calendarSlots = [
-  { time: "09:00 - 09:30", title: "Team Standup", sub: "5 Personen", color: "bg-blue-500", type: "Meeting" },
-  { time: "10:00 - 10:30", title: "Call: Max Mustermann", sub: "Max Mustermann", color: "bg-emerald-500", type: "Call" },
-  { time: "11:00 - 12:30", title: "Fokus-Zeit: Angebote", sub: "", color: "bg-orange-500", type: "Block" },
-  { time: "12:30 - 13:30", title: "Mittagspause", sub: "", color: "bg-purple-500", type: "External" },
-  { time: "14:00 - 15:00", title: "Demo: Innovation Labs", sub: "3 Personen", color: "bg-blue-500", type: "Meeting" },
-  { time: "16:00 - 17:00", title: "Strategiegespräch", sub: "2 Personen", color: "bg-teal-500", type: "Meeting" },
-];
+const WORKDAY_MINUTES = 600; // 10h workday (8:00–18:00)
 
-export function MeinTagClient({ data, stages, contacts, companies, pipelines }: MeinTagClientProps) {
+export function MeinTagClient({ data, stages, contacts, companies, pipelines, calendarSlots, exceptions, nextMeeting }: MeinTagClientProps) {
   const totalItems = data.stats.overdueCount + data.stats.todayCount + data.stats.upcomingCount;
   const completedItems = 0;
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [showQuickActions, setShowQuickActions] = useState(true);
   const [activeTab, setActiveTab] = useState<"alle" | "heute" | "überfällig" | "erledigt">("alle");
+
+  // Calculate available time from real calendar events
+  const scheduledMinutes = calendarSlots.reduce((sum, s) => sum + s.durationMinutes, 0);
+  const freeMinutes = Math.max(0, WORKDAY_MINUTES - scheduledMinutes);
+  const freeHours = Math.floor(freeMinutes / 60);
+  const freeRestMinutes = freeMinutes % 60;
+
+  // Exception counts
+  const exceptionCount = exceptions.stagnantDeals.length + exceptions.overdueTasks.length + exceptions.overdueDeals.length;
 
   const allItems = [...data.overdue, ...data.today, ...data.upcoming];
   const filteredItems = activeTab === "alle" ? allItems
@@ -119,8 +129,14 @@ export function MeinTagClient({ data, stages, contacts, companies, pipelines }: 
         </span>
         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-blue-200 bg-blue-50 text-xs font-bold text-blue-700">
           <Clock size={14} />
-          4h 30min frei
+          {freeHours}h {freeRestMinutes > 0 ? `${freeRestMinutes}m` : ""} frei
         </span>
+        {exceptionCount > 0 && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-red-200 bg-red-50 text-xs font-bold text-red-700">
+            <AlertTriangle size={14} />
+            {exceptionCount} Hinweis{exceptionCount !== 1 ? "e" : ""}
+          </span>
+        )}
       </PageHeader>
 
       <main className="px-8 py-8">
@@ -221,13 +237,14 @@ export function MeinTagClient({ data, stages, contacts, companies, pipelines }: 
                 </div>
               </div>
 
-              {/* KI-ASSISTENT */}
-              <KIAssistent />
+              {/* KI-TAGES-SUMMARY */}
+              <KIDailyPanel />
             </div>
 
-            {/* KALENDER (4 cols) */}
+            {/* RIGHT COLUMN (4 cols): Kalender + Meeting-Prep + Exceptions + Zeit */}
             <div className="col-span-4">
               <div className="sticky top-32 space-y-4">
+                {/* KALENDER */}
                 <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
                   <div className="px-5 py-4 border-b border-slate-200 flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00a84f] to-[#4dcb8b] flex items-center justify-center">
@@ -239,37 +256,80 @@ export function MeinTagClient({ data, stages, contacts, companies, pipelines }: 
                         {new Date().toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" })}.
                       </p>
                     </div>
+                    <span className="ml-auto text-xs font-bold text-slate-400">{calendarSlots.length} Termine</span>
                   </div>
 
                   <div className="p-4 space-y-2">
-                    {calendarSlots.map((slot, i) => (
-                      <div
-                        key={i}
-                        className={`${slot.color} rounded-xl p-3 text-white`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-bold opacity-90">{slot.time}</span>
-                          <span className="text-[9px] font-bold bg-white/20 rounded px-1.5 py-0.5">
-                            {slot.type}
-                          </span>
+                    {calendarSlots.length > 0 ? (
+                      calendarSlots.map((slot) => (
+                        <div
+                          key={slot.id}
+                          className={`${slot.color} rounded-xl p-3 text-white`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] font-bold opacity-90">{slot.time}</span>
+                            <span className="text-[9px] font-bold bg-white/20 rounded px-1.5 py-0.5">
+                              {slot.type}
+                            </span>
+                          </div>
+                          <div className="text-sm font-bold">{slot.title}</div>
+                          {slot.sub && (
+                            <div className="text-[11px] opacity-80 mt-0.5">{slot.sub}</div>
+                          )}
                         </div>
-                        <div className="text-sm font-bold">{slot.title}</div>
-                        {slot.sub && (
-                          <div className="text-[11px] opacity-80 mt-0.5">{slot.sub}</div>
-                        )}
+                      ))
+                    ) : (
+                      <div className="text-center py-6">
+                        <Calendar size={24} className="mx-auto text-slate-300 mb-2" />
+                        <p className="text-xs text-slate-400">Keine Termine heute</p>
                       </div>
-                    ))}
+                    )}
+                  </div>
+
+                  <div className="px-5 py-3 border-t border-slate-100">
+                    <Link
+                      href="/termine"
+                      className="text-sm font-semibold text-[#00a84f] hover:text-emerald-700 flex items-center gap-1 transition-colors"
+                    >
+                      Alle Termine <ChevronRight size={14} />
+                    </Link>
                   </div>
                 </div>
 
-                {/* Verfügbare Zeit */}
-                <div className="bg-gradient-to-br from-emerald-50 to-white rounded-2xl border-2 border-emerald-200 shadow-lg p-5">
+                {/* MEETING-PREP */}
+                {nextMeeting && <MeetingPrepCard meeting={nextMeeting} />}
+
+                {/* EXCEPTION-HINWEISE */}
+                {exceptionCount > 0 && <ExceptionPanel exceptions={exceptions} />}
+
+                {/* VERFÜGBARE ZEIT */}
+                <div className={cn(
+                  "rounded-2xl border-2 shadow-lg p-5",
+                  freeMinutes > 120
+                    ? "bg-gradient-to-br from-emerald-50 to-white border-emerald-200"
+                    : freeMinutes > 0
+                      ? "bg-gradient-to-br from-amber-50 to-white border-amber-200"
+                      : "bg-gradient-to-br from-red-50 to-white border-red-200"
+                )}>
                   <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle2 size={16} className="text-emerald-600" />
-                    <span className="text-xs font-bold text-emerald-700 uppercase tracking-wide">Verfügbare Zeit</span>
+                    <CheckCircle2 size={16} className={freeMinutes > 120 ? "text-emerald-600" : freeMinutes > 0 ? "text-amber-600" : "text-red-600"} />
+                    <span className={cn("text-xs font-bold uppercase tracking-wide", freeMinutes > 120 ? "text-emerald-700" : freeMinutes > 0 ? "text-amber-700" : "text-red-700")}>
+                      Verfügbare Zeit
+                    </span>
                   </div>
-                  <div className="text-3xl font-bold text-emerald-700">4h 30m</div>
-                  <div className="text-xs text-emerald-600 mt-1">330 Minuten verplant von 600 Minuten</div>
+                  <div className={cn("text-3xl font-bold", freeMinutes > 120 ? "text-emerald-700" : freeMinutes > 0 ? "text-amber-700" : "text-red-700")}>
+                    {freeHours}h {freeRestMinutes > 0 ? `${freeRestMinutes}m` : ""}
+                  </div>
+                  <div className={cn("text-xs mt-1", freeMinutes > 120 ? "text-emerald-600" : freeMinutes > 0 ? "text-amber-600" : "text-red-600")}>
+                    {scheduledMinutes} Minuten verplant von {WORKDAY_MINUTES} Minuten
+                  </div>
+                  {/* Progress bar */}
+                  <div className="mt-3 h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className={cn("h-full rounded-full transition-all", freeMinutes > 120 ? "bg-emerald-500" : freeMinutes > 0 ? "bg-amber-500" : "bg-red-500")}
+                      style={{ width: `${Math.min(100, (scheduledMinutes / WORKDAY_MINUTES) * 100)}%` }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -372,103 +432,308 @@ function TaskItem({ item, onDealClick }: { item: TodayItem; onDealClick: (dealId
   );
 }
 
-function KIAssistent() {
-  const [query, setQuery] = useState("");
-  const [isRecording, setIsRecording] = useState(false);
+// ── Meeting-Prep Card ─────────────────────────────────────
 
-  const exampleQueries = [
-    "Wieviel Zeit hab ich nächsten Donnerstag?",
-    "Wo passt ein 30min Meeting rein?",
-    "Verschieb Aufgabe X auf Freitag",
-    "Was steht diese Woche noch an?",
-  ];
+function MeetingPrepCard({ meeting }: { meeting: NonNullable<NextMeetingPrep> }) {
+  const meetingTime = new Date(meeting.scheduledAt);
+  const timeStr = meetingTime.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden flex flex-col">
-      {/* Header */}
+    <div className="bg-white rounded-2xl border-2 border-blue-200 shadow-lg overflow-hidden">
+      <div className="px-5 py-4 border-b border-blue-100 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+          <FileText size={16} className="text-white" strokeWidth={2.5} />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Meeting-Vorbereitung</h3>
+          <p className="text-[11px] text-blue-600">Nächstes Meeting um {timeStr}</p>
+        </div>
+      </div>
+      <div className="p-5 space-y-3">
+        <div>
+          <p className="text-sm font-bold text-slate-900">{meeting.title}</p>
+          <p className="text-xs text-slate-500 mt-0.5">{meeting.durationMinutes} Min. · {timeStr} Uhr</p>
+        </div>
+        {meeting.location && (
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <MapPin size={12} />
+            <span>{meeting.location}</span>
+          </div>
+        )}
+        {meeting.participants && (
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <Users size={12} />
+            <span>{meeting.participants}</span>
+          </div>
+        )}
+        {meeting.dealTitle && (
+          <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wide mb-1">Verknüpfter Deal</p>
+            <p className="text-sm font-bold text-slate-900">{meeting.dealTitle}</p>
+            <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
+              {meeting.dealStage && <span>Phase: {meeting.dealStage}</span>}
+              {meeting.dealValue != null && <span>Wert: {meeting.dealValue.toLocaleString("de-DE")} €</span>}
+            </div>
+          </div>
+        )}
+        {meeting.contactName && (
+          <div className="flex items-center gap-2 text-xs text-slate-600">
+            <Users size={12} className="text-slate-400" />
+            <span>{meeting.contactName}</span>
+            {meeting.companyName && <span className="text-slate-400">· {meeting.companyName}</span>}
+          </div>
+        )}
+        {meeting.agenda && (
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Agenda</p>
+            <p className="text-xs text-slate-600 whitespace-pre-line">{meeting.agenda}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Exception Panel ───────────────────────────────────────
+
+function ExceptionPanel({ exceptions }: { exceptions: ExceptionData }) {
+  const { stagnantDeals, overdueTasks, overdueDeals } = exceptions;
+
+  return (
+    <div className="bg-white rounded-2xl border-2 border-red-200 shadow-lg overflow-hidden">
+      <div className="px-5 py-4 border-b border-red-100 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
+          <AlertTriangle size={16} className="text-white" strokeWidth={2.5} />
+        </div>
+        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Handlungsbedarf</h3>
+      </div>
+      <div className="p-4 space-y-3">
+        {stagnantDeals.length > 0 && (
+          <div>
+            <p className="text-[10px] font-bold text-red-600 uppercase tracking-wide mb-1.5 flex items-center gap-1">
+              <TrendingDown size={10} />
+              Stagnierende Deals ({stagnantDeals.length})
+            </p>
+            <div className="space-y-1.5">
+              {stagnantDeals.slice(0, 3).map((deal) => (
+                <Link
+                  key={deal.id}
+                  href="/pipeline/unternehmer"
+                  className="block bg-red-50 rounded-lg px-3 py-2 hover:bg-red-100 transition-colors"
+                >
+                  <p className="text-xs font-bold text-slate-800">{deal.title}</p>
+                  <p className="text-[10px] text-red-600">
+                    {deal.daysSinceUpdate} Tage ohne Update
+                    {deal.companyName && ` · ${deal.companyName}`}
+                    {deal.value != null && ` · ${deal.value.toLocaleString("de-DE")} €`}
+                  </p>
+                </Link>
+              ))}
+              {stagnantDeals.length > 3 && (
+                <p className="text-[10px] text-red-500 pl-3">+{stagnantDeals.length - 3} weitere</p>
+              )}
+            </div>
+          </div>
+        )}
+        {(overdueTasks.length > 0 || overdueDeals.length > 0) && (
+          <div>
+            <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wide mb-1.5 flex items-center gap-1">
+              <Clock size={10} />
+              Überfällig ({overdueTasks.length + overdueDeals.length})
+            </p>
+            <div className="space-y-1.5">
+              {overdueTasks.slice(0, 3).map((task) => (
+                <Link
+                  key={task.id}
+                  href="/aufgaben"
+                  className="block bg-amber-50 rounded-lg px-3 py-2 hover:bg-amber-100 transition-colors"
+                >
+                  <p className="text-xs font-bold text-slate-800">{task.title}</p>
+                  <p className="text-[10px] text-amber-600">
+                    Fällig: {new Date(task.dueDate + "T00:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
+                    {task.companyName && ` · ${task.companyName}`}
+                  </p>
+                </Link>
+              ))}
+              {overdueDeals.slice(0, 2).map((deal) => (
+                <Link
+                  key={deal.id}
+                  href="/pipeline/unternehmer"
+                  className="block bg-amber-50 rounded-lg px-3 py-2 hover:bg-amber-100 transition-colors"
+                >
+                  <p className="text-xs font-bold text-slate-800">{deal.nextAction}</p>
+                  <p className="text-[10px] text-amber-600">
+                    Deal: {deal.title} · Fällig: {new Date(deal.nextActionDate + "T00:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── KI Daily Summary Panel ────────────────────────────────
+
+function KIDailyPanel() {
+  const [summary, setSummary] = useState<DailySummary | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  const loadSummary = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/ai/query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "daily-summary", context: {} }),
+      });
+
+      if (res.status === 429) {
+        setError("Rate Limit erreicht. Bitte in einer Minute erneut versuchen.");
+        return;
+      }
+
+      if (!res.ok) {
+        setError("KI-Service nicht verfügbar.");
+        return;
+      }
+
+      const data = await res.json();
+      if (data.success && data.data) {
+        setSummary(data.data);
+        setLoaded(true);
+      } else {
+        setError(data.error || "Unbekannter Fehler.");
+      }
+    } catch {
+      setError("Verbindungsfehler.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
       <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#120774] to-[#4454b8] flex items-center justify-center">
-          <MessageSquare size={16} className="text-white" strokeWidth={2.5} />
+          <Sparkles size={16} className="text-white" strokeWidth={2.5} />
         </div>
         <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
-          KI-Assistent
+          KI-Tageseinschätzung
         </h3>
-        <span className="text-xs font-medium text-slate-400">
-          Frag mich etwas über deinen Tag
-        </span>
+        {!loaded && !loading && (
+          <button
+            onClick={loadSummary}
+            className="ml-auto px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#120774] to-[#4454b8] text-white text-xs font-bold hover:shadow-md transition-all"
+          >
+            Tagesanalyse starten
+          </button>
+        )}
+        {loaded && (
+          <button
+            onClick={loadSummary}
+            disabled={loading}
+            className="ml-auto px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all"
+          >
+            Aktualisieren
+          </button>
+        )}
       </div>
 
-      {/* Chat / Empty State */}
-      <div className="flex-1 min-h-[280px] flex flex-col items-center justify-center px-8">
-        <div className="text-center max-w-md">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#120774]/10 to-[#4454b8]/10 flex items-center justify-center mx-auto mb-4">
-            <Sparkles size={28} className="text-[#4454b8]" strokeWidth={1.5} />
+      <div className="p-6">
+        {!loaded && !loading && !error && (
+          <div className="text-center py-6">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#120774]/10 to-[#4454b8]/10 flex items-center justify-center mx-auto mb-4">
+              <Sparkles size={28} className="text-[#4454b8]" strokeWidth={1.5} />
+            </div>
+            <p className="text-sm text-slate-500 leading-relaxed">
+              Lass die KI deinen Tag analysieren — Prioritäten, Meeting-Vorbereitung und Warnungen auf einen Blick.
+            </p>
           </div>
-          <p className="text-sm text-slate-500 leading-relaxed mb-5">
-            Stell eine Frage zu deinem Tag, deinen Aufgaben oder deiner Zeitplanung. Ich kann Termine prüfen, Aufgaben umplanen und Vorschläge machen.
-          </p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {exampleQueries.map((q) => (
-              <button
-                key={q}
-                onClick={() => setQuery(q)}
-                className="px-3 py-1.5 rounded-full bg-slate-50 text-xs font-medium text-slate-500 border border-slate-200 hover:bg-slate-100 hover:text-slate-700 hover:border-slate-300 transition-all cursor-pointer"
-              >
-                &ldquo;{q}&rdquo;
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+        )}
 
-      {/* Input Bar (at bottom, like a chat) */}
-      <div className="px-4 py-4 border-t border-slate-200 bg-slate-50/50">
-        <div className="flex items-center gap-2">
-          <div className="flex-1 relative">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-              size={16}
-              strokeWidth={2.5}
-            />
-            <input
-              type="text"
-              placeholder="Frag mich etwas..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && query.trim()) {
-                  // Future: send query to KI
-                  setQuery("");
-                }
-              }}
-              className="w-full pl-9 pr-4 py-2.5 rounded-xl border-2 border-slate-200 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#4454b8] focus:ring-2 focus:ring-[#4454b8]/20 transition-all bg-white"
-            />
+        {loading && (
+          <div className="text-center py-8">
+            <Loader2 size={28} className="mx-auto text-[#4454b8] animate-spin mb-3" />
+            <p className="text-sm text-slate-500">Analysiere deinen Tag...</p>
           </div>
+        )}
 
-          {/* Voice */}
-          <button
-            onClick={() => setIsRecording(!isRecording)}
-            className={cn(
-              "p-2.5 rounded-xl border-2 transition-all shrink-0",
-              isRecording
-                ? "bg-red-50 border-red-300 text-red-600 animate-pulse"
-                : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:border-slate-300"
+        {error && (
+          <div className="bg-red-50 rounded-lg p-4 border border-red-100">
+            <p className="text-sm text-red-700">{error}</p>
+            <button onClick={loadSummary} className="mt-2 text-xs font-bold text-red-600 hover:text-red-800">
+              Erneut versuchen
+            </button>
+          </div>
+        )}
+
+        {summary && !loading && (
+          <div className="space-y-4">
+            {/* Greeting */}
+            <p className="text-sm text-slate-700 leading-relaxed">{summary.greeting}</p>
+
+            {/* Priorities */}
+            {summary.priorities.length > 0 && (
+              <div>
+                <p className="text-[10px] font-bold text-[#4454b8] uppercase tracking-wide mb-2">Prioritäten</p>
+                <ul className="space-y-1.5">
+                  {summary.priorities.map((p, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                      <span className="w-5 h-5 rounded-full bg-[#4454b8] text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                        {i + 1}
+                      </span>
+                      {p}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
-          >
-            <Mic size={16} strokeWidth={2.5} />
-          </button>
 
-          {/* Send / KI */}
-          <button
-            className="p-2.5 rounded-xl bg-gradient-to-r from-[#120774] to-[#4454b8] text-white shadow-md hover:shadow-lg transition-all shrink-0"
-          >
-            {query.trim() ? (
-              <Send size={16} strokeWidth={2.5} />
-            ) : (
-              <Sparkles size={16} strokeWidth={2.5} />
+            {/* Meeting Prep */}
+            {summary.meetingPrep.length > 0 && (
+              <div>
+                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wide mb-2">Meeting-Vorbereitung</p>
+                <ul className="space-y-1">
+                  {summary.meetingPrep.map((m, i) => (
+                    <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
+                      <Calendar size={12} className="text-blue-400 shrink-0 mt-1" />
+                      {m}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
-          </button>
-        </div>
+
+            {/* Warnings */}
+            {summary.warnings.length > 0 && (
+              <div>
+                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wide mb-2">Warnungen</p>
+                <ul className="space-y-1">
+                  {summary.warnings.map((w, i) => (
+                    <li key={i} className="text-sm text-amber-700 flex items-start gap-2">
+                      <AlertTriangle size={12} className="text-amber-500 shrink-0 mt-1" />
+                      {w}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Focus */}
+            {summary.suggestedFocus && (
+              <div className="bg-gradient-to-r from-[#120774]/5 to-[#4454b8]/5 rounded-lg p-3 border border-[#4454b8]/10">
+                <p className="text-[10px] font-bold text-[#4454b8] uppercase tracking-wide mb-1">Empfohlener Fokus</p>
+                <p className="text-sm font-medium text-slate-800">{summary.suggestedFocus}</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -200,6 +200,280 @@ export async function getMeinTagContext() {
   };
 }
 
+// ── Calendar events for today ────────────────────────────────
+
+export type CalendarSlot = {
+  id: string;
+  time: string;
+  title: string;
+  sub: string;
+  color: string;
+  type: string;
+  durationMinutes: number;
+  dealId: string | null;
+  contactId: string | null;
+  companyId: string | null;
+  meetingId: string | null;
+};
+
+const typeColors: Record<string, string> = {
+  meeting: "bg-blue-500",
+  call: "bg-emerald-500",
+  block: "bg-orange-500",
+  personal: "bg-purple-500",
+  other: "bg-slate-500",
+};
+
+const typeLabels: Record<string, string> = {
+  meeting: "Meeting",
+  call: "Call",
+  block: "Block",
+  personal: "Privat",
+  other: "Termin",
+};
+
+export async function getCalendarEventsForToday(): Promise<CalendarSlot[]> {
+  const supabase = await createClient();
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+
+  const { data: events } = await supabase
+    .from("calendar_events")
+    .select("*, contacts(first_name, last_name), companies(name), deals(title)")
+    .gte("start_time", todayStart)
+    .lt("start_time", todayEnd)
+    .order("start_time", { ascending: true });
+
+  if (!events || events.length === 0) return [];
+
+  return events.map((e: any) => {
+    const start = new Date(e.start_time);
+    const end = new Date(e.end_time);
+    const duration = Math.round((end.getTime() - start.getTime()) / 60000);
+    const contact = e.contacts as any;
+    const company = e.companies as any;
+    const deal = e.deals as any;
+
+    const sub = [
+      contact ? `${contact.first_name} ${contact.last_name}` : null,
+      company?.name,
+      deal?.title,
+    ].filter(Boolean).join(" · ");
+
+    return {
+      id: e.id,
+      time: `${start.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} - ${end.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}`,
+      title: e.title,
+      sub,
+      color: typeColors[e.type] || typeColors.other,
+      type: typeLabels[e.type] || typeLabels.other,
+      durationMinutes: duration,
+      dealId: e.deal_id,
+      contactId: e.contact_id,
+      companyId: e.company_id,
+      meetingId: e.meeting_id,
+    };
+  });
+}
+
+// ── Exception data: stagnant deals + overdue items ──────────
+
+export type ExceptionData = {
+  stagnantDeals: {
+    id: string;
+    title: string;
+    daysSinceUpdate: number;
+    value: number | null;
+    stage: string | null;
+    companyName: string | null;
+  }[];
+  overdueTasks: {
+    id: string;
+    title: string;
+    dueDate: string;
+    priority: string | null;
+    companyName: string | null;
+  }[];
+  overdueDeals: {
+    id: string;
+    title: string;
+    nextActionDate: string;
+    nextAction: string;
+    companyName: string | null;
+  }[];
+};
+
+export async function getExceptionData(): Promise<ExceptionData> {
+  const supabase = await createClient();
+  const now = new Date();
+  const today = now.toISOString().split("T")[0];
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [stagnantResult, overdueTasksResult, overdueDealsResult] = await Promise.all([
+    // Deals without update for >14 days
+    supabase
+      .from("deals")
+      .select("id, title, value, updated_at, companies(name), pipeline_stages(name)")
+      .eq("status", "active")
+      .lt("updated_at", fourteenDaysAgo)
+      .order("updated_at", { ascending: true })
+      .limit(10),
+
+    // Overdue tasks
+    supabase
+      .from("tasks")
+      .select("id, title, due_date, priority, companies(name)")
+      .in("status", ["open", "waiting"])
+      .lt("due_date", today)
+      .order("due_date", { ascending: true })
+      .limit(10),
+
+    // Overdue deal actions
+    supabase
+      .from("deals")
+      .select("id, title, next_action, next_action_date, companies(name)")
+      .eq("status", "active")
+      .not("next_action_date", "is", null)
+      .lt("next_action_date", today)
+      .order("next_action_date", { ascending: true })
+      .limit(10),
+  ]);
+
+  return {
+    stagnantDeals: (stagnantResult.data || []).map((d: any) => ({
+      id: d.id,
+      title: d.title,
+      daysSinceUpdate: Math.floor((now.getTime() - new Date(d.updated_at).getTime()) / (24 * 60 * 60 * 1000)),
+      value: d.value,
+      stage: (d.pipeline_stages as any)?.name ?? null,
+      companyName: (d.companies as any)?.name ?? null,
+    })),
+    overdueTasks: (overdueTasksResult.data || []).map((t: any) => ({
+      id: t.id,
+      title: t.title,
+      dueDate: t.due_date,
+      priority: t.priority,
+      companyName: (t.companies as any)?.name ?? null,
+    })),
+    overdueDeals: (overdueDealsResult.data || []).map((d: any) => ({
+      id: d.id,
+      title: d.title,
+      nextActionDate: d.next_action_date,
+      nextAction: d.next_action,
+      companyName: (d.companies as any)?.name ?? null,
+    })),
+  };
+}
+
+// ── Next meeting with context ───────────────────────────────
+
+export type NextMeetingPrep = {
+  id: string;
+  title: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  location: string | null;
+  agenda: string | null;
+  participants: string | null;
+  dealTitle: string | null;
+  dealId: string | null;
+  dealValue: number | null;
+  dealStage: string | null;
+  contactName: string | null;
+  companyName: string | null;
+} | null;
+
+export async function getNextMeetingWithContext(): Promise<NextMeetingPrep> {
+  const supabase = await createClient();
+  const now = new Date().toISOString();
+
+  const { data: meeting } = await supabase
+    .from("meetings")
+    .select(`
+      id, title, scheduled_at, duration_minutes, location, agenda, participants,
+      deal_id,
+      deals(id, title, value, pipeline_stages(name)),
+      contacts(first_name, last_name),
+      companies(name)
+    `)
+    .eq("status", "planned")
+    .gte("scheduled_at", now)
+    .order("scheduled_at", { ascending: true })
+    .limit(1)
+    .single();
+
+  if (!meeting) return null;
+
+  const deal = meeting.deals as any;
+  const contact = meeting.contacts as any;
+  const company = meeting.companies as any;
+
+  return {
+    id: meeting.id,
+    title: meeting.title,
+    scheduledAt: meeting.scheduled_at,
+    durationMinutes: meeting.duration_minutes,
+    location: meeting.location,
+    agenda: meeting.agenda,
+    participants: meeting.participants,
+    dealTitle: deal?.title ?? null,
+    dealId: deal?.id ?? null,
+    dealValue: deal?.value ?? null,
+    dealStage: deal?.pipeline_stages?.name ?? null,
+    contactName: contact ? `${contact.first_name} ${contact.last_name}` : null,
+    companyName: company?.name ?? null,
+  };
+}
+
+// ── Daily summary context assembly ──────────────────────────
+
+export async function getDailySummaryContext() {
+  const [todayData, calendarSlots, exceptions, nextMeeting] = await Promise.all([
+    getTodayItems(),
+    getCalendarEventsForToday(),
+    getExceptionData(),
+    getNextMeetingWithContext(),
+  ]);
+
+  const allItems = [...todayData.overdue, ...todayData.today, ...todayData.upcoming];
+
+  return {
+    todaysTasks: allItems.map((item) => ({
+      title: item.title,
+      priority: item.priority ?? undefined,
+      dueDate: item.dueDate ?? undefined,
+    })),
+    upcomingMeetings: calendarSlots
+      .filter((s) => s.type === "Meeting" || s.type === "Call")
+      .map((s) => ({
+        title: s.title,
+        time: s.time,
+        attendees: s.sub ? [s.sub] : undefined,
+        dealName: undefined,
+      })),
+    stagnantDeals: exceptions.stagnantDeals.map((d) => ({
+      name: d.title,
+      daysSinceLastActivity: d.daysSinceUpdate,
+      value: d.value ?? undefined,
+      stage: d.stage ?? undefined,
+    })),
+    overdueItems: [
+      ...exceptions.overdueTasks.map((t) => ({
+        title: t.title,
+        dueDate: t.dueDate,
+        type: "task" as const,
+      })),
+      ...exceptions.overdueDeals.map((d) => ({
+        title: `${d.nextAction} (${d.title})`,
+        dueDate: d.nextActionDate,
+        type: "deal_action" as const,
+      })),
+    ],
+  };
+}
+
 // Lightweight stats-only query for Dashboard reminder
 export async function getOverdueCount(): Promise<number> {
   const supabase = await createClient();
