@@ -745,7 +745,7 @@
       "title": "Activities erweitern: source_type + source_id",
       "type": "improvement",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "DEC-021: activities Tabelle bekommt source_type + source_id fuer Rueckverlinkung zu Meetings, Calls etc.",
       "createdAt": "2026-04-09"

@@ -9,14 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: V3 Slice-Planning abgeschlossen. 10 Slices definiert. Naechster Schritt: Implementation (SLC-301 Schema-Migration zuerst).
-- Current Phase: V3 Slice-Planning done → Implementation
+- High-Level State: implementing
+- Current Focus: V3 Implementation gestartet. SLC-301 (Schema-Migration MIG-005) done. Phase 1 Foundation laeuft.
+- Current Phase: V3 Implementation — Phase 1 Foundation
 
 ## Immediate Next Steps
-1. SLC-301 /backend — V3 Schema-Migration (MIG-005) auf Hetzner ausfuehren
-2. SLC-303 /frontend — Navigation-Umbau (parallel zu SLC-301 moeglich)
-3. SLC-304 /backend — Bedrock LLM-Service Layer (parallel zu SLC-301 moeglich)
+1. /qa fuer SLC-301 (Schema-Migration)
+2. SLC-303 /frontend — Navigation-Umbau (4-Gruppen-Sidebar)
+3. SLC-304 /backend — Bedrock LLM-Service Layer (/lib/ai/)
 4. /qa nach jedem Slice
 
 ## Active Scope
@@ -38,4 +38,4 @@ V3 Scope — Operative Kontextlogik (9 Features):
 - V2.2 — 2026-04-09 — deployed auf Hetzner (UI-Redesign + KI-Cockpit UI-Shells)
 
 ## Notes
-V3 Discovery (RPT-033), Requirements (RPT-034), Architecture (RPT-035) und Slice-Planning (RPT-036) abgeschlossen. 10 Slices definiert (SLC-301 bis SLC-310) in 4 Phasen: Foundation → Data Layer → Workspaces → Polish. Empfohlener Start: SLC-301 (Schema-Migration), SLC-303 (Navigation) und SLC-304 (LLM-Service) parallel.
+V3 Discovery (RPT-033), Requirements (RPT-034), Architecture (RPT-035) und Slice-Planning (RPT-036) abgeschlossen. 10 Slices definiert (SLC-301 bis SLC-310) in 4 Phasen: Foundation → Data Layer → Workspaces → Polish. SLC-301 (Schema-Migration MIG-005) am 2026-04-09 auf Hetzner ausgefuehrt und verifiziert. Naechste Slices: SLC-303 (Navigation) und SLC-304 (LLM-Service) parallel.

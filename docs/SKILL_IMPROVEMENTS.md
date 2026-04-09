@@ -13,6 +13,15 @@
 - Affected Area: Dashboard, Datenmodell (Verknüpfung aller Module), API-Layer, LLM-Integration
 - Status: open
 
+### IMP-003 — SQL-Migration Workflow: Container-Discovery vor SQL-Ausgabe
+
+- Date: 2026-04-09
+- Source: SLC-301 V3 Schema-Migration — User musste Container-Namen manuell nachsuchen
+- Observation: Bei SQL-Migrationen auf Hetzner wurde das komplette SQL zusammen mit einem hardcodierten Container-Namen (supabase-db) ausgegeben. Der Container heißt aber dynamisch (Coolify generiert z.B. supabase-db-k9f5pn5upfq7etoefb5ukbcg-124113196331). User musste mehrfach nachfragen und die Schritte manuell durchgehen.
+- Suggested Improvement: Fester 4-Schritt-Workflow bei jeder SQL-Migration: (1) SSH-Befehl geben + warten, (2) Container-Discovery-Befehl geben + warten auf Antwort, (3) docker exec mit gemeldetem Container-Namen + warten auf psql-Prompt, (4) erst dann SQL-Block liefern. Nie das SQL zusammen mit den Verbindungsbefehlen in einem Rutsch rausgeben. Nie Container-Namen hardcoden.
+- Affected Area: /backend Skill (SQL-Migrationen), Memory feedback_sql_on_hetzner.md, Memory reference_hetzner_ssh.md
+- Status: resolved
+
 ### IMP-002 — Mein Tag KI-Assistent: Voice-Driven Workflow Assistant
 
 - Date: 2026-04-08

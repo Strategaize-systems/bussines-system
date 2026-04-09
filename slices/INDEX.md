@@ -41,7 +41,7 @@
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-301 | [V3 Schema-Migration (MIG-005)](SLC-301-v3-schema-migration.md) | FEAT-307..309 | planned | Blocker | 2026-04-09 |
+| SLC-301 | [V3 Schema-Migration (MIG-005)](SLC-301-v3-schema-migration.md) | FEAT-307..309 | done | Blocker | 2026-04-09 |
 | SLC-302 | [Governance (Audit + Rollen)](SLC-302-governance-audit-rollen.md) | FEAT-307 | planned | High | 2026-04-09 |
 | SLC-303 | [Navigation-Umbau (4-Gruppen)](SLC-303-navigation-umbau.md) | FEAT-306 | planned | High | 2026-04-09 |
 | SLC-304 | [Bedrock LLM-Service Layer](SLC-304-bedrock-llm-service.md) | FEAT-305 | planned | High | 2026-04-09 |
