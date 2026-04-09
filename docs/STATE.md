@@ -9,25 +9,26 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: requirements
-- Current Focus: V3 Requirements — Operative Kontextlogik. Discovery abgeschlossen, 6 Architekturentscheidungen bestaetigt (DEC-021 bis DEC-026).
-- Current Phase: V3 Requirements
+- High-Level State: architecture
+- Current Focus: V3 Architecture — Technische Architektur fuer 9 Features definieren. Requirements abgeschlossen (RPT-034).
+- Current Phase: V3 Architecture
 
 ## Immediate Next Steps
-1. /requirements fuer V3 — Features und Akzeptanzkriterien definieren
-2. V3 Scope: Deal-Workspace, Mein Tag, Firmen-/Kontakt-Workspace, Bedrock LLM, Navigation-Umbau, Governance-Basis
-3. Architektur nach Requirements
+1. /architecture fuer V3 — Schema-Erweiterungen, LLM-Layer, Workspace-Pattern, Governance
+2. /slice-planning nach Architecture
+3. Implementation nach Slice-Planning
 
 ## Active Scope
-V3 Scope — Operative Kontextlogik:
-- Deal-Workspace als eigene Seite (DEC-022) mit KI-Briefing (DEC-023), Prozess-Check, Direktaktionen
-- Mein Tag: echte Kalender-Daten (DEC-026), Meeting-Prep, Exception-Hinweise, erste KI-Funktion
-- Firmen-/Kontakt-Workspace erweitern (Deal-Liste, KI-Slot)
-- Bedrock LLM-Integration Layer (DEC-018 + DEC-023)
-- Navigation umstrukturieren (5-Schichten-Modell)
-- Governance-Basis: Rollen (operator/admin), Basis-RLS, Audit-Log (DEC-024)
-- Neue Tabellen: calendar_events (DEC-026), audit_log (DEC-024), meetings (DEC-021)
-- Activities erweitern: source_type + source_id (DEC-021)
+V3 Scope — Operative Kontextlogik (9 Features):
+- FEAT-301: Deal-Workspace (eigene Route, KI-Briefing, Prozess-Check, Direktaktionen)
+- FEAT-302: Mein Tag V2 (echte Kalender, Meeting-Prep, Exceptions, KI-Summary)
+- FEAT-303: Firmen-Workspace Upgrade (Deal-Liste, KI-Slot)
+- FEAT-304: Kontakt-Workspace Upgrade (Deal-Kontext, KI-Slot)
+- FEAT-305: Bedrock LLM-Integration Layer (Service, Prompts, Confirm-before-write)
+- FEAT-306: Navigation-Umbau (5-Schichten-Sidebar)
+- FEAT-307: Governance-Basis (Rollen, RLS, Audit-Log)
+- FEAT-308: Meeting-Management (eigene Tabelle, Timeline-Integration)
+- FEAT-309: Kalender-Events (eigene Tabelle, Mein Tag Integration)
 
 ## Blockers
 - aktuell keine
@@ -36,4 +37,4 @@ V3 Scope — Operative Kontextlogik:
 - V2.2 — 2026-04-09 — deployed auf Hetzner (UI-Redesign + KI-Cockpit UI-Shells)
 
 ## Notes
-V2.2 abgeschlossen und released. Offene UI-Items (BL-212 bis BL-215) in V3-Backlog uebernommen. Strategische Neuausrichtung: Vom Feature-CRM zum kontextzentrierten BD-Betriebssystem mit 5-Schichten-Architektur (Operativ, Analyse, Prozesslogik, Wissen, Fallback). Discovery (RPT-033) dokumentiert Gap-Analyse und bestaetigt Phasenstruktur V3/V3.1/V4/V5. 4-System-Landschaft: System 1 (Blueprint), System 2 (Operating System), System 3 (Business Development = dieses System), System 4 (Intelligence Studio).
+V3 Discovery (RPT-033) und Requirements (RPT-034) abgeschlossen. 6 Architekturentscheidungen bestaetigt (DEC-021 bis DEC-026). 9 Features mit Akzeptanzkriterien definiert. 7 Feature-Spec-Dateien erstellt. 16 neue Backlog-Items (BL-301-316). Phasenstruktur: V3/V3.1/V4/V5. 4-System-Landschaft: System 1 (Blueprint), System 2 (Operating System), System 3 (Business Development = dieses System), System 4 (Intelligence Studio).
