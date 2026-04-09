@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: architecture
-- Current Focus: V3 Architecture — Technische Architektur fuer 9 Features definieren. Requirements abgeschlossen (RPT-034).
-- Current Phase: V3 Architecture
+- Current Focus: V3 Architecture abgeschlossen. Naechster Schritt: /slice-planning.
+- Current Phase: V3 Architecture done → Slice-Planning
 
 ## Immediate Next Steps
-1. /architecture fuer V3 — Schema-Erweiterungen, LLM-Layer, Workspace-Pattern, Governance
-2. /slice-planning nach Architecture
-3. Implementation nach Slice-Planning
+1. /slice-planning fuer V3 — 9 Features in implementierbare Slices schneiden
+2. Implementation nach Slice-Planning
+3. /qa nach jedem Slice
 
 ## Active Scope
 V3 Scope — Operative Kontextlogik (9 Features):
@@ -37,4 +37,4 @@ V3 Scope — Operative Kontextlogik (9 Features):
 - V2.2 — 2026-04-09 — deployed auf Hetzner (UI-Redesign + KI-Cockpit UI-Shells)
 
 ## Notes
-V3 Discovery (RPT-033) und Requirements (RPT-034) abgeschlossen. 6 Architekturentscheidungen bestaetigt (DEC-021 bis DEC-026). 9 Features mit Akzeptanzkriterien definiert. 7 Feature-Spec-Dateien erstellt. 16 neue Backlog-Items (BL-301-316). Phasenstruktur: V3/V3.1/V4/V5. 4-System-Landschaft: System 1 (Blueprint), System 2 (Operating System), System 3 (Business Development = dieses System), System 4 (Intelligence Studio).
+V3 Discovery (RPT-033), Requirements (RPT-034) und Architecture (RPT-035) abgeschlossen. 6 Architekturentscheidungen (DEC-021 bis DEC-026) bestaetigt und in ARCHITECTURE.md technisch ausgearbeitet. Schema-Erweiterungen (MIG-005, MIG-006), LLM-Layer (/lib/ai/), Workspace-Pattern, RLS-Strategie und Audit-Trail definiert. Naechster Schritt: /slice-planning.

@@ -31,3 +31,19 @@
 - Affected Areas: Pipelines, Pipeline-Stages, Sidebar, /pipeline/leads Route
 - Risk: Gering — additive Änderung, kein Impact auf bestehende Pipelines
 - Rollback Notes: DELETE FROM pipeline_stages WHERE pipeline_id = 'b0000000-0000-0000-0000-000000000003'; DELETE FROM pipelines WHERE id = 'b0000000-0000-0000-0000-000000000003';
+
+### MIG-005 — V3 Schema-Erweiterungen (geplant)
+- Date: TBD
+- Scope: 3 neue Tabellen (meetings, calendar_events, audit_log). Activities erweitert um source_type + source_id. Profiles erweitert um role + team. RLS + Grants fuer neue Tabellen.
+- Reason: V3 Operative Kontextlogik — Meeting-Management (FEAT-308), Kalender-Events (FEAT-309), Governance-Basis (FEAT-307), Timeline-Rueckverlinkung (DEC-021).
+- Affected Areas: Gesamte Datenbasis, Mein Tag, Deal-Workspace, Audit-Log-Viewer
+- Risk: Mittel — additive Aenderungen (neue Tabellen, neue Spalten). Kein Impact auf bestehende Daten.
+- Rollback Notes: DROP TABLE audit_log; DROP TABLE calendar_events; DROP TABLE meetings; ALTER TABLE activities DROP COLUMN source_type; ALTER TABLE activities DROP COLUMN source_id; ALTER TABLE profiles DROP COLUMN role; ALTER TABLE profiles DROP COLUMN team;
+
+### MIG-006 — V3 RLS-Umbau (geplant)
+- Date: TBD
+- Scope: created_by-Backfill auf bestehende Rows. RLS-Policies von full_access auf operator_own_data umstellen (deals, tasks, emails, activities, documents, meetings, calendar_events). audit_log: admin-only.
+- Reason: FEAT-307 Governance-Basis — Rollenbasierte Sichtbarkeit (Operator sieht eigene Daten, Admin sieht alles).
+- Affected Areas: Alle geschaeftsrelevanten Tabellen, Auth-Flow, Server Actions
+- Risk: Mittel — created_by-Backfill muss vor RLS-Umbau laufen. Single-User-Szenario reduziert Risiko.
+- Rollback Notes: Pro Tabelle: DROP POLICY operator_own_data, DROP POLICY admin_full_access, CREATE POLICY authenticated_full_access FOR ALL TO authenticated USING (true).
