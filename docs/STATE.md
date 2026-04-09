@@ -6,43 +6,34 @@
 - Delivery Mode: internal-tool
 
 ## Purpose
-Internes, KI-gestütztes Revenue- und Relationship-System für beratungsintensives B2B-Geschäft. Steuert Multiplikatoren, Leads, Gespräche, Angebote und Übergaben datenfundiert. KEIN generisches CRM, KEINE Marketing-Suite — ein fokussiertes Vertriebs- und Akquise-System.
+Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: V2.2 deployed. Dashboard + Mein Tag KI-Cockpit UI-Shells fertig. Nächste Phase: Discovery für Seitenkonsolidierung + KI-driven CRM-Konzept.
-- Current Phase: V2.2 Implementation + Discovery V3-Konzept
+- High-Level State: requirements
+- Current Focus: V3 Requirements — Operative Kontextlogik. Discovery abgeschlossen, 6 Architekturentscheidungen bestaetigt (DEC-021 bis DEC-026).
+- Current Phase: V3 Requirements
 
 ## Immediate Next Steps
-1. Discovery: Seitenkonsolidierung — von 15 Seiten auf ~4 Kernseiten (Mein Tag, Dashboard, Pipeline, 360°-Ansicht)
-2. Pipeline-Seiten V2.2 Style Guide Nacharbeit (BL-212)
-3. Fehlende/versteckte Seiten: Entscheidung was rein, raus, zusammengefasst wird (BL-214, BL-215)
-4. KI-Integration: Bedrock Frankfurt für LLM-Abfragen (DEC-018)
+1. /requirements fuer V3 — Features und Akzeptanzkriterien definieren
+2. V3 Scope: Deal-Workspace, Mein Tag, Firmen-/Kontakt-Workspace, Bedrock LLM, Navigation-Umbau, Governance-Basis
+3. Architektur nach Requirements
 
 ## Active Scope
-V2 Scope (Neuausrichtung — 11 Module):
-- Modul 1: Kontakte & Organisationen (erweitert — Beziehungstypen, Rollen, Qualität)
-- Modul 2: Firmen/Accounts (erweitert — Eignungssicht, Fit-Kriterien)
-- Modul 3: Multiplikator-Management (NEU — Kern-Modul)
-- Modul 4: Opportunity/Deal Engine (umgebaut — geschäftsspezifische Stufen)
-- Modul 5: Gesprächsmanagement (erweitert — strukturierte Notizen, V2: Call Intelligence)
-- Modul 6: E-Mail-Management (NEU — SMTP-Versand, Logging, Follow-ups)
-- Modul 7: Angebots-/Proposal-Steuerung (NEU)
-- Modul 8: Qualifizierung/Fit-Gates (NEU)
-- Modul 9: Aufgaben/Follow-ups (erweitert)
-- Modul 10: Übergabe an System 1 (NEU)
-- Modul 11: Kalender/Meeting-Buchung (NEU — Cal.com Integration)
-- Sonderfunktionen: Relationship Timeline, Referral Tracking, Deal Loss Analysis
-- ENTFERNT: Content-Kalender, Marketing-Skills, Brand System (→ System 4)
-- Tech: Next.js + Supabase (bestehende Infrastruktur wiederverwendbar)
-- Hosting: Hetzner CPX32, Coolify, business.strategaizetransition.com
+V3 Scope — Operative Kontextlogik:
+- Deal-Workspace als eigene Seite (DEC-022) mit KI-Briefing (DEC-023), Prozess-Check, Direktaktionen
+- Mein Tag: echte Kalender-Daten (DEC-026), Meeting-Prep, Exception-Hinweise, erste KI-Funktion
+- Firmen-/Kontakt-Workspace erweitern (Deal-Liste, KI-Slot)
+- Bedrock LLM-Integration Layer (DEC-018 + DEC-023)
+- Navigation umstrukturieren (5-Schichten-Modell)
+- Governance-Basis: Rollen (operator/admin), Basis-RLS, Audit-Log (DEC-024)
+- Neue Tabellen: calendar_events (DEC-026), audit_log (DEC-024), meetings (DEC-021)
+- Activities erweitern: source_type + source_id (DEC-021)
 
 ## Blockers
 - aktuell keine
 
 ## Last Stable Version
-- V2.1 — 2026-04-07 — deployed auf Hetzner (Pipeline-Hardening + Daily Ops)
-- V2.2 — 2026-04-08 — UI-Redesign nach Style Guide V2 (Deployment pending)
+- V2.2 — 2026-04-09 — deployed auf Hetzner (UI-Redesign + KI-Cockpit UI-Shells)
 
 ## Notes
-V1 war als Marketing+CRM-Plattform deployed. Fundamentale Neuausrichtung nach User-Review (2026-04-01): System ist ein Revenue & Relationship System, NICHT eine Marketing-Suite. Content-Produktion gehört zu System 4 (Intelligence Studio). Discovery mit 10-Modul-Blueprint abgeschlossen. 4-System-Landschaft: System 1 (Blueprint/Onboarding), System 2 (Operating System), System 3 (Business Development = dieses System), System 4 (Intelligence Studio).
+V2.2 abgeschlossen und released. Offene UI-Items (BL-212 bis BL-215) in V3-Backlog uebernommen. Strategische Neuausrichtung: Vom Feature-CRM zum kontextzentrierten BD-Betriebssystem mit 5-Schichten-Architektur (Operativ, Analyse, Prozesslogik, Wissen, Fallback). Discovery (RPT-033) dokumentiert Gap-Analyse und bestaetigt Phasenstruktur V3/V3.1/V4/V5. 4-System-Landschaft: System 1 (Blueprint), System 2 (Operating System), System 3 (Business Development = dieses System), System 4 (Intelligence Studio).

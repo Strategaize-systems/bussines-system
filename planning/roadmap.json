@@ -24,23 +24,37 @@
     {
       "id": "v2-2",
       "name": "V2.2",
-      "status": "active",
-      "summary": "UI-Redesign (Style Guide V2) + Usability & Effizienz: Kompletter UI-Umbau aller Seiten, Pipeline Liste-Toggle, E-Mail-Templates, Unified Timeline, Duplikat-Erkennung, Activity-Queue/Focus View",
+      "status": "released",
+      "summary": "UI-Redesign (Style Guide V2) + KI-Cockpit UI-Shells. Abgeschlossen — offene UI-Items in V3 übernommen.",
       "order": 4
     },
     {
       "id": "v3",
       "name": "V3",
-      "status": "planned",
-      "summary": "Intelligence Layer: Call Intelligence, Signal-Extraktion, Mail-Integration, Funnel-Reports, Win/Loss-Analyse, Workflow-Automation",
+      "status": "active",
+      "summary": "Operative Kontextlogik: Deal-Workspace, Mein Tag geschärft, Firmen-/Kontakt-Workspace, Bedrock LLM-Integration, Navigation-Umbau, Governance-Basis (Rollen, RLS, Audit)",
       "order": 5
+    },
+    {
+      "id": "v3-1",
+      "name": "V3.1",
+      "status": "planned",
+      "summary": "Analyse + Prozesssteuerung: Persönliches Analyse-Cockpit, Ziele, KPI-Snapshots, Exception Queue, Prozesshinweise, Folgeaktivitätslogik",
+      "order": 6
     },
     {
       "id": "v4",
       "name": "V4",
       "status": "planned",
-      "summary": "Automation: Kalender-Sync, semi-automatische Workflows, Reporting/Analytics",
-      "order": 6
+      "summary": "Wissen + Management: Wissensbasis, Insight-Review-Queue, Management-Cockpit LLM-Ausbau, Meeting-Transkription, Einwandmuster, KI-Coaching, IMAP, Cal.com-Sync",
+      "order": 7
+    },
+    {
+      "id": "v5",
+      "name": "V5",
+      "status": "planned",
+      "summary": "Automatisierung + Skalierung: Cadences/Sequences, Routing/Territories, Teamlead-Rolle, Intelligence-Platform-Export",
+      "order": 8
     }
   ]
 }
