@@ -43,8 +43,8 @@
 |----|-------|---------|--------|----------|---------|
 | SLC-301 | [V3 Schema-Migration (MIG-005)](SLC-301-v3-schema-migration.md) | FEAT-307..309 | done | Blocker | 2026-04-09 |
 | SLC-302 | [Governance (Audit + Rollen)](SLC-302-governance-audit-rollen.md) | FEAT-307 | planned | High | 2026-04-09 |
-| SLC-303 | [Navigation-Umbau (4-Gruppen)](SLC-303-navigation-umbau.md) | FEAT-306 | planned | High | 2026-04-09 |
-| SLC-304 | [Bedrock LLM-Service Layer](SLC-304-bedrock-llm-service.md) | FEAT-305 | planned | High | 2026-04-09 |
+| SLC-303 | [Navigation-Umbau (4-Gruppen)](SLC-303-navigation-umbau.md) | FEAT-306 | done | High | 2026-04-09 |
+| SLC-304 | [Bedrock LLM-Service Layer](SLC-304-bedrock-llm-service.md) | FEAT-305 | done | High | 2026-04-09 |
 | SLC-305 | [Meeting + Calendar CRUD](SLC-305-meeting-calendar-crud.md) | FEAT-308, FEAT-309 | planned | High | 2026-04-09 |
 | SLC-306 | [Deal-Workspace Basis](SLC-306-deal-workspace-basis.md) | FEAT-301 | planned | High | 2026-04-09 |
 | SLC-307 | [Deal-Workspace KI + Prozess](SLC-307-deal-workspace-ki-prozess.md) | FEAT-301 | planned | High | 2026-04-09 |

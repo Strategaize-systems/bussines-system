@@ -675,7 +675,7 @@
       "title": "Bedrock LLM-Service Layer (/lib/ai/)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "FEAT-305: AWS Bedrock Client, Prompt-Templates, Response-Parser, API-Route /api/ai/query. Zentrale KI-Infrastruktur.",
       "createdAt": "2026-04-09"
@@ -685,7 +685,7 @@
       "title": "Confirm-before-write Pattern (UI + API)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "FEAT-305: Bestaetigungsdialog bevor KI schreibende Aktionen ausfuehrt. Human-in-the-loop Kernprinzip.",
       "createdAt": "2026-04-09"
@@ -695,7 +695,7 @@
       "title": "Navigation-Umbau: 5-Schichten-Sidebar",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "FEAT-306: Operativ > Workspaces > Analyse > Verwaltung. Sidebar umstrukturieren.",
       "createdAt": "2026-04-09"

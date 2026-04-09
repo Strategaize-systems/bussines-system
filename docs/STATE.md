@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V3 Implementation gestartet. SLC-301 (Schema-Migration MIG-005) done. Phase 1 Foundation laeuft.
-- Current Phase: V3 Implementation — Phase 1 Foundation
+- Current Focus: V3 Phase 1 Foundation abgeschlossen (SLC-301, SLC-303, SLC-304 done). Phase 2 Data Layer als naechstes.
+- Current Phase: V3 Implementation — Phase 1 done, Phase 2 Data Layer next
 
 ## Immediate Next Steps
-1. /qa fuer SLC-301 (Schema-Migration)
-2. SLC-303 /frontend — Navigation-Umbau (4-Gruppen-Sidebar)
-3. SLC-304 /backend — Bedrock LLM-Service Layer (/lib/ai/)
+1. /qa fuer SLC-303 + SLC-304
+2. SLC-302 /backend+frontend — Governance (Audit + Rollen)
+3. SLC-305 /backend+frontend — Meeting + Calendar CRUD
 4. /qa nach jedem Slice
 
 ## Active Scope
@@ -38,4 +38,4 @@ V3 Scope — Operative Kontextlogik (9 Features):
 - V2.2 — 2026-04-09 — deployed auf Hetzner (UI-Redesign + KI-Cockpit UI-Shells)
 
 ## Notes
-V3 Discovery (RPT-033), Requirements (RPT-034), Architecture (RPT-035) und Slice-Planning (RPT-036) abgeschlossen. 10 Slices definiert (SLC-301 bis SLC-310) in 4 Phasen: Foundation → Data Layer → Workspaces → Polish. SLC-301 (Schema-Migration MIG-005) am 2026-04-09 auf Hetzner ausgefuehrt und verifiziert. Naechste Slices: SLC-303 (Navigation) und SLC-304 (LLM-Service) parallel.
+V3 Discovery (RPT-033), Requirements (RPT-034), Architecture (RPT-035) und Slice-Planning (RPT-036) abgeschlossen. 10 Slices definiert (SLC-301 bis SLC-310) in 4 Phasen: Foundation → Data Layer → Workspaces → Polish. SLC-301 (Schema-Migration MIG-005) am 2026-04-09 auf Hetzner ausgefuehrt und verifiziert. SLC-303 (Navigation-Umbau) und SLC-304 (Bedrock LLM-Service) parallel implementiert und build-verifiziert. Phase 1 Foundation komplett. Naechste Phase: Phase 2 Data Layer (SLC-302 Governance, SLC-305 Meeting+Calendar).
