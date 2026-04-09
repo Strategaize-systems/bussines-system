@@ -595,7 +595,7 @@
       "title": "Deal-Workspace: Eigene Route /deals/[id]",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "FEAT-301: DealDetailSheet durch eigene Workspace-Seite ersetzen. Deal-Header, Timeline, Tasks, Proposals, Signals, Direktaktionen.",
       "createdAt": "2026-04-09"
