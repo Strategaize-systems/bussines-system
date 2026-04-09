@@ -41,8 +41,8 @@
 | FEAT-305 | Bedrock LLM-Integration Layer | done | [Spec](FEAT-305-bedrock-llm-layer.md) | 2026-04-09 |
 | FEAT-306 | Navigation-Umbau (5-Schichten) | done | [Spec](FEAT-306-navigation-umbau.md) | 2026-04-09 |
 | FEAT-307 | Governance-Basis (Rollen, RLS, Audit) | in_progress | [Spec](FEAT-307-governance-basis.md) | 2026-04-09 |
-| FEAT-308 | Meeting-Management | planned | [Spec](FEAT-308-meeting-management.md) | 2026-04-09 |
-| FEAT-309 | Kalender-Events | planned | [Spec](FEAT-309-calendar-events.md) | 2026-04-09 |
+| FEAT-308 | Meeting-Management | in_progress | [Spec](FEAT-308-meeting-management.md) | 2026-04-09 |
+| FEAT-309 | Kalender-Events | in_progress | [Spec](FEAT-309-calendar-events.md) | 2026-04-09 |
 
 ## V3.1 Features (Analyse + Prozesssteuerung — planned)
 

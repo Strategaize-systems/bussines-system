@@ -705,7 +705,7 @@
       "title": "Rollen-System: operator/admin in profiles",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "FEAT-307: profiles.role + profiles.team. RLS-Policies anpassen.",
       "createdAt": "2026-04-09"
@@ -715,7 +715,7 @@
       "title": "Audit-Log Tabelle + Logging bei kritischen Mutations",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "FEAT-307: audit_log Tabelle (actor_id, action, entity_type, entity_id, changes JSONB). Logging bei Stage-Wechsel, Deal-Status.",
       "createdAt": "2026-04-09"
@@ -725,7 +725,7 @@
       "title": "Meetings-Tabelle + CRUD",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "FEAT-308: Eigene meetings Tabelle. Meeting-Erstellung aus Deal-Workspace + Mein Tag. Timeline-Integration via source_type.",
       "createdAt": "2026-04-09"
@@ -735,7 +735,7 @@
       "title": "Calendar-Events Tabelle + CRUD + Mein Tag Integration",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "FEAT-309: calendar_events Tabelle. CRUD-UI. Integration in Mein Tag Kalender-Panel.",
       "createdAt": "2026-04-09"
