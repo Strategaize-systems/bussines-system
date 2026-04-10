@@ -286,7 +286,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "deferred",
-      "version": "V3.1",
+      "version": "V3.2",
       "description": "Toggle zwischen Kanban-Board und Tabellen-Ansicht der gleichen Deals. Tabelle mit sortierbaren Spalten, Filtern, Bulk-Actions.",
       "createdAt": "2026-04-03"
     },
@@ -306,7 +306,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "deferred",
-      "version": "V3.1",
+      "version": "V3.2",
       "description": "Eine Timeline die Activities + E-Mails + Proposals + Signals + Referrals chronologisch zusammenführt. Pro Kontakt und pro Firma sichtbar.",
       "createdAt": "2026-04-03"
     },
@@ -575,8 +575,8 @@
       "title": "Mobile PWA: Mein Tag als installierbare App",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
-      "version": "V3.1",
+      "status": "deferred",
+      "version": "V3.2",
       "description": "Mein Tag als Progressive Web App (PWA) für Smartphone/Tablet. Abgespeckte mobile Version: Aufgaben, KI-Assistent mit Voice, Kalender. Kein kompletter Nachbau der Desktop-Version. PWA-Manifest + Service Worker + mobile-optimiertes Layout. Voice-Input funktioniert nativ über Browser. Whisper API ist bereits server-seitig verfügbar. Vorteil: Kein App Store nötig, direkt aus Browser installierbar, funktioniert auf iOS + Android.",
       "createdAt": "2026-04-08"
     },
@@ -585,8 +585,8 @@
       "title": "Kontakt-Karte mit Leaflet + OpenStreetMap (PLZ-basierte Pins)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
-      "version": "V3.1",
+      "status": "deferred",
+      "version": "V3.2",
       "description": "Interaktive Karte auf Kontakte-, Firmen- und Multiplikatoren-Seiten. Tech: react-leaflet + OpenStreetMap (kostenlos, kein API-Key). Deutschland-Ausschnitt, einzoombar, verschiebbar. Farbige Pins pro Kontakttyp (Kontakte blau, Firmen grün, Multiplikatoren lila). Clustering bei vielen Pins ('23 Kontakte in München'). Suchfeld oben. Geocoding über PLZ-Koordinaten-Tabelle (Open Data DE/NL/AT, einmalig importiert — kein Live-API-Call). Heatmap-Effekt optional. Dependency: npm install react-leaflet leaflet @types/leaflet. PLZ-Tabelle als JSON oder DB-Seed.",
       "createdAt": "2026-04-07"
     },

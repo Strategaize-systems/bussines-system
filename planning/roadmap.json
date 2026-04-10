@@ -38,8 +38,8 @@
     {
       "id": "v3-1",
       "name": "V3.1",
-      "status": "planned",
-      "summary": "UX-Schliff + KI-Kontext: Zeit-Picker, Meeting-Typ, Schnellaktionen, Pipeline-KI-Suche, KI-E-Mail-Composing, Kontext-Intelligenz (Formulare vorbefuellt), Auto-Wiedervorlagen, Tageseinschaetzung erweitert",
+      "status": "active",
+      "summary": "UX-Schliff + KI-Kontext: 9 Slices (SLC-311..319). Zeit-Picker, Meeting-Typ, Schnellaktionen, KI on-click, Pipeline-KI-Suche, KI-E-Mail-Composing, Kontext-Intelligenz, Auto-Wiedervorlagen, Tageseinschaetzung, Templates, Duplikate, Attribution, Focus View",
       "order": 6
     },
     {

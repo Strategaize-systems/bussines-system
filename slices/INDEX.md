@@ -51,3 +51,17 @@
 | SLC-308 | [Mein Tag V2](SLC-308-mein-tag-v2.md) | FEAT-302 | done | High | 2026-04-09 |
 | SLC-309 | [Firmen + Kontakt Workspace](SLC-309-firmen-kontakt-workspace.md) | FEAT-303, FEAT-304 | done | Medium | 2026-04-09 |
 | SLC-310 | [V2.2 Nacharbeit + Extras](SLC-310-v22-nacharbeit.md) | BL-212, BL-213 | done | Medium | 2026-04-09 |
+
+## V3.1 Slices (UX-Schliff + KI-Kontext)
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-311 | [Meeting/Kalender UX-Fixes](SLC-311-meeting-kalender-ux.md) | FEAT-308, FEAT-309 | planned | Blocker | 2026-04-10 |
+| SLC-312 | [Schnellaktionen-Rebuild](SLC-312-schnellaktionen-rebuild.md) | FEAT-302 | planned | High | 2026-04-10 |
+| SLC-313 | [KI on-click Pattern](SLC-313-ki-onclick-pattern.md) | FEAT-305 | planned | Blocker | 2026-04-10 |
+| SLC-314 | [Pipeline KI-Suche + Voice](SLC-314-pipeline-ki-suche.md) | FEAT-301, FEAT-305 | planned | High | 2026-04-10 |
+| SLC-315 | [KI-Composing + Kontext-Intelligenz](SLC-315-ki-composing-kontext.md) | FEAT-305, FEAT-106 | planned | High | 2026-04-10 |
+| SLC-316 | [Auto-Wiedervorlagen](SLC-316-auto-wiedervorlagen.md) | FEAT-302, FEAT-109 | planned | High | 2026-04-10 |
+| SLC-317 | [Tageseinschaetzung erweitert](SLC-317-tageseinschaetzung-erweitert.md) | FEAT-302 | planned | High | 2026-04-10 |
+| SLC-318 | [Templates + Duplikate + Attribution](SLC-318-templates-duplikate-attribution.md) | FEAT-106, FEAT-101 | planned | Medium | 2026-04-10 |
+| SLC-319 | [Activity-Queue / Focus View](SLC-319-activity-queue.md) | FEAT-302 | planned | Medium | 2026-04-10 |

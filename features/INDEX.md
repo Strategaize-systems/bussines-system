@@ -44,15 +44,19 @@
 | FEAT-308 | Meeting-Management | deployed | [Spec](FEAT-308-meeting-management.md) | 2026-04-09 |
 | FEAT-309 | Kalender-Events | deployed | [Spec](FEAT-309-calendar-events.md) | 2026-04-09 |
 
-## V3.1 Features (Analyse + Prozesssteuerung — planned)
+## V3.1 Features (UX-Schliff + KI-Kontext — active)
 
 | ID | Feature | Status | Created |
 |----|---------|--------|---------|
-| FEAT-311 | Persoenliches Analyse-Cockpit | planned | 2026-04-09 |
-| FEAT-312 | Ziel-Objekt + Zielabgleich | planned | 2026-04-09 |
-| FEAT-313 | Exception Queue / Zuordnungs-Inbox | planned | 2026-04-09 |
-| FEAT-314 | Regelbasierte Prozesshinweise | planned | 2026-04-09 |
-| FEAT-315 | KI-Summaries Firmen + Kontakte (aktiv) | planned | 2026-04-09 |
+| FEAT-311 | Meeting/Kalender UX-Upgrade | in_progress | 2026-04-10 |
+| FEAT-312 | Schnellaktionen-Rebuild | in_progress | 2026-04-10 |
+| FEAT-313 | KI on-click + Kostenkontrolle | in_progress | 2026-04-10 |
+| FEAT-314 | Pipeline KI-Suche + Voice | in_progress | 2026-04-10 |
+| FEAT-315 | KI-Composing + Kontext-Intelligenz | in_progress | 2026-04-10 |
+| FEAT-316 | Auto-Wiedervorlagen | in_progress | 2026-04-10 |
+| FEAT-317 | Tageseinschaetzung erweitert | in_progress | 2026-04-10 |
+| FEAT-318 | Templates + Duplikate + Attribution | planned | 2026-04-10 |
+| FEAT-319 | Activity-Queue / Focus View | planned | 2026-04-10 |
 
 ## V4 Features (Wissen + Management — planned)
 
