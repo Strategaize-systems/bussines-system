@@ -33,22 +33,22 @@ export function KPICard({
   const g = gradients[gradient];
 
   const content = (
-    <div className="bg-white rounded-xl border-2 border-slate-200 p-6 shadow-lg relative overflow-hidden group hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
+    <div className="bg-white rounded-xl border-2 border-slate-200 p-4 shadow-lg relative overflow-hidden group hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
       {/* Gradient Accent Line */}
       <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${g}`} />
 
       {/* Icon */}
-      <div className="flex items-center justify-between mb-3">
-        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${g} flex items-center justify-center shadow-lg`}>
-          <Icon size={24} className="text-white" strokeWidth={2.5} />
+      <div className="flex items-center justify-between mb-2">
+        <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${g} flex items-center justify-center shadow`}>
+          <Icon size={20} className="text-white" strokeWidth={2.5} />
         </div>
       </div>
 
       {/* Value */}
-      <div className="text-4xl font-bold text-slate-900 mb-1">{value}</div>
+      <div className="text-2xl font-bold text-slate-900 mb-0.5">{value}</div>
 
       {/* Label */}
-      <div className="text-sm font-semibold text-slate-600 uppercase tracking-wide">
+      <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
         {label}
       </div>
 

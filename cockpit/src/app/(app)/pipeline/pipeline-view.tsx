@@ -139,7 +139,7 @@ export function PipelineView({
   }, []);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       <PageHeader
         title="Pipeline"
         subtitle={`Sales Pipeline · Deals & Opportunities Management`}
@@ -153,8 +153,8 @@ export function PipelineView({
         </button>
       </PageHeader>
 
-      <main className="px-8 py-8">
-        <div className="max-w-[1800px] mx-auto space-y-6">
+      <main className="px-8 py-8 overflow-hidden">
+        <div className="space-y-6">
           {/* KPI Cards */}
           <KPIGrid columns={4}>
             <KPICard
