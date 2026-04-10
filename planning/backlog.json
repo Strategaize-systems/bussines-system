@@ -832,12 +832,12 @@
     },
     {
       "id": "BL-325",
-      "title": "KI-Wiedervorlagen: Automatische Pruefung + Nachfass-Aktionen",
+      "title": "KI-Wiedervorlagen: Vorschlaege mit Freigabe, nie autonom am Kunden",
       "type": "feature",
       "priority": "high",
       "status": "open",
       "version": "V4",
-      "description": "Zweite Ebene der Wiedervorlage — nicht fuer den Mitarbeiter, sondern fuer die KI. KI prueft automatisch: (1) Hat der Kunde auf unsere E-Mail geantwortet? Wenn nicht nach X Tagen → sanfte Erinnerung senden (mit Bestaetigung). (2) Wurde die Mitarbeiter-Wiedervorlage erledigt? Wenn nicht → Eskalation in Mein Tag. (3) Meeting-Erinnerungen: Automatische E-Mail an Meeting-Teilnehmer am Morgen des Tages oder 30 Min vorher ('Wir freuen uns auf das Meeting um 10 Uhr'). Regelbasiert mit konfigurierbaren Zeitfenstern und Eskalationsstufen.",
+      "description": "KI-gesteuerte Wiedervorlagen mit FREIGABE-PRINZIP — KI handelt NIE autonom am Kunden. Ablauf: (1) KI prueft taeglich: Hat Kunde geantwortet? Ist Mitarbeiter-Wiedervorlage erledigt? (2) Ergebnis erscheint als eigene Liste in Mein Tag / KI-Tageseinschaetzung: 'Heute stehen X Nachfass-Aktionen an' mit Kunde, Grund, vorgeschlagene Aktion. (3) Mitarbeiter geht Liste durch (5 Min morgens): Pro Eintrag: Freigeben / Verschieben (z.B. +2 Tage, +5 Tage) / Abbrechen. (4) Erst NACH Freigabe fuehrt KI die Aktion aus (E-Mail senden, Erinnerung). Zusaetzlich: Meeting-Erinnerungen (am Morgen oder 30 Min vorher) koennen automatisch laufen — die betreffen eigene Termine, nicht Kunden-Nachfass. Ziel: Mitarbeiter behaelt volle Kontrolle, KI entlastet aber maximal. Keine genervten Kunden durch stumpfe Automatik.",
       "createdAt": "2026-04-10"
     }
   ]
