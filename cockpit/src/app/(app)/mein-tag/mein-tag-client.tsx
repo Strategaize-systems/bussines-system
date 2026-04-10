@@ -234,6 +234,13 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                   <span className="text-xs font-bold text-orange-600 bg-orange-100 rounded-full px-2 py-0.5">
                     {totalItems} Offen
                   </span>
+                  <Link
+                    href="/focus"
+                    className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#120774] to-[#4454b8] text-white text-[11px] font-bold hover:shadow-md transition-all"
+                  >
+                    <Target size={12} />
+                    Jetzt abarbeiten
+                  </Link>
                 </div>
 
                 {/* Tabs */}

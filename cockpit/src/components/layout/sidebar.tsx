@@ -21,6 +21,7 @@ import {
   Settings,
   Shield,
   Briefcase,
+  Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -44,6 +45,7 @@ const navGroups: NavGroup[] = [
     label: "OPERATIV",
     items: [
       { name: "Mein Tag", href: "/mein-tag", icon: Sparkles },
+      { name: "Focus", href: "/focus", icon: Target },
       {
         name: "Pipeline",
         href: "/pipeline/multiplikatoren",

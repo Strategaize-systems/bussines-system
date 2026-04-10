@@ -64,4 +64,4 @@
 | SLC-316 | [Auto-Wiedervorlagen](SLC-316-auto-wiedervorlagen.md) | FEAT-302, FEAT-109 | done | High | 2026-04-10 |
 | SLC-317 | [Tageseinschaetzung erweitert](SLC-317-tageseinschaetzung-erweitert.md) | FEAT-302 | done | High | 2026-04-10 |
 | SLC-318 | [Templates + Duplikate + Attribution](SLC-318-templates-duplikate-attribution.md) | FEAT-106, FEAT-107, FEAT-101 | done | Medium | 2026-04-10 |
-| SLC-319 | [Activity-Queue / Focus View](SLC-319-activity-queue.md) | FEAT-302 | planned | Medium | 2026-04-10 |
+| SLC-319 | [Activity-Queue / Focus View](SLC-319-activity-queue.md) | FEAT-302 | done | Medium | 2026-04-10 |

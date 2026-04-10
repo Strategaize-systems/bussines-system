@@ -10,14 +10,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V3.1 Implementation. SLC-311..318 done. Naechster Slice: SLC-319 (Activity-Queue / Focus View).
-- Current Phase: V3.1 Implementation (8/9 Slices done)
+- Current Focus: V3.1 Implementation. Alle 9 Slices done (SLC-311..319). Naechster Schritt: /qa SLC-319, dann Gesamt-QA.
+- Current Phase: V3.1 Implementation (9/9 Slices done)
 
 ## Immediate Next Steps
-1. /qa fuer SLC-318 (Templates + Duplikate + Attribution)
-2. SQL-Migration 11_v31_templates_attribution.sql auf Hetzner ausfuehren
-3. SLC-319 implementieren (Activity-Queue / Focus View) — Medium
-4. Gesamt-QA nach SLC-319
+1. /qa fuer SLC-319 (Activity-Queue / Focus View)
+2. SQL-Migrationen auf Hetzner ausfuehren (09, 10, 11)
+3. Gesamt-QA V3.1
+4. /final-check → /go-live → /deploy
 
 ## Active Scope
 V3.1 — UX-Schliff + KI-Kontext (9 Slices, 19 Backlog-Items):

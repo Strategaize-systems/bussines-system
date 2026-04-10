@@ -325,7 +325,7 @@
       "title": "Activity-Queue / Focus View (naechste Aktionen abarbeiten)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V3.1",
       "description": "Dedizierte Ansicht: 'Arbeite deine nächsten 5 Aktionen ab'. Zeigt Deal + Kontakt + was zu tun ist. Nach Erledigung springt zur nächsten. Wie Pipedrive Focus View.",
       "createdAt": "2026-04-03"
