@@ -839,6 +839,36 @@
       "version": "V4",
       "description": "KI-gesteuerte Wiedervorlagen mit FREIGABE-PRINZIP — KI handelt NIE autonom am Kunden. Ablauf: (1) KI prueft taeglich: Hat Kunde geantwortet? Ist Mitarbeiter-Wiedervorlage erledigt? (2) Ergebnis erscheint als eigene Liste in Mein Tag / KI-Tageseinschaetzung: 'Heute stehen X Nachfass-Aktionen an' mit Kunde, Grund, vorgeschlagene Aktion. (3) Mitarbeiter geht Liste durch (5 Min morgens): Pro Eintrag: Freigeben / Verschieben (z.B. +2 Tage, +5 Tage) / Abbrechen. (4) Erst NACH Freigabe fuehrt KI die Aktion aus (E-Mail senden, Erinnerung). BIDIREKTIONAL: Wiedervorlagen koennen in beide Richtungen verschoben werden — (A) Eigene Wiedervorlage → KI delegieren ('das kann die KI automatisch nachfassen') und (B) KI-Wiedervorlage → selbst uebernehmen ('den rufe ich lieber persoenlich an'). Beide Listen leben nebeneinander in Mein Tag. Zusaetzlich: Meeting-Erinnerungen (am Morgen oder 30 Min vorher) koennen automatisch laufen — die betreffen eigene Termine, nicht Kunden-Nachfass. Ziel: Mitarbeiter behaelt volle Kontrolle, KI entlastet aber maximal. Keine genervten Kunden durch stumpfe Automatik.",
       "createdAt": "2026-04-10"
+    },
+    {
+      "id": "BL-326",
+      "title": "Meeting-Erinnerungen an Teilnehmer + Kalender-Integration",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V4",
+      "description": "Automatische Meeting-Erinnerungen an externe Teilnehmer: (1) E-Mail X Stunden vor Meeting (konfigurierbar, z.B. 2h oder 4h) mit Meeting-Details, Agenda, Einwahl-Link. (2) Kalender-Integration: Bei Meeting-Zusage automatisch .ics / CalDAV-Eintrag senden, damit es im Kalender des Teilnehmers landet (Google Cal, Outlook, Apple Calendar). (3) Spaeter: Cal.com-Sync fuer bidirektionale Buchung (bereits als FEAT-406 geplant). Meeting-Erinnerungen duerfen automatisch laufen — das sind eigene Termine, kein Kunden-Nachfass.",
+      "createdAt": "2026-04-10"
+    },
+    {
+      "id": "BL-327",
+      "title": "KI-Kontextanalyse: Auto-Replies erkennen und Wiedervorlagen anpassen",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V4",
+      "description": "KI analysiert eingehende E-Mails auf Abwesenheitshinweise und Kontext: (1) Auto-Reply 'Bin bis 20.04. nicht erreichbar' → Wiedervorlage automatisch auf 22.04. setzen (+1-2 Puffer nach Rueckkehr). (2) 'Melde mich naechste Woche' → Wiedervorlage entsprechend schieben. (3) Ergebnis erscheint in Tageseinschaetzung: 'Bei Kunde X kam gestern ein Auto-Reply — erst ab 22.04. wieder erreichbar'. Vertriebsintelligenz: Nicht am Rueckkehrtag nerven, sondern 1-2 Tage Puffer geben. Setzt IMAP-Integration (FEAT-405) voraus fuer E-Mail-Analyse.",
+      "createdAt": "2026-04-10"
+    },
+    {
+      "id": "BL-328",
+      "title": "Tageseinschaetzung erweitern: Rueckblick Vortag + ungesehene Ereignisse",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3.1",
+      "description": "KI-Tageseinschaetzung in Mein Tag erweitern um: (1) Zusammenfassung vom Vortag — was ist passiert, was habe ich noch nicht gesehen? Auto-Replies, eingehende E-Mails, Statusaenderungen bei Deals. (2) Ungesehene Ereignisse markieren: 'Gestern kam ein Auto-Reply von Kunde X — erst ab Donnerstag erreichbar'. (3) Quick-Acknowledge: Pro Eintrag einfach 'OK, gesehen' oder 'Muss ich mir anschauen'. Ziel: Morgens 5 Min einlesen, alles im Blick, nichts uebersehen. Nicht nur 'Was steht heute an?' sondern auch 'Was habe ich verpasst?'.",
+      "createdAt": "2026-04-10"
     }
   ]
 }
