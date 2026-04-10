@@ -825,7 +825,7 @@
       "title": "Automatische Wiedervorlagen nach Aktionen (Meeting, Call, E-Mail)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3.1",
       "description": "Nach Abschluss bestimmter Aktionen (Meeting erledigt, Telefonat gefuehrt, E-Mail gesendet) automatisch Wiedervorlage erstellen. Zeitraum abhaengig von Kontakt-Prioritaet: Hoch = 2-3 Tage, Mittel = 5 Tage, Niedrig = 7 Tage (konfigurierbar). Wiedervorlage erscheint in 'Mein Tag' als Aufgabe. Zusaetzlich: Nach Meeting/Call direkt Frage 'Naechster Schritt?' mit Vorschlaegen.",
       "createdAt": "2026-04-10"

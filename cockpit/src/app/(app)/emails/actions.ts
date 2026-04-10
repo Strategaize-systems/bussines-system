@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import nodemailer from "nodemailer";
+import { createFollowUpTask } from "@/app/(app)/aufgaben/actions";
 
 export type Email = {
   id: string;
@@ -123,9 +124,37 @@ export async function sendEmail(formData: FormData) {
 
   if (error) return { error: error.message };
 
+  // Auto-create follow-up task when follow_up_date is set
+  if (followUpDate) {
+    const contactName = contactId
+      ? await getContactName(supabase, contactId)
+      : null;
+    await createFollowUpTask({
+      title: contactName
+        ? `Follow-up: ${contactName} (${subject})`
+        : `Follow-up: ${subject}`,
+      description: `Automatische Wiedervorlage nach E-Mail "${subject}"`,
+      due_date: followUpDate,
+      contact_id: contactId,
+      company_id: companyId,
+      deal_id: dealId,
+    });
+  }
+
   if (contactId) revalidatePath(`/contacts/${contactId}`);
   revalidatePath("/emails");
   return { error: "" };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getContactName(supabase: any, contactId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("contacts")
+    .select("first_name, last_name")
+    .eq("id", contactId)
+    .single();
+  if (!data) return null;
+  return `${data.first_name} ${data.last_name}`;
 }
 
 export async function updateFollowUpStatus(id: string, status: string) {

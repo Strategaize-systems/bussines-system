@@ -16,13 +16,14 @@ import {
   Eye,
   Clock,
   Calendar,
+  CalendarClock,
   Plus,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
 import { TaskSheet } from "./task-sheet";
-import { completeTask, deleteTask, type Task } from "./actions";
+import { completeTask, deleteTask, type Task, type TaskType } from "./actions";
 import Link from "next/link";
 
 const priorityConfig: Record<string, { label: string; variant: string }> = {
@@ -56,6 +57,7 @@ export function AufgabenClient({ tasks, contacts, companies, deals }: AufgabenCl
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
   const [showNewTask, setShowNewTask] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
@@ -64,6 +66,7 @@ export function AufgabenClient({ tasks, contacts, companies, deals }: AufgabenCl
     (t) => t.status === "open" && t.due_date && t.due_date < today
   ).length;
   const completedCount = tasks.filter((t) => t.status === "completed").length;
+  const followUpCount = tasks.filter((t) => t.type === "follow_up" && t.status === "open").length;
 
   const filtered = useMemo(() => {
     let result = tasks;
@@ -73,8 +76,9 @@ export function AufgabenClient({ tasks, contacts, companies, deals }: AufgabenCl
     }
     if (statusFilter) result = result.filter((t) => t.status === statusFilter);
     if (priorityFilter) result = result.filter((t) => t.priority === priorityFilter);
+    if (typeFilter) result = result.filter((t) => t.type === typeFilter);
     return result;
-  }, [tasks, searchQuery, statusFilter, priorityFilter]);
+  }, [tasks, searchQuery, statusFilter, priorityFilter, typeFilter]);
 
   return (
     <div className="min-h-screen">
@@ -141,6 +145,16 @@ export function AufgabenClient({ tasks, contacts, companies, deals }: AufgabenCl
                 { value: "low", label: "Niedrig" },
               ]}
             />
+            <FilterSelect
+              value={typeFilter}
+              onChange={setTypeFilter}
+              options={[
+                { value: "", label: "Alle Typen" },
+                { value: "manual", label: "Manuell" },
+                { value: "follow_up", label: "Wiedervorlage" },
+                { value: "proposal", label: "Angebot" },
+              ]}
+            />
           </FilterBar>
 
           {/* Task List */}
@@ -199,7 +213,9 @@ function TaskRow({
   const isOverdue = task.status === "open" && task.due_date && task.due_date < today;
   const prio = priorityConfig[task.priority] || priorityConfig.medium;
   const status = statusConfig[task.status] || statusConfig.open;
-  const TypeIcon = typeIcons["task"] || CheckSquare;
+  const isFollowUp = task.type === "follow_up";
+  const isProposal = task.type === "proposal";
+  const TypeIcon = isFollowUp ? CalendarClock : isProposal ? FileText : (typeIcons["task"] || CheckSquare);
 
   const handleComplete = () => {
     startTransition(async () => {
@@ -217,7 +233,7 @@ function TaskRow({
     <div className={`flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors group ${isOverdue ? "bg-red-50/30" : ""}`}>
       {/* Type Icon */}
       <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-        isOverdue ? "bg-red-100 text-red-600" : "bg-slate-100 text-slate-500"
+        isOverdue ? "bg-red-100 text-red-600" : isFollowUp ? "bg-purple-100 text-purple-600" : isProposal ? "bg-indigo-100 text-indigo-600" : "bg-slate-100 text-slate-500"
       }`}>
         <TypeIcon size={18} strokeWidth={2} />
       </div>
@@ -239,6 +255,16 @@ function TaskRow({
           {isOverdue && (
             <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border bg-red-100 text-red-700 border-red-200">
               Überfällig
+            </span>
+          )}
+          {isFollowUp && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border bg-purple-100 text-purple-700 border-purple-200">
+              Wiedervorlage
+            </span>
+          )}
+          {isProposal && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border bg-indigo-100 text-indigo-700 border-indigo-200">
+              Angebot
             </span>
           )}
         </div>

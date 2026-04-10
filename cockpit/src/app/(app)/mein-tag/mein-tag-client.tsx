@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Check,
   Calendar,
+  CalendarClock,
   Users,
   Building2,
   Handshake,
@@ -58,8 +59,10 @@ interface MeinTagClientProps {
 
 const typeConfig: Record<TodayItemType, { icon: typeof ListTodo; bg: string }> = {
   overdue_task: { icon: AlertTriangle, bg: "bg-red-50 text-red-600" },
+  overdue_follow_up: { icon: AlertTriangle, bg: "bg-red-50 text-red-600" },
   overdue_deal: { icon: AlertTriangle, bg: "bg-red-50 text-red-600" },
   task: { icon: ListTodo, bg: "bg-blue-50 text-[#4454b8]" },
+  follow_up: { icon: CalendarClock, bg: "bg-purple-50 text-purple-600" },
   deal_action: { icon: Kanban, bg: "bg-emerald-50 text-[#00a84f]" },
 };
 

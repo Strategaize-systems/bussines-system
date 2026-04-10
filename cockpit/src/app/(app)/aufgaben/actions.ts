@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+export type TaskType = "manual" | "follow_up" | "proposal";
+
 export type Task = {
   id: string;
   contact_id: string | null;
@@ -13,6 +15,7 @@ export type Task = {
   due_date: string | null;
   priority: string;
   status: string;
+  type: TaskType;
   completed_at: string | null;
   created_at: string;
   contacts?: { id: string; first_name: string; last_name: string } | null;
@@ -24,6 +27,7 @@ export async function getTasks(filter?: {
   status?: string;
   priority?: string;
   dealId?: string;
+  type?: string;
 }) {
   const supabase = await createClient();
 
@@ -41,6 +45,9 @@ export async function getTasks(filter?: {
   if (filter?.dealId) {
     query = query.eq("deal_id", filter.dealId);
   }
+  if (filter?.type && filter.type !== "all") {
+    query = query.eq("type", filter.type);
+  }
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
@@ -56,9 +63,42 @@ export async function createTask(formData: FormData) {
     due_date: (formData.get("due_date") as string) || null,
     priority: (formData.get("priority") as string) || "medium",
     status: "open",
+    type: (formData.get("type") as string) || "manual",
     contact_id: (formData.get("contact_id") as string) || null,
     company_id: (formData.get("company_id") as string) || null,
     deal_id: (formData.get("deal_id") as string) || null,
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/aufgaben");
+  revalidatePath("/deals");
+  revalidatePath("/mein-tag");
+  return { error: "" };
+}
+
+/** Create a follow-up task programmatically (no FormData needed) */
+export async function createFollowUpTask(params: {
+  title: string;
+  description?: string;
+  due_date: string;
+  priority?: string;
+  contact_id?: string | null;
+  company_id?: string | null;
+  deal_id?: string | null;
+}) {
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("tasks").insert({
+    title: params.title,
+    description: params.description || null,
+    due_date: params.due_date,
+    priority: params.priority || "medium",
+    status: "open",
+    type: "follow_up",
+    contact_id: params.contact_id || null,
+    company_id: params.company_id || null,
+    deal_id: params.deal_id || null,
   });
 
   if (error) return { error: error.message };

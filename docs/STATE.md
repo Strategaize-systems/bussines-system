@@ -10,12 +10,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V3.1 Implementation. SLC-311..315 done. Naechster Slice: SLC-316 (Auto-Wiedervorlagen).
-- Current Phase: V3.1 Implementation (5/9 Slices done)
+- Current Focus: V3.1 Implementation. SLC-311..316 done. Naechster Slice: SLC-317 (Tageseinschaetzung erweitert).
+- Current Phase: V3.1 Implementation (6/9 Slices done)
 
 ## Immediate Next Steps
-1. /qa fuer SLC-315 (KI-Composing + Kontext-Intelligenz)
-2. SLC-316 implementieren (Auto-Wiedervorlagen) — High
+1. /qa fuer SLC-316 (Auto-Wiedervorlagen)
+2. SQL-Migration 09_v31_task_type.sql auf Hetzner ausfuehren
 3. SLC-317 implementieren (Tageseinschaetzung erweitert) — High
 4. SLC-318..319 (Templates, Activity-Queue) — Medium
 

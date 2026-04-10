@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
-export type TodayItemType = "task" | "deal_action" | "overdue_task" | "overdue_deal";
+export type TodayItemType = "task" | "follow_up" | "deal_action" | "overdue_task" | "overdue_follow_up" | "overdue_deal";
 
 export type TodayItem = {
   id: string;
@@ -17,6 +17,7 @@ export type TodayItem = {
   contactName: string | null;
   companyName: string | null;
   dealTitle: string | null;
+  taskType?: string | null;
 };
 
 export type TodayData = {
@@ -70,10 +71,18 @@ export async function getTodayItems(): Promise<TodayData> {
     const contact = task.contacts as any;
     const company = task.companies as any;
     const deal = task.deals as any;
+    const isFollowUp = task.type === "follow_up";
+
+    let itemType: TodayItemType;
+    if (isOverdue) {
+      itemType = isFollowUp ? "overdue_follow_up" : "overdue_task";
+    } else {
+      itemType = isFollowUp ? "follow_up" : "task";
+    }
 
     items.push({
       id: `task-${task.id}`,
-      type: isOverdue ? "overdue_task" : "task",
+      type: itemType,
       title: task.title,
       subtitle: task.description,
       dueDate: task.due_date,
@@ -83,6 +92,7 @@ export async function getTodayItems(): Promise<TodayData> {
       contactName: contact ? `${contact.first_name} ${contact.last_name}` : null,
       companyName: company?.name ?? null,
       dealTitle: deal?.title ?? null,
+      taskType: task.type ?? "manual",
     });
   }
 

@@ -3,6 +3,8 @@
  * Pure utility, no DB access — works with already-loaded data.
  */
 
+import { calculateFollowUpDate } from "./follow-up";
+
 export interface ContextPrefill {
   // Email
   contactEmail?: string;
@@ -37,13 +39,9 @@ interface PrefillInput {
   } | null;
 }
 
-/** Calculate follow-up date based on contact priority */
+/** @deprecated Use calculateFollowUpDate from lib/follow-up.ts directly */
 function getFollowUpDate(priority?: string | null): string {
-  const days = priority === "high" ? 2 : priority === "medium" ? 5 : 7;
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  return calculateFollowUpDate(priority);
 }
 
 export function getContextPrefill(input: PrefillInput): ContextPrefill {
