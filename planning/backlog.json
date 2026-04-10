@@ -285,8 +285,8 @@
       "title": "Pipeline Liste-Ansicht Toggle (Kanban ↔ Tabelle)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
-      "version": "V3",
+      "status": "deferred",
+      "version": "V3.1",
       "description": "Toggle zwischen Kanban-Board und Tabellen-Ansicht der gleichen Deals. Tabelle mit sortierbaren Spalten, Filtern, Bulk-Actions.",
       "createdAt": "2026-04-03"
     },
@@ -305,8 +305,8 @@
       "title": "Unified Timeline (alle Objekte chronologisch pro Kontakt/Firma)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
-      "version": "V3",
+      "status": "deferred",
+      "version": "V3.1",
       "description": "Eine Timeline die Activities + E-Mails + Proposals + Signals + Referrals chronologisch zusammenführt. Pro Kontakt und pro Firma sichtbar.",
       "createdAt": "2026-04-03"
     },
