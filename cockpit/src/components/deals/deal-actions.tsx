@@ -10,6 +10,7 @@ import { ActivityForm } from "@/components/activities/activity-form";
 import { Button } from "@/components/ui/button";
 import { ListTodo, Mail, Calendar, ChevronDown } from "lucide-react";
 import type { PipelineStage } from "@/app/(app)/pipeline/actions";
+import { getContextPrefill } from "@/lib/context-prefill";
 
 interface DealActionsProps {
   deal: any;
@@ -28,6 +29,22 @@ export function DealActions({
 }: DealActionsProps) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+
+  const prefill = getContextPrefill({
+    deal: {
+      title: deal.title,
+      next_action: deal.next_action,
+      contact_id: deal.contact_id,
+      company_id: deal.company_id,
+    },
+    contact: deal.contacts ? {
+      first_name: deal.contacts.first_name,
+      last_name: deal.contacts.last_name,
+      email: deal.contacts.email ?? null,
+      priority: deal.contacts.priority ?? null,
+    } : null,
+    company: deal.companies ? { name: deal.companies.name } : null,
+  });
 
   const handleStageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newStageId = e.target.value;
@@ -69,6 +86,8 @@ export function DealActions({
         contacts={contacts}
         companies={companies}
         deals={dealsForSelect}
+        defaultDealId={deal.id}
+        defaultTitle={prefill.suggestedTaskTitle}
         trigger={
           <Button variant="outline" size="sm" className="text-xs">
             <ListTodo className="mr-1.5 h-3.5 w-3.5" />
@@ -80,8 +99,11 @@ export function DealActions({
       {/* + Email */}
       <EmailSheet
         defaultTo={deal.contacts?.email ?? ""}
+        defaultSubject={prefill.suggestedSubject}
+        defaultFollowUpDate={prefill.suggestedFollowUpDate}
         contactId={deal.contact_id ?? undefined}
         companyId={deal.company_id ?? undefined}
+        dealId={deal.id}
         trigger={
           <Button variant="outline" size="sm" className="text-xs">
             <Mail className="mr-1.5 h-3.5 w-3.5" />
@@ -98,6 +120,8 @@ export function DealActions({
         defaultDealId={deal.id}
         defaultContactId={deal.contact_id ?? undefined}
         defaultCompanyId={deal.company_id ?? undefined}
+        defaultParticipants={prefill.suggestedParticipants}
+        defaultAgenda={prefill.suggestedAgenda}
         trigger={
           <Button variant="outline" size="sm" className="text-xs">
             <Calendar className="mr-1.5 h-3.5 w-3.5" />

@@ -28,6 +28,8 @@ interface MeetingSheetProps {
   defaultDealId?: string;
   defaultContactId?: string;
   defaultCompanyId?: string;
+  defaultParticipants?: string;
+  defaultAgenda?: string;
 }
 
 export function MeetingSheet({
@@ -41,6 +43,8 @@ export function MeetingSheet({
   defaultDealId,
   defaultContactId,
   defaultCompanyId,
+  defaultParticipants,
+  defaultAgenda,
 }: MeetingSheetProps) {
   const [open, setOpen] = useState(defaultOpen ?? false);
   const [error, setError] = useState("");
@@ -98,6 +102,8 @@ export function MeetingSheet({
             defaultDealId={defaultDealId}
             defaultContactId={defaultContactId}
             defaultCompanyId={defaultCompanyId}
+            defaultParticipants={defaultParticipants}
+            defaultAgenda={defaultAgenda}
           />
         </div>
       </SheetContent>

@@ -15,20 +15,40 @@ import { useState, useTransition } from "react";
 
 interface EmailSheetProps {
   defaultTo?: string;
+  defaultSubject?: string;
+  defaultFollowUpDate?: string;
   contactId?: string;
   companyId?: string;
+  dealId?: string;
   trigger?: React.ReactNode;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
-export function EmailSheet({ defaultTo, contactId, companyId, trigger, defaultOpen, onOpenChange: externalOnOpenChange }: EmailSheetProps) {
+export function EmailSheet({
+  defaultTo,
+  defaultSubject,
+  defaultFollowUpDate,
+  contactId,
+  companyId,
+  dealId,
+  trigger,
+  defaultOpen,
+  onOpenChange: externalOnOpenChange,
+}: EmailSheetProps) {
   const [open, setOpen] = useState(defaultOpen ?? false);
   const [error, setError] = useState("");
   const [warning, setWarning] = useState("");
   const [isPending, startTransition] = useTransition();
 
-  const handleOpenChange = (v: boolean) => { setOpen(v); if (!v) { setError(""); setWarning(""); } externalOnOpenChange?.(v); };
+  const handleOpenChange = (v: boolean) => {
+    setOpen(v);
+    if (!v) {
+      setError("");
+      setWarning("");
+    }
+    externalOnOpenChange?.(v);
+  };
 
   const handleSubmit = (formData: FormData) => {
     setError("");
@@ -70,8 +90,11 @@ export function EmailSheet({ defaultTo, contactId, companyId, trigger, defaultOp
           )}
           <EmailCompose
             defaultTo={defaultTo}
+            defaultSubject={defaultSubject}
+            defaultFollowUpDate={defaultFollowUpDate}
             contactId={contactId}
             companyId={companyId}
+            dealId={dealId}
             onSubmit={handleSubmit}
             isPending={isPending}
           />

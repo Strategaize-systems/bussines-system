@@ -15,6 +15,8 @@ interface TaskFormProps {
   deals: { id: string; title: string }[];
   onSubmit: (formData: FormData) => void;
   isPending?: boolean;
+  defaultDealId?: string;
+  defaultTitle?: string;
 }
 
 export function TaskForm({
@@ -24,6 +26,8 @@ export function TaskForm({
   deals,
   onSubmit,
   isPending,
+  defaultDealId,
+  defaultTitle,
 }: TaskFormProps) {
   return (
     <form action={onSubmit} className="space-y-4">
@@ -32,7 +36,7 @@ export function TaskForm({
         <Input
           id="title"
           name="title"
-          defaultValue={task?.title}
+          defaultValue={task?.title ?? defaultTitle ?? ""}
           placeholder="z.B. Angebot nachfassen"
           required
         />
@@ -118,7 +122,7 @@ export function TaskForm({
         <select
           id="deal_id"
           name="deal_id"
-          defaultValue={task?.deal_id ?? ""}
+          defaultValue={task?.deal_id ?? defaultDealId ?? ""}
           className={selectClass}
         >
           <option value="">— Kein Deal —</option>

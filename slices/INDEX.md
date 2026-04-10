@@ -60,7 +60,7 @@
 | SLC-312 | [Schnellaktionen-Rebuild](SLC-312-schnellaktionen-rebuild.md) | FEAT-302 | done | High | 2026-04-10 |
 | SLC-313 | [KI on-click Pattern](SLC-313-ki-onclick-pattern.md) | FEAT-305 | done | Blocker | 2026-04-10 |
 | SLC-314 | [Pipeline KI-Suche + Voice](SLC-314-pipeline-ki-suche.md) | FEAT-301, FEAT-305 | done | High | 2026-04-10 |
-| SLC-315 | [KI-Composing + Kontext-Intelligenz](SLC-315-ki-composing-kontext.md) | FEAT-305, FEAT-106 | planned | High | 2026-04-10 |
+| SLC-315 | [KI-Composing + Kontext-Intelligenz](SLC-315-ki-composing-kontext.md) | FEAT-305, FEAT-106 | done | High | 2026-04-10 |
 | SLC-316 | [Auto-Wiedervorlagen](SLC-316-auto-wiedervorlagen.md) | FEAT-302, FEAT-109 | planned | High | 2026-04-10 |
 | SLC-317 | [Tageseinschaetzung erweitert](SLC-317-tageseinschaetzung-erweitert.md) | FEAT-302 | planned | High | 2026-04-10 |
 | SLC-318 | [Templates + Duplikate + Attribution](SLC-318-templates-duplikate-attribution.md) | FEAT-106, FEAT-107, FEAT-101 | planned | Medium | 2026-04-10 |

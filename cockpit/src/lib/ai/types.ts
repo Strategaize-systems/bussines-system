@@ -134,14 +134,28 @@ export interface PipelineSearchContext {
 }
 
 // -------------------------------------------------------------
+// Email Improve
+// -------------------------------------------------------------
+
+export interface EmailImproveResult {
+  improvedText: string;
+  changes: string[];
+}
+
+export interface EmailImproveContext {
+  text: string;
+  mode: "correct" | "formal" | "summarize";
+}
+
+// -------------------------------------------------------------
 // API Request / Response
 // -------------------------------------------------------------
 
-export type AIQueryType = "deal-briefing" | "daily-summary" | "pipeline-search";
+export type AIQueryType = "deal-briefing" | "daily-summary" | "pipeline-search" | "email-improve";
 
 export interface AIQueryRequest {
   type: AIQueryType;
-  context: DealBriefingContext | DailySummaryContext | PipelineSearchContext;
+  context: DealBriefingContext | DailySummaryContext | PipelineSearchContext | EmailImproveContext;
 }
 
 export interface AIQueryResponse<T = DealBriefing | DailySummary> {

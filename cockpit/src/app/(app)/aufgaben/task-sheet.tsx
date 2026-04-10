@@ -21,9 +21,11 @@ interface TaskSheetProps {
   trigger?: React.ReactNode;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
+  defaultDealId?: string;
+  defaultTitle?: string;
 }
 
-export function TaskSheet({ contacts, companies, deals, task, trigger, defaultOpen, onOpenChange: externalOnOpenChange }: TaskSheetProps) {
+export function TaskSheet({ contacts, companies, deals, task, trigger, defaultOpen, onOpenChange: externalOnOpenChange, defaultDealId, defaultTitle }: TaskSheetProps) {
   const [open, setOpen] = useState(defaultOpen ?? false);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -77,6 +79,8 @@ export function TaskSheet({ contacts, companies, deals, task, trigger, defaultOp
             deals={deals}
             onSubmit={handleSubmit}
             isPending={isPending}
+            defaultDealId={defaultDealId}
+            defaultTitle={defaultTitle}
           />
         </div>
       </SheetContent>

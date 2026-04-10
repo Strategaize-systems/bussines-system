@@ -105,7 +105,7 @@ export function parseLLMResponse<T>(
 // Built-in validators for known response types
 // =============================================================
 
-import type { DealBriefing, DailySummary, PipelineSearchFilter } from "./types";
+import type { DealBriefing, DailySummary, PipelineSearchFilter, EmailImproveResult } from "./types";
 
 /** Validates a DealBriefing response */
 export function validateDealBriefing(data: unknown): DealBriefing | null {
@@ -166,5 +166,20 @@ export function validatePipelineSearchFilter(data: unknown): PipelineSearchFilte
     titleSearch: typeof d.titleSearch === "string" ? d.titleSearch : null,
     hasNextAction: typeof d.hasNextAction === "boolean" ? d.hasNextAction : null,
     isStagnant: typeof d.isStagnant === "boolean" ? d.isStagnant : null,
+  };
+}
+
+/** Validates an EmailImproveResult response */
+export function validateEmailImproveResult(data: unknown): EmailImproveResult | null {
+  if (typeof data !== "object" || data === null) return null;
+
+  const d = data as Record<string, unknown>;
+
+  if (typeof d.improvedText !== "string") return null;
+  if (!Array.isArray(d.changes)) return null;
+
+  return {
+    improvedText: d.improvedText,
+    changes: d.changes.map(String),
   };
 }

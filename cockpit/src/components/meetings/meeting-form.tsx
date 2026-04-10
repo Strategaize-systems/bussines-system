@@ -20,6 +20,8 @@ interface MeetingFormProps {
   defaultDealId?: string;
   defaultContactId?: string;
   defaultCompanyId?: string;
+  defaultParticipants?: string;
+  defaultAgenda?: string;
 }
 
 function parseDatePart(isoString: string | undefined | null): string {
@@ -62,6 +64,8 @@ export function MeetingForm({
   defaultDealId,
   defaultContactId,
   defaultCompanyId,
+  defaultParticipants,
+  defaultAgenda,
 }: MeetingFormProps) {
   const [date, setDate] = useState(parseDatePart(meeting?.scheduled_at));
   const [time, setTime] = useState(parseTimePart(meeting?.scheduled_at));
@@ -187,7 +191,7 @@ export function MeetingForm({
         <Input
           id="participants"
           name="participants"
-          defaultValue={meeting?.participants ?? ""}
+          defaultValue={meeting?.participants ?? defaultParticipants ?? ""}
           placeholder="z.B. Max Mustermann, Lisa Müller"
         />
       </div>
@@ -250,7 +254,7 @@ export function MeetingForm({
           id="agenda"
           name="agenda"
           rows={3}
-          defaultValue={meeting?.agenda ?? ""}
+          defaultValue={meeting?.agenda ?? defaultAgenda ?? ""}
           placeholder="Besprechungsthemen..."
         />
       </div>

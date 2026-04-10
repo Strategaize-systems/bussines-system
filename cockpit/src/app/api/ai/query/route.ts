@@ -13,7 +13,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { queryLLM } from "@/lib/ai/bedrock-client";
-import { parseLLMResponse, validateDealBriefing, validateDailySummary, validatePipelineSearchFilter } from "@/lib/ai/parser";
+import { parseLLMResponse, validateDealBriefing, validateDailySummary, validatePipelineSearchFilter, validateEmailImproveResult } from "@/lib/ai/parser";
 import { checkRateLimit } from "@/lib/ai/rate-limiter";
 import {
   DEAL_BRIEFING_SYSTEM_PROMPT,
@@ -27,15 +27,21 @@ import {
   PIPELINE_SEARCH_SYSTEM_PROMPT,
   buildPipelineSearchPrompt,
 } from "@/lib/ai/prompts/pipeline-search";
+import {
+  EMAIL_IMPROVE_SYSTEM_PROMPT,
+  buildEmailImprovePrompt,
+} from "@/lib/ai/prompts/email-improve";
 import type {
   AIQueryRequest,
   AIQueryResponse,
   DealBriefingContext,
   DailySummaryContext,
   PipelineSearchContext,
+  EmailImproveContext,
   DealBriefing,
   DailySummary,
   PipelineSearchFilter,
+  EmailImproveResult,
 } from "@/lib/ai/types";
 
 export async function POST(request: NextRequest) {
@@ -153,12 +159,29 @@ export async function POST(request: NextRequest) {
       break;
     }
 
+    case "email-improve": {
+      const ctx = body.context as EmailImproveContext;
+      if (!ctx.text || !ctx.mode) {
+        return NextResponse.json(
+          {
+            success: false,
+            data: null,
+            error: "Ungueltige Anfrage: 'text' und 'mode' sind erforderlich",
+          } satisfies AIQueryResponse,
+          { status: 400 }
+        );
+      }
+      systemPrompt = EMAIL_IMPROVE_SYSTEM_PROMPT;
+      userPrompt = buildEmailImprovePrompt(ctx);
+      break;
+    }
+
     default:
       return NextResponse.json(
         {
           success: false,
           data: null,
-          error: `Unbekannter Query-Typ: '${body.type}'. Erlaubt: 'deal-briefing', 'daily-summary', 'pipeline-search'`,
+          error: `Unbekannter Query-Typ: '${body.type}'. Erlaubt: 'deal-briefing', 'daily-summary', 'pipeline-search', 'email-improve'`,
         } satisfies AIQueryResponse,
         { status: 400 }
       );
@@ -277,6 +300,41 @@ export async function POST(request: NextRequest) {
           data: parsed.data,
           error: null,
         } satisfies AIQueryResponse<PipelineSearchFilter>,
+        {
+          status: 200,
+          headers: {
+            "X-RateLimit-Limit": String(rateLimit.limit),
+            "X-RateLimit-Remaining": String(
+              rateLimit.limit - rateLimit.currentCount
+            ),
+          },
+        }
+      );
+    }
+
+    case "email-improve": {
+      const parsed = parseLLMResponse<EmailImproveResult>(
+        llmResult.data,
+        validateEmailImproveResult
+      );
+
+      if (!parsed.success) {
+        return NextResponse.json(
+          {
+            success: false,
+            data: null,
+            error: `KI-Antwort konnte nicht verarbeitet werden: ${parsed.error}`,
+          } satisfies AIQueryResponse,
+          { status: 502 }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          data: parsed.data,
+          error: null,
+        } satisfies AIQueryResponse<EmailImproveResult>,
         {
           status: 200,
           headers: {
