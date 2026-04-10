@@ -231,6 +231,7 @@ export async function updateMeeting(id: string, formData: FormData) {
   revalidatePath("/meetings");
   revalidatePath("/termine");
   revalidatePath("/mein-tag");
+  revalidatePath("/focus");
   return { error: "" };
 }
 

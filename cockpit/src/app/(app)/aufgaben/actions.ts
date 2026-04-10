@@ -74,6 +74,7 @@ export async function createTask(formData: FormData) {
   revalidatePath("/aufgaben");
   revalidatePath("/deals");
   revalidatePath("/mein-tag");
+  revalidatePath("/focus");
   return { error: "" };
 }
 
@@ -106,6 +107,7 @@ export async function createFollowUpTask(params: {
   revalidatePath("/aufgaben");
   revalidatePath("/deals");
   revalidatePath("/mein-tag");
+  revalidatePath("/focus");
   return { error: "" };
 }
 
