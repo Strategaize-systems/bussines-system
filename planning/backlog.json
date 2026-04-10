@@ -535,7 +535,7 @@
       "title": "Pipeline-Seiten V2.2 Style Guide Nacharbeit",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "Pipeline-Seiten (Multiplikatoren, Unternehmer, Leads) haben nach V2.2 Redesign Probleme: KPI-Kacheln sehen nicht nach Style Guide V2 aus, 'Scrollen Sie horizontal' funktioniert nicht korrekt, rechte Kachel wird abgeschnitten. Gesamtes Layout muss an V2.2 Standard angeglichen werden.",
       "createdAt": "2026-04-08"
@@ -545,7 +545,7 @@
       "title": "Multiplikatoren: Standort-Filter fehlt",
       "type": "fix",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "Firmen-Seite hat Standort-Filter, Multiplikatoren-Seite nicht. Standort-Filter muss auch auf Multiplikatoren-Seite eingebaut werden (Konsistenz).",
       "createdAt": "2026-04-08"

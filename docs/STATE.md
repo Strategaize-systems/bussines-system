@@ -9,15 +9,15 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: V3 Implementation abgeschlossen bis auf SLC-310 (Nacharbeit). Gesamt-QA + Final-Check als naechstes.
-- Current Phase: V3 Implementation — 10 von 10 Slices done (SLC-310 Nacharbeit offen)
+- High-Level State: qa
+- Current Focus: Alle 10 V3-Slices done. Gesamt-QA + Final-Check + Deploy als naechstes.
+- Current Phase: V3 QA — alle Slices abgeschlossen, Deploy-Vorbereitung
 
 ## Immediate Next Steps
-1. SLC-310 — V2.2 Nacharbeit + Extras
+1. Redeploy auf Hetzner
 2. Gesamt-QA ueber alle V3 Slices
 3. /final-check
-4. Deploy
+4. /go-live
 
 ## Active Scope
 V3 Scope — Operative Kontextlogik (9 Features):
@@ -38,4 +38,4 @@ V3 Scope — Operative Kontextlogik (9 Features):
 - V2.2 — 2026-04-09 — deployed auf Hetzner (UI-Redesign + KI-Cockpit UI-Shells)
 
 ## Notes
-Alle V3-Feature-Slices (SLC-301 bis SLC-309) done. SLC-309 (Firmen+Kontakt Workspace): Deal-Listen + KI-Placeholder auf beiden Detail-Seiten. QA RPT-044 PASS. Verbleibend nur noch SLC-310 (V2.2 Nacharbeit), dann Gesamt-QA + Final-Check + Deploy.
+Alle 10 V3-Slices (SLC-301 bis SLC-310) done. SLC-310: Kanban Scroll-Fix + Multiplikatoren Standort-Filter. Naechster Schritt: Redeploy auf Hetzner, dann Gesamt-QA + Final-Check.
