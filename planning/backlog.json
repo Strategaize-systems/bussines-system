@@ -869,6 +869,16 @@
       "version": "V3.1",
       "description": "KI-Tageseinschaetzung in Mein Tag erweitern um: (1) Zusammenfassung vom Vortag — was ist passiert, was habe ich noch nicht gesehen? Auto-Replies, eingehende E-Mails, Statusaenderungen bei Deals. (2) Ungesehene Ereignisse markieren: 'Gestern kam ein Auto-Reply von Kunde X — erst ab Donnerstag erreichbar'. (3) Quick-Acknowledge: Pro Eintrag einfach 'OK, gesehen' oder 'Muss ich mir anschauen'. Ziel: Morgens 5 Min einlesen, alles im Blick, nichts uebersehen. Nicht nur 'Was steht heute an?' sondern auch 'Was habe ich verpasst?'.",
       "createdAt": "2026-04-10"
+    },
+    {
+      "id": "BL-329",
+      "title": "KI-Gatekeeper: Eingehende E-Mails analysieren, priorisieren, alerten",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V4",
+      "description": "KI als persoenlicher Gatekeeper im Hintergrund: (1) Eingehende E-Mails automatisch analysieren und dem richtigen Kontakt/Deal zuordnen. (2) Priorisierung: Kundenrueckfragen sofort in Aufgabenliste schieben ('Kunde XY hat Rueckfrage zu Angebot'). Weniger dringendes in Tageseinschaetzung am naechsten Morgen. (3) Handlungsvorschlaege: 'Kunde bittet um Meeting → soll ich Termin vorschlagen?', 'Rueckfrage zu Preis → hier ist der Kontext aus dem Angebot'. (4) Ziel: Kein manuelles E-Mail-Postfach durcharbeiten mehr. KI filtert, priorisiert, ordnet zu, schlaegt vor. Mitarbeiter reagiert nur noch auf aufbereitete, priorisierte Items. Setzt IMAP-Integration (FEAT-405) voraus. Recherche: State-of-the-Art bei AI Personal Assistants (OpenClaw, Anthropic MCP, etc.) fuer Best Practices.",
+      "createdAt": "2026-04-10"
     }
   ]
 }
