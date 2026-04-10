@@ -27,6 +27,16 @@ const trustOptions = [
   { value: "niedrig", label: "Niedrig" },
 ];
 
+const regionOptions = [
+  { value: "", label: "Alle Standorte" },
+  { value: "Nord", label: "Nord" },
+  { value: "Ost", label: "Ost" },
+  { value: "West", label: "West" },
+  { value: "Süd", label: "Süd" },
+  { value: "Süd-West", label: "Süd-West" },
+  { value: "Süd-Ost", label: "Süd-Ost" },
+];
+
 interface MultiplikatorenClientProps {
   multipliers: Contact[];
   companies: { id: string; name: string }[];
@@ -38,6 +48,7 @@ export function MultiplikatorenClient({ multipliers, companies }: Multiplikatore
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [trustFilter, setTrustFilter] = useState("");
+  const [regionFilter, setRegionFilter] = useState("");
   const [showNewContact, setShowNewContact] = useState(false);
 
   const filtered = useMemo(() => {
@@ -52,8 +63,9 @@ export function MultiplikatorenClient({ multipliers, companies }: Multiplikatore
     }
     if (typeFilter) result = result.filter((m) => m.multiplier_type === typeFilter);
     if (trustFilter) result = result.filter((m) => m.trust_level === trustFilter);
+    if (regionFilter) result = result.filter((m) => m.region === regionFilter);
     return result;
-  }, [multipliers, searchQuery, typeFilter, trustFilter]);
+  }, [multipliers, searchQuery, typeFilter, trustFilter, regionFilter]);
 
   const highTrust = multipliers.filter((m) => m.trust_level === "hoch").length;
   const highReferral = multipliers.filter((m) => m.referral_capability === "hoch").length;
@@ -85,6 +97,7 @@ export function MultiplikatorenClient({ multipliers, companies }: Multiplikatore
           >
             <FilterSelect value={typeFilter} onChange={setTypeFilter} options={typeOptions} />
             <FilterSelect value={trustFilter} onChange={setTrustFilter} options={trustOptions} />
+            <FilterSelect value={regionFilter} onChange={setRegionFilter} options={regionOptions} />
           </FilterBar>
 
           {/* Cards Grid */}
@@ -150,6 +163,24 @@ export function MultiplikatorenClient({ multipliers, companies }: Multiplikatore
             {/* Map Sidebar */}
             <div className="col-span-4">
               <div className="sticky top-32 space-y-4">
+                {/* Standort-Filter */}
+                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <MapPin size={16} className="text-[#4454b8]" strokeWidth={2.5} />
+                    <h3 className="text-sm font-bold text-slate-900">Standort-Filter</h3>
+                  </div>
+                  <select
+                    value={regionFilter}
+                    onChange={(e) => setRegionFilter(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border-2 border-slate-200 text-sm font-medium text-slate-700 focus:outline-none focus:border-[#4454b8] focus:ring-2 focus:ring-[#4454b8]/20 transition-all cursor-pointer"
+                  >
+                    {regionOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Map */}
                 <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
                   <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 mb-3">
                     <MapPin size={16} className="text-[#4454b8]" strokeWidth={2.5} />

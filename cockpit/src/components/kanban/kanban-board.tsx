@@ -145,7 +145,7 @@ export function KanbanBoard({ stages, deals: initialDeals, onDealClick }: Kanban
           </button>
         </div>
       )}
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="flex gap-4 overflow-x-auto pb-4 pr-4">
         {stages.map((stage) => (
           <KanbanColumn
             key={stage.id}
