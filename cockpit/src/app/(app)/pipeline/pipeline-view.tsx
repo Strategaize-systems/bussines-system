@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { DealSheet } from "./deal-sheet";
@@ -84,6 +84,15 @@ export function PipelineView({
     return Math.round(total / withProb.length);
   }, [activeDeals, stages]);
 
+  const kanbanRef = useRef<HTMLDivElement>(null);
+
+  const scrollKanban = useCallback((direction: "left" | "right") => {
+    const el = kanbanRef.current;
+    if (!el) return;
+    const scrollAmount = 320; // roughly one column width
+    el.scrollBy({ left: direction === "right" ? scrollAmount : -scrollAmount, behavior: "smooth" });
+  }, []);
+
   return (
     <div className="min-h-screen">
       <PageHeader
@@ -101,33 +110,35 @@ export function PipelineView({
 
       <main className="px-8 py-8">
         <div className="max-w-[1800px] mx-auto space-y-6">
-          {/* KPI Cards */}
-          <KPIGrid columns={4}>
-            <KPICard
-              label="Aktive Deals"
-              value={activeDeals.length}
-              icon={ClipboardList}
-              gradient="blue"
-            />
-            <KPICard
-              label="Pipeline Wert"
-              value={fmt.format(totalValue)}
-              icon={TrendingUp}
-              gradient="green"
-            />
-            <KPICard
-              label="Gewichtet"
-              value={fmt.format(forecast)}
-              icon={Target}
-              gradient="yellow"
-            />
-            <KPICard
-              label="Ø Chance"
-              value={`${avgChance}%`}
-              icon={Percent}
-              gradient="emerald"
-            />
-          </KPIGrid>
+          {/* KPI Cards — scrollable on smaller screens */}
+          <div className="overflow-x-auto">
+            <KPIGrid columns={4}>
+              <KPICard
+                label="Aktive Deals"
+                value={activeDeals.length}
+                icon={ClipboardList}
+                gradient="blue"
+              />
+              <KPICard
+                label="Pipeline Wert"
+                value={fmt.format(totalValue)}
+                icon={TrendingUp}
+                gradient="green"
+              />
+              <KPICard
+                label="Gewichtet"
+                value={fmt.format(forecast)}
+                icon={Target}
+                gradient="yellow"
+              />
+              <KPICard
+                label="Ø Chance"
+                value={`${avgChance}%`}
+                icon={Percent}
+                gradient="emerald"
+              />
+            </KPIGrid>
+          </div>
 
           {/* Search + Filter */}
           <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
@@ -165,18 +176,24 @@ export function PipelineView({
             </div>
           </div>
 
-          {/* Stage Info Bar */}
+          {/* Stage Info Bar with functional scroll buttons */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 text-sm text-slate-600">
               <LayoutList size={16} className="text-slate-400" />
               <span className="font-bold">{stages.length} Stages</span>
-              <span className="text-slate-400">← Scrollen Sie horizontal →</span>
             </div>
             <div className="flex items-center gap-2">
-              <button className="p-2 rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors">
+              <button
+                onClick={() => scrollKanban("left")}
+                className="p-2 rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+              >
                 <ChevronLeft size={16} />
               </button>
-              <button className="p-2 rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors">
+              <span className="text-xs text-slate-400">Scrollen</span>
+              <button
+                onClick={() => scrollKanban("right")}
+                className="p-2 rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+              >
                 <ChevronRight size={16} />
               </button>
             </div>
@@ -184,6 +201,7 @@ export function PipelineView({
 
           {/* Kanban Board */}
           <KanbanBoard
+            ref={kanbanRef}
             stages={stages}
             deals={filteredDeals}
             onDealClick={(deal) => router.push(`/deals/${deal.id}`)}

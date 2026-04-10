@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, forwardRef } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -26,7 +26,7 @@ interface KanbanBoardProps {
   onDealClick?: (deal: Deal) => void;
 }
 
-export function KanbanBoard({ stages, deals: initialDeals, onDealClick }: KanbanBoardProps) {
+export const KanbanBoard = forwardRef<HTMLDivElement, KanbanBoardProps>(function KanbanBoard({ stages, deals: initialDeals, onDealClick }, ref) {
   const [deals, setDeals] = useState(initialDeals);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -145,7 +145,7 @@ export function KanbanBoard({ stages, deals: initialDeals, onDealClick }: Kanban
           </button>
         </div>
       )}
-      <div className="flex gap-4 overflow-x-auto pb-4 pr-4">
+      <div ref={ref} className="flex gap-4 overflow-x-auto pb-4 pr-4">
         {stages.map((stage) => (
           <KanbanColumn
             key={stage.id}
@@ -161,4 +161,4 @@ export function KanbanBoard({ stages, deals: initialDeals, onDealClick }: Kanban
       </DragOverlay>
     </DndContext>
   );
-}
+});

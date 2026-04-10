@@ -789,6 +789,16 @@
       "version": "V3.1",
       "description": "Klick auf 'Neue E-Mail' in Schnellaktionen soll direkt die E-Mail-Erstellungs-Maske (EmailSheet) oeffnen — nicht auf /emails navigieren. Gleiches Prinzip fuer alle anderen Schnellaktionen: direkt erstellen, nicht zur Liste navigieren.",
       "createdAt": "2026-04-10"
+    },
+    {
+      "id": "BL-321",
+      "title": "Pipeline-Seiten: KI-Suche + Voice-Input",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3.1",
+      "description": "Pipeline-Seiten (Unternehmer, Leads, Multiplikatoren) brauchen KI-Suche mit Mikrofon-Button und Sparkles-Icon wie auf anderen Seiten. Ermoeglicht natuerlichsprachliche Suche in Deals (z.B. 'Zeig mir alle Deals ueber 50k in Phase Angebot').",
+      "createdAt": "2026-04-10"
     }
   ]
 }
