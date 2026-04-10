@@ -31,7 +31,7 @@ export async function getAuditLogs(
 
   let query = supabase
     .from("audit_log")
-    .select("*, profiles(display_name)")
+    .select("*")
     .order("created_at", { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1);
 
@@ -44,7 +44,24 @@ export async function getAuditLogs(
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
-  return (data ?? []) as AuditLogEntry[];
+
+  // Manual profile lookup (no FK from audit_log.actor_id to profiles)
+  const actorIds = [...new Set((data ?? []).map((e: any) => e.actor_id))];
+  const profileMap = new Map<string, string | null>();
+  if (actorIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, display_name")
+      .in("id", actorIds);
+    for (const p of profiles ?? []) {
+      profileMap.set(p.id, p.display_name);
+    }
+  }
+
+  return (data ?? []).map((e: any) => ({
+    ...e,
+    profiles: { display_name: profileMap.get(e.actor_id) ?? null },
+  })) as AuditLogEntry[];
 }
 
 export async function getAuditLogCount(
