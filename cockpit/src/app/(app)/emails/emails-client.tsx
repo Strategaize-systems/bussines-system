@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
 import { EmailSheet } from "./email-sheet";
+import type { EmailTemplateOption } from "./email-compose";
 import { updateFollowUpStatus, deleteEmail, type Email } from "./actions";
 import Link from "next/link";
 
@@ -18,9 +19,9 @@ const followUpConfig: Record<string, { label: string; variant: string }> = {
   overdue: { label: "Überfällig", variant: "bg-red-100 text-red-700 border-red-200" },
 };
 
-interface EmailsClientProps { emails: Email[]; }
+interface EmailsClientProps { emails: Email[]; templates?: EmailTemplateOption[]; }
 
-export function EmailsClient({ emails }: EmailsClientProps) {
+export function EmailsClient({ emails, templates }: EmailsClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [followUpFilter, setFollowUpFilter] = useState("");
   const [showNewEmail, setShowNewEmail] = useState(false);
@@ -75,7 +76,7 @@ export function EmailsClient({ emails }: EmailsClientProps) {
           </div>
         </div>
       </main>
-      {showNewEmail && <EmailSheet defaultOpen onOpenChange={(open: boolean) => { if (!open) setShowNewEmail(false); }} />}
+      {showNewEmail && <EmailSheet defaultOpen onOpenChange={(open: boolean) => { if (!open) setShowNewEmail(false); }} templates={templates} />}
     </div>
   );
 }
