@@ -65,6 +65,7 @@ export async function createTask(formData: FormData) {
 
   revalidatePath("/aufgaben");
   revalidatePath("/deals");
+  revalidatePath("/mein-tag");
   return { error: "" };
 }
 
@@ -92,6 +93,7 @@ export async function updateTask(id: string, formData: FormData) {
 
   revalidatePath("/aufgaben");
   revalidatePath("/deals");
+  revalidatePath("/mein-tag");
   return { error: "" };
 }
 
@@ -110,6 +112,7 @@ export async function completeTask(id: string) {
 
   revalidatePath("/aufgaben");
   revalidatePath("/deals");
+  revalidatePath("/mein-tag");
   return { error: "" };
 }
 
@@ -128,6 +131,7 @@ export async function reopenTask(id: string) {
 
   revalidatePath("/aufgaben");
   revalidatePath("/deals");
+  revalidatePath("/mein-tag");
   return { error: "" };
 }
 
@@ -139,5 +143,6 @@ export async function deleteTask(id: string) {
 
   revalidatePath("/aufgaben");
   revalidatePath("/deals");
+  revalidatePath("/mein-tag");
   return { error: "" };
 }
