@@ -879,6 +879,16 @@
       "version": "V4",
       "description": "KI als persoenlicher Gatekeeper im Hintergrund: (1) Eingehende E-Mails automatisch analysieren und dem richtigen Kontakt/Deal zuordnen. (2) Priorisierung: Kundenrueckfragen sofort in Aufgabenliste schieben ('Kunde XY hat Rueckfrage zu Angebot'). Weniger dringendes in Tageseinschaetzung am naechsten Morgen. (3) Handlungsvorschlaege: 'Kunde bittet um Meeting → soll ich Termin vorschlagen?', 'Rueckfrage zu Preis → hier ist der Kontext aus dem Angebot'. (4) Ziel: Kein manuelles E-Mail-Postfach durcharbeiten mehr. KI filtert, priorisiert, ordnet zu, schlaegt vor. Mitarbeiter reagiert nur noch auf aufbereitete, priorisierte Items. Setzt IMAP-Integration (FEAT-405) voraus. Recherche: State-of-the-Art bei AI Personal Assistants (OpenClaw, Anthropic MCP, etc.) fuer Best Practices.",
       "createdAt": "2026-04-10"
+    },
+    {
+      "id": "BL-330",
+      "title": "KI-Features on-click statt auto-load (Bedrock-Kostenkontrolle)",
+      "type": "fix",
+      "priority": "high",
+      "status": "open",
+      "version": "V3.1",
+      "description": "Alle Bedrock LLM-Aufrufe von auto-load auf expliziten Klick umstellen. Betrifft: (1) Deal-Workspace KI-Summary — Button 'KI-Zusammenfassung generieren' statt auto-load bei Seitenaufruf. (2) Mein Tag KI-Tageseinschaetzung — Klick zum Aktivieren. (3) Alle weiteren Stellen wo Bedrock automatisch aufgerufen wird. Grund: Pay-per-Use-Kosten bei Bedrock laufen hoch wenn bei jedem Seitenaufruf LLM-Calls feuern, besonders in Test-/Entwicklungsphase. Spaeter optional: Auto-Load als User-Setting wenn Kosten kalkulierbar.",
+      "createdAt": "2026-04-10"
     }
   ]
 }
