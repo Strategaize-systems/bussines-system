@@ -809,6 +809,16 @@
       "version": "V3.1",
       "description": "E-Mail verfassen komplett ueberarbeiten: (1) Kontakt automatisch aus Deal-Kontext vorbelegen, (2) Betreff aus naechster Aktion / Kontext, (3) Templates auswaehlen, (4) Nachricht per Voice einsprechen + Whisper-Transkription, (5) KI-Verbesserung (Rechtschreibung, Ton, Zusammenfassung), (6) Follow-up-Datum. Ziel: E-Mail schreiben ohne viel tippen, KI unterstuetzt bei Formulierung und Kontext.",
       "createdAt": "2026-04-10"
+    },
+    {
+      "id": "BL-323",
+      "title": "Kontext-Intelligenz: Alle Formulare KI-vorbefuellt aus Kontext",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3.1",
+      "description": "Kernfunktion: Wenn ein Formular (E-Mail, Meeting, Task, Aktivitaet, Deal-Edit) aus einem Kontext geoeffnet wird (z.B. Deal-Workspace), muessen alle verfuegbaren Felder automatisch vorbefuellt sein — Kontakt, Firma, Deal, Betreff/naechste Aktion, etc. Kein manuelles Klicken/Tippen fuer Daten die das System schon kennt. Zusaetzlich: Voice-Input + KI-Verbesserung in allen Textfeldern (Agenda, Beschreibung, Nachricht). Override per Sprache moeglich ('Pass auf, aender den Kontakt auf XY'). Gilt fuer: E-Mail (BL-322), Meeting, Task, Aktivitaet, Deal-Bearbeitung. Das ist DAS Differenzierungsmerkmal gegenueber klassischem CRM.",
+      "createdAt": "2026-04-10"
     }
   ]
 }
