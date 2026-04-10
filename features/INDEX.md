@@ -34,15 +34,15 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-301 | Deal-Workspace | done | [Spec](FEAT-301-deal-workspace.md) | 2026-04-09 |
-| FEAT-302 | Mein Tag V2 (Kalender, Meeting-Prep, KI) | done | [Spec](FEAT-302-mein-tag-v2.md) | 2026-04-09 |
-| FEAT-303 | Firmen-Workspace Upgrade | done | — | 2026-04-09 |
-| FEAT-304 | Kontakt-Workspace Upgrade | done | — | 2026-04-09 |
-| FEAT-305 | Bedrock LLM-Integration Layer | done | [Spec](FEAT-305-bedrock-llm-layer.md) | 2026-04-09 |
-| FEAT-306 | Navigation-Umbau (5-Schichten) | done | [Spec](FEAT-306-navigation-umbau.md) | 2026-04-09 |
-| FEAT-307 | Governance-Basis (Rollen, RLS, Audit) | done | [Spec](FEAT-307-governance-basis.md) | 2026-04-09 |
-| FEAT-308 | Meeting-Management | done | [Spec](FEAT-308-meeting-management.md) | 2026-04-09 |
-| FEAT-309 | Kalender-Events | done | [Spec](FEAT-309-calendar-events.md) | 2026-04-09 |
+| FEAT-301 | Deal-Workspace | deployed | [Spec](FEAT-301-deal-workspace.md) | 2026-04-09 |
+| FEAT-302 | Mein Tag V2 (Kalender, Meeting-Prep, KI) | deployed | [Spec](FEAT-302-mein-tag-v2.md) | 2026-04-09 |
+| FEAT-303 | Firmen-Workspace Upgrade | deployed | — | 2026-04-09 |
+| FEAT-304 | Kontakt-Workspace Upgrade | deployed | — | 2026-04-09 |
+| FEAT-305 | Bedrock LLM-Integration Layer | deployed | [Spec](FEAT-305-bedrock-llm-layer.md) | 2026-04-09 |
+| FEAT-306 | Navigation-Umbau (5-Schichten) | deployed | [Spec](FEAT-306-navigation-umbau.md) | 2026-04-09 |
+| FEAT-307 | Governance-Basis (Rollen, RLS, Audit) | deployed | [Spec](FEAT-307-governance-basis.md) | 2026-04-09 |
+| FEAT-308 | Meeting-Management | deployed | [Spec](FEAT-308-meeting-management.md) | 2026-04-09 |
+| FEAT-309 | Kalender-Events | deployed | [Spec](FEAT-309-calendar-events.md) | 2026-04-09 |
 
 ## V3.1 Features (Analyse + Prozesssteuerung — planned)
 
