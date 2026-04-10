@@ -263,3 +263,8 @@
 .stat-card-danger::before {
   background: linear-gradient(to right, #ef4444, #f87171);
 }
+
+/* Hide scrollbar but keep scroll functionality */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

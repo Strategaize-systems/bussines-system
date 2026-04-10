@@ -86,7 +86,7 @@ interface KPIGridProps {
 
 export function KPIGrid({ children, columns = 4 }: KPIGridProps) {
   return (
-    <div className={`grid gap-6 ${columns === 3 ? "grid-cols-3" : "grid-cols-4"}`} style={{ minWidth: columns === 4 ? "800px" : "600px" }}>
+    <div className={`grid gap-4 ${columns === 3 ? "grid-cols-3" : "grid-cols-4"}`}>
       {children}
     </div>
   );

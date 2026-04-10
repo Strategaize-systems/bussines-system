@@ -155,35 +155,33 @@ export function PipelineView({
 
       <main className="px-8 py-8">
         <div className="max-w-[1800px] mx-auto space-y-6">
-          {/* KPI Cards — scrollable on smaller screens */}
-          <div className="overflow-x-auto">
-            <KPIGrid columns={4}>
-              <KPICard
-                label="Aktive Deals"
-                value={activeDeals.length}
-                icon={ClipboardList}
-                gradient="blue"
-              />
-              <KPICard
-                label="Pipeline Wert"
-                value={fmt.format(totalValue)}
-                icon={TrendingUp}
-                gradient="green"
-              />
-              <KPICard
-                label="Gewichtet"
-                value={fmt.format(forecast)}
-                icon={Target}
-                gradient="yellow"
-              />
-              <KPICard
-                label="Ø Chance"
-                value={`${avgChance}%`}
-                icon={Percent}
-                gradient="emerald"
-              />
-            </KPIGrid>
-          </div>
+          {/* KPI Cards */}
+          <KPIGrid columns={4}>
+            <KPICard
+              label="Aktive Deals"
+              value={activeDeals.length}
+              icon={ClipboardList}
+              gradient="blue"
+            />
+            <KPICard
+              label="Pipeline Wert"
+              value={fmt.format(totalValue)}
+              icon={TrendingUp}
+              gradient="green"
+            />
+            <KPICard
+              label="Gewichtet"
+              value={fmt.format(forecast)}
+              icon={Target}
+              gradient="yellow"
+            />
+            <KPICard
+              label="Ø Chance"
+              value={`${avgChance}%`}
+              icon={Percent}
+              gradient="emerald"
+            />
+          </KPIGrid>
 
           {/* Search + Filter */}
           <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
