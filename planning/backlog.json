@@ -752,12 +752,42 @@
     },
     {
       "id": "BL-317",
-      "title": "Zeit-Picker: Schnellauswahl statt Scroll-Raedchen",
+      "title": "Zeit-Picker: Schnellauswahl statt Scroll-Raedchen (Stunde + Minute)",
       "type": "fix",
       "priority": "high",
       "status": "open",
       "version": "V3.1",
       "description": "Zeitauswahl bei Meetings/Kalender-Events verbessern: Vorschlaege fuer gaengige Zeiten (15, 30, 45, 60 Min. Intervalle), direkt klickbar. Fuer Sonderzeiten: editierbares Feld per Icon-Klick. Kein Browser-natives Scroll-Raedchen — das ist auf Desktop unpraktisch und bietet keine Schnellauswahl.",
+      "createdAt": "2026-04-10"
+    },
+    {
+      "id": "BL-318",
+      "title": "Meeting-Typ: Online vs. Physisch mit Location-Logik",
+      "type": "improvement",
+      "priority": "high",
+      "status": "open",
+      "version": "V3.1",
+      "description": "Meetings brauchen Typ-Auswahl: Online (Default, Location automatisch 'Home Office') oder Physisch (Adresse muss eingegeben werden). 99% der Meetings sind online — das muss der Standard sein. Freitext-Location reicht nicht.",
+      "createdAt": "2026-04-10"
+    },
+    {
+      "id": "BL-319",
+      "title": "Schnellaktionen: Neuer Termin fehlt + Aktionen pruefen",
+      "type": "fix",
+      "priority": "high",
+      "status": "open",
+      "version": "V3.1",
+      "description": "Mein Tag Schnellaktionen: 'Neuer Termin' fehlt komplett. Ausserdem muessen alle Schnellaktionen geprueft werden — sie sollen direkt die Erstellungs-Maske oeffnen (Sheet/Modal), nicht auf Listenseiten navigieren. Aktuell linken z.B. 'Neue E-Mail' und andere einfach auf die jeweilige Seite statt ein Formular zu oeffnen.",
+      "createdAt": "2026-04-10"
+    },
+    {
+      "id": "BL-320",
+      "title": "Schnellaktionen: Neue E-Mail oeffnet Compose-Sheet statt Listenseite",
+      "type": "fix",
+      "priority": "medium",
+      "status": "open",
+      "version": "V3.1",
+      "description": "Klick auf 'Neue E-Mail' in Schnellaktionen soll direkt die E-Mail-Erstellungs-Maske (EmailSheet) oeffnen — nicht auf /emails navigieren. Gleiches Prinzip fuer alle anderen Schnellaktionen: direkt erstellen, nicht zur Liste navigieren.",
       "createdAt": "2026-04-10"
     }
   ]
