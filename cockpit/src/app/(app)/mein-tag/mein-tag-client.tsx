@@ -78,12 +78,11 @@ const statusStyles: Record<string, string> = {
   in_arbeit: "bg-amber-100 text-amber-700 border-amber-200",
 };
 
-// Quick action navigation items (open list pages)
-const quickNavActions = [
+// Entity creation actions (right column, above calendar)
+const entityActions = [
   { label: "Neuer Kontakt", icon: Users, color: "from-[#120774] to-[#4454b8]", href: "/contacts" },
   { label: "Neue Firma", icon: Building2, color: "from-[#00a84f] to-[#4dcb8b]", href: "/companies" },
   { label: "Multiplikator", icon: Handshake, color: "from-purple-500 to-purple-600", href: "/multiplikatoren" },
-  { label: "Neues Lead", icon: Target, color: "from-orange-500 to-orange-600", href: "/pipeline/leads" },
 ];
 
 const WORKDAY_MINUTES = 600; // 10h workday (8:00–18:00)
@@ -92,7 +91,6 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
   const totalItems = data.stats.overdueCount + data.stats.todayCount + data.stats.upcomingCount;
   const completedItems = 0;
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
-  const [showQuickActions, setShowQuickActions] = useState(true);
 
   // Calculate available time from real calendar events
   const scheduledMinutes = calendarSlots.reduce((sum, s) => sum + s.durationMinutes, 0);
@@ -161,76 +159,43 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
 
       <main className="px-8 py-8">
         <div className="max-w-[1800px] mx-auto space-y-6">
-          {/* Schnellaktionen */}
-          <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
-            <button
-              onClick={() => setShowQuickActions(!showQuickActions)}
-              className="w-full flex items-center justify-between px-6 py-4"
-            >
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-                <span className="text-lg">+</span>
-                SCHNELLAKTIONEN
-              </div>
-              {showQuickActions ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
-            </button>
-            {showQuickActions && (
-              <div className="px-6 pb-6">
-                <div className="grid grid-cols-8 gap-4">
-                  {/* Navigation actions (open list pages) */}
-                  {quickNavActions.map((action) => (
-                    <Link
-                      key={action.label}
-                      href={action.href}
-                      className="flex flex-col items-center gap-2 group"
-                    >
-                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${action.color} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform`}>
-                        <action.icon size={24} strokeWidth={2} />
-                      </div>
-                      <span className="text-[11px] font-semibold text-slate-600 text-center leading-tight">
-                        {action.label}
-                      </span>
-                    </Link>
-                  ))}
-
-                  {/* Sheet actions (open creation sheets inline) */}
-                  <TaskSheet
-                    contacts={contacts}
-                    companies={companies}
-                    deals={deals}
-                    trigger={
-                      <QuickActionButton icon={ListTodo} label="Neue Aufgabe" color="from-[#120774] to-[#4454b8]" />
-                    }
-                  />
-                  <EmailSheet
-                    trigger={
-                      <QuickActionButton icon={Mail} label="Neue E-Mail" color="from-sky-500 to-sky-600" />
-                    }
-                  />
-                  <MeetingSheet
-                    contacts={contacts}
-                    companies={companies}
-                    deals={deals}
-                    trigger={
-                      <QuickActionButton icon={Users} label="Neues Meeting" color="from-emerald-500 to-emerald-600" />
-                    }
-                  />
-                  <EventSheet
-                    contacts={contacts}
-                    companies={companies}
-                    deals={deals}
-                    trigger={
-                      <QuickActionButton icon={Calendar} label="Neuer Termin" color="from-purple-500 to-purple-600" />
-                    }
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 2-Column: Aufgaben + KI-Assistent (left) | Kalender (right, sticky) */}
+          {/* 2-Column Layout */}
           <div className="grid grid-cols-12 gap-6">
-            {/* LEFT COLUMN: Aufgaben + KI-Assistent */}
+            {/* LEFT COLUMN: Work Actions + Aufgaben + KI-Workspace */}
             <div className="col-span-8 space-y-6">
+
+              {/* Work Quick Actions (above Aufgaben) */}
+              <div className="flex items-center gap-3">
+                <TaskSheet
+                  contacts={contacts}
+                  companies={companies}
+                  deals={deals}
+                  trigger={<QuickActionButton icon={ListTodo} label="Aufgabe" color="from-[#120774] to-[#4454b8]" />}
+                />
+                <EmailSheet
+                  trigger={<QuickActionButton icon={Mail} label="E-Mail" color="from-sky-500 to-sky-600" />}
+                />
+                <MeetingSheet
+                  contacts={contacts}
+                  companies={companies}
+                  deals={deals}
+                  trigger={<QuickActionButton icon={Users} label="Meeting" color="from-emerald-500 to-emerald-600" />}
+                />
+                <EventSheet
+                  contacts={contacts}
+                  companies={companies}
+                  deals={deals}
+                  trigger={<QuickActionButton icon={Calendar} label="Termin" color="from-purple-500 to-purple-600" />}
+                />
+                <TaskSheet
+                  contacts={contacts}
+                  companies={companies}
+                  deals={deals}
+                  defaultTitle="Anruf: "
+                  trigger={<QuickActionButton icon={Phone} label="Anruf" color="from-orange-500 to-orange-600" />}
+                />
+              </div>
+
               {/* AUFGABEN */}
               <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
                 {/* Section Header */}
@@ -307,6 +272,24 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
             {/* RIGHT COLUMN (4 cols): Kalender + Meeting-Prep + Exceptions + Zeit */}
             <div className="col-span-4">
               <div className="sticky top-32 space-y-4">
+                {/* Entity Quick Actions (above calendar) */}
+                <div className="flex items-center justify-center gap-3">
+                  {entityActions.map((action) => (
+                    <Link
+                      key={action.label}
+                      href={action.href}
+                      className="flex flex-col items-center gap-1.5 group"
+                    >
+                      <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center text-white shadow group-hover:scale-105 transition-transform`}>
+                        <action.icon size={18} strokeWidth={2} />
+                      </div>
+                      <span className="text-[10px] font-semibold text-slate-500 text-center leading-tight">
+                        {action.label}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+
                 {/* KALENDER */}
                 <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
                   <div className="px-5 py-4 border-b border-slate-200 flex items-center gap-3">
