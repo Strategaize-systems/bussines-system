@@ -655,7 +655,7 @@
       "title": "Firmen-Workspace: Deal-Liste im Firmenkontext",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "FEAT-303: Aktive + vergangene Deals mit Status/Wert/Phase auf /companies/[id].",
       "createdAt": "2026-04-09"
@@ -665,7 +665,7 @@
       "title": "Kontakt-Workspace: Deals im Kontakt-Kontext",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V3",
       "description": "FEAT-304: Aktive + vergangene Deals auf /contacts/[id].",
       "createdAt": "2026-04-09"
