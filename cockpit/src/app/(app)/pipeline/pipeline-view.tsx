@@ -7,7 +7,9 @@ import { DealSheet } from "./deal-sheet";
 import { PageHeader } from "@/components/ui/page-header";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import type { Deal, Pipeline, PipelineStage } from "./actions";
-import { Search, Filter, TrendingUp, ClipboardList, Target, Percent, Plus, ChevronLeft, ChevronRight, LayoutList } from "lucide-react";
+import { Filter, TrendingUp, ClipboardList, Target, Percent, Plus, ChevronLeft, ChevronRight, LayoutList } from "lucide-react";
+import { PipelineSearchBar } from "@/components/pipeline/pipeline-search-bar";
+import type { PipelineSearchFilter } from "@/lib/ai/types";
 
 const fmt = new Intl.NumberFormat("de-DE", {
   style: "currency",
@@ -43,11 +45,20 @@ export function PipelineView({
   const [searchQuery, setSearchQuery] = useState("");
   const [stageFilter, setStageFilter] = useState("all");
   const [showNewDeal, setShowNewDeal] = useState(false);
+  const [aiFilter, setAiFilter] = useState<PipelineSearchFilter | null>(null);
+
+  const stageNames = useMemo(() => stages.map((s) => s.name), [stages]);
 
   const filteredDeals = useMemo(() => {
     return deals.filter((d) => {
-      if (d.status !== "active") return false;
+      // Default: only active (unless AI filter overrides status)
+      const targetStatus = aiFilter?.status || "active";
+      if (d.status !== targetStatus) return false;
+
+      // Stage filter (dropdown)
       if (stageFilter !== "all" && d.stage_id !== stageFilter) return false;
+
+      // Text search
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         const matchTitle = d.title?.toLowerCase().includes(q);
@@ -57,9 +68,43 @@ export function PipelineView({
           : false;
         if (!matchTitle && !matchCompany && !matchContact) return false;
       }
+
+      // AI filter
+      if (aiFilter) {
+        if (aiFilter.stage) {
+          const matchStage = stages.find(
+            (s) => s.name.toLowerCase() === aiFilter.stage!.toLowerCase()
+          );
+          if (matchStage && d.stage_id !== matchStage.id) return false;
+        }
+        if (aiFilter.minValue != null && (d.value ?? 0) < aiFilter.minValue) return false;
+        if (aiFilter.maxValue != null && (d.value ?? 0) > aiFilter.maxValue) return false;
+        if (aiFilter.contactName) {
+          const name = d.contacts
+            ? `${(d.contacts as any).first_name} ${(d.contacts as any).last_name}`.toLowerCase()
+            : "";
+          if (!name.includes(aiFilter.contactName.toLowerCase())) return false;
+        }
+        if (aiFilter.companyName) {
+          const company = ((d.companies as any)?.name ?? "").toLowerCase();
+          if (!company.includes(aiFilter.companyName.toLowerCase())) return false;
+        }
+        if (aiFilter.titleSearch) {
+          if (!d.title?.toLowerCase().includes(aiFilter.titleSearch.toLowerCase())) return false;
+        }
+        if (aiFilter.hasNextAction === true && !d.next_action) return false;
+        if (aiFilter.hasNextAction === false && d.next_action) return false;
+        if (aiFilter.isStagnant === true) {
+          const daysSince = d.updated_at
+            ? Math.floor((Date.now() - new Date(d.updated_at).getTime()) / 86400000)
+            : 999;
+          if (daysSince < 7) return false;
+        }
+      }
+
       return true;
     });
-  }, [deals, searchQuery, stageFilter]);
+  }, [deals, searchQuery, stageFilter, aiFilter, stages]);
 
   const activeDeals = deals.filter((d) => d.status === "active");
   const totalValue = activeDeals.reduce((sum, d) => sum + (d.value ?? 0), 0);
@@ -142,19 +187,16 @@ export function PipelineView({
 
           {/* Search + Filter */}
           <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
-            <div className="flex items-center gap-4">
-              {/* Search */}
-              <div className="flex-1 max-w-lg">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} strokeWidth={2.5} />
-                  <input
-                    type="text"
-                    placeholder="Deal, Firma oder Ansprechpartner suchen..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border-2 border-slate-200 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#4454b8] focus:ring-2 focus:ring-[#4454b8]/20 transition-all"
-                  />
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <PipelineSearchBar
+                  pipelineName={pipeline.name}
+                  stageNames={stageNames}
+                  onFilter={(filter) => setAiFilter(filter)}
+                  onReset={() => { setAiFilter(null); setSearchQuery(""); }}
+                  onTextSearch={setSearchQuery}
+                  textQuery={searchQuery}
+                />
               </div>
 
               {/* Stage Filter */}
@@ -168,11 +210,6 @@ export function PipelineView({
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
-
-              {/* Filter icon */}
-              <button className="p-2.5 rounded-lg border-2 border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors">
-                <Filter size={18} strokeWidth={2.5} />
-              </button>
             </div>
           </div>
 

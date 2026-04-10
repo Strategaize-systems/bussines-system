@@ -112,14 +112,36 @@ export interface DailySummaryContext {
 }
 
 // -------------------------------------------------------------
+// Pipeline Search
+// -------------------------------------------------------------
+
+export interface PipelineSearchFilter {
+  stage: string | null;
+  minValue: number | null;
+  maxValue: number | null;
+  status: string | null;
+  contactName: string | null;
+  companyName: string | null;
+  titleSearch: string | null;
+  hasNextAction: boolean | null;
+  isStagnant: boolean | null;
+}
+
+export interface PipelineSearchContext {
+  query: string;
+  stageNames: string[];
+  pipelineName: string;
+}
+
+// -------------------------------------------------------------
 // API Request / Response
 // -------------------------------------------------------------
 
-export type AIQueryType = "deal-briefing" | "daily-summary";
+export type AIQueryType = "deal-briefing" | "daily-summary" | "pipeline-search";
 
 export interface AIQueryRequest {
   type: AIQueryType;
-  context: DealBriefingContext | DailySummaryContext;
+  context: DealBriefingContext | DailySummaryContext | PipelineSearchContext;
 }
 
 export interface AIQueryResponse<T = DealBriefing | DailySummary> {

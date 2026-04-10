@@ -105,7 +105,7 @@ export function parseLLMResponse<T>(
 // Built-in validators for known response types
 // =============================================================
 
-import type { DealBriefing, DailySummary } from "./types";
+import type { DealBriefing, DailySummary, PipelineSearchFilter } from "./types";
 
 /** Validates a DealBriefing response */
 export function validateDealBriefing(data: unknown): DealBriefing | null {
@@ -146,5 +146,25 @@ export function validateDailySummary(data: unknown): DailySummary | null {
     meetingPrep: d.meetingPrep.map(String),
     warnings: d.warnings.map(String),
     suggestedFocus: d.suggestedFocus,
+  };
+}
+
+/** Validates a PipelineSearchFilter response */
+export function validatePipelineSearchFilter(data: unknown): PipelineSearchFilter | null {
+  if (typeof data !== "object" || data === null) return null;
+
+  const d = data as Record<string, unknown>;
+
+  // All fields are nullable, so we just normalize types
+  return {
+    stage: typeof d.stage === "string" ? d.stage : null,
+    minValue: typeof d.minValue === "number" ? d.minValue : null,
+    maxValue: typeof d.maxValue === "number" ? d.maxValue : null,
+    status: typeof d.status === "string" ? d.status : null,
+    contactName: typeof d.contactName === "string" ? d.contactName : null,
+    companyName: typeof d.companyName === "string" ? d.companyName : null,
+    titleSearch: typeof d.titleSearch === "string" ? d.titleSearch : null,
+    hasNextAction: typeof d.hasNextAction === "boolean" ? d.hasNextAction : null,
+    isStagnant: typeof d.isStagnant === "boolean" ? d.isStagnant : null,
   };
 }

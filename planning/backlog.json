@@ -795,7 +795,7 @@
       "title": "Pipeline-Seiten: KI-Suche + Voice-Input",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3.1",
       "description": "Pipeline-Seiten (Unternehmer, Leads, Multiplikatoren) brauchen KI-Suche mit Mikrofon-Button und Sparkles-Icon wie auf anderen Seiten. Ermoeglicht natuerlichsprachliche Suche in Deals (z.B. 'Zeig mir alle Deals ueber 50k in Phase Angebot').",
       "createdAt": "2026-04-10"
