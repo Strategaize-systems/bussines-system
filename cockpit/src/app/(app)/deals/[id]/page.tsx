@@ -36,6 +36,7 @@ export default async function DealPage({
   ]);
 
   return (
+    <div className="px-8 py-6">
     <DealWorkspace
       deal={deal}
       activities={relations.activities}
@@ -52,5 +53,6 @@ export default async function DealPage({
       dealsForSelect={dealsForSelect}
       referrals={referrals}
     />
+    </div>
   );
 }

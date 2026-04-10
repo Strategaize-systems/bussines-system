@@ -799,6 +799,16 @@
       "version": "V3.1",
       "description": "Pipeline-Seiten (Unternehmer, Leads, Multiplikatoren) brauchen KI-Suche mit Mikrofon-Button und Sparkles-Icon wie auf anderen Seiten. Ermoeglicht natuerlichsprachliche Suche in Deals (z.B. 'Zeig mir alle Deals ueber 50k in Phase Angebot').",
       "createdAt": "2026-04-10"
+    },
+    {
+      "id": "BL-322",
+      "title": "KI-gestuetztes E-Mail-Composing mit Kontext",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3.1",
+      "description": "E-Mail verfassen komplett ueberarbeiten: (1) Kontakt automatisch aus Deal-Kontext vorbelegen, (2) Betreff aus naechster Aktion / Kontext, (3) Templates auswaehlen, (4) Nachricht per Voice einsprechen + Whisper-Transkription, (5) KI-Verbesserung (Rechtschreibung, Ton, Zusammenfassung), (6) Follow-up-Datum. Ziel: E-Mail schreiben ohne viel tippen, KI unterstuetzt bei Formulierung und Kontext.",
+      "createdAt": "2026-04-10"
     }
   ]
 }

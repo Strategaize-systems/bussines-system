@@ -13,7 +13,7 @@ const DEFAULT_MODEL_ID = process.env.LLM_MODEL || "eu.anthropic.claude-sonnet-4-
 const DEFAULT_REGION = "eu-central-1";
 const DEFAULT_TEMPERATURE = 0.3;
 const DEFAULT_MAX_TOKENS = 2048;
-const DEFAULT_TIMEOUT_MS = 30_000;
+const DEFAULT_TIMEOUT_MS = 60_000;
 
 /**
  * Creates a Bedrock Runtime client configured from environment variables.
