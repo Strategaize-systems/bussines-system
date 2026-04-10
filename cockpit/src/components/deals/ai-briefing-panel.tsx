@@ -1,14 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import {
-  RefreshCw,
-  Brain,
-  AlertTriangle,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { useState, useCallback } from "react";
+import { Brain, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AiLoadButton } from "@/components/ai/ai-load-button";
+import { AiResultPanel } from "@/components/ai/ai-result-panel";
 import type { DealBriefing, DealBriefingContext } from "@/lib/ai/types";
 
 interface AIBriefingPanelProps {
@@ -17,9 +13,11 @@ interface AIBriefingPanelProps {
 
 export function AIBriefingPanel({ context }: AIBriefingPanelProps) {
   const [briefing, setBriefing] = useState<DealBriefing | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(true);
+
+  const loaded = briefing !== null;
 
   const fetchBriefing = useCallback(async () => {
     setLoading(true);
@@ -30,6 +28,19 @@ export function AIBriefingPanel({ context }: AIBriefingPanelProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: "deal-briefing", context }),
       });
+
+      if (res.status === 429) {
+        setError(
+          "Rate Limit erreicht. Bitte in einer Minute erneut versuchen."
+        );
+        return;
+      }
+
+      if (!res.ok) {
+        setError("KI-Service nicht verfügbar.");
+        return;
+      }
+
       const data = await res.json();
       if (data.success && data.data) {
         setBriefing(data.data);
@@ -43,11 +54,6 @@ export function AIBriefingPanel({ context }: AIBriefingPanelProps) {
     }
   }, [context]);
 
-  useEffect(() => {
-    fetchBriefing();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return (
     <div className="rounded-xl border border-slate-200 p-4 space-y-3">
       <div className="flex items-center justify-between">
@@ -57,31 +63,28 @@ export function AIBriefingPanel({ context }: AIBriefingPanelProps) {
             KI-Briefing
           </h3>
         </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={fetchBriefing}
-            disabled={loading}
-          >
-            <RefreshCw
-              className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
+        {loaded && (
+          <div className="flex items-center gap-1">
+            <AiLoadButton
+              onClick={fetchBriefing}
+              loading={loading}
+              loaded={true}
+              refreshVariant="icon"
             />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => setExpanded(!expanded)}
-          >
-            {expanded ? (
-              <ChevronUp className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronDown className="h-3.5 w-3.5" />
-            )}
-          </Button>
-        </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setExpanded(!expanded)}
+            >
+              {expanded ? (
+                <ChevronUp className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          </div>
+        )}
       </div>
 
       {!expanded && briefing && (
@@ -90,43 +93,26 @@ export function AIBriefingPanel({ context }: AIBriefingPanelProps) {
         </p>
       )}
 
-      {expanded && (
-        <>
-          {loading && <BriefingSkeleton />}
-
-          {error && !loading && (
-            <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3">
-              <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm text-amber-800">{error}</p>
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="text-xs text-amber-600 p-0 h-auto mt-1"
-                  onClick={fetchBriefing}
-                >
-                  Erneut versuchen
-                </Button>
-              </div>
+      {(expanded || !loaded) && (
+        <AiResultPanel
+          loading={loading}
+          error={error}
+          onRetry={fetchBriefing}
+          loadingMessage="Analysiere Deal..."
+        >
+          {!loaded && (
+            <div className="text-center py-3">
+              <AiLoadButton
+                onClick={fetchBriefing}
+                loading={false}
+                loaded={false}
+                label="KI-Analyse laden"
+              />
             </div>
           )}
-
-          {briefing && !loading && <BriefingContent briefing={briefing} />}
-        </>
+          {briefing && <BriefingContent briefing={briefing} />}
+        </AiResultPanel>
       )}
-    </div>
-  );
-}
-
-function BriefingSkeleton() {
-  return (
-    <div className="space-y-3 animate-pulse">
-      <div className="h-3 bg-slate-100 rounded w-full" />
-      <div className="h-3 bg-slate-100 rounded w-5/6" />
-      <div className="h-3 bg-slate-100 rounded w-4/6" />
-      <div className="h-6 bg-slate-50 rounded" />
-      <div className="h-3 bg-slate-100 rounded w-3/4" />
-      <div className="h-3 bg-slate-100 rounded w-2/3" />
     </div>
   );
 }

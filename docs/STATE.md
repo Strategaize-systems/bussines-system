@@ -9,13 +9,13 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: V3.1 Slice-Planning abgeschlossen. 9 Slices (SLC-311 bis SLC-319) bereit fuer Implementation.
-- Current Phase: V3.1 Slice-Planning done — Implementation next
+- High-Level State: implementing
+- Current Focus: V3.1 Implementation. SLC-313 (KI on-click Pattern) done. Naechster Slice: SLC-311 (Meeting/Kalender UX-Fixes).
+- Current Phase: V3.1 Implementation (1/9 Slices done)
 
 ## Immediate Next Steps
-1. SLC-311 implementieren (Meeting/Kalender UX-Fixes) — Blocker
-2. SLC-313 implementieren (KI on-click Pattern) — Blocker
+1. /qa fuer SLC-313 (KI on-click Pattern)
+2. SLC-311 implementieren (Meeting/Kalender UX-Fixes) — Blocker
 3. SLC-312 implementieren (Schnellaktionen-Rebuild) — High
 4. Weiter mit KI-Features (SLC-314, SLC-315)
 

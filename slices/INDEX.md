@@ -58,7 +58,7 @@
 |----|-------|---------|--------|----------|---------|
 | SLC-311 | [Meeting/Kalender UX-Fixes](SLC-311-meeting-kalender-ux.md) | FEAT-308, FEAT-309 | planned | Blocker | 2026-04-10 |
 | SLC-312 | [Schnellaktionen-Rebuild](SLC-312-schnellaktionen-rebuild.md) | FEAT-302 | planned | High | 2026-04-10 |
-| SLC-313 | [KI on-click Pattern](SLC-313-ki-onclick-pattern.md) | FEAT-305 | planned | Blocker | 2026-04-10 |
+| SLC-313 | [KI on-click Pattern](SLC-313-ki-onclick-pattern.md) | FEAT-305 | done | Blocker | 2026-04-10 |
 | SLC-314 | [Pipeline KI-Suche + Voice](SLC-314-pipeline-ki-suche.md) | FEAT-301, FEAT-305 | planned | High | 2026-04-10 |
 | SLC-315 | [KI-Composing + Kontext-Intelligenz](SLC-315-ki-composing-kontext.md) | FEAT-305, FEAT-106 | planned | High | 2026-04-10 |
 | SLC-316 | [Auto-Wiedervorlagen](SLC-316-auto-wiedervorlagen.md) | FEAT-302, FEAT-109 | planned | High | 2026-04-10 |

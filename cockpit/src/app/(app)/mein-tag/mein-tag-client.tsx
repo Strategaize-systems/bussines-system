@@ -37,6 +37,8 @@ import { completeTaskFromMeinTag, completeDealActionFromMeinTag } from "./action
 import type { TodayData, TodayItem, TodayItemType, CalendarSlot, ExceptionData, NextMeetingPrep } from "./actions";
 import type { Deal, PipelineStage } from "../pipeline/actions";
 import type { DailySummary } from "@/lib/ai/types";
+import { AiLoadButton } from "@/components/ai/ai-load-button";
+import { AiResultPanel } from "@/components/ai/ai-result-panel";
 
 interface MeinTagClientProps {
   data: TodayData;
@@ -581,7 +583,8 @@ function KIDailyPanel({ data, calendarSlots, exceptions }: { data: TodayData; ca
   const [summary, setSummary] = useState<DailySummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
+
+  const loaded = summary !== null;
 
   const loadSummary = async () => {
     setLoading(true);
@@ -642,7 +645,6 @@ function KIDailyPanel({ data, calendarSlots, exceptions }: { data: TodayData; ca
       const data = await res.json();
       if (data.success && data.data) {
         setSummary(data.data);
-        setLoaded(true);
       } else {
         setError(data.error || "Unbekannter Fehler.");
       }
@@ -663,53 +665,42 @@ function KIDailyPanel({ data, calendarSlots, exceptions }: { data: TodayData; ca
           KI-Tageseinschätzung
         </h3>
         {!loaded && !loading && (
-          <button
+          <AiLoadButton
             onClick={loadSummary}
-            className="ml-auto px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#120774] to-[#4454b8] text-white text-xs font-bold hover:shadow-md transition-all"
-          >
-            Tagesanalyse starten
-          </button>
+            loading={false}
+            loaded={false}
+            label="Tagesanalyse starten"
+            className="ml-auto"
+          />
         )}
         {loaded && (
-          <button
+          <AiLoadButton
             onClick={loadSummary}
-            disabled={loading}
-            className="ml-auto px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all"
-          >
-            Aktualisieren
-          </button>
+            loading={loading}
+            loaded={true}
+            className="ml-auto"
+          />
         )}
       </div>
 
       <div className="p-6">
-        {!loaded && !loading && !error && (
-          <div className="text-center py-6">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#120774]/10 to-[#4454b8]/10 flex items-center justify-center mx-auto mb-4">
-              <Sparkles size={28} className="text-[#4454b8]" strokeWidth={1.5} />
+        <AiResultPanel
+          loading={loading}
+          error={error}
+          onRetry={loadSummary}
+          loadingMessage="Analysiere deinen Tag..."
+        >
+          {!loaded && (
+            <div className="text-center py-6">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#120774]/10 to-[#4454b8]/10 flex items-center justify-center mx-auto mb-4">
+                <Sparkles size={28} className="text-[#4454b8]" strokeWidth={1.5} />
+              </div>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                Lass die KI deinen Tag analysieren — Prioritäten, Meeting-Vorbereitung und Warnungen auf einen Blick.
+              </p>
             </div>
-            <p className="text-sm text-slate-500 leading-relaxed">
-              Lass die KI deinen Tag analysieren — Prioritäten, Meeting-Vorbereitung und Warnungen auf einen Blick.
-            </p>
-          </div>
-        )}
-
-        {loading && (
-          <div className="text-center py-8">
-            <Loader2 size={28} className="mx-auto text-[#4454b8] animate-spin mb-3" />
-            <p className="text-sm text-slate-500">Analysiere deinen Tag...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-50 rounded-lg p-4 border border-red-100">
-            <p className="text-sm text-red-700">{error}</p>
-            <button onClick={loadSummary} className="mt-2 text-xs font-bold text-red-600 hover:text-red-800">
-              Erneut versuchen
-            </button>
-          </div>
-        )}
-
-        {summary && !loading && (
+          )}
+          {summary && (
           <div className="space-y-4">
             {/* Greeting */}
             <p className="text-sm text-slate-700 leading-relaxed">{summary.greeting}</p>
@@ -770,6 +761,7 @@ function KIDailyPanel({ data, calendarSlots, exceptions }: { data: TodayData; ca
             )}
           </div>
         )}
+        </AiResultPanel>
       </div>
     </div>
   );

@@ -885,7 +885,7 @@
       "title": "KI-Features on-click statt auto-load (Bedrock-Kostenkontrolle)",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3.1",
       "description": "Alle Bedrock LLM-Aufrufe von auto-load auf expliziten Klick umstellen. Betrifft: (1) Deal-Workspace KI-Summary — Button 'KI-Zusammenfassung generieren' statt auto-load bei Seitenaufruf. (2) Mein Tag KI-Tageseinschaetzung — Klick zum Aktivieren. (3) Alle weiteren Stellen wo Bedrock automatisch aufgerufen wird. Grund: Pay-per-Use-Kosten bei Bedrock laufen hoch wenn bei jedem Seitenaufruf LLM-Calls feuern, besonders in Test-/Entwicklungsphase. Spaeter optional: Auto-Load als User-Setting wenn Kosten kalkulierbar.",
       "createdAt": "2026-04-10"
