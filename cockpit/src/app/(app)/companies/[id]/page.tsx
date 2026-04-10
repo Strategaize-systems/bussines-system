@@ -1,4 +1,5 @@
-import { getCompany, getCompanyContacts, deleteCompany } from "../actions";
+import { getCompany, getCompanyContacts, deleteCompany, getDealsByCompany } from "../actions";
+import type { CompanyDeal } from "../actions";
 import { CompanySheet } from "../company-sheet";
 import { getActivities } from "@/lib/actions/activity-actions";
 import { getDocuments } from "@/lib/actions/document-actions";
@@ -24,6 +25,8 @@ import {
   TrendingUp,
   CheckCircle2,
   XCircle,
+  Kanban,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -78,13 +81,14 @@ export default async function CompanyDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [company, contacts, activities, documents, fitAssessment, signals] = await Promise.all([
+  const [company, contacts, activities, documents, fitAssessment, signals, deals] = await Promise.all([
     getCompany(id),
     getCompanyContacts(id),
     getActivities({ companyId: id }),
     getDocuments({ companyId: id }),
     getFitAssessment("company", id),
     getSignals({ companyId: id }),
+    getDealsByCompany(id),
   ]);
 
   async function handleDelete() {
@@ -305,6 +309,25 @@ export default async function CompanyDetailPage({
       {/* Signals */}
       <SignalList signals={signals} companyId={id} />
 
+      {/* Deals */}
+      <DealSection deals={deals} label="Kontakt" />
+
+      {/* KI-Summary Placeholder */}
+      <Card className="overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-[#120774] to-[#4454b8]" />
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-[#4454b8]" />
+            KI-Firmen-Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Automatische KI-Zusammenfassung dieser Firma — verfügbar ab V3.1.
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Assigned Contacts */}
       <Card className="overflow-hidden">
         <div className="h-1 bg-gradient-to-r from-[#120774] to-[#4454b8]" />
@@ -349,5 +372,86 @@ export default async function CompanyDetailPage({
       {/* Documents */}
       <DocumentList documents={documents} companyId={id} />
     </div>
+  );
+}
+
+const dealStatusConfig: Record<string, { label: string; color: string }> = {
+  active: { label: "Aktiv", color: "bg-blue-100 text-blue-800" },
+  won: { label: "Gewonnen", color: "bg-green-100 text-green-800" },
+  lost: { label: "Verloren", color: "bg-red-100 text-red-800" },
+};
+
+function DealSection({ deals, label }: { deals: CompanyDeal[]; label: string }) {
+  const activeDeals = deals.filter((d) => d.status === "active");
+  const pastDeals = deals.filter((d) => d.status === "won" || d.status === "lost");
+
+  return (
+    <Card className="overflow-hidden">
+      <div className="h-1 bg-gradient-to-r from-[#00a84f] to-[#4dcb8b]" />
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Kanban className="h-4 w-4 text-[#00a84f]" />
+          Deals ({deals.length})
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {deals.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Keine Deals zugeordnet.</p>
+        ) : (
+          <>
+            {activeDeals.length > 0 && (
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
+                  Aktive Deals ({activeDeals.length})
+                </p>
+                <div className="space-y-2">
+                  {activeDeals.map((deal) => (
+                    <DealCard key={deal.id} deal={deal} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {pastDeals.length > 0 && (
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
+                  Abgeschlossene Deals ({pastDeals.length})
+                </p>
+                <div className="space-y-2">
+                  {pastDeals.map((deal) => (
+                    <DealCard key={deal.id} deal={deal} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function DealCard({ deal }: { deal: CompanyDeal }) {
+  const status = dealStatusConfig[deal.status] ?? dealStatusConfig.active;
+  return (
+    <Link
+      href={`/deals/${deal.id}`}
+      className="flex items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors border border-slate-100"
+    >
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{deal.title}</p>
+        <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+          {deal.pipeline_stages?.name && <span>{deal.pipeline_stages.name}</span>}
+          {deal.contacts && (
+            <span>· {deal.contacts.first_name} {deal.contacts.last_name}</span>
+          )}
+        </div>
+      </div>
+      {deal.value != null && (
+        <span className="text-sm font-bold text-slate-700 shrink-0">
+          {deal.value.toLocaleString("de-DE")} €
+        </span>
+      )}
+      <Badge className={`${status.color} shrink-0`}>{status.label}</Badge>
+    </Link>
   );
 }

@@ -170,3 +170,35 @@ export async function getContactsForSelect() {
   if (error) throw new Error(error.message);
   return data as { id: string; first_name: string; last_name: string }[];
 }
+
+export type ContactDeal = {
+  id: string;
+  title: string;
+  value: number | null;
+  status: string;
+  expected_close_date: string | null;
+  created_at: string;
+  companies: { id: string; name: string } | null;
+  pipeline_stages: { name: string } | null;
+};
+
+type ContactDealRaw = Omit<ContactDeal, "companies" | "pipeline_stages"> & {
+  companies: { id: string; name: string }[] | { id: string; name: string } | null;
+  pipeline_stages: { name: string }[] | { name: string } | null;
+};
+
+export async function getDealsByContact(contactId: string): Promise<ContactDeal[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("deals")
+    .select("id, title, value, status, expected_close_date, created_at, companies(id, name), pipeline_stages(name)")
+    .eq("contact_id", contactId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as ContactDealRaw[]).map((d) => ({
+    ...d,
+    companies: Array.isArray(d.companies) ? d.companies[0] ?? null : d.companies,
+    pipeline_stages: Array.isArray(d.pipeline_stages) ? d.pipeline_stages[0] ?? null : d.pipeline_stages,
+  }));
+}

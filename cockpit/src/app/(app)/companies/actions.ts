@@ -250,6 +250,38 @@ export async function getCompaniesEnriched(): Promise<CompanyEnriched[]> {
   });
 }
 
+export type CompanyDeal = {
+  id: string;
+  title: string;
+  value: number | null;
+  status: string;
+  expected_close_date: string | null;
+  created_at: string;
+  contacts: { id: string; first_name: string; last_name: string } | null;
+  pipeline_stages: { name: string } | null;
+};
+
+type CompanyDealRaw = Omit<CompanyDeal, "contacts" | "pipeline_stages"> & {
+  contacts: { id: string; first_name: string; last_name: string }[] | { id: string; first_name: string; last_name: string } | null;
+  pipeline_stages: { name: string }[] | { name: string } | null;
+};
+
+export async function getDealsByCompany(companyId: string): Promise<CompanyDeal[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("deals")
+    .select("id, title, value, status, expected_close_date, created_at, contacts(id, first_name, last_name), pipeline_stages(name)")
+    .eq("company_id", companyId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as CompanyDealRaw[]).map((d) => ({
+    ...d,
+    contacts: Array.isArray(d.contacts) ? d.contacts[0] ?? null : d.contacts,
+    pipeline_stages: Array.isArray(d.pipeline_stages) ? d.pipeline_stages[0] ?? null : d.pipeline_stages,
+  }));
+}
+
 export async function getCompaniesForSelect() {
   const supabase = await createClient();
   const { data, error } = await supabase
