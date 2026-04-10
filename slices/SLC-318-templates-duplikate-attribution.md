@@ -1,14 +1,14 @@
 # SLC-318 — Templates + Duplikate + Attribution
 
 ## Slice Info
-- Feature: FEAT-106, FEAT-101, FEAT-102
+- Feature: FEAT-106, FEAT-107, FEAT-101, FEAT-102
 - Version: V3.1
 - Priority: Medium
 - Dependencies: keine
 - Type: Frontend + Backend (Schema-Erweiterung)
 
 ## Goal
-Drei zusammengehoerende Datenqualitaets-Verbesserungen: E-Mail-Templates in 3 Sprachen, Duplikat-Warnung bei Kontakt-/Firmen-Anlage, und strukturiertes Source/Attribution-Feld.
+Vier zusammengehoerende Datenqualitaets-Verbesserungen: E-Mail-Templates in 3 Sprachen, Angebots-Vorlagen in 3 Sprachen, Duplikat-Warnung bei Kontakt-/Firmen-Anlage, und strukturiertes Source/Attribution-Feld.
 
 ## Scope
 
@@ -29,13 +29,18 @@ Drei zusammengehoerende Datenqualitaets-Verbesserungen: E-Mail-Templates in 3 Sp
 9. Optionen: Empfehlung, LinkedIn, Event, Kaltakquise, Inbound, Kampagne
 10. Optionales Kampagnen-Freitext-Feld
 
+**Angebots-Vorlagen (BL-137):**
+11. Proposal-Templates in DE/NL/EN
+12. Sprache basierend auf Kontakt/Firma vorgeschlagen
+13. Scope-Texte, Standard-Formulierungen pro Sprache
+
 ### Excluded
-- Angebots-Vorlagen (BL-137, eigener Slice wenn noetig)
 - Merge-Logik fuer Duplikate (nur Warnung, kein Auto-Merge)
 - Source-basierte Auswertungen/Reports (V4)
 
 ## Backlog Items
 - BL-129: E-Mail-Templates 3 Sprachen
+- BL-137: Angebots-Vorlagen 3 Sprachen
 - BL-131: Duplikat-Erkennung
 - BL-140: Source/Attribution-Feld
 

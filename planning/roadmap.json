@@ -43,18 +43,25 @@
       "order": 6
     },
     {
+      "id": "v3-2",
+      "name": "V3.2",
+      "status": "planned",
+      "summary": "Deferred aus V3.1: Pipeline Liste-Ansicht Toggle, Unified Timeline, Kontakt-Karte (Leaflet/OSM), Mobile PWA Mein Tag",
+      "order": 7
+    },
+    {
       "id": "v4",
       "name": "V4",
       "status": "planned",
       "summary": "Wissen + Management: Wissensbasis, Insight-Review-Queue, Management-Cockpit LLM-Ausbau, Meeting-Transkription, Einwandmuster, KI-Coaching, IMAP, Cal.com-Sync",
-      "order": 7
+      "order": 8
     },
     {
       "id": "v5",
       "name": "V5",
       "status": "planned",
       "summary": "Automatisierung + Skalierung: Cadences/Sequences, Routing/Territories, Teamlead-Rolle, Intelligence-Platform-Export",
-      "order": 8
+      "order": 9
     }
   ]
 }

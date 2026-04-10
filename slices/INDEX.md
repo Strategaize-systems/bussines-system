@@ -63,5 +63,5 @@
 | SLC-315 | [KI-Composing + Kontext-Intelligenz](SLC-315-ki-composing-kontext.md) | FEAT-305, FEAT-106 | planned | High | 2026-04-10 |
 | SLC-316 | [Auto-Wiedervorlagen](SLC-316-auto-wiedervorlagen.md) | FEAT-302, FEAT-109 | planned | High | 2026-04-10 |
 | SLC-317 | [Tageseinschaetzung erweitert](SLC-317-tageseinschaetzung-erweitert.md) | FEAT-302 | planned | High | 2026-04-10 |
-| SLC-318 | [Templates + Duplikate + Attribution](SLC-318-templates-duplikate-attribution.md) | FEAT-106, FEAT-101 | planned | Medium | 2026-04-10 |
+| SLC-318 | [Templates + Duplikate + Attribution](SLC-318-templates-duplikate-attribution.md) | FEAT-106, FEAT-107, FEAT-101 | planned | Medium | 2026-04-10 |
 | SLC-319 | [Activity-Queue / Focus View](SLC-319-activity-queue.md) | FEAT-302 | planned | Medium | 2026-04-10 |
