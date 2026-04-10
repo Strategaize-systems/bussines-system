@@ -819,6 +819,26 @@
       "version": "V3.1",
       "description": "Kernfunktion: Wenn ein Formular (E-Mail, Meeting, Task, Aktivitaet, Deal-Edit) aus einem Kontext geoeffnet wird (z.B. Deal-Workspace), muessen alle verfuegbaren Felder automatisch vorbefuellt sein — Kontakt, Firma, Deal, Betreff/naechste Aktion, etc. Kein manuelles Klicken/Tippen fuer Daten die das System schon kennt. Zusaetzlich: Voice-Input + KI-Verbesserung in allen Textfeldern (Agenda, Beschreibung, Nachricht). Override per Sprache moeglich ('Pass auf, aender den Kontakt auf XY'). Gilt fuer: E-Mail (BL-322), Meeting, Task, Aktivitaet, Deal-Bearbeitung. Das ist DAS Differenzierungsmerkmal gegenueber klassischem CRM.",
       "createdAt": "2026-04-10"
+    },
+    {
+      "id": "BL-324",
+      "title": "Automatische Wiedervorlagen nach Aktionen (Meeting, Call, E-Mail)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3.1",
+      "description": "Nach Abschluss bestimmter Aktionen (Meeting erledigt, Telefonat gefuehrt, E-Mail gesendet) automatisch Wiedervorlage erstellen. Zeitraum abhaengig von Kontakt-Prioritaet: Hoch = 2-3 Tage, Mittel = 5 Tage, Niedrig = 7 Tage (konfigurierbar). Wiedervorlage erscheint in 'Mein Tag' als Aufgabe. Zusaetzlich: Nach Meeting/Call direkt Frage 'Naechster Schritt?' mit Vorschlaegen.",
+      "createdAt": "2026-04-10"
+    },
+    {
+      "id": "BL-325",
+      "title": "KI-Wiedervorlagen: Automatische Pruefung + Nachfass-Aktionen",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V4",
+      "description": "Zweite Ebene der Wiedervorlage — nicht fuer den Mitarbeiter, sondern fuer die KI. KI prueft automatisch: (1) Hat der Kunde auf unsere E-Mail geantwortet? Wenn nicht nach X Tagen → sanfte Erinnerung senden (mit Bestaetigung). (2) Wurde die Mitarbeiter-Wiedervorlage erledigt? Wenn nicht → Eskalation in Mein Tag. (3) Meeting-Erinnerungen: Automatische E-Mail an Meeting-Teilnehmer am Morgen des Tages oder 30 Min vorher ('Wir freuen uns auf das Meeting um 10 Uhr'). Regelbasiert mit konfigurierbaren Zeitfenstern und Eskalationsstufen.",
+      "createdAt": "2026-04-10"
     }
   ]
 }
