@@ -4,16 +4,18 @@ import {
   getCalendarEventsForToday,
   getExceptionData,
   getNextMeetingWithContext,
+  getTopDeals,
 } from "./actions";
 import { MeinTagClient } from "./mein-tag-client";
 
 export default async function MeinTagPage() {
-  const [data, context, calendarSlots, exceptions, nextMeeting] = await Promise.all([
+  const [data, context, calendarSlots, exceptions, nextMeeting, topDeals] = await Promise.all([
     getTodayItems(),
     getMeinTagContext(),
     getCalendarEventsForToday(),
     getExceptionData(),
     getNextMeetingWithContext(),
+    getTopDeals(5),
   ]);
 
   return (
@@ -27,6 +29,7 @@ export default async function MeinTagPage() {
       calendarSlots={calendarSlots}
       exceptions={exceptions}
       nextMeeting={nextMeeting}
+      topDeals={topDeals}
     />
   );
 }

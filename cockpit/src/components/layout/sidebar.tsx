@@ -46,6 +46,12 @@ const navGroups: NavGroup[] = [
     items: [
       { name: "Mein Tag", href: "/mein-tag", icon: Sparkles },
       { name: "Focus", href: "/focus", icon: Target },
+    ],
+  },
+  {
+    label: "WORKSPACES",
+    items: [
+      { name: "Alle Deals", href: "/deals", icon: Briefcase },
       {
         name: "Pipeline",
         href: "/pipeline/multiplikatoren",
@@ -56,12 +62,6 @@ const navGroups: NavGroup[] = [
           { name: "Leads", href: "/pipeline/leads" },
         ],
       },
-    ],
-  },
-  {
-    label: "WORKSPACES",
-    items: [
-      { name: "Alle Deals", href: "/deals", icon: Briefcase },
       { name: "Alle Firmen", href: "/companies", icon: Building2 },
       { name: "Alle Kontakte", href: "/contacts", icon: Users },
       { name: "Multiplikatoren", href: "/multiplikatoren", icon: Handshake },

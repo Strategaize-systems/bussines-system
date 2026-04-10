@@ -33,12 +33,13 @@ import {
   History,
   Eye,
   ArrowRightLeft,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { DealDetailSheet } from "../pipeline/deal-detail-sheet";
 import { completeTaskFromMeinTag, completeDealActionFromMeinTag } from "./actions";
-import type { TodayData, TodayItem, TodayItemType, CalendarSlot, ExceptionData, NextMeetingPrep } from "./actions";
+import type { TodayData, TodayItem, TodayItemType, CalendarSlot, ExceptionData, NextMeetingPrep, TopDeal } from "./actions";
 import type { Deal, PipelineStage } from "../pipeline/actions";
 import { TaskSheet } from "../aufgaben/task-sheet";
 import { EmailSheet } from "../emails/email-sheet";
@@ -56,6 +57,7 @@ interface MeinTagClientProps {
   calendarSlots: CalendarSlot[];
   exceptions: ExceptionData;
   nextMeeting: NextMeetingPrep;
+  topDeals: TopDeal[];
 }
 
 const typeConfig: Record<TodayItemType, { icon: typeof ListTodo; bg: string }> = {
@@ -87,7 +89,7 @@ const entityActions = [
 
 const WORKDAY_MINUTES = 600; // 10h workday (8:00–18:00)
 
-export function MeinTagClient({ data, stages, contacts, companies, deals, pipelines, calendarSlots, exceptions, nextMeeting }: MeinTagClientProps) {
+export function MeinTagClient({ data, stages, contacts, companies, deals, pipelines, calendarSlots, exceptions, nextMeeting, topDeals }: MeinTagClientProps) {
   const totalItems = data.stats.overdueCount + data.stats.todayCount + data.stats.upcomingCount;
   const completedItems = 0;
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
@@ -159,13 +161,13 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
 
       <main className="px-8 py-8">
         <div className="max-w-[1800px] mx-auto space-y-6">
-          {/* 2-Column Layout */}
-          <div className="grid grid-cols-12 gap-6">
-            {/* LEFT COLUMN: Work Actions + Aufgaben + KI-Workspace */}
-            <div className="col-span-8 space-y-6">
+          {/* 3-Column Layout */}
+          <div className="grid grid-cols-12 gap-5">
+            {/* LEFT COLUMN (5): Work Actions + Aufgaben + KI-Workspace */}
+            <div className="col-span-5 space-y-4">
 
-              {/* Work Quick Actions (above Aufgaben) */}
-              <div className="flex items-center gap-3">
+              {/* Work Quick Actions */}
+              <div className="flex items-center justify-center gap-3">
                 <TaskSheet
                   contacts={contacts}
                   companies={companies}
@@ -269,7 +271,84 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
               <KIWorkspace data={data} calendarSlots={calendarSlots} exceptions={exceptions} contacts={contacts} companies={companies} deals={deals} />
             </div>
 
-            {/* RIGHT COLUMN (4 cols): Kalender + Meeting-Prep + Exceptions + Zeit */}
+            {/* MIDDLE COLUMN (3): Top Deals */}
+            <div className="col-span-3 space-y-4">
+              <div className="flex items-center justify-center gap-3">
+                <Link href="/pipeline/unternehmer" className="flex flex-col items-center gap-1.5 group">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#00a84f] to-[#4dcb8b] flex items-center justify-center text-white shadow group-hover:scale-105 transition-transform">
+                    <Briefcase size={18} strokeWidth={2} />
+                  </div>
+                  <span className="text-[10px] font-semibold text-slate-500">Deals</span>
+                </Link>
+              </div>
+
+              <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
+                <div className="px-5 py-3 border-b border-slate-200 flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#00a84f] to-[#4dcb8b] flex items-center justify-center">
+                    <Briefcase size={14} className="text-white" strokeWidth={2.5} />
+                  </div>
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Top Deals</h3>
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 rounded-full px-1.5 py-0.5 ml-auto">
+                    {topDeals.length}
+                  </span>
+                </div>
+
+                <div className="divide-y divide-slate-50">
+                  {topDeals.length > 0 ? (
+                    topDeals.map((deal) => (
+                      <button
+                        key={deal.id}
+                        onClick={() => setSelectedDealId(deal.id)}
+                        className="w-full text-left px-4 py-3 hover:bg-slate-50/50 transition-colors"
+                      >
+                        <p className="text-sm font-bold text-slate-900 truncate">{deal.title}</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          {deal.value != null && (
+                            <span className="text-[10px] font-bold text-emerald-600">
+                              {deal.value.toLocaleString("de-DE")} €
+                            </span>
+                          )}
+                          {deal.stage && (
+                            <span className="text-[10px] text-slate-400 truncate">
+                              · {deal.stage}
+                            </span>
+                          )}
+                        </div>
+                        {deal.companyName && (
+                          <p className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
+                            <Building2 size={9} /> {deal.companyName}
+                          </p>
+                        )}
+                        {deal.nextAction && (
+                          <p className="text-[10px] text-amber-600 mt-0.5 truncate">
+                            → {deal.nextAction}
+                          </p>
+                        )}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-6 text-center">
+                      <Briefcase size={24} className="mx-auto text-slate-300 mb-2" />
+                      <p className="text-xs text-slate-400">Keine aktiven Deals</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="px-4 py-2.5 border-t border-slate-100">
+                  <Link
+                    href="/pipeline/unternehmer"
+                    className="text-xs font-semibold text-[#00a84f] hover:text-emerald-700 flex items-center gap-1 transition-colors"
+                  >
+                    Alle Deals <ChevronRight size={12} />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Meeting-Prep in middle column */}
+              {nextMeeting && <MeetingPrepCard meeting={nextMeeting} />}
+            </div>
+
+            {/* RIGHT COLUMN (4): Kalender + Exceptions + Zeit */}
             <div className="col-span-4">
               <div className="sticky top-32 space-y-4">
                 {/* Entity Quick Actions (above calendar) */}
@@ -341,9 +420,6 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                     </Link>
                   </div>
                 </div>
-
-                {/* MEETING-PREP */}
-                {nextMeeting && <MeetingPrepCard meeting={nextMeeting} />}
 
                 {/* EXCEPTION-HINWEISE */}
                 {exceptionCount > 0 && <ExceptionPanel exceptions={exceptions} />}
@@ -625,11 +701,11 @@ function ExceptionPanel({ exceptions }: { exceptions: ExceptionData }) {
 
 function QuickActionButton({ icon: Icon, label, color }: { icon: typeof ListTodo; label: string; color: string }) {
   return (
-    <div className="flex flex-col items-center gap-2 group cursor-pointer">
-      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform`}>
-        <Icon size={24} strokeWidth={2} />
+    <div className="flex flex-col items-center gap-1.5 group cursor-pointer">
+      <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white shadow group-hover:scale-105 transition-transform`}>
+        <Icon size={18} strokeWidth={2} />
       </div>
-      <span className="text-[11px] font-semibold text-slate-600 text-center leading-tight">
+      <span className="text-[10px] font-semibold text-slate-500 text-center leading-tight">
         {label}
       </span>
     </div>

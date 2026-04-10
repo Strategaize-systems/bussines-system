@@ -508,6 +508,70 @@ export async function getOverdueCount(): Promise<number> {
   return (overdueTasks.count ?? 0) + (overdueDeals.count ?? 0);
 }
 
+// ── Top Deals (Kunden-Pipeline, sorted by value * probability) ──
+
+export type TopDeal = {
+  id: string;
+  title: string;
+  value: number | null;
+  stage: string | null;
+  probability: number;
+  weightedValue: number;
+  nextAction: string | null;
+  nextActionDate: string | null;
+  contactName: string | null;
+  companyName: string | null;
+};
+
+export async function getTopDeals(limit: number = 5): Promise<TopDeal[]> {
+  const supabase = await createClient();
+
+  // Get Unternehmer-Chancen pipeline deals (customer deals)
+  const { data: deals } = await supabase
+    .from("deals")
+    .select(`
+      id, title, value, next_action, next_action_date, stage_id,
+      pipeline_stages(name, probability),
+      contacts(first_name, last_name),
+      companies(name)
+    `)
+    .eq("status", "active")
+    .eq("pipeline_id", "b0000000-0000-0000-0000-000000000002")
+    .order("updated_at", { ascending: false });
+
+  if (!deals || deals.length === 0) return [];
+
+  const mapped: TopDeal[] = deals.map((d: any) => {
+    const stage = d.pipeline_stages as any;
+    const contact = d.contacts as any;
+    const company = d.companies as any;
+    const prob = stage?.probability ?? 0;
+    const val = d.value ?? 0;
+
+    return {
+      id: d.id,
+      title: d.title,
+      value: d.value,
+      stage: stage?.name ?? null,
+      probability: prob,
+      weightedValue: val * (prob / 100),
+      nextAction: d.next_action,
+      nextActionDate: d.next_action_date,
+      contactName: contact ? `${contact.first_name} ${contact.last_name}` : null,
+      companyName: company?.name ?? null,
+    };
+  });
+
+  // Sort: highest weighted value first, then by probability, then by raw value
+  mapped.sort((a, b) => {
+    if (b.weightedValue !== a.weightedValue) return b.weightedValue - a.weightedValue;
+    if (b.probability !== a.probability) return b.probability - a.probability;
+    return (b.value ?? 0) - (a.value ?? 0);
+  });
+
+  return mapped.slice(0, limit);
+}
+
 // ── Yesterday Review ──────────────────────────────────────────
 
 export type YesterdayItem = {
