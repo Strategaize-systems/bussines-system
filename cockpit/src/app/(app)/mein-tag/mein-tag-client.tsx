@@ -39,12 +39,17 @@ import type { Deal, PipelineStage } from "../pipeline/actions";
 import type { DailySummary } from "@/lib/ai/types";
 import { AiLoadButton } from "@/components/ai/ai-load-button";
 import { AiResultPanel } from "@/components/ai/ai-result-panel";
+import { TaskSheet } from "../aufgaben/task-sheet";
+import { EmailSheet } from "../emails/email-sheet";
+import { MeetingSheet } from "@/components/meetings/meeting-sheet";
+import { EventSheet } from "@/components/calendar/event-sheet";
 
 interface MeinTagClientProps {
   data: TodayData;
   stages: PipelineStage[];
   contacts: { id: string; first_name: string; last_name: string }[];
   companies: { id: string; name: string }[];
+  deals: { id: string; title: string }[];
   pipelines: { id: string; name: string }[];
   calendarSlots: CalendarSlot[];
   exceptions: ExceptionData;
@@ -69,20 +74,17 @@ const statusStyles: Record<string, string> = {
   in_arbeit: "bg-amber-100 text-amber-700 border-amber-200",
 };
 
-const quickActions = [
+// Quick action navigation items (open list pages)
+const quickNavActions = [
   { label: "Neuer Kontakt", icon: Users, color: "from-[#120774] to-[#4454b8]", href: "/contacts" },
   { label: "Neue Firma", icon: Building2, color: "from-[#00a84f] to-[#4dcb8b]", href: "/companies" },
   { label: "Multiplikator", icon: Handshake, color: "from-purple-500 to-purple-600", href: "/multiplikatoren" },
   { label: "Neues Lead", icon: Target, color: "from-orange-500 to-orange-600", href: "/pipeline/leads" },
-  { label: "Neue Aufgabe", icon: ListTodo, color: "from-[#120774] to-[#4454b8]", href: "/aufgaben" },
-  { label: "Neue E-Mail", icon: Mail, color: "from-sky-500 to-sky-600", href: "/emails" },
-  { label: "Telefonat", icon: Phone, color: "from-emerald-500 to-emerald-600", href: "#" },
-  { label: "Notiz", icon: StickyNote, color: "from-amber-500 to-amber-600", href: "#" },
 ];
 
 const WORKDAY_MINUTES = 600; // 10h workday (8:00–18:00)
 
-export function MeinTagClient({ data, stages, contacts, companies, pipelines, calendarSlots, exceptions, nextMeeting }: MeinTagClientProps) {
+export function MeinTagClient({ data, stages, contacts, companies, deals, pipelines, calendarSlots, exceptions, nextMeeting }: MeinTagClientProps) {
   const totalItems = data.stats.overdueCount + data.stats.todayCount + data.stats.upcomingCount;
   const completedItems = 0;
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
@@ -158,7 +160,8 @@ export function MeinTagClient({ data, stages, contacts, companies, pipelines, ca
             {showQuickActions && (
               <div className="px-6 pb-6">
                 <div className="grid grid-cols-8 gap-4">
-                  {quickActions.map((action) => (
+                  {/* Navigation actions (open list pages) */}
+                  {quickNavActions.map((action) => (
                     <Link
                       key={action.label}
                       href={action.href}
@@ -172,6 +175,37 @@ export function MeinTagClient({ data, stages, contacts, companies, pipelines, ca
                       </span>
                     </Link>
                   ))}
+
+                  {/* Sheet actions (open creation sheets inline) */}
+                  <TaskSheet
+                    contacts={contacts}
+                    companies={companies}
+                    deals={deals}
+                    trigger={
+                      <QuickActionButton icon={ListTodo} label="Neue Aufgabe" color="from-[#120774] to-[#4454b8]" />
+                    }
+                  />
+                  <EmailSheet
+                    trigger={
+                      <QuickActionButton icon={Mail} label="Neue E-Mail" color="from-sky-500 to-sky-600" />
+                    }
+                  />
+                  <MeetingSheet
+                    contacts={contacts}
+                    companies={companies}
+                    deals={deals}
+                    trigger={
+                      <QuickActionButton icon={Users} label="Neues Meeting" color="from-emerald-500 to-emerald-600" />
+                    }
+                  />
+                  <EventSheet
+                    contacts={contacts}
+                    companies={companies}
+                    deals={deals}
+                    trigger={
+                      <QuickActionButton icon={Calendar} label="Neuer Termin" color="from-purple-500 to-purple-600" />
+                    }
+                  />
                 </div>
               </div>
             )}
@@ -573,6 +607,21 @@ function ExceptionPanel({ exceptions }: { exceptions: ExceptionData }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── Quick Action Button (for Sheet triggers) ────────────────────
+
+function QuickActionButton({ icon: Icon, label, color }: { icon: typeof ListTodo; label: string; color: string }) {
+  return (
+    <div className="flex flex-col items-center gap-2 group cursor-pointer">
+      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform`}>
+        <Icon size={24} strokeWidth={2} />
+      </div>
+      <span className="text-[11px] font-semibold text-slate-600 text-center leading-tight">
+        {label}
+      </span>
     </div>
   );
 }

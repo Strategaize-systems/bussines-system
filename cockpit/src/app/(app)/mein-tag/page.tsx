@@ -22,6 +22,7 @@ export default async function MeinTagPage() {
       stages={context.stages}
       contacts={context.contacts}
       companies={context.companies}
+      deals={context.deals}
       pipelines={context.pipelines}
       calendarSlots={calendarSlots}
       exceptions={exceptions}

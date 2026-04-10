@@ -185,11 +185,12 @@ export async function completeDealActionFromMeinTag(dealId: string) {
 export async function getMeinTagContext() {
   const supabase = await createClient();
 
-  const [stagesResult, contactsResult, companiesResult, pipelinesResult] = await Promise.all([
+  const [stagesResult, contactsResult, companiesResult, pipelinesResult, dealsResult] = await Promise.all([
     supabase.from("pipeline_stages").select("*").order("sort_order"),
     supabase.from("contacts").select("id, first_name, last_name").order("last_name"),
     supabase.from("companies").select("id, name").order("name"),
     supabase.from("pipelines").select("id, name").order("sort_order"),
+    supabase.from("deals").select("id, title").order("title"),
   ]);
 
   return {
@@ -197,6 +198,7 @@ export async function getMeinTagContext() {
     contacts: contactsResult.data ?? [],
     companies: companiesResult.data ?? [],
     pipelines: pipelinesResult.data ?? [],
+    deals: dealsResult.data ?? [],
   };
 }
 

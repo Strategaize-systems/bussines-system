@@ -775,7 +775,7 @@
       "title": "Schnellaktionen: Neuer Termin fehlt + Aktionen pruefen",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3.1",
       "description": "Mein Tag Schnellaktionen: 'Neuer Termin' fehlt komplett. Ausserdem muessen alle Schnellaktionen geprueft werden — sie sollen direkt die Erstellungs-Maske oeffnen (Sheet/Modal), nicht auf Listenseiten navigieren. Aktuell linken z.B. 'Neue E-Mail' und andere einfach auf die jeweilige Seite statt ein Formular zu oeffnen.",
       "createdAt": "2026-04-10"
@@ -785,7 +785,7 @@
       "title": "Schnellaktionen: Neue E-Mail oeffnet Compose-Sheet statt Listenseite",
       "type": "fix",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V3.1",
       "description": "Klick auf 'Neue E-Mail' in Schnellaktionen soll direkt die E-Mail-Erstellungs-Maske (EmailSheet) oeffnen — nicht auf /emails navigieren. Gleiches Prinzip fuer alle anderen Schnellaktionen: direkt erstellen, nicht zur Liste navigieren.",
       "createdAt": "2026-04-10"

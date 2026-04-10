@@ -10,14 +10,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V3.1 Implementation. SLC-311 + SLC-313 done. Naechster Slice: SLC-312 (Schnellaktionen-Rebuild).
-- Current Phase: V3.1 Implementation (2/9 Slices done)
+- Current Focus: V3.1 Implementation. SLC-311 + SLC-312 + SLC-313 done. Naechster Slice: SLC-314 (Pipeline KI-Suche + Voice).
+- Current Phase: V3.1 Implementation (3/9 Slices done)
 
 ## Immediate Next Steps
-1. /qa fuer SLC-311 (Meeting/Kalender UX-Fixes)
-2. SLC-312 implementieren (Schnellaktionen-Rebuild) — High
-3. SLC-314 implementieren (Pipeline KI-Suche + Voice) — High
-4. Weiter mit SLC-315 (KI-Composing)
+1. /qa fuer SLC-312 (Schnellaktionen-Rebuild)
+2. SLC-314 implementieren (Pipeline KI-Suche + Voice) — High
+3. SLC-315 implementieren (KI-Composing + Kontext-Intelligenz) — High
+4. SLC-316 implementieren (Auto-Wiedervorlagen) — High
 
 ## Active Scope
 V3.1 — UX-Schliff + KI-Kontext (9 Slices, 19 Backlog-Items):
