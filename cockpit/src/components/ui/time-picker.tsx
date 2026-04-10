@@ -50,8 +50,6 @@ export function TimePicker({ value, onChange, label, id }: TimePickerProps) {
     }
   }, [showCustom]);
 
-  const isQuickTime = QUICK_TIMES.includes(value);
-
   return (
     <div ref={containerRef} className="relative">
       {label && (
