@@ -1,13 +1,16 @@
 import { getPipelines, getPipelineStages } from "../pipeline/actions";
 import { StagesConfig } from "./stages-config";
+import { TemplatesConfig } from "./templates-config";
+import { getEmailTemplates } from "./template-actions";
 import { getCurrentUserRole } from "@/lib/audit";
 import { Shield } from "lucide-react";
 import type { PipelineStage } from "../pipeline/actions";
 
 export default async function SettingsPage() {
-  const [pipelines, role] = await Promise.all([
+  const [pipelines, role, templates] = await Promise.all([
     getPipelines(),
     getCurrentUserRole(),
+    getEmailTemplates(),
   ]);
 
   // Load stages for all pipelines
@@ -43,6 +46,8 @@ export default async function SettingsPage() {
           </div>
         </div>
       </div>
+
+      <TemplatesConfig templates={templates} />
 
       <StagesConfig pipelines={pipelines} stagesByPipeline={stagesByPipeline} />
     </div>

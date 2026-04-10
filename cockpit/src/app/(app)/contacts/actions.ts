@@ -17,6 +17,7 @@ export type Contact = {
   relationship_type: string | null;
   role_in_process: string | null;
   source: string | null;
+  source_detail: string | null;
   language: string | null;
   region: string | null;
   trust_level: string | null;
@@ -82,6 +83,7 @@ export async function createContact(formData: FormData) {
     relationship_type: (formData.get("relationship_type") as string) || null,
     role_in_process: (formData.get("role_in_process") as string) || null,
     source: (formData.get("source") as string) || null,
+    source_detail: (formData.get("source_detail") as string) || null,
     language: (formData.get("language") as string) || "de",
     region: (formData.get("region") as string) || null,
     trust_level: (formData.get("trust_level") as string) || null,
@@ -120,6 +122,7 @@ export async function updateContact(id: string, formData: FormData) {
       relationship_type: (formData.get("relationship_type") as string) || null,
       role_in_process: (formData.get("role_in_process") as string) || null,
       source: (formData.get("source") as string) || null,
+      source_detail: (formData.get("source_detail") as string) || null,
       language: (formData.get("language") as string) || "de",
       region: (formData.get("region") as string) || null,
       trust_level: (formData.get("trust_level") as string) || null,

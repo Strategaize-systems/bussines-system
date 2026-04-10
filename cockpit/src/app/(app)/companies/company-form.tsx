@@ -6,7 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TagInput } from "@/components/ui/tag-input";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
+import { DuplicateWarning, useDuplicateCheck } from "@/components/ui/duplicate-warning";
+import { checkCompanyDuplicate } from "@/lib/duplicate-check";
+import { useState, useCallback } from "react";
 import type { Company } from "./actions";
 
 const selectClass = "select-premium";
@@ -19,6 +21,7 @@ interface CompanyFormProps {
 
 export function CompanyForm({ company, onSubmit, isPending }: CompanyFormProps) {
   const [tags, setTags] = useState<string[]>(company?.tags ?? []);
+  const dupCheck = useDuplicateCheck(useCallback((v: string) => checkCompanyDuplicate(v), []));
 
   return (
     <form action={onSubmit} className="space-y-4">
@@ -29,7 +32,11 @@ export function CompanyForm({ company, onSubmit, isPending }: CompanyFormProps) 
           name="name"
           defaultValue={company?.name}
           required
+          onBlur={(e) => {
+            if (!company && e.target.value) dupCheck.check(e.target.value);
+          }}
         />
+        <DuplicateWarning result={dupCheck.result} entityType="company" onDismiss={dupCheck.dismiss} />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -289,6 +296,40 @@ export function CompanyForm({ company, onSubmit, isPending }: CompanyFormProps) 
       </div>
 
       <Separator />
+
+      {/* Source / Attribution */}
+      <Separator />
+      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wide">Herkunft</h3>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="source_type">Quelle</Label>
+          <select
+            id="source_type"
+            name="source_type"
+            defaultValue={company?.source_type ?? ""}
+            className={selectClass}
+          >
+            <option value="">— Keine Angabe —</option>
+            <option value="empfehlung">Empfehlung</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="event">Event</option>
+            <option value="kaltakquise">Kaltakquise</option>
+            <option value="inbound">Inbound</option>
+            <option value="kampagne">Kampagne</option>
+            <option value="netzwerk">Netzwerk</option>
+            <option value="sonstige">Sonstige</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="source_detail">Quell-Detail</Label>
+          <Input
+            id="source_detail"
+            name="source_detail"
+            placeholder="z.B. Name des Empfehlers, Kampagne"
+            defaultValue={company?.source_detail ?? ""}
+          />
+        </div>
+      </div>
 
       <div className="space-y-2">
         <Label>Tags</Label>

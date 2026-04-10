@@ -8,6 +8,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Sparkles, Loader2, Check } from "lucide-react";
 import { VoiceRecordButton } from "@/components/voice/voice-record-button";
 
+export type EmailTemplateOption = {
+  id: string;
+  title: string;
+  subject_de: string | null;
+  subject_nl: string | null;
+  subject_en: string | null;
+  body_de: string | null;
+  body_nl: string | null;
+  body_en: string | null;
+};
+
 interface EmailComposeProps {
   defaultTo?: string;
   defaultSubject?: string;
@@ -17,9 +28,32 @@ interface EmailComposeProps {
   dealId?: string;
   onSubmit: (formData: FormData) => void;
   isPending?: boolean;
+  templates?: EmailTemplateOption[];
+  placeholderValues?: {
+    vorname?: string;
+    nachname?: string;
+    firma?: string;
+    position?: string;
+    deal?: string;
+  };
+  contactLanguage?: string;
 }
 
 type ImproveMode = "correct" | "formal" | "summarize";
+
+function applyPlaceholders(
+  text: string,
+  values?: EmailComposeProps["placeholderValues"]
+): string {
+  if (!values) return text;
+  let result = text;
+  if (values.vorname) result = result.replace(/\{\{vorname\}\}/g, values.vorname);
+  if (values.nachname) result = result.replace(/\{\{nachname\}\}/g, values.nachname);
+  if (values.firma) result = result.replace(/\{\{firma\}\}/g, values.firma);
+  if (values.position) result = result.replace(/\{\{position\}\}/g, values.position);
+  if (values.deal) result = result.replace(/\{\{deal\}\}/g, values.deal);
+  return result;
+}
 
 export function EmailCompose({
   defaultTo,
@@ -30,10 +64,30 @@ export function EmailCompose({
   dealId,
   onSubmit,
   isPending,
+  templates,
+  placeholderValues,
+  contactLanguage,
 }: EmailComposeProps) {
   const [body, setBody] = useState("");
+  const [subject, setSubject] = useState(defaultSubject ?? "");
   const [improving, setImproving] = useState(false);
   const [improveResult, setImproveResult] = useState<string[] | null>(null);
+
+  const handleTemplateSelect = (templateId: string) => {
+    if (!templateId || !templates) return;
+    const tpl = templates.find((t) => t.id === templateId);
+    if (!tpl) return;
+
+    const lang = contactLanguage || "de";
+    const subjectField = `subject_${lang}` as keyof EmailTemplateOption;
+    const bodyField = `body_${lang}` as keyof EmailTemplateOption;
+
+    const rawSubject = (tpl[subjectField] as string) || tpl.subject_de || "";
+    const rawBody = (tpl[bodyField] as string) || tpl.body_de || "";
+
+    setSubject(applyPlaceholders(rawSubject, placeholderValues));
+    setBody(applyPlaceholders(rawBody, placeholderValues));
+  };
 
   const handleVoiceTranscript = useCallback((text: string) => {
     setBody((prev) => (prev ? prev + " " + text : text));
@@ -92,12 +146,32 @@ export function EmailCompose({
         />
       </div>
 
+      {/* Template Selector */}
+      {templates && templates.length > 0 && (
+        <div className="space-y-2">
+          <Label htmlFor="template">Template</Label>
+          <select
+            id="template"
+            onChange={(e) => handleTemplateSelect(e.target.value)}
+            className="select-premium"
+          >
+            <option value="">— Kein Template —</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.title}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="space-y-2">
         <Label htmlFor="subject">Betreff *</Label>
         <Input
           id="subject"
           name="subject"
-          defaultValue={defaultSubject ?? ""}
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
           placeholder="Betreff der E-Mail"
           required
         />

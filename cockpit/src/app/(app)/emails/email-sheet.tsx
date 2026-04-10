@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
-import { EmailCompose } from "./email-compose";
+import { EmailCompose, type EmailTemplateOption } from "./email-compose";
 import { sendEmail } from "./actions";
 import { useState, useTransition } from "react";
 
@@ -23,6 +23,15 @@ interface EmailSheetProps {
   trigger?: React.ReactNode;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
+  templates?: EmailTemplateOption[];
+  placeholderValues?: {
+    vorname?: string;
+    nachname?: string;
+    firma?: string;
+    position?: string;
+    deal?: string;
+  };
+  contactLanguage?: string;
 }
 
 export function EmailSheet({
@@ -35,6 +44,9 @@ export function EmailSheet({
   trigger,
   defaultOpen,
   onOpenChange: externalOnOpenChange,
+  templates,
+  placeholderValues,
+  contactLanguage,
 }: EmailSheetProps) {
   const [open, setOpen] = useState(defaultOpen ?? false);
   const [error, setError] = useState("");
@@ -97,6 +109,9 @@ export function EmailSheet({
             dealId={dealId}
             onSubmit={handleSubmit}
             isPending={isPending}
+            templates={templates}
+            placeholderValues={placeholderValues}
+            contactLanguage={contactLanguage}
           />
         </div>
       </SheetContent>

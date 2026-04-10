@@ -28,6 +28,8 @@ export type Company = {
   blueprint_fit: string | null;
   employee_count: string | null;
   revenue_range: string | null;
+  source_type: string | null;
+  source_detail: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -107,6 +109,8 @@ export async function createCompany(formData: FormData) {
     blueprint_fit: (formData.get("blueprint_fit") as string) || null,
     employee_count: (formData.get("employee_count") as string) || null,
     revenue_range: (formData.get("revenue_range") as string) || null,
+    source_type: (formData.get("source_type") as string) || null,
+    source_detail: (formData.get("source_detail") as string) || null,
   });
 
   if (error) return { error: error.message };
@@ -149,6 +153,8 @@ export async function updateCompany(id: string, formData: FormData) {
       blueprint_fit: (formData.get("blueprint_fit") as string) || null,
       employee_count: (formData.get("employee_count") as string) || null,
       revenue_range: (formData.get("revenue_range") as string) || null,
+      source_type: (formData.get("source_type") as string) || null,
+      source_detail: (formData.get("source_detail") as string) || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);

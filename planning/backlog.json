@@ -295,7 +295,7 @@
       "title": "E-Mail-Templates in 3 Sprachen (DE/NL/EN) mit Platzhaltern",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V3.1",
       "description": "Textbausteine für Cold-E-Mails, Follow-ups, Angebots-Begleitung. Platzhalter wie {{vorname}}, {{firma}}. Pro Template 3 Sprachversionen (DE/NL/EN). Sprache wird automatisch aus Kontakt-Sprache vorgeschlagen.",
       "createdAt": "2026-04-03"
@@ -315,7 +315,7 @@
       "title": "Duplikat-Erkennung bei Kontakt-/Firmen-Anlage",
       "type": "improvement",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V3.1",
       "description": "Warnung wenn Kontakt mit gleicher E-Mail oder Firma mit gleichem Namen bereits existiert. Merge-Option.",
       "createdAt": "2026-04-03"
@@ -335,7 +335,7 @@
       "title": "Angebots-Vorlagen in 3 Sprachen (DE/NL/EN)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V3.1",
       "description": "Proposal-Templates in DE/NL/EN. Beim Erstellen eines Angebots wird Sprache basierend auf Kontakt/Firma vorgeschlagen. Scope-Texte, Standard-Formulierungen pro Sprache.",
       "createdAt": "2026-04-03"
@@ -425,7 +425,7 @@
       "title": "Source/Attribution-Feld erweitern (Kontakte + Firmen)",
       "type": "improvement",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V3.1",
       "description": "Das bestehende 'source' Freitext-Feld auf Kontakten durch strukturiertes Feld ersetzen: Dropdown (Empfehlung, LinkedIn, Event, Kaltakquise, Inbound, Kampagne) + optionaler Kampagnen-Verweis. Auch auf Firmen-Ebene hinzufügen. Für Auswertung: wie viele Leads pro Quelle, Conversion pro Kanal.",
       "createdAt": "2026-04-03"

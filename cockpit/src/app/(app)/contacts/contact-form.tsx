@@ -6,7 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TagInput } from "@/components/ui/tag-input";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
+import { DuplicateWarning, useDuplicateCheck } from "@/components/ui/duplicate-warning";
+import { checkContactDuplicate } from "@/lib/duplicate-check";
+import { useState, useCallback } from "react";
 import type { Contact } from "./actions";
 
 const selectClass = "select-premium";
@@ -25,6 +27,7 @@ export function ContactForm({
   isPending,
 }: ContactFormProps) {
   const [tags, setTags] = useState<string[]>(contact?.tags ?? []);
+  const dupCheck = useDuplicateCheck(useCallback((v: string) => checkContactDuplicate(v), []));
 
   return (
     <form action={onSubmit} className="space-y-4">
@@ -56,7 +59,11 @@ export function ContactForm({
           name="email"
           type="email"
           defaultValue={contact?.email ?? ""}
+          onBlur={(e) => {
+            if (!contact && e.target.value) dupCheck.check(e.target.value);
+          }}
         />
+        <DuplicateWarning result={dupCheck.result} entityType="contact" onDismiss={dupCheck.dismiss} />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -157,13 +164,35 @@ export function ContactForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="source">Quelle</Label>
-          <Input
+          <select
             id="source"
             name="source"
-            placeholder="z.B. Empfehlung, LinkedIn, Event"
             defaultValue={contact?.source ?? ""}
+            className={selectClass}
+          >
+            <option value="">— Keine Angabe —</option>
+            <option value="empfehlung">Empfehlung</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="event">Event</option>
+            <option value="kaltakquise">Kaltakquise</option>
+            <option value="inbound">Inbound</option>
+            <option value="kampagne">Kampagne</option>
+            <option value="netzwerk">Netzwerk</option>
+            <option value="sonstige">Sonstige</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="source_detail">Quell-Detail</Label>
+          <Input
+            id="source_detail"
+            name="source_detail"
+            placeholder="z.B. Name des Empfehlers, Kampagne"
+            defaultValue={contact?.source_detail ?? ""}
           />
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="region">Region</Label>
           <Input
@@ -173,9 +202,6 @@ export function ContactForm({
             defaultValue={contact?.region ?? ""}
           />
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="language">Sprache</Label>
           <select
