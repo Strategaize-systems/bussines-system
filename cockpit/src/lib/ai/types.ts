@@ -109,6 +109,20 @@ export interface DailySummaryContext {
     dueDate: string;
     type: string;
   }>;
+  /** Yesterday's completed items (tasks, meetings, emails) */
+  yesterdayCompleted?: Array<{
+    title: string;
+    type: string;
+  }>;
+  /** Yesterday's missed items (tasks that were due but not completed) */
+  yesterdayMissed?: Array<{
+    title: string;
+  }>;
+  /** Events since last login (new deals, stage changes) */
+  unseenEvents?: Array<{
+    description: string;
+    type: string;
+  }>;
 }
 
 // -------------------------------------------------------------

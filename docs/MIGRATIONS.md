@@ -48,6 +48,14 @@
 - Risk: Gering — rein additive Aenderung. Bestehende Tasks erhalten automatisch type='manual' als Default.
 - Rollback Notes: ALTER TABLE tasks DROP COLUMN type; DROP INDEX idx_tasks_type;
 
+### MIG-008 — V3.1 Yesterday Review + Unseen Events
+- Date: 2026-04-10
+- Scope: profiles Tabelle — last_login_at Spalte hinzugefuegt. Index auf tasks.completed_at.
+- Reason: SLC-317 Tageseinschaetzung erweitert — "Seit letztem Login" Feature braucht Zeitstempel, Vortags-Queries brauchen Index auf completed_at.
+- Affected Areas: Profiles, Mein Tag, Tasks
+- Risk: Gering — rein additive Aenderung.
+- Rollback Notes: ALTER TABLE profiles DROP COLUMN last_login_at; DROP INDEX idx_tasks_completed_at;
+
 ### MIG-006 — V3 RLS-Umbau (geplant)
 - Date: TBD
 - Scope: created_by-Backfill auf bestehende Rows. RLS-Policies von full_access auf operator_own_data umstellen (deals, tasks, emails, activities, documents, meetings, calendar_events). audit_log: admin-only.

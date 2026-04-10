@@ -507,3 +507,214 @@ export async function getOverdueCount(): Promise<number> {
 
   return (overdueTasks.count ?? 0) + (overdueDeals.count ?? 0);
 }
+
+// ── Yesterday Review ──────────────────────────────────────────
+
+export type YesterdayItem = {
+  id: string;
+  title: string;
+  type: "task" | "meeting" | "email";
+  contactName: string | null;
+  companyName: string | null;
+};
+
+export type YesterdayReview = {
+  completed: YesterdayItem[];
+  missed: YesterdayItem[];
+};
+
+export async function getYesterdayReview(): Promise<YesterdayReview> {
+  const supabase = await createClient();
+
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split("T")[0];
+  const todayStr = now.toISOString().split("T")[0];
+
+  const [completedTasks, completedMeetings, sentEmails, missedTasks] = await Promise.all([
+    // Tasks completed yesterday
+    supabase
+      .from("tasks")
+      .select("id, title, contacts(first_name, last_name), companies(name)")
+      .eq("status", "completed")
+      .gte("completed_at", `${yesterdayStr}T00:00:00`)
+      .lt("completed_at", `${todayStr}T00:00:00`)
+      .order("completed_at", { ascending: false })
+      .limit(20),
+
+    // Meetings completed yesterday
+    supabase
+      .from("meetings")
+      .select("id, title, contacts(first_name, last_name), companies(name)")
+      .eq("status", "completed")
+      .gte("scheduled_at", `${yesterdayStr}T00:00:00`)
+      .lt("scheduled_at", `${todayStr}T00:00:00`)
+      .order("scheduled_at", { ascending: false })
+      .limit(10),
+
+    // Emails sent yesterday
+    supabase
+      .from("emails")
+      .select("id, subject, contacts(first_name, last_name), companies(name)")
+      .eq("status", "sent")
+      .gte("sent_at", `${yesterdayStr}T00:00:00`)
+      .lt("sent_at", `${todayStr}T00:00:00`)
+      .order("sent_at", { ascending: false })
+      .limit(10),
+
+    // Tasks that were due yesterday but not completed
+    supabase
+      .from("tasks")
+      .select("id, title, contacts(first_name, last_name), companies(name)")
+      .in("status", ["open", "waiting"])
+      .eq("due_date", yesterdayStr)
+      .order("priority", { ascending: true })
+      .limit(10),
+  ]);
+
+  const completed: YesterdayItem[] = [];
+  const missed: YesterdayItem[] = [];
+
+  for (const t of completedTasks.data || []) {
+    const c = t.contacts as any;
+    completed.push({
+      id: t.id,
+      title: t.title,
+      type: "task",
+      contactName: c ? `${c.first_name} ${c.last_name}` : null,
+      companyName: (t.companies as any)?.name ?? null,
+    });
+  }
+
+  for (const m of completedMeetings.data || []) {
+    const c = m.contacts as any;
+    completed.push({
+      id: m.id,
+      title: m.title,
+      type: "meeting",
+      contactName: c ? `${c.first_name} ${c.last_name}` : null,
+      companyName: (m.companies as any)?.name ?? null,
+    });
+  }
+
+  for (const e of sentEmails.data || []) {
+    const c = e.contacts as any;
+    completed.push({
+      id: e.id,
+      title: e.subject || "E-Mail",
+      type: "email",
+      contactName: c ? `${c.first_name} ${c.last_name}` : null,
+      companyName: (e.companies as any)?.name ?? null,
+    });
+  }
+
+  for (const t of missedTasks.data || []) {
+    const c = t.contacts as any;
+    missed.push({
+      id: t.id,
+      title: t.title,
+      type: "task",
+      contactName: c ? `${c.first_name} ${c.last_name}` : null,
+      companyName: (t.companies as any)?.name ?? null,
+    });
+  }
+
+  return { completed, missed };
+}
+
+// ── Unseen Events (since last login) ──────────────────────────
+
+export type UnseenEvent = {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  context: string | null;
+  createdAt: string;
+};
+
+export type UnseenEvents = {
+  newDeals: UnseenEvent[];
+  stageChanges: UnseenEvent[];
+  otherChanges: UnseenEvent[];
+  cutoffLabel: string;
+};
+
+export async function getUnseenEvents(): Promise<UnseenEvents> {
+  const supabase = await createClient();
+
+  // Get last_login_at from profile, fallback to 24h ago
+  const { data: { user } } = await supabase.auth.getUser();
+  let cutoff: string;
+  let cutoffLabel: string;
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("last_login_at")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.last_login_at) {
+      cutoff = profile.last_login_at;
+      const cutoffDate = new Date(cutoff);
+      cutoffLabel = `seit ${cutoffDate.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })} ${cutoffDate.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}`;
+    } else {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      cutoff = yesterday.toISOString();
+      cutoffLabel = "seit gestern";
+    }
+  } else {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    cutoff = yesterday.toISOString();
+    cutoffLabel = "seit gestern";
+  }
+
+  const { data: events } = await supabase
+    .from("audit_log")
+    .select("id, action, entity_type, entity_id, context, created_at")
+    .gt("created_at", cutoff)
+    .order("created_at", { ascending: false })
+    .limit(30);
+
+  const newDeals: UnseenEvent[] = [];
+  const stageChanges: UnseenEvent[] = [];
+  const otherChanges: UnseenEvent[] = [];
+
+  for (const e of events || []) {
+    const evt: UnseenEvent = {
+      id: e.id,
+      action: e.action,
+      entityType: e.entity_type,
+      entityId: e.entity_id,
+      context: e.context,
+      createdAt: e.created_at,
+    };
+
+    if (e.entity_type === "deal" && e.action === "create") {
+      newDeals.push(evt);
+    } else if (e.action === "stage_change") {
+      stageChanges.push(evt);
+    } else if (e.action !== "create" || e.entity_type !== "deal") {
+      otherChanges.push(evt);
+    }
+  }
+
+  return { newDeals, stageChanges, otherChanges, cutoffLabel };
+}
+
+/** Update last_login_at for the current user */
+export async function updateLastLogin() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (user) {
+    await supabase
+      .from("profiles")
+      .update({ last_login_at: new Date().toISOString() })
+      .eq("id", user.id);
+  }
+}

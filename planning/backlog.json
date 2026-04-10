@@ -865,7 +865,7 @@
       "title": "Tageseinschaetzung erweitern: Rueckblick Vortag + ungesehene Ereignisse",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3.1",
       "description": "KI-Tageseinschaetzung in Mein Tag erweitern um: (1) Zusammenfassung vom Vortag — was ist passiert, was habe ich noch nicht gesehen? Auto-Replies, eingehende E-Mails, Statusaenderungen bei Deals. (2) Ungesehene Ereignisse markieren: 'Gestern kam ein Auto-Reply von Kunde X — erst ab Donnerstag erreichbar'. (3) Quick-Acknowledge: Pro Eintrag einfach 'OK, gesehen' oder 'Muss ich mir anschauen'. Ziel: Morgens 5 Min einlesen, alles im Blick, nichts uebersehen. Nicht nur 'Was steht heute an?' sondern auch 'Was habe ich verpasst?'.",
       "createdAt": "2026-04-10"

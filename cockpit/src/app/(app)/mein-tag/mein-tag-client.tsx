@@ -30,12 +30,15 @@ import {
   TrendingDown,
   Loader2,
   FileText,
+  History,
+  Eye,
+  ArrowRightLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { DealDetailSheet } from "../pipeline/deal-detail-sheet";
-import { completeTaskFromMeinTag, completeDealActionFromMeinTag } from "./actions";
-import type { TodayData, TodayItem, TodayItemType, CalendarSlot, ExceptionData, NextMeetingPrep } from "./actions";
+import { completeTaskFromMeinTag, completeDealActionFromMeinTag, getYesterdayReview, getUnseenEvents, updateLastLogin } from "./actions";
+import type { TodayData, TodayItem, TodayItemType, CalendarSlot, ExceptionData, NextMeetingPrep, YesterdayReview, UnseenEvents } from "./actions";
 import type { Deal, PipelineStage } from "../pipeline/actions";
 import type { DailySummary } from "@/lib/ai/types";
 import { AiLoadButton } from "@/components/ai/ai-load-button";
@@ -275,6 +278,10 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                   </Link>
                 </div>
               </div>
+
+              {/* GESTERN + UNSEEN EVENTS */}
+              <YesterdayPanel />
+              <UnseenEventsPanel />
 
               {/* KI-TAGES-SUMMARY */}
               <KIDailyPanel data={data} calendarSlots={calendarSlots} exceptions={exceptions} />
@@ -629,6 +636,248 @@ function QuickActionButton({ icon: Icon, label, color }: { icon: typeof ListTodo
   );
 }
 
+// ── Yesterday Review Panel ────────────────────────────────
+
+const yesterdayTypeConfig: Record<string, { icon: typeof ListTodo; label: string }> = {
+  task: { icon: CheckCircle2, label: "Aufgabe" },
+  meeting: { icon: Users, label: "Meeting" },
+  email: { icon: Mail, label: "E-Mail" },
+};
+
+function YesterdayPanel() {
+  const [data, setData] = useState<YesterdayReview | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const handleLoad = async () => {
+    if (data) {
+      setExpanded(!expanded);
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await getYesterdayReview();
+      setData(result);
+      setExpanded(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalCompleted = data?.completed.length ?? 0;
+  const totalMissed = data?.missed.length ?? 0;
+
+  return (
+    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
+      <button
+        onClick={handleLoad}
+        className="w-full px-6 py-4 flex items-center gap-3 hover:bg-slate-50/50 transition-colors"
+      >
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center">
+          <History size={16} className="text-white" strokeWidth={2.5} />
+        </div>
+        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+          Gestern
+        </h3>
+        {data && (
+          <div className="flex items-center gap-2 ml-2">
+            <span className="text-xs font-bold text-emerald-600 bg-emerald-100 rounded-full px-2 py-0.5">
+              {totalCompleted} erledigt
+            </span>
+            {totalMissed > 0 && (
+              <span className="text-xs font-bold text-red-600 bg-red-100 rounded-full px-2 py-0.5">
+                {totalMissed} verpasst
+              </span>
+            )}
+          </div>
+        )}
+        <span className="ml-auto">
+          {loading ? (
+            <Loader2 size={16} className="text-slate-400 animate-spin" />
+          ) : expanded ? (
+            <ChevronUp size={16} className="text-slate-400" />
+          ) : (
+            <ChevronDown size={16} className="text-slate-400" />
+          )}
+        </span>
+      </button>
+
+      {expanded && data && (
+        <div className="px-6 pb-5 space-y-3">
+          {totalCompleted === 0 && totalMissed === 0 ? (
+            <p className="text-sm text-slate-400 py-2">Nichts Neues von gestern.</p>
+          ) : (
+            <>
+              {data.completed.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide mb-1.5">Erledigt</p>
+                  <div className="space-y-1">
+                    {data.completed.map((item) => {
+                      const cfg = yesterdayTypeConfig[item.type] || yesterdayTypeConfig.task;
+                      const Icon = cfg.icon;
+                      return (
+                        <div key={item.id} className="flex items-center gap-2 text-sm text-slate-600">
+                          <Icon size={13} className="text-emerald-500 shrink-0" />
+                          <span className="truncate">{item.title}</span>
+                          {item.contactName && (
+                            <span className="text-[10px] text-slate-400 shrink-0">({item.contactName})</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {data.missed.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold text-red-600 uppercase tracking-wide mb-1.5">Nicht erledigt</p>
+                  <div className="space-y-1">
+                    {data.missed.map((item) => (
+                      <div key={item.id} className="flex items-center gap-2 text-sm text-red-600">
+                        <AlertTriangle size={13} className="text-red-400 shrink-0" />
+                        <span className="truncate">{item.title}</span>
+                        {item.contactName && (
+                          <span className="text-[10px] text-red-400 shrink-0">({item.contactName})</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Unseen Events Panel ────────────────────────────────
+
+function UnseenEventsPanel() {
+  const [data, setData] = useState<UnseenEvents | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const handleLoad = async () => {
+    if (data) {
+      setExpanded(!expanded);
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await getUnseenEvents();
+      setData(result);
+      setExpanded(true);
+      // Update last_login_at after viewing events
+      await updateLastLogin();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalEvents = data
+    ? data.newDeals.length + data.stageChanges.length + data.otherChanges.length
+    : 0;
+
+  return (
+    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
+      <button
+        onClick={handleLoad}
+        className="w-full px-6 py-4 flex items-center gap-3 hover:bg-slate-50/50 transition-colors"
+      >
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
+          <Eye size={16} className="text-white" strokeWidth={2.5} />
+        </div>
+        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+          Seit letztem Login
+        </h3>
+        {data && (
+          <span className={cn(
+            "text-xs font-bold rounded-full px-2 py-0.5",
+            totalEvents > 0 ? "text-amber-600 bg-amber-100" : "text-slate-400 bg-slate-100"
+          )}>
+            {totalEvents > 0 ? `${totalEvents} Ereignis${totalEvents !== 1 ? "se" : ""}` : "Nichts Neues"}
+          </span>
+        )}
+        {data && (
+          <span className="text-[10px] text-slate-400 ml-1">{data.cutoffLabel}</span>
+        )}
+        <span className="ml-auto">
+          {loading ? (
+            <Loader2 size={16} className="text-slate-400 animate-spin" />
+          ) : expanded ? (
+            <ChevronUp size={16} className="text-slate-400" />
+          ) : (
+            <ChevronDown size={16} className="text-slate-400" />
+          )}
+        </span>
+      </button>
+
+      {expanded && data && (
+        <div className="px-6 pb-5 space-y-3">
+          {totalEvents === 0 ? (
+            <p className="text-sm text-slate-400 py-2">Nichts Neues {data.cutoffLabel}.</p>
+          ) : (
+            <>
+              {data.newDeals.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide mb-1.5">Neue Deals</p>
+                  <div className="space-y-1">
+                    {data.newDeals.map((evt) => (
+                      <div key={evt.id} className="flex items-center gap-2 text-sm text-slate-600">
+                        <Kanban size={13} className="text-emerald-500 shrink-0" />
+                        <span className="truncate">{evt.context || `Deal ${evt.entityId.slice(0, 8)}`}</span>
+                        <span className="text-[10px] text-slate-400 shrink-0">
+                          {new Date(evt.createdAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {data.stageChanges.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wide mb-1.5">Stage-Wechsel</p>
+                  <div className="space-y-1">
+                    {data.stageChanges.map((evt) => (
+                      <div key={evt.id} className="flex items-center gap-2 text-sm text-slate-600">
+                        <ArrowRightLeft size={13} className="text-blue-500 shrink-0" />
+                        <span className="truncate">{evt.context || `${evt.entityType} verschoben`}</span>
+                        <span className="text-[10px] text-slate-400 shrink-0">
+                          {new Date(evt.createdAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {data.otherChanges.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Weitere Aenderungen</p>
+                  <div className="space-y-1">
+                    {data.otherChanges.slice(0, 5).map((evt) => (
+                      <div key={evt.id} className="flex items-center gap-2 text-sm text-slate-500">
+                        <StickyNote size={13} className="text-slate-400 shrink-0" />
+                        <span className="truncate">{evt.context || `${evt.entityType}: ${evt.action}`}</span>
+                      </div>
+                    ))}
+                    {data.otherChanges.length > 5 && (
+                      <p className="text-[10px] text-slate-400">
+                        + {data.otherChanges.length - 5} weitere
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── KI Daily Summary Panel ────────────────────────────────
 
 function KIDailyPanel({ data, calendarSlots, exceptions }: { data: TodayData; calendarSlots: CalendarSlot[]; exceptions: ExceptionData }) {
@@ -642,7 +891,13 @@ function KIDailyPanel({ data, calendarSlots, exceptions }: { data: TodayData; ca
     setLoading(true);
     setError(null);
 
-    // Assemble real context from existing data
+    // Load yesterday data + unseen events for enriched KI context
+    const [yesterdayReview, unseenEvts] = await Promise.all([
+      getYesterdayReview(),
+      getUnseenEvents(),
+    ]);
+
+    // Assemble real context from existing data + yesterday + events
     const allItems = [...data.overdue, ...data.today, ...data.upcoming];
     const context = {
       todaysTasks: allItems.map((item) => ({
@@ -674,6 +929,17 @@ function KIDailyPanel({ data, calendarSlots, exceptions }: { data: TodayData; ca
           dueDate: d.nextActionDate,
           type: "deal_action" as const,
         })),
+      ],
+      yesterdayCompleted: yesterdayReview.completed.map((item) => ({
+        title: item.title,
+        type: item.type,
+      })),
+      yesterdayMissed: yesterdayReview.missed.map((item) => ({
+        title: item.title,
+      })),
+      unseenEvents: [
+        ...unseenEvts.newDeals.map((e) => ({ description: e.context || "Neuer Deal", type: "Neuer Deal" })),
+        ...unseenEvts.stageChanges.map((e) => ({ description: e.context || "Stage-Wechsel", type: "Stage-Wechsel" })),
       ],
     };
 

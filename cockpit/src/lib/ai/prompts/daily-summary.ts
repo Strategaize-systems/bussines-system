@@ -22,11 +22,11 @@ Das JSON muss exakt dieses Schema haben:
 }
 
 Regeln:
-- greeting: Kurze, freundliche Begruessung mit Bezug zum Tagesinhalt (1-2 Saetze)
-- priorities: Die wichtigsten Aufgaben fuer heute, nach Dringlichkeit sortiert (3-5 Punkte)
+- greeting: Kurze, freundliche Begruessung mit Bezug zum Tagesinhalt UND zum Vortag (1-2 Saetze). Wenn gestern viel erledigt wurde, erwaehne das positiv. Wenn Aufgaben verpasst wurden, erwaehne das konstruktiv.
+- priorities: Die wichtigsten Aufgaben fuer heute, nach Dringlichkeit sortiert (3-5 Punkte). Beruecksichtige gestern verpasste Aufgaben mit hoeherer Prioritaet.
 - meetingPrep: Konkrete Vorbereitungshinweise fuer anstehende Meetings (pro Meeting 1 Punkt)
-- warnings: Warnungen zu stagnierten Deals, ueberfaelligen Items, Risiken (0-5 Punkte)
-- suggestedFocus: Ein konkreter Vorschlag, worauf heute der Hauptfokus liegen sollte (1 Satz)
+- warnings: Warnungen zu stagnierten Deals, ueberfaelligen Items, Risiken, UND ungesehene Ereignisse die Aufmerksamkeit erfordern (0-5 Punkte)
+- suggestedFocus: Ein konkreter Vorschlag, worauf heute der Hauptfokus liegen sollte (1 Satz). Beziehe den Vortag ein — z.B. wenn gestern wichtige Items verpasst wurden, koennten die heute Prioritaet haben.
 
 Falls keine Meetings anstehen, setze meetingPrep auf ein leeres Array [].
 Falls keine Warnungen noetig sind, setze warnings auf ein leeres Array [].
@@ -104,9 +104,35 @@ export function buildDailySummaryPrompt(context: DailySummaryContext): string {
     }
   }
 
+  // Yesterday's review
+  if (context.yesterdayCompleted && context.yesterdayCompleted.length > 0) {
+    parts.push("\n=== GESTERN ERLEDIGT ===");
+    for (const item of context.yesterdayCompleted) {
+      parts.push(`- [${item.type}] ${item.title}`);
+    }
+  }
+
+  if (context.yesterdayMissed && context.yesterdayMissed.length > 0) {
+    parts.push("\n=== GESTERN NICHT ERLEDIGT ===");
+    for (const item of context.yesterdayMissed) {
+      parts.push(`- ${item.title}`);
+    }
+  } else if (context.yesterdayCompleted && context.yesterdayCompleted.length > 0) {
+    parts.push("\n=== GESTERN NICHT ERLEDIGT ===");
+    parts.push("Alles erledigt — gute Arbeit!");
+  }
+
+  // Unseen events
+  if (context.unseenEvents && context.unseenEvents.length > 0) {
+    parts.push("\n=== UNGESEHENE EREIGNISSE ===");
+    for (const evt of context.unseenEvents) {
+      parts.push(`- [${evt.type}] ${evt.description}`);
+    }
+  }
+
   parts.push("\n=== AUFGABE ===");
   parts.push(
-    "Erstelle eine strukturierte Tageszusammenfassung basierend auf den obigen Daten. Antworte ausschliesslich mit dem JSON-Objekt."
+    "Erstelle eine strukturierte Tageszusammenfassung basierend auf den obigen Daten. Beziehe den Vortag und ungesehene Ereignisse ein. Antworte ausschliesslich mit dem JSON-Objekt."
   );
 
   return parts.join("\n");
