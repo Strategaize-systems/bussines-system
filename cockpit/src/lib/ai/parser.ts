@@ -105,7 +105,7 @@ export function parseLLMResponse<T>(
 // Built-in validators for known response types
 // =============================================================
 
-import type { DealBriefing, DailySummary, PipelineSearchFilter, EmailImproveResult } from "./types";
+import type { DealBriefing, DailySummary, PipelineSearchFilter, EmailImproveResult, EventClassifyResult } from "./types";
 
 /** Validates a DealBriefing response */
 export function validateDealBriefing(data: unknown): DealBriefing | null {
@@ -167,6 +167,25 @@ export function validatePipelineSearchFilter(data: unknown): PipelineSearchFilte
     hasNextAction: typeof d.hasNextAction === "boolean" ? d.hasNextAction : null,
     isStagnant: typeof d.isStagnant === "boolean" ? d.isStagnant : null,
   };
+}
+
+/** Validates an EventClassifyResult response */
+export function validateEventClassifyResult(data: unknown): EventClassifyResult | null {
+  if (typeof data !== "object" || data === null) return null;
+  const d = data as Record<string, unknown>;
+  if (!Array.isArray(d.items)) return null;
+
+  const validActions = ["email", "anruf", "task", "meeting", null];
+  const items = d.items
+    .filter((item: any) => item && typeof item.id === "string" && typeof item.classification === "string")
+    .map((item: any) => ({
+      id: String(item.id),
+      classification: item.classification === "aktion" ? "aktion" as const : "informativ" as const,
+      suggestedAction: validActions.includes(item.suggestedAction) ? item.suggestedAction : null,
+      reason: typeof item.reason === "string" ? item.reason : "",
+    }));
+
+  return { items };
 }
 
 /** Validates an EmailImproveResult response */

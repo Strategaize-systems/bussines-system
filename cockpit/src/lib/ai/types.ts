@@ -162,14 +162,42 @@ export interface EmailImproveContext {
 }
 
 // -------------------------------------------------------------
+// Event Classification
+// -------------------------------------------------------------
+
+export interface EventClassifyItem {
+  id: string;
+  type: string;
+  title: string;
+  detail?: string;
+  dealContext?: string;
+  contactContext?: string;
+}
+
+export interface EventClassifyContext {
+  items: EventClassifyItem[];
+}
+
+export interface ClassifiedEvent {
+  id: string;
+  classification: "informativ" | "aktion";
+  suggestedAction: "email" | "anruf" | "task" | "meeting" | null;
+  reason: string;
+}
+
+export interface EventClassifyResult {
+  items: ClassifiedEvent[];
+}
+
+// -------------------------------------------------------------
 // API Request / Response
 // -------------------------------------------------------------
 
-export type AIQueryType = "deal-briefing" | "daily-summary" | "pipeline-search" | "email-improve";
+export type AIQueryType = "deal-briefing" | "daily-summary" | "pipeline-search" | "email-improve" | "event-classify";
 
 export interface AIQueryRequest {
   type: AIQueryType;
-  context: DealBriefingContext | DailySummaryContext | PipelineSearchContext | EmailImproveContext;
+  context: DealBriefingContext | DailySummaryContext | PipelineSearchContext | EmailImproveContext | EventClassifyContext;
 }
 
 export interface AIQueryResponse<T = DealBriefing | DailySummary> {

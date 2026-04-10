@@ -37,16 +37,14 @@ import {
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { DealDetailSheet } from "../pipeline/deal-detail-sheet";
-import { completeTaskFromMeinTag, completeDealActionFromMeinTag, getYesterdayReview, getUnseenEvents, updateLastLogin } from "./actions";
-import type { TodayData, TodayItem, TodayItemType, CalendarSlot, ExceptionData, NextMeetingPrep, YesterdayReview, UnseenEvents } from "./actions";
+import { completeTaskFromMeinTag, completeDealActionFromMeinTag } from "./actions";
+import type { TodayData, TodayItem, TodayItemType, CalendarSlot, ExceptionData, NextMeetingPrep } from "./actions";
 import type { Deal, PipelineStage } from "../pipeline/actions";
-import type { DailySummary } from "@/lib/ai/types";
-import { AiLoadButton } from "@/components/ai/ai-load-button";
-import { AiResultPanel } from "@/components/ai/ai-result-panel";
 import { TaskSheet } from "../aufgaben/task-sheet";
 import { EmailSheet } from "../emails/email-sheet";
 import { MeetingSheet } from "@/components/meetings/meeting-sheet";
 import { EventSheet } from "@/components/calendar/event-sheet";
+import { KIWorkspace } from "./ki-workspace";
 
 interface MeinTagClientProps {
   data: TodayData;
@@ -95,7 +93,6 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
   const completedItems = 0;
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [showQuickActions, setShowQuickActions] = useState(true);
-  const [activeTab, setActiveTab] = useState<"alle" | "heute" | "überfällig" | "erledigt">("alle");
 
   // Calculate available time from real calendar events
   const scheduledMinutes = calendarSlots.reduce((sum, s) => sum + s.durationMinutes, 0);
@@ -107,10 +104,23 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
   const exceptionCount = exceptions.stagnantDeals.length + exceptions.overdueTasks.length + exceptions.overdueDeals.length;
 
   const allItems = [...data.overdue, ...data.today, ...data.upcoming];
-  const filteredItems = activeTab === "alle" ? allItems
-    : activeTab === "überfällig" ? data.overdue
-    : activeTab === "heute" ? data.today
-    : [];
+
+  // Smart sort: overdue first (oldest), then by priority (high>medium>low), then by date
+  const priorityScore: Record<string, number> = { high: 0, medium: 1, low: 2 };
+  const smartSorted = [...allItems].sort((a, b) => {
+    if (a.isOverdue !== b.isOverdue) return a.isOverdue ? -1 : 1;
+    const pa = priorityScore[a.priority ?? "medium"] ?? 1;
+    const pb = priorityScore[b.priority ?? "medium"] ?? 1;
+    if (pa !== pb) return pa - pb;
+    return (a.dueDate ?? "").localeCompare(b.dueDate ?? "");
+  });
+
+  // Top-5 for compact display, rest accessible via "Alle anzeigen"
+  const TOP_LIMIT = 5;
+  const topItems = smartSorted.slice(0, TOP_LIMIT);
+  const hasMore = smartSorted.length > TOP_LIMIT;
+  const [showAll, setShowAll] = useState(false);
+  const displayItems = showAll ? smartSorted : topItems;
 
   const selectedDeal: Deal | null = selectedDealId
     ? {
@@ -243,55 +253,55 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                   </Link>
                 </div>
 
-                {/* Tabs */}
-                <div className="px-6 py-3 border-b border-slate-100 flex items-center gap-2">
-                  {(["alle", "heute", "überfällig", "erledigt"] as const).map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
-                        activeTab === tab
-                          ? "bg-[#4454b8] text-white"
-                          : "text-slate-600 hover:bg-slate-100"
-                      )}
-                    >
-                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Task List */}
+                {/* Task List — Top 5 smart sorted */}
                 <div className="divide-y divide-slate-50">
-                  {filteredItems.length > 0 ? (
-                    filteredItems.map((item) => (
+                  {displayItems.length > 0 ? (
+                    displayItems.map((item) => (
                       <TaskItem key={item.id} item={item} onDealClick={setSelectedDealId} />
                     ))
                   ) : (
                     <div className="p-8 text-center">
                       <CheckCircle2 size={32} className="mx-auto text-emerald-400 mb-2" />
-                      <p className="text-sm text-slate-500">Keine Aufgaben in dieser Ansicht</p>
+                      <p className="text-sm text-slate-500">Keine offenen Aufgaben</p>
                     </div>
                   )}
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-3 border-t border-slate-100">
+                <div className="px-6 py-3 border-t border-slate-100 flex items-center justify-between">
+                  {hasMore && !showAll ? (
+                    <button
+                      onClick={() => setShowAll(true)}
+                      className="text-sm font-semibold text-[#4454b8] hover:text-[#120774] transition-colors"
+                    >
+                      Alle {smartSorted.length} Aufgaben anzeigen
+                    </button>
+                  ) : hasMore && showAll ? (
+                    <button
+                      onClick={() => setShowAll(false)}
+                      className="text-sm font-semibold text-[#4454b8] hover:text-[#120774] transition-colors"
+                    >
+                      Nur Top-5 anzeigen
+                    </button>
+                  ) : (
+                    <Link
+                      href="/aufgaben"
+                      className="text-sm font-semibold text-[#4454b8] hover:text-[#120774] flex items-center gap-1 transition-colors"
+                    >
+                      Alle Aufgaben <ChevronRight size={14} />
+                    </Link>
+                  )}
                   <Link
                     href="/aufgaben"
-                    className="text-sm font-semibold text-[#4454b8] hover:text-[#120774] flex items-center gap-1 transition-colors"
+                    className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
                   >
-                    Aufgabe hinzufügen <ChevronRight size={14} />
+                    Verwaltung
                   </Link>
                 </div>
               </div>
 
-              {/* GESTERN + UNSEEN EVENTS */}
-              <YesterdayPanel />
-              <UnseenEventsPanel />
-
-              {/* KI-TAGES-SUMMARY */}
-              <KIDailyPanel data={data} calendarSlots={calendarSlots} exceptions={exceptions} />
+              {/* KI-WORKSPACE */}
+              <KIWorkspace data={data} calendarSlots={calendarSlots} exceptions={exceptions} contacts={contacts} companies={companies} deals={deals} />
             </div>
 
             {/* RIGHT COLUMN (4 cols): Kalender + Meeting-Prep + Exceptions + Zeit */}
@@ -643,451 +653,6 @@ function QuickActionButton({ icon: Icon, label, color }: { icon: typeof ListTodo
   );
 }
 
-// ── Yesterday Review Panel ────────────────────────────────
+// KIWorkspace is now in ./ki-workspace.tsx
+// Old YesterdayPanel, UnseenEventsPanel, and KIDailyPanel code removed.
 
-const yesterdayTypeConfig: Record<string, { icon: typeof ListTodo; label: string }> = {
-  task: { icon: CheckCircle2, label: "Aufgabe" },
-  meeting: { icon: Users, label: "Meeting" },
-  email: { icon: Mail, label: "E-Mail" },
-};
-
-function YesterdayPanel() {
-  const [data, setData] = useState<YesterdayReview | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-
-  const handleLoad = async () => {
-    if (data) {
-      setExpanded(!expanded);
-      return;
-    }
-    setLoading(true);
-    try {
-      const result = await getYesterdayReview();
-      setData(result);
-      setExpanded(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const totalCompleted = data?.completed.length ?? 0;
-  const totalMissed = data?.missed.length ?? 0;
-
-  return (
-    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
-      <button
-        onClick={handleLoad}
-        className="w-full px-6 py-4 flex items-center gap-3 hover:bg-slate-50/50 transition-colors"
-      >
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center">
-          <History size={16} className="text-white" strokeWidth={2.5} />
-        </div>
-        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
-          Gestern
-        </h3>
-        {data && (
-          <div className="flex items-center gap-2 ml-2">
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-100 rounded-full px-2 py-0.5">
-              {totalCompleted} erledigt
-            </span>
-            {totalMissed > 0 && (
-              <span className="text-xs font-bold text-red-600 bg-red-100 rounded-full px-2 py-0.5">
-                {totalMissed} verpasst
-              </span>
-            )}
-          </div>
-        )}
-        <span className="ml-auto">
-          {loading ? (
-            <Loader2 size={16} className="text-slate-400 animate-spin" />
-          ) : expanded ? (
-            <ChevronUp size={16} className="text-slate-400" />
-          ) : (
-            <ChevronDown size={16} className="text-slate-400" />
-          )}
-        </span>
-      </button>
-
-      {expanded && data && (
-        <div className="px-6 pb-5 space-y-3">
-          {totalCompleted === 0 && totalMissed === 0 ? (
-            <p className="text-sm text-slate-400 py-2">Nichts Neues von gestern.</p>
-          ) : (
-            <>
-              {data.completed.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide mb-1.5">Erledigt</p>
-                  <div className="space-y-1">
-                    {data.completed.map((item) => {
-                      const cfg = yesterdayTypeConfig[item.type] || yesterdayTypeConfig.task;
-                      const Icon = cfg.icon;
-                      return (
-                        <div key={item.id} className="flex items-center gap-2 text-sm text-slate-600">
-                          <Icon size={13} className="text-emerald-500 shrink-0" />
-                          <span className="truncate">{item.title}</span>
-                          {item.contactName && (
-                            <span className="text-[10px] text-slate-400 shrink-0">({item.contactName})</span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              {data.missed.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-bold text-red-600 uppercase tracking-wide mb-1.5">Nicht erledigt</p>
-                  <div className="space-y-1">
-                    {data.missed.map((item) => (
-                      <div key={item.id} className="flex items-center gap-2 text-sm text-red-600">
-                        <AlertTriangle size={13} className="text-red-400 shrink-0" />
-                        <span className="truncate">{item.title}</span>
-                        {item.contactName && (
-                          <span className="text-[10px] text-red-400 shrink-0">({item.contactName})</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Unseen Events Panel ────────────────────────────────
-
-function UnseenEventsPanel() {
-  const [data, setData] = useState<UnseenEvents | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-
-  const handleLoad = async () => {
-    if (data) {
-      setExpanded(!expanded);
-      return;
-    }
-    setLoading(true);
-    try {
-      const result = await getUnseenEvents();
-      setData(result);
-      setExpanded(true);
-      // Update last_login_at after viewing events
-      await updateLastLogin();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const totalEvents = data
-    ? data.newDeals.length + data.stageChanges.length + data.otherChanges.length
-    : 0;
-
-  return (
-    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
-      <button
-        onClick={handleLoad}
-        className="w-full px-6 py-4 flex items-center gap-3 hover:bg-slate-50/50 transition-colors"
-      >
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
-          <Eye size={16} className="text-white" strokeWidth={2.5} />
-        </div>
-        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
-          Seit letztem Login
-        </h3>
-        {data && (
-          <span className={cn(
-            "text-xs font-bold rounded-full px-2 py-0.5",
-            totalEvents > 0 ? "text-amber-600 bg-amber-100" : "text-slate-400 bg-slate-100"
-          )}>
-            {totalEvents > 0 ? `${totalEvents} Ereignis${totalEvents !== 1 ? "se" : ""}` : "Nichts Neues"}
-          </span>
-        )}
-        {data && (
-          <span className="text-[10px] text-slate-400 ml-1">{data.cutoffLabel}</span>
-        )}
-        <span className="ml-auto">
-          {loading ? (
-            <Loader2 size={16} className="text-slate-400 animate-spin" />
-          ) : expanded ? (
-            <ChevronUp size={16} className="text-slate-400" />
-          ) : (
-            <ChevronDown size={16} className="text-slate-400" />
-          )}
-        </span>
-      </button>
-
-      {expanded && data && (
-        <div className="px-6 pb-5 space-y-3">
-          {totalEvents === 0 ? (
-            <p className="text-sm text-slate-400 py-2">Nichts Neues {data.cutoffLabel}.</p>
-          ) : (
-            <>
-              {data.newDeals.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide mb-1.5">Neue Deals</p>
-                  <div className="space-y-1">
-                    {data.newDeals.map((evt) => (
-                      <div key={evt.id} className="flex items-center gap-2 text-sm text-slate-600">
-                        <Kanban size={13} className="text-emerald-500 shrink-0" />
-                        <span className="truncate">{evt.context || `Deal ${evt.entityId.slice(0, 8)}`}</span>
-                        <span className="text-[10px] text-slate-400 shrink-0">
-                          {new Date(evt.createdAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {data.stageChanges.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wide mb-1.5">Stage-Wechsel</p>
-                  <div className="space-y-1">
-                    {data.stageChanges.map((evt) => (
-                      <div key={evt.id} className="flex items-center gap-2 text-sm text-slate-600">
-                        <ArrowRightLeft size={13} className="text-blue-500 shrink-0" />
-                        <span className="truncate">{evt.context || `${evt.entityType} verschoben`}</span>
-                        <span className="text-[10px] text-slate-400 shrink-0">
-                          {new Date(evt.createdAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {data.otherChanges.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Weitere Aenderungen</p>
-                  <div className="space-y-1">
-                    {data.otherChanges.slice(0, 5).map((evt) => (
-                      <div key={evt.id} className="flex items-center gap-2 text-sm text-slate-500">
-                        <StickyNote size={13} className="text-slate-400 shrink-0" />
-                        <span className="truncate">{evt.context || `${evt.entityType}: ${evt.action}`}</span>
-                      </div>
-                    ))}
-                    {data.otherChanges.length > 5 && (
-                      <p className="text-[10px] text-slate-400">
-                        + {data.otherChanges.length - 5} weitere
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── KI Daily Summary Panel ────────────────────────────────
-
-function KIDailyPanel({ data, calendarSlots, exceptions }: { data: TodayData; calendarSlots: CalendarSlot[]; exceptions: ExceptionData }) {
-  const [summary, setSummary] = useState<DailySummary | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const loaded = summary !== null;
-
-  const loadSummary = async () => {
-    setLoading(true);
-    setError(null);
-
-    // Load yesterday data + unseen events for enriched KI context
-    const [yesterdayReview, unseenEvts] = await Promise.all([
-      getYesterdayReview(),
-      getUnseenEvents(),
-    ]);
-
-    // Assemble real context from existing data + yesterday + events
-    const allItems = [...data.overdue, ...data.today, ...data.upcoming];
-    const context = {
-      todaysTasks: allItems.map((item) => ({
-        title: item.title,
-        priority: item.priority ?? undefined,
-        dueDate: item.dueDate ?? undefined,
-      })),
-      upcomingMeetings: calendarSlots
-        .filter((s) => s.type === "Meeting" || s.type === "Call")
-        .map((s) => ({
-          title: s.title,
-          time: s.time,
-          attendees: s.sub ? [s.sub] : undefined,
-        })),
-      stagnantDeals: exceptions.stagnantDeals.map((d) => ({
-        name: d.title,
-        daysSinceLastActivity: d.daysSinceUpdate,
-        value: d.value ?? undefined,
-        stage: d.stage ?? undefined,
-      })),
-      overdueItems: [
-        ...exceptions.overdueTasks.map((t) => ({
-          title: t.title,
-          dueDate: t.dueDate,
-          type: "task" as const,
-        })),
-        ...exceptions.overdueDeals.map((d) => ({
-          title: `${d.nextAction} (${d.title})`,
-          dueDate: d.nextActionDate,
-          type: "deal_action" as const,
-        })),
-      ],
-      yesterdayCompleted: yesterdayReview.completed.map((item) => ({
-        title: item.title,
-        type: item.type,
-      })),
-      yesterdayMissed: yesterdayReview.missed.map((item) => ({
-        title: item.title,
-      })),
-      unseenEvents: [
-        ...unseenEvts.newDeals.map((e) => ({ description: e.context || "Neuer Deal", type: "Neuer Deal" })),
-        ...unseenEvts.stageChanges.map((e) => ({ description: e.context || "Stage-Wechsel", type: "Stage-Wechsel" })),
-      ],
-    };
-
-    try {
-      const res = await fetch("/api/ai/query", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "daily-summary", context }),
-      });
-
-      if (res.status === 429) {
-        setError("Rate Limit erreicht. Bitte in einer Minute erneut versuchen.");
-        return;
-      }
-
-      if (!res.ok) {
-        setError("KI-Service nicht verfügbar.");
-        return;
-      }
-
-      const data = await res.json();
-      if (data.success && data.data) {
-        setSummary(data.data);
-      } else {
-        setError(data.error || "Unbekannter Fehler.");
-      }
-    } catch {
-      setError("Verbindungsfehler.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
-      <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#120774] to-[#4454b8] flex items-center justify-center">
-          <Sparkles size={16} className="text-white" strokeWidth={2.5} />
-        </div>
-        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
-          KI-Tageseinschätzung
-        </h3>
-        {!loaded && !loading && (
-          <AiLoadButton
-            onClick={loadSummary}
-            loading={false}
-            loaded={false}
-            label="Tagesanalyse starten"
-            className="ml-auto"
-          />
-        )}
-        {loaded && (
-          <AiLoadButton
-            onClick={loadSummary}
-            loading={loading}
-            loaded={true}
-            className="ml-auto"
-          />
-        )}
-      </div>
-
-      <div className="p-6">
-        <AiResultPanel
-          loading={loading}
-          error={error}
-          onRetry={loadSummary}
-          loadingMessage="Analysiere deinen Tag..."
-        >
-          {!loaded && (
-            <div className="text-center py-6">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#120774]/10 to-[#4454b8]/10 flex items-center justify-center mx-auto mb-4">
-                <Sparkles size={28} className="text-[#4454b8]" strokeWidth={1.5} />
-              </div>
-              <p className="text-sm text-slate-500 leading-relaxed">
-                Lass die KI deinen Tag analysieren — Prioritäten, Meeting-Vorbereitung und Warnungen auf einen Blick.
-              </p>
-            </div>
-          )}
-          {summary && (
-          <div className="space-y-4">
-            {/* Greeting */}
-            <p className="text-sm text-slate-700 leading-relaxed">{summary.greeting}</p>
-
-            {/* Priorities */}
-            {summary.priorities.length > 0 && (
-              <div>
-                <p className="text-[10px] font-bold text-[#4454b8] uppercase tracking-wide mb-2">Prioritäten</p>
-                <ul className="space-y-1.5">
-                  {summary.priorities.map((p, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
-                      <span className="w-5 h-5 rounded-full bg-[#4454b8] text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
-                        {i + 1}
-                      </span>
-                      {p}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Meeting Prep */}
-            {summary.meetingPrep.length > 0 && (
-              <div>
-                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wide mb-2">Meeting-Vorbereitung</p>
-                <ul className="space-y-1">
-                  {summary.meetingPrep.map((m, i) => (
-                    <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
-                      <Calendar size={12} className="text-blue-400 shrink-0 mt-1" />
-                      {m}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Warnings */}
-            {summary.warnings.length > 0 && (
-              <div>
-                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wide mb-2">Warnungen</p>
-                <ul className="space-y-1">
-                  {summary.warnings.map((w, i) => (
-                    <li key={i} className="text-sm text-amber-700 flex items-start gap-2">
-                      <AlertTriangle size={12} className="text-amber-500 shrink-0 mt-1" />
-                      {w}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Focus */}
-            {summary.suggestedFocus && (
-              <div className="bg-gradient-to-r from-[#120774]/5 to-[#4454b8]/5 rounded-lg p-3 border border-[#4454b8]/10">
-                <p className="text-[10px] font-bold text-[#4454b8] uppercase tracking-wide mb-1">Empfohlener Fokus</p>
-                <p className="text-sm font-medium text-slate-800">{summary.suggestedFocus}</p>
-              </div>
-            )}
-          </div>
-        )}
-        </AiResultPanel>
-      </div>
-    </div>
-  );
-}

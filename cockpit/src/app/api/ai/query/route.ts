@@ -13,7 +13,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { queryLLM } from "@/lib/ai/bedrock-client";
-import { parseLLMResponse, validateDealBriefing, validateDailySummary, validatePipelineSearchFilter, validateEmailImproveResult } from "@/lib/ai/parser";
+import { parseLLMResponse, validateDealBriefing, validateDailySummary, validatePipelineSearchFilter, validateEmailImproveResult, validateEventClassifyResult } from "@/lib/ai/parser";
 import { checkRateLimit } from "@/lib/ai/rate-limiter";
 import {
   DEAL_BRIEFING_SYSTEM_PROMPT,
@@ -31,6 +31,10 @@ import {
   EMAIL_IMPROVE_SYSTEM_PROMPT,
   buildEmailImprovePrompt,
 } from "@/lib/ai/prompts/email-improve";
+import {
+  EVENT_CLASSIFY_SYSTEM_PROMPT,
+  buildEventClassifyPrompt,
+} from "@/lib/ai/prompts/event-classify";
 import type {
   AIQueryRequest,
   AIQueryResponse,
@@ -38,10 +42,12 @@ import type {
   DailySummaryContext,
   PipelineSearchContext,
   EmailImproveContext,
+  EventClassifyContext,
   DealBriefing,
   DailySummary,
   PipelineSearchFilter,
   EmailImproveResult,
+  EventClassifyResult,
 } from "@/lib/ai/types";
 
 export async function POST(request: NextRequest) {
@@ -176,12 +182,29 @@ export async function POST(request: NextRequest) {
       break;
     }
 
+    case "event-classify": {
+      const ctx = body.context as EventClassifyContext;
+      if (!ctx.items || ctx.items.length === 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            data: null,
+            error: "Ungueltige Anfrage: 'items' Array ist erforderlich",
+          } satisfies AIQueryResponse,
+          { status: 400 }
+        );
+      }
+      systemPrompt = EVENT_CLASSIFY_SYSTEM_PROMPT;
+      userPrompt = buildEventClassifyPrompt(ctx);
+      break;
+    }
+
     default:
       return NextResponse.json(
         {
           success: false,
           data: null,
-          error: `Unbekannter Query-Typ: '${body.type}'. Erlaubt: 'deal-briefing', 'daily-summary', 'pipeline-search', 'email-improve'`,
+          error: `Unbekannter Query-Typ: '${body.type}'. Erlaubt: 'deal-briefing', 'daily-summary', 'pipeline-search', 'email-improve', 'event-classify'`,
         } satisfies AIQueryResponse,
         { status: 400 }
       );
@@ -335,6 +358,41 @@ export async function POST(request: NextRequest) {
           data: parsed.data,
           error: null,
         } satisfies AIQueryResponse<EmailImproveResult>,
+        {
+          status: 200,
+          headers: {
+            "X-RateLimit-Limit": String(rateLimit.limit),
+            "X-RateLimit-Remaining": String(
+              rateLimit.limit - rateLimit.currentCount
+            ),
+          },
+        }
+      );
+    }
+
+    case "event-classify": {
+      const parsed = parseLLMResponse<EventClassifyResult>(
+        llmResult.data,
+        validateEventClassifyResult
+      );
+
+      if (!parsed.success) {
+        return NextResponse.json(
+          {
+            success: false,
+            data: null,
+            error: `KI-Antwort konnte nicht verarbeitet werden: ${parsed.error}`,
+          } satisfies AIQueryResponse,
+          { status: 502 }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          data: parsed.data,
+          error: null,
+        } satisfies AIQueryResponse<EventClassifyResult>,
         {
           status: 200,
           headers: {
