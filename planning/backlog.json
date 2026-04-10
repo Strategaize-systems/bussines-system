@@ -755,7 +755,7 @@
       "title": "Zeit-Picker: Schnellauswahl statt Scroll-Raedchen (Stunde + Minute)",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3.1",
       "description": "Zeitauswahl bei Meetings/Kalender-Events verbessern: Vorschlaege fuer gaengige Zeiten (15, 30, 45, 60 Min. Intervalle), direkt klickbar. Fuer Sonderzeiten: editierbares Feld per Icon-Klick. Kein Browser-natives Scroll-Raedchen — das ist auf Desktop unpraktisch und bietet keine Schnellauswahl.",
       "createdAt": "2026-04-10"
@@ -765,7 +765,7 @@
       "title": "Meeting-Typ: Online vs. Physisch mit Location-Logik",
       "type": "improvement",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3.1",
       "description": "Meetings brauchen Typ-Auswahl: Online (Default, Location automatisch 'Home Office') oder Physisch (Adresse muss eingegeben werden). 99% der Meetings sind online — das muss der Standard sein. Freitext-Location reicht nicht.",
       "createdAt": "2026-04-10"

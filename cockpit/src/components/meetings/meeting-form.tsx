@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { TimePicker } from "@/components/ui/time-picker";
 import type { Meeting } from "@/app/(app)/meetings/actions";
 
 const selectClass = "select-premium";
@@ -20,12 +22,34 @@ interface MeetingFormProps {
   defaultCompanyId?: string;
 }
 
-function toDateTimeLocal(isoString: string | undefined | null): string {
+function parseDatePart(isoString: string | undefined | null): string {
   if (!isoString) return "";
   const d = new Date(isoString);
-  // Format: YYYY-MM-DDTHH:MM
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function parseTimePart(isoString: string | undefined | null): string {
+  if (!isoString) return "09:00";
+  const d = new Date(isoString);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function inferMeetingType(location: string | null | undefined): "online" | "physisch" {
+  if (!location) return "online";
+  const lower = location.toLowerCase();
+  if (
+    lower === "home office" ||
+    lower.includes("zoom") ||
+    lower.includes("teams") ||
+    lower.includes("google meet") ||
+    lower.includes("online")
+  ) {
+    return "online";
+  }
+  if (lower.length > 0) return "physisch";
+  return "online";
 }
 
 export function MeetingForm({
@@ -39,8 +63,35 @@ export function MeetingForm({
   defaultContactId,
   defaultCompanyId,
 }: MeetingFormProps) {
+  const [date, setDate] = useState(parseDatePart(meeting?.scheduled_at));
+  const [time, setTime] = useState(parseTimePart(meeting?.scheduled_at));
+  const [meetingType, setMeetingType] = useState<"online" | "physisch">(
+    meeting ? inferMeetingType(meeting.location) : "online"
+  );
+  const [location, setLocation] = useState(
+    meeting?.location ?? (meetingType === "online" ? "Home Office" : "")
+  );
+
+  const handleTypeChange = (newType: "online" | "physisch") => {
+    setMeetingType(newType);
+    if (newType === "online") {
+      setLocation("Home Office");
+    } else {
+      setLocation(location === "Home Office" ? "" : location);
+    }
+  };
+
+  const handleSubmit = (formData: FormData) => {
+    // Combine date + time into datetime-local format for server action
+    if (date && time) {
+      formData.set("scheduled_at", `${date}T${time}`);
+    }
+    formData.set("location", location);
+    onSubmit(formData);
+  };
+
   return (
-    <form action={onSubmit} className="space-y-4">
+    <form action={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="title">Titel *</Label>
         <Input
@@ -54,15 +105,22 @@ export function MeetingForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="scheduled_at">Termin *</Label>
+          <Label htmlFor="date">Datum *</Label>
           <Input
-            id="scheduled_at"
-            name="scheduled_at"
-            type="datetime-local"
-            defaultValue={toDateTimeLocal(meeting?.scheduled_at)}
+            id="date"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
             required
           />
         </div>
+        <div className="space-y-2">
+          <Label>Uhrzeit *</Label>
+          <TimePicker value={time} onChange={setTime} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="duration_minutes">Dauer (Min.)</Label>
           <Input
@@ -74,31 +132,54 @@ export function MeetingForm({
             defaultValue={meeting?.duration_minutes ?? 60}
           />
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="location">Ort</Label>
-          <Input
-            id="location"
-            name="location"
-            defaultValue={meeting?.location ?? ""}
-            placeholder="z.B. Zoom, Büro Frankfurt"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
+          <Label htmlFor="meeting_type">Typ</Label>
           <select
-            id="status"
-            name="status"
-            defaultValue={meeting?.status ?? "planned"}
+            id="meeting_type"
+            value={meetingType}
+            onChange={(e) => handleTypeChange(e.target.value as "online" | "physisch")}
             className={selectClass}
           >
-            <option value="planned">Geplant</option>
-            <option value="completed">Durchgeführt</option>
-            <option value="cancelled">Abgesagt</option>
+            <option value="online">Online</option>
+            <option value="physisch">Physisch</option>
           </select>
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="location">
+          Ort{meetingType === "physisch" ? " *" : ""}
+        </Label>
+        {meetingType === "online" ? (
+          <Input
+            id="location"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="z.B. Zoom, Teams"
+          />
+        ) : (
+          <Input
+            id="location"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="z.B. Büro Frankfurt, Musterstraße 1"
+            required
+          />
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="status">Status</Label>
+        <select
+          id="status"
+          name="status"
+          defaultValue={meeting?.status ?? "planned"}
+          className={selectClass}
+        >
+          <option value="planned">Geplant</option>
+          <option value="completed">Durchgeführt</option>
+          <option value="cancelled">Abgesagt</option>
+        </select>
       </div>
 
       <div className="space-y-2">

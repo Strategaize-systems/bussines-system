@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { TimePicker } from "@/components/ui/time-picker";
 import type { CalendarEvent } from "@/app/(app)/termine/actions";
 
 const selectClass = "select-premium";
@@ -17,11 +19,18 @@ interface EventFormProps {
   isPending?: boolean;
 }
 
-function toDateTimeLocal(isoString: string | undefined | null): string {
+function parseDatePart(isoString: string | undefined | null): string {
   if (!isoString) return "";
   const d = new Date(isoString);
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function parseTimePart(isoString: string | undefined | null, fallback: string): string {
+  if (!isoString) return fallback;
+  const d = new Date(isoString);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export function EventForm({
@@ -32,8 +41,32 @@ export function EventForm({
   onSubmit,
   isPending,
 }: EventFormProps) {
+  const [startDate, setStartDate] = useState(parseDatePart(event?.start_time));
+  const [startTime, setStartTime] = useState(parseTimePart(event?.start_time, "09:00"));
+  const [endDate, setEndDate] = useState(parseDatePart(event?.end_time));
+  const [endTime, setEndTime] = useState(parseTimePart(event?.end_time, "10:00"));
+
+  const handleSubmit = (formData: FormData) => {
+    // Combine date + time into datetime-local format for server action
+    if (startDate && startTime) {
+      formData.set("start_time", `${startDate}T${startTime}`);
+    }
+    if (endDate && endTime) {
+      formData.set("end_time", `${endDate}T${endTime}`);
+    }
+    onSubmit(formData);
+  };
+
+  // When start date changes, sync end date if empty or earlier
+  const handleStartDateChange = (newDate: string) => {
+    setStartDate(newDate);
+    if (!endDate || endDate < newDate) {
+      setEndDate(newDate);
+    }
+  };
+
   return (
-    <form action={onSubmit} className="space-y-4">
+    <form action={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="title">Titel *</Label>
         <Input
@@ -47,24 +80,35 @@ export function EventForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="start_time">Beginn *</Label>
+          <Label htmlFor="start_date">Datum Beginn *</Label>
           <Input
-            id="start_time"
-            name="start_time"
-            type="datetime-local"
-            defaultValue={toDateTimeLocal(event?.start_time)}
+            id="start_date"
+            type="date"
+            value={startDate}
+            onChange={(e) => handleStartDateChange(e.target.value)}
             required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="end_time">Ende *</Label>
+          <Label>Uhrzeit Beginn *</Label>
+          <TimePicker value={startTime} onChange={setStartTime} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="end_date">Datum Ende *</Label>
           <Input
-            id="end_time"
-            name="end_time"
-            type="datetime-local"
-            defaultValue={toDateTimeLocal(event?.end_time)}
+            id="end_date"
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
             required
           />
+        </div>
+        <div className="space-y-2">
+          <Label>Uhrzeit Ende *</Label>
+          <TimePicker value={endTime} onChange={setEndTime} />
         </div>
       </div>
 

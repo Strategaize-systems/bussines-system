@@ -48,7 +48,7 @@
 
 | ID | Feature | Status | Created |
 |----|---------|--------|---------|
-| FEAT-311 | Meeting/Kalender UX-Upgrade | in_progress | 2026-04-10 |
+| FEAT-311 | Meeting/Kalender UX-Upgrade | done | 2026-04-10 |
 | FEAT-312 | Schnellaktionen-Rebuild | in_progress | 2026-04-10 |
 | FEAT-313 | KI on-click + Kostenkontrolle | done | 2026-04-10 |
 | FEAT-314 | Pipeline KI-Suche + Voice | in_progress | 2026-04-10 |
