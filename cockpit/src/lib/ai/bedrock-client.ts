@@ -9,7 +9,7 @@ import {
 import type { LLMOptions, LLMResponse } from "./types";
 
 // Default configuration
-const DEFAULT_MODEL_ID = "anthropic.claude-sonnet-4-6-20250514-v1:0";
+const DEFAULT_MODEL_ID = process.env.LLM_MODEL || "eu.anthropic.claude-sonnet-4-6-20250514-v1:0";
 const DEFAULT_REGION = "eu-central-1";
 const DEFAULT_TEMPERATURE = 0.3;
 const DEFAULT_MAX_TOKENS = 2048;
