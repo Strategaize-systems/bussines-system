@@ -749,6 +749,16 @@
       "version": "V3",
       "description": "DEC-021: activities Tabelle bekommt source_type + source_id fuer Rueckverlinkung zu Meetings, Calls etc.",
       "createdAt": "2026-04-09"
+    },
+    {
+      "id": "BL-317",
+      "title": "Zeit-Picker: Schnellauswahl statt Scroll-Raedchen",
+      "type": "fix",
+      "priority": "high",
+      "status": "open",
+      "version": "V3.1",
+      "description": "Zeitauswahl bei Meetings/Kalender-Events verbessern: Vorschlaege fuer gaengige Zeiten (15, 30, 45, 60 Min. Intervalle), direkt klickbar. Fuer Sonderzeiten: editierbares Feld per Icon-Klick. Kein Browser-natives Scroll-Raedchen — das ist auf Desktop unpraktisch und bietet keine Schnellauswahl.",
+      "createdAt": "2026-04-10"
     }
   ]
 }
