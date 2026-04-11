@@ -4,10 +4,11 @@ import { useState, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { PipelineTable } from "./pipeline-table";
 import { DealSheet } from "./deal-sheet";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import type { Deal, Pipeline, PipelineStage } from "./actions";
-import { Filter, TrendingUp, ClipboardList, Target, Percent, Plus, ChevronLeft, ChevronRight, LayoutList } from "lucide-react";
+import { Filter, TrendingUp, ClipboardList, Target, Percent, Plus, ChevronLeft, ChevronRight, LayoutList, Kanban, List } from "lucide-react";
 import { PipelineSearchBar } from "@/components/pipeline/pipeline-search-bar";
 import type { PipelineSearchFilter } from "@/lib/ai/types";
 import { cn } from "@/lib/utils";
@@ -56,6 +57,7 @@ export function PipelineView({
   const [stageFilter, setStageFilter] = useState("all");
   const [showNewDeal, setShowNewDeal] = useState(false);
   const [aiFilter, setAiFilter] = useState<PipelineSearchFilter | null>(null);
+  const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
 
   const stageNames = useMemo(() => stages.map((s) => s.name), [stages]);
 
@@ -173,13 +175,43 @@ export function PipelineView({
                 );
               })}
             </div>
-            <button
-              onClick={() => setShowNewDeal(true)}
-              className="px-5 py-2 rounded-lg bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2"
-            >
-              <Plus size={16} strokeWidth={2.5} />
-              Neuer Deal
-            </button>
+            <div className="flex items-center gap-2">
+              {/* View Toggle: Kanban ↔ Liste */}
+              <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode("kanban")}
+                  className={cn(
+                    "px-3 py-2 rounded-md text-sm font-semibold transition-all",
+                    viewMode === "kanban"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  )}
+                  title="Kanban-Ansicht"
+                >
+                  <Kanban size={16} strokeWidth={2.5} />
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={cn(
+                    "px-3 py-2 rounded-md text-sm font-semibold transition-all",
+                    viewMode === "list"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  )}
+                  title="Listen-Ansicht"
+                >
+                  <List size={16} strokeWidth={2.5} />
+                </button>
+              </div>
+
+              <button
+                onClick={() => setShowNewDeal(true)}
+                className="px-5 py-2 rounded-lg bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2"
+              >
+                <Plus size={16} strokeWidth={2.5} />
+                Neuer Deal
+              </button>
+            </div>
           </div>
 
           {/* KPI Cards — compact inline layout */}
@@ -218,40 +250,62 @@ export function PipelineView({
         </div>
       </div>
 
-      {/* Kanban Board — fills remaining height, scrolls inside */}
+      {/* Content area — fills remaining height */}
       <div className="flex-1 min-h-0 flex flex-col px-8 py-3 bg-slate-50 overflow-hidden">
-        {/* Stage Info Bar with scroll controls */}
-        <div className="flex items-center justify-between mb-3 shrink-0">
-          <div className="flex items-center gap-3 text-sm text-slate-600">
-            <LayoutList size={16} className="text-slate-400" />
-            <span className="font-bold">{stages.length} Stages</span>
-            <span className="text-xs text-slate-400">← Scrollen Sie horizontal →</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => scrollKanban("left")}
-              className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button
-              onClick={() => scrollKanban("right")}
-              className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        {viewMode === "kanban" ? (
+          <>
+            {/* Stage Info Bar with scroll controls */}
+            <div className="flex items-center justify-between mb-3 shrink-0">
+              <div className="flex items-center gap-3 text-sm text-slate-600">
+                <LayoutList size={16} className="text-slate-400" />
+                <span className="font-bold">{stages.length} Stages</span>
+                <span className="text-xs text-slate-400">← Scrollen Sie horizontal →</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => scrollKanban("left")}
+                  className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  onClick={() => scrollKanban("right")}
+                  className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
 
-        {/* Kanban Board container — scrolls horizontally + vertically inside */}
-        <div className="flex-1 min-h-0 overflow-hidden rounded-xl border-2 border-slate-200 bg-white">
-          <KanbanBoard
-            ref={kanbanRef}
-            stages={stages}
-            deals={filteredDeals}
-            onDealClick={(deal) => router.push(`/deals/${deal.id}`)}
-          />
-        </div>
+            {/* Kanban Board container */}
+            <div className="flex-1 min-h-0 overflow-hidden rounded-xl border-2 border-slate-200 bg-white">
+              <KanbanBoard
+                ref={kanbanRef}
+                stages={stages}
+                deals={filteredDeals}
+                onDealClick={(deal) => router.push(`/deals/${deal.id}`)}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            {/* List Info Bar */}
+            <div className="flex items-center gap-3 text-sm text-slate-600 mb-3 shrink-0">
+              <List size={16} className="text-slate-400" />
+              <span className="font-bold">{filteredDeals.length} Deals</span>
+              <span className="text-xs text-slate-400">Sortierbar per Klick auf Spaltenköpfe</span>
+            </div>
+
+            {/* Table container */}
+            <div className="flex-1 min-h-0 overflow-hidden rounded-xl border-2 border-slate-200 bg-white">
+              <PipelineTable
+                deals={filteredDeals}
+                stages={stages}
+                onDealClick={(deal) => router.push(`/deals/${deal.id}`)}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* New Deal Sheet */}
