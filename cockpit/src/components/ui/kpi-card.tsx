@@ -19,6 +19,7 @@ interface KPICardProps {
   comparison?: string;
   comparisonPositive?: boolean;
   href?: string;
+  compact?: boolean;
 }
 
 export function KPICard({
@@ -29,8 +30,26 @@ export function KPICard({
   comparison,
   comparisonPositive,
   href,
+  compact = false,
 }: KPICardProps) {
   const g = gradients[gradient];
+
+  if (compact) {
+    const content = (
+      <div className="bg-white rounded-xl border-2 border-slate-200 px-4 py-2.5 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-200">
+        <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${g}`} />
+        <div className="flex items-center gap-3">
+          <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${g} flex items-center justify-center shadow-sm shrink-0`}>
+            <Icon size={16} className="text-white" strokeWidth={2.5} />
+          </div>
+          <div className="text-xl font-bold text-slate-900 tabular-nums">{value}</div>
+          <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide leading-tight">{label}</div>
+        </div>
+      </div>
+    );
+    if (href) return <Link href={href} className="block">{content}</Link>;
+    return content;
+  }
 
   const content = (
     <div className="bg-white rounded-xl border-2 border-slate-200 p-4 shadow-lg relative overflow-hidden group hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">

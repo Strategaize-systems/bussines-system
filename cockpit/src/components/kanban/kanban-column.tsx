@@ -30,8 +30,8 @@ export function KanbanColumn({ stage, deals, onDealClick }: KanbanColumnProps) {
 
   return (
     <div className="flex w-64 shrink-0 flex-col">
-      {/* Column Header — Figma-aligned */}
-      <div className="mb-3 rounded-xl bg-white border-2 border-slate-200 overflow-hidden shadow-sm">
+      {/* Column Header — sticky at top of scroll container */}
+      <div className="mb-3 rounded-xl bg-white border-2 border-slate-200 overflow-hidden shadow-sm sticky top-0 z-10">
         {/* Color accent bar */}
         <div
           className="h-1.5"

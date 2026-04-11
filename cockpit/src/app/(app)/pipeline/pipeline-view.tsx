@@ -176,32 +176,12 @@ export function PipelineView({
             </button>
           </div>
 
-          {/* KPI Cards */}
+          {/* KPI Cards — compact inline layout */}
           <KPIGrid columns={4}>
-            <KPICard
-              label="Aktive Deals"
-              value={activeDeals.length}
-              icon={ClipboardList}
-              gradient="blue"
-            />
-            <KPICard
-              label="Pipeline Wert"
-              value={fmt.format(totalValue)}
-              icon={TrendingUp}
-              gradient="green"
-            />
-            <KPICard
-              label="Gewichtet"
-              value={fmt.format(forecast)}
-              icon={Target}
-              gradient="yellow"
-            />
-            <KPICard
-              label="Ø Chance"
-              value={`${avgChance}%`}
-              icon={Percent}
-              gradient="emerald"
-            />
+            <KPICard label="Aktive Deals" value={activeDeals.length} icon={ClipboardList} gradient="blue" compact />
+            <KPICard label="Pipeline Wert" value={fmt.format(totalValue)} icon={TrendingUp} gradient="green" compact />
+            <KPICard label="Gewichtet" value={fmt.format(forecast)} icon={Target} gradient="yellow" compact />
+            <KPICard label="Ø Chance" value={`${avgChance}%`} icon={Percent} gradient="emerald" compact />
           </KPIGrid>
 
           {/* Search + Filter */}
