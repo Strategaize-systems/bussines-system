@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Sparkles, X, Loader2, Lightbulb, ArrowRight } from "lucide-react";
+import { Sparkles, X, Loader2, Lightbulb } from "lucide-react";
 import { VoiceRecordButton } from "@/components/voice/voice-record-button";
 import type { MeinTagQueryResult } from "@/lib/ai/types";
 
