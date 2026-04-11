@@ -156,198 +156,202 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
       </PageHeader>
 
       <main className="px-8 py-8">
-        <div className="max-w-[1800px] mx-auto space-y-4">
-          {/* 3-Column Layout: equal thirds */}
+        <div className="max-w-[1800px] mx-auto">
+          {/* Top-level 8+4 split: left content flows independently from right sidebar */}
           <div className="grid grid-cols-12 gap-5">
-            {/* LEFT COLUMN (4): Work Actions + Aufgaben */}
-            <div className="col-span-4 space-y-4">
 
-              {/* Work Quick Actions */}
-              <div className="flex items-center justify-center gap-3">
-                <TaskSheet
-                  contacts={contacts}
-                  companies={companies}
-                  deals={deals}
-                  trigger={<QuickActionButton icon={ListTodo} label="Aufgabe" color="from-[#120774] to-[#4454b8]" />}
-                />
-                <EmailSheet
-                  trigger={<QuickActionButton icon={Mail} label="E-Mail" color="from-sky-500 to-sky-600" />}
-                />
-                <MeetingSheet
-                  contacts={contacts}
-                  companies={companies}
-                  deals={deals}
-                  trigger={<QuickActionButton icon={Users} label="Meeting" color="from-emerald-500 to-emerald-600" />}
-                />
-                <EventSheet
-                  contacts={contacts}
-                  companies={companies}
-                  deals={deals}
-                  trigger={<QuickActionButton icon={Calendar} label="Termin" color="from-purple-500 to-purple-600" />}
-                />
-                <TaskSheet
-                  contacts={contacts}
-                  companies={companies}
-                  deals={deals}
-                  defaultTitle="Anruf: "
-                  trigger={<QuickActionButton icon={Phone} label="Anruf" color="from-orange-500 to-orange-600" />}
-                />
-              </div>
-
-              {/* AUFGABEN — fixed height to match Top Deals */}
-              <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden min-h-[320px] flex flex-col">
-                {/* Section Header — matched to Top Deals */}
-                <div className="px-5 py-3 border-b border-slate-200 flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#120774] to-[#4454b8] flex items-center justify-center">
-                    <CheckCircle2 size={14} className="text-white" strokeWidth={2.5} />
+            {/* LEFT MAIN AREA (8 cols): Aufgaben + Deals side-by-side, then KI-Workspace below */}
+            <div className="col-span-8 space-y-4">
+              {/* Aufgaben + Deals row */}
+              <div className="grid grid-cols-2 gap-5">
+                {/* LEFT: Work Actions + Aufgaben */}
+                <div className="space-y-4">
+                  {/* Work Quick Actions */}
+                  <div className="flex items-center justify-center gap-3">
+                    <TaskSheet
+                      contacts={contacts}
+                      companies={companies}
+                      deals={deals}
+                      trigger={<QuickActionButton icon={ListTodo} label="Aufgabe" color="from-[#120774] to-[#4454b8]" />}
+                    />
+                    <EmailSheet
+                      trigger={<QuickActionButton icon={Mail} label="E-Mail" color="from-sky-500 to-sky-600" />}
+                    />
+                    <MeetingSheet
+                      contacts={contacts}
+                      companies={companies}
+                      deals={deals}
+                      trigger={<QuickActionButton icon={Users} label="Meeting" color="from-emerald-500 to-emerald-600" />}
+                    />
+                    <EventSheet
+                      contacts={contacts}
+                      companies={companies}
+                      deals={deals}
+                      trigger={<QuickActionButton icon={Calendar} label="Termin" color="from-purple-500 to-purple-600" />}
+                    />
+                    <TaskSheet
+                      contacts={contacts}
+                      companies={companies}
+                      deals={deals}
+                      defaultTitle="Anruf: "
+                      trigger={<QuickActionButton icon={Phone} label="Anruf" color="from-orange-500 to-orange-600" />}
+                    />
                   </div>
-                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">
-                    Aufgaben
-                  </h3>
-                  <span className="text-[10px] font-bold text-orange-600 bg-orange-100 rounded-full px-1.5 py-0.5">
-                    {totalItems}
-                  </span>
-                  <Link
-                    href="/focus"
-                    className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#120774] to-[#4454b8] text-white text-[10px] font-bold hover:shadow-md transition-all"
-                  >
-                    <Target size={10} />
-                    Abarbeiten
-                  </Link>
-                </div>
 
-                {/* Task List — Top 5 smart sorted */}
-                <div className="divide-y divide-slate-50 flex-1">
-                  {displayItems.length > 0 ? (
-                    displayItems.map((item) => (
-                      <TaskItem key={item.id} item={item} onDealClick={setSelectedDealId} />
-                    ))
-                  ) : (
-                    <div className="p-8 text-center">
-                      <CheckCircle2 size={32} className="mx-auto text-emerald-400 mb-2" />
-                      <p className="text-sm text-slate-500">Keine offenen Aufgaben</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Footer */}
-                <div className="px-5 py-2.5 border-t border-slate-100 flex items-center justify-between">
-                  {hasMore && !showAll ? (
-                    <button
-                      onClick={() => setShowAll(true)}
-                      className="text-sm font-semibold text-[#4454b8] hover:text-[#120774] transition-colors"
-                    >
-                      Alle {smartSorted.length} Aufgaben anzeigen
-                    </button>
-                  ) : hasMore && showAll ? (
-                    <button
-                      onClick={() => setShowAll(false)}
-                      className="text-sm font-semibold text-[#4454b8] hover:text-[#120774] transition-colors"
-                    >
-                      Nur Top-5 anzeigen
-                    </button>
-                  ) : (
-                    <Link
-                      href="/aufgaben"
-                      className="text-sm font-semibold text-[#4454b8] hover:text-[#120774] flex items-center gap-1 transition-colors"
-                    >
-                      Alle Aufgaben <ChevronRight size={14} />
-                    </Link>
-                  )}
-                  <Link
-                    href="/aufgaben"
-                    className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
-                  >
-                    Verwaltung
-                  </Link>
-                </div>
-              </div>
-
-            </div>
-
-            {/* MIDDLE COLUMN (4): Top Deals */}
-            <div className="col-span-4 space-y-4">
-              <div className="flex items-center justify-center gap-3">
-                <Link href="/pipeline/unternehmer" className="flex flex-col items-center gap-1.5 group">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#00a84f] to-[#4dcb8b] flex items-center justify-center text-white shadow group-hover:scale-105 transition-transform">
-                    <Briefcase size={18} strokeWidth={2} />
-                  </div>
-                  <span className="text-[10px] font-semibold text-slate-500">Deals</span>
-                </Link>
-              </div>
-
-              <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden min-h-[320px] flex flex-col">
-                <div className="px-5 py-3 border-b border-slate-200 flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#00a84f] to-[#4dcb8b] flex items-center justify-center">
-                    <Briefcase size={14} className="text-white" strokeWidth={2.5} />
-                  </div>
-                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Top Deals</h3>
-                  <Link
-                    href="/deals"
-                    className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-[10px] font-bold hover:shadow-md transition-all"
-                  >
-                    <Briefcase size={10} />
-                    Alle Deals
-                  </Link>
-                </div>
-
-                <div className="divide-y divide-slate-50 flex-1">
-                  {topDeals.length > 0 ? (
-                    topDeals.map((deal) => (
-                      <button
-                        key={deal.id}
-                        onClick={() => setSelectedDealId(deal.id)}
-                        className="w-full text-left px-4 py-3 hover:bg-slate-50/50 transition-colors"
+                  {/* AUFGABEN */}
+                  <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden min-h-[320px] flex flex-col">
+                    <div className="px-5 py-3 border-b border-slate-200 flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#120774] to-[#4454b8] flex items-center justify-center">
+                        <CheckCircle2 size={14} className="text-white" strokeWidth={2.5} />
+                      </div>
+                      <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">
+                        Aufgaben
+                      </h3>
+                      <span className="text-[10px] font-bold text-orange-600 bg-orange-100 rounded-full px-1.5 py-0.5">
+                        {totalItems}
+                      </span>
+                      <Link
+                        href="/focus"
+                        className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#120774] to-[#4454b8] text-white text-[10px] font-bold hover:shadow-md transition-all"
                       >
-                        <p className="text-sm font-bold text-slate-900 truncate">{deal.title}</p>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          {deal.value != null && (
-                            <span className="text-[10px] font-bold text-emerald-600">
-                              {deal.value.toLocaleString("de-DE")} €
-                            </span>
-                          )}
-                          {deal.stage && (
-                            <span className="text-[10px] text-slate-400 truncate">
-                              · {deal.stage}
-                            </span>
-                          )}
-                        </div>
-                        {deal.companyName && (
-                          <p className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
-                            <Building2 size={9} /> {deal.companyName}
-                          </p>
-                        )}
-                        {deal.nextAction && (
-                          <p className="text-[10px] text-amber-600 mt-0.5 truncate">
-                            → {deal.nextAction}
-                          </p>
-                        )}
-                      </button>
-                    ))
-                  ) : (
-                    <div className="px-4 py-6 text-center">
-                      <Briefcase size={24} className="mx-auto text-slate-300 mb-2" />
-                      <p className="text-xs text-slate-400">Keine aktiven Deals</p>
+                        <Target size={10} />
+                        Abarbeiten
+                      </Link>
                     </div>
-                  )}
+
+                    <div className="divide-y divide-slate-50 flex-1">
+                      {displayItems.length > 0 ? (
+                        displayItems.map((item) => (
+                          <TaskItem key={item.id} item={item} onDealClick={setSelectedDealId} />
+                        ))
+                      ) : (
+                        <div className="p-8 text-center">
+                          <CheckCircle2 size={32} className="mx-auto text-emerald-400 mb-2" />
+                          <p className="text-sm text-slate-500">Keine offenen Aufgaben</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="px-5 py-2.5 border-t border-slate-100 flex items-center justify-between">
+                      {hasMore && !showAll ? (
+                        <button
+                          onClick={() => setShowAll(true)}
+                          className="text-sm font-semibold text-[#4454b8] hover:text-[#120774] transition-colors"
+                        >
+                          Alle {smartSorted.length} Aufgaben anzeigen
+                        </button>
+                      ) : hasMore && showAll ? (
+                        <button
+                          onClick={() => setShowAll(false)}
+                          className="text-sm font-semibold text-[#4454b8] hover:text-[#120774] transition-colors"
+                        >
+                          Nur Top-5 anzeigen
+                        </button>
+                      ) : (
+                        <Link
+                          href="/aufgaben"
+                          className="text-sm font-semibold text-[#4454b8] hover:text-[#120774] flex items-center gap-1 transition-colors"
+                        >
+                          Alle Aufgaben <ChevronRight size={14} />
+                        </Link>
+                      )}
+                      <Link
+                        href="/aufgaben"
+                        className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        Verwaltung
+                      </Link>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="px-4 py-2.5 border-t border-slate-100">
-                  <Link
-                    href="/pipeline/unternehmer"
-                    className="text-xs font-semibold text-[#00a84f] hover:text-emerald-700 flex items-center gap-1 transition-colors"
-                  >
-                    Alle Deals <ChevronRight size={12} />
-                  </Link>
+                {/* RIGHT: Deal Action + Top Deals */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center gap-3">
+                    <Link href="/pipeline/unternehmer" className="flex flex-col items-center gap-1.5 group">
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#00a84f] to-[#4dcb8b] flex items-center justify-center text-white shadow group-hover:scale-105 transition-transform">
+                        <Briefcase size={18} strokeWidth={2} />
+                      </div>
+                      <span className="text-[10px] font-semibold text-slate-500">Deals</span>
+                    </Link>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden min-h-[320px] flex flex-col">
+                    <div className="px-5 py-3 border-b border-slate-200 flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#00a84f] to-[#4dcb8b] flex items-center justify-center">
+                        <Briefcase size={14} className="text-white" strokeWidth={2.5} />
+                      </div>
+                      <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Top Deals</h3>
+                      <Link
+                        href="/deals"
+                        className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-[10px] font-bold hover:shadow-md transition-all"
+                      >
+                        <Briefcase size={10} />
+                        Alle Deals
+                      </Link>
+                    </div>
+
+                    <div className="divide-y divide-slate-50 flex-1">
+                      {topDeals.length > 0 ? (
+                        topDeals.map((deal) => (
+                          <button
+                            key={deal.id}
+                            onClick={() => setSelectedDealId(deal.id)}
+                            className="w-full text-left px-4 py-3 hover:bg-slate-50/50 transition-colors"
+                          >
+                            <p className="text-sm font-bold text-slate-900 truncate">{deal.title}</p>
+                            <div className="flex items-center gap-1.5 mt-1">
+                              {deal.value != null && (
+                                <span className="text-[10px] font-bold text-emerald-600">
+                                  {deal.value.toLocaleString("de-DE")} €
+                                </span>
+                              )}
+                              {deal.stage && (
+                                <span className="text-[10px] text-slate-400 truncate">
+                                  · {deal.stage}
+                                </span>
+                              )}
+                            </div>
+                            {deal.companyName && (
+                              <p className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
+                                <Building2 size={9} /> {deal.companyName}
+                              </p>
+                            )}
+                            {deal.nextAction && (
+                              <p className="text-[10px] text-amber-600 mt-0.5 truncate">
+                                → {deal.nextAction}
+                              </p>
+                            )}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-4 py-6 text-center">
+                          <Briefcase size={24} className="mx-auto text-slate-300 mb-2" />
+                          <p className="text-xs text-slate-400">Keine aktiven Deals</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="px-4 py-2.5 border-t border-slate-100">
+                      <Link
+                        href="/pipeline/unternehmer"
+                        className="text-xs font-semibold text-[#00a84f] hover:text-emerald-700 flex items-center gap-1 transition-colors"
+                      >
+                        Alle Deals <ChevronRight size={12} />
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               </div>
 
+              {/* KI-WORKSPACE — flows directly after Aufgaben + Deals */}
+              <KIWorkspace data={data} calendarSlots={calendarSlots} exceptions={exceptions} contacts={contacts} companies={companies} deals={deals} />
             </div>
 
             {/* RIGHT COLUMN (4): Entities + Zeit + Kalender + Meeting-Prep + Exceptions */}
             <div className="col-span-4">
               <div className="sticky top-32 space-y-4">
-                {/* Entity Quick Actions — same height as left/middle buttons */}
+                {/* Entity Quick Actions */}
                 <div className="flex items-center justify-center gap-3">
                   {entityActions.map((action) => (
                     <Link
@@ -445,13 +449,7 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                 {exceptionCount > 0 && <ExceptionPanel exceptions={exceptions} />}
               </div>
             </div>
-          </div>
 
-          {/* KI-WORKSPACE — independent section below the 3-column grid */}
-          <div className="grid grid-cols-12 gap-5">
-            <div className="col-span-8">
-              <KIWorkspace data={data} calendarSlots={calendarSlots} exceptions={exceptions} contacts={contacts} companies={companies} deals={deals} />
-            </div>
           </div>
         </div>
       </main>
