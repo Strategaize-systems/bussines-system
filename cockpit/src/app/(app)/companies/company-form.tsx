@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TagInput } from "@/components/ui/tag-input";
 import { Separator } from "@/components/ui/separator";
 import { DuplicateWarning, useDuplicateCheck } from "@/components/ui/duplicate-warning";
+import { PlzCityAutocomplete } from "@/components/ui/plz-city-autocomplete";
 import { checkCompanyDuplicate } from "@/lib/duplicate-check";
 import { useState, useCallback } from "react";
 import type { Company } from "./actions";
@@ -21,6 +22,8 @@ interface CompanyFormProps {
 
 export function CompanyForm({ company, onSubmit, isPending }: CompanyFormProps) {
   const [tags, setTags] = useState<string[]>(company?.tags ?? []);
+  const [plz, setPlz] = useState(company?.address_zip ?? "");
+  const [city, setCity] = useState(company?.address_city ?? "");
   const dupCheck = useDuplicateCheck(useCallback((v: string) => checkCompanyDuplicate(v), []));
 
   return (
@@ -87,24 +90,12 @@ export function CompanyForm({ company, onSubmit, isPending }: CompanyFormProps) 
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="address_zip">PLZ</Label>
-          <Input
-            id="address_zip"
-            name="address_zip"
-            defaultValue={company?.address_zip ?? ""}
-          />
-        </div>
-        <div className="col-span-2 space-y-2">
-          <Label htmlFor="address_city">Ort</Label>
-          <Input
-            id="address_city"
-            name="address_city"
-            defaultValue={company?.address_city ?? ""}
-          />
-        </div>
-      </div>
+      <PlzCityAutocomplete
+        plzValue={plz}
+        cityValue={city}
+        onPlzChange={setPlz}
+        onCityChange={setCity}
+      />
 
       <div className="space-y-2">
         <Label htmlFor="address_country">Land</Label>
