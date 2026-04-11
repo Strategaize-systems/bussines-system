@@ -52,16 +52,7 @@ const navGroups: NavGroup[] = [
     label: "WORKSPACES",
     items: [
       { name: "Alle Deals", href: "/deals", icon: Briefcase },
-      {
-        name: "Pipeline",
-        href: "/pipeline/multiplikatoren",
-        icon: TrendingUp,
-        children: [
-          { name: "Multiplikatoren", href: "/pipeline/multiplikatoren" },
-          { name: "Chancen / Endkunden", href: "/pipeline/unternehmer" },
-          { name: "Leads", href: "/pipeline/leads" },
-        ],
-      },
+      { name: "Pipeline", href: "/pipeline/multiplikatoren", icon: TrendingUp },
       { name: "Alle Firmen", href: "/companies", icon: Building2 },
       { name: "Alle Kontakte", href: "/contacts", icon: Users },
       { name: "Multiplikatoren", href: "/multiplikatoren", icon: Handshake },

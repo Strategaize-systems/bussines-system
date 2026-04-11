@@ -151,10 +151,11 @@ export function PipelineView({
       </PageHeader>
 
       <main className="px-8 py-6 flex-1 flex flex-col">
-        <div className="max-w-[1800px] mx-auto w-full flex-1 flex flex-col space-y-5">
+        {/* Upper section — constrained width for KPIs + Search */}
+        <div className="max-w-[1200px] w-full space-y-5 mb-5">
 
           {/* Pipeline Selector Tabs */}
-          <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 w-fit">
+          <div className="flex items-center gap-2">
             {pipelines.map((p) => {
               const slug = SLUG_MAP[p.name] ?? p.name.toLowerCase();
               const isActive = slug === currentSlug;
@@ -163,10 +164,10 @@ export function PipelineView({
                   key={p.id}
                   href={`/pipeline/${slug}`}
                   className={cn(
-                    "px-4 py-2 rounded-lg text-sm font-semibold transition-all",
+                    "px-5 py-2.5 rounded-xl text-sm font-bold transition-all border-2",
                     isActive
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                      ? "bg-gradient-to-r from-[#120774] to-[#4454b8] text-white border-transparent shadow-lg shadow-[#4454b8]/20"
+                      : "bg-white text-slate-600 border-slate-200 hover:border-[#4454b8]/30 hover:text-slate-800 hover:shadow-sm"
                   )}
                 >
                   {p.name}
@@ -175,7 +176,7 @@ export function PipelineView({
             })}
           </div>
 
-          {/* KPI Cards — constrained width */}
+          {/* KPI Cards */}
           <KPIGrid columns={4}>
             <KPICard
               label="Aktive Deals"
@@ -230,7 +231,10 @@ export function PipelineView({
               </select>
             </div>
           </div>
+        </div>
 
+        {/* Lower section — full width for Kanban Board */}
+        <div className="flex-1 min-h-0 flex flex-col space-y-3">
           {/* Stage Info Bar with scroll controls */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 text-sm text-slate-600">
@@ -254,7 +258,7 @@ export function PipelineView({
             </div>
           </div>
 
-          {/* Kanban Board — contained, scrollable area */}
+          {/* Kanban Board — full width, scrollable */}
           <div className="flex-1 min-h-0 overflow-hidden rounded-xl border-2 border-slate-200 bg-slate-50">
             <KanbanBoard
               ref={kanbanRef}
