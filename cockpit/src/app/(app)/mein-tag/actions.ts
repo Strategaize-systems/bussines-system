@@ -385,6 +385,7 @@ export type NextMeetingPrep = {
   id: string;
   title: string;
   scheduledAt: string;
+  timeStr: string;
   durationMinutes: number;
   location: string | null;
   agenda: string | null;
@@ -422,10 +423,14 @@ export async function getNextMeetingWithContext(): Promise<NextMeetingPrep> {
   const contact = meeting.contacts as any;
   const company = meeting.companies as any;
 
+  const meetingStart = new Date(meeting.scheduled_at);
+  const timeStr = meetingStart.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+
   return {
     id: meeting.id,
     title: meeting.title,
     scheduledAt: meeting.scheduled_at,
+    timeStr,
     durationMinutes: meeting.duration_minutes,
     location: meeting.location,
     agenda: meeting.agenda,

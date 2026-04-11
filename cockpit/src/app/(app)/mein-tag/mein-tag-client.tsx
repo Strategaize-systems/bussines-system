@@ -445,8 +445,10 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                 {exceptionCount > 0 && <ExceptionPanel exceptions={exceptions} />}
               </div>
             </div>
+          </div>
 
-            {/* KI-WORKSPACE — spans Aufgaben + Top Deals (col 1-8), same grid row */}
+          {/* KI-WORKSPACE — independent section below the 3-column grid */}
+          <div className="grid grid-cols-12 gap-5">
             <div className="col-span-8">
               <KIWorkspace data={data} calendarSlots={calendarSlots} exceptions={exceptions} contacts={contacts} companies={companies} deals={deals} />
             </div>
@@ -552,9 +554,6 @@ function TaskItem({ item, onDealClick }: { item: TodayItem; onDealClick: (dealId
 // ── Meeting-Prep Card ─────────────────────────────────────
 
 function MeetingPrepCard({ meeting }: { meeting: NonNullable<NextMeetingPrep> }) {
-  const meetingTime = new Date(meeting.scheduledAt);
-  const timeStr = meetingTime.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
-
   return (
     <div className="bg-white rounded-2xl border-2 border-blue-200 shadow-lg overflow-hidden">
       <div className="px-5 py-4 border-b border-blue-100 flex items-center gap-3">
@@ -563,13 +562,13 @@ function MeetingPrepCard({ meeting }: { meeting: NonNullable<NextMeetingPrep> })
         </div>
         <div>
           <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Meeting-Vorbereitung</h3>
-          <p className="text-[11px] text-blue-600">Nächstes Meeting um {timeStr}</p>
+          <p className="text-[11px] text-blue-600">Nächstes Meeting um {meeting.timeStr}</p>
         </div>
       </div>
       <div className="p-5 space-y-3">
         <div>
           <p className="text-sm font-bold text-slate-900">{meeting.title}</p>
-          <p className="text-xs text-slate-500 mt-0.5">{meeting.durationMinutes} Min. · {timeStr} Uhr</p>
+          <p className="text-xs text-slate-500 mt-0.5">{meeting.durationMinutes} Min. · {meeting.timeStr} Uhr</p>
         </div>
         {meeting.location && (
           <div className="flex items-center gap-2 text-xs text-slate-500">
