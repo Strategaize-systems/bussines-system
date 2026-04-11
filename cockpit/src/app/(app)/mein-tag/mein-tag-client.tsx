@@ -45,12 +45,16 @@ import { TaskSheet } from "../aufgaben/task-sheet";
 import { EmailSheet } from "../emails/email-sheet";
 import { MeetingSheet } from "@/components/meetings/meeting-sheet";
 import { EventSheet } from "@/components/calendar/event-sheet";
+import { DealSheet } from "../pipeline/deal-sheet";
+import { ContactSheet } from "../contacts/contact-sheet";
+import { CompanySheet } from "../companies/company-sheet";
+import { CallSheet } from "./call-sheet";
 import { KIWorkspace } from "./ki-workspace";
 
 interface MeinTagClientProps {
   data: TodayData;
   stages: PipelineStage[];
-  contacts: { id: string; first_name: string; last_name: string }[];
+  contacts: { id: string; first_name: string; last_name: string; phone?: string | null; company_id?: string | null }[];
   companies: { id: string; name: string }[];
   deals: { id: string; title: string }[];
   pipelines: { id: string; name: string }[];
@@ -80,13 +84,6 @@ const statusStyles: Record<string, string> = {
   open: "bg-blue-100 text-blue-700 border-blue-200",
   in_arbeit: "bg-amber-100 text-amber-700 border-amber-200",
 };
-
-// Entity creation actions (right column, above calendar)
-const entityActions = [
-  { label: "Neuer Kontakt", icon: Users, color: "from-[#120774] to-[#4454b8]", href: "/contacts" },
-  { label: "Neue Firma", icon: Building2, color: "from-[#00a84f] to-[#4dcb8b]", href: "/companies" },
-  { label: "Multiplikator", icon: Handshake, color: "from-purple-500 to-purple-600", href: "/multiplikatoren" },
-];
 
 const WORKDAY_MINUTES = 480; // 8h workday
 
@@ -189,11 +186,17 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                       deals={deals}
                       trigger={<QuickActionButton icon={Calendar} label="Termin" color="from-purple-500 to-purple-600" />}
                     />
-                    <TaskSheet
-                      contacts={contacts}
-                      companies={companies}
-                      deals={deals}
-                      defaultTitle="Anruf: "
+                    <CallSheet
+                      contacts={contacts.map((c) => {
+                        const comp = c.company_id ? companies.find((co) => co.id === c.company_id) : null;
+                        return {
+                          id: c.id,
+                          first_name: c.first_name,
+                          last_name: c.last_name,
+                          phone: c.phone,
+                          company_name: comp?.name ?? null,
+                        };
+                      })}
                       trigger={<QuickActionButton icon={Phone} label="Anruf" color="from-orange-500 to-orange-600" />}
                     />
                   </div>
@@ -268,12 +271,13 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                 {/* RIGHT: Deal Action + Top Deals */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-center gap-3">
-                    <Link href="/pipeline/unternehmer" className="flex flex-col items-center gap-1.5 group">
-                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#00a84f] to-[#4dcb8b] flex items-center justify-center text-white shadow group-hover:scale-105 transition-transform">
-                        <Briefcase size={18} strokeWidth={2} />
-                      </div>
-                      <span className="text-[10px] font-semibold text-slate-500">Deals</span>
-                    </Link>
+                    <DealSheet
+                      stages={stages}
+                      pipelineId={pipelines[0]?.id ?? ""}
+                      contacts={contacts}
+                      companies={companies}
+                      trigger={<QuickActionButton icon={Briefcase} label="Neuer Deal" color="from-[#00a84f] to-[#4dcb8b]" />}
+                    />
                   </div>
 
                   <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden min-h-[320px] flex flex-col">
@@ -353,20 +357,17 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
               <div className="sticky top-32 space-y-4">
                 {/* Entity Quick Actions */}
                 <div className="flex items-center justify-center gap-3">
-                  {entityActions.map((action) => (
-                    <Link
-                      key={action.label}
-                      href={action.href}
-                      className="flex flex-col items-center gap-1.5 group"
-                    >
-                      <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center text-white shadow group-hover:scale-105 transition-transform`}>
-                        <action.icon size={18} strokeWidth={2} />
-                      </div>
-                      <span className="text-[10px] font-semibold text-slate-500 text-center leading-tight">
-                        {action.label}
-                      </span>
-                    </Link>
-                  ))}
+                  <ContactSheet
+                    companies={companies}
+                    trigger={<QuickActionButton icon={Users} label="Neuer Kontakt" color="from-[#120774] to-[#4454b8]" />}
+                  />
+                  <CompanySheet
+                    trigger={<QuickActionButton icon={Building2} label="Neue Firma" color="from-[#00a84f] to-[#4dcb8b]" />}
+                  />
+                  <ContactSheet
+                    companies={companies}
+                    trigger={<QuickActionButton icon={Handshake} label="Multiplikator" color="from-purple-500 to-purple-600" />}
+                  />
                 </div>
 
                 {/* Verfuegbare Zeit — compact bar */}
