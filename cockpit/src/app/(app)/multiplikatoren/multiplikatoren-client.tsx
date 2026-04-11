@@ -56,6 +56,7 @@ export function MultiplikatorenClient({ multipliers, companies }: Multiplikatore
   const [trustFilter, setTrustFilter] = useState("");
   const [regionFilter, setRegionFilter] = useState("");
   const [showNewContact, setShowNewContact] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [plzSearch, setPlzSearch] = useState("");
   const [plzRadius, setPlzRadius] = useState(50);
 
@@ -185,6 +186,7 @@ export function MultiplikatorenClient({ multipliers, companies }: Multiplikatore
                     <EntityMapDynamic
                       entities={mapEntities}
                       onEntityClick={(id) => router.push(`/contacts/${id}`)}
+                      hoveredId={hoveredCard}
                       center={plzCenter ?? undefined}
                       zoom={plzCenter ? 10 : undefined}
                     />
@@ -197,7 +199,11 @@ export function MultiplikatorenClient({ multipliers, companies }: Multiplikatore
                     <div
                       key={m.id}
                       onClick={() => router.push(`/contacts/${m.id}`)}
-                      className="bg-white rounded-xl border-2 border-slate-200 p-3 cursor-pointer hover:border-slate-300 transition-all"
+                      onMouseEnter={() => setHoveredCard(m.id)}
+                      onMouseLeave={() => setHoveredCard(null)}
+                      className={`bg-white rounded-xl border-2 p-3 cursor-pointer transition-all ${
+                        hoveredCard === m.id ? "border-[#4454b8] shadow-md" : "border-slate-200 hover:border-slate-300"
+                      }`}
                     >
                       <div className="text-sm font-bold text-slate-900">
                         {m.first_name} {m.last_name}
@@ -292,6 +298,7 @@ export function MultiplikatorenClient({ multipliers, companies }: Multiplikatore
                       <EntityMapDynamic
                         entities={mapEntities}
                         onEntityClick={(id) => router.push(`/contacts/${id}`)}
+                        hoveredId={hoveredCard}
                         center={plzCenter ?? undefined}
                         zoom={plzCenter ? 10 : undefined}
                       />

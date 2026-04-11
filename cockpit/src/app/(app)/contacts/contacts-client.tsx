@@ -45,6 +45,7 @@ export function ContactsClient({ contacts, companies }: ContactsClientProps) {
   const [typeFilter, setTypeFilter] = useState("");
   const [regionFilter, setRegionFilter] = useState("");
   const [showNewContact, setShowNewContact] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [plzSearch, setPlzSearch] = useState("");
   const [plzRadius, setPlzRadius] = useState(50);
 
@@ -173,6 +174,7 @@ export function ContactsClient({ contacts, companies }: ContactsClientProps) {
                     <EntityMapDynamic
                       entities={mapEntities}
                       onEntityClick={(id) => router.push(`/contacts/${id}`)}
+                      hoveredId={hoveredCard}
                       center={plzCenter ?? undefined}
                       zoom={plzCenter ? 10 : undefined}
                     />
@@ -185,7 +187,11 @@ export function ContactsClient({ contacts, companies }: ContactsClientProps) {
                     <div
                       key={contact.id}
                       onClick={() => router.push(`/contacts/${contact.id}`)}
-                      className="bg-white rounded-xl border-2 border-slate-200 p-3 cursor-pointer hover:border-slate-300 transition-all"
+                      onMouseEnter={() => setHoveredCard(contact.id)}
+                      onMouseLeave={() => setHoveredCard(null)}
+                      className={`bg-white rounded-xl border-2 p-3 cursor-pointer transition-all ${
+                        hoveredCard === contact.id ? "border-[#4454b8] shadow-md" : "border-slate-200 hover:border-slate-300"
+                      }`}
                     >
                       <div className="text-sm font-bold text-slate-900">
                         {contact.first_name} {contact.last_name}
@@ -284,6 +290,7 @@ export function ContactsClient({ contacts, companies }: ContactsClientProps) {
                       <EntityMapDynamic
                         entities={mapEntities}
                         onEntityClick={(id) => router.push(`/contacts/${id}`)}
+                        hoveredId={hoveredCard}
                         center={plzCenter ?? undefined}
                         zoom={plzCenter ? 10 : undefined}
                       />
