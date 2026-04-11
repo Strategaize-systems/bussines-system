@@ -47,7 +47,9 @@ export function SearchAutocomplete({
       .slice(0, maxResults);
   }, [items, value, minChars, maxResults]);
 
-  const showDropdown = isOpen && matches.length > 0 && value.length >= minChars;
+  const hasQuery = value.length >= minChars;
+  const showDropdown = isOpen && hasQuery;
+  const listboxId = "search-autocomplete-listbox";
 
   // Close on click outside
   useEffect(() => {
@@ -125,6 +127,7 @@ export function SearchAutocomplete({
           role="combobox"
           aria-expanded={showDropdown}
           aria-autocomplete="list"
+          aria-controls={showDropdown ? listboxId : undefined}
           aria-activedescendant={activeIndex >= 0 ? `search-item-${activeIndex}` : undefined}
         />
         {value && (
@@ -135,6 +138,7 @@ export function SearchAutocomplete({
               inputRef.current?.focus();
             }}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            aria-label="Suche leeren"
           >
             <X size={14} />
           </button>
@@ -143,47 +147,61 @@ export function SearchAutocomplete({
 
       {showDropdown && (
         <div
+          id={listboxId}
           className="absolute z-50 top-full mt-1 w-full bg-white rounded-xl border-2 border-slate-200 shadow-xl overflow-hidden"
           role="listbox"
         >
-          {matches.map((item, index) => (
-            <button
-              key={item.id}
-              id={`search-item-${index}`}
-              role="option"
-              aria-selected={index === activeIndex}
-              onClick={() => handleSelect(item)}
-              onMouseEnter={() => setActiveIndex(index)}
-              className={`w-full px-4 py-2.5 text-left flex items-center gap-3 transition-colors ${
-                index === activeIndex
-                  ? "bg-[#4454b8]/10 text-slate-900"
-                  : "text-slate-700 hover:bg-slate-50"
-              }`}
-            >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#120774] to-[#4454b8] flex items-center justify-center text-white text-xs font-bold shrink-0">
-                {item.label
+          {matches.length === 0 ? (
+            <div className="px-4 py-3 text-sm text-slate-400">
+              Keine Treffer
+            </div>
+          ) : (
+            <>
+              {matches.map((item, index) => {
+                const initials = item.label
                   .split(" ")
+                  .filter(Boolean)
                   .slice(0, 2)
-                  .map((w) => w[0])
+                  .map((w) => w[0] ?? "")
                   .join("")
-                  .toUpperCase()}
+                  .toUpperCase() || "?";
+
+                return (
+                  <button
+                    key={item.id}
+                    id={`search-item-${index}`}
+                    role="option"
+                    aria-selected={index === activeIndex}
+                    onClick={() => handleSelect(item)}
+                    onMouseEnter={() => setActiveIndex(index)}
+                    className={`w-full px-4 py-2.5 text-left flex items-center gap-3 transition-colors ${
+                      index === activeIndex
+                        ? "bg-[#4454b8]/10 text-slate-900"
+                        : "text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#120774] to-[#4454b8] flex items-center justify-center text-white text-xs font-bold shrink-0">
+                      {initials}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold truncate">{item.label}</p>
+                      {item.sublabel && (
+                        <p className="text-xs text-slate-500 truncate">{item.sublabel}</p>
+                      )}
+                    </div>
+                    {item.type && (
+                      <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">
+                        {item.type}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+              <div className="px-4 py-1.5 text-[10px] text-slate-400 border-t border-slate-100 bg-slate-50">
+                {matches.length} Treffer — Enter zum Navigieren, Esc zum Schliessen
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold truncate">{item.label}</p>
-                {item.sublabel && (
-                  <p className="text-xs text-slate-500 truncate">{item.sublabel}</p>
-                )}
-              </div>
-              {item.type && (
-                <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">
-                  {item.type}
-                </span>
-              )}
-            </button>
-          ))}
-          <div className="px-4 py-1.5 text-[10px] text-slate-400 border-t border-slate-100 bg-slate-50">
-            {matches.length} Treffer — Enter zum Navigieren, Esc zum Schliessen
-          </div>
+            </>
+          )}
         </div>
       )}
     </div>
