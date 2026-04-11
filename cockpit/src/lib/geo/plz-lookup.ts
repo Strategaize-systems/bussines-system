@@ -1,6 +1,9 @@
 import plzData from "./plz-coordinates.json";
 
-const coordinates = plzData as Record<string, { lat: number; lng: number }>;
+const coordinates = plzData as Record<
+  string,
+  { lat: number; lng: number; city?: string }
+>;
 
 export interface GeoEntity {
   id: string;
@@ -46,6 +49,36 @@ export function getEntitiesInRadius(
 
 function toRad(deg: number): number {
   return (deg * Math.PI) / 180;
+}
+
+export interface PlzMatch {
+  plz: string;
+  city: string;
+  lat: number;
+  lng: number;
+}
+
+export function searchLocation(query: string, limit = 10): PlzMatch[] {
+  if (!query || query.length < 2) return [];
+  const q = query.toLowerCase();
+  const results: PlzMatch[] = [];
+
+  for (const [plz, data] of Object.entries(coordinates)) {
+    if (results.length >= limit) break;
+    const city = data.city || "";
+    if (plz.startsWith(q) || city.toLowerCase().includes(q)) {
+      results.push({ plz, city, lat: data.lat, lng: data.lng });
+    }
+  }
+  return results;
+}
+
+// Map radius to zoom level
+export function radiusToZoom(radiusKm: number): number {
+  if (radiusKm <= 10) return 12;
+  if (radiusKm <= 25) return 11;
+  if (radiusKm <= 50) return 10;
+  return 9;
 }
 
 // Default map center: Germany

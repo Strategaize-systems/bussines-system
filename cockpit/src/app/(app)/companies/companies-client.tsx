@@ -10,7 +10,7 @@ import { ViewToggle } from "@/components/ui/view-toggle";
 import type { ViewMode } from "@/components/ui/view-toggle";
 import { EntityMapDynamic } from "@/components/map/entity-map-dynamic";
 import { PlzSearch } from "@/components/map/plz-search";
-import { getCoordinatesForPlz, getEntitiesInRadius } from "@/lib/geo/plz-lookup";
+import { getCoordinatesForPlz, getEntitiesInRadius, radiusToZoom } from "@/lib/geo/plz-lookup";
 import type { GeoEntity } from "@/lib/geo/plz-lookup";
 import { CompanySheet } from "./company-sheet";
 import type { CompanyEnriched, CompanyStats } from "./actions";
@@ -209,7 +209,7 @@ export function CompaniesClient({ companies, stats }: CompaniesClientProps) {
                       onEntityClick={(id) => router.push(`/companies/${id}`)}
                       hoveredId={hoveredCard}
                       center={plzCenter ?? undefined}
-                      zoom={plzCenter ? 10 : undefined}
+                      zoom={plzCenter ? radiusToZoom(plzRadius) : undefined}
                     />
                   </div>
                 </div>
@@ -292,7 +292,7 @@ export function CompaniesClient({ companies, stats }: CompaniesClientProps) {
                         onEntityClick={(id) => router.push(`/companies/${id}`)}
                         hoveredId={hoveredCard}
                         center={plzCenter ?? undefined}
-                        zoom={plzCenter ? 10 : undefined}
+                        zoom={plzCenter ? radiusToZoom(plzRadius) : undefined}
                       />
                     </div>
                   </div>
