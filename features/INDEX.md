@@ -65,7 +65,7 @@
 | FEAT-321 | Quick Actions Modal-Umbau | done | 2026-04-11 |
 | FEAT-322 | Pipeline UI-Overhaul | done | 2026-04-11 |
 | FEAT-323 | Logout-Funktion | done | 2026-04-11 |
-| FEAT-324 | Pipeline-Verwaltung (Settings) | planned | 2026-04-11 |
+| FEAT-324 | Pipeline-Verwaltung (Settings) | done | 2026-04-11 |
 | FEAT-325 | Autocomplete/Typeahead Suche | planned | 2026-04-11 |
 | FEAT-326 | PLZ-Kartensuche mit Heatmap | planned | 2026-04-11 |
 

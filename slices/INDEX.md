@@ -73,6 +73,6 @@
 | SLC-321 | Quick Actions Modal-Umbau | FEAT-321 | done | High | 2026-04-11 |
 | SLC-322 | Pipeline UI-Overhaul + Selector | FEAT-322 | done | High | 2026-04-11 |
 | SLC-323 | Logout-Button Sidebar | FEAT-323 | done | High | 2026-04-11 |
-| SLC-324 | Pipeline-Verwaltung (Settings) | FEAT-324 | planned | Medium | 2026-04-11 |
+| SLC-324 | Pipeline-Verwaltung (Settings) | FEAT-324 | done | Medium | 2026-04-11 |
 | SLC-325 | Autocomplete/Typeahead Suche | FEAT-325 | planned | Medium | 2026-04-11 |
 | SLC-326 | PLZ-Kartensuche mit Heatmap | FEAT-326 | planned | Medium | 2026-04-11 |

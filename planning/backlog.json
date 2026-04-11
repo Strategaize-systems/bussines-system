@@ -945,7 +945,7 @@
       "title": "Pipeline-Verwaltung in Einstellungen: Erstellen, Umbenennen, L�schen",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V3.2",
       "description": "In den Einstellungen soll man Pipelines erstellen, umbenennen und l�schen k�nnen. Beim Erstellen soll ein Standard-Template mit Stages vorgeschlagen werden, das man anpassen kann. �nderungen (Name, L�schen) m�ssen sich in den Pipeline-Selector-Tabs widerspiegeln. Stages pro Pipeline sollen ebenfalls verwaltet werden k�nnen.",
       "createdAt": "2026-04-11"

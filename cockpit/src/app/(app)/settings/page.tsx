@@ -1,5 +1,5 @@
 import { getPipelines, getPipelineStages } from "../pipeline/actions";
-import { StagesConfig } from "./stages-config";
+import { PipelineConfig } from "./pipeline-config";
 import { TemplatesConfig } from "./templates-config";
 import { getEmailTemplates } from "./template-actions";
 import { getCurrentUserRole } from "@/lib/audit";
@@ -30,7 +30,7 @@ export default async function SettingsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Einstellungen</h1>
         <p className="text-sm text-muted-foreground">
-          Pipeline-Stages konfigurieren und Profil verwalten
+          Pipelines, Stages und Templates konfigurieren
         </p>
       </div>
 
@@ -47,9 +47,9 @@ export default async function SettingsPage() {
         </div>
       </div>
 
-      <TemplatesConfig templates={templates} />
+      <PipelineConfig pipelines={pipelines} stagesByPipeline={stagesByPipeline} />
 
-      <StagesConfig pipelines={pipelines} stagesByPipeline={stagesByPipeline} />
+      <TemplatesConfig templates={templates} />
     </div>
   );
 }

@@ -531,6 +531,158 @@ export async function getReferralsForSelect() {
   });
 }
 
+// ── Pipeline mutations (Settings) ───────────────────────────────────
+
+const DEFAULT_STAGES = [
+  { name: "Qualifizierung", color: "#6366f1", probability: 10 },
+  { name: "Erstgespräch", color: "#8b5cf6", probability: 20 },
+  { name: "Angebot vorbereitet", color: "#3b82f6", probability: 40 },
+  { name: "Angebot offen", color: "#0ea5e9", probability: 50 },
+  { name: "Verhandlung / Einwände", color: "#f59e0b", probability: 70 },
+  { name: "Gewonnen", color: "#22c55e", probability: 100 },
+  { name: "Verloren", color: "#ef4444", probability: 0 },
+];
+
+export async function createPipeline(formData: FormData) {
+  const supabase = await createClient();
+
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) return { error: "Pipeline-Name ist erforderlich" };
+
+  const description = (formData.get("description") as string)?.trim() || null;
+
+  // Get max sort_order
+  const { data: existing } = await supabase
+    .from("pipelines")
+    .select("sort_order")
+    .order("sort_order", { ascending: false })
+    .limit(1);
+
+  const nextOrder = existing?.[0] ? existing[0].sort_order + 1 : 1;
+
+  const { data: newPipeline, error } = await supabase
+    .from("pipelines")
+    .insert({ name, description, sort_order: nextOrder })
+    .select("id")
+    .single();
+
+  if (error) return { error: error.message };
+
+  // Create default stages
+  const useDefaults = formData.get("use_defaults") !== "false";
+  if (useDefaults && newPipeline) {
+    const stageInserts = DEFAULT_STAGES.map((s, i) => ({
+      pipeline_id: newPipeline.id,
+      name: s.name,
+      color: s.color,
+      probability: s.probability,
+      sort_order: i + 1,
+    }));
+
+    await supabase.from("pipeline_stages").insert(stageInserts);
+  }
+
+  logAudit({
+    action: "create",
+    entityType: "pipeline",
+    entityId: newPipeline?.id ?? "",
+    changes: { after: { name, description } },
+    context: `Pipeline "${name}" erstellt`,
+  }).catch(() => {});
+
+  revalidatePath("/pipeline");
+  revalidatePath("/settings");
+  return { error: "", id: newPipeline?.id };
+}
+
+export async function updatePipeline(id: string, formData: FormData) {
+  const supabase = await createClient();
+
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) return { error: "Pipeline-Name ist erforderlich" };
+
+  const description = (formData.get("description") as string)?.trim() || null;
+
+  const { data: oldPipeline } = await supabase
+    .from("pipelines")
+    .select("name, description")
+    .eq("id", id)
+    .single();
+
+  const { error } = await supabase
+    .from("pipelines")
+    .update({ name, description })
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+
+  logAudit({
+    action: "update",
+    entityType: "pipeline",
+    entityId: id,
+    changes: {
+      before: oldPipeline ? { name: oldPipeline.name } : undefined,
+      after: { name },
+    },
+    context: `Pipeline umbenannt: ${oldPipeline?.name ?? "?"} → ${name}`,
+  }).catch(() => {});
+
+  revalidatePath("/pipeline");
+  revalidatePath("/settings");
+  return { error: "" };
+}
+
+export async function deletePipeline(id: string) {
+  const supabase = await createClient();
+
+  // Check for deals in this pipeline
+  const { count } = await supabase
+    .from("deals")
+    .select("id", { count: "exact", head: true })
+    .eq("pipeline_id", id);
+
+  if (count && count > 0) {
+    return { error: `Pipeline enthält noch ${count} Deal(s). Bitte verschiebe oder lösche diese zuerst.` };
+  }
+
+  const { data: pipeline } = await supabase
+    .from("pipelines")
+    .select("name")
+    .eq("id", id)
+    .single();
+
+  // Delete stages first (cascade may not be set)
+  await supabase.from("pipeline_stages").delete().eq("pipeline_id", id);
+
+  const { error } = await supabase.from("pipelines").delete().eq("id", id);
+
+  if (error) return { error: error.message };
+
+  logAudit({
+    action: "delete",
+    entityType: "pipeline",
+    entityId: id,
+    changes: { before: pipeline ? { name: pipeline.name } : undefined },
+    context: `Pipeline "${pipeline?.name ?? id}" gelöscht`,
+  }).catch(() => {});
+
+  revalidatePath("/pipeline");
+  revalidatePath("/settings");
+  return { error: "" };
+}
+
+export async function getPipelineById(id: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("pipelines")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) return null;
+  return data as Pipeline;
+}
+
 // ── Stage mutations (Settings) ───────────────────────────────────────
 
 export async function createStage(formData: FormData) {

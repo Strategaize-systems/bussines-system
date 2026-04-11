@@ -29,11 +29,17 @@ interface PipelineViewProps {
   currentSlug: string;
 }
 
-const SLUG_MAP: Record<string, string> = {
+// Known slugs for built-in pipelines (static routes)
+const KNOWN_SLUGS: Record<string, string> = {
   "Multiplikatoren": "multiplikatoren",
   "Unternehmer-Chancen": "unternehmer",
   "Lead-Management": "leads",
 };
+
+// For custom pipelines, use their ID as slug (handled by [slug] dynamic route)
+function getPipelineSlug(p: Pipeline): string {
+  return KNOWN_SLUGS[p.name] ?? p.id;
+}
 
 export function PipelineView({
   pipeline,
@@ -149,7 +155,7 @@ export function PipelineView({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {pipelines.map((p) => {
-                const slug = SLUG_MAP[p.name] ?? p.name.toLowerCase();
+                const slug = getPipelineSlug(p);
                 const isActive = slug === currentSlug;
                 return (
                   <Link

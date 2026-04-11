@@ -15,7 +15,8 @@ export type AuditEntityType =
   | "task"
   | "contact"
   | "company"
-  | "proposal";
+  | "proposal"
+  | "pipeline";
 
 export interface AuditParams {
   action: AuditAction;
