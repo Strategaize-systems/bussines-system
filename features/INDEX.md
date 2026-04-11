@@ -67,7 +67,7 @@
 | FEAT-323 | Logout-Funktion | deployed | 2026-04-11 |
 | FEAT-324 | Pipeline-Verwaltung (Settings) | deployed | 2026-04-11 |
 | FEAT-325 | Autocomplete/Typeahead Suche | deployed | 2026-04-11 |
-| FEAT-326 | PLZ-Kartensuche mit Heatmap | planned | 2026-04-11 |
+| FEAT-326 | PLZ-Kartensuche mit Heatmap | done | 2026-04-11 |
 
 ## V4 Features (Wissen + Management — planned)
 

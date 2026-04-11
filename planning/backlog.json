@@ -915,7 +915,7 @@
       "title": "Kontakte/Firmen/Multiplikatoren: PLZ-Kartensuche mit Heatmap",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V3.2",
       "description": "Deutschlandkarte mit PLZ-Suche f�r Kontakte, Firmen und Multiplikatoren. User gibt PLZ ein, Karte zoomt auf den Bereich und zeigt alle Eintr�ge im Umkreis. Links daneben werden die gefundenen Eintr�ge als Liste angezeigt. Heatmap-Darstellung zeigt Aktivit�tsdichte nach Region. Erg�nzt die bestehende Name/Text-Suche um geografische Suche.",
       "createdAt": "2026-04-11"
