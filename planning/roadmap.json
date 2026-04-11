@@ -45,7 +45,7 @@
     {
       "id": "v3-2",
       "name": "V3.2",
-      "status": "active",
+      "status": "released",
       "summary": "UI-Polish + Pipeline-Management: Quick Actions Modal-Umbau, Pipeline UI-Overhaul (Stage-Headers, Deal-Cards nach Figma), Pipeline-Selector Tabs, Logout-Button, Pipeline-Verwaltung in Settings, Autocomplete-Suche, PLZ-Kartensuche mit Heatmap",
       "order": 7
     },

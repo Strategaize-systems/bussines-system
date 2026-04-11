@@ -42,9 +42,9 @@
 - Risks: Keine neuen Schema-Migrationen. Bedrock-Kosten kontrolliert durch on-click Pattern.
 - Rollback Notes: Docker Image Rollback via Coolify. V3 Image als Fallback.
 
-### REL-007 — V3.2 UI-Polish + Pipeline-Management
+### REL-007 — V3.2 UI-Polish + Pipeline-Management + PLZ-Karte
 - Date: 2026-04-11
-- Scope: 5 von 6 Slices (SLC-321..325). Quick Actions Modal-Umbau, Pipeline UI-Overhaul + Selector, Logout-Button, Pipeline-Verwaltung in Settings (CRUD + Default-Stages), Autocomplete/Typeahead Suche. SLC-326 (PLZ-Karte) deferred.
-- Summary: UI-Quality-Release. Pipeline komplett ueberarbeitet (Figma-Design, Tabs, Viewport-Layout). Settings erweitert um Pipeline-CRUD mit Built-in-Schutz. Wiederverwendbare SearchAutocomplete-Komponente auf Kontakte, Firmen, Multiplikatoren.
-- Risks: Keine Schema-Migrationen. Keine neuen externen Abhaengigkeiten.
+- Scope: 6 von 6 Slices (SLC-321..326). Quick Actions Modal-Umbau, Pipeline UI-Overhaul + Selector, Logout-Button, Pipeline-Verwaltung in Settings, Autocomplete/Typeahead Suche, PLZ-Kartensuche mit Heatmap (DE+NL).
+- Summary: UI-Quality-Release + Geo-Feature. Pipeline komplett ueberarbeitet. Settings erweitert um Pipeline-CRUD. Wiederverwendbare SearchAutocomplete. Interaktive Leaflet-Karte auf Firmen/Kontakte/Multiplikatoren mit PLZ+Stadtsuche, Umkreis-Filter, Heatmap. 12.384 PLZ (8.298 DE + 4.086 NL). Next.js 16.2.3 Security Patch. Gesamt-QA PASS, Final-Check PASS.
+- Risks: Keine Schema-Migrationen. Neue Dependencies: leaflet, react-leaflet, leaflet.heat.
 - Rollback Notes: Docker Image Rollback via Coolify. V3.1 Image als Fallback.
