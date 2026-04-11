@@ -93,7 +93,7 @@ export function PlzSearch({
               setSelectedLabel("");
               setShowDropdown(v.length >= 2);
               // If pure numeric and 5 digits, apply directly
-              if (/^\d{5}$/.test(v)) {
+              if (/^\d{4,5}$/.test(v)) {
                 onChange(v);
                 setShowDropdown(false);
               } else if (v.length < 2) {

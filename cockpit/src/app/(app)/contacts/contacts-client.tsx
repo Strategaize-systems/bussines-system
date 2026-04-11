@@ -74,7 +74,7 @@ export function ContactsClient({ contacts, companies }: ContactsClientProps) {
 
   // PLZ search center
   const plzCenter = useMemo(() => {
-    if (plzSearch.length === 5) return getCoordinatesForPlz(plzSearch);
+    if (plzSearch.length >= 4) return getCoordinatesForPlz(plzSearch);
     return null;
   }, [plzSearch]);
 
