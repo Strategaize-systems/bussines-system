@@ -105,7 +105,7 @@ export function parseLLMResponse<T>(
 // Built-in validators for known response types
 // =============================================================
 
-import type { DealBriefing, DailySummary, PipelineSearchFilter, EmailImproveResult, EventClassifyResult } from "./types";
+import type { DealBriefing, DailySummary, PipelineSearchFilter, EmailImproveResult, EventClassifyResult, MeinTagQueryResult } from "./types";
 
 /** Validates a DealBriefing response */
 export function validateDealBriefing(data: unknown): DealBriefing | null {
@@ -186,6 +186,21 @@ export function validateEventClassifyResult(data: unknown): EventClassifyResult 
     }));
 
   return { items };
+}
+
+/** Validates a MeinTagQueryResult response */
+export function validateMeinTagQueryResult(data: unknown): MeinTagQueryResult | null {
+  if (typeof data !== "object" || data === null) return null;
+
+  const d = data as Record<string, unknown>;
+
+  if (typeof d.answer !== "string") return null;
+
+  return {
+    answer: d.answer,
+    highlights: Array.isArray(d.highlights) ? d.highlights.map(String) : [],
+    suggestedAction: typeof d.suggestedAction === "string" ? d.suggestedAction : null,
+  };
 }
 
 /** Validates an EmailImproveResult response */

@@ -13,7 +13,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { queryLLM } from "@/lib/ai/bedrock-client";
-import { parseLLMResponse, validateDealBriefing, validateDailySummary, validatePipelineSearchFilter, validateEmailImproveResult, validateEventClassifyResult } from "@/lib/ai/parser";
+import { parseLLMResponse, validateDealBriefing, validateDailySummary, validatePipelineSearchFilter, validateEmailImproveResult, validateEventClassifyResult, validateMeinTagQueryResult } from "@/lib/ai/parser";
 import { checkRateLimit } from "@/lib/ai/rate-limiter";
 import {
   DEAL_BRIEFING_SYSTEM_PROMPT,
@@ -35,6 +35,10 @@ import {
   EVENT_CLASSIFY_SYSTEM_PROMPT,
   buildEventClassifyPrompt,
 } from "@/lib/ai/prompts/event-classify";
+import {
+  MEIN_TAG_QUERY_SYSTEM_PROMPT,
+  buildMeinTagQueryPrompt,
+} from "@/lib/ai/prompts/mein-tag-query";
 import type {
   AIQueryRequest,
   AIQueryResponse,
@@ -43,11 +47,13 @@ import type {
   PipelineSearchContext,
   EmailImproveContext,
   EventClassifyContext,
+  MeinTagQueryContext,
   DealBriefing,
   DailySummary,
   PipelineSearchFilter,
   EmailImproveResult,
   EventClassifyResult,
+  MeinTagQueryResult,
 } from "@/lib/ai/types";
 
 export async function POST(request: NextRequest) {
@@ -199,12 +205,29 @@ export async function POST(request: NextRequest) {
       break;
     }
 
+    case "mein-tag-query": {
+      const ctx = body.context as MeinTagQueryContext;
+      if (!ctx.query) {
+        return NextResponse.json(
+          {
+            success: false,
+            data: null,
+            error: "Ungueltige Anfrage: 'query' ist erforderlich",
+          } satisfies AIQueryResponse,
+          { status: 400 }
+        );
+      }
+      systemPrompt = MEIN_TAG_QUERY_SYSTEM_PROMPT;
+      userPrompt = buildMeinTagQueryPrompt(ctx);
+      break;
+    }
+
     default:
       return NextResponse.json(
         {
           success: false,
           data: null,
-          error: `Unbekannter Query-Typ: '${body.type}'. Erlaubt: 'deal-briefing', 'daily-summary', 'pipeline-search', 'email-improve', 'event-classify'`,
+          error: `Unbekannter Query-Typ: '${body.type}'. Erlaubt: 'deal-briefing', 'daily-summary', 'pipeline-search', 'email-improve', 'event-classify', 'mein-tag-query'`,
         } satisfies AIQueryResponse,
         { status: 400 }
       );
@@ -393,6 +416,41 @@ export async function POST(request: NextRequest) {
           data: parsed.data,
           error: null,
         } satisfies AIQueryResponse<EventClassifyResult>,
+        {
+          status: 200,
+          headers: {
+            "X-RateLimit-Limit": String(rateLimit.limit),
+            "X-RateLimit-Remaining": String(
+              rateLimit.limit - rateLimit.currentCount
+            ),
+          },
+        }
+      );
+    }
+
+    case "mein-tag-query": {
+      const parsed = parseLLMResponse<MeinTagQueryResult>(
+        llmResult.data,
+        validateMeinTagQueryResult
+      );
+
+      if (!parsed.success) {
+        return NextResponse.json(
+          {
+            success: false,
+            data: null,
+            error: `KI-Antwort konnte nicht verarbeitet werden: ${parsed.error}`,
+          } satisfies AIQueryResponse,
+          { status: 502 }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          data: parsed.data,
+          error: null,
+        } satisfies AIQueryResponse<MeinTagQueryResult>,
         {
           status: 200,
           headers: {

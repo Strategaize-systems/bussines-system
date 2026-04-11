@@ -50,6 +50,7 @@ import { ContactSheet } from "../contacts/contact-sheet";
 import { CompanySheet } from "../companies/company-sheet";
 import { CallSheet } from "./call-sheet";
 import { KIWorkspace } from "./ki-workspace";
+import { MeinTagSearchBar } from "@/components/mein-tag/mein-tag-search-bar";
 
 interface MeinTagClientProps {
   data: TodayData;
@@ -157,8 +158,41 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
           {/* Top-level 8+4 split: left content flows independently from right sidebar */}
           <div className="grid grid-cols-12 gap-5">
 
-            {/* LEFT MAIN AREA (8 cols): Aufgaben + Deals side-by-side, then KI-Workspace below */}
+            {/* LEFT MAIN AREA (8 cols): KI-Suchfeld, Aufgaben + Deals, KI-Workspace */}
             <div className="col-span-8 space-y-4">
+              {/* KI-Assistent Search Bar */}
+              <MeinTagSearchBar
+                todaysTasks={allItems.map((item) => ({
+                  title: item.title,
+                  priority: item.priority ?? undefined,
+                  dueDate: item.dueDate ?? undefined,
+                  contactName: item.contactName ?? undefined,
+                  companyName: item.companyName ?? undefined,
+                }))}
+                topDeals={topDeals.map((d) => ({
+                  title: d.title,
+                  value: d.value ?? undefined,
+                  stage: d.stage ?? undefined,
+                  companyName: d.companyName ?? undefined,
+                  nextAction: d.nextAction ?? undefined,
+                }))}
+                calendarSlots={calendarSlots.map((s) => ({
+                  time: s.time,
+                  title: s.title,
+                  type: s.type,
+                }))}
+                stagnantDeals={exceptions.stagnantDeals.map((d) => ({
+                  title: d.title,
+                  daysSinceUpdate: d.daysSinceUpdate,
+                  value: d.value ?? undefined,
+                  stage: d.stage ?? undefined,
+                }))}
+                overdueTasks={exceptions.overdueTasks.map((t) => ({
+                  title: t.title,
+                  dueDate: t.dueDate,
+                }))}
+              />
+
               {/* Aufgaben + Deals row */}
               <div className="grid grid-cols-2 gap-5">
                 {/* LEFT: Work Actions + Aufgaben */}

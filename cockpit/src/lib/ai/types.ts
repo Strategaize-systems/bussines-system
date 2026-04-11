@@ -190,14 +190,60 @@ export interface EventClassifyResult {
 }
 
 // -------------------------------------------------------------
+// Mein Tag Query (KI-Assistent)
+// -------------------------------------------------------------
+
+export interface MeinTagQueryResult {
+  /** Direct answer to the user's question */
+  answer: string;
+  /** Optional highlighted items (deals, tasks, contacts) relevant to the answer */
+  highlights: string[];
+  /** Optional suggested next action */
+  suggestedAction: string | null;
+}
+
+export interface MeinTagQueryContext {
+  query: string;
+  todaysTasks: Array<{
+    title: string;
+    priority?: string;
+    dueDate?: string;
+    contactName?: string;
+    companyName?: string;
+  }>;
+  topDeals: Array<{
+    title: string;
+    value?: number;
+    stage?: string;
+    companyName?: string;
+    nextAction?: string;
+  }>;
+  calendarSlots: Array<{
+    time: string;
+    title: string;
+    type: string;
+  }>;
+  stagnantDeals: Array<{
+    title: string;
+    daysSinceUpdate: number;
+    value?: number;
+    stage?: string;
+  }>;
+  overdueTasks: Array<{
+    title: string;
+    dueDate: string;
+  }>;
+}
+
+// -------------------------------------------------------------
 // API Request / Response
 // -------------------------------------------------------------
 
-export type AIQueryType = "deal-briefing" | "daily-summary" | "pipeline-search" | "email-improve" | "event-classify";
+export type AIQueryType = "deal-briefing" | "daily-summary" | "pipeline-search" | "email-improve" | "event-classify" | "mein-tag-query";
 
 export interface AIQueryRequest {
   type: AIQueryType;
-  context: DealBriefingContext | DailySummaryContext | PipelineSearchContext | EmailImproveContext | EventClassifyContext;
+  context: DealBriefingContext | DailySummaryContext | PipelineSearchContext | EmailImproveContext | EventClassifyContext | MeinTagQueryContext;
 }
 
 export interface AIQueryResponse<T = DealBriefing | DailySummary> {
