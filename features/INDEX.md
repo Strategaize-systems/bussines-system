@@ -62,11 +62,11 @@
 
 | ID | Feature | Status | Created |
 |----|---------|--------|---------|
-| FEAT-321 | Quick Actions Modal-Umbau | done | 2026-04-11 |
-| FEAT-322 | Pipeline UI-Overhaul | done | 2026-04-11 |
-| FEAT-323 | Logout-Funktion | done | 2026-04-11 |
-| FEAT-324 | Pipeline-Verwaltung (Settings) | done | 2026-04-11 |
-| FEAT-325 | Autocomplete/Typeahead Suche | done | 2026-04-11 |
+| FEAT-321 | Quick Actions Modal-Umbau | deployed | 2026-04-11 |
+| FEAT-322 | Pipeline UI-Overhaul | deployed | 2026-04-11 |
+| FEAT-323 | Logout-Funktion | deployed | 2026-04-11 |
+| FEAT-324 | Pipeline-Verwaltung (Settings) | deployed | 2026-04-11 |
+| FEAT-325 | Autocomplete/Typeahead Suche | deployed | 2026-04-11 |
 | FEAT-326 | PLZ-Kartensuche mit Heatmap | planned | 2026-04-11 |
 
 ## V4 Features (Wissen + Management — planned)

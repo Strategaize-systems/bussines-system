@@ -14,8 +14,8 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - Current Phase: V3.2 Implementation (5/6 Slices done)
 
 ## Immediate Next Steps
-1. /qa fuer SLC-325 (Autocomplete/Typeahead)
-2. SLC-326 (PLZ-Kartensuche + Heatmap) — Library-Entscheidung (Leaflet vs. Mapbox)
+1. /architecture fuer SLC-326 (PLZ-Kartensuche + Heatmap) — Library-Entscheidung
+2. SLC-326 Implementierung in frischer Session
 3. SLC-326 (PLZ-Kartensuche + Heatmap) — Library-Entscheidung (Leaflet vs. Mapbox)
 4. Gesamt-QA V3.2 nach allen Slices
 
@@ -32,7 +32,7 @@ V3.2 — UI-Polish + Pipeline-Management (6 Slices, 7 Backlog-Items):
 - aktuell keine
 
 ## Last Stable Version
-- V3.1 — 2026-04-11 — deployed auf Hetzner (UX-Schliff + KI-Kontext)
+- V3.2 — 2026-04-11 — deployed auf Hetzner (UI-Polish + Pipeline-Management, 5/6 Slices)
 
 ## Notes
 V3 released (2026-04-10, REL-005). V3.1 (9 Slices, UX-Schliff + KI-Kontext) code-complete (REL-006). V3.2 aktiv — 3/6 Slices done (Quick Actions, Pipeline UI-Overhaul, Logout). Offen: Pipeline-Verwaltung, Autocomplete, PLZ-Karte. V3.1 deployed auf Hetzner (2026-04-11, REL-006).

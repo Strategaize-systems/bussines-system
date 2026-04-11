@@ -41,3 +41,10 @@
 - Summary: UX-Schliff und KI-Kontext-Integration. Alle Formulare KI-vorbefuellt aus Kontext. Voice-Input in allen Textfeldern. KI-Kostenkontrolle durch on-click statt auto-load. Automatische Wiedervorlagen nach Aktionen.
 - Risks: Keine neuen Schema-Migrationen. Bedrock-Kosten kontrolliert durch on-click Pattern.
 - Rollback Notes: Docker Image Rollback via Coolify. V3 Image als Fallback.
+
+### REL-007 — V3.2 UI-Polish + Pipeline-Management
+- Date: 2026-04-11
+- Scope: 5 von 6 Slices (SLC-321..325). Quick Actions Modal-Umbau, Pipeline UI-Overhaul + Selector, Logout-Button, Pipeline-Verwaltung in Settings (CRUD + Default-Stages), Autocomplete/Typeahead Suche. SLC-326 (PLZ-Karte) deferred.
+- Summary: UI-Quality-Release. Pipeline komplett ueberarbeitet (Figma-Design, Tabs, Viewport-Layout). Settings erweitert um Pipeline-CRUD mit Built-in-Schutz. Wiederverwendbare SearchAutocomplete-Komponente auf Kontakte, Firmen, Multiplikatoren.
+- Risks: Keine Schema-Migrationen. Keine neuen externen Abhaengigkeiten.
+- Rollback Notes: Docker Image Rollback via Coolify. V3.1 Image als Fallback.
