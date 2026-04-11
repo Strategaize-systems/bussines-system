@@ -7,6 +7,11 @@ import { PageHeader } from "@/components/ui/page-header";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
 import { ViewToggle } from "@/components/ui/view-toggle";
+import type { ViewMode } from "@/components/ui/view-toggle";
+import { EntityMapDynamic } from "@/components/map/entity-map-dynamic";
+import { PlzSearch } from "@/components/map/plz-search";
+import { getCoordinatesForPlz, getEntitiesInRadius } from "@/lib/geo/plz-lookup";
+import type { GeoEntity } from "@/lib/geo/plz-lookup";
 import { ContactSheet } from "../contacts/contact-sheet";
 import type { Contact } from "../contacts/actions";
 import type { SearchItem } from "@/components/ui/search-autocomplete";
@@ -40,17 +45,19 @@ const regionOptions = [
 
 interface MultiplikatorenClientProps {
   multipliers: Contact[];
-  companies: { id: string; name: string }[];
+  companies: { id: string; name: string; address_zip: string | null }[];
 }
 
 export function MultiplikatorenClient({ multipliers, companies }: MultiplikatorenClientProps) {
   const router = useRouter();
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [trustFilter, setTrustFilter] = useState("");
   const [regionFilter, setRegionFilter] = useState("");
   const [showNewContact, setShowNewContact] = useState(false);
+  const [plzSearch, setPlzSearch] = useState("");
+  const [plzRadius, setPlzRadius] = useState(50);
 
   const filtered = useMemo(() => {
     let result = multipliers;
@@ -67,6 +74,47 @@ export function MultiplikatorenClient({ multipliers, companies }: Multiplikatore
     if (regionFilter) result = result.filter((m) => m.region === regionFilter);
     return result;
   }, [multipliers, searchQuery, typeFilter, trustFilter, regionFilter]);
+
+  // Build company PLZ lookup
+  const companyPlzMap = useMemo(() => {
+    const map = new Map<string, string>();
+    companies.forEach((c) => { if (c.address_zip) map.set(c.id, c.address_zip); });
+    return map;
+  }, [companies]);
+
+  // PLZ search center
+  const plzCenter = useMemo(() => {
+    if (plzSearch.length === 5) return getCoordinatesForPlz(plzSearch);
+    return null;
+  }, [plzSearch]);
+
+  // Geo-enrich multipliers via company PLZ
+  const geoEntities = useMemo(
+    () => {
+      const result: GeoEntity[] = [];
+      for (const m of filtered) {
+        const plz = m.company_id ? companyPlzMap.get(m.company_id) : null;
+        const coords = getCoordinatesForPlz(plz);
+        if (!coords) continue;
+        result.push({
+          id: m.id,
+          lat: coords.lat,
+          lng: coords.lng,
+          label: `${m.first_name} ${m.last_name}`,
+          sublabel: m.multiplier_type || undefined,
+          type: m.trust_level || undefined,
+        });
+      }
+      return result;
+    },
+    [filtered, companyPlzMap]
+  );
+
+  // Filter by PLZ radius
+  const mapEntities = useMemo(() => {
+    if (!plzCenter) return geoEntities;
+    return getEntitiesInRadius(geoEntities, plzCenter, plzRadius);
+  }, [geoEntities, plzCenter, plzRadius]);
 
   const highTrust = multipliers.filter((m) => m.trust_level === "hoch").length;
   const highReferral = multipliers.filter((m) => m.referral_capability === "hoch").length;
@@ -114,103 +162,145 @@ export function MultiplikatorenClient({ multipliers, companies }: Multiplikatore
             <FilterSelect value={regionFilter} onChange={setRegionFilter} options={regionOptions} />
           </FilterBar>
 
-          {/* Cards Grid */}
-          <div className="grid grid-cols-12 gap-6">
-            <div className="col-span-8">
-              <div className="grid grid-cols-2 gap-6">
-                {filtered.map((m) => (
-                  <div
-                    key={m.id}
-                    onClick={() => router.push(`/contacts/${m.id}`)}
-                    className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden hover:border-[#4454b8] hover:shadow-xl transition-all group cursor-pointer"
-                  >
-                    <div className="p-5 border-b border-slate-200 bg-gradient-to-br from-slate-50 to-white">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
-                          {m.first_name.charAt(0)}{m.last_name.charAt(0)}
-                        </div>
-                        <div>
-                          <h3 className="text-base font-bold text-slate-900 group-hover:text-[#120774] transition-colors">
-                            {m.first_name} {m.last_name}
-                          </h3>
-                          {m.position && <p className="text-xs text-slate-500">{m.position}</p>}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 mt-3 flex-wrap">
-                        {m.multiplier_type && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border bg-purple-50 text-purple-700 border-purple-200">
-                            {m.multiplier_type}
-                          </span>
-                        )}
-                        {m.trust_level && (
-                          <TrustBadge level={m.trust_level} />
-                        )}
-                        {m.referral_capability && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border bg-amber-50 text-amber-700 border-amber-200">
-                            ⭐ Empf: {m.referral_capability}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="p-4 space-y-1.5">
-                      {m.companies && (
-                        <p className="text-xs text-slate-600">🏢 {(m.companies as any).name}</p>
-                      )}
-                      {m.email && <p className="text-xs text-slate-600 truncate">📧 {m.email}</p>}
-                      {m.region && (
-                        <p className="text-xs text-slate-500 flex items-center gap-1">
-                          <MapPin size={10} /> {m.region}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {filtered.length === 0 && (
-                  <div className="col-span-2 bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-12 text-center">
-                    <Handshake size={40} className="mx-auto text-slate-300 mb-3" />
-                    <p className="text-sm font-medium text-slate-500">Keine Multiplikatoren gefunden</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Map Sidebar */}
-            <div className="col-span-4">
-              <div className="sticky top-32 space-y-4">
-                {/* Standort-Filter */}
+          {viewMode === "karte" ? (
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-8 space-y-4">
+                <PlzSearch
+                  value={plzSearch}
+                  onChange={setPlzSearch}
+                  radiusKm={plzRadius}
+                  onRadiusChange={setPlzRadius}
+                />
                 <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <MapPin size={16} className="text-[#4454b8]" strokeWidth={2.5} />
-                    <h3 className="text-sm font-bold text-slate-900">Standort-Filter</h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <MapPin size={16} strokeWidth={2.5} className="text-[#4454b8]" />
+                      {plzCenter ? `PLZ ${plzSearch} · ${plzRadius} km` : "Deutschland"}
+                    </h3>
+                    <span className="text-[10px] font-bold text-slate-400">
+                      {mapEntities.length} Standorte
+                    </span>
                   </div>
-                  <select
-                    value={regionFilter}
-                    onChange={(e) => setRegionFilter(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border-2 border-slate-200 text-sm font-medium text-slate-700 focus:outline-none focus:border-[#4454b8] focus:ring-2 focus:ring-[#4454b8]/20 transition-all cursor-pointer"
-                  >
-                    {regionOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Map */}
-                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
-                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 mb-3">
-                    <MapPin size={16} className="text-[#4454b8]" strokeWidth={2.5} />
-                    Deutschland
-                  </h3>
-                  <div className="rounded-xl border-2 border-slate-200 bg-gradient-to-br from-blue-50/50 to-slate-50 aspect-[3/4] flex items-center justify-center">
-                    <div className="text-center">
-                      <MapPin size={32} className="mx-auto text-slate-300 mb-2" />
-                      <p className="text-xs text-slate-400 font-medium">Karte wird geladen...</p>
-                      <p className="text-[10px] text-slate-300 mt-1">{filtered.length} Multiplikatoren</p>
-                    </div>
+                  <div className="rounded-xl border-2 border-slate-200 overflow-hidden" style={{ height: "600px" }}>
+                    <EntityMapDynamic
+                      entities={mapEntities}
+                      onEntityClick={(id) => router.push(`/contacts/${id}`)}
+                      center={plzCenter ?? undefined}
+                      zoom={plzCenter ? 10 : undefined}
+                    />
                   </div>
                 </div>
               </div>
+              <div className="col-span-4">
+                <div className="sticky top-32 space-y-2 max-h-[calc(100vh-10rem)] overflow-y-auto">
+                  {(plzCenter ? filtered.filter((m) => mapEntities.some((e) => e.id === m.id)) : filtered).map((m) => (
+                    <div
+                      key={m.id}
+                      onClick={() => router.push(`/contacts/${m.id}`)}
+                      className="bg-white rounded-xl border-2 border-slate-200 p-3 cursor-pointer hover:border-slate-300 transition-all"
+                    >
+                      <div className="text-sm font-bold text-slate-900">
+                        {m.first_name} {m.last_name}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        {[m.multiplier_type, m.region].filter(Boolean).join(" · ")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-8">
+                <div className="grid grid-cols-2 gap-6">
+                  {filtered.map((m) => (
+                    <div
+                      key={m.id}
+                      onClick={() => router.push(`/contacts/${m.id}`)}
+                      className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden hover:border-[#4454b8] hover:shadow-xl transition-all group cursor-pointer"
+                    >
+                      <div className="p-5 border-b border-slate-200 bg-gradient-to-br from-slate-50 to-white">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
+                            {m.first_name.charAt(0)}{m.last_name.charAt(0)}
+                          </div>
+                          <div>
+                            <h3 className="text-base font-bold text-slate-900 group-hover:text-[#120774] transition-colors">
+                              {m.first_name} {m.last_name}
+                            </h3>
+                            {m.position && <p className="text-xs text-slate-500">{m.position}</p>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-3 flex-wrap">
+                          {m.multiplier_type && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border bg-purple-50 text-purple-700 border-purple-200">
+                              {m.multiplier_type}
+                            </span>
+                          )}
+                          {m.trust_level && (
+                            <TrustBadge level={m.trust_level} />
+                          )}
+                          {m.referral_capability && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border bg-amber-50 text-amber-700 border-amber-200">
+                              ⭐ Empf: {m.referral_capability}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="p-4 space-y-1.5">
+                        {m.companies && (
+                          <p className="text-xs text-slate-600">🏢 {(m.companies as any).name}</p>
+                        )}
+                        {m.email && <p className="text-xs text-slate-600 truncate">📧 {m.email}</p>}
+                        {m.region && (
+                          <p className="text-xs text-slate-500 flex items-center gap-1">
+                            <MapPin size={10} /> {m.region}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {filtered.length === 0 && (
+                    <div className="col-span-2 bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-12 text-center">
+                      <Handshake size={40} className="mx-auto text-slate-300 mb-3" />
+                      <p className="text-sm font-medium text-slate-500">Keine Multiplikatoren gefunden</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="col-span-4">
+                <div className="sticky top-32 space-y-4">
+                  <PlzSearch
+                    value={plzSearch}
+                    onChange={setPlzSearch}
+                    radiusKm={plzRadius}
+                    onRadiusChange={setPlzRadius}
+                  />
+                  <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <MapPin size={16} strokeWidth={2.5} className="text-[#4454b8]" />
+                        {plzCenter ? `PLZ ${plzSearch} · ${plzRadius} km` : "Deutschland"}
+                      </h3>
+                      <span className="text-[10px] font-bold text-slate-400">
+                        {mapEntities.length} Standorte
+                      </span>
+                    </div>
+                    <div className="rounded-xl border-2 border-slate-200 overflow-hidden aspect-[3/4]">
+                      <EntityMapDynamic
+                        entities={mapEntities}
+                        onEntityClick={(id) => router.push(`/contacts/${id}`)}
+                        center={plzCenter ?? undefined}
+                        zoom={plzCenter ? 10 : undefined}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 

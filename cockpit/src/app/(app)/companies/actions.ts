@@ -292,9 +292,9 @@ export async function getCompaniesForSelect() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("companies")
-    .select("id, name")
+    .select("id, name, address_zip")
     .order("name");
 
   if (error) throw new Error(error.message);
-  return data as { id: string; name: string }[];
+  return data as { id: string; name: string; address_zip: string | null }[];
 }

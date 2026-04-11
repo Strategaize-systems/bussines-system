@@ -7,6 +7,11 @@ import { PageHeader } from "@/components/ui/page-header";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
 import { ViewToggle } from "@/components/ui/view-toggle";
+import type { ViewMode } from "@/components/ui/view-toggle";
+import { EntityMapDynamic } from "@/components/map/entity-map-dynamic";
+import { PlzSearch } from "@/components/map/plz-search";
+import { getCoordinatesForPlz, getEntitiesInRadius } from "@/lib/geo/plz-lookup";
+import type { GeoEntity } from "@/lib/geo/plz-lookup";
 import { ContactSheet } from "./contact-sheet";
 import type { Contact } from "./actions";
 import type { SearchItem } from "@/components/ui/search-autocomplete";
@@ -30,16 +35,18 @@ const regionOptions = [
 
 interface ContactsClientProps {
   contacts: Contact[];
-  companies: { id: string; name: string }[];
+  companies: { id: string; name: string; address_zip: string | null }[];
 }
 
 export function ContactsClient({ contacts, companies }: ContactsClientProps) {
   const router = useRouter();
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [regionFilter, setRegionFilter] = useState("");
   const [showNewContact, setShowNewContact] = useState(false);
+  const [plzSearch, setPlzSearch] = useState("");
+  const [plzRadius, setPlzRadius] = useState(50);
 
   const filtered = useMemo(() => {
     let result = contacts;
@@ -56,6 +63,47 @@ export function ContactsClient({ contacts, companies }: ContactsClientProps) {
     if (regionFilter) result = result.filter((c) => c.region === regionFilter);
     return result;
   }, [contacts, searchQuery, typeFilter, regionFilter]);
+
+  // Build company PLZ lookup
+  const companyPlzMap = useMemo(() => {
+    const map = new Map<string, string>();
+    companies.forEach((c) => { if (c.address_zip) map.set(c.id, c.address_zip); });
+    return map;
+  }, [companies]);
+
+  // PLZ search center
+  const plzCenter = useMemo(() => {
+    if (plzSearch.length === 5) return getCoordinatesForPlz(plzSearch);
+    return null;
+  }, [plzSearch]);
+
+  // Geo-enrich contacts via company PLZ
+  const geoEntities = useMemo(
+    () => {
+      const result: GeoEntity[] = [];
+      for (const c of filtered) {
+        const plz = c.company_id ? companyPlzMap.get(c.company_id) : null;
+        const coords = getCoordinatesForPlz(plz);
+        if (!coords) continue;
+        result.push({
+          id: c.id,
+          lat: coords.lat,
+          lng: coords.lng,
+          label: `${c.first_name} ${c.last_name}`,
+          sublabel: c.position || undefined,
+          type: c.relationship_type || undefined,
+        });
+      }
+      return result;
+    },
+    [filtered, companyPlzMap]
+  );
+
+  // Filter by PLZ radius
+  const mapEntities = useMemo(() => {
+    if (!plzCenter) return geoEntities;
+    return getEntitiesInRadius(geoEntities, plzCenter, plzRadius);
+  }, [geoEntities, plzCenter, plzRadius]);
 
   const multiplierCount = contacts.filter((c) => c.is_multiplier).length;
   const kundenCount = contacts.filter((c) => c.relationship_type === "kunde").length;
@@ -102,100 +150,149 @@ export function ContactsClient({ contacts, companies }: ContactsClientProps) {
             <FilterSelect value={regionFilter} onChange={setRegionFilter} options={regionOptions} />
           </FilterBar>
 
-          {/* Contact Cards Grid */}
-          <div className="grid grid-cols-12 gap-6">
-            <div className="col-span-8">
-              <div className="grid grid-cols-2 gap-6">
-                {filtered.map((contact) => (
-                  <div
-                    key={contact.id}
-                    onClick={() => router.push(`/contacts/${contact.id}`)}
-                    className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden hover:border-[#4454b8] hover:shadow-xl transition-all group cursor-pointer"
-                  >
-                    <div className="p-5 border-b border-slate-200 bg-gradient-to-br from-slate-50 to-white">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#120774] to-[#4454b8] flex items-center justify-center text-white text-sm font-bold">
-                          {contact.first_name.charAt(0)}{contact.last_name.charAt(0)}
+          {viewMode === "karte" ? (
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-8 space-y-4">
+                <PlzSearch
+                  value={plzSearch}
+                  onChange={setPlzSearch}
+                  radiusKm={plzRadius}
+                  onRadiusChange={setPlzRadius}
+                />
+                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <MapPin size={16} strokeWidth={2.5} className="text-[#4454b8]" />
+                      {plzCenter ? `PLZ ${plzSearch} · ${plzRadius} km` : "Deutschland"}
+                    </h3>
+                    <span className="text-[10px] font-bold text-slate-400">
+                      {mapEntities.length} Standorte
+                    </span>
+                  </div>
+                  <div className="rounded-xl border-2 border-slate-200 overflow-hidden" style={{ height: "600px" }}>
+                    <EntityMapDynamic
+                      entities={mapEntities}
+                      onEntityClick={(id) => router.push(`/contacts/${id}`)}
+                      center={plzCenter ?? undefined}
+                      zoom={plzCenter ? 10 : undefined}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="col-span-4">
+                <div className="sticky top-32 space-y-2 max-h-[calc(100vh-10rem)] overflow-y-auto">
+                  {(plzCenter ? filtered.filter((c) => mapEntities.some((e) => e.id === c.id)) : filtered).map((contact) => (
+                    <div
+                      key={contact.id}
+                      onClick={() => router.push(`/contacts/${contact.id}`)}
+                      className="bg-white rounded-xl border-2 border-slate-200 p-3 cursor-pointer hover:border-slate-300 transition-all"
+                    >
+                      <div className="text-sm font-bold text-slate-900">
+                        {contact.first_name} {contact.last_name}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        {[contact.position, contact.region].filter(Boolean).join(" · ")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-8">
+                <div className="grid grid-cols-2 gap-6">
+                  {filtered.map((contact) => (
+                    <div
+                      key={contact.id}
+                      onClick={() => router.push(`/contacts/${contact.id}`)}
+                      className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden hover:border-[#4454b8] hover:shadow-xl transition-all group cursor-pointer"
+                    >
+                      <div className="p-5 border-b border-slate-200 bg-gradient-to-br from-slate-50 to-white">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#120774] to-[#4454b8] flex items-center justify-center text-white text-sm font-bold">
+                            {contact.first_name.charAt(0)}{contact.last_name.charAt(0)}
+                          </div>
+                          <div>
+                            <h3 className="text-base font-bold text-slate-900 group-hover:text-[#120774] transition-colors">
+                              {contact.first_name} {contact.last_name}
+                            </h3>
+                            {contact.position && (
+                              <p className="text-xs text-slate-500">{contact.position}</p>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="text-base font-bold text-slate-900 group-hover:text-[#120774] transition-colors">
-                            {contact.first_name} {contact.last_name}
-                          </h3>
-                          {contact.position && (
-                            <p className="text-xs text-slate-500">{contact.position}</p>
+                        <div className="flex items-center gap-2 mt-3 flex-wrap">
+                          {contact.relationship_type && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border bg-blue-50 text-blue-700 border-blue-200">
+                              {contact.relationship_type}
+                            </span>
+                          )}
+                          {contact.is_multiplier && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border bg-purple-50 text-purple-700 border-purple-200">
+                              Multiplikator
+                            </span>
+                          )}
+                          {contact.region && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border bg-slate-50 text-slate-600 border-slate-200">
+                              <MapPin size={9} /> {contact.region}
+                            </span>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 mt-3 flex-wrap">
-                        {contact.relationship_type && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border bg-blue-50 text-blue-700 border-blue-200">
-                            {contact.relationship_type}
-                          </span>
+                      <div className="p-4 space-y-1.5">
+                        {contact.email && (
+                          <p className="text-xs text-slate-600 truncate">📧 {contact.email}</p>
                         )}
-                        {contact.is_multiplier && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border bg-purple-50 text-purple-700 border-purple-200">
-                            Multiplikator
-                          </span>
+                        {contact.phone && (
+                          <p className="text-xs text-slate-600">📞 {contact.phone}</p>
                         )}
-                        {contact.region && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border bg-slate-50 text-slate-600 border-slate-200">
-                            <MapPin size={9} /> {contact.region}
-                          </span>
+                        {contact.companies && (
+                          <p className="text-xs text-slate-500">🏢 {(contact.companies as any).name}</p>
                         )}
                       </div>
                     </div>
-                    <div className="p-4 space-y-1.5">
-                      {contact.email && (
-                        <p className="text-xs text-slate-600 truncate">📧 {contact.email}</p>
-                      )}
-                      {contact.phone && (
-                        <p className="text-xs text-slate-600">📞 {contact.phone}</p>
-                      )}
-                      {contact.companies && (
-                        <p className="text-xs text-slate-500">🏢 {(contact.companies as any).name}</p>
-                      )}
+                  ))}
+                  {filtered.length === 0 && (
+                    <div className="col-span-2 bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-12 text-center">
+                      <Users size={40} className="mx-auto text-slate-300 mb-3" />
+                      <p className="text-sm font-medium text-slate-500">Keine Kontakte gefunden</p>
                     </div>
-                  </div>
-                ))}
-                {filtered.length === 0 && (
-                  <div className="col-span-2 bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-12 text-center">
-                    <Users size={40} className="mx-auto text-slate-300 mb-3" />
-                    <p className="text-sm font-medium text-slate-500">Keine Kontakte gefunden</p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* Map Sidebar */}
-            <div className="col-span-4">
-              <div className="sticky top-32 space-y-4">
-                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <MapPin size={16} className="text-[#4454b8]" strokeWidth={2.5} />
-                    <h3 className="text-sm font-bold text-slate-900">Standort-Filter</h3>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="PLZ (z.B. 10115)"
-                    className="w-full px-3 py-2 rounded-lg border-2 border-slate-200 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#4454b8] focus:ring-2 focus:ring-[#4454b8]/20 transition-all"
+              <div className="col-span-4">
+                <div className="sticky top-32 space-y-4">
+                  <PlzSearch
+                    value={plzSearch}
+                    onChange={setPlzSearch}
+                    radiusKm={plzRadius}
+                    onRadiusChange={setPlzRadius}
                   />
-                </div>
-                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
-                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 mb-3">
-                    <MapPin size={16} className="text-[#4454b8]" strokeWidth={2.5} />
-                    Deutschland
-                  </h3>
-                  <div className="rounded-xl border-2 border-slate-200 bg-gradient-to-br from-blue-50/50 to-slate-50 aspect-[3/4] flex items-center justify-center">
-                    <div className="text-center">
-                      <MapPin size={32} className="mx-auto text-slate-300 mb-2" />
-                      <p className="text-xs text-slate-400 font-medium">Karte wird geladen...</p>
-                      <p className="text-[10px] text-slate-300 mt-1">{filtered.length} Kontakte</p>
+                  <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <MapPin size={16} strokeWidth={2.5} className="text-[#4454b8]" />
+                        {plzCenter ? `PLZ ${plzSearch} · ${plzRadius} km` : "Deutschland"}
+                      </h3>
+                      <span className="text-[10px] font-bold text-slate-400">
+                        {mapEntities.length} Standorte
+                      </span>
+                    </div>
+                    <div className="rounded-xl border-2 border-slate-200 overflow-hidden aspect-[3/4]">
+                      <EntityMapDynamic
+                        entities={mapEntities}
+                        onEntityClick={(id) => router.push(`/contacts/${id}`)}
+                        center={plzCenter ?? undefined}
+                        zoom={plzCenter ? 10 : undefined}
+                      />
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
 

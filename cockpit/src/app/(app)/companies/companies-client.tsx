@@ -7,6 +7,11 @@ import { PageHeader } from "@/components/ui/page-header";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
 import { ViewToggle } from "@/components/ui/view-toggle";
+import type { ViewMode } from "@/components/ui/view-toggle";
+import { EntityMapDynamic } from "@/components/map/entity-map-dynamic";
+import { PlzSearch } from "@/components/map/plz-search";
+import { getCoordinatesForPlz, getEntitiesInRadius } from "@/lib/geo/plz-lookup";
+import type { GeoEntity } from "@/lib/geo/plz-lookup";
 import { CompanySheet } from "./company-sheet";
 import type { CompanyEnriched, CompanyStats } from "./actions";
 import type { SearchItem } from "@/components/ui/search-autocomplete";
@@ -50,13 +55,15 @@ interface CompaniesClientProps {
 
 export function CompaniesClient({ companies, stats }: CompaniesClientProps) {
   const router = useRouter();
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [regionFilter, setRegionFilter] = useState("");
   const [potentialFilter, setPotentialFilter] = useState("");
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [showNewCompany, setShowNewCompany] = useState(false);
+  const [plzSearch, setPlzSearch] = useState("");
+  const [plzRadius, setPlzRadius] = useState(50);
 
   const searchItems: SearchItem[] = useMemo(
     () =>
@@ -91,6 +98,39 @@ export function CompaniesClient({ companies, stats }: CompaniesClientProps) {
     }
     return result;
   }, [companies, searchQuery, statusFilter, regionFilter, potentialFilter]);
+
+  // PLZ search center
+  const plzCenter = useMemo(() => {
+    if (plzSearch.length === 5) return getCoordinatesForPlz(plzSearch);
+    return null;
+  }, [plzSearch]);
+
+  // Geo-enrich filtered companies
+  const geoEntities = useMemo(
+    () => {
+      const result: GeoEntity[] = [];
+      for (const c of filtered) {
+        const coords = getCoordinatesForPlz(c.address_zip);
+        if (!coords) continue;
+        result.push({
+          id: c.id,
+          lat: coords.lat,
+          lng: coords.lng,
+          label: c.name,
+          sublabel: [c.address_zip, c.address_city].filter(Boolean).join(" "),
+          type: c.blueprint_fit || undefined,
+        });
+      }
+      return result;
+    },
+    [filtered]
+  );
+
+  // Filter by PLZ radius when search is active
+  const mapEntities = useMemo(() => {
+    if (!plzCenter) return geoEntities;
+    return getEntitiesInRadius(geoEntities, plzCenter, plzRadius);
+  }, [geoEntities, plzCenter, plzRadius]);
 
   return (
     <div className="min-h-screen">
@@ -143,82 +183,123 @@ export function CompaniesClient({ companies, stats }: CompaniesClientProps) {
             <FilterSelect value={potentialFilter} onChange={setPotentialFilter} options={potentialOptions} />
           </FilterBar>
 
-          {/* 2-Column Layout: Cards + Map */}
-          <div className="grid grid-cols-12 gap-6">
-            {/* Company Cards (8 cols) */}
-            <div className="col-span-8">
-              <div className="grid grid-cols-2 gap-6">
-                {filtered.map((company) => (
-                  <CompanyCard
-                    key={company.id}
-                    company={company}
-                    isHovered={hoveredCard === company.id}
-                    onHover={() => setHoveredCard(company.id)}
-                    onLeave={() => setHoveredCard(null)}
-                    onClick={() => router.push(`/companies/${company.id}`)}
-                  />
-                ))}
-                {filtered.length === 0 && (
-                  <div className="col-span-2 bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-12 text-center">
-                    <Building2 size={40} className="mx-auto text-slate-300 mb-3" />
-                    <p className="text-sm font-medium text-slate-500">Keine Firmen gefunden</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Map Sidebar (4 cols, sticky) */}
-            <div className="col-span-4">
-              <div className="sticky top-32 space-y-4">
-                {/* PLZ Filter */}
-                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <MapPin size={16} className="text-[#4454b8]" strokeWidth={2.5} />
-                    <h3 className="text-sm font-bold text-slate-900">Standort-Filter</h3>
-                  </div>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                    <input
-                      type="text"
-                      placeholder="PLZ (z.B. 10115)"
-                      className="w-full pl-9 pr-4 py-2 rounded-lg border-2 border-slate-200 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#4454b8] focus:ring-2 focus:ring-[#4454b8]/20 transition-all"
-                    />
-                  </div>
-                </div>
-
-                {/* Map Placeholder */}
+          {viewMode === "karte" ? (
+            /* Full Map View: Map (8 cols) + List (4 cols) */
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-8 space-y-4">
+                <PlzSearch
+                  value={plzSearch}
+                  onChange={setPlzSearch}
+                  radiusKm={plzRadius}
+                  onRadiusChange={setPlzRadius}
+                />
                 <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                       <MapPin size={16} strokeWidth={2.5} className="text-[#4454b8]" />
-                      Deutschland
+                      {plzCenter ? `PLZ ${plzSearch} · ${plzRadius} km` : "Deutschland"}
                     </h3>
+                    <span className="text-[10px] font-bold text-slate-400">
+                      {mapEntities.length} Standorte
+                    </span>
                   </div>
-                  <div className="relative rounded-xl border-2 border-slate-200 overflow-hidden bg-gradient-to-br from-blue-50/50 to-slate-50 aspect-[3/4] flex items-center justify-center">
-                    <div className="text-center">
-                      <MapPin size={32} className="mx-auto text-slate-300 mb-2" />
-                      <p className="text-xs text-slate-400 font-medium">Karte wird geladen...</p>
-                      <p className="text-[10px] text-slate-300 mt-1">{filtered.length} Standorte</p>
+                  <div className="rounded-xl border-2 border-slate-200 overflow-hidden" style={{ height: "600px" }}>
+                    <EntityMapDynamic
+                      entities={mapEntities}
+                      onEntityClick={(id) => router.push(`/companies/${id}`)}
+                      hoveredId={hoveredCard}
+                      center={plzCenter ?? undefined}
+                      zoom={plzCenter ? 10 : undefined}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="col-span-4">
+                <div className="sticky top-32 space-y-2 max-h-[calc(100vh-10rem)] overflow-y-auto">
+                  {(plzCenter ? filtered.filter((c) => mapEntities.some((e) => e.id === c.id)) : filtered).map((company) => (
+                    <div
+                      key={company.id}
+                      onClick={() => router.push(`/companies/${company.id}`)}
+                      onMouseEnter={() => setHoveredCard(company.id)}
+                      onMouseLeave={() => setHoveredCard(null)}
+                      className={`bg-white rounded-xl border-2 p-3 cursor-pointer transition-all ${
+                        hoveredCard === company.id ? "border-[#4454b8] shadow-md" : "border-slate-200 hover:border-slate-300"
+                      }`}
+                    >
+                      <div className="text-sm font-bold text-slate-900">{company.name}</div>
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        {[company.address_zip, company.address_city].filter(Boolean).join(" ")}
+                      </div>
+                      {company.blueprint_fit && (
+                        <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold ${
+                          company.blueprint_fit === "ideal" ? "bg-emerald-100 text-emerald-700" :
+                          company.blueprint_fit === "gut" ? "bg-blue-100 text-blue-700" :
+                          "bg-amber-100 text-amber-700"
+                        }`}>
+                          {company.blueprint_fit}
+                        </span>
+                      )}
                     </div>
-                    {/* Pins */}
-                    {filtered.slice(0, 10).map((c, i) => (
-                      <div
-                        key={c.id}
-                        className={`absolute w-3 h-3 rounded-full border-2 border-white shadow-md transition-all ${
-                          hoveredCard === c.id ? "scale-150 z-10" : ""
-                        }`}
-                        style={{
-                          backgroundColor: c.blueprint_fit === "ideal" ? "#10b981" : c.blueprint_fit === "gut" ? "#4454b8" : "#f97316",
-                          top: `${20 + (i * 6)}%`,
-                          left: `${30 + ((i * 17) % 40)}%`,
-                        }}
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Grid/List View: Cards (8 cols) + Map Sidebar (4 cols) */
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-8">
+                <div className="grid grid-cols-2 gap-6">
+                  {filtered.map((company) => (
+                    <CompanyCard
+                      key={company.id}
+                      company={company}
+                      isHovered={hoveredCard === company.id}
+                      onHover={() => setHoveredCard(company.id)}
+                      onLeave={() => setHoveredCard(null)}
+                      onClick={() => router.push(`/companies/${company.id}`)}
+                    />
+                  ))}
+                  {filtered.length === 0 && (
+                    <div className="col-span-2 bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-12 text-center">
+                      <Building2 size={40} className="mx-auto text-slate-300 mb-3" />
+                      <p className="text-sm font-medium text-slate-500">Keine Firmen gefunden</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="col-span-4">
+                <div className="sticky top-32 space-y-4">
+                  <PlzSearch
+                    value={plzSearch}
+                    onChange={setPlzSearch}
+                    radiusKm={plzRadius}
+                    onRadiusChange={setPlzRadius}
+                  />
+                  <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <MapPin size={16} strokeWidth={2.5} className="text-[#4454b8]" />
+                        {plzCenter ? `PLZ ${plzSearch} · ${plzRadius} km` : "Deutschland"}
+                      </h3>
+                      <span className="text-[10px] font-bold text-slate-400">
+                        {mapEntities.length} Standorte
+                      </span>
+                    </div>
+                    <div className="rounded-xl border-2 border-slate-200 overflow-hidden aspect-[3/4]">
+                      <EntityMapDynamic
+                        entities={mapEntities}
+                        onEntityClick={(id) => router.push(`/companies/${id}`)}
+                        hoveredId={hoveredCard}
+                        center={plzCenter ?? undefined}
+                        zoom={plzCenter ? 10 : undefined}
                       />
-                    ))}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
 
