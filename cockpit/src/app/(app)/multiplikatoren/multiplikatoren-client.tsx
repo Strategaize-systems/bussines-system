@@ -176,7 +176,7 @@ export function MultiplikatorenClient({ multipliers, companies }: Multiplikatore
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                       <MapPin size={16} strokeWidth={2.5} className="text-[#4454b8]" />
-                      {plzCenter ? `PLZ ${plzSearch} · ${plzRadius} km` : "Deutschland"}
+                      {plzCenter ? `PLZ ${plzSearch} · ${plzRadius} km` : "Karte"}
                     </h3>
                     <span className="text-[10px] font-bold text-slate-400">
                       {mapEntities.length} Standorte
@@ -288,7 +288,7 @@ export function MultiplikatorenClient({ multipliers, companies }: Multiplikatore
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                         <MapPin size={16} strokeWidth={2.5} className="text-[#4454b8]" />
-                        {plzCenter ? `PLZ ${plzSearch} · ${plzRadius} km` : "Deutschland"}
+                        {plzCenter ? `PLZ ${plzSearch} · ${plzRadius} km` : "Karte"}
                       </h3>
                       <span className="text-[10px] font-bold text-slate-400">
                         {mapEntities.length} Standorte
