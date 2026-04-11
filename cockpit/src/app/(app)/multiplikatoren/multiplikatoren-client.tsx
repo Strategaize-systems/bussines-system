@@ -9,6 +9,7 @@ import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
 import { ViewToggle } from "@/components/ui/view-toggle";
 import { ContactSheet } from "../contacts/contact-sheet";
 import type { Contact } from "../contacts/actions";
+import type { SearchItem } from "@/components/ui/search-autocomplete";
 
 const typeOptions = [
   { value: "", label: "Alle Typen" },
@@ -70,6 +71,18 @@ export function MultiplikatorenClient({ multipliers, companies }: Multiplikatore
   const highTrust = multipliers.filter((m) => m.trust_level === "hoch").length;
   const highReferral = multipliers.filter((m) => m.referral_capability === "hoch").length;
 
+  const searchItems: SearchItem[] = useMemo(
+    () =>
+      multipliers.map((m) => ({
+        id: m.id,
+        label: `${m.first_name} ${m.last_name}`,
+        sublabel: [m.multiplier_type, m.region].filter(Boolean).join(" · "),
+        href: `/contacts/${m.id}`,
+        type: m.multiplier_type || "Multiplikator",
+      })),
+    [multipliers]
+  );
+
   return (
     <div className="min-h-screen">
       <PageHeader title="Multiplikatoren" subtitle="Beziehungsmanagement · Steuerberater, Banker, Verbände">
@@ -91,6 +104,7 @@ export function MultiplikatorenClient({ multipliers, companies }: Multiplikatore
             searchPlaceholder="Multiplikator suchen..."
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
+            autocompleteItems={searchItems}
             actionLabel="Multiplikator"
             actionIcon={UserPlus}
             onAction={() => setShowNewContact(true)}

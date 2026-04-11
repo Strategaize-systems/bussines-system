@@ -2,11 +2,13 @@
 
 import { Search, Mic, Sparkles, Plus, type LucideIcon } from "lucide-react";
 import { ReactNode, useState } from "react";
+import { SearchAutocomplete, type SearchItem } from "./search-autocomplete";
 
 interface FilterBarProps {
   searchPlaceholder?: string;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
+  autocompleteItems?: SearchItem[];
   showVoice?: boolean;
   showAI?: boolean;
   actionLabel?: string;
@@ -19,6 +21,7 @@ export function FilterBar({
   searchPlaceholder = "Suchen...",
   searchValue,
   onSearchChange,
+  autocompleteItems,
   showVoice = true,
   showAI = true,
   actionLabel,
@@ -32,23 +35,32 @@ export function FilterBar({
   return (
     <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-6">
       <div className="flex items-center gap-4">
-        {/* Search */}
-        <div className="flex-1 min-w-0">
-          <div className="relative">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-              size={18}
-              strokeWidth={2.5}
-            />
-            <input
-              type="text"
-              placeholder={searchPlaceholder}
-              value={searchValue}
-              onChange={(e) => onSearchChange?.(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg border-2 border-slate-200 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#4454b8] focus:ring-2 focus:ring-[#4454b8]/20 transition-all"
-            />
+        {/* Search — with or without autocomplete */}
+        {autocompleteItems && searchValue !== undefined && onSearchChange ? (
+          <SearchAutocomplete
+            items={autocompleteItems}
+            value={searchValue}
+            onChange={onSearchChange}
+            placeholder={searchPlaceholder}
+          />
+        ) : (
+          <div className="flex-1 min-w-0">
+            <div className="relative">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                size={18}
+                strokeWidth={2.5}
+              />
+              <input
+                type="text"
+                placeholder={searchPlaceholder}
+                value={searchValue}
+                onChange={(e) => onSearchChange?.(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border-2 border-slate-200 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#4454b8] focus:ring-2 focus:ring-[#4454b8]/20 transition-all"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Voice Button */}
         {showVoice && (

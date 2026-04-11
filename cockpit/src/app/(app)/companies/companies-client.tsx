@@ -9,6 +9,7 @@ import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
 import { ViewToggle } from "@/components/ui/view-toggle";
 import { CompanySheet } from "./company-sheet";
 import type { CompanyEnriched, CompanyStats } from "./actions";
+import type { SearchItem } from "@/components/ui/search-autocomplete";
 
 const fmt = new Intl.NumberFormat("de-DE", {
   style: "currency",
@@ -56,6 +57,18 @@ export function CompaniesClient({ companies, stats }: CompaniesClientProps) {
   const [potentialFilter, setPotentialFilter] = useState("");
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [showNewCompany, setShowNewCompany] = useState(false);
+
+  const searchItems: SearchItem[] = useMemo(
+    () =>
+      companies.map((c) => ({
+        id: c.id,
+        label: c.name,
+        sublabel: [c.industry, c.region].filter(Boolean).join(" · "),
+        href: `/companies/${c.id}`,
+        type: c.blueprint_fit || "Firma",
+      })),
+    [companies]
+  );
 
   const filtered = useMemo(() => {
     let result = companies;
@@ -120,6 +133,7 @@ export function CompaniesClient({ companies, stats }: CompaniesClientProps) {
             searchPlaceholder="Firma oder Branche suchen..."
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
+            autocompleteItems={searchItems}
             actionLabel="Neue Firma"
             actionIcon={Building2}
             onAction={() => setShowNewCompany(true)}

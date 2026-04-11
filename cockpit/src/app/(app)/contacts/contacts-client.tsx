@@ -9,6 +9,7 @@ import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
 import { ViewToggle } from "@/components/ui/view-toggle";
 import { ContactSheet } from "./contact-sheet";
 import type { Contact } from "./actions";
+import type { SearchItem } from "@/components/ui/search-autocomplete";
 
 const relationshipOptions = [
   { value: "", label: "Alle Typen" },
@@ -59,6 +60,18 @@ export function ContactsClient({ contacts, companies }: ContactsClientProps) {
   const multiplierCount = contacts.filter((c) => c.is_multiplier).length;
   const kundenCount = contacts.filter((c) => c.relationship_type === "kunde").length;
 
+  const searchItems: SearchItem[] = useMemo(
+    () =>
+      contacts.map((c) => ({
+        id: c.id,
+        label: `${c.first_name} ${c.last_name}`,
+        sublabel: [c.position, c.email].filter(Boolean).join(" · "),
+        href: `/contacts/${c.id}`,
+        type: c.relationship_type || "Kontakt",
+      })),
+    [contacts]
+  );
+
   return (
     <div className="min-h-screen">
       <PageHeader title="Kontakte" subtitle="Beziehungsmanagement · Kontakte & Netzwerk">
@@ -80,6 +93,7 @@ export function ContactsClient({ contacts, companies }: ContactsClientProps) {
             searchPlaceholder="Kontakt, Position oder E-Mail suchen..."
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
+            autocompleteItems={searchItems}
             actionLabel="Neuer Kontakt"
             actionIcon={UserPlus}
             onAction={() => setShowNewContact(true)}

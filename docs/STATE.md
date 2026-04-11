@@ -10,12 +10,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V3.2 Implementation. 4 von 6 Slices done (SLC-321..324). Naechste Slices: SLC-325 (Autocomplete), SLC-326 (PLZ-Karte).
-- Current Phase: V3.2 Implementation (4/6 Slices done)
+- Current Focus: V3.2 Implementation. 5 von 6 Slices done (SLC-321..325). Naechster Slice: SLC-326 (PLZ-Karte).
+- Current Phase: V3.2 Implementation (5/6 Slices done)
 
 ## Immediate Next Steps
-1. /qa fuer SLC-324 (Pipeline-Verwaltung)
-2. SLC-325 (Autocomplete/Typeahead Suche) — wiederverwendbare Komponente
+1. /qa fuer SLC-325 (Autocomplete/Typeahead)
+2. SLC-326 (PLZ-Kartensuche + Heatmap) — Library-Entscheidung (Leaflet vs. Mapbox)
 3. SLC-326 (PLZ-Kartensuche + Heatmap) — Library-Entscheidung (Leaflet vs. Mapbox)
 4. Gesamt-QA V3.2 nach allen Slices
 
@@ -25,7 +25,7 @@ V3.2 — UI-Polish + Pipeline-Management (6 Slices, 7 Backlog-Items):
 - SLC-322: Pipeline UI-Overhaul + Selector (BL-332, BL-334) — done
 - SLC-323: Logout-Button Sidebar (BL-335) — done
 - SLC-324: Pipeline-Verwaltung in Settings (BL-336) — done
-- SLC-325: Autocomplete/Typeahead Suche (BL-337) — planned
+- SLC-325: Autocomplete/Typeahead Suche (BL-337) — done
 - SLC-326: PLZ-Kartensuche mit Heatmap (BL-333) — planned
 
 ## Blockers

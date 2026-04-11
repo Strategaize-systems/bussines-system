@@ -955,7 +955,7 @@
       "title": "Autocomplete/Typeahead Suche auf allen Seiten",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V3.2",
       "description": "Intelligente Suche mit Live-Vorschl�gen: Beim Tippen werden passende Eintr�ge aus der Datenbank als Dropdown angezeigt (Deals, Kontakte, Firmen, etc.). Nicht nur Freitext-Suche, sondern Autocomplete mit Ergebnis-Preview. Gilt f�r Pipeline-Suche, Kontakte, Firmen, Multiplikatoren und alle anderen Suchfelder. Debounced API-Call nach 2+ Zeichen.",
       "createdAt": "2026-04-11"
