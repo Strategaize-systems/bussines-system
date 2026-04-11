@@ -94,51 +94,44 @@ export function KanbanCard({ deal, stageColor, onClick }: KanbanCardProps) {
           )}
         </div>
 
-        {/* Value */}
-        {deal.value != null && (
-          <div className="text-xs font-bold gradient-text-success">
-            {fmt.format(deal.value)}
+        {/* Company + Contact */}
+        <div className="space-y-0.5">
+          {deal.companies && (
+            <div className="flex items-center gap-1 text-[11px] text-slate-500 truncate">
+              <Building2 className="h-3 w-3 shrink-0" />
+              {deal.companies.name}
+            </div>
+          )}
+          {deal.contacts && (
+            <div className="flex items-center gap-1 text-[11px] text-slate-400 truncate">
+              <User className="h-3 w-3 shrink-0" />
+              {deal.contacts.first_name} {deal.contacts.last_name}
+            </div>
+          )}
+        </div>
+
+        {/* Value + Probability */}
+        <div className="flex items-center justify-between">
+          {deal.value != null && (
+            <div className="text-xs font-bold text-emerald-600">
+              {fmt.format(deal.value)}
+            </div>
+          )}
+        </div>
+
+        {/* Close Date */}
+        {deal.expected_close_date && (
+          <div className="flex items-center gap-1 text-[10px] text-slate-400">
+            <Calendar className="h-3 w-3 shrink-0" />
+            Close: {new Date(deal.expected_close_date + "T00:00:00").toLocaleDateString("de-DE", { day: "numeric", month: "numeric", year: "numeric" })}
           </div>
         )}
-
-        {/* Contact/Company with Avatar */}
-        <div className="flex items-center gap-2">
-          <div
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-            style={{ backgroundColor: stageColor || "#6366f1" }}
-          >
-            {initials}
-          </div>
-          <div className="min-w-0 flex-1">
-            {deal.contacts && (
-              <div className="text-xs font-medium text-slate-700 truncate">
-                {deal.contacts.first_name} {deal.contacts.last_name}
-              </div>
-            )}
-            {deal.companies && (
-              <div className="text-[11px] text-slate-400 truncate">
-                {deal.companies.name}
-              </div>
-            )}
-          </div>
-        </div>
 
         {/* Next Action */}
         {deal.next_action && (
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-400 bg-slate-50 rounded-lg px-2 py-1">
-            <Calendar className="h-3 w-3 shrink-0" />
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-[#4454b8] bg-[#4454b8]/5 rounded-lg px-2 py-1">
+            <span className="shrink-0">→</span>
             <span className="truncate">{deal.next_action}</span>
-          </div>
-        )}
-
-        {/* Tags */}
-        {deal.tags?.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {deal.tags.map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-[9px] px-1.5 py-0">
-                {tag}
-              </Badge>
-            ))}
           </div>
         )}
 

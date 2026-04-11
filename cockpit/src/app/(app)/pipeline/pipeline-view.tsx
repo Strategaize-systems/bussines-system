@@ -185,8 +185,8 @@ export function PipelineView({
 
           {/* Search + Filter */}
           <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex-1 min-w-0">
                 <PipelineSearchBar
                   pipelineName={pipeline.name}
                   stageNames={stageNames}
@@ -201,7 +201,7 @@ export function PipelineView({
               <select
                 value={stageFilter}
                 onChange={(e) => setStageFilter(e.target.value)}
-                className="px-4 py-2.5 rounded-lg border-2 border-slate-200 text-sm font-semibold text-slate-700 focus:outline-none focus:border-[#4454b8] cursor-pointer"
+                className="px-3 py-2 rounded-lg border-2 border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#4454b8] cursor-pointer shrink-0"
               >
                 <option value="all">Alle Stages</option>
                 {stages.map((s) => (
@@ -234,8 +234,8 @@ export function PipelineView({
             </div>
           </div>
 
-          {/* Kanban Board — contained to prevent page overflow */}
-          <div className="overflow-hidden">
+          {/* Kanban Board — width-constrained container, scrolls internally */}
+          <div className="w-full overflow-hidden rounded-xl">
             <KanbanBoard
               ref={kanbanRef}
               stages={stages}
