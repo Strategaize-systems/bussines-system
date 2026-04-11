@@ -136,44 +136,45 @@ export function PipelineView({
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden">
+      {/* Fixed Header */}
       <PageHeader
         title="Pipeline"
         subtitle={`Sales Pipeline · Deals & Opportunities Management`}
-      >
-        <button
-          onClick={() => setShowNewDeal(true)}
-          className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2"
-        >
-          <Plus size={16} strokeWidth={2.5} />
-          Neuer Deal
-        </button>
-      </PageHeader>
+      />
 
-      <main className="px-8 py-6 flex-1 flex flex-col">
-        {/* Upper section — constrained width for KPIs + Search */}
-        <div className="max-w-[1200px] w-full space-y-5 mb-5">
-
-          {/* Pipeline Selector Tabs */}
-          <div className="flex items-center gap-2">
-            {pipelines.map((p) => {
-              const slug = SLUG_MAP[p.name] ?? p.name.toLowerCase();
-              const isActive = slug === currentSlug;
-              return (
-                <Link
-                  key={p.id}
-                  href={`/pipeline/${slug}`}
-                  className={cn(
-                    "px-5 py-2.5 rounded-xl text-sm font-bold transition-all border-2",
-                    isActive
-                      ? "bg-gradient-to-r from-[#120774] to-[#4454b8] text-white border-transparent shadow-lg shadow-[#4454b8]/20"
-                      : "bg-white text-slate-600 border-slate-200 hover:border-[#4454b8]/30 hover:text-slate-800 hover:shadow-sm"
-                  )}
-                >
-                  {p.name}
-                </Link>
-              );
-            })}
+      {/* Fixed upper section — Tabs + KPIs + Search */}
+      <div className="shrink-0 bg-white border-b border-slate-200 px-8 py-4 space-y-4 z-10">
+        <div className="max-w-[1400px] space-y-4">
+          {/* Pipeline Tabs + Neuer Deal */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {pipelines.map((p) => {
+                const slug = SLUG_MAP[p.name] ?? p.name.toLowerCase();
+                const isActive = slug === currentSlug;
+                return (
+                  <Link
+                    key={p.id}
+                    href={`/pipeline/${slug}`}
+                    className={cn(
+                      "px-5 py-2 rounded-xl text-sm font-bold transition-all border-2",
+                      isActive
+                        ? "bg-gradient-to-r from-[#120774] to-[#4454b8] text-white border-transparent shadow-lg shadow-[#4454b8]/20"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-[#4454b8]/30 hover:text-slate-800 hover:shadow-sm"
+                    )}
+                  >
+                    {p.name}
+                  </Link>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => setShowNewDeal(true)}
+              className="px-5 py-2 rounded-lg bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2"
+            >
+              <Plus size={16} strokeWidth={2.5} />
+              Neuer Deal
+            </button>
           </div>
 
           {/* KPI Cards */}
@@ -205,7 +206,7 @@ export function PipelineView({
           </KPIGrid>
 
           {/* Search + Filter */}
-          <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg p-4">
+          <div className="bg-white rounded-xl border-2 border-slate-200 shadow-sm p-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex-1 min-w-0">
                 <PipelineSearchBar
@@ -217,8 +218,6 @@ export function PipelineView({
                   textQuery={searchQuery}
                 />
               </div>
-
-              {/* Stage Filter */}
               <select
                 value={stageFilter}
                 onChange={(e) => setStageFilter(e.target.value)}
@@ -232,43 +231,43 @@ export function PipelineView({
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Lower section — full width for Kanban Board */}
-        <div className="flex-1 min-h-0 flex flex-col space-y-3">
-          {/* Stage Info Bar with scroll controls */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 text-sm text-slate-600">
-              <LayoutList size={16} className="text-slate-400" />
-              <span className="font-bold">{stages.length} Stages</span>
-              <span className="text-xs text-slate-400">← Scrollen Sie horizontal →</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => scrollKanban("left")}
-                className="p-2 rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                onClick={() => scrollKanban("right")}
-                className="p-2 rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
+      {/* Kanban Board — fills remaining viewport, scrolls horizontally inside */}
+      <div className="flex-1 min-h-0 flex flex-col px-8 py-3 bg-slate-50">
+        {/* Stage Info Bar with scroll controls */}
+        <div className="flex items-center justify-between mb-3 shrink-0">
+          <div className="flex items-center gap-3 text-sm text-slate-600">
+            <LayoutList size={16} className="text-slate-400" />
+            <span className="font-bold">{stages.length} Stages</span>
+            <span className="text-xs text-slate-400">← Scrollen Sie horizontal →</span>
           </div>
-
-          {/* Kanban Board — full width, scrollable */}
-          <div className="flex-1 min-h-0 overflow-hidden rounded-xl border-2 border-slate-200 bg-slate-50">
-            <KanbanBoard
-              ref={kanbanRef}
-              stages={stages}
-              deals={filteredDeals}
-              onDealClick={(deal) => router.push(`/deals/${deal.id}`)}
-            />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => scrollKanban("left")}
+              className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              onClick={() => scrollKanban("right")}
+              className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+            >
+              <ChevronRight size={16} />
+            </button>
           </div>
         </div>
-      </main>
+
+        {/* Kanban Board container — own scroll */}
+        <div className="flex-1 min-h-0 overflow-hidden rounded-xl border-2 border-slate-200 bg-white">
+          <KanbanBoard
+            ref={kanbanRef}
+            stages={stages}
+            deals={filteredDeals}
+            onDealClick={(deal) => router.push(`/deals/${deal.id}`)}
+          />
+        </div>
+      </div>
 
       {/* New Deal Sheet */}
       {showNewDeal && (
