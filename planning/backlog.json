@@ -967,7 +967,7 @@
       "title": "Mein Tag: KI-Suchfeld + Voice-Input oben auf der Seite",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3.3",
       "description": "Auf der Mein-Tag-Seite fehlt ein zentrales KI-Eingabefeld mit Mikrofon-Button. Platzierung: oberhalb oder neben dem KI-Analyse-Bereich. Funktion: (1) Texteingabe fuer KI-Abfragen ('Welche Deals sind diese Woche faellig?'). (2) Mikrofon-Button fuer Voice-Input via Whisper API (bereits server-seitig verfuegbar). (3) KI-Button zum Absenden/Verarbeiten. Kein reines Suchfeld — soll Anweisungen und Fragen verarbeiten koennen. Ist der zentrale Einstiegspunkt fuer den KI-Assistenten auf Mein Tag.",
       "createdAt": "2026-04-11"

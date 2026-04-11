@@ -81,7 +81,7 @@
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-331 | KI-Suchfeld + Voice auf Mein Tag | FEAT-331 | planned | High | 2026-04-11 |
+| SLC-331 | KI-Suchfeld + Voice auf Mein Tag | FEAT-331 | done | High | 2026-04-11 |
 | SLC-332 | PLZ/Stadt-Autocomplete bei Adresseingabe | FEAT-332 | planned | Medium | 2026-04-11 |
 | SLC-333 | Pipeline Liste-Ansicht Toggle | FEAT-333 | planned | Medium | 2026-04-11 |
 | SLC-334 | Unified Timeline | FEAT-334 | planned | Medium | 2026-04-11 |
