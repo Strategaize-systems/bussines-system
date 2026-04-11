@@ -305,7 +305,7 @@
       "title": "Unified Timeline (alle Objekte chronologisch pro Kontakt/Firma)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V3.3",
       "description": "Eine Timeline die Activities + E-Mails + Proposals + Signals + Referrals chronologisch zusammenführt. Pro Kontakt und pro Firma sichtbar.",
       "createdAt": "2026-04-03"
