@@ -3,6 +3,7 @@ import {
   getPipelineStages,
   getDealsForPipeline,
   getReferralsForSelect,
+  getPipelines,
 } from "../actions";
 import { getContactsForSelect } from "../../contacts/actions";
 import { getCompaniesForSelect } from "../../companies/actions";
@@ -10,7 +11,8 @@ import { PipelineView } from "../pipeline-view";
 
 export default async function MultiplikatorenPipelinePage() {
   const pipeline = await getPipelineBySlug("multiplikatoren");
-  const [stages, deals, contacts, companies, referrals] = await Promise.all([
+  const [pipelines, stages, deals, contacts, companies, referrals] = await Promise.all([
+    getPipelines(),
     getPipelineStages(pipeline.id),
     getDealsForPipeline(pipeline.id),
     getContactsForSelect(),
@@ -21,11 +23,13 @@ export default async function MultiplikatorenPipelinePage() {
   return (
     <PipelineView
       pipeline={pipeline}
+      pipelines={pipelines}
       stages={stages}
       deals={deals}
       contacts={contacts}
       companies={companies}
       referrals={referrals}
+      currentSlug="multiplikatoren"
     />
   );
 }

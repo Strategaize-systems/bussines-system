@@ -145,7 +145,7 @@ export const KanbanBoard = forwardRef<HTMLDivElement, KanbanBoardProps>(function
           </button>
         </div>
       )}
-      <div ref={ref} className="flex gap-4 overflow-x-auto pb-4 pr-4 scrollbar-hide" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+      <div ref={ref} className="flex gap-4 overflow-x-auto pb-4 pr-4 p-4" style={{ scrollbarWidth: "thin" }}>
         {stages.map((stage) => (
           <KanbanColumn
             key={stage.id}

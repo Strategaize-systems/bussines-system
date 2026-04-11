@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { DealSheet } from "./deal-sheet";
 import { PageHeader } from "@/components/ui/page-header";
@@ -10,6 +11,7 @@ import type { Deal, Pipeline, PipelineStage } from "./actions";
 import { Filter, TrendingUp, ClipboardList, Target, Percent, Plus, ChevronLeft, ChevronRight, LayoutList } from "lucide-react";
 import { PipelineSearchBar } from "@/components/pipeline/pipeline-search-bar";
 import type { PipelineSearchFilter } from "@/lib/ai/types";
+import { cn } from "@/lib/utils";
 
 const fmt = new Intl.NumberFormat("de-DE", {
   style: "currency",
@@ -17,29 +19,32 @@ const fmt = new Intl.NumberFormat("de-DE", {
   maximumFractionDigits: 0,
 });
 
-const fmtCompact = new Intl.NumberFormat("de-DE", {
-  style: "currency",
-  currency: "EUR",
-  notation: "compact",
-  maximumFractionDigits: 0,
-});
-
 interface PipelineViewProps {
   pipeline: Pipeline;
+  pipelines: Pipeline[];
   stages: PipelineStage[];
   deals: Deal[];
   contacts: { id: string; first_name: string; last_name: string }[];
   companies: { id: string; name: string }[];
   referrals?: { id: string; label: string }[];
+  currentSlug: string;
 }
+
+const SLUG_MAP: Record<string, string> = {
+  "Multiplikatoren": "multiplikatoren",
+  "Unternehmer-Chancen": "unternehmer",
+  "Lead-Management": "leads",
+};
 
 export function PipelineView({
   pipeline,
+  pipelines,
   stages,
   deals,
   contacts,
   companies,
   referrals,
+  currentSlug,
 }: PipelineViewProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,14 +56,9 @@ export function PipelineView({
 
   const filteredDeals = useMemo(() => {
     return deals.filter((d) => {
-      // Default: only active (unless AI filter overrides status)
       const targetStatus = aiFilter?.status || "active";
       if (d.status !== targetStatus) return false;
-
-      // Stage filter (dropdown)
       if (stageFilter !== "all" && d.stage_id !== stageFilter) return false;
-
-      // Text search
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         const matchTitle = d.title?.toLowerCase().includes(q);
@@ -68,8 +68,6 @@ export function PipelineView({
           : false;
         if (!matchTitle && !matchCompany && !matchContact) return false;
       }
-
-      // AI filter
       if (aiFilter) {
         if (aiFilter.stage) {
           const matchStage = stages.find(
@@ -101,7 +99,6 @@ export function PipelineView({
           if (daysSince < 7) return false;
         }
       }
-
       return true;
     });
   }, [deals, searchQuery, stageFilter, aiFilter, stages]);
@@ -134,12 +131,12 @@ export function PipelineView({
   const scrollKanban = useCallback((direction: "left" | "right") => {
     const el = kanbanRef.current;
     if (!el) return;
-    const scrollAmount = 320; // roughly one column width
+    const scrollAmount = 320;
     el.scrollBy({ left: direction === "right" ? scrollAmount : -scrollAmount, behavior: "smooth" });
   }, []);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <PageHeader
         title="Pipeline"
         subtitle={`Sales Pipeline · Deals & Opportunities Management`}
@@ -153,9 +150,32 @@ export function PipelineView({
         </button>
       </PageHeader>
 
-      <main className="px-8 py-8">
-        <div className="max-w-[1800px] mx-auto space-y-6">
-          {/* KPI Cards */}
+      <main className="px-8 py-6 flex-1 flex flex-col">
+        <div className="max-w-[1800px] mx-auto w-full flex-1 flex flex-col space-y-5">
+
+          {/* Pipeline Selector Tabs */}
+          <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 w-fit">
+            {pipelines.map((p) => {
+              const slug = SLUG_MAP[p.name] ?? p.name.toLowerCase();
+              const isActive = slug === currentSlug;
+              return (
+                <Link
+                  key={p.id}
+                  href={`/pipeline/${slug}`}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-semibold transition-all",
+                    isActive
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                  )}
+                >
+                  {p.name}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* KPI Cards — constrained width */}
           <KPIGrid columns={4}>
             <KPICard
               label="Aktive Deals"
@@ -211,11 +231,12 @@ export function PipelineView({
             </div>
           </div>
 
-          {/* Stage Info Bar with functional scroll buttons */}
+          {/* Stage Info Bar with scroll controls */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 text-sm text-slate-600">
               <LayoutList size={16} className="text-slate-400" />
               <span className="font-bold">{stages.length} Stages</span>
+              <span className="text-xs text-slate-400">← Scrollen Sie horizontal →</span>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -224,7 +245,6 @@ export function PipelineView({
               >
                 <ChevronLeft size={16} />
               </button>
-              <span className="text-xs text-slate-400">Scrollen</span>
               <button
                 onClick={() => scrollKanban("right")}
                 className="p-2 rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
@@ -234,8 +254,8 @@ export function PipelineView({
             </div>
           </div>
 
-          {/* Kanban Board — width-constrained container, scrolls internally */}
-          <div className="w-full overflow-hidden rounded-xl">
+          {/* Kanban Board — contained, scrollable area */}
+          <div className="flex-1 min-h-0 overflow-hidden rounded-xl border-2 border-slate-200 bg-slate-50">
             <KanbanBoard
               ref={kanbanRef}
               stages={stages}
