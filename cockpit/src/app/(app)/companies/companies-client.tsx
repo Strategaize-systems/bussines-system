@@ -19,7 +19,6 @@ import type { SearchItem } from "@/components/ui/search-autocomplete";
 const fmt = new Intl.NumberFormat("de-DE", {
   style: "currency",
   currency: "EUR",
-  notation: "compact",
   maximumFractionDigits: 0,
 });
 
@@ -383,8 +382,8 @@ function CompanyCard({
         <div className="p-3 text-center bg-gradient-to-r from-blue-50 to-blue-100/50">
           <div className="text-lg font-bold text-blue-700">
             {company.pipelineValue > 0
-              ? new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", notation: "compact", maximumFractionDigits: 0 }).format(company.pipelineValue)
-              : "€0k"}
+              ? new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(company.pipelineValue)
+              : "0 €"}
           </div>
           <div className="text-[10px] font-bold text-blue-600 uppercase">Pipeline</div>
         </div>

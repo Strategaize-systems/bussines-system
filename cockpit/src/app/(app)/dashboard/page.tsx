@@ -17,7 +17,6 @@ const fmt = new Intl.NumberFormat("de-DE", {
 const fmtCompact = new Intl.NumberFormat("de-DE", {
   style: "currency",
   currency: "EUR",
-  notation: "compact",
   maximumFractionDigits: 0,
 });
 

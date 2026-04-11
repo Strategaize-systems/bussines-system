@@ -8,7 +8,6 @@ import type { Deal } from "@/app/(app)/pipeline/actions";
 const fmtCompact = new Intl.NumberFormat("de-DE", {
   style: "currency",
   currency: "EUR",
-  notation: "compact",
   maximumFractionDigits: 0,
 });
 
