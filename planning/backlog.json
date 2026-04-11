@@ -987,7 +987,7 @@
       "title": "PLZ/Stadt/Strassen-Autocomplete bei Adresseingabe (Firma anlegen, Suche)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V3.3",
       "description": "Intelligente Adress-Autovervollstaendigung: (1) PLZ-Feld: Bei Eingabe von '4' werden alle PLZ mit 4xxx vorgeschlagen, bei '41' nur 41xxx usw. Auswahl fuellt automatisch Ort-Feld. (2) Ort-Feld: Stadtname-Suche mit Vorschlaegen, Auswahl fuellt PLZ. (3) Strasse: Spaetere Phase — benoetigt externe Daten (z.B. OpenStreetMap Nominatim API). Gilt fuer: 'Neue Firma' Formular, PLZ-Kartensuche, ueberall wo Adressen eingegeben werden. PLZ+Stadt-Daten sind bereits lokal vorhanden (8.293 Eintraege mit Stadtnamen). Strassen-Autocomplete ist ein separater Schritt mit API-Abhaengigkeit.",
       "createdAt": "2026-04-11"

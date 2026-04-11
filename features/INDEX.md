@@ -74,7 +74,7 @@
 | ID | Feature | Status | Created |
 |----|---------|--------|---------|
 | FEAT-331 | KI-Suchfeld + Voice auf Mein Tag | in_progress | 2026-04-11 |
-| FEAT-332 | PLZ/Stadt-Autocomplete bei Adresseingabe | planned | 2026-04-11 |
+| FEAT-332 | PLZ/Stadt-Autocomplete bei Adresseingabe | in_progress | 2026-04-11 |
 | FEAT-333 | Pipeline Liste-Ansicht Toggle | planned | 2026-04-11 |
 | FEAT-334 | Unified Timeline | planned | 2026-04-11 |
 | FEAT-335 | Funnel-Report (Conversion pro Stage) | planned | 2026-04-11 |
