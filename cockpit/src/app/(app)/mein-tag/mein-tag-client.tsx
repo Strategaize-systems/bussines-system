@@ -160,7 +160,7 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
       </PageHeader>
 
       <main className="px-8 py-8">
-        <div className="max-w-[1800px] mx-auto space-y-6">
+        <div className="max-w-[1800px] mx-auto space-y-4">
           {/* 3-Column Layout: equal thirds */}
           <div className="grid grid-cols-12 gap-5">
             {/* LEFT COLUMN (4): Work Actions + Aufgaben */}
@@ -198,8 +198,8 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                 />
               </div>
 
-              {/* AUFGABEN */}
-              <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
+              {/* AUFGABEN — fixed height to match Top Deals */}
+              <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden min-h-[320px] flex flex-col">
                 {/* Section Header — matched to Top Deals */}
                 <div className="px-5 py-3 border-b border-slate-200 flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#120774] to-[#4454b8] flex items-center justify-center">
@@ -221,7 +221,7 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                 </div>
 
                 {/* Task List — Top 5 smart sorted */}
-                <div className="divide-y divide-slate-50">
+                <div className="divide-y divide-slate-50 flex-1">
                   {displayItems.length > 0 ? (
                     displayItems.map((item) => (
                       <TaskItem key={item.id} item={item} onDealClick={setSelectedDealId} />
@@ -280,7 +280,7 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                 </Link>
               </div>
 
-              <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
+              <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden min-h-[320px] flex flex-col">
                 <div className="px-5 py-3 border-b border-slate-200 flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#00a84f] to-[#4dcb8b] flex items-center justify-center">
                     <Briefcase size={14} className="text-white" strokeWidth={2.5} />
@@ -295,7 +295,7 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                   </Link>
                 </div>
 
-                <div className="divide-y divide-slate-50">
+                <div className="divide-y divide-slate-50 flex-1">
                   {topDeals.length > 0 ? (
                     topDeals.map((deal) => (
                       <button
@@ -348,38 +348,10 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
 
             </div>
 
-            {/* RIGHT COLUMN (4): Zeit + Entities + Kalender + Meeting-Prep + Exceptions */}
+            {/* RIGHT COLUMN (4): Entities + Zeit + Kalender + Meeting-Prep + Exceptions */}
             <div className="col-span-4">
               <div className="sticky top-32 space-y-4">
-                {/* Verfuegbare Zeit — compact bar */}
-                <div className={cn(
-                  "rounded-xl border px-4 py-2.5 flex items-center gap-3",
-                  freeMinutes > 120
-                    ? "bg-emerald-50 border-emerald-200"
-                    : freeMinutes > 0
-                      ? "bg-amber-50 border-amber-200"
-                      : "bg-red-50 border-red-200"
-                )}>
-                  <Clock size={14} className={freeMinutes > 120 ? "text-emerald-600" : freeMinutes > 0 ? "text-amber-600" : "text-red-600"} />
-                  <div className="flex-1">
-                    <div className="flex items-baseline gap-1.5">
-                      <span className={cn("text-lg font-bold", freeMinutes > 120 ? "text-emerald-700" : freeMinutes > 0 ? "text-amber-700" : "text-red-700")}>
-                        {freeHours}h {freeRestMinutes > 0 ? `${freeRestMinutes}m` : ""}
-                      </span>
-                      <span className={cn("text-[10px]", freeMinutes > 120 ? "text-emerald-600" : freeMinutes > 0 ? "text-amber-600" : "text-red-600")}>
-                        frei
-                      </span>
-                    </div>
-                  </div>
-                  <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                    <div
-                      className={cn("h-full rounded-full", freeMinutes > 120 ? "bg-emerald-500" : freeMinutes > 0 ? "bg-amber-500" : "bg-red-500")}
-                      style={{ width: `${Math.min(100, (scheduledMinutes / WORKDAY_MINUTES) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Entity Quick Actions */}
+                {/* Entity Quick Actions — same height as left/middle buttons */}
                 <div className="flex items-center justify-center gap-3">
                   {entityActions.map((action) => (
                     <Link
@@ -395,6 +367,27 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                       </span>
                     </Link>
                   ))}
+                </div>
+
+                {/* Verfuegbare Zeit — compact bar */}
+                <div className={cn(
+                  "rounded-xl border px-3 py-2 flex items-center gap-2",
+                  freeMinutes > 120
+                    ? "bg-emerald-50 border-emerald-200"
+                    : freeMinutes > 0
+                      ? "bg-amber-50 border-amber-200"
+                      : "bg-red-50 border-red-200"
+                )}>
+                  <Clock size={12} className={freeMinutes > 120 ? "text-emerald-600" : freeMinutes > 0 ? "text-amber-600" : "text-red-600"} />
+                  <span className={cn("text-sm font-bold", freeMinutes > 120 ? "text-emerald-700" : freeMinutes > 0 ? "text-amber-700" : "text-red-700")}>
+                    {freeHours}h {freeRestMinutes > 0 ? `${freeRestMinutes}m` : ""} frei
+                  </span>
+                  <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div
+                      className={cn("h-full rounded-full", freeMinutes > 120 ? "bg-emerald-500" : freeMinutes > 0 ? "bg-amber-500" : "bg-red-500")}
+                      style={{ width: `${Math.min(100, (scheduledMinutes / WORKDAY_MINUTES) * 100)}%` }}
+                    />
+                  </div>
                 </div>
 
                 {/* KALENDER */}
@@ -458,8 +451,8 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
             </div>
           </div>
 
-          {/* KI-WORKSPACE — under Aufgaben + Top Deals (8/12) */}
-          <div className="grid grid-cols-12 gap-5">
+          {/* KI-WORKSPACE — directly under Aufgaben + Top Deals (8/12) */}
+          <div className="grid grid-cols-12 gap-5 -mt-1">
             <div className="col-span-8">
               <KIWorkspace data={data} calendarSlots={calendarSlots} exceptions={exceptions} contacts={contacts} companies={companies} deals={deals} />
             </div>
