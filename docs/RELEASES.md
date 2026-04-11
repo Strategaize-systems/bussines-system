@@ -48,3 +48,10 @@
 - Summary: UI-Quality-Release + Geo-Feature. Pipeline komplett ueberarbeitet. Settings erweitert um Pipeline-CRUD. Wiederverwendbare SearchAutocomplete. Interaktive Leaflet-Karte auf Firmen/Kontakte/Multiplikatoren mit PLZ+Stadtsuche, Umkreis-Filter, Heatmap. 12.384 PLZ (8.298 DE + 4.086 NL). Next.js 16.2.3 Security Patch. Gesamt-QA PASS, Final-Check PASS.
 - Risks: Keine Schema-Migrationen. Neue Dependencies: leaflet, react-leaflet, leaflet.heat.
 - Rollback Notes: Docker Image Rollback via Coolify. V3.1 Image als Fallback.
+
+### REL-008 — V3.3 UI-Abrundung + Visualisierung
+- Date: 2026-04-11
+- Scope: 6 von 6 Slices (SLC-331..336). KI-Suchfeld + Voice im KI-Workspace, PLZ/Stadt-Autocomplete, Pipeline Liste-Ansicht Toggle, Unified Timeline, Funnel-Report, Win/Loss-Analyse Dashboard.
+- Summary: Reine Frontend-Erweiterungen ohne Schema-Aenderungen. KI-Suchfeld mit Voice-Input direkt im KI-Workspace Header (Bedrock mein-tag-query). PLZ-Autocomplete bei Firma anlegen/bearbeiten. Pipeline hat jetzt 4 View-Modes (Kanban, Liste, Funnel, Win/Loss). Unified Timeline ersetzt Activity-Timeline auf Kontakt- und Firmen-Workspace (5 Datenquellen). Funnel-Report zeigt Conversion-Rates pro Stage. Win/Loss-Analyse mit Verlustgruende-Ranking und 6-Monats-Trend. Gesamt-QA PASS (RPT-071), Final-Check PASS (RPT-072). User Live-Test bestanden.
+- Risks: Keine Schema-Migrationen. Keine neuen Dependencies. Responsive nicht explizit getestet (Desktop-only internal-tool).
+- Rollback Notes: Docker Image Rollback via Coolify. V3.2 Image als Fallback.

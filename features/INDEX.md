@@ -69,16 +69,16 @@
 | FEAT-325 | Autocomplete/Typeahead Suche | deployed | 2026-04-11 |
 | FEAT-326 | PLZ-Kartensuche mit Heatmap | deployed | 2026-04-11 |
 
-## V3.3 Features (UI-Abrundung + Visualisierung — active)
+## V3.3 Features (UI-Abrundung + Visualisierung — released)
 
 | ID | Feature | Status | Created |
 |----|---------|--------|---------|
-| FEAT-331 | KI-Suchfeld + Voice auf Mein Tag | done | 2026-04-11 |
-| FEAT-332 | PLZ/Stadt-Autocomplete bei Adresseingabe | done | 2026-04-11 |
-| FEAT-333 | Pipeline Liste-Ansicht Toggle | done | 2026-04-11 |
-| FEAT-334 | Unified Timeline | done | 2026-04-11 |
-| FEAT-335 | Funnel-Report (Conversion pro Stage) | done | 2026-04-11 |
-| FEAT-336 | Win/Loss-Analyse Dashboard | done | 2026-04-11 |
+| FEAT-331 | KI-Suchfeld + Voice auf Mein Tag | deployed | 2026-04-11 |
+| FEAT-332 | PLZ/Stadt-Autocomplete bei Adresseingabe | deployed | 2026-04-11 |
+| FEAT-333 | Pipeline Liste-Ansicht Toggle | deployed | 2026-04-11 |
+| FEAT-334 | Unified Timeline | deployed | 2026-04-11 |
+| FEAT-335 | Funnel-Report (Conversion pro Stage) | deployed | 2026-04-11 |
+| FEAT-336 | Win/Loss-Analyse Dashboard | deployed | 2026-04-11 |
 
 ## V4 Features (KI-Kern + Externe Integrationen — planned)
 

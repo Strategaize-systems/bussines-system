@@ -52,7 +52,7 @@
     {
       "id": "v3-3",
       "name": "V3.3",
-      "status": "active",
+      "status": "released",
       "summary": "UI-Abrundung + Visualisierung: KI-Suchfeld auf Mein Tag, PLZ-Autocomplete, Pipeline-Listenansicht, Unified Timeline, Funnel-Report, Win/Loss-Analyse",
       "order": 8
     },
