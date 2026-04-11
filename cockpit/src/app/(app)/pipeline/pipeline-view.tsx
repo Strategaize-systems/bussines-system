@@ -135,15 +135,15 @@ export function PipelineView({
   }, []);
 
   return (
-    <div className="h-[100vh] flex flex-col overflow-hidden min-w-0">
+    <div style={{ width: 'calc(100vw - 16rem)', height: '100vh' }} className="flex flex-col overflow-hidden">
       {/* Header — left-aligned */}
-      <div className="shrink-0 min-w-0 bg-white/95 backdrop-blur-xl border-b border-slate-200/60 px-8 py-4 shadow-sm z-20">
+      <div className="shrink-0 bg-white/95 backdrop-blur-xl border-b border-slate-200/60 px-8 py-4 shadow-sm z-20">
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Pipeline</h1>
         <p className="text-sm text-slate-500">Sales Pipeline · Deals & Opportunities Management</p>
       </div>
 
-      {/* Fixed upper section — Tabs + KPIs + Search (constrained width) */}
-      <div className="shrink-0 min-w-0 bg-white border-b border-slate-200 px-8 py-4 space-y-4 z-10 overflow-hidden">
+      {/* Fixed upper section — Tabs + KPIs + Search */}
+      <div className="shrink-0 bg-white border-b border-slate-200 px-8 py-4 space-y-4 z-10">
         <div className="max-w-[1200px] space-y-4">
           {/* Pipeline Tabs + Neuer Deal */}
           <div className="flex items-center justify-between">
@@ -232,8 +232,8 @@ export function PipelineView({
         </div>
       </div>
 
-      {/* Kanban Board — fills remaining viewport, scrolls horizontally inside */}
-      <div className="flex-1 min-h-0 min-w-0 flex flex-col px-8 py-3 bg-slate-50 overflow-hidden">
+      {/* Kanban Board — fills remaining height, scrolls inside */}
+      <div className="flex-1 min-h-0 flex flex-col px-8 py-3 bg-slate-50 overflow-hidden">
         {/* Stage Info Bar with scroll controls */}
         <div className="flex items-center justify-between mb-3 shrink-0">
           <div className="flex items-center gap-3 text-sm text-slate-600">
@@ -241,7 +241,7 @@ export function PipelineView({
             <span className="font-bold">{stages.length} Stages</span>
             <span className="text-xs text-slate-400">← Scrollen Sie horizontal →</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => scrollKanban("left")}
               className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
@@ -257,8 +257,8 @@ export function PipelineView({
           </div>
         </div>
 
-        {/* Kanban Board container — own scroll, contained */}
-        <div className="flex-1 min-h-0 min-w-0 overflow-hidden rounded-xl border-2 border-slate-200 bg-white">
+        {/* Kanban Board container — scrolls horizontally + vertically inside */}
+        <div className="flex-1 min-h-0 overflow-hidden rounded-xl border-2 border-slate-200 bg-white">
           <KanbanBoard
             ref={kanbanRef}
             stages={stages}
