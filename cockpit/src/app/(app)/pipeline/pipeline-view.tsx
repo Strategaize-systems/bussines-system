@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { DealSheet } from "./deal-sheet";
-import { PageHeader } from "@/components/ui/page-header";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import type { Deal, Pipeline, PipelineStage } from "./actions";
 import { Filter, TrendingUp, ClipboardList, Target, Percent, Plus, ChevronLeft, ChevronRight, LayoutList } from "lucide-react";
@@ -136,16 +135,16 @@ export function PipelineView({
   }, []);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      {/* Fixed Header */}
-      <PageHeader
-        title="Pipeline"
-        subtitle={`Sales Pipeline · Deals & Opportunities Management`}
-      />
+    <div className="h-[100vh] flex flex-col overflow-hidden">
+      {/* Header — left-aligned, not centered */}
+      <div className="shrink-0 bg-white/95 backdrop-blur-xl border-b border-slate-200/60 px-8 py-4 shadow-sm z-20">
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Pipeline</h1>
+        <p className="text-sm text-slate-500">Sales Pipeline · Deals & Opportunities Management</p>
+      </div>
 
       {/* Fixed upper section — Tabs + KPIs + Search */}
       <div className="shrink-0 bg-white border-b border-slate-200 px-8 py-4 space-y-4 z-10">
-        <div className="max-w-[1400px] space-y-4">
+        <div className="space-y-4">
           {/* Pipeline Tabs + Neuer Deal */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

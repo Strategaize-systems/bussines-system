@@ -889,6 +889,66 @@
       "version": "V3.1",
       "description": "Alle Bedrock LLM-Aufrufe von auto-load auf expliziten Klick umstellen. Betrifft: (1) Deal-Workspace KI-Summary â€” Button 'KI-Zusammenfassung generieren' statt auto-load bei Seitenaufruf. (2) Mein Tag KI-Tageseinschaetzung â€” Klick zum Aktivieren. (3) Alle weiteren Stellen wo Bedrock automatisch aufgerufen wird. Grund: Pay-per-Use-Kosten bei Bedrock laufen hoch wenn bei jedem Seitenaufruf LLM-Calls feuern, besonders in Test-/Entwicklungsphase. Spaeter optional: Auto-Load als User-Setting wenn Kosten kalkulierbar.",
       "createdAt": "2026-04-10"
+    },
+    {
+      "id": "BL-331",
+      "title": "Mein Tag Quick Actions: Modals statt Seitennavigation",
+      "type": "fix",
+      "priority": "high",
+      "status": "open",
+      "version": "V3.2",
+      "description": "Quick Action Buttons auf Mein Tag öffnen teilweise falsche Ziele: Deals-Button geht zur Pipeline statt New Deal Modal, Anruf öffnet Task statt Anruf-Fenster (VoIP mit Mikrofon/Speaker), Neuer Kontakt/Firma/Multiplikator navigiert zu Listenseiten statt Modal zu öffnen. Alle Buttons müssen Sheet/Modal öffnen für direkte Erstellung.",
+      "createdAt": "2026-04-11"
+    },
+    {
+      "id": "BL-332",
+      "title": "Pipeline: Grid-Fix, Pipeline-Selector, Stage-UI nach Figma",
+      "type": "improvement",
+      "priority": "high",
+      "status": "open",
+      "version": "V3.2",
+      "description": "Pipeline-Seite hat mehrere Probleme: KPI-Karten zu breit (Grid passt nicht), Scroll-Mechanismus nicht sichtbar, Stage-Karten und Deal-Cards sehen nicht aus wie im Figma-Design. Zusätzlich: Pipeline-Selector einbauen (Dropdown/Tabs für Multiplikatoren/Chancen/Leads), oberer Bereich (KPIs + Filter) fix, Pipeline-Board darunter als scrollbarer Bereich der sich je nach Pipeline-Auswahl neu lädt.",
+      "createdAt": "2026-04-11"
+    },
+    {
+      "id": "BL-333",
+      "title": "Kontakte/Firmen/Multiplikatoren: PLZ-Kartensuche mit Heatmap",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V3.2",
+      "description": "Deutschlandkarte mit PLZ-Suche für Kontakte, Firmen und Multiplikatoren. User gibt PLZ ein, Karte zoomt auf den Bereich und zeigt alle Einträge im Umkreis. Links daneben werden die gefundenen Einträge als Liste angezeigt. Heatmap-Darstellung zeigt Aktivitätsdichte nach Region. Ergänzt die bestehende Name/Text-Suche um geografische Suche.",
+      "createdAt": "2026-04-11"
+    },
+    {
+      "id": "BL-334",
+      "title": "Pipeline UI-Overhaul: Stage-Headers, Deal-Cards nach Figma-Design",
+      "type": "improvement",
+      "priority": "high",
+      "status": "open",
+      "version": "V3.2",
+      "description": "Pipeline Stage-Headers und Deal-Cards sehen nicht aus wie im Figma-Design (Version 104). Stages brauchen farbige Icons, runde Badges mit Deal-Count + Wert. Deal-Cards brauchen Firmenname, Kontaktperson, Priorität-Badge, Deal-Wert prominent, Wahrscheinlichkeit mit Progress-Bar, Close-Date, nächste Aktion. Aktuelles UI wirkt im Vergleich zum Design-Entwurf billig und unfertig.",
+      "createdAt": "2026-04-11"
+    },
+    {
+      "id": "BL-335",
+      "title": "Logout/Login Funktion in Sidebar + Settings",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V3.2",
+      "description": "Logout-Button fehlt komplett. Muss in der Sidebar unten (neben Business Dev CRM Label) und in den Einstellungen verfügbar sein. Login-Flow muss nach Logout korrekt funktionieren.",
+      "createdAt": "2026-04-11"
+    },
+    {
+      "id": "BL-336",
+      "title": "Pipeline-Verwaltung in Einstellungen: Erstellen, Umbenennen, Löschen",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V3.2",
+      "description": "In den Einstellungen soll man Pipelines erstellen, umbenennen und löschen können. Beim Erstellen soll ein Standard-Template mit Stages vorgeschlagen werden, das man anpassen kann. Änderungen (Name, Löschen) müssen sich in den Pipeline-Selector-Tabs widerspiegeln. Stages pro Pipeline sollen ebenfalls verwaltet werden können.",
+      "createdAt": "2026-04-11"
     }
   ]
 }
