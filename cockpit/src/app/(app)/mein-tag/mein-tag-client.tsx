@@ -161,10 +161,10 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
 
       <main className="px-8 py-8">
         <div className="max-w-[1800px] mx-auto space-y-6">
-          {/* 3-Column Layout */}
+          {/* 3-Column Layout: equal thirds */}
           <div className="grid grid-cols-12 gap-5">
-            {/* LEFT COLUMN (5): Work Actions + Aufgaben + KI-Workspace */}
-            <div className="col-span-5 space-y-4">
+            {/* LEFT COLUMN (4): Work Actions + Aufgaben */}
+            <div className="col-span-4 space-y-4">
 
               {/* Work Quick Actions */}
               <div className="flex items-center justify-center gap-3">
@@ -267,12 +267,10 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                 </div>
               </div>
 
-              {/* KI-WORKSPACE */}
-              <KIWorkspace data={data} calendarSlots={calendarSlots} exceptions={exceptions} contacts={contacts} companies={companies} deals={deals} />
             </div>
 
-            {/* MIDDLE COLUMN (3): Top Deals */}
-            <div className="col-span-3 space-y-4">
+            {/* MIDDLE COLUMN (4): Top Deals */}
+            <div className="col-span-4 space-y-4">
               <div className="flex items-center justify-center gap-3">
                 <Link href="/pipeline/unternehmer" className="flex flex-col items-center gap-1.5 group">
                   <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#00a84f] to-[#4dcb8b] flex items-center justify-center text-white shadow group-hover:scale-105 transition-transform">
@@ -454,6 +452,13 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* KI-WORKSPACE — spans Aufgaben + Top Deals width (8/12) */}
+          <div className="grid grid-cols-12 gap-5">
+            <div className="col-span-8">
+              <KIWorkspace data={data} calendarSlots={calendarSlots} exceptions={exceptions} contacts={contacts} companies={companies} deals={deals} />
             </div>
           </div>
         </div>

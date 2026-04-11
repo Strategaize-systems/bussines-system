@@ -139,7 +139,7 @@ export function PipelineView({
   }, []);
 
   return (
-    <div className="min-h-screen overflow-x-hidden">
+    <div className="min-h-screen">
       <PageHeader
         title="Pipeline"
         subtitle={`Sales Pipeline · Deals & Opportunities Management`}
@@ -153,8 +153,8 @@ export function PipelineView({
         </button>
       </PageHeader>
 
-      <main className="px-8 py-8 overflow-hidden">
-        <div className="space-y-6">
+      <main className="px-8 py-8">
+        <div className="max-w-[1800px] mx-auto space-y-6">
           {/* KPI Cards */}
           <KPIGrid columns={4}>
             <KPICard
@@ -234,13 +234,15 @@ export function PipelineView({
             </div>
           </div>
 
-          {/* Kanban Board */}
-          <KanbanBoard
-            ref={kanbanRef}
-            stages={stages}
-            deals={filteredDeals}
-            onDealClick={(deal) => router.push(`/deals/${deal.id}`)}
-          />
+          {/* Kanban Board — contained to prevent page overflow */}
+          <div className="overflow-hidden">
+            <KanbanBoard
+              ref={kanbanRef}
+              stages={stages}
+              deals={filteredDeals}
+              onDealClick={(deal) => router.push(`/deals/${deal.id}`)}
+            />
+          </div>
         </div>
       </main>
 

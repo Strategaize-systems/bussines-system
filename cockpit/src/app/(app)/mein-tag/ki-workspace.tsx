@@ -234,7 +234,7 @@ export function KIWorkspace({ data, calendarSlots, exceptions, contacts, compani
   const visibleUnseen = unseenClassified.filter((i) => !dismissedIds.has(i.id));
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
+    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden min-h-[340px]">
       {/* Header with tabs */}
       <div className="px-6 py-4 border-b border-slate-200">
         <div className="flex items-center gap-3 mb-3">
