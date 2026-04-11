@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Plus, Pencil, Check, X, GitBranch, ChevronDown, ChevronUp } from "lucide-react";
+import { Trash2, Plus, Pencil, Check, X, GitBranch, ChevronDown, ChevronUp, Lock } from "lucide-react";
 import {
   createPipeline,
   updatePipeline,
@@ -15,6 +15,9 @@ import {
   deleteStage,
 } from "../pipeline/actions";
 import type { Pipeline, PipelineStage } from "../pipeline/actions";
+
+// Built-in pipeline names (must match PIPELINE_SLUGS in actions.ts)
+const BUILT_IN_NAMES = new Set(["Multiplikatoren", "Unternehmer-Chancen", "Lead-Management"]);
 
 interface PipelineConfigProps {
   pipelines: Pipeline[];
@@ -119,6 +122,7 @@ function PipelineCard({
   pipeline: Pipeline;
   stages: PipelineStage[];
 }) {
+  const isBuiltIn = BUILT_IN_NAMES.has(pipeline.name);
   const [editing, setEditing] = useState(false);
   const [showStages, setShowStages] = useState(false);
   const [showAddStage, setShowAddStage] = useState(false);
@@ -195,6 +199,12 @@ function PipelineCard({
               </span>
             </div>
             <div className="flex items-center gap-1">
+              {isBuiltIn && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1 mr-1" title="System-Pipeline — kann nicht umbenannt oder gelöscht werden">
+                  <Lock className="h-3 w-3" />
+                  System
+                </span>
+              )}
               <Button
                 size="sm"
                 variant="ghost"
@@ -204,12 +214,16 @@ function PipelineCard({
                 Stages
                 {showStages ? <ChevronUp className="ml-1 h-3.5 w-3.5" /> : <ChevronDown className="ml-1 h-3.5 w-3.5" />}
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => setEditing(true)} disabled={isPending}>
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-              <Button size="sm" variant="ghost" onClick={handleDelete} disabled={isPending}>
-                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-              </Button>
+              {!isBuiltIn && (
+                <>
+                  <Button size="sm" variant="ghost" onClick={() => setEditing(true)} disabled={isPending}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={handleDelete} disabled={isPending}>
+                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -250,12 +264,16 @@ function PipelineCard({
 function StageRow({ stage }: { stage: PipelineStage }) {
   const [editing, setEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const handleUpdate = (formData: FormData) => {
+    setError("");
     startTransition(async () => {
       const result = await updateStage(stage.id, formData);
-      if (!result.error) {
+      if (result.error) {
+        setError(result.error);
+      } else {
         setEditing(false);
         router.refresh();
       }
@@ -264,15 +282,22 @@ function StageRow({ stage }: { stage: PipelineStage }) {
 
   const handleDelete = () => {
     if (!confirm(`Stage "${stage.name}" wirklich löschen? Deals in dieser Stage verlieren ihre Zuordnung.`)) return;
+    setError("");
     startTransition(async () => {
-      await deleteStage(stage.id);
-      router.refresh();
+      const result = await deleteStage(stage.id);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        router.refresh();
+      }
     });
   };
 
   if (editing) {
     return (
-      <form action={handleUpdate} className="flex items-center gap-2 rounded-md border p-2 mb-1">
+      <form action={handleUpdate} className="flex flex-col gap-1 rounded-md border p-2 mb-1">
+        {error && <p className="text-xs text-destructive">{error}</p>}
+        <div className="flex items-center gap-2">
         <input
           type="color"
           name="color"
@@ -292,15 +317,18 @@ function StageRow({ stage }: { stage: PipelineStage }) {
         <Button type="submit" size="sm" variant="outline" disabled={isPending}>
           <Check className="h-3.5 w-3.5" />
         </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>
+        <Button type="button" size="sm" variant="ghost" onClick={() => { setEditing(false); setError(""); }}>
           <X className="h-3.5 w-3.5" />
         </Button>
+        </div>
       </form>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-md border p-2 mb-1">
+    <div className="flex flex-col gap-1 rounded-md border p-2 mb-1">
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      <div className="flex items-center gap-2">
       <div
         className="h-4 w-4 rounded-full shrink-0"
         style={{ backgroundColor: stage.color || "#6366f1" }}
@@ -313,6 +341,7 @@ function StageRow({ stage }: { stage: PipelineStage }) {
       <Button size="sm" variant="ghost" onClick={handleDelete} disabled={isPending}>
         <Trash2 className="h-3.5 w-3.5 text-destructive" />
       </Button>
+      </div>
     </div>
   );
 }
