@@ -58,7 +58,7 @@
 | FEAT-318 | Templates + Duplikate + Attribution | deployed | 2026-04-10 |
 | FEAT-319 | Activity-Queue / Focus View | deployed | 2026-04-10 |
 
-## V3.2 Features (UI-Polish + Pipeline-Management — active)
+## V3.2 Features (UI-Polish + Pipeline-Management — deployed)
 
 | ID | Feature | Status | Created |
 |----|---------|--------|---------|
@@ -69,7 +69,18 @@
 | FEAT-325 | Autocomplete/Typeahead Suche | deployed | 2026-04-11 |
 | FEAT-326 | PLZ-Kartensuche mit Heatmap | deployed | 2026-04-11 |
 
-## V4 Features (Wissen + Management — planned)
+## V3.3 Features (UI-Abrundung + Visualisierung — active)
+
+| ID | Feature | Status | Created |
+|----|---------|--------|---------|
+| FEAT-331 | KI-Suchfeld + Voice auf Mein Tag | planned | 2026-04-11 |
+| FEAT-332 | PLZ/Stadt-Autocomplete bei Adresseingabe | planned | 2026-04-11 |
+| FEAT-333 | Pipeline Liste-Ansicht Toggle | planned | 2026-04-11 |
+| FEAT-334 | Unified Timeline | planned | 2026-04-11 |
+| FEAT-335 | Funnel-Report (Conversion pro Stage) | planned | 2026-04-11 |
+| FEAT-336 | Win/Loss-Analyse Dashboard | planned | 2026-04-11 |
+
+## V4 Features (KI-Kern + Externe Integrationen — planned)
 
 | ID | Feature | Status | Created |
 |----|---------|--------|---------|
@@ -78,7 +89,11 @@
 | FEAT-403 | Management-Cockpit LLM-Ausbau | planned | 2026-04-09 |
 | FEAT-404 | Call Intelligence (Transkription, KI-Summary) | planned | 2026-04-09 |
 | FEAT-405 | IMAP Mail-Integration | planned | 2026-04-09 |
-| FEAT-406 | Cal.com-Sync | planned | 2026-04-09 |
+| FEAT-406 | Cal.com-Sync + Gesamtkalender | planned | 2026-04-09 |
+| FEAT-407 | KI-Wiedervorlagen mit Freigabe | planned | 2026-04-11 |
+| FEAT-408 | KI-Gatekeeper (E-Mail-Analyse) | planned | 2026-04-11 |
+| FEAT-409 | Meeting-Erinnerungen | planned | 2026-04-11 |
+| FEAT-410 | KI-Kontextanalyse (Auto-Replies) | planned | 2026-04-11 |
 
 ## V5 Features (Automatisierung + Skalierung — planned)
 

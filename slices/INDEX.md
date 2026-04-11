@@ -76,3 +76,14 @@
 | SLC-324 | Pipeline-Verwaltung (Settings) | FEAT-324 | done | Medium | 2026-04-11 |
 | SLC-325 | Autocomplete/Typeahead Suche | FEAT-325 | done | Medium | 2026-04-11 |
 | SLC-326 | PLZ-Kartensuche mit Heatmap | FEAT-326 | done | Medium | 2026-04-11 |
+
+## V3.3 Slices (UI-Abrundung + Visualisierung)
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-331 | KI-Suchfeld + Voice auf Mein Tag | FEAT-331 | planned | High | 2026-04-11 |
+| SLC-332 | PLZ/Stadt-Autocomplete bei Adresseingabe | FEAT-332 | planned | Medium | 2026-04-11 |
+| SLC-333 | Pipeline Liste-Ansicht Toggle | FEAT-333 | planned | Medium | 2026-04-11 |
+| SLC-334 | Unified Timeline | FEAT-334 | planned | Medium | 2026-04-11 |
+| SLC-335 | Funnel-Report (Conversion pro Stage) | FEAT-335 | planned | Medium | 2026-04-11 |
+| SLC-336 | Win/Loss-Analyse Dashboard | FEAT-336 | planned | Medium | 2026-04-11 |

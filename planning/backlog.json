@@ -285,8 +285,8 @@
       "title": "Pipeline Liste-Ansicht Toggle (Kanban ↔ Tabelle)",
       "type": "feature",
       "priority": "medium",
-      "status": "deferred",
-      "version": "V3.2",
+      "status": "open",
+      "version": "V3.3",
       "description": "Toggle zwischen Kanban-Board und Tabellen-Ansicht der gleichen Deals. Tabelle mit sortierbaren Spalten, Filtern, Bulk-Actions.",
       "createdAt": "2026-04-03"
     },
@@ -305,8 +305,8 @@
       "title": "Unified Timeline (alle Objekte chronologisch pro Kontakt/Firma)",
       "type": "feature",
       "priority": "medium",
-      "status": "deferred",
-      "version": "V3.2",
+      "status": "open",
+      "version": "V3.3",
       "description": "Eine Timeline die Activities + E-Mails + Proposals + Signals + Referrals chronologisch zusammenführt. Pro Kontakt und pro Firma sichtbar.",
       "createdAt": "2026-04-03"
     },
@@ -366,7 +366,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": "V3+",
+      "version": "V3.3",
       "description": "Pipeline als Trichter-Grafik: zeigt wie viele Deals von Stage zu Stage konvertieren. Conversion-Rate pro Stufe.",
       "createdAt": "2026-04-03"
     },
@@ -376,7 +376,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": "V3+",
+      "version": "V3.3",
       "description": "Aggregierte Ansicht der won_lost_reasons über Zeit. Welche Verlustgründe häufen sich? Trend-Analyse.",
       "createdAt": "2026-04-03"
     },
@@ -477,6 +477,7 @@
       "priority": "high",
       "status": "open",
       "version": "V4",
+      "note": "Infrastruktur-Blocker fuer BL-201 Call Intelligence",
       "description": "Self-hosted Jitsi Meet auf Hetzner für Browser-basierte Video-Meetings. Kein Download nötig. Integration mit Cal.com für Terminplanung. Jibri für Recording. Meetings direkt aus 'Mein Tag' und Deal-Detail starten. Aufnahmen fließen in Call Intelligence Pipeline (BL-201).",
       "createdAt": "2026-04-04"
     },
@@ -585,7 +586,7 @@
       "title": "Kontakt-Karte mit Leaflet + OpenStreetMap (PLZ-basierte Pins)",
       "type": "feature",
       "priority": "medium",
-      "status": "deferred",
+      "status": "done",
       "version": "V3.2",
       "description": "Interaktive Karte auf Kontakte-, Firmen- und Multiplikatoren-Seiten. Tech: react-leaflet + OpenStreetMap (kostenlos, kein API-Key). Deutschland-Ausschnitt, einzoombar, verschiebbar. Farbige Pins pro Kontakttyp (Kontakte blau, Firmen grün, Multiplikatoren lila). Clustering bei vielen Pins ('23 Kontakte in München'). Suchfeld oben. Geocoding über PLZ-Koordinaten-Tabelle (Open Data DE/NL/AT, einmalig importiert — kein Live-API-Call). Heatmap-Effekt optional. Dependency: npm install react-leaflet leaflet @types/leaflet. PLZ-Tabelle als JSON oder DB-Seed.",
       "createdAt": "2026-04-07"
@@ -837,6 +838,7 @@
       "priority": "high",
       "status": "open",
       "version": "V4",
+      "note": "Abhaengig von BL-203 IMAP",
       "description": "KI-gesteuerte Wiedervorlagen mit FREIGABE-PRINZIP — KI handelt NIE autonom am Kunden. Ablauf: (1) KI prueft taeglich: Hat Kunde geantwortet? Ist Mitarbeiter-Wiedervorlage erledigt? (2) Ergebnis erscheint als eigene Liste in Mein Tag / KI-Tageseinschaetzung: 'Heute stehen X Nachfass-Aktionen an' mit Kunde, Grund, vorgeschlagene Aktion. (3) Mitarbeiter geht Liste durch (5 Min morgens): Pro Eintrag: Freigeben / Verschieben (z.B. +2 Tage, +5 Tage) / Abbrechen. (4) Erst NACH Freigabe fuehrt KI die Aktion aus (E-Mail senden, Erinnerung). BIDIREKTIONAL: Wiedervorlagen koennen in beide Richtungen verschoben werden — (A) Eigene Wiedervorlage → KI delegieren ('das kann die KI automatisch nachfassen') und (B) KI-Wiedervorlage → selbst uebernehmen ('den rufe ich lieber persoenlich an'). Beide Listen leben nebeneinander in Mein Tag. Zusaetzlich: Meeting-Erinnerungen (am Morgen oder 30 Min vorher) koennen automatisch laufen — die betreffen eigene Termine, nicht Kunden-Nachfass. Ziel: Mitarbeiter behaelt volle Kontrolle, KI entlastet aber maximal. Keine genervten Kunden durch stumpfe Automatik.",
       "createdAt": "2026-04-10"
     },
@@ -966,7 +968,7 @@
       "type": "feature",
       "priority": "high",
       "status": "open",
-      "version": null,
+      "version": "V3.3",
       "description": "Auf der Mein-Tag-Seite fehlt ein zentrales KI-Eingabefeld mit Mikrofon-Button. Platzierung: oberhalb oder neben dem KI-Analyse-Bereich. Funktion: (1) Texteingabe fuer KI-Abfragen ('Welche Deals sind diese Woche faellig?'). (2) Mikrofon-Button fuer Voice-Input via Whisper API (bereits server-seitig verfuegbar). (3) KI-Button zum Absenden/Verarbeiten. Kein reines Suchfeld — soll Anweisungen und Fragen verarbeiten koennen. Ist der zentrale Einstiegspunkt fuer den KI-Assistenten auf Mein Tag.",
       "createdAt": "2026-04-11"
     },
@@ -976,7 +978,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": null,
+      "version": "V4",
       "description": "Zwei Luecken: (1) Es gibt keine Gesamtkalender-Ansicht — aktuell nur Kalender-Panel in Mein Tag mit Tagesansicht. Gebraucht wird eine vollstaendige Kalenderseite mit Wochen-/Monatsansicht, aehnlich Google Calendar. Zeigt alle calendar_events, Meetings, Aufgaben-Deadlines. (2) Kalender fehlt in der Navigation/Verwaltung — keine eigene Route, kein Menue-Eintrag. Spaeter: Sync mit externen Kalendern (Google Cal, Outlook) via Cal.com (BL-205) oder CalDAV.",
       "createdAt": "2026-04-11"
     },
@@ -986,7 +988,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": null,
+      "version": "V3.3",
       "description": "Intelligente Adress-Autovervollstaendigung: (1) PLZ-Feld: Bei Eingabe von '4' werden alle PLZ mit 4xxx vorgeschlagen, bei '41' nur 41xxx usw. Auswahl fuellt automatisch Ort-Feld. (2) Ort-Feld: Stadtname-Suche mit Vorschlaegen, Auswahl fuellt PLZ. (3) Strasse: Spaetere Phase — benoetigt externe Daten (z.B. OpenStreetMap Nominatim API). Gilt fuer: 'Neue Firma' Formular, PLZ-Kartensuche, ueberall wo Adressen eingegeben werden. PLZ+Stadt-Daten sind bereits lokal vorhanden (8.293 Eintraege mit Stadtnamen). Strassen-Autocomplete ist ein separater Schritt mit API-Abhaengigkeit.",
       "createdAt": "2026-04-11"
     }

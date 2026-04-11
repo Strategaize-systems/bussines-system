@@ -50,18 +50,25 @@
       "order": 7
     },
     {
+      "id": "v3-3",
+      "name": "V3.3",
+      "status": "active",
+      "summary": "UI-Abrundung + Visualisierung: KI-Suchfeld auf Mein Tag, PLZ-Autocomplete, Pipeline-Listenansicht, Unified Timeline, Funnel-Report, Win/Loss-Analyse",
+      "order": 8
+    },
+    {
       "id": "v4",
       "name": "V4",
       "status": "planned",
-      "summary": "Wissen + Management: Wissensbasis, Insight-Review-Queue, Management-Cockpit LLM-Ausbau, Meeting-Transkription, Einwandmuster, KI-Coaching, IMAP, Cal.com-Sync",
-      "order": 8
+      "summary": "KI-Kern + Externe Integrationen: IMAP, KI-Wiedervorlagen, KI-Gatekeeper, Call Intelligence, Jitsi Meet, Cal.com, Gesamtkalender, Signal-Extraktion",
+      "order": 9
     },
     {
       "id": "v5",
       "name": "V5",
       "status": "planned",
       "summary": "Automatisierung + Skalierung: Cadences/Sequences, Routing/Territories, Teamlead-Rolle, Intelligence-Platform-Export",
-      "order": 9
+      "order": 10
     }
   ]
 }
