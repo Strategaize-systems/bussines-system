@@ -87,7 +87,7 @@ const entityActions = [
   { label: "Multiplikator", icon: Handshake, color: "from-purple-500 to-purple-600", href: "/multiplikatoren" },
 ];
 
-const WORKDAY_MINUTES = 600; // 10h workday (8:00–18:00)
+const WORKDAY_MINUTES = 480; // 8h workday
 
 export function MeinTagClient({ data, stages, contacts, companies, deals, pipelines, calendarSlots, exceptions, nextMeeting, topDeals }: MeinTagClientProps) {
   const totalItems = data.stats.overdueCount + data.stats.todayCount + data.stats.upcomingCount;
@@ -348,10 +348,38 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
 
             </div>
 
-            {/* RIGHT COLUMN (4): Kalender + Meeting-Prep + Exceptions + Zeit */}
+            {/* RIGHT COLUMN (4): Zeit + Entities + Kalender + Meeting-Prep + Exceptions */}
             <div className="col-span-4">
               <div className="sticky top-32 space-y-4">
-                {/* Entity Quick Actions (above calendar) */}
+                {/* Verfuegbare Zeit — compact bar */}
+                <div className={cn(
+                  "rounded-xl border px-4 py-2.5 flex items-center gap-3",
+                  freeMinutes > 120
+                    ? "bg-emerald-50 border-emerald-200"
+                    : freeMinutes > 0
+                      ? "bg-amber-50 border-amber-200"
+                      : "bg-red-50 border-red-200"
+                )}>
+                  <Clock size={14} className={freeMinutes > 120 ? "text-emerald-600" : freeMinutes > 0 ? "text-amber-600" : "text-red-600"} />
+                  <div className="flex-1">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className={cn("text-lg font-bold", freeMinutes > 120 ? "text-emerald-700" : freeMinutes > 0 ? "text-amber-700" : "text-red-700")}>
+                        {freeHours}h {freeRestMinutes > 0 ? `${freeRestMinutes}m` : ""}
+                      </span>
+                      <span className={cn("text-[10px]", freeMinutes > 120 ? "text-emerald-600" : freeMinutes > 0 ? "text-amber-600" : "text-red-600")}>
+                        frei
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div
+                      className={cn("h-full rounded-full", freeMinutes > 120 ? "bg-emerald-500" : freeMinutes > 0 ? "bg-amber-500" : "bg-red-500")}
+                      style={{ width: `${Math.min(100, (scheduledMinutes / WORKDAY_MINUTES) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Entity Quick Actions */}
                 <div className="flex items-center justify-center gap-3">
                   {entityActions.map((action) => (
                     <Link
@@ -426,41 +454,11 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
 
                 {/* EXCEPTION-HINWEISE */}
                 {exceptionCount > 0 && <ExceptionPanel exceptions={exceptions} />}
-
-                {/* VERFÜGBARE ZEIT */}
-                <div className={cn(
-                  "rounded-2xl border-2 shadow-lg p-5",
-                  freeMinutes > 120
-                    ? "bg-gradient-to-br from-emerald-50 to-white border-emerald-200"
-                    : freeMinutes > 0
-                      ? "bg-gradient-to-br from-amber-50 to-white border-amber-200"
-                      : "bg-gradient-to-br from-red-50 to-white border-red-200"
-                )}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle2 size={16} className={freeMinutes > 120 ? "text-emerald-600" : freeMinutes > 0 ? "text-amber-600" : "text-red-600"} />
-                    <span className={cn("text-xs font-bold uppercase tracking-wide", freeMinutes > 120 ? "text-emerald-700" : freeMinutes > 0 ? "text-amber-700" : "text-red-700")}>
-                      Verfügbare Zeit
-                    </span>
-                  </div>
-                  <div className={cn("text-3xl font-bold", freeMinutes > 120 ? "text-emerald-700" : freeMinutes > 0 ? "text-amber-700" : "text-red-700")}>
-                    {freeHours}h {freeRestMinutes > 0 ? `${freeRestMinutes}m` : ""}
-                  </div>
-                  <div className={cn("text-xs mt-1", freeMinutes > 120 ? "text-emerald-600" : freeMinutes > 0 ? "text-amber-600" : "text-red-600")}>
-                    {scheduledMinutes} Minuten verplant von {WORKDAY_MINUTES} Minuten
-                  </div>
-                  {/* Progress bar */}
-                  <div className="mt-3 h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className={cn("h-full rounded-full transition-all", freeMinutes > 120 ? "bg-emerald-500" : freeMinutes > 0 ? "bg-amber-500" : "bg-red-500")}
-                      style={{ width: `${Math.min(100, (scheduledMinutes / WORKDAY_MINUTES) * 100)}%` }}
-                    />
-                  </div>
-                </div>
               </div>
             </div>
           </div>
 
-          {/* KI-WORKSPACE — spans Aufgaben + Top Deals width (8/12) */}
+          {/* KI-WORKSPACE — under Aufgaben + Top Deals (8/12) */}
           <div className="grid grid-cols-12 gap-5">
             <div className="col-span-8">
               <KIWorkspace data={data} calendarSlots={calendarSlots} exceptions={exceptions} contacts={contacts} companies={companies} deals={deals} />
