@@ -22,9 +22,11 @@ import {
   Shield,
   Briefcase,
   Target,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { signout } from "@/app/(auth)/login/actions";
 
 type NavItem = {
   name: string;
@@ -275,24 +277,49 @@ export function Sidebar() {
         {navGroups.map((group) => renderGroup(group))}
       </nav>
 
-      {/* Footer: Version Badge + Collapse */}
-      <div className="px-3 pb-4">
+      {/* Footer: Version Badge + Logout + Collapse */}
+      <div className="px-3 pb-4 space-y-2">
         {!collapsed && (
-          <div className="flex items-center gap-3 rounded-xl bg-slate-800/50 border border-white/[0.06] px-3 py-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#120774] to-[#4454b8] text-white text-xs font-bold shadow-lg">
-              BD
+          <>
+            {/* Logout Button */}
+            <form action={signout}>
+              <button
+                type="submit"
+                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-medium text-slate-400 hover:bg-white/[0.05] hover:text-white transition-all duration-200"
+              >
+                <LogOut className="h-4 w-4 shrink-0" />
+                <span>Ausloggen</span>
+              </button>
+            </form>
+
+            {/* Version Badge + Collapse */}
+            <div className="flex items-center gap-3 rounded-xl bg-slate-800/50 border border-white/[0.06] px-3 py-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#120774] to-[#4454b8] text-white text-xs font-bold shadow-lg">
+                BD
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[12px] font-semibold text-white truncate">Business Dev CRM</div>
+                <div className="text-[10px] text-slate-500">Version 1.0</div>
+              </div>
+              <button
+                onClick={() => setCollapsed(true)}
+                className="text-slate-500 hover:text-white transition-colors"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </button>
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[12px] font-semibold text-white truncate">Business Dev CRM</div>
-              <div className="text-[10px] text-slate-500">Version 1.0</div>
-            </div>
+          </>
+        )}
+        {collapsed && (
+          <form action={signout}>
             <button
-              onClick={() => setCollapsed(true)}
-              className="text-slate-500 hover:text-white transition-colors"
+              type="submit"
+              className="mx-auto flex items-center justify-center w-10 h-10 rounded-lg text-slate-500 hover:bg-white/[0.05] hover:text-white transition-all"
+              title="Ausloggen"
             >
-              <ChevronLeft className="h-3.5 w-3.5" />
+              <LogOut className="h-4 w-4" />
             </button>
-          </div>
+          </form>
         )}
       </div>
     </aside>
