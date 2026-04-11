@@ -38,15 +38,15 @@
     {
       "id": "v3-1",
       "name": "V3.1",
-      "status": "active",
+      "status": "released",
       "summary": "UX-Schliff + KI-Kontext: 9 Slices (SLC-311..319). Zeit-Picker, Meeting-Typ, Schnellaktionen, KI on-click, Pipeline-KI-Suche, KI-E-Mail-Composing, Kontext-Intelligenz, Auto-Wiedervorlagen, Tageseinschaetzung, Templates, Duplikate, Attribution, Focus View",
       "order": 6
     },
     {
       "id": "v3-2",
       "name": "V3.2",
-      "status": "planned",
-      "summary": "Deferred aus V3.1: Pipeline Liste-Ansicht Toggle, Unified Timeline, Kontakt-Karte (Leaflet/OSM), Mobile PWA Mein Tag",
+      "status": "active",
+      "summary": "UI-Polish + Pipeline-Management: Quick Actions Modal-Umbau, Pipeline UI-Overhaul (Stage-Headers, Deal-Cards nach Figma), Pipeline-Selector Tabs, Logout-Button, Pipeline-Verwaltung in Settings, Autocomplete-Suche, PLZ-Kartensuche mit Heatmap",
       "order": 7
     },
     {

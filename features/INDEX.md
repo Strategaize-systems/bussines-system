@@ -44,19 +44,30 @@
 | FEAT-308 | Meeting-Management | deployed | [Spec](FEAT-308-meeting-management.md) | 2026-04-09 |
 | FEAT-309 | Kalender-Events | deployed | [Spec](FEAT-309-calendar-events.md) | 2026-04-09 |
 
-## V3.1 Features (UX-Schliff + KI-Kontext — active)
+## V3.1 Features (UX-Schliff + KI-Kontext — deployed)
 
 | ID | Feature | Status | Created |
 |----|---------|--------|---------|
-| FEAT-311 | Meeting/Kalender UX-Upgrade | done | 2026-04-10 |
-| FEAT-312 | Schnellaktionen-Rebuild | done | 2026-04-10 |
-| FEAT-313 | KI on-click + Kostenkontrolle | done | 2026-04-10 |
-| FEAT-314 | Pipeline KI-Suche + Voice | done | 2026-04-10 |
-| FEAT-315 | KI-Composing + Kontext-Intelligenz | done | 2026-04-10 |
-| FEAT-316 | Auto-Wiedervorlagen | in_progress | 2026-04-10 |
-| FEAT-317 | Tageseinschaetzung erweitert | in_progress | 2026-04-10 |
-| FEAT-318 | Templates + Duplikate + Attribution | planned | 2026-04-10 |
-| FEAT-319 | Activity-Queue / Focus View | planned | 2026-04-10 |
+| FEAT-311 | Meeting/Kalender UX-Upgrade | deployed | 2026-04-10 |
+| FEAT-312 | Schnellaktionen-Rebuild | deployed | 2026-04-10 |
+| FEAT-313 | KI on-click + Kostenkontrolle | deployed | 2026-04-10 |
+| FEAT-314 | Pipeline KI-Suche + Voice | deployed | 2026-04-10 |
+| FEAT-315 | KI-Composing + Kontext-Intelligenz | deployed | 2026-04-10 |
+| FEAT-316 | Auto-Wiedervorlagen | deployed | 2026-04-10 |
+| FEAT-317 | Tageseinschaetzung erweitert | deployed | 2026-04-10 |
+| FEAT-318 | Templates + Duplikate + Attribution | deployed | 2026-04-10 |
+| FEAT-319 | Activity-Queue / Focus View | deployed | 2026-04-10 |
+
+## V3.2 Features (UI-Polish + Pipeline-Management — active)
+
+| ID | Feature | Status | Created |
+|----|---------|--------|---------|
+| FEAT-321 | Quick Actions Modal-Umbau | done | 2026-04-11 |
+| FEAT-322 | Pipeline UI-Overhaul | done | 2026-04-11 |
+| FEAT-323 | Logout-Funktion | done | 2026-04-11 |
+| FEAT-324 | Pipeline-Verwaltung (Settings) | planned | 2026-04-11 |
+| FEAT-325 | Autocomplete/Typeahead Suche | planned | 2026-04-11 |
+| FEAT-326 | PLZ-Kartensuche mit Heatmap | planned | 2026-04-11 |
 
 ## V4 Features (Wissen + Management — planned)
 

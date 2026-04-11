@@ -10,34 +10,29 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V3.1 Implementation. Alle 9 Slices done (SLC-311..319). Naechster Schritt: /qa SLC-319, dann Gesamt-QA.
-- Current Phase: V3.1 Implementation (9/9 Slices done)
+- Current Focus: V3.2 Implementation. 3 von 6 Slices done (SLC-321..323). Naechste Slices: SLC-324 (Pipeline-Verwaltung), SLC-325 (Autocomplete), SLC-326 (PLZ-Karte).
+- Current Phase: V3.2 Implementation (3/6 Slices done)
 
 ## Immediate Next Steps
-1. /qa fuer SLC-319 (Activity-Queue / Focus View)
-2. SQL-Migrationen auf Hetzner ausfuehren (09, 10, 11)
-3. Gesamt-QA V3.1
-4. /final-check → /go-live → /deploy
+1. SLC-324 (Pipeline-Verwaltung in Settings) — am eigenstaendigsten
+2. SLC-325 (Autocomplete/Typeahead Suche) — wiederverwendbare Komponente
+3. SLC-326 (PLZ-Kartensuche + Heatmap) — Library-Entscheidung (Leaflet vs. Mapbox)
+4. Gesamt-QA V3.2 nach allen Slices
 
 ## Active Scope
-V3.1 — UX-Schliff + KI-Kontext (9 Slices, 19 Backlog-Items):
-- SLC-311: Meeting/Kalender UX-Fixes (BL-317, BL-318) — Blocker
-- SLC-312: Schnellaktionen-Rebuild (BL-319, BL-320) — High
-- SLC-313: KI on-click Pattern (BL-330) — Blocker
-- SLC-314: Pipeline KI-Suche + Voice (BL-321) — High
-- SLC-315: KI-Composing + Kontext-Intelligenz (BL-322, BL-323) — High
-- SLC-316: Auto-Wiedervorlagen (BL-324) — High
-- SLC-317: Tageseinschaetzung erweitert (BL-328) — High
-- SLC-318: Templates + Duplikate + Attribution (BL-129, BL-131, BL-140) — Medium
-- SLC-319: Activity-Queue / Focus View (BL-132) — Medium
-
-Deferred auf V3.2: BL-128 (Pipeline Liste-Toggle), BL-130 (Unified Timeline), BL-209 (Kontakt-Karte), BL-216 (Mobile PWA).
+V3.2 — UI-Polish + Pipeline-Management (6 Slices, 7 Backlog-Items):
+- SLC-321: Quick Actions Modal-Umbau (BL-331) — done
+- SLC-322: Pipeline UI-Overhaul + Selector (BL-332, BL-334) — done
+- SLC-323: Logout-Button Sidebar (BL-335) — done
+- SLC-324: Pipeline-Verwaltung in Settings (BL-336) — planned
+- SLC-325: Autocomplete/Typeahead Suche (BL-337) — planned
+- SLC-326: PLZ-Kartensuche mit Heatmap (BL-333) — planned
 
 ## Blockers
 - aktuell keine
 
 ## Last Stable Version
-- V3 — 2026-04-10 — deployed auf Hetzner (Operative Kontextlogik + Hotfixes)
+- V3.1 — 2026-04-11 — deployed auf Hetzner (UX-Schliff + KI-Kontext)
 
 ## Notes
-V3 mit 10 Slices (SLC-301 bis SLC-310) released. Gesamt-QA PASS (RPT-046). Mehrere Hotfixes nach Live-Test applied. 13 neue Backlog-Items erstellt (BL-317 bis BL-329, V3.1 + V4).
+V3 released (2026-04-10, REL-005). V3.1 (9 Slices, UX-Schliff + KI-Kontext) code-complete (REL-006). V3.2 aktiv — 3/6 Slices done (Quick Actions, Pipeline UI-Overhaul, Logout). Offen: Pipeline-Verwaltung, Autocomplete, PLZ-Karte. V3.1 deployed auf Hetzner (2026-04-11, REL-006).

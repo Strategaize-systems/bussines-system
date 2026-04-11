@@ -27,3 +27,17 @@
 - Summary: Letztes rein UI-zentriertes Release. Offene Items (BL-212 Pipeline Style Guide, BL-213 Standort-Filter, BL-214 fehlende Seiten, BL-215 Konsolidierung) in V3-Backlog uebernommen — werden durch V3 Workspace-Konzept und Navigation-Umbau abgedeckt. Strategische Neuausrichtung beginnt mit V3.
 - Risks: Keine neuen technischen Risiken. KI-Shells sind Platzhalter ohne Backend.
 - Rollback Notes: Docker Image Rollback via Coolify. V2.1 Image als Fallback.
+
+### REL-005 — V3 Operative Kontextlogik
+- Date: 2026-04-10
+- Scope: 10 Slices (SLC-301..310), 9 Features (FEAT-301..309). Deal-Workspace, Mein Tag V2, Firmen-/Kontakt-Workspace, Bedrock LLM-Integration, Navigation-Umbau (5-Schichten), Governance-Basis (Rollen, RLS, Audit), Meeting/Kalender-Management.
+- Summary: Strategische Neuausrichtung abgeschlossen. Workspace-zentriertes Arbeiten mit KI-Unterstuetzung (Bedrock Claude Sonnet). MIG-005 Schema-Migration (Meetings, Calendar Events, Audit-Log, Navigation). Gesamt-QA PASS (RPT-046). Mehrere Hotfixes nach Live-Test.
+- Risks: Bedrock-Kosten bei Auto-Load (behoben in V3.1 durch on-click Pattern). SMTP nicht konfiguriert. Keine automatisierten Tests.
+- Rollback Notes: Docker Image Rollback via Coolify. V2.2 Image als Fallback. MIG-005 Rollback: DROP meetings, calendar_events, audit_log Tabellen.
+
+### REL-006 — V3.1 UX-Schliff + KI-Kontext
+- Date: 2026-04-11
+- Scope: 9 Slices (SLC-311..319). Meeting/Kalender UX, Schnellaktionen-Rebuild, KI on-click Pattern, Pipeline KI-Suche + Voice, KI-E-Mail-Composing, Kontext-Intelligenz, Auto-Wiedervorlagen, Tageseinschaetzung erweitert, Templates + Duplikate + Attribution, Activity-Queue.
+- Summary: UX-Schliff und KI-Kontext-Integration. Alle Formulare KI-vorbefuellt aus Kontext. Voice-Input in allen Textfeldern. KI-Kostenkontrolle durch on-click statt auto-load. Automatische Wiedervorlagen nach Aktionen.
+- Risks: Keine neuen Schema-Migrationen. Bedrock-Kosten kontrolliert durch on-click Pattern.
+- Rollback Notes: Docker Image Rollback via Coolify. V3 Image als Fallback.

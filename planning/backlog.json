@@ -895,9 +895,9 @@
       "title": "Mein Tag Quick Actions: Modals statt Seitennavigation",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3.2",
-      "description": "Quick Action Buttons auf Mein Tag öffnen teilweise falsche Ziele: Deals-Button geht zur Pipeline statt New Deal Modal, Anruf öffnet Task statt Anruf-Fenster (VoIP mit Mikrofon/Speaker), Neuer Kontakt/Firma/Multiplikator navigiert zu Listenseiten statt Modal zu öffnen. Alle Buttons müssen Sheet/Modal öffnen für direkte Erstellung.",
+      "description": "Quick Action Buttons auf Mein Tag ï¿½ffnen teilweise falsche Ziele: Deals-Button geht zur Pipeline statt New Deal Modal, Anruf ï¿½ffnet Task statt Anruf-Fenster (VoIP mit Mikrofon/Speaker), Neuer Kontakt/Firma/Multiplikator navigiert zu Listenseiten statt Modal zu ï¿½ffnen. Alle Buttons mï¿½ssen Sheet/Modal ï¿½ffnen fï¿½r direkte Erstellung.",
       "createdAt": "2026-04-11"
     },
     {
@@ -905,9 +905,9 @@
       "title": "Pipeline: Grid-Fix, Pipeline-Selector, Stage-UI nach Figma",
       "type": "improvement",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3.2",
-      "description": "Pipeline-Seite hat mehrere Probleme: KPI-Karten zu breit (Grid passt nicht), Scroll-Mechanismus nicht sichtbar, Stage-Karten und Deal-Cards sehen nicht aus wie im Figma-Design. Zusätzlich: Pipeline-Selector einbauen (Dropdown/Tabs für Multiplikatoren/Chancen/Leads), oberer Bereich (KPIs + Filter) fix, Pipeline-Board darunter als scrollbarer Bereich der sich je nach Pipeline-Auswahl neu lädt.",
+      "description": "Pipeline-Seite hat mehrere Probleme: KPI-Karten zu breit (Grid passt nicht), Scroll-Mechanismus nicht sichtbar, Stage-Karten und Deal-Cards sehen nicht aus wie im Figma-Design. Zusï¿½tzlich: Pipeline-Selector einbauen (Dropdown/Tabs fï¿½r Multiplikatoren/Chancen/Leads), oberer Bereich (KPIs + Filter) fix, Pipeline-Board darunter als scrollbarer Bereich der sich je nach Pipeline-Auswahl neu lï¿½dt.",
       "createdAt": "2026-04-11"
     },
     {
@@ -917,7 +917,7 @@
       "priority": "medium",
       "status": "open",
       "version": "V3.2",
-      "description": "Deutschlandkarte mit PLZ-Suche für Kontakte, Firmen und Multiplikatoren. User gibt PLZ ein, Karte zoomt auf den Bereich und zeigt alle Einträge im Umkreis. Links daneben werden die gefundenen Einträge als Liste angezeigt. Heatmap-Darstellung zeigt Aktivitätsdichte nach Region. Ergänzt die bestehende Name/Text-Suche um geografische Suche.",
+      "description": "Deutschlandkarte mit PLZ-Suche fï¿½r Kontakte, Firmen und Multiplikatoren. User gibt PLZ ein, Karte zoomt auf den Bereich und zeigt alle Eintrï¿½ge im Umkreis. Links daneben werden die gefundenen Eintrï¿½ge als Liste angezeigt. Heatmap-Darstellung zeigt Aktivitï¿½tsdichte nach Region. Ergï¿½nzt die bestehende Name/Text-Suche um geografische Suche.",
       "createdAt": "2026-04-11"
     },
     {
@@ -925,9 +925,9 @@
       "title": "Pipeline UI-Overhaul: Stage-Headers, Deal-Cards nach Figma-Design",
       "type": "improvement",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3.2",
-      "description": "Pipeline Stage-Headers und Deal-Cards sehen nicht aus wie im Figma-Design (Version 104). Stages brauchen farbige Icons, runde Badges mit Deal-Count + Wert. Deal-Cards brauchen Firmenname, Kontaktperson, Priorität-Badge, Deal-Wert prominent, Wahrscheinlichkeit mit Progress-Bar, Close-Date, nächste Aktion. Aktuelles UI wirkt im Vergleich zum Design-Entwurf billig und unfertig.",
+      "description": "Pipeline Stage-Headers und Deal-Cards sehen nicht aus wie im Figma-Design (Version 104). Stages brauchen farbige Icons, runde Badges mit Deal-Count + Wert. Deal-Cards brauchen Firmenname, Kontaktperson, Prioritï¿½t-Badge, Deal-Wert prominent, Wahrscheinlichkeit mit Progress-Bar, Close-Date, nï¿½chste Aktion. Aktuelles UI wirkt im Vergleich zum Design-Entwurf billig und unfertig.",
       "createdAt": "2026-04-11"
     },
     {
@@ -935,19 +935,29 @@
       "title": "Logout/Login Funktion in Sidebar + Settings",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V3.2",
-      "description": "Logout-Button fehlt komplett. Muss in der Sidebar unten (neben Business Dev CRM Label) und in den Einstellungen verfügbar sein. Login-Flow muss nach Logout korrekt funktionieren.",
+      "description": "Logout-Button fehlt komplett. Muss in der Sidebar unten (neben Business Dev CRM Label) und in den Einstellungen verfï¿½gbar sein. Login-Flow muss nach Logout korrekt funktionieren.",
       "createdAt": "2026-04-11"
     },
     {
       "id": "BL-336",
-      "title": "Pipeline-Verwaltung in Einstellungen: Erstellen, Umbenennen, Löschen",
+      "title": "Pipeline-Verwaltung in Einstellungen: Erstellen, Umbenennen, Lï¿½schen",
       "type": "feature",
       "priority": "medium",
       "status": "open",
       "version": "V3.2",
-      "description": "In den Einstellungen soll man Pipelines erstellen, umbenennen und löschen können. Beim Erstellen soll ein Standard-Template mit Stages vorgeschlagen werden, das man anpassen kann. Änderungen (Name, Löschen) müssen sich in den Pipeline-Selector-Tabs widerspiegeln. Stages pro Pipeline sollen ebenfalls verwaltet werden können.",
+      "description": "In den Einstellungen soll man Pipelines erstellen, umbenennen und lï¿½schen kï¿½nnen. Beim Erstellen soll ein Standard-Template mit Stages vorgeschlagen werden, das man anpassen kann. ï¿½nderungen (Name, Lï¿½schen) mï¿½ssen sich in den Pipeline-Selector-Tabs widerspiegeln. Stages pro Pipeline sollen ebenfalls verwaltet werden kï¿½nnen.",
+      "createdAt": "2026-04-11"
+    },
+    {
+      "id": "BL-337",
+      "title": "Autocomplete/Typeahead Suche auf allen Seiten",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V3.2",
+      "description": "Intelligente Suche mit Live-Vorschlï¿½gen: Beim Tippen werden passende Eintrï¿½ge aus der Datenbank als Dropdown angezeigt (Deals, Kontakte, Firmen, etc.). Nicht nur Freitext-Suche, sondern Autocomplete mit Ergebnis-Preview. Gilt fï¿½r Pipeline-Suche, Kontakte, Firmen, Multiplikatoren und alle anderen Suchfelder. Debounced API-Call nach 2+ Zeichen.",
       "createdAt": "2026-04-11"
     }
   ]
