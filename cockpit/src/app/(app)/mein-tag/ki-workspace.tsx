@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { AiLoadButton } from "@/components/ai/ai-load-button";
 import { AiResultPanel } from "@/components/ai/ai-result-panel";
+import { MeinTagSearchBar } from "@/components/mein-tag/mein-tag-search-bar";
 import { TaskSheet } from "../aufgaben/task-sheet";
 import { EmailSheet } from "../emails/email-sheet";
 import { MeetingSheet } from "@/components/meetings/meeting-sheet";
@@ -52,6 +53,14 @@ const actionOptions = [
   { value: "meeting", label: "Meeting" },
 ];
 
+interface SearchContext {
+  todaysTasks: Array<{ title: string; priority?: string; dueDate?: string; contactName?: string; companyName?: string }>;
+  topDeals: Array<{ title: string; value?: number; stage?: string; companyName?: string; nextAction?: string }>;
+  calendarSlots: Array<{ time: string; title: string; type: string }>;
+  stagnantDeals: Array<{ title: string; daysSinceUpdate: number; value?: number; stage?: string }>;
+  overdueTasks: Array<{ title: string; dueDate: string }>;
+}
+
 interface KIWorkspaceProps {
   data: TodayData;
   calendarSlots: CalendarSlot[];
@@ -59,9 +68,10 @@ interface KIWorkspaceProps {
   contacts: { id: string; first_name: string; last_name: string }[];
   companies: { id: string; name: string }[];
   deals: { id: string; title: string }[];
+  searchContext: SearchContext;
 }
 
-export function KIWorkspace({ data, calendarSlots, exceptions, contacts, companies, deals }: KIWorkspaceProps) {
+export function KIWorkspace({ data, calendarSlots, exceptions, contacts, companies, deals, searchContext }: KIWorkspaceProps) {
   const [wsTab, setWsTab] = useState<WorkspaceTab>("tagesanalyse");
 
   // Tagesanalyse state
@@ -132,7 +142,6 @@ export function KIWorkspace({ data, calendarSlots, exceptions, contacts, compani
 
   // ── Gestern loader ─────────────────────
   const loadYesterday = async () => {
-    if (yesterdayData) return; // already loaded
     setYesterdayLoading(true);
     try {
       const review = await getYesterdayReview();
@@ -186,7 +195,6 @@ export function KIWorkspace({ data, calendarSlots, exceptions, contacts, compani
 
   // ── Seit Login loader ─────────────────────
   const loadUnseen = async () => {
-    if (unseenData) return;
     setUnseenLoading(true);
     try {
       const events = await getUnseenEvents();
@@ -235,16 +243,27 @@ export function KIWorkspace({ data, calendarSlots, exceptions, contacts, compani
 
   return (
     <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden min-h-[340px]">
-      {/* Header with tabs */}
-      <div className="px-6 py-4 border-b border-slate-200">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#120774] to-[#4454b8] flex items-center justify-center">
+      {/* Header: Title + Search Bar inline */}
+      <div className="px-6 py-4 border-b border-slate-200 space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#120774] to-[#4454b8] flex items-center justify-center shrink-0">
             <Sparkles size={16} className="text-white" strokeWidth={2.5} />
           </div>
-          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide shrink-0">
             KI-Workspace
           </h3>
+          {/* Inline Search + Voice */}
+          <div className="flex-1 min-w-0">
+            <MeinTagSearchBar
+              todaysTasks={searchContext.todaysTasks}
+              topDeals={searchContext.topDeals}
+              calendarSlots={searchContext.calendarSlots}
+              stagnantDeals={searchContext.stagnantDeals}
+              overdueTasks={searchContext.overdueTasks}
+            />
+          </div>
         </div>
+        {/* Shortcut Tabs */}
         <div className="flex items-center gap-1">
           {([
             { key: "tagesanalyse" as const, label: "Tagesanalyse", icon: Sparkles },
@@ -253,11 +272,7 @@ export function KIWorkspace({ data, calendarSlots, exceptions, contacts, compani
           ]).map((tab) => (
             <button
               key={tab.key}
-              onClick={() => {
-                setWsTab(tab.key);
-                if (tab.key === "gestern") loadYesterday();
-                if (tab.key === "seit-login") loadUnseen();
-              }}
+              onClick={() => setWsTab(tab.key)}
               className={cn(
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
                 wsTab === tab.key
@@ -340,6 +355,14 @@ export function KIWorkspace({ data, calendarSlots, exceptions, contacts, compani
         {/* ── TAB: Gestern ────────────────── */}
         {wsTab === "gestern" && (
           <>
+            {!yesterdayData && !yesterdayLoading && (
+              <div className="text-center py-4">
+                <p className="text-sm text-slate-500 mb-3">
+                  Was ist gestern passiert? Verpasste Aufgaben und erledigte Arbeit.
+                </p>
+                <AiLoadButton onClick={loadYesterday} loading={false} loaded={false} label="Analyse gestern starten" />
+              </div>
+            )}
             {yesterdayLoading && (
               <div className="flex items-center justify-center py-8 gap-2 text-slate-400">
                 <Loader2 size={16} className="animate-spin" />
@@ -369,6 +392,14 @@ export function KIWorkspace({ data, calendarSlots, exceptions, contacts, compani
         {/* ── TAB: Seit Login ────────────────── */}
         {wsTab === "seit-login" && (
           <>
+            {!unseenData && !unseenLoading && (
+              <div className="text-center py-4">
+                <p className="text-sm text-slate-500 mb-3">
+                  Was hat sich seit deinem letzten Login geaendert?
+                </p>
+                <AiLoadButton onClick={loadUnseen} loading={false} loaded={false} label="Analyse seit letztes Login starten" />
+              </div>
+            )}
             {unseenLoading && (
               <div className="flex items-center justify-center py-8 gap-2 text-slate-400">
                 <Loader2 size={16} className="animate-spin" />
