@@ -18,6 +18,13 @@ export default async function MeinTagPage() {
     getTopDeals(5),
   ]);
 
+  const dateLabel = new Date().toLocaleDateString("de-DE", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
   return (
     <MeinTagClient
       data={data}
@@ -30,6 +37,7 @@ export default async function MeinTagPage() {
       exceptions={exceptions}
       nextMeeting={nextMeeting}
       topDeals={topDeals}
+      dateLabel={dateLabel}
     />
   );
 }

@@ -58,6 +58,7 @@ interface MeinTagClientProps {
   exceptions: ExceptionData;
   nextMeeting: NextMeetingPrep;
   topDeals: TopDeal[];
+  dateLabel: string;
 }
 
 const typeConfig: Record<TodayItemType, { icon: typeof ListTodo; bg: string }> = {
@@ -89,7 +90,7 @@ const entityActions = [
 
 const WORKDAY_MINUTES = 480; // 8h workday
 
-export function MeinTagClient({ data, stages, contacts, companies, deals, pipelines, calendarSlots, exceptions, nextMeeting, topDeals }: MeinTagClientProps) {
+export function MeinTagClient({ data, stages, contacts, companies, deals, pipelines, calendarSlots, exceptions, nextMeeting, topDeals, dateLabel }: MeinTagClientProps) {
   const totalItems = data.stats.overdueCount + data.stats.todayCount + data.stats.upcomingCount;
   const completedItems = 0;
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
@@ -136,12 +137,7 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
     <div className="min-h-screen">
       <PageHeader
         title="Mein Tag"
-        subtitle={new Date().toLocaleDateString("de-DE", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }) + " · Dein Operations-Cockpit"}
+        subtitle={`${dateLabel} · Dein Operations-Cockpit`}
       >
         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 text-xs font-bold text-emerald-700">
           <CheckCircle2 size={14} />
@@ -399,7 +395,7 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                     <div>
                       <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Kalender</h3>
                       <p className="text-[11px] text-slate-500">
-                        {new Date().toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" })}.
+                        {dateLabel.split(",")[0]}.
                       </p>
                     </div>
                     <span className="ml-auto text-xs font-bold text-slate-400">{calendarSlots.length} Termine</span>
