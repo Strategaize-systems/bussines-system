@@ -1,5 +1,6 @@
 import {
   getPipelineById,
+  getPipelineBySlug,
   getPipelineStages,
   getDealsForPipeline,
   getReferralsForSelect,
@@ -17,8 +18,9 @@ export default async function DynamicPipelinePage({
 }) {
   const { slug } = await params;
 
-  // Dynamic route handles pipeline IDs (UUIDs) for user-created pipelines
-  const pipeline = await getPipelineById(slug);
+  // Try known slug first (multiplikatoren, unternehmer, leads), then by ID
+  let pipeline = await getPipelineBySlug(slug).catch(() => null);
+  if (!pipeline) pipeline = await getPipelineById(slug);
   if (!pipeline) notFound();
 
   const [pipelines, stages, deals, contacts, companies, referrals] = await Promise.all([

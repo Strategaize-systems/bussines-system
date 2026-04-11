@@ -54,12 +54,6 @@ const PIPELINE_SLUGS: Record<string, string> = {
   leads: "Lead-Management",
 };
 
-// Built-in pipeline names that have static routes — cannot be renamed or deleted
-const BUILT_IN_PIPELINE_NAMES = new Set(Object.values(PIPELINE_SLUGS));
-
-export async function isBuiltInPipeline(name: string): Promise<boolean> {
-  return BUILT_IN_PIPELINE_NAMES.has(name);
-}
 
 export async function getPipelines() {
   const supabase = await createClient();
@@ -616,10 +610,6 @@ export async function updatePipeline(id: string, formData: FormData) {
     .eq("id", id)
     .single();
 
-  // Prevent renaming built-in pipelines (static routes depend on exact name)
-  if (oldPipeline && BUILT_IN_PIPELINE_NAMES.has(oldPipeline.name) && name !== oldPipeline.name) {
-    return { error: `"${oldPipeline.name}" ist eine System-Pipeline und kann nicht umbenannt werden.` };
-  }
 
   const { error } = await supabase
     .from("pipelines")
@@ -646,17 +636,6 @@ export async function updatePipeline(id: string, formData: FormData) {
 
 export async function deletePipeline(id: string) {
   const supabase = await createClient();
-
-  // Prevent deleting built-in pipelines (static routes depend on them)
-  const { data: pipelineCheck } = await supabase
-    .from("pipelines")
-    .select("name")
-    .eq("id", id)
-    .single();
-
-  if (pipelineCheck && BUILT_IN_PIPELINE_NAMES.has(pipelineCheck.name)) {
-    return { error: `"${pipelineCheck.name}" ist eine System-Pipeline und kann nicht gelöscht werden.` };
-  }
 
   // Check for deals in this pipeline
   const { count } = await supabase
