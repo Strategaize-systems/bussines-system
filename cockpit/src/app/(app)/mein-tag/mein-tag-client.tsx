@@ -449,10 +449,8 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                 {exceptionCount > 0 && <ExceptionPanel exceptions={exceptions} />}
               </div>
             </div>
-          </div>
 
-          {/* KI-WORKSPACE — directly under Aufgaben + Top Deals (8/12) */}
-          <div className="grid grid-cols-12 gap-5 -mt-1">
+            {/* KI-WORKSPACE — spans Aufgaben + Top Deals (col 1-8), same grid row */}
             <div className="col-span-8">
               <KIWorkspace data={data} calendarSlots={calendarSlots} exceptions={exceptions} contacts={contacts} companies={companies} deals={deals} />
             </div>
