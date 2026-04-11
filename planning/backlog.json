@@ -365,7 +365,7 @@
       "title": "Funnel-Report (Conversion pro Stage)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V3.3",
       "description": "Pipeline als Trichter-Grafik: zeigt wie viele Deals von Stage zu Stage konvertieren. Conversion-Rate pro Stufe.",
       "createdAt": "2026-04-03"
@@ -375,7 +375,7 @@
       "title": "Win/Loss-Analyse Dashboard",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V3.3",
       "description": "Aggregierte Ansicht der won_lost_reasons über Zeit. Welche Verlustgründe häufen sich? Trend-Analyse.",
       "createdAt": "2026-04-03"

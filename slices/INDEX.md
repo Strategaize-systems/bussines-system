@@ -85,5 +85,5 @@
 | SLC-332 | PLZ/Stadt-Autocomplete bei Adresseingabe | FEAT-332 | done | Medium | 2026-04-11 |
 | SLC-333 | Pipeline Liste-Ansicht Toggle | FEAT-333 | done | Medium | 2026-04-11 |
 | SLC-334 | Unified Timeline | FEAT-334 | done | Medium | 2026-04-11 |
-| SLC-335 | Funnel-Report (Conversion pro Stage) | FEAT-335 | planned | Medium | 2026-04-11 |
-| SLC-336 | Win/Loss-Analyse Dashboard | FEAT-336 | planned | Medium | 2026-04-11 |
+| SLC-335 | Funnel-Report (Conversion pro Stage) | FEAT-335 | done | Medium | 2026-04-11 |
+| SLC-336 | Win/Loss-Analyse Dashboard | FEAT-336 | done | Medium | 2026-04-11 |

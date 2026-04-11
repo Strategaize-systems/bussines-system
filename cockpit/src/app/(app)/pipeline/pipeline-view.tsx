@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { PipelineTable } from "./pipeline-table";
+import { FunnelReport } from "./funnel-report";
+import { WinLossReport } from "./win-loss-report";
 import { DealSheet } from "./deal-sheet";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import type { Deal, Pipeline, PipelineStage } from "./actions";
-import { Filter, TrendingUp, ClipboardList, Target, Percent, Plus, ChevronLeft, ChevronRight, LayoutList, Kanban, List } from "lucide-react";
+import { TrendingUp, ClipboardList, Target, Percent, Plus, ChevronLeft, ChevronRight, LayoutList, Kanban, List, BarChart3, PieChart } from "lucide-react";
 import { PipelineSearchBar } from "@/components/pipeline/pipeline-search-bar";
 import type { PipelineSearchFilter } from "@/lib/ai/types";
 import { cn } from "@/lib/utils";
@@ -57,7 +59,7 @@ export function PipelineView({
   const [stageFilter, setStageFilter] = useState("all");
   const [showNewDeal, setShowNewDeal] = useState(false);
   const [aiFilter, setAiFilter] = useState<PipelineSearchFilter | null>(null);
-  const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
+  const [viewMode, setViewMode] = useState<"kanban" | "list" | "funnel" | "winloss">("kanban");
 
   const stageNames = useMemo(() => stages.map((s) => s.name), [stages]);
 
@@ -202,6 +204,30 @@ export function PipelineView({
                 >
                   <List size={16} strokeWidth={2.5} />
                 </button>
+                <button
+                  onClick={() => setViewMode("funnel")}
+                  className={cn(
+                    "px-3 py-2 rounded-md text-sm font-semibold transition-all",
+                    viewMode === "funnel"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  )}
+                  title="Funnel-Report"
+                >
+                  <BarChart3 size={16} strokeWidth={2.5} />
+                </button>
+                <button
+                  onClick={() => setViewMode("winloss")}
+                  className={cn(
+                    "px-3 py-2 rounded-md text-sm font-semibold transition-all",
+                    viewMode === "winloss"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  )}
+                  title="Win/Loss-Analyse"
+                >
+                  <PieChart size={16} strokeWidth={2.5} />
+                </button>
               </div>
 
               <button
@@ -287,7 +313,7 @@ export function PipelineView({
               />
             </div>
           </>
-        ) : (
+        ) : viewMode === "list" ? (
           <>
             {/* List Info Bar */}
             <div className="flex items-center gap-3 text-sm text-slate-600 mb-3 shrink-0">
@@ -305,6 +331,16 @@ export function PipelineView({
               />
             </div>
           </>
+        ) : viewMode === "funnel" ? (
+          /* Funnel Report */
+          <div className="flex-1 min-h-0 overflow-hidden rounded-xl border-2 border-slate-200 bg-white">
+            <FunnelReport deals={deals} stages={stages} />
+          </div>
+        ) : (
+          /* Win/Loss Report */
+          <div className="flex-1 min-h-0 overflow-hidden rounded-xl border-2 border-slate-200 bg-white">
+            <WinLossReport deals={deals} />
+          </div>
         )}
       </div>
 

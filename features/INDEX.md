@@ -73,12 +73,12 @@
 
 | ID | Feature | Status | Created |
 |----|---------|--------|---------|
-| FEAT-331 | KI-Suchfeld + Voice auf Mein Tag | in_progress | 2026-04-11 |
-| FEAT-332 | PLZ/Stadt-Autocomplete bei Adresseingabe | in_progress | 2026-04-11 |
-| FEAT-333 | Pipeline Liste-Ansicht Toggle | in_progress | 2026-04-11 |
-| FEAT-334 | Unified Timeline | in_progress | 2026-04-11 |
-| FEAT-335 | Funnel-Report (Conversion pro Stage) | planned | 2026-04-11 |
-| FEAT-336 | Win/Loss-Analyse Dashboard | planned | 2026-04-11 |
+| FEAT-331 | KI-Suchfeld + Voice auf Mein Tag | done | 2026-04-11 |
+| FEAT-332 | PLZ/Stadt-Autocomplete bei Adresseingabe | done | 2026-04-11 |
+| FEAT-333 | Pipeline Liste-Ansicht Toggle | done | 2026-04-11 |
+| FEAT-334 | Unified Timeline | done | 2026-04-11 |
+| FEAT-335 | Funnel-Report (Conversion pro Stage) | done | 2026-04-11 |
+| FEAT-336 | Win/Loss-Analyse Dashboard | done | 2026-04-11 |
 
 ## V4 Features (KI-Kern + Externe Integrationen — planned)
 
