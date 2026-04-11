@@ -200,23 +200,23 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
 
               {/* AUFGABEN */}
               <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
-                {/* Section Header */}
-                <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#120774] to-[#4454b8] flex items-center justify-center">
-                    <CheckCircle2 size={16} className="text-white" strokeWidth={2.5} />
+                {/* Section Header — matched to Top Deals */}
+                <div className="px-5 py-3 border-b border-slate-200 flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#120774] to-[#4454b8] flex items-center justify-center">
+                    <CheckCircle2 size={14} className="text-white" strokeWidth={2.5} />
                   </div>
-                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">
                     Aufgaben
                   </h3>
-                  <span className="text-xs font-bold text-orange-600 bg-orange-100 rounded-full px-2 py-0.5">
-                    {totalItems} Offen
+                  <span className="text-[10px] font-bold text-orange-600 bg-orange-100 rounded-full px-1.5 py-0.5">
+                    {totalItems}
                   </span>
                   <Link
                     href="/focus"
-                    className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#120774] to-[#4454b8] text-white text-[11px] font-bold hover:shadow-md transition-all"
+                    className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#120774] to-[#4454b8] text-white text-[10px] font-bold hover:shadow-md transition-all"
                   >
-                    <Target size={12} />
-                    Jetzt abarbeiten
+                    <Target size={10} />
+                    Abarbeiten
                   </Link>
                 </div>
 
@@ -235,7 +235,7 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-3 border-t border-slate-100 flex items-center justify-between">
+                <div className="px-5 py-2.5 border-t border-slate-100 flex items-center justify-between">
                   {hasMore && !showAll ? (
                     <button
                       onClick={() => setShowAll(true)}
@@ -286,9 +286,13 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                     <Briefcase size={14} className="text-white" strokeWidth={2.5} />
                   </div>
                   <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Top Deals</h3>
-                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 rounded-full px-1.5 py-0.5 ml-auto">
-                    {topDeals.length}
-                  </span>
+                  <Link
+                    href="/deals"
+                    className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-[10px] font-bold hover:shadow-md transition-all"
+                  >
+                    <Briefcase size={10} />
+                    Alle Deals
+                  </Link>
                 </div>
 
                 <div className="divide-y divide-slate-50">
@@ -342,11 +346,9 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                 </div>
               </div>
 
-              {/* Meeting-Prep in middle column */}
-              {nextMeeting && <MeetingPrepCard meeting={nextMeeting} />}
             </div>
 
-            {/* RIGHT COLUMN (4): Kalender + Exceptions + Zeit */}
+            {/* RIGHT COLUMN (4): Kalender + Meeting-Prep + Exceptions + Zeit */}
             <div className="col-span-4">
               <div className="sticky top-32 space-y-4">
                 {/* Entity Quick Actions (above calendar) */}
@@ -418,6 +420,9 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                     </Link>
                   </div>
                 </div>
+
+                {/* MEETING-PREP */}
+                {nextMeeting && <MeetingPrepCard meeting={nextMeeting} />}
 
                 {/* EXCEPTION-HINWEISE */}
                 {exceptionCount > 0 && <ExceptionPanel exceptions={exceptions} />}
