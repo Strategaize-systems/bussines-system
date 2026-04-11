@@ -9,7 +9,10 @@ import { getFitAssessment } from "../../fit-assessment/actions";
 import { getSignals } from "../../fit-assessment/signal-actions";
 import { FitAssessmentForm } from "../../fit-assessment/fit-assessment-form";
 import { SignalList } from "../../fit-assessment/signal-list";
-import { ActivityTimeline } from "@/components/activities/activity-timeline";
+import { UnifiedTimeline } from "@/components/timeline/unified-timeline";
+import { getEmailsForContact } from "../../emails/actions";
+import { getMeetingsForContact } from "@/app/(app)/meetings/actions";
+import { getProposalsForContact } from "../../proposals/actions";
 import { DocumentList } from "@/components/documents/document-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +33,7 @@ import {
   CalendarDays,
   Kanban,
   Sparkles,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -73,7 +77,7 @@ export default async function ContactDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [contact, companies, activities, documents, fitAssessment, signals, deals] = await Promise.all([
+  const [contact, companies, activities, documents, fitAssessment, signals, deals, emails, meetings, proposals] = await Promise.all([
     getContact(id),
     getCompaniesForSelect(),
     getActivities({ contactId: id }),
@@ -81,6 +85,9 @@ export default async function ContactDetailPage({
     getFitAssessment("multiplier", id),
     getSignals({ contactId: id }),
     getDealsByContact(id),
+    getEmailsForContact(id),
+    getMeetingsForContact(id),
+    getProposalsForContact(id),
   ]);
 
   async function handleDelete() {
@@ -341,8 +348,24 @@ export default async function ContactDetailPage({
         </CardContent>
       </Card>
 
-      {/* Activities */}
-      <ActivityTimeline activities={activities} contactId={id} />
+      {/* Unified Timeline */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-[#4454b8]" />
+            Timeline
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <UnifiedTimeline
+            activities={activities}
+            emails={emails}
+            meetings={meetings}
+            signals={signals}
+            proposals={proposals}
+          />
+        </CardContent>
+      </Card>
 
       {/* Documents */}
       <DocumentList documents={documents} contactId={id} />

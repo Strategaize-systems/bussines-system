@@ -48,6 +48,18 @@ export async function getEmailsForContact(contactId: string) {
   return data as Email[];
 }
 
+export async function getEmailsForCompany(companyId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("emails")
+    .select("*")
+    .eq("company_id", companyId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data as Email[];
+}
+
 export async function sendEmail(formData: FormData) {
   const supabase = await createClient();
 

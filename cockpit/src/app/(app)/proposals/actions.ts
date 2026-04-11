@@ -36,6 +36,30 @@ export async function getProposals() {
   return data as Proposal[];
 }
 
+export async function getProposalsForContact(contactId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("proposals")
+    .select("*, deals(id, title)")
+    .eq("contact_id", contactId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data as Proposal[];
+}
+
+export async function getProposalsForCompany(companyId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("proposals")
+    .select("*, deals(id, title)")
+    .eq("company_id", companyId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data as Proposal[];
+}
+
 export async function createProposal(formData: FormData) {
   const supabase = await createClient();
 

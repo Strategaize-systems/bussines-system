@@ -74,6 +74,30 @@ export async function getMeetingsForDeal(dealId: string) {
   return data as Meeting[];
 }
 
+export async function getMeetingsForContact(contactId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("meetings")
+    .select("*, contacts(id, first_name, last_name), companies(id, name)")
+    .eq("contact_id", contactId)
+    .order("scheduled_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data as Meeting[];
+}
+
+export async function getMeetingsForCompany(companyId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("meetings")
+    .select("*, contacts(id, first_name, last_name), companies(id, name)")
+    .eq("company_id", companyId)
+    .order("scheduled_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data as Meeting[];
+}
+
 export async function getUpcomingMeetings(limit: number = 5) {
   const supabase = await createClient();
   const now = new Date().toISOString();
