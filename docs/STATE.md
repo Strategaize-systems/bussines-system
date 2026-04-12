@@ -9,13 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: architecture
-- Current Focus: V4 Architecture abgeschlossen — naechster Schritt /slice-planning
-- Current Phase: V4 Planung
+- High-Level State: slice-planning
+- Current Focus: V4 Slice-Planning abgeschlossen — naechster Schritt Implementation (SLC-401 Schema-Migration)
+- Current Phase: V4 Implementation
 
 ## Immediate Next Steps
-1. /slice-planning fuer V4 (6 Features in implementierbare Slices zerlegen)
-2. Implementation starten mit IMAP-Sync (Fundament fuer Gatekeeper)
+1. SLC-401: V4 Schema-Migration (MIG-010) auf Hetzner ausfuehren
+2. SLC-402: IMAP-Sync Service implementieren (/backend)
+3. SLC-403: E-Mail-Inbox UI (/frontend)
 
 ## Active Scope
 V4 — KI-Gatekeeper + Externe Integrationen (6 Features):
@@ -33,4 +34,4 @@ V4 — KI-Gatekeeper + Externe Integrationen (6 Features):
 - V3.3 — 2026-04-11 — deployed auf Hetzner (UI-Abrundung + Visualisierung, 6/6 Slices, REL-008)
 
 ## Notes
-V4 Requirements + Architecture abgeschlossen (2026-04-12). V4 Architektur: IMAP-Sync via Cron-API-Routes (DEC-033), Cal.com eigene PostgreSQL (DEC-034), 5 neue DB-Tabellen (email_messages, email_threads, email_sync_state, ai_action_queue, ai_feedback), calendar_events erweitert. Server-Sizing: CPX32 reicht fuer Start (~2.5 GB von 8 GB). Empfohlene Slice-Reihenfolge: IMAP → Gatekeeper → Wiedervorlagen → Auto-Reply → Cal.com → Management-Cockpit.
+V4 Requirements + Architecture + Slice-Planning abgeschlossen (2026-04-12). 9 Slices definiert: SLC-401 (Schema) → SLC-402 (IMAP-Sync) → SLC-403 (Inbox-UI) → SLC-404 (Gatekeeper) → SLC-405 (Wiedervorlagen) → SLC-406 (Auto-Reply) → SLC-407 (Cal.com) → SLC-408 (Kalender-UI) → SLC-409 (Management-Cockpit LLM). Alle mit Micro-Tasks. Naechster Schritt: SLC-401 Schema-Migration auf Hetzner.

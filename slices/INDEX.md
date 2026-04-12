@@ -87,3 +87,17 @@
 | SLC-334 | Unified Timeline | FEAT-334 | done | Medium | 2026-04-11 |
 | SLC-335 | Funnel-Report (Conversion pro Stage) | FEAT-335 | done | Medium | 2026-04-11 |
 | SLC-336 | Win/Loss-Analyse Dashboard | FEAT-336 | done | Medium | 2026-04-11 |
+
+## V4 Slices (KI-Gatekeeper + Externe Integrationen)
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-401 | [V4 Schema-Migration (MIG-010)](SLC-401-v4-schema-migration.md) | FEAT-405,407,408,406 | planned | Blocker | 2026-04-12 |
+| SLC-402 | [IMAP-Sync Service](SLC-402-imap-sync-service.md) | FEAT-405 | planned | Blocker | 2026-04-12 |
+| SLC-403 | [E-Mail-Inbox UI + Zuordnung](SLC-403-email-inbox-ui.md) | FEAT-405 | planned | High | 2026-04-12 |
+| SLC-404 | [Gatekeeper-Klassifikation](SLC-404-gatekeeper-klassifikation.md) | FEAT-408 | planned | High | 2026-04-12 |
+| SLC-405 | [KI-Wiedervorlagen mit Freigabe](SLC-405-ki-wiedervorlagen.md) | FEAT-407 | planned | High | 2026-04-12 |
+| SLC-406 | [Auto-Reply Detection](SLC-406-auto-reply-detection.md) | FEAT-410 | planned | Medium | 2026-04-12 |
+| SLC-407 | [Cal.com Docker-Setup + API](SLC-407-calcom-docker-setup.md) | FEAT-406 | planned | High | 2026-04-12 |
+| SLC-408 | [Gesamtkalender UI](SLC-408-gesamtkalender-ui.md) | FEAT-406 | planned | High | 2026-04-12 |
+| SLC-409 | [Management-Cockpit LLM-Ausbau](SLC-409-management-cockpit-llm.md) | FEAT-403 | planned | Medium | 2026-04-12 |
