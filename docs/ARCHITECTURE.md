@@ -709,6 +709,748 @@ AWS_REGION=eu-central-1
 | AWS Credentials Management in Docker | Niedrig | Mittel | Env Vars in Coolify, nicht im Image |
 | LLM-Output unbrauchbar/halluziniert | Mittel | Mittel | Strukturierter Output mit JSON Schema, Fallback-UI |
 
+---
+
+# V4 Architektur — KI-Gatekeeper + Externe Integrationen
+
+## V4 Architecture Summary
+
+V4 erweitert das System um drei neue Infrastruktur-Schichten:
+
+1. **IMAP-Sync-Layer** — Eingehende E-Mails von IONOS synchronisieren und speichern
+2. **KI-Klassifikation-Layer** — Zwei-Pass E-Mail-Analyse (Regelbasiert + Bedrock)
+3. **Cal.com-Integration-Layer** — Self-Hosted Kalender-Sync und Buchungs-Engine
+
+Zentrale neue Konzepte:
+- **Background Processing** via Cron-API-Routes (kein separater Worker-Container)
+- **ai_action_queue** als universelle Human-in-the-Loop Queue
+- **Suggest-Approve-Execute Pattern** fuer alle KI-Aktionen
+
+## V4 Main Components
+
+```
+Browser (HTTPS)
+  │
+  ├─ business.strategaizetransition.com
+  │
+Coolify / Caddy (Reverse Proxy, SSL/TLS)
+  │
+  ├─ / → app:3000 (Next.js BD Cockpit)
+  ├─ /calcom → calcom:3000 (Cal.com Self-Hosted)           ← V4 NEU
+  │
+  ├───────────────────────────────────────────────────────────────────┐
+  │                                                                   │
+Next.js App (BD Cockpit)                              Supabase Stack  │
+  │                                                    Kong :8000     │
+  ├── Workspace-Pages (bestehend)                      GoTrue :9999   │
+  ├── Operative Pages (bestehend + erweitert)          PostgREST:3000 │
+  │   ├── /mein-tag (V4: Gatekeeper, Wiedervorlagen)   Storage :5000  │
+  │   ├── /emails (V4: IMAP-Inbox + Klassifikation)    PostgreSQL:5432│
+  │   └── /kalender (V4 NEU: Gesamtkalender)                         │
+  │                                                                   │
+  ├── Server Actions (bestehend + erweitert)                          │
+  │                                                                   │
+  ├── /lib/ai/ (erweitert)                                            │
+  │   ├── bedrock-client.ts (bestehend)                               │
+  │   ├── prompts/ (erweitert: email-classify, followup-suggest)      │
+  │   ├── classifiers/ (V4 NEU)                                       │
+  │   │   ├── rule-based.ts  — Header-Analyse, Absender-Matching     │
+  │   │   └── llm-based.ts   — Bedrock Kontext-Klassifikation        │
+  │   └── action-queue.ts (V4 NEU — ai_action_queue Service)         │
+  │                                                                   │
+  ├── /lib/imap/ (V4 NEU)                                             │
+  │   ├── sync-service.ts    — imapflow Verbindung + Sync-Logik      │
+  │   ├── parser.ts          — E-Mail-Parsing (Header, Body, Thread) │
+  │   ├── contact-matcher.ts — Auto-Zuordnung via E-Mail-Adresse     │
+  │   └── retention.ts       — 90-Tage Cleanup                       │
+  │                                                                   │
+  ├── /lib/calcom/ (V4 NEU)                                           │
+  │   ├── api-client.ts      — Cal.com REST API Client               │
+  │   ├── webhook-handler.ts — Cal.com Webhook Events verarbeiten    │
+  │   └── sync.ts            — Bidirektionaler Event-Sync            │
+  │                                                                   │
+  ├── /api/cron/ (V4 NEU — Background Jobs)                          │
+  │   ├── imap-sync/route.ts — IMAP Polling (alle 5 Min)             │
+  │   ├── classify/route.ts  — E-Mail Batch-Klassifikation           │
+  │   ├── followups/route.ts — KI-Wiedervorlagen generieren          │
+  │   └── retention/route.ts — E-Mail Retention Cleanup (taeglich)   │
+  │                                                                   │
+  ├── /api/webhooks/ (V4 NEU)                                         │
+  │   └── calcom/route.ts    — Cal.com Webhook Receiver              │
+  │                                                                   │
+  ├── /api/ai/query (bestehend — erweitert)                           │
+  ├── /api/transcribe (bestehend — Whisper)                           │
+  │                                                                   │
+  ├── nodemailer (SMTP — bestehend)                                   │
+  │                                                                   │
+Cal.com (V4 NEU)                                                      │
+  ├── calcom:3000 (Web UI + API)                                      │
+  ├── calcom-db:5432 (eigene PostgreSQL)                              │
+  │                                                                   │
+Docker Network: business-net ─────────────────────────────────────────┘
+
+Extern (kein Docker):
+  IONOS IMAP (imap.ionos.de:993, SSL) ← imapflow           ← V4 NEU
+  SMTP Server (Gmail/eigener) ← nodemailer (bestehend)
+  AWS Bedrock (eu-central-1) ← @aws-sdk/client-bedrock-runtime
+  OpenAI Whisper API ← Transkription (bestehend)
+  Coolify Cron ← triggert /api/cron/* Endpoints              ← V4 NEU
+```
+
+## V4 Responsibilities
+
+| Component | Verantwortung |
+|---|---|
+| **/lib/imap/** | IMAP-Verbindung, E-Mail-Sync, Parsing, Kontakt-Matching, Retention |
+| **/lib/ai/classifiers/** | Regelbasierte + LLM-gestuetzte E-Mail-Klassifikation |
+| **/lib/ai/action-queue.ts** | ai_action_queue CRUD, Freigabe-Workflow |
+| **/lib/calcom/** | Cal.com API Client, Webhook-Verarbeitung, Event-Sync |
+| **/api/cron/** | Background Jobs (IMAP-Sync, Klassifikation, Wiedervorlagen, Retention) |
+| **/api/webhooks/calcom/** | Cal.com Webhook Empfaenger |
+| **Cal.com Container** | Terminbuchung, Verfuegbarkeit, externe Kalender-Sync |
+
+## V4 Background Processing — Cron-API-Routes (DEC-033)
+
+### Warum Cron-API-Routes statt Worker-Container
+
+Fuer ein internes Single-User-Tool ist ein separater Worker-Container mit Queue-System (Bull, RabbitMQ) ueberdimensioniert. Stattdessen:
+
+- Next.js API Routes als Cron-Endpoints
+- Coolify Cron Job (oder System-Cron) ruft Endpoints periodisch auf
+- Schutz via CRON_SECRET Header (kein oeffentlicher Zugang)
+- Bei Fehler: naechster Cron-Lauf versucht es erneut
+
+```
+Coolify Cron
+  │
+  ├── alle 5 Min  → POST /api/cron/imap-sync    (Header: x-cron-secret)
+  ├── alle 15 Min → POST /api/cron/classify      (Header: x-cron-secret)
+  ├── alle 6h     → POST /api/cron/followups     (Header: x-cron-secret)
+  └── taeglich    → POST /api/cron/retention      (Header: x-cron-secret)
+```
+
+### Cron-Endpoint Schutz
+
+```typescript
+// /api/cron/middleware.ts
+export function verifyCronSecret(request: Request): boolean {
+  const secret = request.headers.get('x-cron-secret')
+  return secret === process.env.CRON_SECRET
+}
+```
+
+### Cron-Endpoints Detail
+
+| Endpoint | Intervall | Aufgabe | Max Laufzeit |
+|---|---|---|---|
+| `/api/cron/imap-sync` | 5 Min | Neue E-Mails via IMAP holen, parsen, speichern, Kontakte matchen | 30s |
+| `/api/cron/classify` | 15 Min | Unklassifizierte E-Mails batch-klassifizieren (Rule + optional Bedrock) | 60s |
+| `/api/cron/followups` | 6h | KI-Wiedervorlagen-Vorschlaege generieren | 60s |
+| `/api/cron/retention` | 24h | E-Mails aelter als 90 Tage loeschen | 30s |
+
+## V4 Data Model
+
+### Uebersicht: 23 Tabellen (18 bestehend + 5 neu)
+
+```
+BESTEHEND (unveraendert):              NEU (V4):
+├── companies                          ├── email_messages
+├── contacts                           ├── email_threads
+├── pipelines                          ├── email_sync_state
+├── pipeline_stages                    ├── ai_action_queue
+├── deals                              └── ai_feedback
+├── emails (outbound SMTP)
+├── proposals                          BESTEHEND (erweitert V4):
+├── fit_assessments                    └── calendar_events (+3: source, external_id, sync_status)
+├── tasks
+├── handoffs
+├── referrals
+├── signals
+├── documents
+├── activities
+├── profiles
+├── meetings
+├── calendar_events
+└── audit_log
+```
+
+### Neue Tabelle: email_messages (FEAT-405)
+
+```sql
+CREATE TABLE email_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  message_id TEXT UNIQUE NOT NULL,          -- RFC 822 Message-ID
+  in_reply_to TEXT,                          -- fuer Thread-Erkennung
+  references_header TEXT,                    -- fuer Thread-Erkennung
+  thread_id UUID REFERENCES email_threads(id) ON DELETE SET NULL,
+  from_address TEXT NOT NULL,
+  from_name TEXT,
+  to_addresses TEXT[] NOT NULL,
+  cc_addresses TEXT[],
+  subject TEXT,
+  body_text TEXT,
+  body_html TEXT,
+  received_at TIMESTAMPTZ NOT NULL,
+  -- Zuordnung
+  contact_id UUID REFERENCES contacts(id) ON DELETE SET NULL,
+  company_id UUID REFERENCES companies(id) ON DELETE SET NULL,
+  deal_id UUID REFERENCES deals(id) ON DELETE SET NULL,
+  -- KI-Klassifikation (FEAT-408)
+  classification TEXT DEFAULT 'unclassified',  -- anfrage, antwort, auto_reply, newsletter, intern, spam, unclassified
+  priority TEXT DEFAULT 'normal',              -- dringend, normal, niedrig, irrelevant
+  gatekeeper_summary TEXT,                     -- KI-generierte Zusammenfassung
+  is_auto_reply BOOLEAN DEFAULT FALSE,
+  is_read BOOLEAN DEFAULT FALSE,
+  analyzed_at TIMESTAMPTZ,
+  -- Attachments (Metadaten)
+  attachments JSONB DEFAULT '[]',             -- [{filename, mime_type, size_bytes}]
+  -- Retention
+  synced_at TIMESTAMPTZ DEFAULT now(),
+  retention_expires_at TIMESTAMPTZ DEFAULT (now() + interval '90 days'),
+  -- Roh-Header fuer Debugging
+  headers_json JSONB,
+  created_by UUID
+);
+
+CREATE INDEX idx_email_messages_received ON email_messages(received_at DESC);
+CREATE INDEX idx_email_messages_contact ON email_messages(contact_id);
+CREATE INDEX idx_email_messages_company ON email_messages(company_id);
+CREATE INDEX idx_email_messages_deal ON email_messages(deal_id);
+CREATE INDEX idx_email_messages_thread ON email_messages(thread_id);
+CREATE INDEX idx_email_messages_classification ON email_messages(classification);
+CREATE INDEX idx_email_messages_message_id ON email_messages(message_id);
+CREATE INDEX idx_email_messages_from ON email_messages(from_address);
+CREATE INDEX idx_email_messages_retention ON email_messages(retention_expires_at)
+  WHERE retention_expires_at IS NOT NULL;
+```
+
+### Neue Tabelle: email_threads (FEAT-405)
+
+```sql
+CREATE TABLE email_threads (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  subject TEXT NOT NULL,                     -- normalisierter Subject (ohne Re:/Fwd:)
+  first_message_at TIMESTAMPTZ NOT NULL,
+  last_message_at TIMESTAMPTZ NOT NULL,
+  message_count INT DEFAULT 1,
+  -- Zuordnung (vom neuesten Message uebernommen)
+  contact_id UUID REFERENCES contacts(id) ON DELETE SET NULL,
+  company_id UUID REFERENCES companies(id) ON DELETE SET NULL,
+  deal_id UUID REFERENCES deals(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_email_threads_last_message ON email_threads(last_message_at DESC);
+CREATE INDEX idx_email_threads_contact ON email_threads(contact_id);
+```
+
+### Neue Tabelle: email_sync_state (FEAT-405)
+
+```sql
+CREATE TABLE email_sync_state (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  folder TEXT NOT NULL UNIQUE,               -- z.B. 'INBOX'
+  last_uid INT DEFAULT 0,                    -- IMAP UID fuer inkrementellen Sync
+  last_sync_at TIMESTAMPTZ,
+  status TEXT DEFAULT 'idle',                -- idle, syncing, error
+  error_message TEXT,
+  emails_synced_total INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+### Neue Tabelle: ai_action_queue (FEAT-407, FEAT-408)
+
+```sql
+CREATE TABLE ai_action_queue (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  -- Was
+  type TEXT NOT NULL,                         -- reply, followup, meeting, assign_contact, reclassify, task
+  action_description TEXT NOT NULL,           -- Menschenlesbarer Vorschlag
+  reasoning TEXT,                             -- KI-Begruendung
+  -- Worauf bezogen
+  entity_type TEXT NOT NULL,                  -- email_message, deal, contact, company
+  entity_id UUID NOT NULL,
+  -- Kontext
+  context_json JSONB,                         -- Zusaetzliche Daten fuer die Aktion
+  -- Prioritaet
+  priority TEXT DEFAULT 'normal',             -- dringend, normal, niedrig
+  -- Quelle
+  source TEXT NOT NULL,                       -- gatekeeper, followup_engine, auto_reply_detector
+  -- Status-Workflow
+  status TEXT DEFAULT 'pending',              -- pending, approved, rejected, executed, expired
+  suggested_at TIMESTAMPTZ DEFAULT now(),
+  decided_at TIMESTAMPTZ,
+  decided_by UUID,
+  execution_result TEXT,
+  -- Deduplizierung
+  dedup_key TEXT,                             -- Verhindert doppelte Vorschlaege
+  expires_at TIMESTAMPTZ,                     -- Auto-Expire nach X Tagen
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_ai_queue_status ON ai_action_queue(status) WHERE status = 'pending';
+CREATE INDEX idx_ai_queue_entity ON ai_action_queue(entity_type, entity_id);
+CREATE INDEX idx_ai_queue_source ON ai_action_queue(source);
+CREATE INDEX idx_ai_queue_dedup ON ai_action_queue(dedup_key) WHERE dedup_key IS NOT NULL;
+```
+
+### Neue Tabelle: ai_feedback (FEAT-407)
+
+```sql
+CREATE TABLE ai_feedback (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  action_queue_id UUID REFERENCES ai_action_queue(id) ON DELETE CASCADE,
+  feedback_type TEXT NOT NULL,                -- approved, rejected, modified
+  reason TEXT,                                -- Optionaler Ablehnungsgrund
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_ai_feedback_queue ON ai_feedback(action_queue_id);
+```
+
+### Tabellen-Erweiterung: calendar_events (FEAT-406)
+
+```sql
+ALTER TABLE calendar_events ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'manual';
+  -- Werte: manual, calcom, google, outlook
+ALTER TABLE calendar_events ADD COLUMN IF NOT EXISTS external_id TEXT;
+  -- Cal.com Booking ID oder Google Event ID
+ALTER TABLE calendar_events ADD COLUMN IF NOT EXISTS sync_status TEXT DEFAULT 'synced';
+  -- Werte: synced, pending_sync, conflict
+ALTER TABLE calendar_events ADD COLUMN IF NOT EXISTS booking_link TEXT;
+  -- Cal.com Booking-Link fuer den Event
+
+CREATE INDEX idx_calendar_events_source ON calendar_events(source);
+CREATE INDEX idx_calendar_events_external ON calendar_events(external_id)
+  WHERE external_id IS NOT NULL;
+```
+
+## IMAP-Sync Flow (FEAT-405)
+
+```
+/api/cron/imap-sync (alle 5 Min)
+  │
+  ├── 1. Cron-Secret pruefen
+  ├── 2. email_sync_state laden (last_uid fuer INBOX)
+  ├── 3. IMAP-Verbindung oeffnen (imapflow → imap.ionos.de:993)
+  ├── 4. FETCH neue UIDs seit last_uid
+  │      └── Limit: max 50 Mails pro Sync-Lauf
+  ├── 5. Pro E-Mail:
+  │      ├── Header parsen (From, To, CC, Subject, Message-ID, In-Reply-To, References)
+  │      ├── Body parsen (Text + HTML)
+  │      ├── Attachments: nur Metadaten (Filename, MIME, Size)
+  │      ├── Auto-Reply erkennen (Header: Auto-Submitted, X-Auto-Response-Suppress)
+  │      ├── Thread zuordnen/erstellen (via In-Reply-To/References oder Subject-Match)
+  │      ├── Kontakt matchen (from_address → contacts.email)
+  │      │   └── wenn match: company_id + deal_id uebernehmen
+  │      └── INSERT email_messages
+  ├── 6. email_sync_state aktualisieren (last_uid, last_sync_at)
+  └── 7. Response: { synced: N, errors: N, duration_ms: N }
+```
+
+### Initial-Sync Strategie
+
+Beim ersten Sync (last_uid = 0):
+- Nur E-Mails der letzten 90 Tage holen (SINCE-Filter)
+- Max 500 E-Mails beim Initial-Sync
+- Danach normaler inkrementeller Sync
+
+### Kontakt-Matching Algorithmus
+
+```
+1. from_address exakt in contacts.email? → match
+2. from_address Domain in companies.website/email? → company match (kein contact match)
+3. Kein Match → contact_id = NULL (landet in "Unzugeordnet"-Queue)
+```
+
+## KI-Gatekeeper Classification Flow (FEAT-408)
+
+```
+/api/cron/classify (alle 15 Min)
+  │
+  ├── 1. Cron-Secret pruefen
+  ├── 2. Unklassifizierte E-Mails laden (classification = 'unclassified', LIMIT 20)
+  │
+  ├── 3. PASS 1: Regelbasierte Klassifikation (kostenlos, schnell)
+  │      ├── Auto-Submitted Header → classification = 'auto_reply'
+  │      ├── List-Unsubscribe Header → classification = 'newsletter'
+  │      ├── from_address in Spam-Liste → classification = 'spam'
+  │      ├── from_address = bekannter Kontakt + offener Deal → priority = 'dringend'
+  │      ├── from_address = bekannter Kontakt → classification = 'antwort', priority = 'normal'
+  │      └── Subject enthaelt 'Re:'/'AW:' → classification = 'antwort'
+  │
+  ├── 4. Wenn classification noch 'unclassified' ODER priority unklar:
+  │      └── PASS 2: Bedrock Klassifikation (kosten-relevant)
+  │           ├── Prompt: E-Mail-Inhalt + CRM-Kontext (Deal, Kontakt, letzte Interaktion)
+  │           ├── Output: { classification, priority, summary, suggested_actions[] }
+  │           └── INSERT ai_action_queue fuer suggested_actions
+  │
+  ├── 5. email_messages UPDATE (classification, priority, gatekeeper_summary, analyzed_at)
+  │
+  └── 6. Wenn priority = 'dringend': (spaetere Erweiterung: Push-Notification)
+```
+
+### Bedrock Prompt fuer E-Mail-Klassifikation
+
+```
+Input:
+- E-Mail Subject, Body (max 2000 Zeichen), From, Date
+- Kontakt-Info (wenn gemacht): Name, Firma, Rolle, letzte Interaktion
+- Deal-Info (wenn vorhanden): Stage, Wert, offene Angebote
+
+Output-Schema:
+{
+  classification: 'anfrage' | 'antwort' | 'auto_reply' | 'newsletter' | 'intern' | 'spam',
+  priority: 'dringend' | 'normal' | 'niedrig' | 'irrelevant',
+  summary: string (max 100 Zeichen),
+  suggested_actions: [
+    { type: 'reply' | 'followup' | 'meeting' | 'task', description: string }
+  ]
+}
+```
+
+## KI-Wiedervorlagen Flow (FEAT-407)
+
+```
+/api/cron/followups (alle 6h)
+  │
+  ├── 1. Cron-Secret pruefen
+  ├── 2. Bestehende pending Vorschlaege zaehlen (max 20 aktive)
+  ├── 3. CRM-Daten analysieren:
+  │      ├── Deals ohne Aktion seit >14 Tagen
+  │      ├── Offene Angebote seit >7 Tagen
+  │      ├── Kontakte ohne Interaktion seit >30 Tagen
+  │      ├── Unbeantwortete E-Mails seit >3 Tagen (FEAT-405)
+  │      └── Multiplikatoren ohne Follow-up seit >21 Tagen
+  │
+  ├── 4. Deduplizierung: dedup_key pruefen (kein Vorschlag wenn identischer pending)
+  │
+  ├── 5. Pro Kandidat: Bedrock-Begruendung generieren
+  │      └── "Deal X seit 14 Tagen ohne Aktion, Angebot seit 5 Tagen offen"
+  │
+  ├── 6. INSERT ai_action_queue (source = 'followup_engine')
+  │
+  └── 7. Response: { generated: N, skipped_dedup: N }
+```
+
+### Freigabe-Workflow (UI in Mein Tag)
+
+```
+Mein Tag → KI-Wiedervorlagen Sektion
+  │
+  ├── Vorschlag anzeigen: Beschreibung + Begruendung + Kontext-Link
+  │
+  ├── [Freigeben] → status = 'approved' → Task erstellen (tasks Tabelle)
+  ├── [Verschieben] → Datum-Picker → expires_at aktualisieren
+  └── [Abbrechen] → status = 'rejected' → ai_feedback INSERT (reason optional)
+```
+
+## Cal.com Integration Flow (FEAT-406)
+
+### Docker-Setup
+
+```yaml
+# docker-compose.yml Erweiterung
+calcom:
+  image: calcom/cal.com:latest
+  environment:
+    - DATABASE_URL=postgresql://calcom:password@calcom-db:5432/calcom
+    - NEXTAUTH_SECRET=${CALCOM_SECRET}
+    - CALENDSO_ENCRYPTION_KEY=${CALCOM_ENCRYPTION_KEY}
+    - NEXT_PUBLIC_WEBAPP_URL=https://cal.strategaizetransition.com
+  ports:
+    - "3100:3000"
+  depends_on:
+    - calcom-db
+  networks:
+    - business-net
+
+calcom-db:
+  image: postgres:15-alpine
+  environment:
+    - POSTGRES_USER=calcom
+    - POSTGRES_PASSWORD=${CALCOM_DB_PASSWORD}
+    - POSTGRES_DB=calcom
+  volumes:
+    - calcom-db-data:/var/lib/postgresql/data
+  networks:
+    - business-net
+```
+
+### Cal.com eigene PostgreSQL (DEC-034)
+
+Cal.com bekommt eine **eigene PostgreSQL-Instanz** (nicht shared mit Supabase):
+- Cal.com hat eigenes Prisma-Schema das mit Supabase-Schema kollidieren wuerde
+- Isolation: Cal.com-Probleme betreffen nicht die Business-DB
+- Upgrade: Cal.com kann unabhaengig aktualisiert werden
+- RAM-Kosten: PostgreSQL 15 Alpine braucht ca. 50-100 MB zusaetzlich
+
+### Sync-Flow
+
+```
+Cal.com Webhook → POST /api/webhooks/calcom
+  │
+  ├── Event: BOOKING_CREATED
+  │   ├── Booking-Daten parsen (Titel, Zeit, Teilnehmer, Meeting-Link)
+  │   ├── Teilnehmer-E-Mail → Kontakt matchen (contact_matcher.ts)
+  │   └── INSERT calendar_events (source='calcom', external_id=booking_id)
+  │
+  ├── Event: BOOKING_CANCELLED
+  │   └── calendar_events DELETE WHERE external_id = booking_id
+  │
+  └── Event: BOOKING_RESCHEDULED
+      └── calendar_events UPDATE (start_time, end_time)
+```
+
+### Gesamtkalender-Ansicht
+
+```
+/kalender (V4 NEU)
+  │
+  ├── Datenquellen:
+  │   ├── calendar_events WHERE source = 'manual' (bestehend)
+  │   ├── calendar_events WHERE source = 'calcom' (Cal.com Sync)
+  │   └── meetings (bestehende Meetings → als Events darstellen)
+  │
+  ├── Ansichten:
+  │   ├── Tagesansicht (Default)
+  │   ├── Wochenansicht
+  │   └── Monatsansicht
+  │
+  └── Aktionen:
+      ├── Event erstellen (manual)
+      ├── Event bearbeiten (nur manual)
+      ├── Booking-Link kopieren (Cal.com Events)
+      └── Klick auf Event → Detail mit Deal-/Kontakt-Kontext
+```
+
+## Auto-Reply Detection Flow (FEAT-410)
+
+```
+Teil des Classify-Cron (/api/cron/classify)
+  │
+  ├── Wenn classification = 'auto_reply':
+  │   ├── 1. Abwesenheits-Zeitraum extrahieren
+  │   │      ├── Regex: "vom X bis Y", "until DATE", "zurueck am DATE"
+  │   │      └── Fallback: Bedrock-Extraktion wenn Regex fehlschlaegt
+  │   │
+  │   ├── 2. Kontakt identifizieren (from_address → contact_id)
+  │   │
+  │   ├── 3. Aktive Wiedervorlagen fuer Kontakt suchen
+  │   │      └── ai_action_queue WHERE entity_type='contact' AND entity_id=contact_id
+  │   │                           AND status='pending' AND type='followup'
+  │   │
+  │   └── 4. Wenn Wiedervorlage existiert + Rueckkehr-Datum bekannt:
+  │          ├── Wiedervorlage verschieben (expires_at = rueckkehr_datum + 1 Tag)
+  │          └── INSERT ai_action_queue (type='info', description='Auto-Reply erkannt...')
+  │
+  └── Kein Rueckkehr-Datum → Default: Wiedervorlage + 7 Tage
+```
+
+## Mein Tag V4 — Erweiterungen
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Mein Tag                                     [KI-Workspace] │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│ ┌─── KI-Gatekeeper ───────────────────────────── V4 NEU ──┐│
+│ │ 📧 3 dringende │ 5 normale │ 2 irrelevante E-Mails      ││
+│ │ [Alle anzeigen →]                                        ││
+│ └─────────────────────────────────────────────────────────┘│
+│                                                             │
+│ ┌─── KI-Wiedervorlagen ──────────────────────── V4 NEU ──┐│
+│ │ Deal "Firma X": Seit 14d ohne Aktion    [✓] [⏰] [✗]   ││
+│ │ Kontakt "Herr Y": Follow-up faellig     [✓] [⏰] [✗]   ││
+│ │ Angebot "Projekt Z": 7d offen           [✓] [⏰] [✗]   ││
+│ │                                     [Alle freigeben]     ││
+│ └─────────────────────────────────────────────────────────┘│
+│                                                             │
+│ ┌─── Kalender (bestehend, Daten jetzt aus Cal.com) ──────┐│
+│ │ 09:00 Meeting Firma A (Cal.com)                         ││
+│ │ 11:00 Call Herr B                                       ││
+│ │ 14:00 Workshop (blockiert)                              ││
+│ └─────────────────────────────────────────────────────────┘│
+│                                                             │
+│ ┌─── Meeting-Prep │ Aufgaben │ Tageseinschaetzung ───────┐│
+│ │ (bestehend, unveraendert)                                ││
+│ └─────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────┘
+```
+
+## V4 API Routes
+
+### Neue API Routes
+
+| Route | Methode | Zweck | Auth |
+|---|---|---|---|
+| `/api/cron/imap-sync` | POST | IMAP E-Mail-Sync | CRON_SECRET |
+| `/api/cron/classify` | POST | E-Mail Batch-Klassifikation | CRON_SECRET |
+| `/api/cron/followups` | POST | KI-Wiedervorlagen generieren | CRON_SECRET |
+| `/api/cron/retention` | POST | E-Mail Retention Cleanup | CRON_SECRET |
+| `/api/webhooks/calcom` | POST | Cal.com Webhook Receiver | CALCOM_WEBHOOK_SECRET |
+
+### Bestehende API Routes (erweitert)
+
+| Route | Erweiterung |
+|---|---|
+| `/api/ai/query` | Neue Query-Types: `email-classify`, `followup-suggest`, `management-analysis` |
+
+## V4 Docker Compose Aenderungen
+
+```yaml
+# Neue Services in docker-compose.yml
+
+calcom:
+  image: calcom/cal.com:latest
+  environment:
+    DATABASE_URL: postgresql://calcom:${CALCOM_DB_PASSWORD}@calcom-db:5432/calcom
+    NEXTAUTH_SECRET: ${CALCOM_SECRET}
+    CALENDSO_ENCRYPTION_KEY: ${CALCOM_ENCRYPTION_KEY}
+    NEXT_PUBLIC_WEBAPP_URL: https://cal.strategaizetransition.com
+  ports:
+    - "3100:3000"
+  depends_on:
+    - calcom-db
+  networks:
+    - business-net
+  restart: unless-stopped
+
+calcom-db:
+  image: postgres:15-alpine
+  environment:
+    POSTGRES_USER: calcom
+    POSTGRES_PASSWORD: ${CALCOM_DB_PASSWORD}
+    POSTGRES_DB: calcom
+  volumes:
+    - calcom-db-data:/var/lib/postgresql/data
+  networks:
+    - business-net
+  restart: unless-stopped
+
+# Neue Volumes
+volumes:
+  calcom-db-data:
+```
+
+### Neue Dependencies (package.json)
+
+```json
+{
+  "imapflow": "^1.0.160",
+  "mailparser": "^3.7.1"
+}
+```
+
+## V4 Env Vars — Neue Variablen
+
+```bash
+# IMAP (V4 NEU)
+IMAP_HOST=imap.ionos.de
+IMAP_PORT=993
+IMAP_USER=...                          # IONOS E-Mail-Adresse
+IMAP_PASSWORD=...                      # IONOS Passwort
+IMAP_TLS=true
+
+# Cron (V4 NEU)
+CRON_SECRET=...                        # Schutz fuer /api/cron/* Endpoints
+
+# Cal.com (V4 NEU)
+CALCOM_SECRET=...                      # NextAuth Secret fuer Cal.com
+CALCOM_ENCRYPTION_KEY=...              # Cal.com Encryption Key
+CALCOM_DB_PASSWORD=...                 # Cal.com PostgreSQL Passwort
+CALCOM_API_KEY=...                     # Cal.com API Key fuer Sync
+CALCOM_WEBHOOK_SECRET=...              # Webhook-Verifizierung
+CALCOM_BASE_URL=http://calcom:3000     # Interner URL (Container-zu-Container)
+NEXT_PUBLIC_CALCOM_URL=https://cal.strategaizetransition.com  # Externer URL
+```
+
+## V4 Server Sizing
+
+### Aktuell (CPX32): 4 vCPU, 8 GB RAM
+
+| Container | RAM (geschaetzt) |
+|---|---|
+| Next.js App | ~500 MB |
+| PostgreSQL (Supabase) | ~500 MB |
+| Kong | ~100 MB |
+| GoTrue | ~50 MB |
+| PostgREST | ~50 MB |
+| Storage | ~100 MB |
+| Studio | ~200 MB |
+| **Summe bestehend** | **~1.5 GB** |
+
+### V4 Zusaetzlich
+
+| Container | RAM (geschaetzt) |
+|---|---|
+| Cal.com | ~500-800 MB |
+| Cal.com PostgreSQL | ~100 MB |
+| IMAP-Sync (kein eigener Container, laeuft in Next.js) | ~50 MB |
+| **Summe V4 neu** | **~650-950 MB** |
+
+### Gesamt-Schaetzung: ~2.2-2.5 GB von 8 GB
+
+**Empfehlung:** CPX32 reicht fuer V4 Start. Upgrade auf CPX42 (8 vCPU, 16 GB) empfohlen wenn:
+- Cal.com + Business System gleichzeitig hohe Last erzeugen
+- E-Mail-Volumen >100 E-Mails/Tag
+- LLM-Batch-Klassifikation regelmaessig >20 E-Mails verarbeitet
+
+## V4 Security / Privacy
+
+### EU-only Datenhaltung
+
+```
+E-Mail-Empfang:  IONOS (Deutschland) → imap.ionos.de
+E-Mail-Speicher: Hetzner (Deutschland) → PostgreSQL
+KI-Analyse:      AWS Bedrock (Frankfurt, eu-central-1)
+Kalender:        Hetzner (Deutschland) → Cal.com Self-Hosted
+```
+
+### IMAP-Credentials
+- In Docker Environment Variables (Coolify Secrets)
+- Nicht im Image, nicht im Repository
+- IONOS regulaeres Passwort oder App-Passwort
+
+### E-Mail-Retention
+- 90-Tage Default (konfigurierbar via IMAP_RETENTION_DAYS)
+- Automatische Loeschung via Cron
+- Body und Attachments werden geloescht, Metadaten (Subject, From, Date) optional behalten
+
+### Cron-Endpoint-Schutz
+- CRON_SECRET Header auf allen /api/cron/* Routes
+- Kein oeffentlicher Zugang zu Background Jobs
+- Coolify Cron Jobs senden Secret automatisch
+
+### Cal.com Webhook-Verifizierung
+- CALCOM_WEBHOOK_SECRET fuer Signatur-Check
+- Nur verifizierte Webhooks werden verarbeitet
+
+## V4 Constraints & Tradeoffs
+
+| Entscheidung | Tradeoff |
+|---|---|
+| Cron-API statt Worker-Container | Einfacher, aber kein garantiertes Delivery. Fuer Single-User akzeptabel. |
+| Eigene Cal.com PostgreSQL | Extra Container, aber saubere Isolation von Supabase |
+| IMAP Polling statt PUSH (IDLE) | Bis zu 5 Min Delay. IDLE ist komplexer (dauerhafte Verbindung). Fuer Single-User OK. |
+| E-Mail-Body in PostgreSQL statt Object Storage | Einfacher, aber DB waechst. Retention Policy begrenzt auf 90 Tage. |
+| Zwei-Pass-Klassifikation | Regelbasiert zuerst spart Bedrock-Kosten, aber doppelte Logik zu pflegen |
+| imapflow statt imap-simple | Modernere Library, besser maintained, aber weniger Stack-Overflow-Antworten |
+| email_messages neben bestehender emails Tabelle | Zwei E-Mail-Tabellen (inbound vs outbound). Spaeter: Migration in eine Tabelle. |
+
+## V4 Technische Risiken
+
+| Risiko | Wahrscheinlichkeit | Impact | Mitigation |
+|---|---|---|---|
+| IONOS IMAP-Rate-Limiting | Niedrig | Mittel | 5-Min-Intervall ist konservativ, Retry bei 429 |
+| Cal.com Self-Hosted Instabilitaet | Mittel | Mittel | Community Edition ist stabil, Monitoring, Fallback auf manuellen Kalender |
+| IMAP-Threading falsche Zuordnung | Mittel | Niedrig | In-Reply-To ist zuverlaessig, Subject-Fallback als Backup |
+| Cron-Job verpasst (Coolify Restart) | Niedrig | Niedrig | Inkrementeller Sync holt alles nach, kein Datenverlust |
+| Bedrock-Kosten bei vielen E-Mails | Mittel | Mittel | Zwei-Pass: Regel zuerst, Bedrock nur fuer unklare, Max 20/Batch |
+| Zwei PostgreSQL-Instanzen auf einem Server | Niedrig | Niedrig | Cal.com DB ist klein, Alpine Image minimal |
+
 ## Recommended Next Step
 
-`/slice-planning` — Die 9 Features in implementierbare Slices schneiden.
+`/slice-planning` — Die 6 V4-Features in implementierbare Slices schneiden. Empfohlene Reihenfolge: IMAP-Sync → Gatekeeper → Wiedervorlagen → Auto-Reply → Cal.com → Management-Cockpit.
