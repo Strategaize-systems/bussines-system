@@ -9,12 +9,12 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: V4 Slice-Planning abgeschlossen — naechster Schritt Implementation (SLC-401 Schema-Migration)
+- High-Level State: implementing
+- Current Focus: V4 Implementation — SLC-401 done, SLC-402 IMAP-Sync als naechstes
 - Current Phase: V4 Implementation
 
 ## Immediate Next Steps
-1. SLC-401: V4 Schema-Migration (MIG-010) auf Hetzner ausfuehren
+1. SLC-401 SQL auf Hetzner ausfuehren (12_v4_migration.sql via psql)
 2. SLC-402: IMAP-Sync Service implementieren (/backend)
 3. SLC-403: E-Mail-Inbox UI (/frontend)
 
