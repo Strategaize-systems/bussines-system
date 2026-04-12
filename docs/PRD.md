@@ -685,3 +685,266 @@ Der Business-Development-Flow wird in V3 an folgenden Stellen unterstuetzt:
 ## V3 Open Questions
 
 Keine blockierenden offenen Fragen. Alle 6 Architekturentscheidungen (DEC-021 bis DEC-026) sind bestaetigt.
+
+---
+
+# V4 — KI-Gatekeeper + Externe Integrationen
+
+## V4 Purpose
+
+V4 transformiert das Business System von einem System mit KI-Unterstuetzung zu einem System mit KI-Gatekeeper. Die KI wird zum persoenlichen Assistenten, der eingehende Kommunikation analysiert, priorisiert, Handlungen vorschlaegt und Wiedervorlagen intelligent verwaltet — immer mit menschlicher Freigabe (Confirm-before-act).
+
+Gleichzeitig wird die Kalender-Infrastruktur professionalisiert: Cal.com als Self-Hosted Buchungs- und Sync-Engine, Gesamtkalender-Ansicht als zentrales Planungsinstrument.
+
+V4 ist KEIN inkrementelles UI-Update. V4 veraendert fundamental, wie der Eigentuemer morgens seinen Tag beginnt und wie eingehende Kommunikation verarbeitet wird.
+
+## V4 Vision — Vom CRM zum KI-gesteuerten Arbeitssystem
+
+```
+VORHER (V3.3):
+  Morgens einloggen → Mein Tag ansehen → E-Mail-Postfach separat durcharbeiten
+  → manuell priorisieren → manuell Wiedervorlagen erstellen → manuell zuordnen
+
+NACHHER (V4):
+  Morgens einloggen → Mein Tag zeigt:
+    - KI-Gatekeeper: "3 dringende E-Mails, 2 Wiedervorlagen faellig, 1 Auto-Reply erkannt"
+    - Wiedervorlagen-Liste: Freigeben / Verschieben / Abbrechen (5 Min)
+    - Gesamtkalender: Alle Termine auf einen Blick (Cal.com-Sync)
+    - KI hat bereits E-Mails klassifiziert, Kontakten zugeordnet, Prioritaeten gesetzt
+```
+
+## V4 Architekturleitplanken
+
+1. **Confirm-before-act bleibt Grundprinzip** — KI schlaegt vor, Mensch entscheidet
+2. **IMAP ist Fundament** — ohne eingehende E-Mails kein Gatekeeper
+3. **Self-Hosted Everything** — IONOS IMAP direkt, Cal.com Self-Hosted, Jitsi Self-Hosted (V4.1)
+4. **EU-only Datenhaltung** — IONOS (DE) → Hetzner (DE) → Bedrock Frankfurt (EU)
+5. **Suggest-Approve-Execute Pattern** — KI-Aktionen durchlaufen immer die Queue
+6. **Kosten-bewusst** — KI-Analyse on-demand oder batch, nicht bei jedem E-Mail-Eingang
+
+## V4 Features (6 Features)
+
+### FEAT-405 — IMAP Mail-Integration
+
+Eingehende E-Mails automatisch synchronisieren, speichern und im System verfuegbar machen.
+
+**Infrastruktur:**
+- `imapflow` Library fuer IMAP-Verbindung
+- IONOS IMAP-Server direkt (imap.ionos.de, Port 993, SSL)
+- Background-Sync-Service (Polling-Intervall konfigurierbar, Default: 5 Min)
+- Neue DB-Tabellen: `email_messages`, `email_threads`
+
+**Funktionen:**
+- Eingehende E-Mails synchronisieren (INBOX + konfigurierbare Ordner)
+- E-Mails automatisch Kontakten/Firmen zuordnen (via E-Mail-Adresse)
+- E-Mail-Detail-Ansicht im System
+- E-Mails in Unified Timeline anzeigen
+- Thread-Erkennung (In-Reply-To / References Header)
+- Attachment-Handling (Metadaten speichern, Download-Link)
+- DSGVO: 90-Tage Retention Policy (konfigurierbar)
+
+**Nicht V4:**
+- Ausgehende E-Mails via IMAP senden (SMTP bleibt wie bisher)
+- Multi-Account (nur ein Postfach in V4)
+- Ordner-Management im System
+
+**Akzeptanzkriterien:**
+1. Eingehende E-Mails werden automatisch synchronisiert (max. 5 Min Delay)
+2. E-Mails werden korrekt Kontakten/Firmen zugeordnet (via gespeicherte E-Mail-Adressen)
+3. Nicht zuordenbare E-Mails landen in einer "Unzugeordnet"-Queue
+4. E-Mails erscheinen in der Unified Timeline des zugeordneten Kontakts/Firma/Deals
+5. Thread-Erkennung gruppiert zusammengehoerige E-Mails
+6. Sync-Status ist in Settings sichtbar (letzte Sync, Anzahl, Fehler)
+7. Retention Policy loescht E-Mails aelter als 90 Tage automatisch
+
+### FEAT-408 — KI-Gatekeeper (E-Mail-Analyse)
+
+KI analysiert eingehende E-Mails, klassifiziert sie, priorisiert und schlaegt Aktionen vor.
+
+**Abhaengigkeit:** Erfordert FEAT-405 (IMAP).
+
+**Architektur (aus Recherche RPT-047):**
+- Zwei-Pass-Klassifikation:
+  1. Regelbasiert (Absender bekannt? Auto-Reply? Newsletter?)
+  2. Bedrock Claude fuer komplexe Klassifikation
+- `ai_action_queue` Tabelle fuer vorgeschlagene Aktionen
+- Prioritaets-Stufen: Dringend / Normal / Niedrig / Spam/Irrelevant
+
+**Funktionen:**
+- Eingehende E-Mails automatisch klassifizieren (Prioritaet + Kategorie)
+- Kontextualisierung: Deal-Bezug, offene Angebote, letzte Interaktion einbeziehen
+- Aktions-Vorschlaege: "Antwort noetig", "Wiedervorlage erstellen", "Termin vereinbaren"
+- Alert-UI in Mein Tag: Dringende E-Mails sofort sichtbar
+- Batch-Verarbeitung: Neue E-Mails seit letztem Login als Zusammenfassung
+
+**Nicht V4:**
+- Automatische Antwort-Generierung (nur Vorschlaege)
+- Automatisches Weiterleiten an Dritte
+- Cross-System E-Mail-Analyse (nur Business System Kontext)
+
+**Akzeptanzkriterien:**
+1. Jede synchronisierte E-Mail bekommt Prioritaet und Kategorie
+2. Regelbasierte Klassifikation erkennt Auto-Replies, Newsletter, bekannte Absender
+3. Bedrock-Analyse laeuft on-click oder batch (nicht automatisch bei jedem E-Mail-Eingang)
+4. Mein Tag zeigt Gatekeeper-Summary: "X dringende, Y normale, Z irrelevante E-Mails"
+5. Klick auf Gatekeeper-Summary oeffnet priorisierte E-Mail-Liste
+6. Aktions-Vorschlaege erscheinen in `ai_action_queue` mit Freigabe-Workflow
+7. Falsch-klassifizierte E-Mails koennen manuell umklassifiziert werden (Feedback-Loop)
+
+### FEAT-410 — KI-Kontextanalyse (Auto-Replies)
+
+Intelligente Erkennung von Auto-Replies, Abwesenheitsnotizen und automatischen Antworten — mit automatischer Anpassung von Wiedervorlagen.
+
+**Abhaengigkeit:** Erfordert FEAT-405 (IMAP) + FEAT-407 (KI-Wiedervorlagen).
+
+**Funktionen:**
+- Auto-Reply-Erkennung via Header-Analyse (Auto-Submitted, X-Auto-Response-Suppress)
+- Abwesenheits-Erkennung: "Ich bin vom X bis Y nicht erreichbar"
+- Automatische Wiedervorlagen-Anpassung: Wenn Kontakt abwesend bis Datum X, Wiedervorlage auf nach Datum X verschieben
+- Benachrichtigung: "Auto-Reply von Kontakt Y erkannt, Wiedervorlage verschoben auf Z"
+
+**Akzeptanzkriterien:**
+1. Auto-Replies werden zuverlaessig erkannt (Header + Content-Analyse)
+2. Abwesenheits-Zeitraum wird extrahiert wenn moeglich
+3. Bestehende Wiedervorlagen werden automatisch angepasst (mit Notification)
+4. Anpassungen sind sichtbar und rueckgaengig machbar
+5. Manuelle Override moeglich ("trotzdem am urspruenglichen Datum")
+
+### FEAT-407 — KI-Wiedervorlagen mit Freigabe
+
+KI schlaegt proaktiv Wiedervorlagen vor basierend auf CRM-Kontext. Mensch entscheidet: Freigeben / Verschieben / Abbrechen.
+
+**Architektur:**
+- `ai_action_queue` Tabelle (geteilt mit FEAT-408)
+- Wiedervorlagen-Vorschlaege basierend auf: letzte Interaktion, Deal-Phase, offene Aufgaben, E-Mail-Alter
+- Morgen-Ritual: 5 Minuten Wiedervorlagen-Liste durchgehen
+
+**Funktionen:**
+- KI analysiert CRM-Daten und schlaegt Wiedervorlagen vor
+- Vorschlaege erscheinen in Mein Tag als eigene Sektion
+- Pro Vorschlag: Freigeben (wird Task) / Verschieben (neues Datum) / Abbrechen (verwerfen)
+- Begruendung pro Vorschlag: "Deal X seit 14 Tagen ohne Aktion, Angebot offen"
+- Bidirektional: User kann auch eigene Wiedervorlagen an KI delegieren
+- Lern-Effekt: Abgelehnte Vorschlaege beeinflussen zukuenftige Vorschlaege (einfaches Feedback)
+
+**Abgrenzung zu bestehenden Auto-Wiedervorlagen (V3.1 FEAT-316):**
+- V3.1 = regelbasiert, fest definierte Trigger (Stagnation, ueberfaellige Tasks)
+- V4 = KI-basiert, kontextuell, mit Begruendung, mit Freigabe-Workflow
+
+**Akzeptanzkriterien:**
+1. KI generiert Wiedervorlagen-Vorschlaege basierend auf CRM-Kontext
+2. Vorschlaege erscheinen in Mein Tag mit Begruendung
+3. Drei Aktionen pro Vorschlag: Freigeben / Verschieben / Abbrechen
+4. Freigegebene Vorschlaege werden zu echten Tasks
+5. Abgelehnte Vorschlaege werden nicht wiederholt (gleicher Kontext)
+6. Vorschlaege werden batch-generiert (nicht Echtzeit) — Kostenkontrolle
+
+### FEAT-406 — Cal.com-Sync + Gesamtkalender
+
+Professionelle Kalender-Infrastruktur: Cal.com Self-Hosted als Buchungs- und Sync-Engine, Gesamtkalender-Ansicht im Business System.
+
+**Infrastruktur:**
+- Cal.com Self-Hosted auf Hetzner (Docker)
+- API-Integration fuer Termin-Sync
+- Bestehende `calendar_events` Tabelle als lokaler Store
+
+**Funktionen:**
+- Bidirektionaler Sync: Cal.com ↔ Business System
+- Gesamtkalender-Ansicht (Tages-/Wochen-/Monatsansicht, Google-Calendar-aehnlich)
+- Meeting-Buchungs-Links pro Kontakt (Cal.com Booking Pages)
+- Externe Kalender anbinden (Google Calendar, Outlook via Cal.com)
+- Verfuegbarkeits-Logik: Cal.com managed Verfuegbarkeit
+- Navigation: Direkter Zugang ueber Sidebar
+
+**Nicht V4:**
+- Eigene Buchungslogik (Cal.com uebernimmt)
+- Multi-Kalender-Management (ein Hauptkalender + Sync)
+
+**Akzeptanzkriterien:**
+1. Cal.com laeuft Self-Hosted auf Hetzner als Docker-Container
+2. Termine aus Cal.com erscheinen automatisch im Business System
+3. Gesamtkalender-Ansicht zeigt alle Termine (Tages-/Wochen-/Monatsansicht)
+4. Meeting-Buchungs-Link ist pro Kontakt verfuegbar
+5. Bestehende `calendar_events` werden in Gesamtkalender integriert
+6. Mein Tag Kalender-Panel nutzt die gleiche Datenquelle
+7. Verfuegbare-Zeit-Berechnung basiert auf Cal.com-Daten
+
+### FEAT-403 — Management-Cockpit LLM-Ausbau
+
+Erweiterung des Dashboard KI-Cockpits um tiefere LLM-gestuetzte Analysen.
+
+**Funktionen:**
+- Erweiterte KI-Abfragen: Pipeline-Analyse, Multiplikator-Effektivitaet, Forecast-Verfeinerung
+- Trend-Erkennung: "Deal-Velocity sinkt seit 2 Wochen", "Multiplikator X bringt bessere Leads als Y"
+- Vergleichs-Analysen: Zeitraum vs. Zeitraum, Pipeline vs. Pipeline
+- Natuerlichsprachliche Abfragen: "Wie viele Deals habe ich diesen Monat gewonnen?"
+
+**Akzeptanzkriterien:**
+1. Mindestens 5 neue vordefinierte KI-Analyse-Abfragen
+2. Natuerlichsprachliche Freitext-Abfrage funktioniert
+3. Ergebnisse sind nachvollziehbar (Datenquelle sichtbar)
+4. Abfragen laufen on-click (Kostenkontrolle)
+
+## V4 Scope — Zusammenfassung
+
+### In Scope
+- 6 Features (FEAT-403, FEAT-405, FEAT-406, FEAT-407, FEAT-408, FEAT-410)
+- Neue Infrastruktur: IMAP-Sync-Service, Cal.com Self-Hosted
+- Neue DB-Tabellen: `email_messages`, `email_threads`, `ai_action_queue`
+- Erweiterung: `calendar_events` (Cal.com-Sync), Mein Tag (Gatekeeper-Summary, Wiedervorlagen)
+- IONOS IMAP direkt angebunden (imap.ionos.de)
+
+### Out of Scope (V4.1)
+- FEAT-404: Call Intelligence (Jitsi + Whisper Transkription)
+- FEAT-409: Meeting-Erinnerungen
+- FEAT-401: Wissensbasis
+- FEAT-402: Insight-Review-Queue
+
+### Out of Scope (V5+)
+- Cadences / Sequences
+- Routing / Territories
+- Teamlead-Rolle
+- Intelligence-Platform-Export
+- Multi-IMAP-Account
+- Automatische E-Mail-Antworten ohne Freigabe
+
+## V4 Constraints
+
+- Single User (Eigentuemer)
+- Self-Hosted: Hetzner (Business System), IONOS (IMAP), Cal.com (Hetzner Docker)
+- AWS Bedrock Frankfurt (eu-central-1) fuer LLM
+- OpenAI Whisper API bleibt (DEC-019)
+- EU-only Datenhaltung durchgaengig
+- KI-Kosten: Bedrock geschaetzt 10-25 EUR/Monat (hoeher wegen E-Mail-Analyse)
+- IMAP-Polling statt Push (imapflow IDLE als Option fuer spaeter)
+- Server-Upgrade moeglich wenn Last steigt (User informieren)
+
+## V4 Risks & Assumptions
+
+| Risiko | Mitigation |
+|---|---|
+| IONOS IMAP-Zuverlaessigkeit | Polling mit Retry-Logik, Sync-Status-Monitoring in Settings |
+| E-Mail-Volumen ueberfordert Bedrock-Budget | Zwei-Pass: Regelbasiert zuerst, Bedrock nur fuer komplexe E-Mails |
+| Cal.com Self-Hosted Komplexitaet | Cal.com Docker-Setup ist gut dokumentiert, Community aktiv |
+| IMAP-Threading-Qualitaet | In-Reply-To + References Header sind Standard, Fallback auf Subject-Matching |
+| KI-Klassifikation Fehlraten | Feedback-Loop: manuelle Korrektur verbessert zukuenftige Klassifikation |
+| Server-Last (IMAP-Sync + Cal.com + bestehende Container) | Monitoring, Server-Upgrade bei Bedarf (CPX32 → CPX42/CPX52) |
+
+## V4 Success Criteria
+
+V4 ist erfolgreich wenn:
+1. Eigentuemer oeffnet morgens Mein Tag und sieht KI-Gatekeeper-Summary (dringende E-Mails, Wiedervorlagen)
+2. 5-Minuten-Morgenritual: Wiedervorlagen-Liste durchgehen, freigeben/verschieben/abbrechen
+3. Eingehende E-Mails sind automatisch klassifiziert und Kontakten zugeordnet
+4. Auto-Replies werden erkannt und Wiedervorlagen intelligent angepasst
+5. Gesamtkalender zeigt alle Termine (Cal.com + manuell) auf einen Blick
+6. Meeting-Buchung funktioniert ueber Cal.com-Links direkt aus dem System
+7. KI-Analyse im Dashboard liefert tiefere Einblicke als statische Metriken
+8. EU-only Datenhaltung ist durchgaengig sichergestellt
+9. Kein manuelles E-Mail-Postfach-Durcharbeiten mehr noetig
+
+## V4 Open Questions
+
+- Cal.com Version/Edition fuer Self-Hosted: Community Edition reicht fuer V4
+- IONOS IMAP-Credentials: App-Passwort oder regulaeres Passwort (zu klaeren bei Setup)
+- Server-Sizing: Aktueller CPX32 reicht fuer Start, Upgrade-Schwelle definieren bei /architecture

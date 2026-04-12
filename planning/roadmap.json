@@ -60,15 +60,22 @@
       "id": "v4",
       "name": "V4",
       "status": "planned",
-      "summary": "KI-Kern + Externe Integrationen: IMAP, KI-Wiedervorlagen, KI-Gatekeeper, Call Intelligence, Jitsi Meet, Cal.com, Gesamtkalender, Signal-Extraktion",
+      "summary": "KI-Gatekeeper + Externe Integrationen: IMAP Mail-Integration, KI-Gatekeeper (E-Mail-Analyse), KI-Wiedervorlagen mit Freigabe, KI-Kontextanalyse (Auto-Replies), Cal.com-Sync + Gesamtkalender, Management-Cockpit LLM-Ausbau",
       "order": 9
+    },
+    {
+      "id": "v4-1",
+      "name": "V4.1",
+      "status": "planned",
+      "summary": "Meeting-Intelligence + Wissensschicht: Call Intelligence (Jitsi + Whisper), Meeting-Erinnerungen, Wissensbasis, Insight-Review-Queue",
+      "order": 10
     },
     {
       "id": "v5",
       "name": "V5",
       "status": "planned",
       "summary": "Automatisierung + Skalierung: Cadences/Sequences, Routing/Territories, Teamlead-Rolle, Intelligence-Platform-Export",
-      "order": 10
+      "order": 11
     }
   ]
 }
