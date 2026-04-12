@@ -1,81 +1,74 @@
 {
   "versions": [
     {
-      "id": "v1-legacy",
-      "name": "V1 (Legacy)",
-      "status": "released",
-      "summary": "Marketing+CRM Version — deployed, ersetzt durch V2 Neuausrichtung",
-      "order": 1
-    },
-    {
       "id": "v2",
       "name": "V2",
       "status": "released",
       "summary": "Revenue & Relationship System: 11 Module (Kontakte, Firmen, Multiplikatoren, Pipelines, Gespräche, E-Mail, Angebote, Fit-Gates, Aufgaben, Übergabe, Kalender) + Sonderfunktionen (Timeline, Referral, Loss Analysis, Dashboard)",
-      "order": 2
+      "order": 1
     },
     {
       "id": "v2-1",
       "name": "V2.1",
       "status": "released",
       "summary": "Pipeline-Hardening + Daily Ops: Deal-Status-Workflow, Deal-Detail-Popup, Deal-Rotting, Mein Tag, Voice-Input, Insight-Button, Lead-Pipeline, Pipeline-Filter, Forecast",
-      "order": 3
+      "order": 2
     },
     {
       "id": "v2-2",
       "name": "V2.2",
       "status": "released",
       "summary": "UI-Redesign (Style Guide V2) + KI-Cockpit UI-Shells. Abgeschlossen — offene UI-Items in V3 übernommen.",
-      "order": 4
+      "order": 3
     },
     {
       "id": "v3",
       "name": "V3",
       "status": "released",
       "summary": "Operative Kontextlogik: Deal-Workspace, Mein Tag V2, Firmen-/Kontakt-Workspace, Bedrock LLM-Integration, Navigation-Umbau, Governance-Basis, Meeting/Kalender-Management",
-      "order": 5
+      "order": 4
     },
     {
       "id": "v3-1",
       "name": "V3.1",
       "status": "released",
       "summary": "UX-Schliff + KI-Kontext: 9 Slices (SLC-311..319). Zeit-Picker, Meeting-Typ, Schnellaktionen, KI on-click, Pipeline-KI-Suche, KI-E-Mail-Composing, Kontext-Intelligenz, Auto-Wiedervorlagen, Tageseinschaetzung, Templates, Duplikate, Attribution, Focus View",
-      "order": 6
+      "order": 5
     },
     {
       "id": "v3-2",
       "name": "V3.2",
       "status": "released",
       "summary": "UI-Polish + Pipeline-Management: Quick Actions Modal-Umbau, Pipeline UI-Overhaul (Stage-Headers, Deal-Cards nach Figma), Pipeline-Selector Tabs, Logout-Button, Pipeline-Verwaltung in Settings, Autocomplete-Suche, PLZ-Kartensuche mit Heatmap",
-      "order": 7
+      "order": 6
     },
     {
       "id": "v3-3",
       "name": "V3.3",
       "status": "released",
       "summary": "UI-Abrundung + Visualisierung: KI-Suchfeld auf Mein Tag, PLZ-Autocomplete, Pipeline-Listenansicht, Unified Timeline, Funnel-Report, Win/Loss-Analyse",
-      "order": 8
+      "order": 7
     },
     {
       "id": "v4",
       "name": "V4",
       "status": "active",
       "summary": "KI-Gatekeeper + Externe Integrationen: IMAP Mail-Integration, KI-Gatekeeper (E-Mail-Analyse), KI-Wiedervorlagen mit Freigabe, KI-Kontextanalyse (Auto-Replies), Cal.com-Sync + Gesamtkalender, Management-Cockpit LLM-Ausbau",
-      "order": 9
+      "order": 8
     },
     {
       "id": "v4-1",
       "name": "V4.1",
       "status": "planned",
       "summary": "Meeting-Intelligence + Wissensschicht: Call Intelligence (Jitsi + Whisper), Meeting-Erinnerungen, Wissensbasis, Insight-Review-Queue",
-      "order": 10
+      "order": 9
     },
     {
       "id": "v5",
       "name": "V5",
       "status": "planned",
       "summary": "Automatisierung + Skalierung: Cadences/Sequences, Routing/Territories, Teamlead-Rolle, Intelligence-Platform-Export",
-      "order": 11
+      "order": 10
     }
   ]
 }

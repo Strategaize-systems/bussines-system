@@ -577,7 +577,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "deferred",
-      "version": "V3.2",
+      "version": null,
       "description": "Mein Tag als Progressive Web App (PWA) für Smartphone/Tablet. Abgespeckte mobile Version: Aufgaben, KI-Assistent mit Voice, Kalender. Kein kompletter Nachbau der Desktop-Version. PWA-Manifest + Service Worker + mobile-optimiertes Layout. Voice-Input funktioniert nativ über Browser. Whisper API ist bereits server-seitig verfügbar. Vorteil: Kein App Store nötig, direkt aus Browser installierbar, funktioniert auf iOS + Android.",
       "createdAt": "2026-04-08"
     },
