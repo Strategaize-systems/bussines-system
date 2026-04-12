@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V4 Implementation — SLC-401 done, SLC-402 IMAP-Sync als naechstes
+- Current Focus: V4 Implementation — SLC-401+402 done, SLC-403 E-Mail-Inbox UI als naechstes
 - Current Phase: V4 Implementation
 
 ## Immediate Next Steps
-1. SLC-401 SQL auf Hetzner ausfuehren (12_v4_migration.sql via psql)
-2. SLC-402: IMAP-Sync Service implementieren (/backend)
-3. SLC-403: E-Mail-Inbox UI (/frontend)
+1. /qa fuer SLC-402 (IMAP-Sync Verifikation)
+2. SLC-403: E-Mail-Inbox UI + Zuordnung (/frontend)
+3. SLC-404: Gatekeeper-Klassifikation (/backend)
 
 ## Active Scope
 V4 — KI-Gatekeeper + Externe Integrationen (6 Features):

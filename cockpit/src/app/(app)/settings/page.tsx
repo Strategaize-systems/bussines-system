@@ -2,15 +2,18 @@ import { getPipelines, getPipelineStages } from "../pipeline/actions";
 import { PipelineConfig } from "./pipeline-config";
 import { TemplatesConfig } from "./templates-config";
 import { getEmailTemplates } from "./template-actions";
+import { getImapSyncStatus } from "./imap-actions";
+import { ImapStatus } from "./imap-status";
 import { getCurrentUserRole } from "@/lib/audit";
 import { Shield } from "lucide-react";
 import type { PipelineStage } from "../pipeline/actions";
 
 export default async function SettingsPage() {
-  const [pipelines, role, templates] = await Promise.all([
+  const [pipelines, role, templates, imapSync] = await Promise.all([
     getPipelines(),
     getCurrentUserRole(),
     getEmailTemplates(),
+    getImapSyncStatus(),
   ]);
 
   // Load stages for all pipelines
@@ -46,6 +49,8 @@ export default async function SettingsPage() {
           </div>
         </div>
       </div>
+
+      <ImapStatus syncState={imapSync} />
 
       <PipelineConfig pipelines={pipelines} stagesByPipeline={stagesByPipeline} />
 
