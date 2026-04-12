@@ -22,7 +22,7 @@ export async function matchContact(
   const { data: contact } = await supabase
     .from("contacts")
     .select("id, company_id")
-    .eq("email", normalized)
+    .ilike("email", normalized)
     .limit(1)
     .maybeSingle();
 
