@@ -5,6 +5,7 @@ import {
   Sparkles,
   History,
   Eye,
+  Lightbulb,
   CheckCircle2,
   AlertTriangle,
   Calendar,
@@ -25,11 +26,13 @@ import { MeinTagSearchBar } from "@/components/mein-tag/mein-tag-search-bar";
 import { TaskSheet } from "../aufgaben/task-sheet";
 import { EmailSheet } from "../emails/email-sheet";
 import { MeetingSheet } from "@/components/meetings/meeting-sheet";
+import { FollowupSuggestions } from "./followup-suggestions";
 import { getYesterdayReview, getUnseenEvents, updateLastLogin } from "./actions";
 import type { TodayData, CalendarSlot, ExceptionData, YesterdayReview, UnseenEvents } from "./actions";
 import type { DailySummary, ClassifiedEvent } from "@/lib/ai/types";
+import type { AIActionQueueItem } from "@/types/ai-queue";
 
-type WorkspaceTab = "tagesanalyse" | "gestern" | "seit-login";
+type WorkspaceTab = "tagesanalyse" | "gestern" | "seit-login" | "wiedervorlagen";
 
 type ClassifiedItem = {
   id: string;
@@ -69,9 +72,10 @@ interface KIWorkspaceProps {
   companies: { id: string; name: string }[];
   deals: { id: string; title: string }[];
   searchContext: SearchContext;
+  followupSuggestions: AIActionQueueItem[];
 }
 
-export function KIWorkspace({ data, calendarSlots, exceptions, contacts, companies, deals, searchContext }: KIWorkspaceProps) {
+export function KIWorkspace({ data, calendarSlots, exceptions, contacts, companies, deals, searchContext, followupSuggestions }: KIWorkspaceProps) {
   const [wsTab, setWsTab] = useState<WorkspaceTab>("tagesanalyse");
 
   // Tagesanalyse state
@@ -266,9 +270,10 @@ export function KIWorkspace({ data, calendarSlots, exceptions, contacts, compani
         {/* Shortcut Tabs */}
         <div className="flex items-center gap-1">
           {([
-            { key: "tagesanalyse" as const, label: "Tagesanalyse", icon: Sparkles },
-            { key: "gestern" as const, label: "Gestern", icon: History },
-            { key: "seit-login" as const, label: "Seit Login", icon: Eye },
+            { key: "tagesanalyse" as const, label: "Tagesanalyse", icon: Sparkles, badge: 0 },
+            { key: "gestern" as const, label: "Gestern", icon: History, badge: 0 },
+            { key: "seit-login" as const, label: "Seit Login", icon: Eye, badge: 0 },
+            { key: "wiedervorlagen" as const, label: "Wiedervorlagen", icon: Lightbulb, badge: followupSuggestions.length },
           ]).map((tab) => (
             <button
               key={tab.key}
@@ -282,6 +287,11 @@ export function KIWorkspace({ data, calendarSlots, exceptions, contacts, compani
             >
               <tab.icon size={12} />
               {tab.label}
+              {tab.badge > 0 && (
+                <span className="ml-1 w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold flex items-center justify-center">
+                  {tab.badge}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -424,6 +434,20 @@ export function KIWorkspace({ data, calendarSlots, exceptions, contacts, compani
                   />
                 ))}
               </div>
+            )}
+          </>
+        )}
+
+        {/* ── TAB: Wiedervorlagen ────────────────── */}
+        {wsTab === "wiedervorlagen" && (
+          <>
+            {followupSuggestions.length === 0 ? (
+              <div className="text-center py-8">
+                <Lightbulb size={24} className="mx-auto text-slate-300 mb-2" />
+                <p className="text-sm text-slate-400">Keine offenen Wiedervorlagen-Vorschlaege.</p>
+              </div>
+            ) : (
+              <FollowupSuggestions suggestions={followupSuggestions} embedded />
             )}
           </>
         )}

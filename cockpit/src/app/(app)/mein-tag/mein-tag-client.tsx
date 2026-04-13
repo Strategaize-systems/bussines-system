@@ -19,10 +19,8 @@ import {
   Mail,
   Phone,
   MapPin,
-  TrendingDown,
   FileText,
   Briefcase,
-  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
@@ -39,7 +37,6 @@ import { ContactSheet } from "../contacts/contact-sheet";
 import { CompanySheet } from "../companies/company-sheet";
 import { CallSheet } from "./call-sheet";
 import { KIWorkspace } from "./ki-workspace";
-import { FollowupSuggestions } from "./followup-suggestions";
 import type { AIActionQueueItem } from "@/types/ai-queue";
 
 interface MeinTagClientProps {
@@ -349,6 +346,7 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                 contacts={contacts}
                 companies={companies}
                 deals={deals}
+                followupSuggestions={followupSuggestions}
                 searchContext={{
                   todaysTasks: allItems.map((item) => ({
                     title: item.title,
@@ -381,9 +379,6 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                   })),
                 }}
               />
-
-              {/* KI-WIEDERVORLAGEN */}
-              <FollowupSuggestions suggestions={followupSuggestions} />
             </div>
 
             {/* RIGHT COLUMN (4): Entities + Zeit + Kalender + Meeting-Prep + Exceptions */}
@@ -480,11 +475,35 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                 {/* MEETING-PREP */}
                 {nextMeeting && <MeetingPrepCard meeting={nextMeeting} />}
 
-                {/* GATEKEEPER SUMMARY */}
-                {(gatekeeperSummary.total > 0) && <GatekeeperCard summary={gatekeeperSummary} />}
-
-                {/* EXCEPTION-HINWEISE */}
-                {exceptionCount > 0 && <ExceptionPanel exceptions={exceptions} />}
+                {/* FOCUS-BADGES — compact links to /focus when there are open items */}
+                {(gatekeeperSummary.unclassified > 0 || exceptionCount > 0) && (
+                  <div className="space-y-1.5">
+                    {gatekeeperSummary.unclassified > 0 && (
+                      <Link
+                        href="/focus"
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 transition-colors"
+                      >
+                        <Mail size={14} className="text-amber-600" />
+                        <span className="text-xs font-semibold text-amber-700 flex-1">
+                          {gatekeeperSummary.unclassified} nicht zugeordnete E-Mails
+                        </span>
+                        <ChevronRight size={12} className="text-amber-400" />
+                      </Link>
+                    )}
+                    {exceptionCount > 0 && (
+                      <Link
+                        href="/focus"
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 transition-colors"
+                      >
+                        <AlertTriangle size={14} className="text-red-500" />
+                        <span className="text-xs font-semibold text-red-700 flex-1">
+                          {exceptionCount} offene Punkte
+                        </span>
+                        <ChevronRight size={12} className="text-red-400" />
+                      </Link>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -641,149 +660,6 @@ function MeetingPrepCard({ meeting }: { meeting: NonNullable<NextMeetingPrep> })
             <p className="text-xs text-slate-600 whitespace-pre-line">{meeting.agenda}</p>
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-// ── Exception Panel ───────────────────────────────────────
-
-function ExceptionPanel({ exceptions }: { exceptions: ExceptionData }) {
-  const { stagnantDeals, overdueTasks, overdueDeals } = exceptions;
-
-  return (
-    <div className="bg-white rounded-2xl border-2 border-red-200 shadow-lg overflow-hidden">
-      <div className="px-5 py-4 border-b border-red-100 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
-          <AlertTriangle size={16} className="text-white" strokeWidth={2.5} />
-        </div>
-        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Handlungsbedarf</h3>
-      </div>
-      <div className="p-4 space-y-3">
-        {stagnantDeals.length > 0 && (
-          <div>
-            <p className="text-[10px] font-bold text-red-600 uppercase tracking-wide mb-1.5 flex items-center gap-1">
-              <TrendingDown size={10} />
-              Stagnierende Deals ({stagnantDeals.length})
-            </p>
-            <div className="space-y-1.5">
-              {stagnantDeals.slice(0, 3).map((deal) => (
-                <Link
-                  key={deal.id}
-                  href="/pipeline/unternehmer"
-                  className="block bg-red-50 rounded-lg px-3 py-2 hover:bg-red-100 transition-colors"
-                >
-                  <p className="text-xs font-bold text-slate-800">{deal.title}</p>
-                  <p className="text-[10px] text-red-600">
-                    {deal.daysSinceUpdate} Tage ohne Update
-                    {deal.companyName && ` · ${deal.companyName}`}
-                    {deal.value != null && ` · ${deal.value.toLocaleString("de-DE")} €`}
-                  </p>
-                </Link>
-              ))}
-              {stagnantDeals.length > 3 && (
-                <p className="text-[10px] text-red-500 pl-3">+{stagnantDeals.length - 3} weitere</p>
-              )}
-            </div>
-          </div>
-        )}
-        {(overdueTasks.length > 0 || overdueDeals.length > 0) && (
-          <div>
-            <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wide mb-1.5 flex items-center gap-1">
-              <Clock size={10} />
-              Überfällig ({overdueTasks.length + overdueDeals.length})
-            </p>
-            <div className="space-y-1.5">
-              {overdueTasks.slice(0, 3).map((task) => (
-                <Link
-                  key={task.id}
-                  href="/aufgaben"
-                  className="block bg-amber-50 rounded-lg px-3 py-2 hover:bg-amber-100 transition-colors"
-                >
-                  <p className="text-xs font-bold text-slate-800">{task.title}</p>
-                  <p className="text-[10px] text-amber-600">
-                    Fällig: {new Date(task.dueDate + "T00:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
-                    {task.companyName && ` · ${task.companyName}`}
-                  </p>
-                </Link>
-              ))}
-              {overdueDeals.slice(0, 2).map((deal) => (
-                <Link
-                  key={deal.id}
-                  href="/pipeline/unternehmer"
-                  className="block bg-amber-50 rounded-lg px-3 py-2 hover:bg-amber-100 transition-colors"
-                >
-                  <p className="text-xs font-bold text-slate-800">{deal.nextAction}</p>
-                  <p className="text-[10px] text-amber-600">
-                    Deal: {deal.title} · Fällig: {new Date(deal.nextActionDate + "T00:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Gatekeeper Summary Card ──────────────────────────────────────
-
-function GatekeeperCard({ summary }: { summary: GatekeeperSummary }) {
-  return (
-    <div className="bg-white rounded-2xl border-2 border-violet-200 shadow-lg overflow-hidden">
-      <div className="px-5 py-4 border-b border-violet-100 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center">
-          <Shield size={16} className="text-white" strokeWidth={2.5} />
-        </div>
-        <div>
-          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Gatekeeper</h3>
-          <p className="text-[11px] text-violet-600">{summary.total} E-Mails (7 Tage)</p>
-        </div>
-        {summary.pendingActions > 0 && (
-          <span className="ml-auto text-[10px] font-bold text-amber-600 bg-amber-100 rounded-full px-2 py-0.5">
-            {summary.pendingActions} offen
-          </span>
-        )}
-      </div>
-      <div className="p-4 space-y-2">
-        {/* Priority breakdown */}
-        <div className="grid grid-cols-2 gap-2">
-          {summary.dringend > 0 && (
-            <div className="bg-red-50 rounded-lg px-3 py-2 border border-red-100">
-              <p className="text-lg font-black text-red-600">{summary.dringend}</p>
-              <p className="text-[10px] font-bold text-red-500 uppercase">Dringend</p>
-            </div>
-          )}
-          <div className="bg-blue-50 rounded-lg px-3 py-2 border border-blue-100">
-            <p className="text-lg font-black text-blue-600">{summary.normal}</p>
-            <p className="text-[10px] font-bold text-blue-500 uppercase">Normal</p>
-          </div>
-          <div className="bg-slate-50 rounded-lg px-3 py-2 border border-slate-200">
-            <p className="text-lg font-black text-slate-500">{summary.niedrig}</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase">Niedrig</p>
-          </div>
-          <div className="bg-slate-50 rounded-lg px-3 py-2 border border-slate-200">
-            <p className="text-lg font-black text-slate-400">{summary.irrelevant}</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase">Irrelevant</p>
-          </div>
-        </div>
-
-        {/* Unclassified warning */}
-        {summary.unclassified > 0 && (
-          <div className="bg-amber-50 rounded-lg px-3 py-2 border border-amber-200 flex items-center gap-2">
-            <span className="text-sm font-bold text-amber-700">{summary.unclassified}</span>
-            <span className="text-xs text-amber-600">noch nicht klassifiziert</span>
-          </div>
-        )}
-      </div>
-      <div className="px-5 py-3 border-t border-violet-100">
-        <Link
-          href="/emails"
-          className="text-sm font-semibold text-violet-600 hover:text-violet-800 flex items-center gap-1 transition-colors"
-        >
-          E-Mails anzeigen <ChevronRight size={14} />
-        </Link>
       </div>
     </div>
   );

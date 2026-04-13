@@ -20,10 +20,22 @@ import {
 
 interface FollowupSuggestionsProps {
   suggestions: AIActionQueueItem[];
+  embedded?: boolean;
 }
 
-export function FollowupSuggestions({ suggestions }: FollowupSuggestionsProps) {
+export function FollowupSuggestions({ suggestions, embedded }: FollowupSuggestionsProps) {
   if (suggestions.length === 0) return null;
+
+  // Embedded mode: just the list, no card wrapper (used inside KI Workspace tab)
+  if (embedded) {
+    return (
+      <div className="space-y-2">
+        {suggestions.map((suggestion) => (
+          <FollowupItem key={suggestion.id} suggestion={suggestion} />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl border-2 border-amber-200 shadow-lg overflow-hidden">
