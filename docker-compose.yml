@@ -13,6 +13,8 @@ volumes:
     driver: local
   storage-data:
     driver: local
+  calcom-db-data:
+    driver: local
 
 services:
 
@@ -42,6 +44,11 @@ services:
       SMTP_USER: ${SMTP_USER:-unused}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-unused}
       SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-noreply@example.com}
+      CALCOM_API_KEY: ${CALCOM_API_KEY:-}
+      CALCOM_WEBHOOK_SECRET: ${CALCOM_WEBHOOK_SECRET:-}
+      CALCOM_INTERNAL_URL: http://calcom:3000
+      CALCOM_PUBLIC_URL: ${CALCOM_PUBLIC_URL:-https://cal.strategaizetransition.com}
+      CALCOM_BOOKING_PATH: ${CALCOM_BOOKING_PATH:-}
     depends_on:
       supabase-db:
         condition: service_healthy
@@ -222,6 +229,49 @@ services:
     depends_on:
       supabase-meta:
         condition: service_started
+    networks:
+      - business-net
+
+  # ============================================================
+  # V4: CAL.COM SELF-HOSTED (FEAT-406, SLC-407)
+  # ============================================================
+
+  calcom-db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    expose:
+      - "5432"
+    volumes:
+      - calcom-db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: calcom
+      POSTGRES_PASSWORD: ${CALCOM_DB_PASSWORD}
+      POSTGRES_DB: calcom
+    networks:
+      - business-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U calcom -d calcom"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  calcom:
+    image: calcom/cal.com:latest
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      DATABASE_URL: postgresql://calcom:${CALCOM_DB_PASSWORD}@calcom-db:5432/calcom
+      DATABASE_DIRECT_URL: postgresql://calcom:${CALCOM_DB_PASSWORD}@calcom-db:5432/calcom
+      NEXTAUTH_SECRET: ${CALCOM_NEXTAUTH_SECRET}
+      CALENDSO_ENCRYPTION_KEY: ${CALCOM_ENCRYPTION_KEY}
+      NEXT_PUBLIC_WEBAPP_URL: ${CALCOM_PUBLIC_URL:-https://cal.strategaizetransition.com}
+      NEXT_PUBLIC_API_V2_URL: ${CALCOM_PUBLIC_URL:-https://cal.strategaizetransition.com}/api/v2
+      CALCOM_LICENSE_KEY: ""
+      NODE_ENV: production
+    depends_on:
+      calcom-db:
+        condition: service_healthy
     networks:
       - business-net
 

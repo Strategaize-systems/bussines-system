@@ -455,7 +455,7 @@
       "title": "Tiefe Mail-Integration (IMAP)",
       "type": "feature",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V4",
       "description": "FEAT-203: Empfangene Mails automatisch synchronisieren und zuordnen.",
       "createdAt": "2026-04-01"
@@ -836,7 +836,7 @@
       "title": "KI-Wiedervorlagen: Vorschlaege mit Freigabe, nie autonom am Kunden",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V4",
       "note": "Abhaengig von BL-203 IMAP",
       "description": "KI-gesteuerte Wiedervorlagen mit FREIGABE-PRINZIP — KI handelt NIE autonom am Kunden. Ablauf: (1) KI prueft taeglich: Hat Kunde geantwortet? Ist Mitarbeiter-Wiedervorlage erledigt? (2) Ergebnis erscheint als eigene Liste in Mein Tag / KI-Tageseinschaetzung: 'Heute stehen X Nachfass-Aktionen an' mit Kunde, Grund, vorgeschlagene Aktion. (3) Mitarbeiter geht Liste durch (5 Min morgens): Pro Eintrag: Freigeben / Verschieben (z.B. +2 Tage, +5 Tage) / Abbrechen. (4) Erst NACH Freigabe fuehrt KI die Aktion aus (E-Mail senden, Erinnerung). BIDIREKTIONAL: Wiedervorlagen koennen in beide Richtungen verschoben werden — (A) Eigene Wiedervorlage → KI delegieren ('das kann die KI automatisch nachfassen') und (B) KI-Wiedervorlage → selbst uebernehmen ('den rufe ich lieber persoenlich an'). Beide Listen leben nebeneinander in Mein Tag. Zusaetzlich: Meeting-Erinnerungen (am Morgen oder 30 Min vorher) koennen automatisch laufen — die betreffen eigene Termine, nicht Kunden-Nachfass. Ziel: Mitarbeiter behaelt volle Kontrolle, KI entlastet aber maximal. Keine genervten Kunden durch stumpfe Automatik.",
@@ -857,7 +857,7 @@
       "title": "KI-Kontextanalyse: Auto-Replies erkennen und Wiedervorlagen anpassen",
       "type": "feature",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V4",
       "description": "KI analysiert eingehende E-Mails auf Abwesenheitshinweise und Kontext: (1) Auto-Reply 'Bin bis 20.04. nicht erreichbar' → Wiedervorlage automatisch auf 22.04. setzen (+1-2 Puffer nach Rueckkehr). (2) 'Melde mich naechste Woche' → Wiedervorlage entsprechend schieben. (3) Ergebnis erscheint in Tageseinschaetzung: 'Bei Kunde X kam gestern ein Auto-Reply — erst ab 22.04. wieder erreichbar'. Vertriebsintelligenz: Nicht am Rueckkehrtag nerven, sondern 1-2 Tage Puffer geben. Setzt IMAP-Integration (FEAT-405) voraus fuer E-Mail-Analyse.",
       "createdAt": "2026-04-10"
@@ -877,7 +877,7 @@
       "title": "KI-Gatekeeper: Eingehende E-Mails analysieren, priorisieren, alerten",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V4",
       "description": "KI als persoenlicher Gatekeeper im Hintergrund: (1) Eingehende E-Mails automatisch analysieren und dem richtigen Kontakt/Deal zuordnen. (2) Priorisierung: Kundenrueckfragen sofort in Aufgabenliste schieben ('Kunde XY hat Rueckfrage zu Angebot'). Weniger dringendes in Tageseinschaetzung am naechsten Morgen. (3) Handlungsvorschlaege: 'Kunde bittet um Meeting → soll ich Termin vorschlagen?', 'Rueckfrage zu Preis → hier ist der Kontext aus dem Angebot'. (4) Ziel: Kein manuelles E-Mail-Postfach durcharbeiten mehr. KI filtert, priorisiert, ordnet zu, schlaegt vor. Mitarbeiter reagiert nur noch auf aufbereitete, priorisierte Items. Setzt IMAP-Integration (FEAT-405) voraus. Recherche: State-of-the-Art bei AI Personal Assistants (OpenClaw, Anthropic MCP, etc.) fuer Best Practices.",
       "createdAt": "2026-04-10"

@@ -35,6 +35,7 @@ import {
   Kanban,
   Sparkles,
   Clock,
+  CalendarPlus,
 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -87,6 +88,18 @@ async function getContactAbsenceInfo(contactId: string) {
   }
 
   return null;
+}
+
+function buildCalcomBookingUrl(contact: { email?: string | null; first_name?: string; last_name?: string }): string | null {
+  const publicUrl = process.env.CALCOM_PUBLIC_URL;
+  const bookingPath = process.env.CALCOM_BOOKING_PATH;
+  if (!publicUrl || !bookingPath) return null;
+
+  const url = new URL(bookingPath, publicUrl);
+  if (contact.email) url.searchParams.set("email", contact.email);
+  const name = [contact.first_name, contact.last_name].filter(Boolean).join(" ");
+  if (name) url.searchParams.set("name", name);
+  return url.toString();
 }
 
 const relationshipLabels: Record<string, string> = {
@@ -178,6 +191,17 @@ export default async function ContactDetailPage({
             <p className="text-muted-foreground">{contact.position}</p>
           )}
         </div>
+        {(() => {
+          const calcomUrl = buildCalcomBookingUrl(contact);
+          return calcomUrl ? (
+            <a href={calcomUrl} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="sm">
+                <CalendarPlus className="mr-2 h-4 w-4" />
+                Meeting buchen
+              </Button>
+            </a>
+          ) : null;
+        })()}
         {contact.email && (
           <EmailSheet
             defaultTo={contact.email}

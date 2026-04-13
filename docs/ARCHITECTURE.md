@@ -52,7 +52,13 @@ Next.js App (BD Cockpit)                    Supabase Stack   │
   ├── /api/ai/query (V3 NEU — LLM API Route)                │
   ├── /api/transcribe (bestehend — Whisper)                  │
   │                                                          │
-  └── nodemailer (SMTP)                                      │
+  ├── nodemailer (SMTP)                                      │
+  └── /lib/calcom/ (V4 NEU — Cal.com API Client)             │
+                                                             │
+Cal.com Stack (V4 NEU):                                      │
+  ├── calcom:3000 (Cal.com Self-Hosted)                      │
+  ├── calcom-db:5432 (PostgreSQL 15 — eigene Instanz)        │
+  └── Webhooks → /api/webhooks/calcom                        │
                                                              │
 Docker Network: business-net ────────────────────────────────┘
 
@@ -60,7 +66,7 @@ Extern (kein Docker):
   SMTP Server (Gmail/eigener) ← nodemailer
   AWS Bedrock (eu-central-1) ← @aws-sdk/client-bedrock-runtime (V3 NEU)
   OpenAI Whisper API ← Transkription (bestehend)
-  Cal.com/Calendly ← nur Link (bestehend)
+  cal.strategaizetransition.com ← Cal.com Self-Hosted (V4, DEC-031)
 ```
 
 ## Responsibilities — V3

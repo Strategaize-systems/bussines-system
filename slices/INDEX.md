@@ -98,6 +98,6 @@
 | SLC-404 | [Gatekeeper-Klassifikation](SLC-404-gatekeeper-klassifikation.md) | FEAT-408 | done | High | 2026-04-12 |
 | SLC-405 | [KI-Wiedervorlagen mit Freigabe](SLC-405-ki-wiedervorlagen.md) | FEAT-407 | done | High | 2026-04-12 |
 | SLC-406 | [Auto-Reply Detection](SLC-406-auto-reply-detection.md) | FEAT-410 | done | Medium | 2026-04-12 |
-| SLC-407 | [Cal.com Docker-Setup + API](SLC-407-calcom-docker-setup.md) | FEAT-406 | planned | High | 2026-04-12 |
+| SLC-407 | [Cal.com Docker-Setup + API](SLC-407-calcom-docker-setup.md) | FEAT-406 | done | High | 2026-04-12 |
 | SLC-408 | [Gesamtkalender UI](SLC-408-gesamtkalender-ui.md) | FEAT-406 | planned | High | 2026-04-12 |
 | SLC-409 | [Management-Cockpit LLM-Ausbau](SLC-409-management-cockpit-llm.md) | FEAT-403 | planned | Medium | 2026-04-12 |
