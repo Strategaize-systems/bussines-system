@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { verifyCronSecret } from "../verify-cron-secret";
 import { initialSync, cleanupOrphaned } from "@/lib/calcom/sync";
 
@@ -25,6 +26,11 @@ export async function POST(request: NextRequest) {
   try {
     const syncResult = await initialSync();
     const cleanupResult = await cleanupOrphaned();
+
+    // Revalidate all calendar-related routes after sync
+    revalidatePath("/kalender");
+    revalidatePath("/termine");
+    revalidatePath("/mein-tag");
 
     return NextResponse.json({
       ok: true,

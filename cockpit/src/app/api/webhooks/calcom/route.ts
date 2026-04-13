@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import {
   verifyWebhookSignature,
   handleWebhookEvent,
@@ -30,6 +31,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await handleWebhookEvent(event);
+
+    // Revalidate all calendar-related routes after sync
+    revalidatePath("/kalender");
+    revalidatePath("/termine");
+    revalidatePath("/mein-tag");
 
     return NextResponse.json({
       ok: true,

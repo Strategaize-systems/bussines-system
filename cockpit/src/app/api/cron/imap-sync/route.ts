@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { verifyCronSecret } from "../verify-cron-secret";
 import { syncEmails } from "@/lib/imap/sync-service";
 
@@ -10,6 +11,10 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await syncEmails();
+
+    // Revalidate email-related routes after sync
+    revalidatePath("/emails");
+    revalidatePath("/mein-tag");
 
     return NextResponse.json({
       success: true,
