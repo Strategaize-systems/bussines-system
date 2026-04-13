@@ -787,3 +787,44 @@ export async function updateLastLogin() {
       .eq("id", user.id);
   }
 }
+
+// ── Gatekeeper Summary (E-Mail-Klassifikation) ──────────────
+
+export type GatekeeperSummary = {
+  total: number;
+  unclassified: number;
+  dringend: number;
+  normal: number;
+  niedrig: number;
+  irrelevant: number;
+  pendingActions: number;
+};
+
+export async function getGatekeeperSummary(): Promise<GatekeeperSummary> {
+  const supabase = await createClient();
+
+  // Count emails by priority (only classified ones from last 7 days)
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const cutoff = sevenDaysAgo.toISOString();
+
+  const [totalResult, unclassifiedResult, dringendResult, normalResult, niedrigResult, irrelevantResult, actionsResult] = await Promise.all([
+    supabase.from("email_messages").select("id", { count: "exact", head: true }).gte("received_at", cutoff),
+    supabase.from("email_messages").select("id", { count: "exact", head: true }).eq("classification", "unclassified").gte("received_at", cutoff),
+    supabase.from("email_messages").select("id", { count: "exact", head: true }).eq("priority", "dringend").gte("received_at", cutoff),
+    supabase.from("email_messages").select("id", { count: "exact", head: true }).eq("priority", "normal").neq("classification", "unclassified").gte("received_at", cutoff),
+    supabase.from("email_messages").select("id", { count: "exact", head: true }).eq("priority", "niedrig").gte("received_at", cutoff),
+    supabase.from("email_messages").select("id", { count: "exact", head: true }).eq("priority", "irrelevant").gte("received_at", cutoff),
+    supabase.from("ai_action_queue").select("id", { count: "exact", head: true }).eq("status", "pending").eq("source", "gatekeeper"),
+  ]);
+
+  return {
+    total: totalResult.count ?? 0,
+    unclassified: unclassifiedResult.count ?? 0,
+    dringend: dringendResult.count ?? 0,
+    normal: normalResult.count ?? 0,
+    niedrig: niedrigResult.count ?? 0,
+    irrelevant: irrelevantResult.count ?? 0,
+    pendingActions: actionsResult.count ?? 0,
+  };
+}

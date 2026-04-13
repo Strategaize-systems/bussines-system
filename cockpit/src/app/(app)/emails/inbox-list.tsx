@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { InboxEmail } from "./imap-actions";
-import { markEmailRead } from "./imap-actions";
+import { markEmailRead, reclassifyEmail } from "./imap-actions";
 
 // ------------------------------------------------------------------
 // Classification & priority badges
@@ -21,6 +21,13 @@ const classificationConfig: Record<string, { label: string; color: string }> = {
   newsletter: { label: "Newsletter", color: "bg-purple-100 text-purple-600" },
   intern: { label: "Intern", color: "bg-teal-100 text-teal-600" },
   spam: { label: "Spam", color: "bg-red-100 text-red-600" },
+};
+
+const priorityConfig: Record<string, { label: string; color: string; dot: string }> = {
+  dringend: { label: "Dringend", color: "bg-red-100 text-red-700", dot: "bg-red-500" },
+  normal: { label: "Normal", color: "bg-blue-100 text-blue-700", dot: "bg-blue-400" },
+  niedrig: { label: "Niedrig", color: "bg-slate-100 text-slate-500", dot: "bg-slate-400" },
+  irrelevant: { label: "Irrelevant", color: "bg-slate-50 text-slate-400", dot: "bg-slate-300" },
 };
 
 // ------------------------------------------------------------------
@@ -176,11 +183,28 @@ function InboxRow({
             </p>
           )}
 
+          {/* Gatekeeper summary */}
+          {email.gatekeeper_summary && (
+            <p className="text-[10px] text-violet-500 truncate mt-0.5 italic">
+              KI: {email.gatekeeper_summary}
+            </p>
+          )}
+
           {/* Bottom row: badges */}
           <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
             <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold", cls.color)}>
               {cls.label}
             </span>
+
+            {email.classification !== "unclassified" && email.priority && email.priority !== "normal" && (
+              <span className={cn(
+                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold",
+                priorityConfig[email.priority]?.color ?? "bg-slate-100 text-slate-500"
+              )}>
+                <span className={cn("w-1.5 h-1.5 rounded-full", priorityConfig[email.priority]?.dot ?? "bg-slate-400")} />
+                {priorityConfig[email.priority]?.label ?? email.priority}
+              </span>
+            )}
 
             {email.contact && (
               <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-slate-100 text-[10px] text-slate-600">
@@ -212,7 +236,12 @@ function InboxRow({
           </div>
         </div>
 
-        <ChevronRight size={14} className="text-slate-300 shrink-0 mt-1" />
+        <div className="flex flex-col items-center gap-1 shrink-0 mt-1">
+          <ChevronRight size={14} className="text-slate-300" />
+          {email.classification !== "unclassified" && (
+            <ReclassifyButton emailId={email.id} currentClassification={email.classification} currentPriority={email.priority} />
+          )}
+        </div>
       </div>
     </button>
   );
@@ -236,4 +265,96 @@ function formatRelativeDate(dateStr: string): string {
   if (diffDays === 1) return "gestern";
   if (diffDays < 7) return `vor ${diffDays} Tagen`;
   return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+}
+
+// ------------------------------------------------------------------
+// Reclassify button
+// ------------------------------------------------------------------
+
+function ReclassifyButton({
+  emailId,
+  currentClassification,
+  currentPriority,
+}: {
+  emailId: string;
+  currentClassification: string;
+  currentPriority: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [, startTransition] = useTransition();
+
+  const classifications = ["anfrage", "antwort", "auto_reply", "newsletter", "intern", "spam"] as const;
+  const priorities = ["dringend", "normal", "niedrig", "irrelevant"] as const;
+
+  const handleReclassify = (cls: string, prio: string) => {
+    startTransition(async () => {
+      await reclassifyEmail(emailId, cls as any, prio as any);
+      setOpen(false);
+    });
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        className="text-[9px] text-slate-400 hover:text-violet-600 transition-colors"
+        title="Umklassifizieren"
+      >
+        Korr.
+      </button>
+      {open && (
+        <div
+          className="absolute right-0 top-5 z-50 bg-white rounded-xl shadow-2xl border border-slate-200 p-3 min-w-[200px]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">Kategorie</p>
+          <div className="flex flex-wrap gap-1 mb-3">
+            {classifications.map((cls) => {
+              const cfg = classificationConfig[cls];
+              return (
+                <button
+                  key={cls}
+                  onClick={() => handleReclassify(cls, currentPriority)}
+                  className={cn(
+                    "px-2 py-1 rounded text-[10px] font-bold transition-colors",
+                    cls === currentClassification
+                      ? "ring-2 ring-violet-400 " + (cfg?.color ?? "bg-slate-100")
+                      : (cfg?.color ?? "bg-slate-100") + " hover:ring-1 hover:ring-slate-300"
+                  )}
+                >
+                  {cfg?.label ?? cls}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">Prioritaet</p>
+          <div className="flex flex-wrap gap-1">
+            {priorities.map((prio) => {
+              const cfg = priorityConfig[prio];
+              return (
+                <button
+                  key={prio}
+                  onClick={() => handleReclassify(currentClassification, prio)}
+                  className={cn(
+                    "px-2 py-1 rounded text-[10px] font-bold transition-colors",
+                    prio === currentPriority
+                      ? "ring-2 ring-violet-400 " + (cfg?.color ?? "bg-slate-100")
+                      : (cfg?.color ?? "bg-slate-100") + " hover:ring-1 hover:ring-slate-300"
+                  )}
+                >
+                  {cfg?.label ?? prio}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); setOpen(false); }}
+            className="mt-2 w-full text-center text-[10px] text-slate-400 hover:text-slate-600"
+          >
+            Schliessen
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }

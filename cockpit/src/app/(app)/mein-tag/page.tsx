@@ -5,17 +5,19 @@ import {
   getExceptionData,
   getNextMeetingWithContext,
   getTopDeals,
+  getGatekeeperSummary,
 } from "./actions";
 import { MeinTagClient } from "./mein-tag-client";
 
 export default async function MeinTagPage() {
-  const [data, context, calendarSlots, exceptions, nextMeeting, topDeals] = await Promise.all([
+  const [data, context, calendarSlots, exceptions, nextMeeting, topDeals, gatekeeperSummary] = await Promise.all([
     getTodayItems(),
     getMeinTagContext(),
     getCalendarEventsForToday(),
     getExceptionData(),
     getNextMeetingWithContext(),
     getTopDeals(5),
+    getGatekeeperSummary(),
   ]);
 
   const dateLabel = new Date().toLocaleDateString("de-DE", {
@@ -37,6 +39,7 @@ export default async function MeinTagPage() {
       exceptions={exceptions}
       nextMeeting={nextMeeting}
       topDeals={topDeals}
+      gatekeeperSummary={gatekeeperSummary}
       dateLabel={dateLabel}
     />
   );

@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { EmailMessage, EmailThread } from "@/types/email";
+import type { EmailMessage, EmailThread, EmailClassification, EmailPriority } from "@/types/email";
 
 // ------------------------------------------------------------------
 // Types for UI
@@ -236,4 +236,28 @@ export async function searchDeals(query: string) {
 
   if (error) throw new Error(error.message);
   return data ?? [];
+}
+
+// ------------------------------------------------------------------
+// Manual reclassification
+// ------------------------------------------------------------------
+
+export async function reclassifyEmail(
+  emailId: string,
+  classification: EmailClassification,
+  priority: EmailPriority
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("email_messages")
+    .update({
+      classification,
+      priority,
+      analyzed_at: new Date().toISOString(),
+    })
+    .eq("id", emailId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/emails");
+  return { success: true };
 }

@@ -22,12 +22,13 @@ import {
   TrendingDown,
   FileText,
   Briefcase,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { DealDetailSheet } from "../pipeline/deal-detail-sheet";
 import { completeTaskFromMeinTag, completeDealActionFromMeinTag } from "./actions";
-import type { TodayData, TodayItem, TodayItemType, CalendarSlot, ExceptionData, NextMeetingPrep, TopDeal } from "./actions";
+import type { TodayData, TodayItem, TodayItemType, CalendarSlot, ExceptionData, NextMeetingPrep, TopDeal, GatekeeperSummary } from "./actions";
 import type { Deal, PipelineStage } from "../pipeline/actions";
 import { TaskSheet } from "../aufgaben/task-sheet";
 import { EmailSheet } from "../emails/email-sheet";
@@ -50,6 +51,7 @@ interface MeinTagClientProps {
   exceptions: ExceptionData;
   nextMeeting: NextMeetingPrep;
   topDeals: TopDeal[];
+  gatekeeperSummary: GatekeeperSummary;
   dateLabel: string;
 }
 
@@ -75,7 +77,7 @@ const statusStyles: Record<string, string> = {
 
 const WORKDAY_MINUTES = 480; // 8h workday
 
-export function MeinTagClient({ data, stages, contacts, companies, deals, pipelines, calendarSlots, exceptions, nextMeeting, topDeals, dateLabel }: MeinTagClientProps) {
+export function MeinTagClient({ data, stages, contacts, companies, deals, pipelines, calendarSlots, exceptions, nextMeeting, topDeals, gatekeeperSummary, dateLabel }: MeinTagClientProps) {
   const totalItems = data.stats.overdueCount + data.stats.todayCount + data.stats.upcomingCount;
   const completedItems = 0;
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
@@ -472,6 +474,9 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                 {/* MEETING-PREP */}
                 {nextMeeting && <MeetingPrepCard meeting={nextMeeting} />}
 
+                {/* GATEKEEPER SUMMARY */}
+                {(gatekeeperSummary.total > 0) && <GatekeeperCard summary={gatekeeperSummary} />}
+
                 {/* EXCEPTION-HINWEISE */}
                 {exceptionCount > 0 && <ExceptionPanel exceptions={exceptions} />}
               </div>
@@ -711,6 +716,68 @@ function ExceptionPanel({ exceptions }: { exceptions: ExceptionData }) {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── Gatekeeper Summary Card ──────────────────────────────────────
+
+function GatekeeperCard({ summary }: { summary: GatekeeperSummary }) {
+  return (
+    <div className="bg-white rounded-2xl border-2 border-violet-200 shadow-lg overflow-hidden">
+      <div className="px-5 py-4 border-b border-violet-100 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center">
+          <Shield size={16} className="text-white" strokeWidth={2.5} />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Gatekeeper</h3>
+          <p className="text-[11px] text-violet-600">{summary.total} E-Mails (7 Tage)</p>
+        </div>
+        {summary.pendingActions > 0 && (
+          <span className="ml-auto text-[10px] font-bold text-amber-600 bg-amber-100 rounded-full px-2 py-0.5">
+            {summary.pendingActions} offen
+          </span>
+        )}
+      </div>
+      <div className="p-4 space-y-2">
+        {/* Priority breakdown */}
+        <div className="grid grid-cols-2 gap-2">
+          {summary.dringend > 0 && (
+            <div className="bg-red-50 rounded-lg px-3 py-2 border border-red-100">
+              <p className="text-lg font-black text-red-600">{summary.dringend}</p>
+              <p className="text-[10px] font-bold text-red-500 uppercase">Dringend</p>
+            </div>
+          )}
+          <div className="bg-blue-50 rounded-lg px-3 py-2 border border-blue-100">
+            <p className="text-lg font-black text-blue-600">{summary.normal}</p>
+            <p className="text-[10px] font-bold text-blue-500 uppercase">Normal</p>
+          </div>
+          <div className="bg-slate-50 rounded-lg px-3 py-2 border border-slate-200">
+            <p className="text-lg font-black text-slate-500">{summary.niedrig}</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase">Niedrig</p>
+          </div>
+          <div className="bg-slate-50 rounded-lg px-3 py-2 border border-slate-200">
+            <p className="text-lg font-black text-slate-400">{summary.irrelevant}</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase">Irrelevant</p>
+          </div>
+        </div>
+
+        {/* Unclassified warning */}
+        {summary.unclassified > 0 && (
+          <div className="bg-amber-50 rounded-lg px-3 py-2 border border-amber-200 flex items-center gap-2">
+            <span className="text-sm font-bold text-amber-700">{summary.unclassified}</span>
+            <span className="text-xs text-amber-600">noch nicht klassifiziert</span>
+          </div>
+        )}
+      </div>
+      <div className="px-5 py-3 border-t border-violet-100">
+        <Link
+          href="/emails"
+          className="text-sm font-semibold text-violet-600 hover:text-violet-800 flex items-center gap-1 transition-colors"
+        >
+          E-Mails anzeigen <ChevronRight size={14} />
+        </Link>
       </div>
     </div>
   );
