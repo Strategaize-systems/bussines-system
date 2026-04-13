@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V4 Implementation — SLC-401..404 done, SLC-405 KI-Wiedervorlagen als naechstes
+- Current Focus: V4 Implementation — SLC-401..405 done, SLC-406 Auto-Reply Detection als naechstes
 - Current Phase: V4 Implementation
 
 ## Immediate Next Steps
-1. /qa fuer SLC-404 Gatekeeper-Klassifikation
-2. Deploy SLC-404 auf Hetzner + Cron-Job einrichten
-3. SLC-405: KI-Wiedervorlagen mit Freigabe (/backend)
+1. /qa fuer SLC-405 KI-Wiedervorlagen
+2. Deploy SLC-405 auf Hetzner + Cron-Job followups einrichten
+3. SLC-406: Auto-Reply Detection (/backend)
 
 ## Active Scope
 V4 — KI-Gatekeeper + Externe Integrationen (6 Features):
