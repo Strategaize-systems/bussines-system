@@ -2,6 +2,7 @@
 
 import {
   Mail,
+  MailOpen,
   Phone,
   MessageSquare,
   ArrowRightLeft,
@@ -17,6 +18,7 @@ const typeIcons: Record<string, typeof MessageSquare> = {
   note: MessageSquare,
   call: Phone,
   email: Mail,
+  inbox: MailOpen,
   meeting: Calendar,
   stage_change: ArrowRightLeft,
   task: Clock,
@@ -26,6 +28,7 @@ const typeIcons: Record<string, typeof MessageSquare> = {
 
 const typeColors: Record<string, string> = {
   email: "bg-blue-50 text-blue-600",
+  inbox: "bg-indigo-50 text-indigo-600",
   meeting: "bg-purple-50 text-purple-600",
   stage_change: "bg-amber-50 text-amber-600",
   signal: "bg-orange-50 text-orange-600",
@@ -39,6 +42,7 @@ const typeLabels: Record<string, string> = {
   note: "Notiz",
   call: "Anruf",
   email: "E-Mail",
+  inbox: "Empfangen",
   meeting: "Meeting",
   stage_change: "Stage",
   task: "Aufgabe",
@@ -60,6 +64,7 @@ interface UnifiedTimelineProps {
   meetings: any[];
   signals: any[];
   proposals: any[];
+  inboxEmails?: any[];
 }
 
 export function UnifiedTimeline({
@@ -68,6 +73,7 @@ export function UnifiedTimeline({
   meetings,
   signals,
   proposals,
+  inboxEmails = [],
 }: UnifiedTimelineProps) {
   const [filterType, setFilterType] = useState<string>("all");
 
@@ -114,6 +120,13 @@ export function UnifiedTimeline({
         p.deals?.title && `Deal: ${p.deals.title}`,
       ].filter(Boolean).join(" · "),
       date: p.sent_at || p.created_at,
+    })),
+    ...inboxEmails.map((e: any) => ({
+      id: `inbox-${e.id}`,
+      type: "inbox",
+      title: e.subject || "(Kein Betreff)",
+      summary: `Von: ${e.from_name || e.from_address}`,
+      date: e.received_at,
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 

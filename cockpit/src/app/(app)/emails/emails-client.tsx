@@ -4,7 +4,6 @@ import { useState, useMemo, useTransition } from "react";
 import {
   Mail, Send, Clock, AlertCircle, CheckCircle2, Trash2, Plus, Calendar,
 } from "lucide-react";
-import { PageHeader } from "@/components/ui/page-header";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
 import { EmailSheet } from "./email-sheet";
@@ -43,14 +42,14 @@ export function EmailsClient({ emails, templates }: EmailsClientProps) {
   }, [emailsWithOverdue, searchQuery, followUpFilter]);
 
   return (
-    <div className="min-h-screen">
-      <PageHeader title="E-Mails" subtitle={`${emails.length} E-Mails gesamt`}>
-        <button onClick={() => setShowNewEmail(true)} className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2">
-          <Plus size={16} strokeWidth={2.5} /> Neue E-Mail
-        </button>
-      </PageHeader>
+    <div>
       <main className="px-8 py-8">
         <div className="max-w-[1800px] mx-auto space-y-6">
+          <div className="flex justify-end">
+            <button onClick={() => setShowNewEmail(true)} className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2">
+              <Plus size={16} strokeWidth={2.5} /> Neue E-Mail
+            </button>
+          </div>
           <KPIGrid columns={3}>
             <KPICard label="Gesendet" value={emails.filter((e) => e.status === "sent").length} icon={Send} gradient="blue" />
             <KPICard label="Follow-ups offen" value={emailsWithOverdue.filter((e) => e.follow_up_status === "pending").length} icon={Clock} gradient="yellow" />

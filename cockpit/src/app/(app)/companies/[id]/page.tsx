@@ -9,6 +9,7 @@ import { FitAssessmentForm } from "../../fit-assessment/fit-assessment-form";
 import { SignalList } from "../../fit-assessment/signal-list";
 import { UnifiedTimeline } from "@/components/timeline/unified-timeline";
 import { getEmailsForCompany } from "../../emails/actions";
+import { getInboxEmailsForCompany } from "../../emails/imap-actions";
 import { getMeetingsForCompany } from "@/app/(app)/meetings/actions";
 import { getProposalsForCompany } from "../../proposals/actions";
 import { DocumentList } from "@/components/documents/document-list";
@@ -85,7 +86,7 @@ export default async function CompanyDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [company, contacts, activities, documents, fitAssessment, signals, deals, emails, meetings, proposals] = await Promise.all([
+  const [company, contacts, activities, documents, fitAssessment, signals, deals, emails, meetings, proposals, inboxEmails] = await Promise.all([
     getCompany(id),
     getCompanyContacts(id),
     getActivities({ companyId: id }),
@@ -96,6 +97,7 @@ export default async function CompanyDetailPage({
     getEmailsForCompany(id),
     getMeetingsForCompany(id),
     getProposalsForCompany(id),
+    getInboxEmailsForCompany(id),
   ]);
 
   async function handleDelete() {
@@ -388,6 +390,7 @@ export default async function CompanyDetailPage({
             meetings={meetings}
             signals={signals}
             proposals={proposals}
+            inboxEmails={inboxEmails}
           />
         </CardContent>
       </Card>
