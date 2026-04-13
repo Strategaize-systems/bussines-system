@@ -13,6 +13,15 @@ export async function POST(request: NextRequest) {
   const authError = verifyCronSecret(request);
   if (authError) return authError;
 
+  // Cron sync requires CALCOM_API_KEY (enterprise feature in Cal.com AGPLv3).
+  // Without it, only webhook-based sync is available.
+  if (!process.env.CALCOM_API_KEY) {
+    return NextResponse.json({
+      ok: false,
+      error: "CALCOM_API_KEY not configured. Cron sync requires Cal.com API key (enterprise feature). Use webhook-based sync instead.",
+    }, { status: 501 });
+  }
+
   try {
     const syncResult = await initialSync();
     const cleanupResult = await cleanupOrphaned();
