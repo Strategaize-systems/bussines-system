@@ -14,9 +14,9 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - Current Phase: V4 Implementation
 
 ## Immediate Next Steps
-1. /qa fuer SLC-407 Cal.com Docker-Setup + API
-2. Deploy Cal.com Container auf Hetzner (Coolify: neuer Service + DNS cal.strategaizetransition.com)
-3. SLC-408: Gesamtkalender UI (/frontend)
+1. SLC-408: Gesamtkalender UI (/frontend)
+2. SLC-409: Management-Cockpit LLM-Ausbau (/backend)
+3. Gesamt-QA V4
 
 ## Active Scope
 V4 — KI-Gatekeeper + Externe Integrationen (6 Features):
