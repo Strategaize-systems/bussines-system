@@ -48,6 +48,7 @@ const navGroups: NavGroup[] = [
     items: [
       { name: "Mein Tag", href: "/mein-tag", icon: Sparkles },
       { name: "Focus", href: "/focus", icon: Target },
+      { name: "Kalender", href: "/kalender", icon: Calendar },
     ],
   },
   {

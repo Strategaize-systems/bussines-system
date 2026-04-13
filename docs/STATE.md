@@ -9,14 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: V4 Implementation — SLC-401..407 done, SLC-408 Gesamtkalender-UI als naechstes
-- Current Phase: V4 Implementation
+- High-Level State: qa
+- Current Focus: V4 alle 9 Slices done (SLC-401..409) — Gesamt-QA V4 als naechstes
+- Current Phase: V4 QA
 
 ## Immediate Next Steps
-1. SLC-408: Gesamtkalender UI (/frontend)
-2. SLC-409: Management-Cockpit LLM-Ausbau (/backend)
-3. Gesamt-QA V4
+1. Gesamt-QA V4 (alle 9 Slices)
+2. Final-Check V4
+3. Deploy V4
 
 ## Active Scope
 V4 — KI-Gatekeeper + Externe Integrationen (6 Features):
@@ -34,4 +34,4 @@ V4 — KI-Gatekeeper + Externe Integrationen (6 Features):
 - V3.3 — 2026-04-11 — deployed auf Hetzner (UI-Abrundung + Visualisierung, 6/6 Slices, REL-008)
 
 ## Notes
-V4 Requirements + Architecture + Slice-Planning abgeschlossen (2026-04-12). 9 Slices definiert: SLC-401 (Schema) → SLC-402 (IMAP-Sync) → SLC-403 (Inbox-UI) → SLC-404 (Gatekeeper) → SLC-405 (Wiedervorlagen) → SLC-406 (Auto-Reply) → SLC-407 (Cal.com) → SLC-408 (Kalender-UI) → SLC-409 (Management-Cockpit LLM). Alle mit Micro-Tasks. Naechster Schritt: SLC-401 Schema-Migration auf Hetzner.
+V4 Implementation abgeschlossen (2026-04-13). 9/9 Slices done: SLC-401 (Schema) → SLC-402 (IMAP-Sync) → SLC-403 (Inbox-UI) → SLC-404 (Gatekeeper) → SLC-405 (Wiedervorlagen) → SLC-406 (Auto-Reply) → SLC-407 (Cal.com) → SLC-408 (Kalender-UI) → SLC-409 (Management-Cockpit LLM). Einzelne Slice-QAs bestanden. Naechster Schritt: Gesamt-QA V4, dann Final-Check + Deploy.

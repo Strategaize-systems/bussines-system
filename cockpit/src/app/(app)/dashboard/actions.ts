@@ -209,6 +209,102 @@ export async function getTopChancen(limit = 5): Promise<TopChance[]> {
   }));
 }
 
+export async function getManagementContext() {
+  const supabase = await createClient();
+
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [dealsResult, activitiesResult, multiplikatorsResult, stagesResult, statsResult] = await Promise.all([
+    // All active + recently closed deals
+    supabase
+      .from("deals")
+      .select("id, title, value, status, updated_at, companies(name), pipeline_stages(name, probability)")
+      .in("status", ["active", "won", "lost"])
+      .order("updated_at", { ascending: false })
+      .limit(100),
+
+    // Recent activities (last 30 days)
+    supabase
+      .from("activities")
+      .select("id, type, title, created_at, deals(title)")
+      .gte("created_at", thirtyDaysAgo)
+      .order("created_at", { ascending: false })
+      .limit(100),
+
+    // Multiplikatoren
+    supabase
+      .from("contacts")
+      .select("id, first_name, last_name, trust_level, companies(name)")
+      .eq("is_multiplier", true)
+      .order("trust_level", { ascending: false, nullsFirst: false })
+      .limit(50),
+
+    // Pipeline stages with deal counts
+    supabase
+      .from("pipeline_stages")
+      .select("id, name, probability")
+      .order("sort_order"),
+
+    // Basic stats
+    getDashboardStats(),
+  ]);
+
+  // Count deals per stage
+  const stageDeals = new Map<string, { count: number; value: number }>();
+  for (const deal of (dealsResult.data || []).filter((d: any) => d.status === "active")) {
+    const stageId = (deal as any).pipeline_stages?.name;
+    if (stageId) {
+      const existing = stageDeals.get(stageId) || { count: 0, value: 0 };
+      existing.count++;
+      existing.value += (deal as any).value ?? 0;
+      stageDeals.set(stageId, existing);
+    }
+  }
+
+  // Count won/lost
+  const wonDeals = (dealsResult.data || []).filter((d: any) => d.status === "won").length;
+  const lostDeals = (dealsResult.data || []).filter((d: any) => d.status === "lost").length;
+
+  return {
+    deals: (dealsResult.data || []).map((d: any) => ({
+      title: d.title,
+      value: d.value,
+      stage: d.pipeline_stages?.name ?? null,
+      probability: d.pipeline_stages?.probability ?? null,
+      status: d.status,
+      lastUpdate: d.updated_at?.split("T")[0] ?? null,
+      company: d.companies?.name ?? null,
+    })),
+    activities: (activitiesResult.data || []).map((a: any) => ({
+      date: a.created_at?.split("T")[0] ?? "",
+      type: a.type,
+      title: a.title,
+      dealTitle: a.deals?.title ?? null,
+    })),
+    multiplikatoren: (multiplikatorsResult.data || []).map((m: any) => ({
+      name: `${m.first_name} ${m.last_name}`.trim(),
+      trustLevel: m.trust_level,
+      company: m.companies?.name ?? null,
+      referralCount: 0,
+    })),
+    stages: (stagesResult.data || []).map((s: any) => ({
+      name: s.name,
+      dealCount: stageDeals.get(s.name)?.count ?? 0,
+      totalValue: stageDeals.get(s.name)?.value ?? 0,
+      probability: s.probability ?? 0,
+    })),
+    stats: {
+      openDeals: statsResult.openDeals,
+      totalPipelineValue: statsResult.totalPipelineValue,
+      wonDeals,
+      lostDeals,
+      totalContacts: statsResult.totalContacts,
+      totalCompanies: statsResult.totalCompanies,
+    },
+  };
+}
+
 export async function getUpcomingActions(limit = 10): Promise<UpcomingAction[]> {
   const supabase = await createClient();
 

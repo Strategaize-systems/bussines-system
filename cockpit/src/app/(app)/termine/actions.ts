@@ -116,6 +116,7 @@ export async function createCalendarEvent(formData: FormData) {
 
   revalidatePath("/termine");
   revalidatePath("/mein-tag");
+  revalidatePath("/kalender");
   return { error: "" };
 }
 
@@ -141,6 +142,7 @@ export async function updateCalendarEvent(id: string, formData: FormData) {
 
   revalidatePath("/termine");
   revalidatePath("/mein-tag");
+  revalidatePath("/kalender");
   return { error: "" };
 }
 
@@ -155,5 +157,6 @@ export async function deleteCalendarEvent(id: string) {
 
   revalidatePath("/termine");
   revalidatePath("/mein-tag");
+  revalidatePath("/kalender");
   return { error: "" };
 }

@@ -469,7 +469,7 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
 
                   <div className="px-5 py-3 border-t border-slate-100">
                     <Link
-                      href="/termine"
+                      href="/kalender"
                       className="text-sm font-semibold text-[#00a84f] hover:text-emerald-700 flex items-center gap-1 transition-colors"
                     >
                       Alle Termine <ChevronRight size={14} />

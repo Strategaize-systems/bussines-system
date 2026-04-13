@@ -194,6 +194,7 @@ export async function createMeeting(formData: FormData) {
   revalidatePath("/meetings");
   revalidatePath("/termine");
   revalidatePath("/mein-tag");
+  revalidatePath("/kalender");
   return { error: "" };
 }
 
@@ -255,6 +256,7 @@ export async function updateMeeting(id: string, formData: FormData) {
   revalidatePath("/meetings");
   revalidatePath("/termine");
   revalidatePath("/mein-tag");
+  revalidatePath("/kalender");
   revalidatePath("/focus");
   return { error: "" };
 }
@@ -273,5 +275,6 @@ export async function deleteMeeting(id: string) {
   revalidatePath("/meetings");
   revalidatePath("/termine");
   revalidatePath("/mein-tag");
+  revalidatePath("/kalender");
   return { error: "" };
 }

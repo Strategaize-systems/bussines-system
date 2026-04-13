@@ -236,14 +236,118 @@ export interface MeinTagQueryContext {
 }
 
 // -------------------------------------------------------------
+// Management Analysis
+// -------------------------------------------------------------
+
+export interface ManagementAnalysisResult {
+  title: string;
+  summary: string;
+  insights: string[];
+  recommendations: string[];
+  dataPoints: Array<{
+    label: string;
+    value: string;
+    trend?: "up" | "down" | "stable" | "unknown";
+  }>;
+  confidence: number;
+  dataSources: string[];
+}
+
+export interface ManagementAnalysisContext {
+  analysisType?: string;
+  deals?: Array<{
+    title: string;
+    value?: number;
+    stage?: string;
+    probability?: number;
+    status: string;
+    lastUpdate?: string;
+    company?: string;
+  }>;
+  activities?: Array<{
+    date: string;
+    type: string;
+    title: string;
+    dealTitle?: string;
+  }>;
+  multiplikatoren?: Array<{
+    name: string;
+    trustLevel?: number;
+    company?: string;
+    referralCount?: number;
+  }>;
+  stages?: Array<{
+    name: string;
+    dealCount: number;
+    totalValue: number;
+    probability: number;
+  }>;
+  stats?: {
+    openDeals: number;
+    totalPipelineValue: number;
+    wonDeals?: number;
+    lostDeals?: number;
+    totalContacts: number;
+    totalCompanies: number;
+  };
+}
+
+// -------------------------------------------------------------
+// Management Freetext Query
+// -------------------------------------------------------------
+
+export interface ManagementFreetextResult {
+  answer: string;
+  highlights: string[];
+  dataPoints: Array<{
+    label: string;
+    value: string;
+  }>;
+  suggestedFollowUp: string | null;
+  dataSources: string[];
+  confidence: number;
+}
+
+export interface ManagementFreetextContext {
+  query: string;
+  deals?: Array<{
+    title: string;
+    value?: number;
+    stage?: string;
+    status: string;
+    company?: string;
+    lastUpdate?: string;
+  }>;
+  activities?: Array<{
+    date: string;
+    type: string;
+    title: string;
+    dealTitle?: string;
+  }>;
+  stats?: {
+    openDeals: number;
+    totalPipelineValue: number;
+    wonDeals?: number;
+    lostDeals?: number;
+    totalContacts: number;
+    totalCompanies: number;
+  };
+  stages?: Array<{
+    name: string;
+    dealCount: number;
+    totalValue: number;
+  }>;
+}
+
+// -------------------------------------------------------------
 // API Request / Response
 // -------------------------------------------------------------
 
-export type AIQueryType = "deal-briefing" | "daily-summary" | "pipeline-search" | "email-improve" | "event-classify" | "mein-tag-query";
+export type AIQueryType = "deal-briefing" | "daily-summary" | "pipeline-search" | "email-improve" | "event-classify" | "mein-tag-query" | "management-analysis" | "management-freetext";
 
 export interface AIQueryRequest {
   type: AIQueryType;
-  context: DealBriefingContext | DailySummaryContext | PipelineSearchContext | EmailImproveContext | EventClassifyContext | MeinTagQueryContext;
+  context: DealBriefingContext | DailySummaryContext | PipelineSearchContext | EmailImproveContext | EventClassifyContext | MeinTagQueryContext | ManagementAnalysisContext | ManagementFreetextContext;
 }
 
 export interface AIQueryResponse<T = DealBriefing | DailySummary> {

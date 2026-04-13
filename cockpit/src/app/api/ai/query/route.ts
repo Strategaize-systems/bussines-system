@@ -13,8 +13,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { queryLLM } from "@/lib/ai/bedrock-client";
-import { parseLLMResponse, validateDealBriefing, validateDailySummary, validatePipelineSearchFilter, validateEmailImproveResult, validateEventClassifyResult, validateMeinTagQueryResult } from "@/lib/ai/parser";
+import { parseLLMResponse, validateDealBriefing, validateDailySummary, validatePipelineSearchFilter, validateEmailImproveResult, validateEventClassifyResult, validateMeinTagQueryResult, validateManagementAnalysisResult, validateManagementFreetextResult } from "@/lib/ai/parser";
 import { checkRateLimit } from "@/lib/ai/rate-limiter";
+import { buildCacheKey, getCached, setCache } from "@/lib/ai/cache";
 import {
   DEAL_BRIEFING_SYSTEM_PROMPT,
   buildDealBriefingPrompt,
@@ -39,6 +40,14 @@ import {
   MEIN_TAG_QUERY_SYSTEM_PROMPT,
   buildMeinTagQueryPrompt,
 } from "@/lib/ai/prompts/mein-tag-query";
+import {
+  MANAGEMENT_ANALYSIS_SYSTEM_PROMPT,
+  buildManagementAnalysisPrompt,
+} from "@/lib/ai/prompts/management-analysis";
+import {
+  MANAGEMENT_FREETEXT_SYSTEM_PROMPT,
+  buildManagementFreetextPrompt,
+} from "@/lib/ai/prompts/management-freetext";
 import type {
   AIQueryRequest,
   AIQueryResponse,
@@ -54,6 +63,10 @@ import type {
   EmailImproveResult,
   EventClassifyResult,
   MeinTagQueryResult,
+  ManagementAnalysisContext,
+  ManagementAnalysisResult,
+  ManagementFreetextContext,
+  ManagementFreetextResult,
 } from "@/lib/ai/types";
 
 export async function POST(request: NextRequest) {
@@ -222,19 +235,79 @@ export async function POST(request: NextRequest) {
       break;
     }
 
+    case "management-analysis": {
+      const ctx = body.context as ManagementAnalysisContext;
+      if (!ctx.analysisType) {
+        return NextResponse.json(
+          {
+            success: false,
+            data: null,
+            error: "Ungueltige Anfrage: 'analysisType' ist erforderlich",
+          } satisfies AIQueryResponse,
+          { status: 400 }
+        );
+      }
+      systemPrompt = MANAGEMENT_ANALYSIS_SYSTEM_PROMPT;
+      userPrompt = buildManagementAnalysisPrompt(ctx);
+      break;
+    }
+
+    case "management-freetext": {
+      const ctx = body.context as ManagementFreetextContext;
+      if (!ctx.query) {
+        return NextResponse.json(
+          {
+            success: false,
+            data: null,
+            error: "Ungueltige Anfrage: 'query' ist erforderlich",
+          } satisfies AIQueryResponse,
+          { status: 400 }
+        );
+      }
+      systemPrompt = MANAGEMENT_FREETEXT_SYSTEM_PROMPT;
+      userPrompt = buildManagementFreetextPrompt(ctx);
+      break;
+    }
+
     default:
       return NextResponse.json(
         {
           success: false,
           data: null,
-          error: `Unbekannter Query-Typ: '${body.type}'. Erlaubt: 'deal-briefing', 'daily-summary', 'pipeline-search', 'email-improve', 'event-classify', 'mein-tag-query'`,
+          error: `Unbekannter Query-Typ: '${body.type}'. Erlaubt: 'deal-briefing', 'daily-summary', 'pipeline-search', 'email-improve', 'event-classify', 'mein-tag-query', 'management-analysis', 'management-freetext'`,
         } satisfies AIQueryResponse,
         { status: 400 }
       );
   }
 
   // -------------------------------------------------------
-  // 5. Bedrock Invocation
+  // 5. Cache Check (management queries only)
+  // -------------------------------------------------------
+  const isCacheable = body.type === "management-analysis" || body.type === "management-freetext";
+  if (isCacheable) {
+    const cacheKey = buildCacheKey(body.type, body.context);
+    const cached = getCached<unknown>(cacheKey);
+    if (cached) {
+      return NextResponse.json(
+        {
+          success: true,
+          data: cached,
+          error: null,
+        } as AIQueryResponse,
+        {
+          status: 200,
+          headers: {
+            "X-RateLimit-Limit": String(rateLimit.limit),
+            "X-RateLimit-Remaining": String(rateLimit.limit - rateLimit.currentCount),
+            "X-Cache": "HIT",
+          },
+        }
+      );
+    }
+  }
+
+  // -------------------------------------------------------
+  // 6. Bedrock Invocation
   // -------------------------------------------------------
   const llmResult = await queryLLM(userPrompt, systemPrompt);
 
@@ -458,6 +531,86 @@ export async function POST(request: NextRequest) {
             "X-RateLimit-Remaining": String(
               rateLimit.limit - rateLimit.currentCount
             ),
+          },
+        }
+      );
+    }
+
+    case "management-analysis": {
+      const parsed = parseLLMResponse<ManagementAnalysisResult>(
+        llmResult.data,
+        validateManagementAnalysisResult
+      );
+
+      if (!parsed.success) {
+        return NextResponse.json(
+          {
+            success: false,
+            data: null,
+            error: `KI-Antwort konnte nicht verarbeitet werden: ${parsed.error}`,
+          } satisfies AIQueryResponse,
+          { status: 502 }
+        );
+      }
+
+      // Cache the result
+      const cacheKey = buildCacheKey(body.type, body.context);
+      setCache(cacheKey, parsed.data);
+
+      return NextResponse.json(
+        {
+          success: true,
+          data: parsed.data,
+          error: null,
+        } satisfies AIQueryResponse<ManagementAnalysisResult>,
+        {
+          status: 200,
+          headers: {
+            "X-RateLimit-Limit": String(rateLimit.limit),
+            "X-RateLimit-Remaining": String(
+              rateLimit.limit - rateLimit.currentCount
+            ),
+            "X-Cache": "MISS",
+          },
+        }
+      );
+    }
+
+    case "management-freetext": {
+      const parsed = parseLLMResponse<ManagementFreetextResult>(
+        llmResult.data,
+        validateManagementFreetextResult
+      );
+
+      if (!parsed.success) {
+        return NextResponse.json(
+          {
+            success: false,
+            data: null,
+            error: `KI-Antwort konnte nicht verarbeitet werden: ${parsed.error}`,
+          } satisfies AIQueryResponse,
+          { status: 502 }
+        );
+      }
+
+      // Cache the result
+      const cacheKey = buildCacheKey(body.type, body.context);
+      setCache(cacheKey, parsed.data);
+
+      return NextResponse.json(
+        {
+          success: true,
+          data: parsed.data,
+          error: null,
+        } satisfies AIQueryResponse<ManagementFreetextResult>,
+        {
+          status: 200,
+          headers: {
+            "X-RateLimit-Limit": String(rateLimit.limit),
+            "X-RateLimit-Remaining": String(
+              rateLimit.limit - rateLimit.currentCount
+            ),
+            "X-Cache": "MISS",
           },
         }
       );

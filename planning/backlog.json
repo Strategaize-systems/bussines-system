@@ -506,7 +506,7 @@
       "title": "Cal.com — Self-Hosted Kalender + Terminbuchung",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V4",
       "description": "Cal.com self-hosted auf Hetzner. Buchungsseiten für Kunden, Google/Outlook Calendar Sync, Standard .ics-Einladungen. Integration in 'Mein Tag' (Termine heute sehen). Meeting-Links automatisch mit Jitsi (BL-205). Ersetzt den Kalender-Platzhalter in Mein Tag.",
       "createdAt": "2026-04-04"
@@ -977,7 +977,7 @@
       "title": "Gesamtkalender-Ansicht (Google-Calendar-aehnlich) + Navigation",
       "type": "feature",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V4",
       "description": "Zwei Luecken: (1) Es gibt keine Gesamtkalender-Ansicht — aktuell nur Kalender-Panel in Mein Tag mit Tagesansicht. Gebraucht wird eine vollstaendige Kalenderseite mit Wochen-/Monatsansicht, aehnlich Google Calendar. Zeigt alle calendar_events, Meetings, Aufgaben-Deadlines. (2) Kalender fehlt in der Navigation/Verwaltung — keine eigene Route, kein Menue-Eintrag. Spaeter: Sync mit externen Kalendern (Google Cal, Outlook) via Cal.com (BL-205) oder CalDAV.",
       "createdAt": "2026-04-11"
@@ -997,7 +997,7 @@
       "title": "Management-Cockpit LLM-Ausbau: Erweiterte KI-Analysen + Freitext-Abfragen",
       "type": "feature",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V4",
       "description": "FEAT-403: Tiefere LLM-Analysen im Dashboard (Pipeline, Multiplikatoren, Forecast), Trend-Erkennung, natuerlichsprachliche Freitext-Abfragen, Vergleichs-Analysen.",
       "createdAt": "2026-04-12"

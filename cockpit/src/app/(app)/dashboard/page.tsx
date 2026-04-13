@@ -1,10 +1,12 @@
 import {
   getDashboardStats,
   getTopChancen,
+  getManagementContext,
 } from "./actions";
 import { PageHeader } from "@/components/ui/page-header";
 import { KPICard } from "@/components/ui/kpi-card";
 import { DashboardSearch } from "./dashboard-search";
+import { KIAnalysis } from "./ki-analysis";
 import { Euro, ClipboardList, TrendingUp, ChevronRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 
@@ -21,9 +23,10 @@ const fmtCompact = new Intl.NumberFormat("de-DE", {
 });
 
 export default async function DashboardPage() {
-  const [stats, chancen] = await Promise.all([
+  const [stats, chancen, managementCtx] = await Promise.all([
     getDashboardStats(),
     getTopChancen(5),
+    getManagementContext(),
   ]);
 
   return (
@@ -40,32 +43,9 @@ export default async function DashboardPage() {
 
           {/* Main Layout: KPI-Fenster (left) + Cards & Chancen (right) */}
           <div className="grid grid-cols-12 gap-6">
-            {/* KPI-Fenster — AI-driven analysis area */}
+            {/* KI-Analyse Cockpit */}
             <div className="col-span-8">
-              <div className="bg-white rounded-2xl border-2 border-dashed border-slate-300 shadow-lg overflow-hidden h-full min-h-[520px] flex flex-col items-center justify-center">
-                <div className="text-center px-8 max-w-lg">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#120774] to-[#4454b8] flex items-center justify-center mx-auto mb-6 shadow-lg">
-                    <Sparkles size={32} className="text-white" strokeWidth={2} />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">
-                    KI-Analyse Cockpit
-                  </h3>
-                  <p className="text-sm text-slate-500 leading-relaxed mb-6">
-                    Stellen Sie eine Frage über die KI-Suche oben, um Ihre KPIs, Berichte und Analysen hier anzuzeigen.
-                  </p>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    <span className="px-3 py-1.5 rounded-full bg-slate-50 text-xs font-medium text-slate-500 border border-slate-200">
-                      &ldquo;Pipeline-Wert der letzten Woche&rdquo;
-                    </span>
-                    <span className="px-3 py-1.5 rounded-full bg-slate-50 text-xs font-medium text-slate-500 border border-slate-200">
-                      &ldquo;Umsätze Dezember vs. Januar&rdquo;
-                    </span>
-                    <span className="px-3 py-1.5 rounded-full bg-slate-50 text-xs font-medium text-slate-500 border border-slate-200">
-                      &ldquo;Top 10 offene Deals&rdquo;
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <KIAnalysis contextData={managementCtx} />
             </div>
 
             {/* Right Column: KPI Cards + Unternehmer-Chancen */}

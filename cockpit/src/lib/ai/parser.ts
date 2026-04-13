@@ -105,7 +105,7 @@ export function parseLLMResponse<T>(
 // Built-in validators for known response types
 // =============================================================
 
-import type { DealBriefing, DailySummary, PipelineSearchFilter, EmailImproveResult, EventClassifyResult, MeinTagQueryResult } from "./types";
+import type { DealBriefing, DailySummary, PipelineSearchFilter, EmailImproveResult, EventClassifyResult, MeinTagQueryResult, ManagementAnalysisResult, ManagementFreetextResult } from "./types";
 
 /** Validates a DealBriefing response */
 export function validateDealBriefing(data: unknown): DealBriefing | null {
@@ -215,5 +215,58 @@ export function validateEmailImproveResult(data: unknown): EmailImproveResult | 
   return {
     improvedText: d.improvedText,
     changes: d.changes.map(String),
+  };
+}
+
+/** Validates a ManagementAnalysisResult response */
+export function validateManagementAnalysisResult(data: unknown): ManagementAnalysisResult | null {
+  if (typeof data !== "object" || data === null) return null;
+
+  const d = data as Record<string, unknown>;
+
+  if (typeof d.title !== "string") return null;
+  if (typeof d.summary !== "string") return null;
+  if (!Array.isArray(d.insights)) return null;
+  if (!Array.isArray(d.recommendations)) return null;
+
+  const validTrends = ["up", "down", "stable", "unknown"];
+
+  return {
+    title: d.title,
+    summary: d.summary,
+    insights: d.insights.map(String),
+    recommendations: d.recommendations.map(String),
+    dataPoints: Array.isArray(d.dataPoints)
+      ? d.dataPoints.map((dp: any) => ({
+          label: String(dp.label ?? ""),
+          value: String(dp.value ?? ""),
+          trend: validTrends.includes(dp.trend) ? dp.trend : "unknown",
+        }))
+      : [],
+    confidence: typeof d.confidence === "number" ? Math.max(0, Math.min(100, d.confidence)) : 50,
+    dataSources: Array.isArray(d.dataSources) ? d.dataSources.map(String) : [],
+  };
+}
+
+/** Validates a ManagementFreetextResult response */
+export function validateManagementFreetextResult(data: unknown): ManagementFreetextResult | null {
+  if (typeof data !== "object" || data === null) return null;
+
+  const d = data as Record<string, unknown>;
+
+  if (typeof d.answer !== "string") return null;
+
+  return {
+    answer: d.answer,
+    highlights: Array.isArray(d.highlights) ? d.highlights.map(String) : [],
+    dataPoints: Array.isArray(d.dataPoints)
+      ? d.dataPoints.map((dp: any) => ({
+          label: String(dp.label ?? ""),
+          value: String(dp.value ?? ""),
+        }))
+      : [],
+    suggestedFollowUp: typeof d.suggestedFollowUp === "string" ? d.suggestedFollowUp : null,
+    dataSources: Array.isArray(d.dataSources) ? d.dataSources.map(String) : [],
+    confidence: typeof d.confidence === "number" ? Math.max(0, Math.min(100, d.confidence)) : 50,
   };
 }
