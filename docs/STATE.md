@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V4 Implementation — SLC-401+402 done, SLC-403 E-Mail-Inbox UI als naechstes
+- Current Focus: V4 Implementation — SLC-401..403 done, SLC-404 Gatekeeper-Klassifikation als naechstes
 - Current Phase: V4 Implementation
 
 ## Immediate Next Steps
-1. IMAP-Sync Live-Test: Test-Mail senden, Kontakt-Matching verifizieren
-2. Coolify Cron-Job einrichten (alle 5 Min imap-sync, taeglich retention)
-3. SLC-403: E-Mail-Inbox UI + Zuordnung (/frontend)
+1. Deploy SLC-403 auf Hetzner + Browser-Check Inbox-UI
+2. SLC-404: Gatekeeper-Klassifikation (/backend)
+3. SLC-405: KI-Wiedervorlagen mit Freigabe
 
 ## Active Scope
 V4 — KI-Gatekeeper + Externe Integrationen (6 Features):

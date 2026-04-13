@@ -94,7 +94,7 @@
 |----|-------|---------|--------|----------|---------|
 | SLC-401 | [V4 Schema-Migration (MIG-010)](SLC-401-v4-schema-migration.md) | FEAT-405,407,408,406 | done | Blocker | 2026-04-12 |
 | SLC-402 | [IMAP-Sync Service](SLC-402-imap-sync-service.md) | FEAT-405 | done | Blocker | 2026-04-12 |
-| SLC-403 | [E-Mail-Inbox UI + Zuordnung](SLC-403-email-inbox-ui.md) | FEAT-405 | planned | High | 2026-04-12 |
+| SLC-403 | [E-Mail-Inbox UI + Zuordnung](SLC-403-email-inbox-ui.md) | FEAT-405 | done | High | 2026-04-12 |
 | SLC-404 | [Gatekeeper-Klassifikation](SLC-404-gatekeeper-klassifikation.md) | FEAT-408 | planned | High | 2026-04-12 |
 | SLC-405 | [KI-Wiedervorlagen mit Freigabe](SLC-405-ki-wiedervorlagen.md) | FEAT-407 | planned | High | 2026-04-12 |
 | SLC-406 | [Auto-Reply Detection](SLC-406-auto-reply-detection.md) | FEAT-410 | planned | Medium | 2026-04-12 |
