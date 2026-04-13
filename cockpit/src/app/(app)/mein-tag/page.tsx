@@ -7,10 +7,11 @@ import {
   getTopDeals,
   getGatekeeperSummary,
 } from "./actions";
+import { getPendingFollowups } from "./followup-actions";
 import { MeinTagClient } from "./mein-tag-client";
 
 export default async function MeinTagPage() {
-  const [data, context, calendarSlots, exceptions, nextMeeting, topDeals, gatekeeperSummary] = await Promise.all([
+  const [data, context, calendarSlots, exceptions, nextMeeting, topDeals, gatekeeperSummary, followupSuggestions] = await Promise.all([
     getTodayItems(),
     getMeinTagContext(),
     getCalendarEventsForToday(),
@@ -18,6 +19,7 @@ export default async function MeinTagPage() {
     getNextMeetingWithContext(),
     getTopDeals(5),
     getGatekeeperSummary(),
+    getPendingFollowups(),
   ]);
 
   const dateLabel = new Date().toLocaleDateString("de-DE", {
@@ -40,6 +42,7 @@ export default async function MeinTagPage() {
       nextMeeting={nextMeeting}
       topDeals={topDeals}
       gatekeeperSummary={gatekeeperSummary}
+      followupSuggestions={followupSuggestions}
       dateLabel={dateLabel}
     />
   );

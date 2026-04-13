@@ -39,6 +39,8 @@ import { ContactSheet } from "../contacts/contact-sheet";
 import { CompanySheet } from "../companies/company-sheet";
 import { CallSheet } from "./call-sheet";
 import { KIWorkspace } from "./ki-workspace";
+import { FollowupSuggestions } from "./followup-suggestions";
+import type { AIActionQueueItem } from "@/types/ai-queue";
 
 interface MeinTagClientProps {
   data: TodayData;
@@ -52,6 +54,7 @@ interface MeinTagClientProps {
   nextMeeting: NextMeetingPrep;
   topDeals: TopDeal[];
   gatekeeperSummary: GatekeeperSummary;
+  followupSuggestions: AIActionQueueItem[];
   dateLabel: string;
 }
 
@@ -77,7 +80,7 @@ const statusStyles: Record<string, string> = {
 
 const WORKDAY_MINUTES = 480; // 8h workday
 
-export function MeinTagClient({ data, stages, contacts, companies, deals, pipelines, calendarSlots, exceptions, nextMeeting, topDeals, gatekeeperSummary, dateLabel }: MeinTagClientProps) {
+export function MeinTagClient({ data, stages, contacts, companies, deals, pipelines, calendarSlots, exceptions, nextMeeting, topDeals, gatekeeperSummary, followupSuggestions, dateLabel }: MeinTagClientProps) {
   const totalItems = data.stats.overdueCount + data.stats.todayCount + data.stats.upcomingCount;
   const completedItems = 0;
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
@@ -378,6 +381,9 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                   })),
                 }}
               />
+
+              {/* KI-WIEDERVORLAGEN */}
+              <FollowupSuggestions suggestions={followupSuggestions} />
             </div>
 
             {/* RIGHT COLUMN (4): Entities + Zeit + Kalender + Meeting-Prep + Exceptions */}
