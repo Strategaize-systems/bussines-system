@@ -92,10 +92,10 @@ export function KIAnalysis({ contextData }: KIAnalysisProps) {
       if (json.success && json.data) {
         setState({ status: "analysis", data: json.data, label });
       } else {
-        setState({ status: "error", message: json.error || "Analyse fehlgeschlagen" });
+        setState({ status: "error", message: "Analyse konnte nicht erstellt werden. Bitte erneut versuchen." });
       }
     } catch {
-      setState({ status: "error", message: "Verbindungsfehler zum KI-Service" });
+      setState({ status: "error", message: "Verbindung fehlgeschlagen. Bitte erneut versuchen." });
     }
   }
 
@@ -130,10 +130,10 @@ export function KIAnalysis({ contextData }: KIAnalysisProps) {
       if (json.success && json.data) {
         setState({ status: "freetext", data: json.data, query: freetextQuery });
       } else {
-        setState({ status: "error", message: json.error || "Abfrage fehlgeschlagen" });
+        setState({ status: "error", message: "Abfrage konnte nicht verarbeitet werden. Bitte erneut versuchen." });
       }
     } catch {
-      setState({ status: "error", message: "Verbindungsfehler zum KI-Service" });
+      setState({ status: "error", message: "Verbindung fehlgeschlagen. Bitte erneut versuchen." });
     }
   }
 
@@ -146,7 +146,7 @@ export function KIAnalysis({ contextData }: KIAnalysisProps) {
         </div>
         <div className="flex-1">
           <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">KI-Analyse Cockpit</h3>
-          <p className="text-[11px] text-slate-500">On-Click Analysen mit Bedrock Claude</p>
+          <p className="text-[11px] text-slate-500">Vordefinierte Analysen und Freitext-Abfragen</p>
         </div>
         <button
           onClick={() => setExpanded(!expanded)}
@@ -229,7 +229,7 @@ export function KIAnalysis({ contextData }: KIAnalysisProps) {
               <div className="flex flex-col items-center justify-center py-12">
                 <Loader2 size={28} className="text-[#4454b8] animate-spin mb-3" />
                 <p className="text-sm font-medium text-slate-600">{state.label} wird erstellt...</p>
-                <p className="text-[11px] text-slate-400 mt-1">Claude analysiert Ihre Daten</p>
+                <p className="text-[11px] text-slate-400 mt-1">Daten werden analysiert...</p>
               </div>
             )}
 

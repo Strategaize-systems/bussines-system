@@ -309,7 +309,8 @@ export async function POST(request: NextRequest) {
   // -------------------------------------------------------
   // 6. Bedrock Invocation
   // -------------------------------------------------------
-  const llmResult = await queryLLM(userPrompt, systemPrompt);
+  const isManagementQuery = body.type === "management-analysis" || body.type === "management-freetext";
+  const llmResult = await queryLLM(userPrompt, systemPrompt, isManagementQuery ? { maxTokens: 4096 } : undefined);
 
   if (!llmResult.success || !llmResult.data) {
     return NextResponse.json(
