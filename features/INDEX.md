@@ -88,7 +88,7 @@
 | FEAT-405 | IMAP Mail-Integration | planned | [Spec](FEAT-405-imap-mail-integration.md) | 2026-04-09 |
 | FEAT-406 | Cal.com-Sync + Gesamtkalender | planned | [Spec](FEAT-406-calcom-gesamtkalender.md) | 2026-04-09 |
 | FEAT-407 | KI-Wiedervorlagen mit Freigabe | planned | [Spec](FEAT-407-ki-wiedervorlagen.md) | 2026-04-11 |
-| FEAT-408 | KI-Gatekeeper (E-Mail-Analyse) | planned | [Spec](FEAT-408-ki-gatekeeper.md) | 2026-04-11 |
+| FEAT-408 | KI-Gatekeeper (E-Mail-Analyse) | in_progress | [Spec](FEAT-408-ki-gatekeeper.md) | 2026-04-11 |
 | FEAT-410 | KI-Kontextanalyse (Auto-Replies) | planned | [Spec](FEAT-410-ki-kontextanalyse.md) | 2026-04-11 |
 
 ## V4.1 Features (Meeting-Intelligence + Wissensschicht — planned)
