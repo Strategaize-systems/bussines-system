@@ -8,6 +8,7 @@ export interface RuleClassificationInput {
   from_address: string;
   from_name: string | null;
   subject: string | null;
+  body_text: string | null;
   headers_json: Record<string, unknown> | null;
   in_reply_to: string | null;
   references_header: string | null;
@@ -115,6 +116,39 @@ function checkAutoReply(
           priority: "irrelevant",
           confidence: "high",
           rule: `auto-reply-subject-${prefix.replace(/[: ]/g, "-").replace(/-+$/, "")}`,
+        };
+      }
+    }
+  }
+
+  // Body content patterns (check first 1000 chars only)
+  if (input.body_text) {
+    const bodySnippet = input.body_text.slice(0, 1000).toLowerCase();
+
+    const autoReplyBodyPatterns = [
+      // German OOO patterns
+      /ich bin vom\b.*?\bbis\b/,
+      /ich bin ab\b.*?(?:nicht erreichbar|abwesend|nicht im b[uü]ro)/,
+      /automatische antwort/,
+      /abwesenheitsnotiz/,
+      /im urlaub/,
+      // English OOO patterns
+      /out of office/,
+      /i am currently out/,
+      /i will be out/,
+      /automatic reply/,
+      /currently unavailable/,
+      /on vacation/,
+      /on leave/,
+    ];
+
+    for (const pattern of autoReplyBodyPatterns) {
+      if (pattern.test(bodySnippet)) {
+        return {
+          classification: "auto_reply",
+          priority: "irrelevant",
+          confidence: "high",
+          rule: "auto-reply-body-content",
         };
       }
     }

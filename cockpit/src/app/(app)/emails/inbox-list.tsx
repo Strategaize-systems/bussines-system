@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import {
   Mail, MailOpen, Paperclip, User, Building2, Briefcase, Search,
-  ChevronRight, Inbox, Filter,
+  ChevronRight, Inbox, Filter, Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { InboxEmail } from "./imap-actions";
@@ -192,7 +192,8 @@ function InboxRow({
 
           {/* Bottom row: badges */}
           <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-            <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold", cls.color)}>
+            <span className={cn("inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold", cls.color)}>
+              {email.classification === "auto_reply" && <Clock size={9} />}
               {cls.label}
             </span>
 

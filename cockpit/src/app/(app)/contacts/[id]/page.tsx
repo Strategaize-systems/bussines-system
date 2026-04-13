@@ -39,6 +39,56 @@ import {
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+async function getContactAbsenceInfo(contactId: string) {
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const { extractAbsenceInfo } = await import("@/lib/ai/classifiers/auto-reply-analyzer");
+
+  const supabase = createAdminClient();
+
+  // Find the most recent auto-reply email from this contact's email address
+  // First get the contact's email
+  const { data: contact } = await supabase
+    .from("contacts")
+    .select("email")
+    .eq("id", contactId)
+    .single();
+
+  if (!contact?.email) return null;
+
+  // Find recent auto-reply from this address (last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const { data: autoReply } = await supabase
+    .from("email_messages")
+    .select("body_text, received_at, from_name")
+    .eq("from_address", contact.email)
+    .eq("classification", "auto_reply")
+    .gte("received_at", thirtyDaysAgo.toISOString())
+    .order("received_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!autoReply) return null;
+
+  const absenceInfo = extractAbsenceInfo(autoReply.body_text);
+
+  // Only show if return date is in the future
+  if (absenceInfo.returnDate) {
+    const returnDate = new Date(absenceInfo.returnDate);
+    if (returnDate > new Date()) {
+      return {
+        returnDate: absenceInfo.returnDate,
+        extracted: absenceInfo.extracted,
+        receivedAt: autoReply.received_at,
+        fromName: autoReply.from_name,
+      };
+    }
+  }
+
+  return null;
+}
+
 const relationshipLabels: Record<string, string> = {
   multiplikator: "Multiplikator",
   kunde: "Kunde",
@@ -91,6 +141,8 @@ export default async function ContactDetailPage({
     getProposalsForContact(id),
     getInboxEmailsForContact(id),
   ]);
+
+  const absenceInfo = await getContactAbsenceInfo(id);
 
   async function handleDelete() {
     "use server";
@@ -150,6 +202,21 @@ export default async function ContactDetailPage({
           </Button>
         </form>
       </div>
+
+      {absenceInfo && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200">
+          <Clock className="h-5 w-5 text-amber-600 shrink-0" />
+          <div>
+            <p className="text-sm font-bold text-amber-800">
+              Abwesend bis {new Date(absenceInfo.returnDate).toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })}
+            </p>
+            <p className="text-xs text-amber-600">
+              Auto-Reply erhalten am {new Date(absenceInfo.receivedAt).toLocaleDateString("de-DE")}
+              {!absenceInfo.extracted && " · Datum geschätzt (kein Datum im Text gefunden)"}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Contact Info */}

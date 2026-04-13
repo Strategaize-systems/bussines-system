@@ -78,6 +78,7 @@ function extractRelevantHeaders(
     "x-auto-response-suppress",
     "precedence",
     "list-unsubscribe",
+    "list-id",
     "x-mailer",
     "return-path",
   ];

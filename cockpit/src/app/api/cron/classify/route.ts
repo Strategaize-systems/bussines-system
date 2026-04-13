@@ -3,6 +3,7 @@ import { verifyCronSecret } from "../verify-cron-secret";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { classifyByRules } from "@/lib/ai/classifiers/rule-based";
 import { classifyByLLM } from "@/lib/ai/classifiers/llm-based";
+import { extractAbsenceInfo } from "@/lib/ai/classifiers/auto-reply-analyzer";
 import { createAction, expireOldActions } from "@/lib/ai/action-queue";
 
 export const maxDuration = 60;
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
     let ruleClassified = 0;
     let llmClassified = 0;
     let llmFailed = 0;
+    let autoReplyAdjusted = 0;
 
     for (const email of emails) {
       // ------------------------------------------------------------------
@@ -65,6 +67,7 @@ export async function POST(request: NextRequest) {
         from_address: email.from_address,
         from_name: email.from_name,
         subject: email.subject,
+        body_text: email.body_text,
         headers_json: email.headers_json,
         in_reply_to: email.in_reply_to,
         references_header: email.references_header,
@@ -95,6 +98,74 @@ export async function POST(request: NextRequest) {
           console.log(
             `[Cron/Classify] Rule classified ${email.id}: ${ruleResult.classification} (${ruleResult.rule})`
           );
+
+          // Auto-reply: extract absence info and adjust followups
+          if (ruleResult.classification === "auto_reply" && email.contact_id) {
+            try {
+              const absenceInfo = extractAbsenceInfo(email.body_text);
+              const returnDate = absenceInfo.returnDate;
+
+              if (returnDate) {
+                // Find pending followup actions for this contact's deals
+                const { data: contactDeals } = await supabase
+                  .from("deals")
+                  .select("id")
+                  .eq("contact_id", email.contact_id)
+                  .eq("status", "active");
+
+                const dealIds = (contactDeals ?? []).map((d: { id: string }) => d.id);
+
+                if (dealIds.length > 0) {
+                  // Postpone pending followup actions for these deals
+                  const { data: adjusted } = await supabase
+                    .from("ai_action_queue")
+                    .update({ suggested_at: `${returnDate}T09:00:00.000Z` })
+                    .eq("source", "followup_engine")
+                    .eq("status", "pending")
+                    .eq("entity_type", "deal")
+                    .in("entity_id", dealIds)
+                    .select("id");
+
+                  const adjustedCount = adjusted?.length ?? 0;
+
+                  // Also postpone tasks linked to these deals
+                  await supabase
+                    .from("tasks")
+                    .update({ due_date: returnDate })
+                    .eq("type", "follow_up")
+                    .eq("status", "open")
+                    .in("deal_id", dealIds)
+                    .lt("due_date", returnDate);
+
+                  if (adjustedCount > 0) {
+                    autoReplyAdjusted += adjustedCount;
+
+                    // Create info notification
+                    await createAction({
+                      type: "info",
+                      action_description: `Auto-Reply von ${email.from_name || email.from_address}: ${adjustedCount} Wiedervorlage(n) auf ${returnDate} verschoben${absenceInfo.extracted ? "" : " (Datum geschaetzt)"}`,
+                      reasoning: absenceInfo.sourceSnippet || "Kein Datumshinweis im Text gefunden, 7 Tage Standard-Verschiebung",
+                      entity_type: "email_message",
+                      entity_id: email.id,
+                      source: "gatekeeper",
+                      priority: "niedrig",
+                      dedup_key: `auto-reply-adjust-${email.id}`,
+                      expires_at: `${returnDate}T23:59:59.000Z`,
+                    });
+
+                    console.log(
+                      `[Cron/Classify] Auto-reply from ${email.from_address}: ${adjustedCount} followups adjusted to ${returnDate}`
+                    );
+                  }
+                }
+              }
+            } catch (adjustError) {
+              console.error(
+                `[Cron/Classify] Auto-reply adjustment failed for ${email.id}:`,
+                adjustError
+              );
+            }
+          }
         }
         continue;
       }
@@ -248,7 +319,7 @@ export async function POST(request: NextRequest) {
 
     const processed = ruleClassified + llmClassified + llmFailed;
     console.log(
-      `[Cron/Classify] Done — processed=${processed}, rule=${ruleClassified}, llm=${llmClassified}, failed=${llmFailed}, expired=${expired}`
+      `[Cron/Classify] Done — processed=${processed}, rule=${ruleClassified}, llm=${llmClassified}, failed=${llmFailed}, autoReplyAdjusted=${autoReplyAdjusted}, expired=${expired}`
     );
 
     return NextResponse.json({
@@ -257,6 +328,7 @@ export async function POST(request: NextRequest) {
       ruleClassified,
       llmClassified,
       llmFailed,
+      autoReplyAdjusted,
       expired,
     });
   } catch (err) {
