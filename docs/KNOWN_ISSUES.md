@@ -223,3 +223,11 @@
 - Area: Configuration
 - Summary: Platzhalter wie "placeholder-will-be-replaced" in .env.local. Akzeptabel für Dev, .gitignore schützt vor Commit.
 - Next Action: Bei Deployment echte Werte einsetzen (SLC-011).
+
+### ISSUE-030 — Fremde Onboarding-Artefakte in Business-DB (Hostname-Kollision)
+- Status: resolved
+- Severity: High
+- Area: Database / Infrastructure
+- Summary: Am 2026-04-14 wurden versehentlich 5 Onboarding-Plattform-Tabellen (template, capture_session, block_checkpoint, knowledge_unit, validation_layer) sowie die Funktion `handle_new_user()` und der Trigger `on_auth_user_created` auf Business-DB angelegt. Ursache: beide Hetzner-Server (Business 91.98.20.191, Onboarding 159.69.207.29) haben denselben internen Hostname `coolify-ubuntu-4gb-nbg1-1`, sodass der SSH-Prompt keinen Unterschied zeigte.
+- Impact: Neue User-Signups wären gebrochen, weil `handle_new_user()` in Spalten `tenant_id` und `email` schrieb, die Business-`profiles` nicht hat. Bestehender User (richard@bellaerts.de) war nicht betroffen.
+- Next Action: Erledigt 2026-04-15 — Trigger, Funktion und die 5 leeren Tabellen gedropped, `_set_updated_at()` Helper mitentfernt. Verifikation: 25 Tabellen im public-Schema (erwartet), User + Profile intakt. Präventiv: SSH-Zugang via Claude-Code-Agent eingerichtet, alle DB-Eingriffe laufen jetzt nur noch via Agent (keine User-Paste-Sessions mehr), Hostname-Kollision kann sich damit nicht wiederholen (Adressierung nur noch per Public-IP).
