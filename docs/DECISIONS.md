@@ -194,3 +194,33 @@
 - Status: accepted
 - Reason: Ursprueunglich waren FEAT-401, -402, -404, -409 fuer V4.1 geplant. Gemeinsam sind sie zu breit fuer einen sauberen Zyklus. Prinzip "wenn wir es machen, machen wir es richtig" bedeutet: lieber drei fokussierte Versionen als eine grosse halb-fertige. FEAT-404 + FEAT-409 + FEAT-411 bilden die Meeting-Basis (V4.1). FEAT-401 Wissensbasis verlangt Cross-Source-Integration — das ist eigene Version (V4.2). FEAT-402 Queue macht erst Sinn, wenn es genug KI-Schreiboperationen gibt — das ist V4.3.
 - Consequence: Roadmap hat jetzt V4.1 (Meeting Intelligence), V4.2 (Wissensbasis), V4.3 (Insight Governance). Jede Version bleibt kompakt und komplett-abschliessbar. Keine halb-fertigen Features ueber mehrere Versionen verteilt. Zyklen bleiben kurz, aber jede Version liefert ein rundes Ergebnis.
+
+## DEC-040 — Jitsi + Jibri Co-Location auf CPX32 mit CPX42-Upgrade-Pfad
+- Status: accepted
+- Reason: Dedizierter Meeting-Server haette zweite Coolify-Instanz erzeugt (~15-20 EUR/Monat zusaetzlich + mehr Admin). V4-Bestand belegt aktuell nur ~2.5 GB von 8 GB auf CPX32. Jitsi-Stack (~1 GB idle) + 1 paralleles Jibri-Recording (~2.5 GB aktiv) passt in die restlichen ~5.5 GB. Single-User-Realitaet: 1 Meeting parallel reicht. Upgrade auf CPX42 (8 vCPU / 16 GB) ist Hetzner-Resize ohne Code-Change, sobald regelmaessig 2+ parallele Recordings anstehen (Blueprint-Tenant, Kunden-Instanzen).
+- Consequence: V4.1 Docker Compose erhaelt Jitsi-Stack als neue Services auf bestehendem Server. Shared `coolify` Network. Hetzner-Firewall: Port 10000/udp oeffnen fuer JVB Media. Kein eigener TURN-Server in V4.1 (Public STUN ausreichend fuer ueblichen Netzwerk-Kontext). Upgrade-Trigger dokumentiert: Bei wiederholter Ressourcen-Konkurrenz Resize auf CPX42 durchfuehren.
+
+## DEC-041 — Whisper-Adapter als Library-Abstraktion (nicht separater Proxy-Service)
+- Status: accepted
+- Reason: DEC-035 verlangt Adapter-Pattern, laesst Umsetzung offen. Library-Abstraktion in `/lib/ai/transcription/` ist konsistent zum bestehenden LLM-Pattern (`/lib/ai/bedrock`), erzeugt keinen Extra-Container, keine Zusatzlatenz, kein Extra-Admin. Separater REST-Proxy waere theoretisch besser shareable zwischen Business + Blueprint, bringt aber Overhead den V4.1 nicht rechtfertigt. Provider-Switch via `TRANSCRIPTION_PROVIDER` ENV-Variable ist einfach und ausreichend fuer OpenAI → Azure → Self-hosted Migration.
+- Consequence: `/lib/ai/transcription/provider.ts` definiert Interface `TranscriptionProvider`. `openai.ts` implementiert V4.1, `azure.ts` + `selfhosted.ts` sind leere Platzhalter. `factory.ts` liest ENV und liefert Instanz. Business-Code ruft ausschliesslich `getTranscriptionProvider().transcribe(...)`. Kein direkter `openai`-Import ausserhalb des Adapter-Moduls.
+
+## DEC-042 — Public-Consent-Page unter /consent/{token} mit Middleware-Whitelist
+- Status: accepted
+- Reason: Kurze lesbare URL in E-Mails ist wichtig (weniger Copy-Paste-Probleme). Alternative `/p/consent/{token}` haette klareren Public-Namespace, ist aber unnoetig verbose. Middleware-Whitelist fuer genau `/consent/*` ist ein One-Liner parallel zu bereits whitelisted `/api/cron/*`.
+- Consequence: Next.js App-Router erhaelt `app/consent/[token]/page.tsx` + `app/consent/[token]/revoke/page.tsx`. `middleware.ts` erlaubt unauthentifizierten Zugriff auf `/consent/*`. Rate-Limit 100 Requests/IP/Stunde speziell auf diesen Pfad. IP-Minimierung: SHA256-Hash mit DAILY_SALT, Plain-IP wird nicht persistiert.
+
+## DEC-043 — Recording-Retention ENV-konfigurierbar, Default 30 Tage
+- Status: accepted
+- Reason: DSGVO-Prinzip der Datenminimierung spricht fuer kurze Retention. 30 Tage sind praktisch (nachtraegliche Manuelle Review moeglich, z.B. bei Unklarheiten im Summary). Fix-Code-Konstante haette bei spaeterem Aenderungswunsch Deploy-Zyklus erzwungen. ENV-Variable `RECORDING_RETENTION_DAYS` erlaubt Anpassung auf 60/90 Tage ohne Code-Aenderung, falls sich im Live-Betrieb zeigt dass laengere Retention sinnvoll ist.
+- Consequence: `RECORDING_RETENTION_DAYS=30` Default in Env-File. `/api/cron/recording-retention` laeuft taeglich 04:00 UTC, loescht Supabase-Storage-Objekte mit `recording_started_at < now() - N days`, setzt `meetings.recording_status = 'deleted'`. Transkript + Summary bleiben permanent. Aenderung erfordert nur Coolify-ENV-Update + Container-Restart.
+
+## DEC-044 — Ad-hoc Meeting-Teilnehmer werden automatisch als Kontakt mit consent_status='pending' angelegt
+- Status: accepted
+- Reason: Meetings aus weitergeleiteten Einladungen koennen E-Mail-Adressen enthalten, die noch nicht in `contacts` existieren. Harte Pruefung "muss existieren" wuerde Meetings blockieren. Stilles Ignorieren wuerde Teilnehmer-Liste unvollstaendig machen. Konsistenz zu V4-IMAP-Logik: eingehende E-Mails legen neue Kontakte auto-an. Gleiches Muster hier. Recording startet nicht (Consent fehlt) — das ist erwuenschtes Verhalten bei unbekannten Personen, nicht Fehler.
+- Consequence: Beim Meeting-Start werden Teilnehmer-E-Mails gegen `contacts` gepruefft. Unbekannte: `INSERT INTO contacts (email, display_name, consent_status='pending', consent_source='ad_hoc')`. UI zeigt im Deal-Workspace: "Aufzeichnung deaktiviert — Einwilligung fehlt fuer {email}". User kann Ad-hoc-Kontakt nachtraeglich mit Deal verknuepfen und Consent-Anfrage ausloesen. Woechentlicher Cleanup-Report: Pending-Kontakte >30d ohne Deal als Review-Liste.
+
+## DEC-045 — Jibri-Recording-Format MP4 (Jibri-Default)
+- Status: accepted
+- Reason: Jibri erzeugt standardmaessig MP4 (ffmpeg-Pipeline, H.264 + AAC). MP4 ist universell kompatibel mit OpenAI Whisper API (keine Pre-Conversion noetig), ffprobe (Duration), Browser-Playback im Deal-Workspace. WebM (VP8/Opus) waere ~20-30% kleiner, erfordert aber Jibri-Config-Hacks und ist bei OpenAI Whisper API nicht nativ unterstuetzt. Fuer V4.1 Volume (1-2 Meetings/Tag) ist Dateigroesse irrelevant.
+- Consequence: Jibri laeuft mit Default-Config, MP4-Output nach `/recordings/{room}.mp4`. Upload-Cron detektiert `.mp4`-Files, laedt sie in Supabase Storage Bucket `meeting-recordings`. Whisper-Adapter reicht File direkt an OpenAI weiter ohne Konvertierung. ffprobe liefert `recording_duration_seconds`.

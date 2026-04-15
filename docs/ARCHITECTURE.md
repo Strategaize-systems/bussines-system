@@ -1460,3 +1460,622 @@ Kalender:        Hetzner (Deutschland) → Cal.com Self-Hosted
 ## Recommended Next Step
 
 `/slice-planning` — Die 6 V4-Features in implementierbare Slices schneiden. Empfohlene Reihenfolge: IMAP-Sync → Gatekeeper → Wiedervorlagen → Auto-Reply → Cal.com → Management-Cockpit.
+
+---
+
+# V4.1 Architektur — Meeting Intelligence Basis
+
+## V4.1 Architecture Summary
+
+V4.1 erweitert die Hetzner-Business-Instanz um eine Meeting-Aufzeichnungs-, Transkriptions- und Summary-Pipeline. Self-hosted **Jitsi + Jibri** liefern Browser-Video-Meetings inkl. Recording. Ein **Whisper-Adapter** (Library-Abstraktion in `/lib/ai/transcription`) speist Aufzeichnungen an OpenAI Whisper API (V4.1) — Provider-Switch auf Azure/Self-hosted via ENV ohne Code-Rewrite (DEC-035, DEC-041). Bedrock Claude Sonnet 4 (bestehender LLM-Layer) erzeugt strukturierte Summaries, die als Meeting-Activity in der Deal-Timeline landen.
+
+Parallel dazu: **DSGVO-Einwilligungsflow** (Public-Page `/consent/{token}`, Audit-Log, Consent-Check vor Recording-Start) und **Meeting-Erinnerungen** (extern via .ics+E-Mail, intern via Browser-Push, KI-Agenda via Bedrock).
+
+Alle neuen Services laufen auf dem bestehenden CPX32 (Upgrade auf CPX42 bei Engpass). Die bestehende Infrastruktur (Supabase, Kong, Bedrock, SMTP, IMAP, Cal.com) bleibt unveraendert — V4.1 ist additiv.
+
+## V4.1 Main Components
+
+```
+Browser (User)                           Hetzner CPX32 (shared)
+─────────────────                        ────────────────────────────────
+Business App UI      ───────► Next.js App (Port 3000)
+  ├── Deal-Workspace                     ├── /app/consent/[token]  (NEU V4.1)
+  │    └── "Meeting starten"             ├── /app/deals/[id]/meeting/new (NEU)
+  ├── Meeting-Detail                     ├── /lib/ai/transcription/     (NEU)
+  │    └── Recording-Status              │     ├── provider.ts (Interface)
+  ├── Settings                           │     ├── openai.ts   (V4.1)
+  │    └── Reminder + Agenda             │     └── factory.ts  (ENV-Switch)
+  └── Push-Subscription                  ├── /lib/ai/bedrock/meeting-summary.ts (NEU)
+        (Service Worker)                 ├── /lib/meetings/
+                                         │     ├── reminders.ts (.ics-Builder)
+                                         │     └── agenda.ts    (KI-Agenda)
+Jitsi Meet UI (separater Pfad)           └── /api/cron/meeting-reminders (NEU)
+  meet.strategaizetransition.com         └── /api/cron/meeting-recording-poll (NEU)
+  ├── Video / Audio                      └── /api/cron/recording-retention (NEU)
+  ├── Share Screen                       └── /api/push/subscribe (NEU)
+  └── Jibri-Start (JWT-signed)           └── /api/meetings/[id]/start (NEU)
+
+                                         Jitsi Stack (NEU V4.1, Docker Compose)
+                                         ├── jitsi-web        (nginx)
+                                         ├── jitsi-prosody    (XMPP)
+                                         ├── jitsi-jicofo     (focus)
+                                         ├── jitsi-jvb        (videobridge)
+                                         └── jitsi-jibri      (recording)
+                                               ├── Chrome headless
+                                               ├── XOrg
+                                               └── ffmpeg → /recordings volume
+
+                                         Cron Worker (NEU)
+                                         └── jibri-upload-watch: shared volume
+                                              → Supabase Storage (EU)
+
+External
+────────
+OpenAI Whisper API (US, DEC-019)  ◄──── /lib/ai/transcription/openai.ts
+AWS Bedrock (Frankfurt)           ◄──── /lib/ai/bedrock (bestehend)
+SMTP (IONOS)                      ◄──── /lib/email (bestehend)
+Web Push Service (Browser/FCM)    ◄──── /lib/push (NEU, web-push npm)
+```
+
+## V4.1 Responsibilities
+
+| Komponente | Verantwortung |
+|---|---|
+| Next.js App | Meeting-Create, Consent-Page, Deal-UI, Settings-UI, Cron-Endpoints, LLM-Orchestrierung |
+| Jitsi Web + Prosody + Jicofo + JVB | Browser-Meeting-Session (Video/Audio/Screen-Share) mit JWT-Auth |
+| Jibri | Headless-Chrome-basierte Aufzeichnung in MP4 auf Shared Volume (DEC-045) |
+| Whisper-Adapter (Library) | Abstrakter `transcribe(audioFile)` Call, Provider-Switch via ENV |
+| OpenAI Whisper API | Deutsche Transkription in V4.1 (DEC-019, akzeptiert) |
+| Bedrock Claude Sonnet 4 | Summary-Generation (Outcome/Decisions/Actions/Next-Step), KI-Agenda-Vorbereitung |
+| Supabase Storage (EU) | Persistente Ablage von Rohaufzeichnungen (30d-Retention) + permanente Artefakte |
+| Audit-Log Tabelle | Consent-Lifecycle-Events mit IP-Hash |
+| Cron-API-Routes | Reminder-Versand, Recording-Upload-Watch, Retention-Cleanup |
+
+## V4.1 Data Model — Schema-Erweiterungen
+
+### Tabellen-Erweiterung: contacts (FEAT-411, DEC-038)
+
+| Feld | Typ | Beschreibung |
+|---|---|---|
+| consent_status | TEXT | `pending` (Default) / `granted` / `declined` / `revoked` |
+| consent_date | TIMESTAMPTZ | Zeitpunkt letzter Aenderung |
+| consent_source | TEXT | `email_link` / `manual` / `imported` / `ad_hoc` |
+| consent_token | TEXT | URL-safe 32-byte hex, nullbar (null = abgelaufen) |
+| consent_token_expires_at | TIMESTAMPTZ | Ablauf 30 Tage nach Anfrage |
+| consent_requested_at | TIMESTAMPTZ | Zeitpunkt der Consent-Anfrage |
+
+Bestand-Kontakte erhalten `consent_status = 'pending'` per Default nach MIG-011.
+
+### Tabellen-Erweiterung: meetings (FEAT-404 + FEAT-409)
+
+| Feld | Typ | Beschreibung |
+|---|---|---|
+| jitsi_room_name | TEXT | Generierter Raum-Name `deal-{dealId}-{ts}` |
+| recording_url | TEXT | Supabase Storage Path (null bis Upload abgeschlossen) |
+| recording_status | TEXT | `not_recording` / `pending` / `recording` / `uploading` / `completed` / `failed` / `deleted` |
+| recording_started_at | TIMESTAMPTZ | Start Jibri-Recording |
+| recording_duration_seconds | INT | Dauer (nach Upload) |
+| transcript_status | TEXT | `pending` / `processing` / `completed` / `failed` |
+| summary_status | TEXT | `pending` / `processing` / `completed` / `failed` |
+| ai_summary | JSONB | `{outcome, decisions[], action_items[], next_step}` |
+| ai_agenda | TEXT | Vorgenerierte KI-Agenda (bei Setting `auto`) |
+| ai_agenda_generated_at | TIMESTAMPTZ | Zeitpunkt Generierung |
+| reminders_sent | JSONB | `[{type, recipient, sent_at}]` fuer Idempotenz |
+
+Das bestehende `transcript TEXT`-Feld aus MIG-005 wird aktiviert (war bisher leer).
+
+### Tabellen-Erweiterung: activities
+
+| Feld | Typ | Beschreibung |
+|---|---|---|
+| ai_generated | BOOLEAN | Default `false`. `true` bei KI-erzeugten Timeline-Eintraegen (Meeting-Summary, Insights). |
+
+### Neue Tabelle: user_settings (FEAT-409)
+
+1:1-Relation zu `profiles.id`. Separater Table statt `profiles`-Erweiterung, damit zukuenftige User-Settings additiv wachsen koennen.
+
+| Feld | Typ | Beschreibung |
+|---|---|---|
+| user_id | UUID PRIMARY KEY REFERENCES profiles(id) | |
+| meeting_reminder_external_hours | INT[] | Default `{24, 2}` |
+| meeting_reminder_internal_enabled | BOOLEAN | Default `false` (nicht nerven) |
+| meeting_reminder_internal_minutes | INT | Default `30` |
+| meeting_agenda_mode | TEXT | `auto` / `on_click` / `off`, Default `on_click` (Bedrock-Kosten) |
+| push_subscription | JSONB | Web-Push Subscription-Object (endpoint + keys), null = nicht abonniert |
+| created_at / updated_at | TIMESTAMPTZ | |
+
+### Audit-Log-Erweiterung (bestehende audit_log-Tabelle, DEC-024)
+
+Neue `action`-Werte: `consent_requested`, `consent_granted`, `consent_declined`, `consent_revoked`, `recording_started`, `recording_completed`, `recording_failed`, `transcript_generated`, `summary_generated`.
+
+`audit_log.changes` JSONB enthaelt bei Consent-Events zusaetzlich: `ip_hash` (SHA256), `user_agent_hash` (SHA256).
+
+Public-Page-Aktionen (kein authentifizierter User) werden mit `actor_id = null` und `changes.actor_label = 'public'` geloggt.
+
+## V4.1 Recording-Pipeline (Flow)
+
+```
+1. User klickt "Meeting starten" im Deal-Workspace
+   └── POST /api/meetings/[id]/start
+        ├── Erzeugt meetings-Row (falls neu)
+        ├── Generiert jitsi_room_name = deal-{id}-{ts}
+        ├── Prueft consent_status aller verknuepften contacts
+        ├── Baut JWT fuer Jitsi (tenant=business, room, moderator-flag)
+        ├── Sendet Einladung + .ics an externe Teilnehmer (FEAT-409)
+        └── Redirect: https://meet.strategaizetransition.com/{room}?jwt={token}
+
+2. Jitsi-Meeting laeuft im Browser
+   └── Wenn alle consent_status='granted': Server-seitig "start recording"
+        ├── Jicofo instruiert Jibri via XMPP
+        ├── Jibri startet Chrome headless, verbindet als Lurker-Teilnehmer
+        ├── ffmpeg schreibt MP4 nach /recordings/{room}.mp4 (shared volume)
+        └── meetings.recording_status = 'recording', recording_started_at = now()
+
+3. Meeting endet (letzter Teilnehmer verlaesst Raum)
+   └── Jibri stoppt automatisch, finalisiert MP4
+
+4. Cron /api/cron/meeting-recording-poll (alle 2 Minuten)
+   └── Liest /recordings Volume, sucht neue MP4s
+        ├── Upload nach Supabase Storage (Bucket: meeting-recordings, EU)
+        ├── meetings.recording_url = storage_path
+        ├── meetings.recording_status = 'completed'
+        ├── recording_duration_seconds aus ffprobe
+        └── Triggert Transkription
+
+5. Transkription (Background-Job im gleichen Cron oder separate Route)
+   └── transcriptionProvider.transcribe(recording_url)
+        ├── meetings.transcript_status = 'processing'
+        ├── Whisper-Adapter laedt File, ruft OpenAI Whisper API
+        ├── transcript TEXT → meetings.transcript
+        ├── meetings.transcript_status = 'completed'
+        └── Triggert Summary
+
+6. Summary-Generation
+   └── bedrockClient.meetingSummary(transcript, deal_context)
+        ├── meetings.summary_status = 'processing'
+        ├── Bedrock Claude Sonnet 4, JSON-structured Output
+        ├── meetings.ai_summary = {...}
+        ├── meetings.summary_status = 'completed'
+        └── Activity-Insert: {source_type='meeting', source_id=meetingId, ai_generated=true, body=ai_summary.outcome}
+
+7. Retention-Cron /api/cron/recording-retention (taeglich)
+   └── Loescht recording_url wenn recording_started_at < now() - RECORDING_RETENTION_DAYS
+        ├── Supabase Storage Remove
+        ├── meetings.recording_status = 'deleted'
+        └── transcript + ai_summary bleiben permanent
+```
+
+**Fehler-Handling:** Bei Whisper 429 / 5xx: Exponential Backoff (3 Versuche, 10s/30s/90s). Bei finaler Fehlschlag: `transcript_status = 'failed'`, User sieht Retry-Button im Deal-Workspace. Aufzeichnung bleibt erhalten (nicht vor manueller Freigabe loeschen).
+
+## V4.1 Whisper-Adapter-Layer (DEC-035, DEC-041)
+
+### Interface
+
+```ts
+// /lib/ai/transcription/provider.ts
+export interface TranscriptionProvider {
+  transcribe(
+    audio: Buffer | ReadableStream | URL,
+    options?: { language?: string; meetingId?: string }
+  ): Promise<TranscriptionResult>
+}
+
+export interface TranscriptionResult {
+  transcript: string
+  language: string
+  durationSeconds: number
+  providerMetadata?: Record<string, unknown>
+}
+```
+
+### Provider-Implementierungen
+
+| Provider | Datei | Aktiv in V4.1 |
+|---|---|---|
+| OpenAI Whisper | `/lib/ai/transcription/openai.ts` | Ja |
+| Azure Whisper (EU) | `/lib/ai/transcription/azure.ts` | Platzhalter, nicht implementiert |
+| Self-hosted (Blueprint-Style) | `/lib/ai/transcription/selfhosted.ts` | Platzhalter, nicht implementiert |
+
+### Factory + ENV
+
+```ts
+// /lib/ai/transcription/factory.ts
+export function getTranscriptionProvider(): TranscriptionProvider {
+  switch (process.env.TRANSCRIPTION_PROVIDER) {
+    case 'azure':       return new AzureWhisperProvider(...)       // V4.x+ später
+    case 'selfhosted':  return new SelfHostedWhisperProvider(...)  // V4.x+ später
+    case 'openai':
+    default:            return new OpenAIWhisperProvider(...)
+  }
+}
+```
+
+Business-Code ruft ausschliesslich `getTranscriptionProvider().transcribe(...)`. Kein direkter OpenAI-SDK-Import ausserhalb von `openai.ts`.
+
+### Language-Detection
+
+Default `de`. OpenAI Whisper unterstuetzt Auto-Detect. V4.1 setzt `language='de'` explizit (User hat deutschsprachiges Business). Auto-Detect wird in V4.x+ aktiviert, wenn erste englische Meetings auftreten.
+
+## V4.1 DSGVO-Consent-Flow (FEAT-411)
+
+### URL-Struktur
+
+Public-Consent-Page unter `/consent/{token}`. Widerruf unter `/consent/{token}/revoke`. Next.js App-Router: `app/consent/[token]/page.tsx` + `app/consent/[token]/revoke/page.tsx`.
+
+Middleware-Whitelist: `/consent/*` ist nicht-authentifizierter Pfad (wie bereits `/api/cron/*`). Kein Supabase-Session-Check.
+
+### Token-Format
+
+`crypto.randomBytes(32).toString('hex')` → 64-char URL-safe Token. Kryptografisch zufaellig, nicht ratbar, kollisionsarm (2^256 Raum).
+
+### Rate-Limiting
+
+In-Memory-Rate-Limiter fuer Next.js Server Actions: 100 Requests/IP/Stunde auf `/consent/*`. IP aus `x-forwarded-for` Header (Coolify-Proxy setzt diesen). Bei Ueberschreitung: HTTP 429 mit `Retry-After`.
+
+### IP-Minimierung
+
+`ip_hash = SHA256(ip + DAILY_SALT)` wird in `audit_log.changes.ip_hash` gespeichert. Plain-IP wird nicht persistiert. `DAILY_SALT` rotiert taeglich (Env Var oder abgeleitet aus Datum + Secret) — verhindert Cross-Day-Korrelation.
+
+### Flow
+
+```
+1. User auf Kontakt-Detail-Seite klickt "Einwilligung anfragen"
+   └── Server Action createConsentRequest(contactId)
+        ├── token = crypto.randomBytes(32).toString('hex')
+        ├── contact.consent_token = token
+        ├── contact.consent_token_expires_at = now() + 30 days
+        ├── contact.consent_status = 'pending' (falls noch nicht)
+        ├── contact.consent_requested_at = now()
+        ├── audit_log insert (consent_requested)
+        └── SMTP-Versand: Template 'consent-request-de' mit Link
+             https://business.strategaizetransition.com/consent/{token}
+
+2. Kontakt oeffnet Link → /consent/{token}
+   └── Server-side load: Kontakt via token, prueft expiry
+        ├── Zeigt: Kontakt-Name, DSGVO-Erklaerung, Datenschutz-Link, Widerruf-Hinweis
+        └── Zwei Buttons: "Ich stimme zu" / "Ich lehne ab"
+
+3. Klick "Ich stimme zu"
+   └── Server Action grantConsent(token)
+        ├── Rate-Limit-Check
+        ├── contact.consent_status = 'granted'
+        ├── contact.consent_date = now()
+        ├── contact.consent_source = 'email_link'
+        ├── audit_log insert (consent_granted, ip_hash, ua_hash)
+        └── Bestaetigungsseite
+
+4. Widerruf via /consent/{token}/revoke
+   └── Analog, setzt consent_status = 'revoked', audit_log (consent_revoked)
+
+5. Manueller Widerruf durch User im Kontakt-Workspace
+   └── Server Action revokeConsent(contactId)
+        ├── contact.consent_status = 'revoked'
+        ├── consent_source = 'manual'
+        └── audit_log (consent_revoked, actor_id=userId)
+```
+
+### Ad-hoc-Teilnehmer ohne Kontakt (DEC-044)
+
+Wenn im Jitsi-Meeting ein E-Mail-Teilnehmer auftaucht, der nicht in `contacts` existiert (z.B. geleitetes Meeting-Invite):
+- Beim Meeting-Start: System erkennt unbekannte E-Mail-Adresse
+- Automatisches Anlegen: `INSERT INTO contacts (email, display_name, consent_status='pending', consent_source='ad_hoc')`
+- Recording startet **nicht** (mindestens ein Teilnehmer ohne `granted`)
+- UI-Hinweis im Deal-Workspace: "Aufzeichnung deaktiviert — Einwilligung fehlt fuer {ad-hoc-Email}"
+- User kann den Ad-hoc-Kontakt anschliessend mit Deal verknuepfen und Consent-Anfrage ausloesen
+
+Das haelt Consent-Status konsistent zur bestehenden V4-IMAP-Logik (neue E-Mail-Adressen werden auch dort auto-angelegt).
+
+## V4.1 Meeting-Reminder-Pipeline (FEAT-409)
+
+### Cron-Endpunkt
+
+`/api/cron/meeting-reminders` laeuft alle 5 Minuten (Coolify Cron). Geschuetzt via `CRON_SECRET`.
+
+### Logik
+
+```
+For each meeting WHERE scheduled_at BETWEEN now() AND now() + 25h
+  AND recording_status != 'deleted':
+
+  # A) Externe Reminder
+  For each contact in meeting.contacts:
+    For each hours in user.meeting_reminder_external_hours (Default [24, 2]):
+      If (scheduled_at - now()) ≈ hours * 3600s (+- 5min Fenster)
+         AND reminders_sent NOT CONTAINS {type: 'external', contact_id, hours}:
+         - SMTP-Versand Reminder-Template
+         - append {type, contact_id, hours, sent_at} to reminders_sent
+
+  # B) Interne Reminder
+  user_setting = user_settings WHERE user_id = meeting.owner_id
+  If user_setting.meeting_reminder_internal_enabled
+     AND (scheduled_at - now()) ≈ user_setting.meeting_reminder_internal_minutes * 60s
+     AND reminders_sent NOT CONTAINS {type: 'internal', user_id}:
+     - Wenn user_setting.push_subscription: web-push.sendNotification(...)
+     - Sonst: SMTP-Fallback
+     - append to reminders_sent
+
+  # C) KI-Agenda (auto)
+  If user_setting.meeting_agenda_mode = 'auto'
+     AND (scheduled_at - now()) < 25h
+     AND meeting.ai_agenda IS NULL:
+     - Bedrock-Call buildAgenda(dealId, meetingId)
+     - meetings.ai_agenda = result
+     - meetings.ai_agenda_generated_at = now()
+```
+
+Idempotenz durch `reminders_sent`-JSONB-Check. Cron kann verpasst werden (Coolify Restart) — naechster Lauf holt auf, keine Doppelung.
+
+### .ics-Generation
+
+Library: `ical-generator` (MIT, ~50KB). Pro Meeting: ein VEVENT mit:
+- UID: `meeting-{meetingId}@business.strategaizetransition.com`
+- DTSTART / DTEND mit `TZID=Europe/Berlin`
+- SUMMARY (Meeting-Titel)
+- DESCRIPTION (Kurzinfo + Meeting-Link)
+- LOCATION (Jitsi-URL oder physischer Ort)
+- ATTENDEE (alle Teilnehmer mit CN und MAILTO)
+
+**DSGVO-Note:** `ATTENDEE`-Liste enthaelt alle Teilnehmer (E-Mail + Name). Das ist Standard-Praxis bei Business-Meeting-Einladungen und wird vom Empfaenger erwartet (sieht er auch in Google/Outlook). Keine sensitiveren Daten.
+
+### Browser-Push
+
+- Library: `web-push` npm package (MIT)
+- VAPID-Keys: `VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY` + `VAPID_SUBJECT` (mailto) in Env
+- User abonniert ueber Settings-Seite: Frontend ruft Service Worker Push-Subscription → POST `/api/push/subscribe` → speichert in `user_settings.push_subscription`
+- Service Worker (`/public/sw.js`) zeigt Notification-Popup mit Meeting-Titel + Link
+- Fallback: wenn `push_subscription IS NULL` oder Push-Versand fehlschlaegt → SMTP
+
+### KI-Agenda-Generation
+
+Bedrock-Call via bestehendem LLM-Service-Layer. System-Prompt verlangt JSON-Output:
+
+```json
+{
+  "last_communication": "...",
+  "open_points": ["..."],
+  "decision_makers": [{"name": "...", "role": "..."}],
+  "suggested_goal": "..."
+}
+```
+
+Context: Deal-Historie (Activities letzte 14d), Task-Liste (offen), Kontakte-Rollen. Single-Call, keine Agent-Loops. Typische Kosten: <0.10 EUR pro Agenda (gemaess FEAT-409 AC-13).
+
+## V4.1 API Routes
+
+### Neue API Routes
+
+| Route | Zweck |
+|---|---|
+| `POST /api/meetings/[id]/start` | Meeting erstellen/aktivieren, JWT fuer Jitsi erzeugen, Einladungen triggern |
+| `POST /api/meetings/[id]/generate-agenda` | On-click Bedrock-Agenda-Generation |
+| `POST /api/meetings/[id]/retry-transcript` | Manueller Retry fuer failed transcripts |
+| `POST /api/consent/[token]/grant` | Server Action: Einwilligung erteilen |
+| `POST /api/consent/[token]/decline` | Server Action: Ablehnen |
+| `POST /api/consent/[token]/revoke` | Server Action: Widerrufen |
+| `POST /api/consent/request` | Authentifiziert: Consent-Anfrage fuer Kontakt anstossen |
+| `POST /api/push/subscribe` | Web-Push-Subscription speichern |
+| `DELETE /api/push/subscribe` | Push-Abo loeschen |
+| `POST /api/cron/meeting-reminders` | Cron: 5-Min-Lauf fuer Reminder |
+| `POST /api/cron/meeting-recording-poll` | Cron: 2-Min-Lauf fuer Jibri-Upload-Watch |
+| `POST /api/cron/recording-retention` | Cron: taegliche Retention-Bereinigung |
+| `POST /api/cron/pending-consent-renewal` | Cron: taeglich, Hinweis bei Pending >7 Tage |
+
+### Neue Server Actions
+
+- `createConsentRequest(contactId)` — Token generieren + Mail-Versand
+- `startMeeting(dealId, contactIds[])` — Jitsi-Raum + JWT + Einladungen
+- `saveUserSettings(settings)` — User-Einstellungen speichern
+
+## V4.1 Docker Compose Aenderungen
+
+Neue Services im `docker-compose.yml` (addditiv, auf shared `coolify` Network):
+
+```yaml
+# Jitsi Stack (shared mit Blueprint spaeter, DEC-036)
+jitsi-web:
+  image: jitsi/web:stable-9258
+  ports:
+    - "8443:443"  # hinter Traefik/Coolify Labels
+  environment:
+    - PUBLIC_URL=https://meet.strategaizetransition.com
+    - ENABLE_AUTH=1
+    - AUTH_TYPE=jwt
+    - JWT_APP_ID=${JITSI_JWT_APP_ID}
+    - JWT_APP_SECRET=${JITSI_JWT_APP_SECRET}
+  volumes:
+    - jitsi-web-config:/config
+
+jitsi-prosody:
+  image: jitsi/prosody:stable-9258
+  volumes:
+    - jitsi-prosody-config:/config
+    - jitsi-prosody-plugins:/prosody-plugins-custom
+
+jitsi-jicofo:
+  image: jitsi/jicofo:stable-9258
+  depends_on:
+    - jitsi-prosody
+
+jitsi-jvb:
+  image: jitsi/jvb:stable-9258
+  ports:
+    - "10000:10000/udp"   # WebRTC Media (UDP, muss auf Hetzner-Firewall offen sein)
+  depends_on:
+    - jitsi-prosody
+
+jitsi-jibri:
+  image: jitsi/jibri:stable-9258
+  restart: unless-stopped
+  shm_size: 2gb                # Chrome braucht grossen /dev/shm
+  cap_add: [SYS_ADMIN]         # Chrome sandbox
+  volumes:
+    - jitsi-recordings:/recordings
+  depends_on:
+    - jitsi-prosody
+```
+
+**Volumes:** `jitsi-web-config`, `jitsi-prosody-config`, `jitsi-prosody-plugins`, `jitsi-recordings` (shared zwischen Jibri und App fuer Upload-Watch).
+
+**Coolify-Config:** `meet.strategaizetransition.com` als zweite Domain auf demselben Coolify-Projekt. Traefik-Labels fuer `jitsi-web` analog zu bestehenden Services.
+
+**Firewall:** Port 10000/udp muss auf Hetzner-Cloud-Firewall eingehend offen sein (JVB Media).
+
+**TURN/STUN:** In V4.1 kein eigener TURN-Server. Jitsi nutzt Public STUN (meet-jit-si-turnrelay.jitsi.net) als Fallback. Falls User hinter strengen NATs haengt: spaeter eigenen coturn Container nachruesten (BL-206-Nachbar).
+
+### Neue Dependencies (package.json)
+
+```json
+{
+  "ical-generator": "^7.0.0",
+  "web-push": "^3.6.0",
+  "fluent-ffmpeg": "^2.1.2",      // ffprobe fuer duration
+  "jsonwebtoken": "^9.0.0",       // Jitsi JWT (evtl. schon da)
+  "openai": "^4.x"                 // falls noch nicht in Deps
+}
+```
+
+## V4.1 Env Vars — Neue Variablen
+
+```
+# Jitsi (V4.1 NEU)
+JITSI_DOMAIN=meet.strategaizetransition.com
+JITSI_JWT_APP_ID=business
+JITSI_JWT_APP_SECRET=...                    # 32-byte random
+JITSI_XMPP_DOMAIN=meet.jitsi
+
+# Whisper (V4.1 NEU, DEC-035 Adapter)
+TRANSCRIPTION_PROVIDER=openai               # openai | azure | selfhosted
+OPENAI_API_KEY=sk-...                       # schon aus V3/V4 vorhanden
+# Azure-Variables bleiben leer in V4.1
+AZURE_WHISPER_ENDPOINT=
+AZURE_WHISPER_KEY=
+
+# Recording Retention (V4.1 NEU)
+RECORDING_RETENTION_DAYS=30                 # konfigurierbar (DEC-043)
+SUPABASE_STORAGE_RECORDINGS_BUCKET=meeting-recordings
+
+# Browser Push (V4.1 NEU)
+VAPID_PUBLIC_KEY=...                        # einmalig via web-push generate-vapid-keys
+VAPID_PRIVATE_KEY=...
+VAPID_SUBJECT=mailto:admin@strategaizetransition.com
+
+# Consent (V4.1 NEU)
+CONSENT_DAILY_SALT=...                      # 32-byte random, rotiert via Cron
+CONSENT_RATE_LIMIT_PER_HOUR=100
+```
+
+## V4.1 Server Sizing
+
+### Aktuell (CPX32): 4 vCPU, 8 GB RAM
+
+V4-Bestand (IMAP + Cal.com + Supabase + Next.js + Bedrock-Client): ~2.5 GB
+
+### V4.1 Zusaetzlich
+
+| Komponente | RAM | CPU |
+|---|---|---|
+| Jitsi Web (nginx) | ~50 MB | wenig |
+| Jitsi Prosody | ~100 MB | wenig |
+| Jitsi Jicofo (JVM) | ~300 MB | moderat waehrend Meeting |
+| Jitsi JVB (JVM, media) | ~500-700 MB | hoch waehrend Meeting (1-2 vCPU Peak) |
+| Jitsi Jibri (Chrome + XOrg + ffmpeg) | ~2.0-2.5 GB **pro Recording** | hoch (1 vCPU Peak) |
+| ical-generator / web-push | vernachlaessigbar | |
+
+**Ein paralleles Meeting + Recording:** ~3.5-4 GB zusaetzlich → Gesamt ~6-6.5 GB von 8 GB.
+
+### Gesamt-Schaetzung: CPX32 reicht fuer 1 paralleles Meeting mit Recording
+
+**Upgrade-Pfad:** Wenn regelmaessig 2+ Meetings parallel: Coolify-Server CPX32 → CPX42 (8 vCPU / 16 GB, ~15-20 EUR/Monat Aufpreis). Kein Code-Change, nur Hetzner-Resize + Coolify-Reboot.
+
+**Idle-Kosten:** Jibri im Idle ~100 MB (Chrome noch nicht gestartet). Erst bei Recording-Start steigt der Verbrauch.
+
+## V4.1 Security / Privacy
+
+### EU-only Datenhaltung fuer Recording-Artefakte
+
+- Rohaufzeichnungen: Supabase Storage (Hetzner EU) — nie US
+- Transkript: PostgreSQL Hetzner
+- Summary: PostgreSQL Hetzner
+- **Ausnahme** (DEC-019 akzeptiert): OpenAI Whisper API (US-Region) fuer Transkription. Audio-File wird uebertragen, OpenAI speichert laut DPA nicht dauerhaft. Adapter-Pattern (DEC-035) erlaubt Wechsel auf EU-Provider ohne Feature-Rewrite.
+
+### Jitsi JWT-Auth
+
+Self-Hosted Jitsi ohne Auth wuerde Raeume oeffentlich zugaenglich machen. JWT-Auth (`ENABLE_AUTH=1`, `AUTH_TYPE=jwt`) sorgt dafuer, dass nur vom Business-System signierte Tokens Raum-Zugang erhalten. External invitees bekommen Token via Einladungs-Link.
+
+### Consent-Token-Sicherheit
+
+- 32-byte kryptografisch-zufaellig (`crypto.randomBytes`)
+- Einmalig pro Anfrage; Ablauf nach 30 Tagen bei Pending
+- Grant / Decline sind einmalige Aktionen (Token invalidiert nach Nutzung)
+- Widerruf-Token bleibt wiederverwendbar (sonst kann Kontakt nicht widerrufen)
+- Rate-Limit 100/Stunde/IP gegen Brute-Force
+
+### IP-Minimierung
+
+`ip_hash = SHA256(ip + daily_salt)` statt Plain-IP im Audit-Log. Daily-Salt-Rotation verhindert Re-Identifizierung ueber Tage.
+
+### Bedrock-Kosten-Bewusstsein (feedback_bedrock_cost_control)
+
+- KI-Agenda-Default: `on_click` (User muss bewusst klicken) — **nicht** `auto`
+- Meeting-Summary ist unvermeidlich automatisch, aber pro Meeting nur 1 Bedrock-Call
+- Retry-Logik limitiert auf 3 Versuche gegen Loops
+
+### Recording-Retention (DEC-043)
+
+Rohaufzeichnungen: `RECORDING_RETENTION_DAYS=30` Default, ENV-konfigurierbar. Retention-Cron laeuft taeglich 04:00 UTC, loescht abgelaufene `recording_url`-Dateien in Supabase Storage, markiert Meeting `recording_status='deleted'`. Transkript + Summary bleiben permanent in DB.
+
+### Cal.com Integration (unveraendert)
+
+V4.1 aendert Cal.com-Integration nicht. Cal.com bucht Meetings, V4.1 kann Jitsi-Raum als Location-URL in Cal.com Event-Type setzen. Verlinkung ist optional und kommt ggf. in einem V4.1-Slice als Polish.
+
+## V4.1 Constraints & Tradeoffs
+
+| Entscheidung | Tradeoff |
+|---|---|
+| Jitsi auf gleichem Server (DEC-040) | Spart 15-20 EUR/Monat, aber Ressourcen-Konkurrenz bei parallelen Recordings. Upgrade-Pfad dokumentiert. |
+| Library-Adapter statt REST-Proxy (DEC-041) | Einfacher, kein Extra-Container; aber bei spaeterem Multi-Tenant schwerer zu sharen. Fuer V4.1 klar. |
+| Public-URL unter `/consent/{token}` (DEC-042) | Kurz, lesbar; erfordert Middleware-Whitelist. Alternativ `/p/*` haette klarere Trennung. |
+| 30 Tage Recording-Retention (DEC-043) | DSGVO-freundlich minimiert (nicht "unbefristet"). Risiko: User will irgendwann auf 90+ Tage — daher ENV-konfigurierbar. |
+| Ad-hoc Auto-Contact (DEC-044) | Konsistent zu IMAP-Verhalten, aber erzeugt leichte Daten-"Reibung" (Pending-Kontakte ohne Deal-Verknuepfung). |
+| Jibri-MP4 (DEC-045) | Jibri-Default, gute Kompatibilitaet mit ffprobe + OpenAI. WebM waere kleiner, aber nicht nativ unterstuetzt. |
+| OpenAI Whisper in US (DEC-019 bestehend) | Qualitaet + Geschwindigkeit akzeptiert; Migrations-Pfad ueber Adapter offen. |
+| Kein eigener TURN-Server in V4.1 | Einfacher Setup, funktioniert fuer ueblichen Netzwerk-Kontext. Risiko: manche Kunden-Netzwerke brauchen TURN — spaeter coturn nachruesten. |
+
+## V4.1 Technische Risiken
+
+| Risiko | Wahrscheinlichkeit | Impact | Mitigation |
+|---|---|---|---|
+| JVB UDP-Port 10000 blockiert (Hetzner Firewall) | Mittel | Blocker | Vor Slice-Start Firewall-Regel pruefen + anlegen |
+| Jibri-Recording schlaegt fehl (Chrome crasht) | Mittel | Mittel | Jibri-Restart-Policy, Recording-Status failed, Retry-Button |
+| Whisper 429 bei parallelem Meeting | Niedrig | Niedrig | Exponential Backoff 3x, OpenAI limits pro Minute sind hoch genug |
+| Bedrock Context-Overflow bei 2h-Meetings | Niedrig | Niedrig | Sonnet 4 hat 200k Context, 2h deutsch = ~20k Tokens, OK |
+| .ics falsch geparst in Outlook | Mittel | Mittel | ical-generator erzeugt RFC-5545; Test mit Outlook/Google/Apple vor Rollout |
+| Push-Notification-Support in Safari iOS | Hoch | Niedrig | Safari Web Push funktioniert ab iOS 16.4 (add-to-home). Fallback SMTP. |
+| Shared Volume /recordings wird voll | Niedrig | Mittel | Upload-Cron loescht lokale MP4 nach Upload; Volume-Monitoring |
+| Consent-Mail landet im Spam | Mittel | Mittel | IONOS-SPF/DKIM existiert seit V3.1; Template-Wortwahl seriös halten |
+| Ad-hoc Auto-Kontakt erzeugt "Geister"-Kontakte | Mittel | Niedrig | Wochentliches Cleanup-Report: Pending >30d und ohne Deal |
+| Jitsi Updates brechen Config | Niedrig | Mittel | Pin `stable-9258`, Upgrades bewusst pro Slice, Config-Volumes sichern |
+
+## V4.1 Open Points (fuer /slice-planning)
+
+- Slice-Reihenfolge (Empfehlung unten)
+- Ob `user_settings`-Tabelle in einem eigenen Slice oder mit FEAT-409 zusammen migriert wird
+- Jitsi-JWT-Library: `jsonwebtoken` vs. `jose` — Entscheidung in Infrastruktur-Slice
+
+## V4.1 Empfohlene Slice-Reihenfolge
+
+1. **SLC-411 Consent-Schema + Public-Page** (FEAT-411, additiv, kein Infra-Dependency)
+2. **SLC-412 Jitsi+Jibri Deployment + Firewall** (FEAT-404, schwerster Infra-Slice, low-code, blockiert folgende Slices)
+3. **SLC-413 Whisper-Adapter-Layer + OpenAI-Provider** (FEAT-404, TypeScript-only)
+4. **SLC-414 Meeting-Start + Jitsi-JWT + Consent-Check** (FEAT-404 Core)
+5. **SLC-415 Recording-Upload-Cron + Retention-Cron** (FEAT-404)
+6. **SLC-416 Transkript + Summary-Pipeline** (FEAT-404 Endgame)
+7. **SLC-417 user_settings + Reminder-Cron + .ics** (FEAT-409 A/B)
+8. **SLC-418 Browser-Push + Service Worker** (FEAT-409 B)
+9. **SLC-419 KI-Agenda (on-click + auto)** (FEAT-409 C)
+
+Geschaetzt 9 Slices. Jedes nach 1-2 Tagen implementierbar.
+
+## V4.1 Recommended Next Step
+
+`/slice-planning` — V4.1-Slices strukturiert ausdefinieren (Acceptance, Dependencies, QA-Fokus, Testfaelle). Danach pro Slice `/backend` oder `/frontend` + `/qa`.
