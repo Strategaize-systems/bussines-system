@@ -31,7 +31,8 @@ Kern-Design-Entscheidungen: Whisper-Adapter-Pattern (DEC-035), Jitsi shared-infr
 **V4.3 — Insight Governance (planned):** FEAT-402 Queue (nach V4.2 stabil).
 
 ## Blockers
-- aktuell keine
+- ISSUE-031 (High): SLC-414 JWT-fuer-Externe inkonsistent zur Architecture — SLC-414-Record vor Implementation aktualisieren (Per-Recipient-JWT mit moderator=false in Einladungs-URL einbetten).
+- ISSUE-032 (Medium): contacts.opt_out_communication-Flag fehlt fuer FEAT-409 AC-5 — SLC-411 MT-1 + MT-7 erweitern, sonst zweite Migration noetig.
 
 ## Last Stable Version
 - V4 — 2026-04-14 — deployed auf Hetzner (KI-Gatekeeper + Externe Integrationen, 9/9 Slices, REL-009)
