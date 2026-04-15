@@ -101,3 +101,17 @@
 | SLC-407 | [Cal.com Docker-Setup + API](SLC-407-calcom-docker-setup.md) | FEAT-406 | done | High | 2026-04-12 |
 | SLC-408 | [Gesamtkalender UI](SLC-408-gesamtkalender-ui.md) | FEAT-406 | done | High | 2026-04-12 |
 | SLC-409 | [Management-Cockpit LLM-Ausbau](SLC-409-management-cockpit-llm.md) | FEAT-403 | done | Medium | 2026-04-12 |
+
+## V4.1 Slices (Meeting Intelligence Basis)
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-411 | [Consent-Schema + Public-Page (MIG-011)](SLC-411-consent-schema-public-page.md) | FEAT-411 | planned | Blocker | 2026-04-15 |
+| SLC-412 | [Jitsi+Jibri Deployment + Firewall](SLC-412-jitsi-jibri-deployment.md) | FEAT-404 | planned | Blocker | 2026-04-15 |
+| SLC-413 | [Whisper-Adapter-Layer + OpenAI-Provider](SLC-413-whisper-adapter-layer.md) | FEAT-404 | planned | High | 2026-04-15 |
+| SLC-414 | [Meeting-Start + Jitsi-JWT + Consent-Check](SLC-414-meeting-start-jwt-consent.md) | FEAT-404 | planned | High | 2026-04-15 |
+| SLC-415 | [Recording-Upload-Cron + Retention-Cron](SLC-415-recording-upload-retention.md) | FEAT-404 | planned | High | 2026-04-15 |
+| SLC-416 | [Transkript + Summary-Pipeline](SLC-416-transcript-summary-pipeline.md) | FEAT-404 | planned | High | 2026-04-15 |
+| SLC-417 | [user_settings + Reminder-Cron + .ics](SLC-417-user-settings-reminder-ics.md) | FEAT-409 | planned | High | 2026-04-15 |
+| SLC-418 | [Browser-Push + Service Worker](SLC-418-browser-push-service-worker.md) | FEAT-409 | planned | Medium | 2026-04-15 |
+| SLC-419 | [KI-Agenda (on-click + auto)](SLC-419-ki-agenda.md) | FEAT-409 | planned | Medium | 2026-04-15 |

@@ -9,14 +9,15 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: architecture
-- Current Focus: V4.1 Architecture abgeschlossen (Meeting Intelligence Basis). 6 neue DECs (DEC-040..045), MIG-011 vorbereitet, 9 Slices empfohlen. Naechster Schritt /slice-planning zur detaillierten Ausarbeitung der V4.1-Slices.
-- Current Phase: V4.1 Architecture done
+- High-Level State: slice-planning
+- Current Focus: V4.1 Slice-Planning abgeschlossen (Meeting Intelligence Basis). 9 Slices (SLC-411..SLC-419) mit Micro-Tasks, AC, QA-Fokus, Dependencies + Aufwandsschaetzung dokumentiert. Naechster Schritt: SLC-411 als erster Blocker-Slice implementieren.
+- Current Phase: V4.1 Slice-Planning done
 
 ## Immediate Next Steps
-1. `/slice-planning` fuer V4.1 starten — 9 empfohlene Slices (SLC-411 Consent-Schema bis SLC-419 KI-Agenda) detaillieren
-2. Danach pro Slice: `/backend` oder `/frontend` + `/qa`
-3. V4-Nachzug: Cal.com Admin-Password staerken (15+ Zeichen + 2FA) — separat, kein V4.1-Blocker
+1. SLC-411 Consent-Schema + Public-Page implementieren (Blocker-Schema MIG-011 + Public-Page + Kontakt-Workspace-UI) — startet mit `/backend` fuer Migration + Server Actions
+2. Vor SLC-412: Pre-Flight-Checks erledigen (Hetzner-Firewall 10000/udp, Coolify-Subdomain `meet.strategaizetransition.com`, VAPID-Keys generieren, Supabase-Bucket `meeting-recordings` anlegen)
+3. Implementierungs-Reihenfolge: SLC-411 → SLC-412 → SLC-413 → SLC-414 → SLC-415 → SLC-416 → SLC-417 → SLC-418 → SLC-419 (mit `/qa` nach jedem Slice)
+4. V4-Nachzug parallel: Cal.com Admin-Password staerken (15+ Zeichen + 2FA), Live-Testbuchung — kein V4.1-Blocker
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (active, Architecture done):**
@@ -41,3 +42,5 @@ V4 Deployment in zwei Phasen: SLC-401..403 am 2026-04-12 (IMAP live), SLC-404..4
 V4.1 Requirements am 2026-04-15 erstellt: PRD erweitert, 5 neue DECs (DEC-035..039), 3 Feature-Specs (FEAT-404, FEAT-409, FEAT-411), roadmap.json mit V4.2 + V4.3 ergaenzt, backlog.json um BL-342..351 erweitert. Prinzip "wenn wir es machen, machen wir es richtig" — deshalb V4.x-Split statt einer grossen Version.
 
 V4.1 Architecture am 2026-04-15 erstellt: ARCHITECTURE.md um ~420 Zeilen V4.1-Block erweitert (Jitsi-Stack, Recording-Pipeline, Whisper-Adapter-Layer, DSGVO-Consent-Flow, Reminder-Pipeline, Docker-Compose-Aenderungen, Env-Vars, Sizing, Risk-Matrix). 6 neue DECs (DEC-040 Jitsi-CPX32-Sizing, DEC-041 Library-Adapter, DEC-042 /consent-URL, DEC-043 ENV-Retention, DEC-044 Ad-hoc-Kontakte, DEC-045 MP4-Format). MIG-011 Schema-Migration geplant (user_settings-Tabelle neu, contacts+6, meetings+11, activities.ai_generated). 9 Slices empfohlen fuer Implementierung.
+
+V4.1 Slice-Planning am 2026-04-15 abgeschlossen: 9 Slice-Dateien erstellt (SLC-411 Consent-Schema + Public-Page, SLC-412 Jitsi+Jibri Deployment, SLC-413 Whisper-Adapter-Layer, SLC-414 Meeting-Start + JWT + Consent-Check, SLC-415 Recording-Upload + Retention, SLC-416 Transkript + Summary-Pipeline, SLC-417 user_settings + Reminder-Cron + .ics, SLC-418 Browser-Push + Service Worker, SLC-419 KI-Agenda). Jeder Slice mit Micro-Tasks (MT-1..N), Acceptance Criteria, Dependencies, QA-Fokus und Aufwandsschaetzung. Gesamt-Aufwandsschaetzung V4.1: ~13-15 Entwicklungstage. SLC-411 = Blocker-Schema (MIG-011 vollstaendig), SLC-412 = schwerster Infra-Slice mit Firewall/Subdomain-Vorarbeit. Pre-Slice-Checks (Hetzner-Firewall 10000/udp, Coolify-Subdomain, VAPID-Keys, Supabase-Bucket) sind vor SLC-412-Start zu erledigen. MIG-011 wurde vollstaendig in SLC-411 konsolidiert (alle additiven Schema-Aenderungen in einer Migration, analog zu V4/SLC-401 Precedent).
