@@ -59,16 +59,30 @@
     {
       "id": "v4-1",
       "name": "V4.1",
-      "status": "planned",
-      "summary": "Meeting-Intelligence + Wissensschicht: Call Intelligence (Jitsi + Whisper), Meeting-Erinnerungen, Wissensbasis, Insight-Review-Queue",
+      "status": "active",
+      "summary": "Meeting Intelligence Basis: Jitsi + Jibri Self-Hosted (shared mit Blueprint), Whisper-Adapter-Pattern (OpenAI jetzt, Azure/Self-Hosted tauschbar), Call Intelligence (Transkription + Bedrock-Summary), Meeting-Erinnerungen (extern .ics + intern Push + KI-Agenda), DSGVO-Einwilligungsflow (einmalig, widerrufbar)",
       "order": 9
+    },
+    {
+      "id": "v4-2",
+      "name": "V4.2",
+      "status": "planned",
+      "summary": "Wissensbasis Cross-Source: Meetings + E-Mails + Dokumente + Deal-Daten zusammen durchsuchbar via natuerliche Sprache (Text + Voice). FEAT-401 komplett, nicht halbgar.",
+      "order": 10
+    },
+    {
+      "id": "v4-3",
+      "name": "V4.3",
+      "status": "planned",
+      "summary": "Insight Governance: Insight-Review-Queue fuer schreibende KI-Aenderungen an Deal/Kontakt-Properties. Informative KI-Outputs (Summaries, Insights) bleiben direkt sichtbar mit KI-Badge.",
+      "order": 11
     },
     {
       "id": "v5",
       "name": "V5",
       "status": "planned",
       "summary": "Automatisierung + Skalierung: Cadences/Sequences, Routing/Territories, Teamlead-Rolle, Intelligence-Platform-Export",
-      "order": 10
+      "order": 12
     }
   ]
 }

@@ -432,12 +432,12 @@
     },
     {
       "id": "BL-201",
-      "title": "Call Intelligence (Notetaker, Transkript, KI-Summary)",
+      "title": "Call Intelligence (Jitsi + Jibri + Whisper + Bedrock-Summary)",
       "type": "feature",
       "priority": "high",
       "status": "open",
       "version": "V4.1",
-      "description": "FEAT-201: Audio-Aufnahme, Whisper-Transkription, KI-Zusammenfassung, automatische Action-Extraktion.",
+      "description": "FEAT-404: Browser-basiertes Video-Meeting via Jitsi, automatische Aufzeichnung via Jibri, Transkription via Whisper-Adapter (OpenAI V4.1), Summary via Bedrock Claude Sonnet 4. Ergebnis als Meeting-Activity in Deal-Timeline. Recording nur bei geprueftem Consent (FEAT-411).",
       "createdAt": "2026-04-01"
     },
     {
@@ -446,8 +446,8 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": "V4.1",
-      "description": "FEAT-202: KI erkennt Signale in Gesprächen/Mails automatisch.",
+      "version": "V4.3",
+      "description": "FEAT-202: KI erkennt Signale in Gespraechen/Mails automatisch und schlaegt Property-Aenderungen an Deal/Kontakt vor. Geht durch Insight-Review-Queue (V4.3), weil schreibende KI-Aenderungen sind.",
       "createdAt": "2026-04-01"
     },
     {
@@ -1001,6 +1001,106 @@
       "version": "V4",
       "description": "FEAT-403: Tiefere LLM-Analysen im Dashboard (Pipeline, Multiplikatoren, Forecast), Trend-Erkennung, natuerlichsprachliche Freitext-Abfragen, Vergleichs-Analysen.",
       "createdAt": "2026-04-12"
+    },
+    {
+      "id": "BL-342",
+      "title": "Whisper-Adapter-Layer (OpenAI jetzt, Azure/Self-Hosted tauschbar)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V4.1",
+      "description": "Adapter-Interface fuer Speech-to-Text-Provider (DEC-035). V4.1 implementiert OpenAIWhisperProvider. Spaetere Azure-Migration ist neue Adapter-Klasse + ENV-Variable, kein Feature-Rewrite. Interface: transcribe(audio, language) -> TranscriptionResult.",
+      "createdAt": "2026-04-15"
+    },
+    {
+      "id": "BL-343",
+      "title": "Jitsi + Jibri Self-Hosted Setup auf Hetzner (Shared-Ready)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V4.1",
+      "description": "Self-hosted Jitsi + Jibri auf Hetzner. JWT-Auth pro Tenant (DEC-036). Initial nur Business-Tenant, Blueprint kommt spaeter dazu. Prosody + JVB + Jicofo + Jibri als Container-Stack. Recording-Storage: Shared Volume -> Cron-Upload nach Supabase Storage EU.",
+      "createdAt": "2026-04-15"
+    },
+    {
+      "id": "BL-344",
+      "title": "DSGVO-Einwilligungsflow: Onboarding-Mail + Public-Consent-Page + Widerruf",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V4.1",
+      "description": "FEAT-411: contacts.consent_status Feld + Einwilligungs-Mail-Template + tokenisierte Public-Page (/consent/{token}) fuer granted/declined. Widerruf jederzeit per Link oder durch User. Audit-Log fuer alle Consent-Aenderungen. Rate-Limiting + IP-Hash (DSGVO-Minimierung).",
+      "createdAt": "2026-04-15"
+    },
+    {
+      "id": "BL-345",
+      "title": "Meeting-Summary-Pipeline: Transcript -> Bedrock -> Activity",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V4.1",
+      "description": "FEAT-404 Teil: Nach Whisper-Transkription wird Transkript an Bedrock Claude Sonnet 4 geschickt. Strukturierter JSON-Summary (outcome, decisions, action_items, next_step). Summary landet als Meeting-Activity in Deal-Timeline mit ai_generated=true. Idempotente Verarbeitung.",
+      "createdAt": "2026-04-15"
+    },
+    {
+      "id": "BL-346",
+      "title": "Meeting-Reminder Cron-Job (externe Mails + interne Push)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V4.1",
+      "description": "FEAT-409 Teil A+B: /api/cron/meeting-reminders alle 5 Min. Externe Erinnerungs-Mails zu konfigurierten Vorlaufzeiten (Default 24h + 2h). Interne Browser-Push X Min vor Meeting wenn User-Setting aktiv. Idempotenz via reminders_sent JSONB. ical-generator fuer .ics-Attachments.",
+      "createdAt": "2026-04-15"
+    },
+    {
+      "id": "BL-347",
+      "title": "KI-Agenda-Vorbereitung vor Meetings (Bedrock + Deal-Kontext)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V4.1",
+      "description": "FEAT-409 Teil C: Bedrock-Call mit Deal-Historie, Kontakten, offenen Tasks -> strukturierte Agenda (letzte Kommunikation, offene Punkte, Entscheider, Meeting-Ziel-Vorschlag). Per-User-Setting: auto / on_click / off (Default on_click). Kostenschutz: ein LLM-Call pro Agenda.",
+      "createdAt": "2026-04-15"
+    },
+    {
+      "id": "BL-348",
+      "title": "User-Settings fuer Meeting-Reminder + KI-Agenda (pro User togglebar)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V4.1",
+      "description": "Settings-UI: meeting_reminder_external_hours, meeting_reminder_internal_enabled, meeting_reminder_internal_minutes, meeting_agenda_mode. Jeder User entscheidet selbst, kein system-weites Nerven. Default: externe Erinnerungen an, interne Push aus, KI-Agenda on-click.",
+      "createdAt": "2026-04-15"
+    },
+    {
+      "id": "BL-349",
+      "title": "Retention-Cron: Meeting-Aufzeichnungen nach 30 Tagen loeschen",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V4.1",
+      "description": "FEAT-404 Teil: Cron-Job loescht Roh-Aufzeichnungen aus Supabase Storage nach 30 Tagen. Transkript und Summary bleiben permanent. Status wird auf recording_status = deleted gesetzt. Schwelle konfigurierbar via ENV, Default 30.",
+      "createdAt": "2026-04-15"
+    },
+    {
+      "id": "BL-350",
+      "title": "Wissensbasis Cross-Source (Meetings + E-Mails + Dokumente + Deal-Daten)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V4.2",
+      "description": "FEAT-401: Alle Wissensquellen in einer durchsuchbaren Struktur. Abfrage per natuerlicher Sprache (Text + Voice) aus Deal-Workspace. Beispiel: 'Hat Kunde X die Vollmacht unterschrieben?'. Anforderung: Cross-Source-Search vollstaendig, kein Halbzeug (DEC-039).",
+      "createdAt": "2026-04-15"
+    },
+    {
+      "id": "BL-351",
+      "title": "Insight-Review-Queue fuer schreibende KI-Aenderungen",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V4.3",
+      "description": "FEAT-402: Queue NUR fuer schreibende KI-Aktionen (Deal-Status, Stage, Property-Aenderungen, Tag-Aenderungen). Informative KI-Outputs bleiben direkt sichtbar (DEC-037). Aktions-Typen: property_change, status_change, tag_change, value_change. Freigabe-UI im Cockpit, Batch-Approval moeglich.",
+      "createdAt": "2026-04-15"
     }
   ]
 }

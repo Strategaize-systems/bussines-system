@@ -169,3 +169,28 @@
 - Status: accepted
 - Reason: Cal.com hat eigenes Prisma-Schema das mit Supabase-Schema kollidieren wuerde. Saubere Isolation: Cal.com-Probleme betreffen nicht die Business-DB. Unabhaengige Upgrades moeglich. PostgreSQL 15 Alpine braucht nur ca. 50-100 MB zusaetzlich.
 - Consequence: Separater calcom-db Container (postgres:15-alpine) in docker-compose.yml. Eigenes Volume (calcom-db-data). Eigene Credentials (CALCOM_DB_PASSWORD). Cal.com und Business System teilen Docker Network, aber nicht die Datenbank.
+
+## DEC-035 — Whisper-Adapter-Pattern statt direktem OpenAI-SDK-Aufruf
+- Status: accepted
+- Reason: Die KI-Welt aendert sich schnell. V4.1 startet mit OpenAI Whisper API (US-Region, bekannt akzeptabel gemaess DEC-019), aber Azure OpenAI Whisper in EU-Region ist mittelfristig die bevorzugte Route (DSGVO-Komfort, vergleichbare Qualitaet). Self-hosted Whisper (wie im Blueprint) bleibt Option fuer Kunden-Instanzen. Direkter SDK-Aufruf im Business-Code wuerde jeden Provider-Wechsel zum Feature-Rewrite machen.
+- Consequence: In V4.1 wird ein Transcription-Adapter-Service gebaut (Interface + OpenAI-Implementation). Business-Code kennt nur das Interface (`transcribe(audioFile) -> transcript`). Provider-Wechsel = neue Adapter-Implementation + ENV-Variable. Kein Feature-Code muss sich aendern. Azure-Migration wird ein eigener Slice wenn Account da ist, nicht Teil von V4.1.
+
+## DEC-036 — Jitsi + Jibri als shared Meeting-Infrastructure (Business + Blueprint)
+- Status: accepted
+- Reason: Meeting-Aufzeichnungs-Pipeline wird in Business System V4.1 und Blueprint V4 gebraucht. Doppelarbeit vermeiden. Eine Jitsi-Instance mit getrennten Tenant-Konfigurationen ist effizienter als zwei separate Deployments. Shared-Infrastructure erlaubt Wiederverwendung von Recording-Pipeline, Storage-Setup und Security-Hardening. Spaeter (Kunden-Instanzen, lokale Desktop-Installationen) kann das Pattern als Docker-Compose-Baustein wiederverwendet werden.
+- Consequence: V4.1 baut ein Jitsi + Jibri Deployment das beide Systeme bedienen kann. Initial nur Business-Tenant aktiv, Blueprint-Tenant kommt dazu wenn Blueprint V4 umgesetzt wird. Getrennte Authentication pro Tenant, aber geteilte Infrastruktur. Bei Multi-Kunden-Deployments spaeter: pro Kunde eigener Jitsi-Stack via Docker-Compose-Template.
+
+## DEC-037 — Insight-Review-Queue nur fuer schreibende KI-Aenderungen (nicht informative)
+- Status: accepted
+- Reason: Klick-Muedigkeit vermeiden. KI generiert in V4 bereits viele Outputs (E-Mail-Insights, Deal-Summaries, Timeline-Eintraege). Jeden davon durch Review-Queue jagen = Mensch wird zum Flaschenhals, KI-Benefit verschwindet. Schreibende Aenderungen an Deal/Kontakt-Properties (Status, Stage, Wert, Rolle, Tag) sind aber risk-sensitiv — eine KI-Halluzination im Deal-Status verzerrt Pipeline-Reporting. Informative Outputs (Summaries, Insights in Timeline) bleiben direkt sichtbar mit klarem KI-Badge und sind jederzeit editierbar.
+- Consequence: V4.3 baut eine Queue NUR fuer schreibende KI-Aktionen auf Deal-/Kontakt-Properties. Timeline-Eintraege, Meeting-Summaries und E-Mail-Insights bleiben direkte Schreiboperationen mit KI-Kennzeichnung. V4 Freigabe-Mechanismus fuer Wiedervorlagen bleibt unveraendert. V4.3-Queue kennt Aktions-Typen: property_change, status_change, tag_change, value_change.
+
+## DEC-038 — DSGVO-Einwilligung einmalig beim Kontakt-Onboarding, widerrufbar
+- Status: accepted
+- Reason: Pro-Meeting-Abfrage der Einwilligung ist unpraktisch (Teilnehmer genervt, Click-Ermuedung, UX-Stoerung kurz vor Meeting-Start). Einmalige Einwilligung beim Onboarding ist DSGVO-konform, wenn: transparente Info vorab (Art der Verarbeitung, Zweck, Rechte), Widerruf jederzeit moeglich, dokumentiert (wer/wann/wie). Kerndienstleistung kann in vollem Umfang erst mit Einwilligung erbracht werden — das wird dem Kontakt transparent kommuniziert, ist aber kein erzwungener Consent (Kontakt kann ablehnen und wird dann manuell bearbeitet).
+- Consequence: FEAT-411 implementiert Onboarding-Flow: Einwilligungs-Mail-Template, Public-Page fuer Zustimmung/Ablehnung, consent_status am Kontakt, Widerruf-Link, Audit-Log aller Consent-Aenderungen. Recording in FEAT-404 prueft consent_status vor Aufzeichnung. Ohne granted-Consent: Meeting laeuft, aber keine Aufzeichnung — User sieht UI-Hinweis.
+
+## DEC-039 — V4.x Scope-Split: Meeting Intelligence / Wissensbasis / Insight Governance
+- Status: accepted
+- Reason: Ursprueunglich waren FEAT-401, -402, -404, -409 fuer V4.1 geplant. Gemeinsam sind sie zu breit fuer einen sauberen Zyklus. Prinzip "wenn wir es machen, machen wir es richtig" bedeutet: lieber drei fokussierte Versionen als eine grosse halb-fertige. FEAT-404 + FEAT-409 + FEAT-411 bilden die Meeting-Basis (V4.1). FEAT-401 Wissensbasis verlangt Cross-Source-Integration — das ist eigene Version (V4.2). FEAT-402 Queue macht erst Sinn, wenn es genug KI-Schreiboperationen gibt — das ist V4.3.
+- Consequence: Roadmap hat jetzt V4.1 (Meeting Intelligence), V4.2 (Wissensbasis), V4.3 (Insight Governance). Jede Version bleibt kompakt und komplett-abschliessbar. Keine halb-fertigen Features ueber mehrere Versionen verteilt. Zyklen bleiben kurz, aber jede Version liefert ein rundes Ergebnis.

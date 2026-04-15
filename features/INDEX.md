@@ -91,14 +91,25 @@
 | FEAT-408 | KI-Gatekeeper (E-Mail-Analyse) | deployed | [Spec](FEAT-408-ki-gatekeeper.md) | 2026-04-11 |
 | FEAT-410 | KI-Kontextanalyse (Auto-Replies) | deployed | [Spec](FEAT-410-ki-kontextanalyse.md) | 2026-04-11 |
 
-## V4.1 Features (Meeting-Intelligence + Wissensschicht — planned)
+## V4.1 Features (Meeting Intelligence Basis — planned)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-404 | Call Intelligence (Jitsi + Jibri + Whisper + Summary) | planned | [Spec](FEAT-404-call-intelligence.md) | 2026-04-09 |
+| FEAT-409 | Meeting-Erinnerungen (extern + intern + KI-Agenda) | planned | [Spec](FEAT-409-meeting-erinnerungen.md) | 2026-04-11 |
+| FEAT-411 | DSGVO-Einwilligungsflow fuer Aufzeichnung | planned | [Spec](FEAT-411-dsgvo-einwilligung.md) | 2026-04-15 |
+
+## V4.2 Features (Wissensbasis Cross-Source — planned)
 
 | ID | Feature | Status | Created |
 |----|---------|--------|---------|
-| FEAT-401 | Wissensbasis | planned | 2026-04-09 |
-| FEAT-402 | Insight-Review-Queue | planned | 2026-04-09 |
-| FEAT-404 | Call Intelligence (Transkription, KI-Summary) | planned | 2026-04-09 |
-| FEAT-409 | Meeting-Erinnerungen | planned | 2026-04-11 |
+| FEAT-401 | Wissensbasis (Meetings + E-Mails + Dokumente + Deal-Daten, Voice-Deal-Chat) | planned | 2026-04-09 |
+
+## V4.3 Features (Insight Governance — planned)
+
+| ID | Feature | Status | Created |
+|----|---------|--------|---------|
+| FEAT-402 | Insight-Review-Queue (nur schreibende KI-Aenderungen) | planned | 2026-04-09 |
 
 ## V5 Features (Automatisierung + Skalierung — planned)
 

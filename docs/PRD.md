@@ -948,3 +948,217 @@ V4 ist erfolgreich wenn:
 - Cal.com Version/Edition fuer Self-Hosted: Community Edition reicht fuer V4
 - IONOS IMAP-Credentials: App-Passwort oder regulaeres Passwort (zu klaeren bei Setup)
 - Server-Sizing: Aktueller CPX32 reicht fuer Start, Upgrade-Schwelle definieren bei /architecture
+
+---
+
+# V4.1 — Meeting Intelligence Basis
+
+## V4.1 Purpose
+
+V4.1 baut die Meeting-Aufzeichnungs-, Transkriptions- und Summary-Pipeline auf. Browser-basierte Video-Meetings werden ueber self-hosted Jitsi gestartet, ueber Jibri aufgezeichnet, ueber Whisper transkribiert und ueber Bedrock zu strukturierten Summaries verdichtet. Die Summary landet als Deal-Activity im Workspace. Parallel dazu werden Meeting-Erinnerungen an externe Teilnehmer (.ics + E-Mail) und interne Vorbereitungshinweise fuer den User eingefuehrt.
+
+V4.1 aktiviert das `transcript`-Feld der `meetings`-Tabelle, das bereits in V3 fuer diesen Zweck vorbereitet wurde (siehe FEAT-308).
+
+## V4.1 Vision — Meetings werden zu strukturierten Daten
+
+VORHER (V4):
+- Meetings sind manuell gepflegte Eintraege mit Freitext-Agenda und Freitext-Outcome
+- Nach einem Call muss der Eigentuemer die wichtigsten Punkte von Hand nachtragen
+- Meeting-Vorbereitung laeuft ueber Scrollen in Deal-Workspace und E-Mail-Historie
+
+NACHHER (V4.1):
+- Meetings werden im Browser gestartet (Jitsi-Link aus Deal oder Kalender)
+- Aufzeichnung laeuft automatisch (nach einmaliger Kunden-Einwilligung)
+- Nach dem Call liegt innerhalb weniger Minuten ein strukturierter Summary vor: Outcome, Entscheidungen, Action-Items, Naechster-Schritt
+- Vor dem Meeting sieht der User eine KI-generierte Agenda aus Deal-Kontext (optional, per-User-Setting)
+- Externe Teilnehmer bekommen automatisch Erinnerungen mit .ics-Attachment, Meeting-Link und Agenda
+
+## V4.1 Architekturleitplanken
+
+1. **Adapter-Pattern fuer Speech-to-Text** — Whisper ueber OpenAI API in V4.1, Azure EU / Self-hosted Whisper spaeter ohne Code-Rewrite austauschbar. Nur API-Route wird umgeschaltet.
+2. **Shared Meeting-Infrastructure** — Jitsi + Jibri als gemeinsame Basis fuer Business System und Blueprint (und spaeter Kunden-Instanzen). Getrennte Tenant-Konfigurationen, geteilte Infrastruktur.
+3. **Einwilligung einmalig, nicht pro Meeting** — DSGVO-konform, aber ohne Klick-Ermuedung: Kontakt stimmt einmal beim Onboarding zu, kann jederzeit widerrufen. Ohne Einwilligung kann die Kerndienstleistung nicht in vollem Umfang erbracht werden (wird dem Kontakt transparent gemacht).
+4. **Per-User-Settings fuer Erinnerungen** — Jeder User entscheidet selbst, ob interne Push-Erinnerungen und KI-Agenda-Vorbereitung laufen sollen. Kein system-weites Nerven.
+5. **EU-only Datenhaltung** — Hetzner (DE) fuer Jitsi/Jibri/Recordings, OpenAI US-Region fuer Whisper akzeptabel (DEC-019), Bedrock Frankfurt fuer Summary-LLM.
+
+## V4.1 Features (3 Features)
+
+### FEAT-404 — Call Intelligence (Jitsi + Jibri + Whisper + Summary)
+
+**Zweck:** Browser-basierte Video-Meetings mit automatischer Aufzeichnung, Transkription und KI-Summary.
+
+**Architektur:**
+- Self-hosted Jitsi Meet auf Hetzner (shared mit Blueprint spaeter)
+- Jibri fuer Recording (Browser-Session-Aufzeichnung, Audio + Video)
+- Whisper-Adapter-Service (OpenAI API in V4.1, Azure/Self-hosted spaeter)
+- Bedrock Claude Sonnet 4 fuer Summary-Generierung (gleicher Service-Layer wie V3/V4)
+- Aufzeichnungs-Artefakte werden in Supabase Storage (EU) abgelegt
+
+**Acceptance Criteria:**
+1. Meeting kann aus Deal-Workspace und Mein Tag als Jitsi-Raum gestartet werden
+2. Jibri zeichnet Meeting auf (nach bestaetigter Einwilligung aller Teilnehmer, siehe FEAT-411)
+3. Aufzeichnung wird nach Meeting-Ende an Whisper-Adapter-Service geschickt
+4. Transkript wird im `meetings.transcript` Feld gespeichert
+5. Bedrock erzeugt strukturierten Summary: Outcome, Decisions, Action-Items, Next-Step
+6. Summary wird als Meeting-Activity in Timeline geschrieben (nicht direkt in Deal-Felder — das ist V4.3)
+7. Transkript + Summary sind im Deal-Workspace sichtbar und editierbar
+8. Fehler-Handling: Wenn Transkription oder Summary scheitert, bleibt die Aufzeichnung erhalten und wird mit Fehler-Status markiert
+
+**Nicht V4.1:**
+- Telefon-Integration via SIP/PSTN (BL-206, spaeter)
+- Automatische Deal-Status-Updates aus Summary (V4.3 Insight Review Queue)
+- Wissensbasis-Integration, Cross-Source-Suche (V4.2)
+
+### FEAT-409 — Meeting-Erinnerungen (extern + intern + KI-Agenda)
+
+**Zweck:** Externe Teilnehmer bekommen Kalendereintrag und Erinnerung, User bekommt Vorbereitungshilfe.
+
+**Drei Komponenten:**
+
+**A) Externe Erinnerung an Teilnehmer**
+- Bei Meeting-Erstellung: Einladungs-E-Mail mit .ics-Attachment (CalDAV-kompatibel)
+- X Stunden vor Meeting (konfigurierbar, Default 24h + 2h): Erinnerungs-E-Mail mit Meeting-Link
+- Laeuft automatisch, keine Freigabe noetig (eigene Termine, kein Kunden-Nachfass)
+
+**B) Interne Erinnerung an User**
+- Push/E-Mail X Minuten vor Meeting (User-Setting, Default 30 Min)
+- Inhalt: Deal-Link, letzter Kontakt, offene Action-Items
+- Per User umschaltbar: an/aus
+
+**C) KI-Agenda-Vorbereitung (optional)**
+- Vor Meeting generiert Bedrock aus Deal-Historie eine strukturierte Vorbereitung: letzte Kommunikation, offene Punkte, Entscheider am Tisch, Vorschlag fuer Meeting-Ziel
+- Per User umschaltbar: Automatisch vor jedem Meeting / Nur on-click / Aus
+- Kosten-bewusst (Bedrock-Call nur wenn aktiviert)
+- Output ist User-intern, NICHT an Kunden
+
+**Acceptance Criteria:**
+1. Externe Meeting-Einladung enthaelt .ics-Attachment, laedt in Google/Outlook/Apple-Kalender
+2. Erinnerungs-Mail geht X Stunden vor Meeting automatisch raus
+3. Interne Push-Benachrichtigung kommt rechtzeitig an, wenn User sie aktiviert hat
+4. KI-Agenda wird bei Aktivierung mit Deal-Kontext korrekt befuellt
+5. Pro-User-Settings sind in Settings-Bereich konfigurierbar
+6. Kein Meeting-Reminder verlaesst das System ohne Meeting-Link und Zeitangabe
+
+**Nicht V4.1:**
+- SMS-Erinnerungen
+- Vorlagen-Editor fuer Erinnerungs-E-Mails (fester Template-Satz in V4.1)
+- KI-Nachbereitung (das ist FEAT-404 Summary)
+
+### FEAT-411 — DSGVO-Einwilligungsflow fuer Meeting-Aufzeichnung
+
+**Zweck:** Einmalige, widerrufbare Einwilligung beim Onboarding eines neuen Kontakts — nicht vor jedem Meeting.
+
+**Ablauf:**
+1. Neuer Kontakt wird angelegt (manuell oder per IMAP erkannt)
+2. Vor erstem bedeutsamen Kontakt: System schickt Einwilligungs-E-Mail mit Erklaerung
+3. E-Mail erklaert transparent: KI-gestuetzte Verarbeitung, Transkription von Meetings und Calls, EU-Datenhaltung, DSGVO-Rechte
+4. Kontakt kann per Link zustimmen oder ablehnen
+5. Status wird am Kontakt gespeichert: `consent_status` (pending / granted / revoked / declined), `consent_date`, `consent_source`
+6. Bei granted: Aufzeichnung ist ab naechstem Meeting automatisch aktiv
+7. Widerruf jederzeit: Kontakt hat Link in Einwilligungs-Mail, User kann am Kontakt manuell revoken
+8. Transparenz: Wenn consent_status != granted, werden Meetings nicht aufgezeichnet und User sieht Hinweis in Meeting-Vorbereitung
+
+**Acceptance Criteria:**
+1. Kontakte haben `consent_status`, `consent_date`, `consent_source` Felder
+2. Einwilligungs-Mail-Template existiert und ist DSGVO-konform formuliert (Mustertext)
+3. Tokenisierter Zustimmungs-Link fuehrt zu einfacher Public-Page (granted/declined)
+4. Widerruf ist jederzeit moeglich (User in UI, Kontakt per Link)
+5. FEAT-404 Recording startet nur, wenn alle Teilnehmer `consent_status = granted` haben
+6. Wenn Einwilligung fehlt: klare UI-Meldung "Aufzeichnung nicht moeglich — Einwilligung fehlt fuer X"
+7. Audit-Trail: jede Consent-Aenderung wird geloggt (wer, wann, wie)
+
+**Nicht V4.1:**
+- Vollstaendige Compliance-Dokumentation (separat via `/compliance` Skill)
+- DPA (Data Processing Agreements) Management
+- Mehrere Consent-Kategorien (V4.1 kennt nur "Meeting-Aufzeichnung" als Kategorie)
+
+## V4.1 Scope — Zusammenfassung
+
+### In Scope
+- 3 Features (FEAT-404, FEAT-409, FEAT-411)
+- Neue Infrastruktur: Jitsi + Jibri Self-Hosted auf Hetzner (shared-ready)
+- Neuer Service-Layer: Whisper-Adapter (OpenAI jetzt, tauschbar)
+- Schema-Erweiterung: `contacts` um consent-Felder, evtl. neue `consents`-Tabelle (Detail in /architecture)
+- Per-User-Settings fuer Erinnerungen und KI-Agenda
+- DSGVO-Einwilligungs-Templates (E-Mail + Public-Page)
+
+### Out of Scope (V4.2)
+- FEAT-401: Wissensbasis Cross-Source (Meetings + E-Mails + Dokumente + Deal-Daten in einem Voice-Deal-Chat durchsuchbar)
+
+### Out of Scope (V4.3)
+- FEAT-402: Insight-Review-Queue (nur schreibende KI-Aenderungen an Deal/Kontakt-Properties durch Queue)
+
+### Out of Scope (V4.x+)
+- Telefon-Integration via SIP/PSTN (Jigasi, BL-206)
+- SMS-Meeting-Erinnerungen
+- Multi-Tenant Jitsi-Setup fuer Kunden-Instanzen (Shared-Instance jetzt, Multi-Tenant wenn mehrere Kunden)
+- Azure OpenAI Migration (Adapter-Pattern vorhanden, Migration separater Slice wenn Account da ist)
+
+## V4.1 Constraints
+
+- **Adapter-Pattern-Pflicht** — Whisper-Zugriff MUSS durch Adapter-Layer laufen. Kein direkter OpenAI-SDK-Aufruf aus Business-Code.
+- **Einwilligung vor Aufzeichnung** — FEAT-404 darf Recording nicht starten ohne geprueftes consent_status.
+- **EU-only fuer Recording-Artefakte** — Meeting-Aufzeichnungen landen in Hetzner/Supabase Storage EU, nie in US.
+- **Per-User-Settings Default: Opt-Out fuer Push, Opt-In fuer KI-Agenda** — nicht alle nerven, aber Erinnerung ist ueblich.
+- **Bedrock-Kosten-Bewusstsein** — KI-Agenda-Vorbereitung nur wenn User das aktiviert hat.
+
+## V4.1 Risks & Assumptions
+
+- **Risk:** Jitsi Self-hosting ist infrastrukturell anspruchsvoller als Cal.com (TURN/STUN-Server, UDP-Ports). Architektur-Slice muss Infra-Komplexitaet explizit planen.
+- **Risk:** Jibri Recording-Latenz und Stabilitaet bei langen Meetings. Testen mit 60+ Minuten Meetings erforderlich.
+- **Risk:** Einwilligungs-Ablehnung durch Kontakte kann Kerndienstleistung einschraenken. Mitigation: transparente Kommunikation im Einwilligungs-Mail-Template.
+- **Assumption:** OpenAI Whisper-Qualitaet reicht fuer deutschsprachige Business-Meetings (bisher in Blueprint und E-Mail-Transkription bestaetigt).
+- **Assumption:** Current CPX32 Hetzner kann Jitsi fuer den Eigentuemer + 1-2 parallele Meetings hosten. Sizing-Review in /architecture.
+
+## V4.1 Success Criteria
+
+V4.1 ist erfolgreich wenn:
+1. Eigentuemer kann ein Meeting aus dem Deal-Workspace als Jitsi-Raum starten
+2. Meeting wird automatisch aufgezeichnet (nach geprueftem Consent aller Teilnehmer)
+3. Nach Meeting-Ende liegt innerhalb von <10 Minuten ein Transkript + Summary als Meeting-Activity vor
+4. Externe Teilnehmer bekommen automatisch Einladung mit .ics und Reminder-Mail vor dem Meeting
+5. User-Setting "interne Push-Erinnerung" und "KI-Agenda" funktioniert per User individuell
+6. Keine Meeting-Aufzeichnung erfolgt ohne dokumentierte Einwilligung
+7. DSGVO-Einwilligungsflow ist einmalig, Widerruf ist jederzeit moeglich
+8. Whisper-Adapter ist so gebaut, dass Umstieg auf Azure/Self-hosted ohne Feature-Rewrite moeglich ist
+
+## V4.1 Open Questions (fuer /architecture)
+
+- Jitsi Sizing: Aktueller CPX32 oder dedizierter Jitsi-Server?
+- Jibri Recording-Format: WebM vs. MP4 (Jibri-Default ist MP4, aber groesser)
+- Storage-Retention: Wie lange bleiben Aufzeichnungen in Supabase Storage? 30 Tage / 90 Tage / unbefristet?
+- Einwilligungs-Mail: via SMTP vorhandener Mail-Infrastruktur oder separater Versand-Weg?
+- Whisper-Adapter-Interface: REST-Proxy oder Library-Abstraktion im Next.js-Code?
+- FEAT-411 Spezialfall: Was passiert bei Meetings mit Teilnehmern, die noch nie Kontakte waren (ad-hoc Anrufe aus E-Mail-Faden)?
+
+---
+
+# V4.2 — Wissensbasis (planned)
+
+## V4.2 Purpose
+
+V4.2 baut die Cross-Source-Wissensbasis: Meeting-Summaries (aus V4.1), E-Mail-Inhalte (aus V4 IMAP), Deal-Daten, Kontakt-Historie und hochgeladene Dokumente werden in einer durchsuchbaren Struktur zusammengefuehrt. Abfrage per natuerlicher Sprache (Text + Voice) aus Deal-Workspace ("Hat Kunde X die Vollmacht unterschrieben?") — wie im KI-Analyse-Cockpit-Paradigma, aber Deal-kontextspezifisch.
+
+V4.2 setzt FEAT-401 um.
+
+## V4.2 Scope-Prinzip
+
+Wenn V4.2 es nicht schafft, alle relevanten Quellen durchsuchbar zu machen, dann ist V4.2 nicht fertig. Kein Halbzeug — entweder Cross-Source vollstaendig oder verschieben.
+
+Detail-Requirements werden geschrieben, sobald V4.1 stabil ist.
+
+---
+
+# V4.3 — Insight Governance (planned)
+
+## V4.3 Purpose
+
+V4.3 fuehrt die Insight-Review-Queue ein: Alle schreibenden KI-Aenderungen an Deal/Kontakt-Properties (Status, Werte, Tags, Rollen) landen in einer Queue. Mensch reviewt, genehmigt, lehnt ab. Informative KI-Ausgaben (Timeline-Summaries, Insights) bleiben direkt sichtbar, aber klar als KI-generiert markiert und editierbar.
+
+V4.3 setzt FEAT-402 um.
+
+## V4.3 Scope-Prinzip
+
+V4.3 wird erst nach V4.1 + V4.2 sinnvoll, weil erst dann genug KI-basierte Schreib-Operationen entstehen, die eine Queue rechtfertigen. Heute (V4) gehen die meisten KI-Aktionen bereits durch Freigabe (Wiedervorlagen).
+
+Detail-Requirements werden geschrieben, sobald V4.2 stabil ist.
