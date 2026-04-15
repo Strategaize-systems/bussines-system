@@ -7,19 +7,19 @@
 - Backlog-Mapping: BL-344 (primaer)
 
 ## Goal
-MIG-011 vollstaendig anwenden (contacts+6, meetings+11, user_settings neu, activities.ai_generated) und den DSGVO-Einwilligungsflow inkl. tokenisierter Public-Page `/consent/{token}`, Consent-Mail-Template, Kontakt-Workspace-UI, Audit-Log-Erweiterung und Rate-Limit/IP-Hash-Schutz (DEC-042) implementieren.
+MIG-011 vollstaendig anwenden (contacts+7 inkl. opt_out_communication, meetings+11, user_settings neu, activities.ai_generated) und den DSGVO-Einwilligungsflow inkl. tokenisierter Public-Page `/consent/{token}`, Consent-Mail-Template, Kontakt-Workspace-UI, Audit-Log-Erweiterung und Rate-Limit/IP-Hash-Schutz (DEC-042) implementieren. Schliesst ISSUE-032 (Opt-out-Flag fuer FEAT-409 AC-5).
 
 ## Scope
-- SQL-Migration MIG-011 (alle additiven Felder + user_settings + RLS + Grants + Indizes)
+- SQL-Migration MIG-011 (alle additiven Felder inkl. `contacts.opt_out_communication BOOLEAN DEFAULT false` + user_settings + RLS + Grants + Indizes)
 - TypeScript-Types (Contact, Meeting, UserSettings, Activity) aktualisieren
-- Server Actions: `createConsentRequest`, `grantConsent`, `declineConsent`, `revokeConsent` (public), `revokeConsentManual` (authed)
+- Server Actions: `createConsentRequest`, `grantConsent`, `declineConsent`, `revokeConsent` (public), `revokeConsentManual` (authed), `setOptOutCommunication` (authed)
 - Public Routes: `app/consent/[token]/page.tsx`, `app/consent/[token]/revoke/page.tsx`, Bestaetigungs-Page `app/consent/[token]/confirmed/page.tsx`
 - `middleware.ts`: Whitelist fuer `/consent/*`
 - Rate-Limiter-Helper (`/lib/security/rate-limit.ts`, In-Memory, 100/IP/Stunde)
 - IP-Hash-Helper (`/lib/security/ip-hash.ts`) + `CONSENT_DAILY_SALT` ENV
 - Consent-Mail-Template `consent-request-de` (HTML + Plain)
-- Kontakt-Workspace UI: Consent-Status-Badge + Datum + Quelle + Buttons "Einwilligung anfragen" / "Widerrufen"
-- Audit-Log-Action-Typen (`consent_requested`, `consent_granted`, `consent_declined`, `consent_revoked`)
+- Kontakt-Workspace UI: Consent-Status-Badge + Datum + Quelle + Buttons "Einwilligung anfragen" / "Widerrufen" + Opt-out-Toggle (Kommunikation unterdruecken)
+- Audit-Log-Action-Typen (`consent_requested`, `consent_granted`, `consent_declined`, `consent_revoked`, `communication_opt_out_changed`)
 - Cron-Route `POST /api/cron/pending-consent-renewal` (Hinweis bei Pending >7 Tage, taeglich)
 
 ## Out of Scope
@@ -31,10 +31,10 @@ MIG-011 vollstaendig anwenden (contacts+6, meetings+11, user_settings neu, activ
 ## Micro-Tasks
 
 ### MT-1: SQL-Migration MIG-011
-- Goal: Vollstaendige additive Schema-Migration erstellen (alle 4 Tabellenaenderungen + Indizes + RLS user_settings)
+- Goal: Vollstaendige additive Schema-Migration erstellen (alle 4 Tabellenaenderungen + Indizes + RLS user_settings). `contacts.opt_out_communication BOOLEAN DEFAULT false` ist Teil dieser Migration (schliesst ISSUE-032).
 - Files: `cockpit/sql/11_v41_migration.sql`
 - Expected behavior: SQL laeuft fehlerfrei auf Hetzner PostgreSQL via `docker exec ... psql -U postgres` (siehe sql-migration-hetzner.md)
-- Verification: SQL-Dry-Run lokal mit Supabase CLI, manuelle Ausfuehrung auf Hetzner, `\d contacts`, `\d meetings`, `\d user_settings`, `\d activities`
+- Verification: SQL-Dry-Run lokal mit Supabase CLI, manuelle Ausfuehrung auf Hetzner, `\d contacts` zeigt 7 neue Felder inkl. `opt_out_communication`, `\d meetings`, `\d user_settings`, `\d activities`
 - Dependencies: none
 
 ### MT-2: TypeScript-Types
@@ -73,10 +73,10 @@ MIG-011 vollstaendig anwenden (contacts+6, meetings+11, user_settings neu, activ
 - Dependencies: MT-4
 
 ### MT-7: Kontakt-Workspace UI
-- Goal: Consent-Status in Kontakt-Detail sichtbar + Aktions-Buttons
-- Files: `cockpit/src/components/contacts/ConsentBadge.tsx`, `cockpit/src/components/contacts/ConsentActions.tsx`, Integration in `cockpit/src/app/contacts/[id]/page.tsx`
-- Expected behavior: Badge zeigt Status mit Farb-Coding, Datum + Quelle, Buttons "Anfragen"/"Widerrufen" je nach Status
-- Verification: Klick-Test durch alle Status-Uebergaenge, Reminder-Hinweis bei Pending >7d sichtbar
+- Goal: Consent-Status + Kommunikations-Opt-out im Kontakt-Detail sichtbar + Aktions-Buttons
+- Files: `cockpit/src/components/contacts/ConsentBadge.tsx`, `cockpit/src/components/contacts/ConsentActions.tsx`, `cockpit/src/components/contacts/OptOutToggle.tsx`, Integration in `cockpit/src/app/contacts/[id]/page.tsx`
+- Expected behavior: Badge zeigt Consent-Status mit Farb-Coding, Datum + Quelle, Buttons "Anfragen"/"Widerrufen"; separater Toggle "Keine Kommunikation senden" (schreibt `opt_out_communication`, Audit-Log `communication_opt_out_changed`)
+- Verification: Klick-Test durch alle Consent-Status-Uebergaenge, Reminder-Hinweis bei Pending >7d sichtbar, Opt-out-Toggle aktiviert/deaktiviert und Reminder-Cron (SLC-417) respektiert das Flag
 - Dependencies: MT-4
 
 ### MT-8: Cron `pending-consent-renewal`
@@ -87,15 +87,16 @@ MIG-011 vollstaendig anwenden (contacts+6, meetings+11, user_settings neu, activ
 - Dependencies: MT-1
 
 ## Acceptance Criteria
-1. MIG-011 komplett auf Hetzner angewendet (`\d` zeigt alle neuen Felder, `user_settings` existiert, RLS aktiv)
+1. MIG-011 komplett auf Hetzner angewendet (`\d` zeigt alle neuen Felder inkl. `contacts.opt_out_communication`, `user_settings` existiert, RLS aktiv)
 2. `/consent/{token}` ist oeffentlich erreichbar ohne Login, Middleware-Whitelist aktiv
 3. Token-Generierung kryptografisch (32-byte hex), Expiry nach 30 Tagen wirkt
 4. Grant/Decline/Revoke-Server-Actions schreiben `audit_log`-Eintrag mit `ip_hash` + `user_agent_hash`
 5. Consent-Mail-Versand funktioniert (IONOS-SMTP), Link fuehrt zur Public-Page
 6. Kontakt-Workspace zeigt Status-Badge + Aktions-Buttons, alle 4 Status-Uebergaenge funktional
-7. Rate-Limit 100/IP/Stunde greift (getestet mit curl-Schleife)
-8. Bestand-Kontakte haben nach Migration `consent_status = 'pending'`
-9. Pending-Renewal-Cron laeuft und loggt Count korrekt
+7. Opt-out-Toggle am Kontakt setzt `opt_out_communication`, Audit-Log-Eintrag `communication_opt_out_changed` vorhanden
+8. Rate-Limit 100/IP/Stunde greift (getestet mit curl-Schleife)
+9. Bestand-Kontakte haben nach Migration `consent_status = 'pending'` und `opt_out_communication = false`
+10. Pending-Renewal-Cron laeuft und loggt Count korrekt
 
 ## Dependencies
 Keine. Additiver Schema-Slice, blockiert aber SLC-414 und SLC-416 (Consent-Check vor Recording).

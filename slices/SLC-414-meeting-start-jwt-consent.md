@@ -7,18 +7,19 @@
 - Backlog-Mapping: BL-201 (Teil), BL-205 (Teil)
 
 ## Goal
-Brueckenschlag zwischen Deal-Workspace und Jitsi: User klickt "Meeting starten" → Server erzeugt Meeting-Row, generiert `jitsi_room_name`, prueft Consent aller Teilnehmer, baut JWT fuer Jitsi (tenant=business), sendet Einladungen + .ics an externe Teilnehmer, redirect in den Jitsi-Raum. Recording wird automatisch getriggert, wenn alle Teilnehmer `consent_status='granted'` haben.
+Brueckenschlag zwischen Deal-Workspace und Jitsi: User klickt "Meeting starten" → Server erzeugt Meeting-Row, generiert `jitsi_room_name`, prueft Consent aller Teilnehmer, baut **pro Teilnehmer einen JWT** fuer Jitsi (Host als `moderator=true`, Externe als `moderator=false`), sendet Einladungen mit individuellem JWT-Link an externe Teilnehmer, redirect in den Jitsi-Raum. Recording wird automatisch getriggert, wenn alle Teilnehmer `consent_status='granted'` haben. Schliesst ISSUE-031 (JWT-fuer-Externe).
 
 ## Scope
 - `POST /api/meetings/[id]/start` Route
 - Server Action `startMeeting(dealId, contactIds[])` fuer Deal-Workspace-Button
-- JWT-Builder via `jsonwebtoken` (HS256, `JITSI_JWT_APP_SECRET`)
+- JWT-Builder via `jsonwebtoken` (HS256, `JITSI_JWT_APP_SECRET`), unterstuetzt 2 Varianten: Moderator-JWT (Host, `moderator=true`) und Participant-JWT (extern, `moderator=false`)
+- Pro Teilnehmer ein individueller JWT mit `sub=contactId|hostUserId`, `exp=meeting_scheduled_at + 6h` (Tolerance fuer Late-Join)
 - Consent-Check-Helper `checkConsentStatus(contactIds)` → `{ allGranted: boolean, missing: Contact[] }`
 - Ad-hoc-Auto-Contact-Logik (DEC-044): unbekannte E-Mails → `INSERT contacts ... consent_status='pending', consent_source='ad_hoc'`
 - Deal-Workspace UI: Button "Meeting starten" + Modal (Teilnehmer-Auswahl + Start-Button) + Banner "Aufzeichnung deaktiviert" bei fehlendem Consent
 - `meetings.jitsi_room_name` wird auf `deal-{dealId}-{ts}` gesetzt
-- Einladungs-E-Mails mit Meeting-Link (kein .ics hier — das kommt in SLC-417 zusammen mit Reminder; hier reicht simple Invite)
-- Audit-Log-Eintrag `meeting_started` (User als actor)
+- Einladungs-E-Mails mit individuellem Meeting-Link `meet.strategaizetransition.com/{room}?jwt={participant-jwt}` (kein .ics hier — das kommt in SLC-417 zusammen mit Reminder; hier reicht simple Invite mit JWT-Link)
+- Audit-Log-Eintrag `meeting_started` (User als actor) + `jwt_issued` pro ausgegebenem Token
 
 ## Out of Scope
 - .ics-Attachment (SLC-417)
@@ -30,11 +31,11 @@ Brueckenschlag zwischen Deal-Workspace und Jitsi: User klickt "Meeting starten" 
 
 ## Micro-Tasks
 
-### MT-1: JWT-Builder + ENV
-- Goal: Modul `/lib/meetings/jitsi-jwt.ts` mit `buildJitsiJwt(params)`
+### MT-1: JWT-Builder + ENV (Moderator + Participant)
+- Goal: Modul `/lib/meetings/jitsi-jwt.ts` mit 2 Funktionen: `buildModeratorJwt(userId, room)` und `buildParticipantJwt(contactId, room, displayName, meetingExpiresAt)`
 - Files: `cockpit/src/lib/meetings/jitsi-jwt.ts`, `cockpit/package.json` (jsonwebtoken ^9 falls fehlt)
-- Expected behavior: Signiert JWT mit `JITSI_JWT_APP_SECRET`, Claims `{aud, iss, sub, room, moderator, exp}`
-- Verification: Unit-Test mit festem Secret liefert erwartbaren Token, Decode klappt
+- Expected behavior: Beide signieren mit `JITSI_JWT_APP_SECRET` (HS256). Claims: `{aud=JITSI_JWT_APP_ID, iss=JITSI_JWT_APP_ID, sub=JITSI_XMPP_DOMAIN, room, context: {user: {id, name, email?}}, moderator, exp}`. Moderator-JWT: `moderator=true`. Participant-JWT: `moderator=false`, `exp=scheduled_at + 6h`.
+- Verification: Unit-Test prueft beide Varianten, Decode zeigt erwartete Claims, moderator-Unterscheidung korrekt, ungueltiger Token wird abgelehnt
 - Dependencies: none
 
 ### MT-2: Consent-Check-Helper
@@ -54,15 +55,15 @@ Brueckenschlag zwischen Deal-Workspace und Jitsi: User klickt "Meeting starten" 
 ### MT-4: API-Route + Server Action
 - Goal: `POST /api/meetings/[id]/start` + `startMeeting` Server Action
 - Files: `cockpit/src/app/api/meetings/[id]/start/route.ts`, `cockpit/src/app/actions/meetings.ts`
-- Expected behavior: Legt meetings-Row an (falls noch nicht), `jitsi_room_name` gesetzt, Consent gecheckt, JWT gebaut, Einladungen versendet, Redirect-URL zurueck
-- Verification: Postman/curl-Test, Response enthaelt `redirect_url` + `recording_enabled` Flag
+- Expected behavior: Legt meetings-Row an (falls noch nicht), `jitsi_room_name` gesetzt, Consent gecheckt, **pro Teilnehmer JWT erzeugt** (Host = Moderator-JWT, Externe = Participant-JWT), Einladungen mit individuellem `?jwt=<token>`-Link versendet, Host-Redirect-URL mit Moderator-JWT zurueckgegeben, Audit-Log-Eintrag `jwt_issued` pro Token
+- Verification: Postman/curl-Test, Response enthaelt `host_redirect_url` (mit Moderator-JWT) + `recording_enabled` Flag; Einladungs-Mails im Test-Postfach enthalten jeweils individuellen JWT-Link
 - Dependencies: MT-1, MT-2, MT-3
 
-### MT-5: Einfache Einladungs-Mail (ohne .ics)
-- Goal: SMTP-Mail an externe Teilnehmer mit Meeting-Link
+### MT-5: Einladungs-Mail mit individuellem JWT-Link (ohne .ics)
+- Goal: SMTP-Mail an externe Teilnehmer mit personalisiertem Jitsi-Link (`?jwt=<participant-jwt>`)
 - Files: `cockpit/src/lib/email/templates/meeting-invite-basic-de.ts`, `cockpit/src/lib/meetings/send-invite.ts`
-- Expected behavior: HTML + Plain, enthaelt Jitsi-Link (ohne JWT im Link — Token in URL vom Empfaenger nicht erwartbar, kommt separater Flow; V4.1: nur internal host generiert JWT, externe klicken Standard-Jitsi-Link und sehen Meeting-ID)
-- Verification: Test-Versand an eigene Adresse
+- Expected behavior: Pro externem Teilnehmer ein Participant-JWT via MT-1, eingebettet in Meeting-URL `meet.strategaizetransition.com/{room}?jwt={token}`. HTML + Plain, jeder Empfaenger erhaelt seinen eigenen Link (kein Shared-JWT). `opt_out_communication=true`-Kontakte werden nicht versendet.
+- Verification: Test-Versand an zwei verschiedene Test-Adressen, beide Links funktionieren in Jitsi, Links sind verschieden; Kontakt mit Opt-out erhaelt keine Mail
 - Dependencies: MT-4
 
 ### MT-6: Deal-Workspace UI
@@ -80,14 +81,16 @@ Brueckenschlag zwischen Deal-Workspace und Jitsi: User klickt "Meeting starten" 
 - Dependencies: MT-6
 
 ## Acceptance Criteria
-1. Klick auf "Meeting starten" im Deal-Workspace oeffnet Jitsi-Raum in neuem Tab (authentifiziert via JWT)
+1. Klick auf "Meeting starten" im Deal-Workspace oeffnet Jitsi-Raum in neuem Tab (authentifiziert via Moderator-JWT fuer Host)
 2. `jitsi_room_name` wird im Format `deal-{dealId}-{ts}` erzeugt und in `meetings` gespeichert
 3. Wenn alle Teilnehmer `consent_status='granted'`: Recording wird automatisch gestartet (Jitsi-Bot-Config)
 4. Wenn mind. ein Teilnehmer nicht `granted`: Banner "Aufzeichnung deaktiviert" mit Liste der Namen
 5. Ad-hoc-Teilnehmer (E-Mail nicht in `contacts`) werden automatisch angelegt mit `consent_source='ad_hoc'`
-6. Externe Teilnehmer erhalten E-Mail mit Meeting-Link
-7. JWT-Ablauf passend (24h z.B.), Audit-Log-Eintrag `meeting_started` vorhanden
-8. `POST /api/meetings/[id]/start` ist authentifiziert, keine Public-Route
+6. Externe Teilnehmer erhalten E-Mail mit **individuellem** Meeting-Link inkl. eigenem Participant-JWT (`moderator=false`)
+7. Jeder ausgegebene JWT generiert Audit-Log `jwt_issued`, Meeting-Start erzeugt `meeting_started`
+8. JWT-Ablauf = `scheduled_at + 6h` (Late-Join-Tolerance), abgelaufener Token wird von Jitsi abgelehnt
+9. Kontakte mit `opt_out_communication=true` erhalten keine Einladung
+10. `POST /api/meetings/[id]/start` ist authentifiziert, keine Public-Route
 
 ## Dependencies
 - SLC-411 (Consent-Schema + contacts-Felder)

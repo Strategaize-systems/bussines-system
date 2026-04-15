@@ -225,22 +225,22 @@
 - Next Action: Bei Deployment echte Werte einsetzen (SLC-011).
 
 ### ISSUE-031 — SLC-414 JWT-fuer-Externe-Teilnehmer inkonsistent zur Architecture
-- Status: open
+- Status: resolved
 - Severity: High
 - Area: Planning / V4.1 / FEAT-404
 - Summary: ARCHITECTURE.md zeigt Redirect mit `?jwt={token}` in URL fuer externe Teilnehmer. SLC-414 MT-5 sagt explizit "ohne JWT im Link". Jitsi laeuft mit `ENABLE_AUTH=1` (SLC-412), externe ohne JWT koennen nicht in den Raum.
 - Impact: SLC-414 implementiert wuerde fuer Host funktionieren, externe Teilnehmer wuerden HTTP 401 erhalten. Meeting-Flow kaputt fuer den Hauptanwendungsfall.
 - Workaround: Vor SLC-414 Implementation klaeren. Empfehlung: Per-Recipient-JWT mit `moderator=false`, eingebettet in Einladungs-URL.
-- Next Action: SLC-414 MT-5 + MT-1 Slice-Record updaten — JWT-Generierung pro externem Teilnehmer in `send-invite.ts` integrieren, JWT-Builder in MT-1 entsprechend erweitern.
+- Next Action: Erledigt 2026-04-15 — SLC-414 MT-1 bietet jetzt 2 JWT-Varianten (Moderator + Participant), MT-4 erzeugt pro Teilnehmer individuellen JWT, MT-5 baut Einladungs-URL mit `?jwt=<participant-jwt>`. AC-6 + AC-7 + AC-8 ergaenzt. Verifikation in SLC-414 Implementation.
 
 ### ISSUE-032 — contacts.opt_out_communication-Flag fehlt fuer FEAT-409 AC-5 Respect-Logik
-- Status: open
+- Status: resolved
 - Severity: Medium
 - Area: Planning / V4.1 / FEAT-409
 - Summary: FEAT-409 AC-5 verlangt Respect-Flag am Kontakt, das verhindert Reminder-Versand bei Opt-out. SQL-Migrations (V1-V4) zeigen kein solches Feld. SLC-411 MT-1 (MIG-011) fuegt es nicht hinzu. SLC-417 erwaehnt es nur als Scope-Notiz, ohne Schema-Zuordnung.
 - Impact: SLC-417 implementierbar, aber ohne Opt-out-Check verletzt es spaeter FEAT-409 AC-5. Zweite Migration noetig wenn nicht in MIG-011 mit aufgenommen.
 - Workaround: Spalte `opt_out_communication BOOLEAN DEFAULT false` zu MIG-011 (SLC-411 MT-1) hinzufuegen + UI-Toggle in SLC-411 MT-7.
-- Next Action: SLC-411-Slice-Datei aktualisieren (MT-1 SQL + MT-7 UI). Alternativ: AC-5 nach V4.2 verschieben mit explizitem Hinweis in SLC-417.
+- Next Action: Erledigt 2026-04-15 — SLC-411 MT-1 (MIG-011) enthaelt jetzt `contacts.opt_out_communication BOOLEAN DEFAULT false`. SLC-411 MT-7 UI zeigt Opt-out-Toggle. SLC-414 MT-5 respektiert Flag beim Einladungs-Versand. Neuer AC-7 + AC-9 in SLC-411. Verifikation in SLC-411 Implementation.
 
 ### ISSUE-030 — Fremde Onboarding-Artefakte in Business-DB (Hostname-Kollision)
 - Status: resolved

@@ -14,9 +14,9 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - Current Phase: V4.1 Slice-Planning done
 
 ## Immediate Next Steps
-1. SLC-411 Consent-Schema + Public-Page implementieren (Blocker-Schema MIG-011 + Public-Page + Kontakt-Workspace-UI) — startet mit `/backend` fuer Migration + Server Actions
+1. SLC-411 Consent-Schema + Public-Page implementieren (MIG-011 inkl. `opt_out_communication` + Public-Page + Kontakt-Workspace-UI mit Opt-out-Toggle) — startet mit `/backend` fuer Migration + Server Actions
 2. Vor SLC-412: Pre-Flight-Checks erledigen (Hetzner-Firewall 10000/udp, Coolify-Subdomain `meet.strategaizetransition.com`, VAPID-Keys generieren, Supabase-Bucket `meeting-recordings` anlegen)
-3. Implementierungs-Reihenfolge: SLC-411 → SLC-412 → SLC-413 → SLC-414 → SLC-415 → SLC-416 → SLC-417 → SLC-418 → SLC-419 (mit `/qa` nach jedem Slice)
+3. Implementierungs-Reihenfolge: SLC-411 → SLC-412 → SLC-413 → SLC-414 (mit Per-Recipient-JWT) → SLC-415 → SLC-416 → SLC-417 → SLC-418 (mit FEAT-409-AC-7-Body-Builder) → SLC-419 (mit `/qa` nach jedem Slice)
 4. V4-Nachzug parallel: Cal.com Admin-Password staerken (15+ Zeichen + 2FA), Live-Testbuchung — kein V4.1-Blocker
 
 ## Active Scope
@@ -31,8 +31,7 @@ Kern-Design-Entscheidungen: Whisper-Adapter-Pattern (DEC-035), Jitsi shared-infr
 **V4.3 — Insight Governance (planned):** FEAT-402 Queue (nach V4.2 stabil).
 
 ## Blockers
-- ISSUE-031 (High): SLC-414 JWT-fuer-Externe inkonsistent zur Architecture — SLC-414-Record vor Implementation aktualisieren (Per-Recipient-JWT mit moderator=false in Einladungs-URL einbetten).
-- ISSUE-032 (Medium): contacts.opt_out_communication-Flag fehlt fuer FEAT-409 AC-5 — SLC-411 MT-1 + MT-7 erweitern, sonst zweite Migration noetig.
+- aktuell keine (ISSUE-031 + ISSUE-032 durch Slice-Record-Updates 2026-04-15 resolved)
 
 ## Last Stable Version
 - V4 — 2026-04-14 — deployed auf Hetzner (KI-Gatekeeper + Externe Integrationen, 9/9 Slices, REL-009)

@@ -43,11 +43,11 @@ Browser-Push-Benachrichtigungen fuer interne Meeting-Erinnerungen einfuehren: Us
 - Verification: `npm ls web-push`
 - Dependencies: none
 
-### MT-3: Service Worker
-- Goal: `/public/sw.js` mit `push`- und `notificationclick`-Handlern
-- Files: `cockpit/public/sw.js`, `cockpit/public/push-icon.png`
-- Expected behavior: Zeigt Notification mit Titel + Body, Klick navigiert zu Meeting-URL
-- Verification: Browser-DevTools Application-Tab zeigt aktiven Service Worker, Test-Push triggert Notification
+### MT-3: Service Worker + Push-Body-Builder
+- Goal: `/public/sw.js` mit `push`- und `notificationclick`-Handlern + server-seitiger Body-Builder fuer FEAT-409 AC-7
+- Files: `cockpit/public/sw.js`, `cockpit/public/push-icon.png`, `cockpit/src/lib/push/build-reminder-body.ts`
+- Expected behavior: Service Worker zeigt Notification mit Titel + Body + Deeplink. `buildReminderBody(meeting, deal, contacts)` erzeugt kompakten Body (max ~140 Zeichen) mit 5 FEAT-409 AC-7-Feldern: Meeting-Titel (im Title), Teilnehmer-Kurzliste (z.B. "mit Max M. + 2"), letzter Kontakt-Datum ("vor 3 Tagen"), Anzahl offene Action-Items ("2 offene Aktionen"), Deal-Link (im Click-Action). Klick navigiert zu `/meetings/{id}`.
+- Verification: Browser-DevTools Application-Tab zeigt aktiven Service Worker, Test-Push zeigt Notification mit allen Feldern und passt ins Zeichenlimit, Klick oeffnet Meeting-Detail
 - Dependencies: MT-1
 
 ### MT-4: Client-Registrations-Flow
@@ -90,11 +90,12 @@ Browser-Push-Benachrichtigungen fuer interne Meeting-Erinnerungen einfuehren: Us
 2. Service Worker ist registriert und aktiv (DevTools Check)
 3. Subscription wird in `user_settings.push_subscription` gespeichert
 4. Reminder-Cron sendet Push statt SMTP wenn Subscription aktiv
-5. Notification zeigt Meeting-Titel + Deal-Link, Klick navigiert korrekt
-6. Bei 410-Gone-Response: Subscription wird automatisch entfernt
-7. Chrome-Desktop + Firefox-Desktop funktional getestet
-8. iOS-Hinweis "Add to Home Screen" erscheint auf iOS-Safari
-9. SMTP-Fallback funktioniert weiterhin wenn kein Push aktiv
+5. Notification enthaelt alle FEAT-409 AC-7-Felder: Meeting-Titel, Teilnehmer-Kurzliste, letzter Kontakt-Datum, Anzahl offener Action-Items, Deal-Link; Klick navigiert zu `/meetings/{id}`
+6. Body haelt Zeichenlimit ~140 ein (kompakte Formatierung)
+7. Bei 410-Gone-Response: Subscription wird automatisch entfernt
+8. Chrome-Desktop + Firefox-Desktop funktional getestet
+9. iOS-Hinweis "Add to Home Screen" erscheint auf iOS-Safari
+10. SMTP-Fallback funktioniert weiterhin wenn kein Push aktiv
 
 ## Dependencies
 - SLC-417 (user_settings + Reminder-Cron existieren)
