@@ -80,16 +80,16 @@
 | FEAT-335 | Funnel-Report (Conversion pro Stage) | deployed | 2026-04-11 |
 | FEAT-336 | Win/Loss-Analyse Dashboard | deployed | 2026-04-11 |
 
-## V4 Features (KI-Gatekeeper + Externe Integrationen — done)
+## V4 Features (KI-Gatekeeper + Externe Integrationen — released)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-403 | Management-Cockpit LLM-Ausbau | done | [Spec](FEAT-403-management-cockpit-llm.md) | 2026-04-09 |
-| FEAT-405 | IMAP Mail-Integration | done | [Spec](FEAT-405-imap-mail-integration.md) | 2026-04-09 |
-| FEAT-406 | Cal.com-Sync + Gesamtkalender | done | [Spec](FEAT-406-calcom-gesamtkalender.md) | 2026-04-09 |
-| FEAT-407 | KI-Wiedervorlagen mit Freigabe | done | [Spec](FEAT-407-ki-wiedervorlagen.md) | 2026-04-11 |
-| FEAT-408 | KI-Gatekeeper (E-Mail-Analyse) | done | [Spec](FEAT-408-ki-gatekeeper.md) | 2026-04-11 |
-| FEAT-410 | KI-Kontextanalyse (Auto-Replies) | done | [Spec](FEAT-410-ki-kontextanalyse.md) | 2026-04-11 |
+| FEAT-403 | Management-Cockpit LLM-Ausbau | deployed | [Spec](FEAT-403-management-cockpit-llm.md) | 2026-04-09 |
+| FEAT-405 | IMAP Mail-Integration | deployed | [Spec](FEAT-405-imap-mail-integration.md) | 2026-04-09 |
+| FEAT-406 | Cal.com-Sync + Gesamtkalender | deployed | [Spec](FEAT-406-calcom-gesamtkalender.md) | 2026-04-09 |
+| FEAT-407 | KI-Wiedervorlagen mit Freigabe | deployed | [Spec](FEAT-407-ki-wiedervorlagen.md) | 2026-04-11 |
+| FEAT-408 | KI-Gatekeeper (E-Mail-Analyse) | deployed | [Spec](FEAT-408-ki-gatekeeper.md) | 2026-04-11 |
+| FEAT-410 | KI-Kontextanalyse (Auto-Replies) | deployed | [Spec](FEAT-410-ki-kontextanalyse.md) | 2026-04-11 |
 
 ## V4.1 Features (Meeting-Intelligence + Wissensschicht — planned)
 

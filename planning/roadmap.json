@@ -52,7 +52,7 @@
     {
       "id": "v4",
       "name": "V4",
-      "status": "active",
+      "status": "released",
       "summary": "KI-Gatekeeper + Externe Integrationen: IMAP Mail-Integration, KI-Gatekeeper (E-Mail-Analyse), KI-Wiedervorlagen mit Freigabe, KI-Kontextanalyse (Auto-Replies), Cal.com-Sync + Gesamtkalender, Management-Cockpit LLM-Ausbau",
       "order": 8
     },
