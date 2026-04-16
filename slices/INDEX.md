@@ -106,7 +106,7 @@
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-411 | [Consent-Schema + Public-Page (MIG-011)](SLC-411-consent-schema-public-page.md) | FEAT-411 | planned | Blocker | 2026-04-15 |
+| SLC-411 | [Consent-Schema + Public-Page (MIG-011)](SLC-411-consent-schema-public-page.md) | FEAT-411 | done | Blocker | 2026-04-15 |
 | SLC-412 | [Jitsi+Jibri Deployment + Firewall](SLC-412-jitsi-jibri-deployment.md) | FEAT-404 | planned | Blocker | 2026-04-15 |
 | SLC-413 | [Whisper-Adapter-Layer + OpenAI-Provider](SLC-413-whisper-adapter-layer.md) | FEAT-404 | planned | High | 2026-04-15 |
 | SLC-414 | [Meeting-Start + Jitsi-JWT + Consent-Check](SLC-414-meeting-start-jwt-consent.md) | FEAT-404 | planned | High | 2026-04-15 |

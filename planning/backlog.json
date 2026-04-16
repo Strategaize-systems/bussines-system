@@ -1027,7 +1027,7 @@
       "title": "DSGVO-Einwilligungsflow: Onboarding-Mail + Public-Consent-Page + Widerruf",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V4.1",
       "description": "FEAT-411: contacts.consent_status Feld + Einwilligungs-Mail-Template + tokenisierte Public-Page (/consent/{token}) fuer granted/declined. Widerruf jederzeit per Link oder durch User. Audit-Log fuer alle Consent-Aenderungen. Rate-Limiting + IP-Hash (DSGVO-Minimierung).",
       "createdAt": "2026-04-15"

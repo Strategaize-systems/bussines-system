@@ -18,6 +18,9 @@ import { DocumentList } from "@/components/documents/document-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConsentBadge } from "@/components/contacts/consent-badge";
+import { ConsentActions } from "@/components/contacts/consent-actions";
+import { OptOutToggle } from "@/components/contacts/opt-out-toggle";
 import {
   ArrowLeft,
   Building2,
@@ -134,6 +137,21 @@ const multiplierTypeLabels: Record<string, string> = {
   makler: "Makler",
   branchenexperte: "Branchenexperte",
 };
+
+function consentSourceLabel(source: string): string {
+  switch (source) {
+    case "email_link":
+      return "per Mail-Link";
+    case "manual":
+      return "manuell erfasst";
+    case "imported":
+      return "Import";
+    case "ad_hoc":
+      return "ad-hoc";
+    default:
+      return source;
+  }
+}
 
 export default async function ContactDetailPage({
   params,
@@ -370,6 +388,44 @@ export default async function ContactDetailPage({
           </CardContent>
         </Card>
       </div>
+
+      {/* Einwilligung & Kommunikation (FEAT-411) */}
+      <Card className="overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-[#4454b8] to-[#2a9d8f]" />
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Shield className="h-4 w-4 text-[#4454b8]" />
+            Einwilligung & Kommunikation
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <ConsentBadge status={contact.consent_status} />
+            {contact.consent_date && (
+              <span className="text-muted-foreground">
+                Stand: {new Date(contact.consent_date).toLocaleDateString("de-DE")}
+              </span>
+            )}
+            {contact.consent_source && (
+              <span className="text-muted-foreground">
+                Quelle: {consentSourceLabel(contact.consent_source)}
+              </span>
+            )}
+          </div>
+          <ConsentActions
+            contactId={contact.id}
+            status={contact.consent_status}
+            hasEmail={Boolean(contact.email)}
+            requestedAt={contact.consent_requested_at}
+          />
+          <div className="pt-2 border-t">
+            <OptOutToggle
+              contactId={contact.id}
+              initial={contact.opt_out_communication}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Tags + Notes */}

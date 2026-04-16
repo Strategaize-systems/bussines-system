@@ -9,15 +9,16 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: V4.1 Slice-Planning abgeschlossen (Meeting Intelligence Basis). 9 Slices (SLC-411..SLC-419) mit Micro-Tasks, AC, QA-Fokus, Dependencies + Aufwandsschaetzung dokumentiert. Naechster Schritt: SLC-411 als erster Blocker-Slice implementieren.
-- Current Phase: V4.1 Slice-Planning done
+- High-Level State: implementing
+- Current Focus: SLC-411 implementiert (MIG-011 auf Hetzner live, Consent-Flow komplett, Public-Page + Kontakt-UI + Cron). Naechster Schritt: /qa auf SLC-411, danach Pre-Flight-Checks fuer SLC-412 (Jitsi+Jibri Deployment).
+- Current Phase: V4.1 Implementation (SLC-411 done, 8 slices remaining)
 
 ## Immediate Next Steps
-1. SLC-411 Consent-Schema + Public-Page implementieren (MIG-011 inkl. `opt_out_communication` + Public-Page + Kontakt-Workspace-UI mit Opt-out-Toggle) — startet mit `/backend` fuer Migration + Server Actions
-2. Vor SLC-412: Pre-Flight-Checks erledigen (Hetzner-Firewall 10000/udp, Coolify-Subdomain `meet.strategaizetransition.com`, VAPID-Keys generieren, Supabase-Bucket `meeting-recordings` anlegen)
-3. Implementierungs-Reihenfolge: SLC-411 → SLC-412 → SLC-413 → SLC-414 (mit Per-Recipient-JWT) → SLC-415 → SLC-416 → SLC-417 → SLC-418 (mit FEAT-409-AC-7-Body-Builder) → SLC-419 (mit `/qa` nach jedem Slice)
+1. /qa auf SLC-411 ausfuehren (Build, Type-Check, Security-Review Public-Page + Rate-Limit + Audit, Migration-Konsistenz, User-Flow-Test in Browser)
+2. Vor SLC-412: Pre-Flight-Checks erledigen (Hetzner-Firewall 10000/udp geoeffnet - DONE, Coolify-Subdomain `meet.strategaizetransition.com` - DONE, VAPID-Keys - DONE, Supabase-Bucket `meeting-recordings` - DONE)
+3. Implementierungs-Reihenfolge: SLC-412 → SLC-413 → SLC-414 (mit Per-Recipient-JWT) → SLC-415 → SLC-416 → SLC-417 → SLC-418 (mit FEAT-409-AC-7-Body-Builder) → SLC-419 (mit `/qa` nach jedem Slice)
 4. V4-Nachzug parallel: Cal.com Admin-Password staerken (15+ Zeichen + 2FA), Live-Testbuchung — kein V4.1-Blocker
+5. VAPID_SUBJECT in Coolify auf immo@bellaerts.de umstellen (steht auf nicht-existentem admin@...) — kein V4.1-Blocker
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (active, Architecture done):**
@@ -44,3 +45,5 @@ V4.1 Requirements am 2026-04-15 erstellt: PRD erweitert, 5 neue DECs (DEC-035..0
 V4.1 Architecture am 2026-04-15 erstellt: ARCHITECTURE.md um ~420 Zeilen V4.1-Block erweitert (Jitsi-Stack, Recording-Pipeline, Whisper-Adapter-Layer, DSGVO-Consent-Flow, Reminder-Pipeline, Docker-Compose-Aenderungen, Env-Vars, Sizing, Risk-Matrix). 6 neue DECs (DEC-040 Jitsi-CPX32-Sizing, DEC-041 Library-Adapter, DEC-042 /consent-URL, DEC-043 ENV-Retention, DEC-044 Ad-hoc-Kontakte, DEC-045 MP4-Format). MIG-011 Schema-Migration geplant (user_settings-Tabelle neu, contacts+6, meetings+11, activities.ai_generated). 9 Slices empfohlen fuer Implementierung.
 
 V4.1 Slice-Planning am 2026-04-15 abgeschlossen: 9 Slice-Dateien erstellt (SLC-411 Consent-Schema + Public-Page, SLC-412 Jitsi+Jibri Deployment, SLC-413 Whisper-Adapter-Layer, SLC-414 Meeting-Start + JWT + Consent-Check, SLC-415 Recording-Upload + Retention, SLC-416 Transkript + Summary-Pipeline, SLC-417 user_settings + Reminder-Cron + .ics, SLC-418 Browser-Push + Service Worker, SLC-419 KI-Agenda). Jeder Slice mit Micro-Tasks (MT-1..N), Acceptance Criteria, Dependencies, QA-Fokus und Aufwandsschaetzung. Gesamt-Aufwandsschaetzung V4.1: ~13-15 Entwicklungstage. SLC-411 = Blocker-Schema (MIG-011 vollstaendig), SLC-412 = schwerster Infra-Slice mit Firewall/Subdomain-Vorarbeit. Pre-Slice-Checks (Hetzner-Firewall 10000/udp, Coolify-Subdomain, VAPID-Keys, Supabase-Bucket) sind vor SLC-412-Start zu erledigen. MIG-011 wurde vollstaendig in SLC-411 konsolidiert (alle additiven Schema-Aenderungen in einer Migration, analog zu V4/SLC-401 Precedent).
+
+SLC-411 am 2026-04-16 implementiert: MIG-011 via sql/13_v41_migration.sql auf Hetzner angewendet (ALTER auf contacts/meetings/activities, user_settings neu, audit_log.actor_id nullable). Alle 8 Micro-Tasks erledigt: Rate-Limit + IP-Hash-Helper, Middleware-Whitelist fuer /consent, Consent Server Actions (create/grant/decline/revoke manual+public, setOptOutCommunication), 3 Public-Consent-Pages (grant/decline/revoke/confirmed) mit Client-Forms, DE-Consent-Mail-Template + SMTP-Versand, Kontakt-Workspace UI (ConsentBadge + ConsentActions + OptOutToggle), Pending-Renewal-Cron (taeglich, nur Zaehler). `npm run build` gruen. Noch offen: /qa, Browser-Smoke-Test mit echtem Token + SMTP-Versand.

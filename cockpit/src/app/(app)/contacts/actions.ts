@@ -26,10 +26,20 @@ export type Contact = {
   multiplier_type: string | null;
   last_interaction_date: string | null;
   meeting_link: string | null;
+  consent_status: ConsentStatus;
+  consent_date: string | null;
+  consent_source: ConsentSource | null;
+  consent_token: string | null;
+  consent_token_expires_at: string | null;
+  consent_requested_at: string | null;
+  opt_out_communication: boolean;
   created_at: string;
   updated_at: string;
   companies?: { id: string; name: string } | null;
 };
+
+export type ConsentStatus = "pending" | "granted" | "declined" | "revoked";
+export type ConsentSource = "email_link" | "manual" | "imported" | "ad_hoc";
 
 export async function getContacts(search?: string) {
   const supabase = await createClient();

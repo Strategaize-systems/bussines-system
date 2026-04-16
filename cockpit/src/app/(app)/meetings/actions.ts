@@ -3,6 +3,31 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+export type RecordingStatus =
+  | "not_recording"
+  | "pending"
+  | "recording"
+  | "uploading"
+  | "completed"
+  | "failed"
+  | "deleted";
+
+export type TranscriptStatus = "pending" | "processing" | "completed" | "failed";
+export type SummaryStatus = "pending" | "processing" | "completed" | "failed";
+
+export type AiSummary = {
+  outcome?: string;
+  decisions?: string[];
+  action_items?: string[];
+  next_step?: string;
+};
+
+export type ReminderSentEntry = {
+  type: string;
+  recipient: string;
+  sent_at: string;
+};
+
 export type Meeting = {
   id: string;
   title: string;
@@ -20,6 +45,17 @@ export type Meeting = {
   status: string;
   created_by: string | null;
   created_at: string;
+  jitsi_room_name: string | null;
+  recording_url: string | null;
+  recording_status: RecordingStatus;
+  recording_started_at: string | null;
+  recording_duration_seconds: number | null;
+  transcript_status: TranscriptStatus | null;
+  summary_status: SummaryStatus | null;
+  ai_summary: AiSummary | null;
+  ai_agenda: string | null;
+  ai_agenda_generated_at: string | null;
+  reminders_sent: ReminderSentEntry[];
   contacts?: { id: string; first_name: string; last_name: string } | null;
   companies?: { id: string; name: string } | null;
   deals?: { id: string; title: string } | null;

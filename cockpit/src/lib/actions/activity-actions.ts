@@ -21,6 +21,7 @@ export type Activity = {
   risks: string | null;
   next_steps: string | null;
   qualification_signals: string | null;
+  ai_generated: boolean;
   created_at: string;
 };
 
