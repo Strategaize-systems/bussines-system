@@ -396,6 +396,7 @@ services:
     environment:
       AUTH_TYPE: jwt
       ENABLE_AUTH: "1"
+      ENABLE_RECORDING: "1"
       XMPP_DOMAIN: ${JITSI_XMPP_DOMAIN:-meet.jitsi}
       XMPP_AUTH_DOMAIN: auth.${JITSI_XMPP_DOMAIN:-meet.jitsi}
       XMPP_INTERNAL_MUC_DOMAIN: internal-muc.${JITSI_XMPP_DOMAIN:-meet.jitsi}
