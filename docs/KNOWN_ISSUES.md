@@ -259,6 +259,33 @@
 - Workaround: Widerruf-Prozess: User per Mail an Besitzer → Besitzer klickt "Widerrufen" im Kontakt-Workspace. Langfristig (V4.2+): Separater persistenter `revoke_token` in contacts oder Re-Generation des Tokens mit jedem Mail-Versand.
 - Next Action: In V4.2-Planning aufnehmen. Architektur-Entscheidung noetig: dauerhafter revoke_token vs. pro-Mail-Token-Rotation. Bis dahin ist manueller Widerruf der offizielle Weg.
 
+### ISSUE-035 — Jibri finalize-script Placeholder-Error nach Recording
+- Status: open
+- Severity: Low
+- Area: FEAT-404 / SLC-412 / Recording
+- Summary: Nach erfolgreichem MP4-Write versucht Jibri `/path/to/finalize` auszufuehren (Default-Platzhalter aus jibri.conf). `java.io.IOException: Cannot run program "/path/to/finalize": error=2, No such file or directory`. MP4 ist bereits geschrieben und valide, Error kommt rein post-processing.
+- Impact: Keine auf Recording-Qualitaet. Log-Noise "SEVERE" in Jibri, koennte Monitoring-Alerts ausloesen. Post-Processing-Hook fehlt (Upload nach Supabase, Cleanup).
+- Workaround: Ignorieren oder via ENV `JIBRI_FINALIZE_RECORDING_SCRIPT_PATH=""` aushebeln.
+- Next Action: In SLC-415 (Recording Upload + Retention) korrekten finalize.sh hinterlegen, der Upload nach Supabase Storage triggert und lokales MP4 loescht. Dort auch SUPABASE_STORAGE_RECORDINGS_BUCKET-Anbindung.
+
+### ISSUE-036 — Jitsi Bridge Channel Qualitaets-Warning bei 1-User-Recording
+- Status: open
+- Severity: Low
+- Area: FEAT-404 / SLC-412 / WebRTC
+- Summary: Beim Jibri-Server-Recording-Smoke-Test erschien Jitsi-Toast "Schlechte Videoqualitaet / Bridge Channel Verbindung wurde unterbrochen". Recording lief durch, MP4 korrekt. Ursache vermutet: Hairpin-NAT-UDP-Verlust (JVB-Media-Stream geht Container -> Public-IP -> Hetzner-Firewall -> zurueck zu JVB).
+- Impact: UX-Noise bei internen Smoke-Tests. Bei echten Kunden-Meetings (externe Teilnehmer) waere der Pfad anders, aber das gleiche Problem koennte bei strikten Kunden-NATs auftreten.
+- Workaround: Internal-Tool ohne externe Teilnehmer OK. Fuer externe Meetings: coturn-Server nachruesten (BL-206-Nachbar).
+- Next Action: Bei ersten echten Kunden-Meetings nachmessen. Falls regelmaessig: coturn-Container als eigenen Slice planen. Aktuell kein V4.1-Blocker.
+
+### ISSUE-037 — linux-modules-extra muss nach Kernel-Upgrade nachinstalliert werden
+- Status: open
+- Severity: Medium
+- Area: Infrastructure / Hetzner Host
+- Summary: Hetzner-Cloud-Ubuntu liefert `snd-aloop` nicht im Standard-Kernel — musste via `apt install linux-modules-extra-$(uname -r)` nachinstalliert werden, damit Jibri Audio erfasst. Aktueller Kernel: 6.8.0-106-generic, neuer 6.8.0-107 ist im APT verfuegbar. Bei naechstem Reboot wird der neue Kernel geladen — das `linux-modules-extra-6.8.0-107-generic` Paket ist aber nicht installiert, damit faellt snd-aloop aus → Jibri-Recording bricht.
+- Impact: Stille Regression nach Kernel-Upgrade + Reboot. Jibri meldet ERR_CONNECTION_REFUSED oder Chrome-Crash, erster Smoke-Test nach Reboot schlaegt fehl.
+- Workaround: Vor Reboot `apt install linux-modules-extra-$(uname -r)` fuer den NEUEN Kernel laufen lassen (uname -r dann noch der alte, deshalb explizit den kommenden Kernel angeben). Oder Auto-Hook einrichten: `apt-get install -y linux-modules-extra-\$(uname -r)` in /etc/apt/apt.conf.d/.
+- Next Action: In Server-Maintenance-Runbook dokumentieren. Langfristig: APT-Hook fuer automatische Modules-Extra-Installation bei Kernel-Upgrades einrichten (eigener kleiner Infra-Slice oder Doctor-Checklist-Item).
+
 ### ISSUE-030 — Fremde Onboarding-Artefakte in Business-DB (Hostname-Kollision)
 - Status: resolved
 - Severity: High

@@ -1465,6 +1465,8 @@ Kalender:        Hetzner (Deutschland) → Cal.com Self-Hosted
 
 # V4.1 Architektur — Meeting Intelligence Basis
 
+> **Status 2026-04-16:** Jitsi-Stack (jitsi-web, prosody, jicofo, jvb, jibri auf stable-9258) **deployed** auf `meet.strategaizetransition.com`. Jibri-Server-Recording produziert MP4 im `jitsi-recordings` Shared-Volume. SLC-412 done, QA PASS (RPT-120). Host-Prerequisite: `linux-modules-extra` mit snd-aloop Kernel-Modul installiert (Hetzner-Cloud-Default fehlt). Weitere V4.1-Slices (Whisper-Adapter, Meeting-Start, Upload, Summary, Reminders, Push, KI-Agenda) folgen.
+
 ## V4.1 Architecture Summary
 
 V4.1 erweitert die Hetzner-Business-Instanz um eine Meeting-Aufzeichnungs-, Transkriptions- und Summary-Pipeline. Self-hosted **Jitsi + Jibri** liefern Browser-Video-Meetings inkl. Recording. Ein **Whisper-Adapter** (Library-Abstraktion in `/lib/ai/transcription`) speist Aufzeichnungen an OpenAI Whisper API (V4.1) — Provider-Switch auf Azure/Self-hosted via ENV ohne Code-Rewrite (DEC-035, DEC-041). Bedrock Claude Sonnet 4 (bestehender LLM-Layer) erzeugt strukturierte Summaries, die als Meeting-Activity in der Deal-Timeline landen.

@@ -10,16 +10,15 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: SLC-412 Code-Seite fertig (docker-compose.yml um Jitsi-Stack erweitert, JWT-Smoke-Test-Helper, 6 Secrets generiert). Pending: Coolify-Deploy (User), Browser-Smoke-Test mit JWT, /qa.
-- Current Phase: V4.1 Implementation (SLC-411 done, SLC-412 in_progress, 7 slices remaining)
+- Current Focus: SLC-412 done (Jitsi+Jibri live auf meet.strategaizetransition.com, Jibri-Recording MP4 verifiziert in shared Volume). /qa PASS (RPT-120). Naechster Schritt: /backend SLC-413 Whisper-Adapter-Layer.
+- Current Phase: V4.1 Implementation (SLC-411 + SLC-412 done, 7 slices remaining)
 
 ## Immediate Next Steps
-1. SLC-412 Coolify-Deploy (USER): 6 Jitsi-Env-Vars in Coolify eintragen (siehe env vars_business.txt), Subdomain `meet.strategaizetransition.com` auf `jitsi-web`-Service pointen, Redeploy triggern
-2. SLC-412 Smoke-Test: `node scripts/gen-test-jwt.mjs` fuer JWT, 2 Browser-Fenster, Start Recording pruefen, `docker exec` in jitsi-jibri: `ls /recordings/` + ffprobe
-3. /qa auf SLC-412 (Container-Stabilitaet >30min, Ressourcen via `docker stats`, JWT-Gate ohne Token HTTP 401, Recording-Persistenz)
-4. Implementierungs-Reihenfolge weiter: SLC-413 → SLC-414 → SLC-415 → SLC-416 → SLC-417 → SLC-418 → SLC-419 (mit `/qa` nach jedem Slice)
-5. V4-Nachzug parallel: Cal.com Admin-Password staerken (15+ Zeichen + 2FA), Live-Testbuchung — kein V4.1-Blocker
-6. VAPID_SUBJECT in Coolify auf immo@bellaerts.de umstellen (steht auf nicht-existentem admin@...) — kein V4.1-Blocker
+1. /backend SLC-413 — Whisper-Adapter-Layer (Transkriptions-Abstraktion, DEC-035/041)
+2. Weiter: SLC-414 (Meeting-Start + JWT + Consent-Check) → SLC-415 (Recording-Upload + Retention, inkl. Jibri-finalize.sh fuer ISSUE-035) → SLC-416 (Transkript + Summary-Pipeline) → SLC-417 (user_settings + Reminder-Cron + .ics) → SLC-418 (Browser-Push + Service Worker) → SLC-419 (KI-Agenda). Jeweils mit /qa.
+3. V4-Nachzug parallel: Cal.com Admin-Password staerken (15+ Zeichen + 2FA), Live-Testbuchung — kein V4.1-Blocker
+4. VAPID_SUBJECT in Coolify auf immo@bellaerts.de umstellen (steht auf nicht-existentem admin@...) — kein V4.1-Blocker
+5. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037) — sonst bricht Jibri nach Reboot
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (active, Architecture done):**
