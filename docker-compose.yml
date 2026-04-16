@@ -303,6 +303,8 @@ services:
     restart: unless-stopped
     expose:
       - "80"
+    # ENABLE_RECORDING=1 muss gesetzt sein, damit die Meet-UI den Jibri-Server-Record
+    # anbietet (sonst zeigt "Aufzeichnung starten"-Dialog nur die lokale Option).
     # jitsi/web image exposed 80 UND 443 via Dockerfile EXPOSE. Ohne Service-Port
     # waehlt Traefik 443 (HTTPS) -> 400 Bad Request. Eine Service-Definition,
     # beide Coolify-Router (http/https) explizit drauf verlinkt.
@@ -327,6 +329,9 @@ services:
       XMPP_RECORDER_DOMAIN: recorder.${JITSI_XMPP_DOMAIN:-meet.jitsi}
       ENABLE_LETSENCRYPT: "0"
       ENABLE_XMPP_WEBSOCKET: "1"
+      ENABLE_RECORDING: "1"
+      ENABLE_FILE_RECORDING_SERVICE: "1"
+      ENABLE_FILE_RECORDING_SERVICE_SHARING: "0"
       TZ: Europe/Berlin
     volumes:
       - jitsi-web-config:/config
@@ -348,6 +353,7 @@ services:
       AUTH_TYPE: jwt
       ENABLE_AUTH: "1"
       ENABLE_GUESTS: "0"
+      ENABLE_RECORDING: "1"
       JWT_APP_ID: ${JITSI_JWT_APP_ID:-business}
       JWT_APP_SECRET: ${JITSI_JWT_APP_SECRET}
       JWT_ACCEPTED_ISSUERS: ${JITSI_JWT_APP_ID:-business}
