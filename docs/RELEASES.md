@@ -56,6 +56,13 @@
 - Risks: Keine Schema-Migrationen. Keine neuen Dependencies. Responsive nicht explizit getestet (Desktop-only internal-tool).
 - Rollback Notes: Docker Image Rollback via Coolify. V3.2 Image als Fallback.
 
+### PRE-V4.1-INFRA — V4.1 Pre-Flight Infrastruktur (Jitsi-Vorbereitung)
+- Date: 2026-04-16
+- Scope: Infrastruktur-Vorarbeit fuer SLC-412 Jitsi+Jibri Deployment. Hetzner-Cloud-Firewall-Regel fuer Port 10000/udp eingehend geoeffnet (via Hetzner Cloud Console). Coolify-Subdomain `meet.strategaizetransition.com` provisioniert (DNS-A-Record auf 91.98.20.191, Traefik-Ready). VAPID-Keys fuer Browser-Push erzeugt (SLC-418-Vorbereitung). Supabase-Storage-Bucket `meeting-recordings` angelegt (SLC-415-Vorbereitung). Kein Code-Deploy, keine Schema-Migration — reine Preparation.
+- Summary: Pre-Flight-Gate fuer V4.1 Meeting-Slices. Server-RAM idle 4.4 GB frei (Zielarchitektur: 1 paralleles Meeting+Recording ~6.5 GB, passt in 8 GB CPX32 mit Upgrade-Pfad CPX42 dokumentiert DEC-040). Alle Infrastruktur-Blocker fuer SLC-412 beseitigt.
+- Risks: Hetzner-Cloud-Firewall-UI-Regel erfordert manuelle Re-Verifizierung vor SLC-412-Smoke-Test (nicht via SSH pruefbar, nur Hetzner Cloud Console). Bei NAT-strikten Kunden-Netzwerken kann UDP/10000 blockiert sein — dokumentiert als Risk in ARCHITECTURE V4.1 (TURN-Server deferred auf BL-206-Nachbar).
+- Rollback Notes: Keine Artefakte produziert. Rollback = Firewall-Regel entfernen, Coolify-Subdomain abkoppeln, Supabase-Bucket loeschen. Kein Effekt auf V4 Produktion.
+
 ### REL-009 — V4 KI-Gatekeeper + Externe Integrationen
 - Date: 2026-04-14
 - Scope: 9 Slices (SLC-401..409), 6 Features (FEAT-403/405/406/407/408/410), 7 V4-Backlog-Items. MIG-010 Schema-Migration (5 neue Tabellen: email_messages, email_threads, email_sync_state, ai_action_queue, ai_feedback; calendar_events erweitert um source/external_id/sync_status/booking_link). IMAP-Sync (IONOS direkt), E-Mail-Inbox UI, Gatekeeper-Klassifikation (Bedrock), KI-Wiedervorlagen mit Freigabe, Auto-Reply-Detection, Cal.com Self-Hosted + Webhook-Sync, Gesamtkalender UI, Management-Cockpit LLM-Ausbau (5 Preset-Analysen + Freitext). Zusaetzlich: Mein Tag/Focus UI-Reorganisation (KI-Wiedervorlagen als Tab, Action-Karten unter Focus), KI-Analyse Branding entfernt, 3 Revalidation-Fixes in Cron/Webhook-Routen.

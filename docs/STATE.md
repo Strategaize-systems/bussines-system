@@ -10,15 +10,16 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: SLC-411 implementiert (MIG-011 auf Hetzner live, Consent-Flow komplett, Public-Page + Kontakt-UI + Cron). Naechster Schritt: /qa auf SLC-411, danach Pre-Flight-Checks fuer SLC-412 (Jitsi+Jibri Deployment).
-- Current Phase: V4.1 Implementation (SLC-411 done, 8 slices remaining)
+- Current Focus: SLC-412 Code-Seite fertig (docker-compose.yml um Jitsi-Stack erweitert, JWT-Smoke-Test-Helper, 6 Secrets generiert). Pending: Coolify-Deploy (User), Browser-Smoke-Test mit JWT, /qa.
+- Current Phase: V4.1 Implementation (SLC-411 done, SLC-412 in_progress, 7 slices remaining)
 
 ## Immediate Next Steps
-1. /qa auf SLC-411 ausfuehren (Build, Type-Check, Security-Review Public-Page + Rate-Limit + Audit, Migration-Konsistenz, User-Flow-Test in Browser)
-2. Vor SLC-412: Pre-Flight-Checks erledigen (Hetzner-Firewall 10000/udp geoeffnet - DONE, Coolify-Subdomain `meet.strategaizetransition.com` - DONE, VAPID-Keys - DONE, Supabase-Bucket `meeting-recordings` - DONE)
-3. Implementierungs-Reihenfolge: SLC-412 → SLC-413 → SLC-414 (mit Per-Recipient-JWT) → SLC-415 → SLC-416 → SLC-417 → SLC-418 (mit FEAT-409-AC-7-Body-Builder) → SLC-419 (mit `/qa` nach jedem Slice)
-4. V4-Nachzug parallel: Cal.com Admin-Password staerken (15+ Zeichen + 2FA), Live-Testbuchung — kein V4.1-Blocker
-5. VAPID_SUBJECT in Coolify auf immo@bellaerts.de umstellen (steht auf nicht-existentem admin@...) — kein V4.1-Blocker
+1. SLC-412 Coolify-Deploy (USER): 6 Jitsi-Env-Vars in Coolify eintragen (siehe env vars_business.txt), Subdomain `meet.strategaizetransition.com` auf `jitsi-web`-Service pointen, Redeploy triggern
+2. SLC-412 Smoke-Test: `node scripts/gen-test-jwt.mjs` fuer JWT, 2 Browser-Fenster, Start Recording pruefen, `docker exec` in jitsi-jibri: `ls /recordings/` + ffprobe
+3. /qa auf SLC-412 (Container-Stabilitaet >30min, Ressourcen via `docker stats`, JWT-Gate ohne Token HTTP 401, Recording-Persistenz)
+4. Implementierungs-Reihenfolge weiter: SLC-413 → SLC-414 → SLC-415 → SLC-416 → SLC-417 → SLC-418 → SLC-419 (mit `/qa` nach jedem Slice)
+5. V4-Nachzug parallel: Cal.com Admin-Password staerken (15+ Zeichen + 2FA), Live-Testbuchung — kein V4.1-Blocker
+6. VAPID_SUBJECT in Coolify auf immo@bellaerts.de umstellen (steht auf nicht-existentem admin@...) — kein V4.1-Blocker
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (active, Architecture done):**

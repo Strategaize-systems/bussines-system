@@ -7,6 +7,7 @@ node_modules/
 .env.deploy
 cockpit/.env.local
 cockpit/.env
+env vars_business.txt
 
 # Next.js
 cockpit/.next/

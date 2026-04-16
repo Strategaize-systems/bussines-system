@@ -475,9 +475,9 @@
       "title": "Jitsi Meet — Self-Hosted Video-Meeting-Plattform",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V4.1",
-      "note": "Infrastruktur-Blocker fuer BL-201 Call Intelligence",
+      "note": "Infrastruktur-Blocker fuer BL-201 Call Intelligence — SLC-412 Code-Seite fertig, Deploy pending",
       "description": "Self-hosted Jitsi Meet auf Hetzner für Browser-basierte Video-Meetings. Kein Download nötig. Integration mit Cal.com für Terminplanung. Jibri für Recording. Meetings direkt aus 'Mein Tag' und Deal-Detail starten. Aufnahmen fließen in Call Intelligence Pipeline (BL-201).",
       "createdAt": "2026-04-04"
     },
@@ -1017,7 +1017,7 @@
       "title": "Jitsi + Jibri Self-Hosted Setup auf Hetzner (Shared-Ready)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V4.1",
       "description": "Self-hosted Jitsi + Jibri auf Hetzner. JWT-Auth pro Tenant (DEC-036). Initial nur Business-Tenant, Blueprint kommt spaeter dazu. Prosody + JVB + Jicofo + Jibri als Container-Stack. Recording-Storage: Shared Volume -> Cron-Upload nach Supabase Storage EU.",
       "createdAt": "2026-04-15"
