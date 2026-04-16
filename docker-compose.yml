@@ -450,6 +450,10 @@ services:
     devices:
       - /dev/snd:/dev/snd
     environment:
+      # PUBLIC_URL ist kritisch: ohne das baut Jibri die Call-URL aus dem XMPP-JID
+      # (https://meet.jitsi/<room>), und meet.jitsi resolvt intern auf prosody (kein HTTPS)
+      # -> net::ERR_CONNECTION_REFUSED beim Chrome-Join.
+      PUBLIC_URL: https://${JITSI_DOMAIN:-meet.strategaizetransition.com}
       XMPP_AUTH_DOMAIN: auth.${JITSI_XMPP_DOMAIN:-meet.jitsi}
       XMPP_INTERNAL_MUC_DOMAIN: internal-muc.${JITSI_XMPP_DOMAIN:-meet.jitsi}
       XMPP_RECORDER_DOMAIN: recorder.${JITSI_XMPP_DOMAIN:-meet.jitsi}
