@@ -303,6 +303,12 @@ services:
     restart: unless-stopped
     expose:
       - "80"
+    # jitsi/web image exposes both 80 and 443 via Dockerfile EXPOSE.
+    # Ohne expliziten Service-Port waehlt Traefik 443, das jedoch HTTPS erwartet (400 Bad Request).
+    # Labels zwingen Traefik auf Port 80 (HTTP). Service-Name folgt Coolify-Projekt-UUID-Pattern.
+    labels:
+      - "traefik.http.services.https-0-k9f5pn5upfq7etoefb5ukbcg-jitsi-web.loadbalancer.server.port=80"
+      - "traefik.http.services.http-0-k9f5pn5upfq7etoefb5ukbcg-jitsi-web.loadbalancer.server.port=80"
     environment:
       ENABLE_AUTH: "1"
       ENABLE_GUESTS: "0"
