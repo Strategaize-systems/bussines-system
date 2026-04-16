@@ -123,8 +123,8 @@ export async function createConsentRequest(contactId: string) {
     token,
   });
 
-  revalidatePath(`/kontakte/${contactId}`);
-  revalidatePath("/kontakte");
+  revalidatePath(`/contacts/${contactId}`);
+  revalidatePath("/contacts");
 
   if (!mailResult.ok) {
     return { error: `Token gesetzt, aber Mail-Versand fehlgeschlagen: ${mailResult.error}` };
@@ -160,8 +160,8 @@ export async function revokeConsentManual(contactId: string) {
     changes: { source: "manual_ui" },
   });
 
-  revalidatePath(`/kontakte/${contactId}`);
-  revalidatePath("/kontakte");
+  revalidatePath(`/contacts/${contactId}`);
+  revalidatePath("/contacts");
   return { error: "" };
 }
 
@@ -197,8 +197,8 @@ export async function setOptOutCommunication(contactId: string, optOut: boolean)
     },
   });
 
-  revalidatePath(`/kontakte/${contactId}`);
-  revalidatePath("/kontakte");
+  revalidatePath(`/contacts/${contactId}`);
+  revalidatePath("/contacts");
   return { error: "" };
 }
 

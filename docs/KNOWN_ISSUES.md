@@ -242,6 +242,15 @@
 - Workaround: Spalte `opt_out_communication BOOLEAN DEFAULT false` zu MIG-011 (SLC-411 MT-1) hinzufuegen + UI-Toggle in SLC-411 MT-7.
 - Next Action: Erledigt 2026-04-15 — SLC-411 MT-1 (MIG-011) enthaelt jetzt `contacts.opt_out_communication BOOLEAN DEFAULT false`. SLC-411 MT-7 UI zeigt Opt-out-Toggle. SLC-414 MT-5 respektiert Flag beim Einladungs-Versand. Neuer AC-7 + AC-9 in SLC-411. Verifikation in SLC-411 Implementation.
 
+### ISSUE-033 — Public-Revoke-Link nach Grant funktionslos (Token-Invalidierung)
+- Status: open
+- Severity: Medium
+- Area: FEAT-411 / Consent-Flow
+- Summary: SLC-411 invalidiert `consent_token` nach grant/decline (QA-Focus "Token nach Grant invalidiert"). Der Widerruf-Link in der Consent-Mail nutzt aber denselben Token. Nach Grant geht der Widerruf-Link aus der Mail ins Leere ("Link nicht gefunden"). Public-Widerruf nach Zustimmung ist damit nur ueber manuelle UI (revokeConsentManual) moeglich, nicht ueber den Link in der Original-Mail.
+- Impact: User, die granted haben und spaeter per Mail-Link widerrufen wollen, bekommen "Link nicht gefunden". Das ist ein DSGVO-Komfort-Gap (Widerruf muss leicht moeglich sein). Interner User kann Widerruf manuell ueber Kontakt-Detail ausloesen.
+- Workaround: Widerruf-Prozess: User per Mail an Besitzer → Besitzer klickt "Widerrufen" im Kontakt-Workspace. Langfristig (V4.2+): Separater persistenter `revoke_token` in contacts oder Re-Generation des Tokens mit jedem Mail-Versand.
+- Next Action: In V4.2-Planning aufnehmen. Architektur-Entscheidung noetig: dauerhafter revoke_token vs. pro-Mail-Token-Rotation. Bis dahin ist manueller Widerruf der offizielle Weg.
+
 ### ISSUE-030 — Fremde Onboarding-Artefakte in Business-DB (Hostname-Kollision)
 - Status: resolved
 - Severity: High
