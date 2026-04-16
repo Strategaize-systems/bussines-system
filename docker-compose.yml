@@ -444,6 +444,10 @@ services:
     shm_size: 2gb
     cap_add:
       - SYS_ADMIN
+    # Audio-Loopback fuer ALSA-Capture aus Headless-Chrome.
+    # Host-Voraussetzung: snd-aloop Kernel-Modul geladen (linux-modules-extra Paket).
+    devices:
+      - /dev/snd:/dev/snd
     environment:
       XMPP_AUTH_DOMAIN: auth.${JITSI_XMPP_DOMAIN:-meet.jitsi}
       XMPP_INTERNAL_MUC_DOMAIN: internal-muc.${JITSI_XMPP_DOMAIN:-meet.jitsi}
