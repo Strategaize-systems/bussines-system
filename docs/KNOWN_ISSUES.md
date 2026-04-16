@@ -242,6 +242,14 @@
 - Workaround: Spalte `opt_out_communication BOOLEAN DEFAULT false` zu MIG-011 (SLC-411 MT-1) hinzufuegen + UI-Toggle in SLC-411 MT-7.
 - Next Action: Erledigt 2026-04-15 — SLC-411 MT-1 (MIG-011) enthaelt jetzt `contacts.opt_out_communication BOOLEAN DEFAULT false`. SLC-411 MT-7 UI zeigt Opt-out-Toggle. SLC-414 MT-5 respektiert Flag beim Einladungs-Versand. Neuer AC-7 + AC-9 in SLC-411. Verifikation in SLC-411 Implementation.
 
+### ISSUE-034 — 6 V2/V3-Tabellen RLS-enabled ohne Policy (Insert implizit verboten)
+- Status: resolved
+- Severity: High
+- Area: Database / RLS
+- Summary: `emails`, `fit_assessments`, `handoffs`, `proposals`, `referrals`, `signals` hatten RLS enabled (`relrowsecurity=true`), aber keine einzige Policy (`pg_policy` = 0 rows). Postgres-Verhalten: RLS an + keine Policy = alles implizit verboten fuer authenticated. Bei SLC-411 Live-Test durch Klick auf "E-Mail senden" als "new row violates row-level security policy for the table 'emails'" sichtbar geworden. Historisch: V2/V3-Migrationen haben RLS aktiviert, aber die `authenticated_full_access`-Policy wurde nur in `sql/02_rls.sql` fuer V1-Tabellen per DO-Block angelegt — nachtraeglich hinzugefuegte Tabellen blieben policy-los.
+- Impact: Insert/Update/Delete auf 6 Tabellen war fuer authenticated User gebrochen. E-Mail-Versand-Logging, Fit-Assessment-Speichern, Handoff-Erstellung, Proposal-Speichern, Referral-Tracking, Signal-Insert aus der Cockpit-UI waren alle betroffen. adminClient (service_role mit BYPASSRLS) war nicht betroffen — das erklaert warum bestimmte Code-Pfade (IMAP-Sync, Cron-Jobs) trotzdem liefen.
+- Next Action: Erledigt 2026-04-16 — `sql/14_fix_missing_rls_policies.sql` legt `authenticated_full_access` Policy auf alle 6 Tabellen an (idempotent via DROP POLICY IF EXISTS + CREATE POLICY) und setzt explizite Grants. Auf Hetzner angewendet, verifiziert: alle 6 Tabellen haben jetzt genau 1 Policy.
+
 ### ISSUE-033 — Public-Revoke-Link nach Grant funktionslos (Token-Invalidierung)
 - Status: open
 - Severity: Medium
