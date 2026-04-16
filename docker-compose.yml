@@ -308,7 +308,10 @@ services:
     # jitsi/web image exposed 80 UND 443 via Dockerfile EXPOSE. Ohne Service-Port
     # waehlt Traefik 443 (HTTPS) -> 400 Bad Request. Eine Service-Definition,
     # beide Coolify-Router (http/https) explizit drauf verlinkt.
+    # traefik.docker.network zwingt Traefik auf das Coolify-Projektnetz (sonst kann
+    # er mehrere Interface-IPs von jitsi-web sehen und die falsche routen).
     labels:
+      - "traefik.docker.network=k9f5pn5upfq7etoefb5ukbcg"
       - "traefik.http.services.jitsi-web-svc.loadbalancer.server.port=80"
       - "traefik.http.routers.http-0-k9f5pn5upfq7etoefb5ukbcg-jitsi-web.service=jitsi-web-svc"
       - "traefik.http.routers.https-0-k9f5pn5upfq7etoefb5ukbcg-jitsi-web.service=jitsi-web-svc"
