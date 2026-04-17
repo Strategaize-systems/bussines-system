@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: SLC-415 done (Recording-Upload-Cron + Retention-Cron: Storage-Bucket, Upload-Poll alle 2 Min, Retention taeglich 04:00, ffprobe Duration, Volume-Monitoring). Naechster Schritt: /qa SLC-415, dann /backend SLC-416.
-- Current Phase: V4.1 Implementation (SLC-411..415 done, 4 slices remaining)
+- Current Focus: SLC-416 done (Transkript + Summary-Pipeline: Whisper-Cron, Bedrock-Summary-Cron, Retry-Endpoints, Zod-Validation, Meeting-Intelligence UI, KI-Badge). Naechster Schritt: /qa SLC-416, dann /backend SLC-417.
+- Current Phase: V4.1 Implementation (SLC-411..416 done, 3 slices remaining)
 
 ## Immediate Next Steps
-1. /qa SLC-415 — Recording-Upload + Retention (Cron-Endpunkte, Idempotenz, Security, Bucket)
-2. /backend SLC-416 — Transkript + Summary-Pipeline (Whisper-Adapter + Bedrock-Summary)
-3. Weiter: SLC-417 (user_settings + Reminder-Cron + .ics) → SLC-418 (Browser-Push + Service Worker) → SLC-419 (KI-Agenda). Jeweils mit /qa.
+1. /qa SLC-416 — Transkript + Summary-Pipeline (Cron-Endpunkte, Zod-Validation, Retry, Idempotenz, UI-Panels)
+2. /backend SLC-417 — user_settings + Reminder-Cron + .ics
+3. Weiter: SLC-418 (Browser-Push + Service Worker) → SLC-419 (KI-Agenda). Jeweils mit /qa.
 3. V4-Nachzug parallel: Cal.com Admin-Password staerken (15+ Zeichen + 2FA), Live-Testbuchung — kein V4.1-Blocker
 4. VAPID_SUBJECT in Coolify auf immo@bellaerts.de umstellen (steht auf nicht-existentem admin@...) — kein V4.1-Blocker
 5. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037) — sonst bricht Jibri nach Reboot

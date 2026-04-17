@@ -1037,7 +1037,7 @@
       "title": "Meeting-Summary-Pipeline: Transcript -> Bedrock -> Activity",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V4.1",
       "description": "FEAT-404 Teil: Nach Whisper-Transkription wird Transkript an Bedrock Claude Sonnet 4 geschickt. Strukturierter JSON-Summary (outcome, decisions, action_items, next_step). Summary landet als Meeting-Activity in Deal-Timeline mit ai_generated=true. Idempotente Verarbeitung.",
       "createdAt": "2026-04-15"
