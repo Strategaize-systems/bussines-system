@@ -36,16 +36,20 @@ export function AgendaPanel({
 }: AgendaPanelProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [localAgenda, setLocalAgenda] = useState<AgendaData | null>(null);
+  const [localGeneratedAt, setLocalGeneratedAt] = useState<string | null>(null);
 
-  // Parse existing agenda
-  let agenda: AgendaData | null = null;
-  if (aiAgenda) {
+  // Parse existing agenda from props (initial) or use local state (after generate)
+  let agenda: AgendaData | null = localAgenda;
+  if (!agenda && aiAgenda) {
     try {
       agenda = typeof aiAgenda === "string" ? JSON.parse(aiAgenda) : aiAgenda;
     } catch {
       agenda = null;
     }
   }
+
+  const generatedAt = localGeneratedAt || aiAgendaGeneratedAt;
 
   const handleGenerate = (regenerate: boolean) => {
     setError(null);
@@ -60,14 +64,18 @@ export function AgendaPanel({
           }
         );
 
+        const data = await res.json().catch(() => ({}));
+
         if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
           setError(data.error || "Fehler bei der Agenda-Generierung");
           return;
         }
 
-        // Reload to show persisted agenda
-        window.location.reload();
+        // Update in-place — no reload needed
+        if (data.agenda) {
+          setLocalAgenda(data.agenda);
+          setLocalGeneratedAt(data.meta?.generated_at || new Date().toISOString());
+        }
       } catch {
         setError("Netzwerkfehler. Bitte erneut versuchen.");
       }
@@ -227,10 +235,10 @@ export function AgendaPanel({
             )}
 
             {/* Generated-at timestamp */}
-            {aiAgendaGeneratedAt && (
+            {generatedAt && (
               <p className="text-[11px] text-muted-foreground pt-1">
                 Generiert am{" "}
-                {new Date(aiAgendaGeneratedAt).toLocaleString("de-DE", {
+                {new Date(generatedAt).toLocaleString("de-DE", {
                   day: "2-digit",
                   month: "2-digit",
                   year: "numeric",
