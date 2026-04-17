@@ -177,11 +177,11 @@ export async function getContactsForSelect() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("contacts")
-    .select("id, first_name, last_name")
+    .select("id, first_name, last_name, email, consent_status")
     .order("last_name");
 
   if (error) throw new Error(error.message);
-  return data as { id: string; first_name: string; last_name: string }[];
+  return data as { id: string; first_name: string; last_name: string; email: string | null; consent_status: string | null }[];
 }
 
 export type ContactDeal = {

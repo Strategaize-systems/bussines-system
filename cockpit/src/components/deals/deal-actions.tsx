@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ListTodo, Mail, Calendar, ChevronDown } from "lucide-react";
 import type { PipelineStage } from "@/app/(app)/pipeline/actions";
 import { getContextPrefill } from "@/lib/context-prefill";
+import { StartMeetingButton } from "@/components/meetings/start-meeting-button";
 
 interface DealActionsProps {
   deal: any;
@@ -112,7 +113,7 @@ export function DealActions({
         }
       />
 
-      {/* + Meeting */}
+      {/* + Meeting (planen) */}
       <MeetingSheet
         contacts={contacts}
         companies={companies}
@@ -128,6 +129,13 @@ export function DealActions({
             Meeting
           </Button>
         }
+      />
+
+      {/* Meeting starten (Jitsi) */}
+      <StartMeetingButton
+        dealId={deal.id}
+        dealTitle={deal.title}
+        contacts={contacts}
       />
 
       {/* + Activity/Note */}

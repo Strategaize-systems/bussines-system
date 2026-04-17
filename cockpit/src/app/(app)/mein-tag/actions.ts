@@ -394,6 +394,7 @@ export type NextMeetingPrep = {
   dealId: string | null;
   dealValue: number | null;
   dealStage: string | null;
+  contactId: string | null;
   contactName: string | null;
   companyName: string | null;
 } | null;
@@ -406,9 +407,9 @@ export async function getNextMeetingWithContext(): Promise<NextMeetingPrep> {
     .from("meetings")
     .select(`
       id, title, scheduled_at, duration_minutes, location, agenda, participants,
-      deal_id,
+      deal_id, contact_id,
       deals(id, title, value, pipeline_stages(name)),
-      contacts(first_name, last_name),
+      contacts(id, first_name, last_name),
       companies(name)
     `)
     .eq("status", "planned")
@@ -439,6 +440,7 @@ export async function getNextMeetingWithContext(): Promise<NextMeetingPrep> {
     dealId: deal?.id ?? null,
     dealValue: deal?.value ?? null,
     dealStage: deal?.pipeline_stages?.name ?? null,
+    contactId: contact?.id ?? (meeting as any).contact_id ?? null,
     contactName: contact ? `${contact.first_name} ${contact.last_name}` : null,
     companyName: company?.name ?? null,
   };

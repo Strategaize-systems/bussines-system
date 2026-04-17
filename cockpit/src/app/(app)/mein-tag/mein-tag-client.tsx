@@ -37,6 +37,7 @@ import { ContactSheet } from "../contacts/contact-sheet";
 import { CompanySheet } from "../companies/company-sheet";
 import { CallSheet } from "./call-sheet";
 import { KIWorkspace } from "./ki-workspace";
+import { startMeeting } from "@/app/actions/meetings";
 import type { AIActionQueueItem } from "@/types/ai-queue";
 
 interface MeinTagClientProps {
@@ -609,16 +610,38 @@ function TaskItem({ item, onDealClick }: { item: TodayItem; onDealClick: (dealId
 // ── Meeting-Prep Card ─────────────────────────────────────
 
 function MeetingPrepCard({ meeting }: { meeting: NonNullable<NextMeetingPrep> }) {
+  const [isStarting, startJitsi] = useTransition();
+
+  const handleStartMeeting = () => {
+    if (!meeting.dealId) return;
+    startJitsi(async () => {
+      const contactIds = meeting.contactId ? [meeting.contactId] : [];
+      const res = await startMeeting(meeting.dealId!, contactIds, meeting.title);
+      if (res.hostRedirectUrl) {
+        window.open(res.hostRedirectUrl, "_blank");
+      }
+    });
+  };
+
   return (
     <div className="bg-white rounded-2xl border-2 border-blue-200 shadow-lg overflow-hidden">
       <div className="px-5 py-4 border-b border-blue-100 flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
           <FileText size={16} className="text-white" strokeWidth={2.5} />
         </div>
-        <div>
+        <div className="flex-1">
           <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Meeting-Vorbereitung</h3>
           <p className="text-[11px] text-blue-600">Nächstes Meeting um {meeting.timeStr}</p>
         </div>
+        {meeting.dealId && (
+          <button
+            onClick={handleStartMeeting}
+            disabled={isStarting}
+            className="flex items-center gap-1.5 rounded-lg bg-[#4454b8] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#3a4aa0] disabled:opacity-50"
+          >
+            {isStarting ? "Wird gestartet..." : "Meeting starten"}
+          </button>
+        )}
       </div>
       <div className="p-5 space-y-3">
         <div>
