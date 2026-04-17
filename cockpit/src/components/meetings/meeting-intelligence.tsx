@@ -2,7 +2,6 @@
 
 import { TranscriptPanel } from "./transcript-panel";
 import { SummaryPanel } from "./summary-panel";
-import { MeetingStatusBadge } from "./meeting-status-badge";
 import type { Meeting } from "@/app/(app)/meetings/actions";
 
 interface MeetingIntelligenceProps {

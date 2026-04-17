@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle2, XCircle, Clock, Mic, FileText, Brain } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Clock, Mic, Brain } from "lucide-react";
 
 type StatusType = "pending" | "processing" | "completed" | "failed" | null;
 
