@@ -59,24 +59,6 @@ function createTransport() {
   };
 }
 
-/**
- * Check if a reminder was already sent for this meeting/type/recipient/hours combo.
- */
-function wasAlreadySent(
-  remindersSent: ReminderSentEntry[],
-  type: string,
-  recipient: string,
-  hours: number
-): boolean {
-  return remindersSent.some(
-    (r) =>
-      r.type === type &&
-      r.recipient === recipient &&
-      // Encode hours in the type field: "external_24h" or "internal_30m"
-      r.type === `${type}_${hours}`
-  );
-}
-
 function makeReminderKey(type: "external" | "internal", value: number): string {
   return type === "external" ? `external_${value}h` : `internal_${value}m`;
 }
