@@ -264,9 +264,9 @@
 - Severity: Low
 - Area: FEAT-404 / SLC-412 / Recording
 - Summary: Nach erfolgreichem MP4-Write versucht Jibri `/path/to/finalize` auszufuehren (Default-Platzhalter aus jibri.conf). `java.io.IOException: Cannot run program "/path/to/finalize": error=2, No such file or directory`. MP4 ist bereits geschrieben und valide, Error kommt rein post-processing.
-- Impact: Keine auf Recording-Qualitaet. Log-Noise "SEVERE" in Jibri, koennte Monitoring-Alerts ausloesen. Post-Processing-Hook fehlt (Upload nach Supabase, Cleanup).
-- Workaround: Ignorieren oder via ENV `JIBRI_FINALIZE_RECORDING_SCRIPT_PATH=""` aushebeln.
-- Next Action: In SLC-415 (Recording Upload + Retention) korrekten finalize.sh hinterlegen, der Upload nach Supabase Storage triggert und lokales MP4 loescht. Dort auch SUPABASE_STORAGE_RECORDINGS_BUCKET-Anbindung.
+- Impact: Keine auf Recording-Qualitaet. Log-Noise "SEVERE" in Jibri, koennte Monitoring-Alerts ausloesen.
+- Workaround: SLC-415 implementiert Poll-basiertes Upload (Cron alle 2 Min liest /recordings, uploaded nach Supabase Storage). Finalize-Script wird dadurch nicht mehr benoetigt fuer Upload. Log-Noise bleibt.
+- Next Action: Optional: `JIBRI_FINALIZE_RECORDING_SCRIPT_PATH=""` in Jibri-ENV setzen um Log-Noise zu eliminieren. Kein funktionaler Blocker mehr.
 
 ### ISSUE-036 — Jitsi Bridge Channel Qualitaets-Warning bei 1-User-Recording
 - Status: open

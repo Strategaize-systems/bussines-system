@@ -435,7 +435,7 @@
       "title": "Call Intelligence (Jitsi + Jibri + Whisper + Bedrock-Summary)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V4.1",
       "description": "FEAT-404: Browser-basiertes Video-Meeting via Jitsi, automatische Aufzeichnung via Jibri, Transkription via Whisper-Adapter (OpenAI V4.1), Summary via Bedrock Claude Sonnet 4. Ergebnis als Meeting-Activity in Deal-Timeline. Recording nur bei geprueftem Consent (FEAT-411).",
       "createdAt": "2026-04-01"
@@ -1077,7 +1077,7 @@
       "title": "Retention-Cron: Meeting-Aufzeichnungen nach 30 Tagen loeschen",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V4.1",
       "description": "FEAT-404 Teil: Cron-Job loescht Roh-Aufzeichnungen aus Supabase Storage nach 30 Tagen. Transkript und Summary bleiben permanent. Status wird auf recording_status = deleted gesetzt. Schwelle konfigurierbar via ENV, Default 30.",
       "createdAt": "2026-04-15"

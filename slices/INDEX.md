@@ -110,7 +110,7 @@
 | SLC-412 | [Jitsi+Jibri Deployment + Firewall](SLC-412-jitsi-jibri-deployment.md) | FEAT-404 | done | Blocker | 2026-04-15 |
 | SLC-413 | [Whisper-Adapter-Layer + OpenAI-Provider](SLC-413-whisper-adapter-layer.md) | FEAT-404 | done | High | 2026-04-15 |
 | SLC-414 | [Meeting-Start + Jitsi-JWT + Consent-Check](SLC-414-meeting-start-jwt-consent.md) | FEAT-404 | done | High | 2026-04-15 |
-| SLC-415 | [Recording-Upload-Cron + Retention-Cron](SLC-415-recording-upload-retention.md) | FEAT-404 | planned | High | 2026-04-15 |
+| SLC-415 | [Recording-Upload-Cron + Retention-Cron](SLC-415-recording-upload-retention.md) | FEAT-404 | done | High | 2026-04-15 |
 | SLC-416 | [Transkript + Summary-Pipeline](SLC-416-transcript-summary-pipeline.md) | FEAT-404 | planned | High | 2026-04-15 |
 | SLC-417 | [user_settings + Reminder-Cron + .ics](SLC-417-user-settings-reminder-ics.md) | FEAT-409 | planned | High | 2026-04-15 |
 | SLC-418 | [Browser-Push + Service Worker](SLC-418-browser-push-service-worker.md) | FEAT-409 | planned | Medium | 2026-04-15 |

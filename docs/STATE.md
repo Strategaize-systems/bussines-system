@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: SLC-414 done (Meeting-Start + Jitsi-JWT + Consent-Check: JWT-Builder, Consent-Helper, Ad-hoc-Contacts, Server Action, Invite-Mail, Deal-Workspace UI, Mein-Tag QuickStart). Naechster Schritt: /qa SLC-414, dann /backend SLC-415.
-- Current Phase: V4.1 Implementation (SLC-411..414 done, 5 slices remaining)
+- Current Focus: SLC-415 done (Recording-Upload-Cron + Retention-Cron: Storage-Bucket, Upload-Poll alle 2 Min, Retention taeglich 04:00, ffprobe Duration, Volume-Monitoring). Naechster Schritt: /qa SLC-415, dann /backend SLC-416.
+- Current Phase: V4.1 Implementation (SLC-411..415 done, 4 slices remaining)
 
 ## Immediate Next Steps
-1. /qa SLC-414 — Meeting-Start + JWT + Consent (Wiring, Security, UX-Check)
-2. /backend SLC-415 — Recording-Upload + Retention (Jibri-finalize.sh fuer ISSUE-035)
-3. Weiter: SLC-416 (Transkript + Summary-Pipeline) → SLC-417 (user_settings + Reminder-Cron + .ics) → SLC-418 (Browser-Push + Service Worker) → SLC-419 (KI-Agenda). Jeweils mit /qa.
+1. /qa SLC-415 — Recording-Upload + Retention (Cron-Endpunkte, Idempotenz, Security, Bucket)
+2. /backend SLC-416 — Transkript + Summary-Pipeline (Whisper-Adapter + Bedrock-Summary)
+3. Weiter: SLC-417 (user_settings + Reminder-Cron + .ics) → SLC-418 (Browser-Push + Service Worker) → SLC-419 (KI-Agenda). Jeweils mit /qa.
 3. V4-Nachzug parallel: Cal.com Admin-Password staerken (15+ Zeichen + 2FA), Live-Testbuchung — kein V4.1-Blocker
 4. VAPID_SUBJECT in Coolify auf immo@bellaerts.de umstellen (steht auf nicht-existentem admin@...) — kein V4.1-Blocker
 5. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037) — sonst bricht Jibri nach Reboot
