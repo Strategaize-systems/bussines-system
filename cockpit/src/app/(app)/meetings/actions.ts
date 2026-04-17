@@ -15,10 +15,15 @@ export type RecordingStatus =
 export type TranscriptStatus = "pending" | "processing" | "completed" | "failed";
 export type SummaryStatus = "pending" | "processing" | "completed" | "failed";
 
+export type ActionItem = {
+  owner?: string | null;
+  task: string;
+};
+
 export type AiSummary = {
   outcome?: string;
   decisions?: string[];
-  action_items?: string[];
+  action_items?: (string | ActionItem)[];
   next_step?: string;
 };
 
@@ -294,6 +299,21 @@ export async function updateMeeting(id: string, formData: FormData) {
   revalidatePath("/mein-tag");
   revalidatePath("/kalender");
   revalidatePath("/focus");
+  return { error: "" };
+}
+
+export async function updateTranscript(meetingId: string, transcript: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("meetings")
+    .update({ transcript })
+    .eq("id", meetingId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/meetings");
+  revalidatePath("/pipeline");
   return { error: "" };
 }
 

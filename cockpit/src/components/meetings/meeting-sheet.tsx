@@ -10,10 +10,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { MeetingForm } from "./meeting-form";
+import { MeetingIntelligence } from "./meeting-intelligence";
 import { FollowUpDialog } from "./follow-up-dialog";
 import {
   createMeeting,
   updateMeeting,
+  updateTranscript,
   type Meeting,
 } from "@/app/(app)/meetings/actions";
 import { useState, useTransition } from "react";
@@ -122,6 +124,14 @@ export function MeetingSheet({
               defaultParticipants={defaultParticipants}
               defaultAgenda={defaultAgenda}
             />
+            {meeting && (
+              <MeetingIntelligence
+                meeting={meeting}
+                onSaveTranscript={async (text) => {
+                  await updateTranscript(meeting.id, text);
+                }}
+              />
+            )}
           </div>
         </SheetContent>
       </Sheet>

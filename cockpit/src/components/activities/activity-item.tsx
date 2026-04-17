@@ -17,6 +17,7 @@ import {
   ShieldAlert,
   ArrowRight,
   Zap,
+  Bot,
 } from "lucide-react";
 import { completeActivity, deleteActivity } from "@/lib/actions/activity-actions";
 import { createSignalForActivity } from "@/app/(app)/fit-assessment/signal-actions";
@@ -96,6 +97,15 @@ export function ActivityItem({ activity }: { activity: Activity }) {
               minute: "2-digit",
             })}
           </span>
+          {activity.ai_generated && (
+            <span
+              className="inline-flex items-center gap-0.5 text-[10px] font-medium text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded"
+              title="KI-generierte Meeting-Zusammenfassung"
+            >
+              <Bot className="h-3 w-3" />
+              KI
+            </span>
+          )}
           {isCompleted && (
             <span className="text-xs text-green-600">erledigt</span>
           )}
