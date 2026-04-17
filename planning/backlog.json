@@ -1047,7 +1047,7 @@
       "title": "Meeting-Reminder Cron-Job (externe Mails + interne Push)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V4.1",
       "description": "FEAT-409 Teil A+B: /api/cron/meeting-reminders alle 5 Min. Externe Erinnerungs-Mails zu konfigurierten Vorlaufzeiten (Default 24h + 2h). Interne Browser-Push X Min vor Meeting wenn User-Setting aktiv. Idempotenz via reminders_sent JSONB. ical-generator fuer .ics-Attachments.",
       "createdAt": "2026-04-15"
@@ -1067,7 +1067,7 @@
       "title": "User-Settings fuer Meeting-Reminder + KI-Agenda (pro User togglebar)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V4.1",
       "description": "Settings-UI: meeting_reminder_external_hours, meeting_reminder_internal_enabled, meeting_reminder_internal_minutes, meeting_agenda_mode. Jeder User entscheidet selbst, kein system-weites Nerven. Default: externe Erinnerungen an, interne Push aus, KI-Agenda on-click.",
       "createdAt": "2026-04-15"

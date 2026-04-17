@@ -1,13 +1,15 @@
 // =============================================================
 // Meeting Invite Sender — Send individualized Jitsi invites via SMTP
 // =============================================================
+// Upgraded in SLC-417: now uses full template with .ics attachment.
 
 import nodemailer from "nodemailer";
 import {
-  meetingInviteHtml,
-  meetingInviteSubject,
-  meetingInviteText,
-} from "@/lib/email/templates/meeting-invite-basic-de";
+  meetingInviteFullHtml,
+  meetingInviteFullSubject,
+  meetingInviteFullText,
+} from "@/lib/email/templates/meeting-invite-full-de";
+import { buildMeetingIcs } from "@/lib/meetings/ics-builder";
 
 interface InviteRecipient {
   email: string;
@@ -17,10 +19,15 @@ interface InviteRecipient {
 }
 
 interface SendInviteInput {
+  meetingId: string;
   meetingTitle: string;
-  meetingDate: string;   // formatted date, e.g. "17. April 2026, 14:00 Uhr"
+  meetingDate: string; // formatted date, e.g. "17. April 2026, 14:00 Uhr"
+  scheduledAt: Date;
+  durationMinutes: number;
   hostName: string;
+  hostEmail: string;
   agenda?: string;
+  location?: string | null;
   recipients: InviteRecipient[];
 }
 
@@ -48,6 +55,25 @@ export async function sendMeetingInvites(input: SendInviteInput): Promise<Result
   let failed = 0;
 
   for (const recipient of input.recipients) {
+    // Build individual .ics with this recipient as attendee
+    const icsContent = buildMeetingIcs({
+      meetingId: input.meetingId,
+      title: input.meetingTitle,
+      scheduledAt: input.scheduledAt,
+      durationMinutes: input.durationMinutes,
+      location: input.location,
+      description: input.agenda,
+      jitsiUrl: recipient.meetingUrl,
+      organizerName: input.hostName,
+      organizerEmail: input.hostEmail,
+      attendees: [
+        {
+          name: `${recipient.firstName} ${recipient.lastName}`.trim(),
+          email: recipient.email,
+        },
+      ],
+    });
+
     const templateInput = {
       firstName: recipient.firstName,
       lastName: recipient.lastName,
@@ -62,9 +88,13 @@ export async function sendMeetingInvites(input: SendInviteInput): Promise<Result
       await transporter.sendMail({
         from: fromAddress,
         to: recipient.email,
-        subject: meetingInviteSubject(templateInput),
-        text: meetingInviteText(templateInput),
-        html: meetingInviteHtml(templateInput),
+        subject: meetingInviteFullSubject(templateInput),
+        text: meetingInviteFullText(templateInput),
+        html: meetingInviteFullHtml(templateInput),
+        icalEvent: {
+          method: "REQUEST",
+          content: icsContent,
+        },
       });
       sent++;
     } catch {

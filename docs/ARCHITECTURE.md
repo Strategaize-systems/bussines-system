@@ -829,10 +829,13 @@ Fuer ein internes Single-User-Tool ist ein separater Worker-Container mit Queue-
 ```
 Coolify Cron
   │
-  ├── alle 5 Min  → POST /api/cron/imap-sync    (Header: x-cron-secret)
-  ├── alle 15 Min → POST /api/cron/classify      (Header: x-cron-secret)
-  ├── alle 6h     → POST /api/cron/followups     (Header: x-cron-secret)
-  └── taeglich    → POST /api/cron/retention      (Header: x-cron-secret)
+  ├── alle 5 Min  → POST /api/cron/imap-sync           (Header: x-cron-secret)
+  ├── alle 5 Min  → POST /api/cron/meeting-transcript  (Header: x-cron-secret)  ← V4.1
+  ├── alle 5 Min  → POST /api/cron/meeting-summary     (Header: x-cron-secret)  ← V4.1
+  ├── alle 5 Min  → POST /api/cron/meeting-reminders   (Header: x-cron-secret)  ← V4.1
+  ├── alle 15 Min → POST /api/cron/classify            (Header: x-cron-secret)
+  ├── alle 6h     → POST /api/cron/followups           (Header: x-cron-secret)
+  └── taeglich    → POST /api/cron/retention            (Header: x-cron-secret)
 ```
 
 ### Cron-Endpoint Schutz

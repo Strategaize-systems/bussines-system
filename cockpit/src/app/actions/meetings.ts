@@ -166,9 +166,13 @@ export async function startMeeting(
 
     if (recipients.length > 0) {
       const inviteResult = await sendMeetingInvites({
+        meetingId: meeting.id,
         meetingTitle: title,
         meetingDate: formatMeetingDate(scheduledAt),
+        scheduledAt,
+        durationMinutes: 60,
         hostName,
+        hostEmail: hostEmail || "",
         recipients,
       });
 

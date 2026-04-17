@@ -5,7 +5,8 @@ import { getEmailTemplates } from "./template-actions";
 import { getImapSyncStatus } from "./imap-actions";
 import { ImapStatus } from "./imap-status";
 import { getCurrentUserRole } from "@/lib/audit";
-import { Shield } from "lucide-react";
+import { Shield, Bell } from "lucide-react";
+import Link from "next/link";
 import type { PipelineStage } from "../pipeline/actions";
 
 export default async function SettingsPage() {
@@ -49,6 +50,21 @@ export default async function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Meeting settings link */}
+      <Link href="/settings/meetings" className="block">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:bg-slate-50">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50">
+              <Bell className="h-4 w-4 text-orange-600" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-900">Meeting-Einstellungen</p>
+              <p className="text-sm text-slate-500">Erinnerungen, Kalender und KI-Agenda</p>
+            </div>
+          </div>
+        </div>
+      </Link>
 
       <ImapStatus syncState={imapSync} />
 
