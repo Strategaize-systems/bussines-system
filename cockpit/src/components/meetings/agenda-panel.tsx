@@ -87,8 +87,8 @@ export function AgendaPanel({
         <CardContent>
           <p className="text-sm text-muted-foreground">
             KI-Agenda ist deaktiviert. Aktivieren Sie sie in den{" "}
-            <a href="/settings" className="underline">
-              Einstellungen
+            <a href="/settings/meetings" className="underline">
+              Meeting-Einstellungen
             </a>
             .
           </p>

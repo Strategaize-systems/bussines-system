@@ -9,7 +9,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { queryLLM } from "@/lib/ai/bedrock-client";
-import { withRetry, isRetryableError } from "@/lib/ai/retry";
 import { buildAgendaContext } from "@/lib/meetings/deal-context";
 import {
   buildMeetingAgendaPrompt,
@@ -76,28 +75,33 @@ export async function POST(
   // ── Build context ──
   const context = await buildAgendaContext(admin, meeting);
 
-  // ── Call Bedrock (1 call + 1 retry on 5xx) ──
+  // ── Call Bedrock (single call, 1 retry on failure) ──
+  // Cost guard: queryLLM returns { success: false } on error (does not throw).
+  // We do 1 call, and if it fails with a retryable error, 1 retry.
   const prompt = buildMeetingAgendaPrompt(context);
   const startTime = Date.now();
 
-  let llmResult;
-  try {
-    llmResult = await withRetry(
-      () =>
-        queryLLM(prompt, MEETING_AGENDA_SYSTEM_PROMPT, {
-          temperature: 0.3,
-          maxTokens: 1500,
-          timeoutMs: 30_000,
-        }),
-      isRetryableError,
-      [10_000] // Single retry after 10s (cost guard: max 2 calls)
-    );
-  } catch (err) {
-    console.error("[GenerateAgenda] Bedrock call failed after retry:", err);
-    return NextResponse.json(
-      { error: "KI-Agenda konnte nicht erstellt werden. Bitte spaeter erneut versuchen." },
-      { status: 502 }
-    );
+  let llmResult = await queryLLM(prompt, MEETING_AGENDA_SYSTEM_PROMPT, {
+    temperature: 0.3,
+    maxTokens: 1500,
+    timeoutMs: 30_000,
+  });
+
+  // Single retry on 5xx/timeout (cost guard: max 2 calls total)
+  if (!llmResult.success && llmResult.error) {
+    const isRetryable =
+      /\b5\d{2}\b/.test(llmResult.error) ||
+      llmResult.error.includes("timed out") ||
+      llmResult.error.includes("ThrottlingException");
+
+    if (isRetryable) {
+      console.log(`[GenerateAgenda] Retrying after error: ${llmResult.error}`);
+      llmResult = await queryLLM(prompt, MEETING_AGENDA_SYSTEM_PROMPT, {
+        temperature: 0.3,
+        maxTokens: 1500,
+        timeoutMs: 30_000,
+      });
+    }
   }
 
   const durationMs = Date.now() - startTime;
@@ -105,7 +109,7 @@ export async function POST(
   if (!llmResult.success || !llmResult.data) {
     console.error("[GenerateAgenda] LLM error:", llmResult.error);
     return NextResponse.json(
-      { error: "KI-Agenda konnte nicht erstellt werden." },
+      { error: "KI-Agenda konnte nicht erstellt werden. Bitte spaeter erneut versuchen." },
       { status: 502 }
     );
   }
