@@ -293,3 +293,10 @@
 - Summary: Am 2026-04-14 wurden versehentlich 5 Onboarding-Plattform-Tabellen (template, capture_session, block_checkpoint, knowledge_unit, validation_layer) sowie die Funktion `handle_new_user()` und der Trigger `on_auth_user_created` auf Business-DB angelegt. Ursache: beide Hetzner-Server (Business 91.98.20.191, Onboarding 159.69.207.29) haben denselben internen Hostname `coolify-ubuntu-4gb-nbg1-1`, sodass der SSH-Prompt keinen Unterschied zeigte.
 - Impact: Neue User-Signups wären gebrochen, weil `handle_new_user()` in Spalten `tenant_id` und `email` schrieb, die Business-`profiles` nicht hat. Bestehender User (richard@bellaerts.de) war nicht betroffen.
 - Next Action: Erledigt 2026-04-15 — Trigger, Funktion und die 5 leeren Tabellen gedropped, `_set_updated_at()` Helper mitentfernt. Verifikation: 25 Tabellen im public-Schema (erwartet), User + Profile intakt. Präventiv: SSH-Zugang via Claude-Code-Agent eingerichtet, alle DB-Eingriffe laufen jetzt nur noch via Agent (keine User-Paste-Sessions mehr), Hostname-Kollision kann sich damit nicht wiederholen (Adressierung nur noch per Public-IP).
+
+### ISSUE-038 — VAPID_SUBJECT zeigt auf nicht-existierende E-Mail-Adresse
+- Status: open
+- Severity: Low
+- Area: Push Notifications / ENV
+- Summary: VAPID_SUBJECT in Coolify steht auf `mailto:admin@strategaizetransition.com` — diese Adresse existiert nicht. Korrekt waere `mailto:immo@bellaerts.de`. Kein Runtime-Blocker, da Push trotzdem funktioniert, aber Push-Provider koennten die Adresse zur Kontaktaufnahme bei Abuse verwenden.
+- Next Action: In Coolify ENV aendern: `VAPID_SUBJECT=mailto:immo@bellaerts.de`. Kein Redeploy noetig (wird bei naechstem Container-Start gelesen).
