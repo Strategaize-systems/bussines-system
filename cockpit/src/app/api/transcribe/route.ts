@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getTranscriptionProvider } from "@/lib/ai/transcription";
 
 export async function POST(request: NextRequest) {
   // Auth check — only authenticated users can transcribe
@@ -7,14 +8,6 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "OPENAI_API_KEY nicht konfiguriert" },
-      { status: 500 }
-    );
   }
 
   try {
@@ -25,35 +18,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Keine Audio-Datei" }, { status: 400 });
     }
 
-    // Forward to OpenAI Whisper API
-    const whisperForm = new FormData();
-    whisperForm.append("file", audioFile, "recording.webm");
-    whisperForm.append("model", "whisper-1");
-    whisperForm.append("language", "de");
-    whisperForm.append("response_format", "text");
+    // Convert File to Buffer for the provider adapter
+    const arrayBuffer = await audioFile.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const filename = audioFile.name || "recording.webm";
 
-    const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: whisperForm,
-    });
+    // Use the transcription adapter (provider selected via ENV)
+    const provider = getTranscriptionProvider();
+    const result = await provider.transcribe(buffer, filename);
 
-    if (!response.ok) {
+    if (!result.success) {
       return NextResponse.json(
-        { error: `Whisper API Fehler: ${response.status}` },
-        { status: 502 }
+        { error: result.error },
+        { status: 502 },
       );
     }
 
-    const transcript = await response.text();
-
-    return NextResponse.json({ text: transcript.trim() });
+    return NextResponse.json({
+      text: result.text,
+      language: result.language,
+      duration: result.duration,
+      provider: result.provider,
+    });
   } catch (err) {
     return NextResponse.json(
       { error: "Transkription fehlgeschlagen" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

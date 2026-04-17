@@ -1007,7 +1007,7 @@
       "title": "Whisper-Adapter-Layer (OpenAI jetzt, Azure/Self-Hosted tauschbar)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V4.1",
       "description": "Adapter-Interface fuer Speech-to-Text-Provider (DEC-035). V4.1 implementiert OpenAIWhisperProvider. Spaetere Azure-Migration ist neue Adapter-Klasse + ENV-Variable, kein Feature-Rewrite. Interface: transcribe(audio, language) -> TranscriptionResult.",
       "createdAt": "2026-04-15"

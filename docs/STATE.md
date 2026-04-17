@@ -10,12 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: SLC-412 done (Jitsi+Jibri live auf meet.strategaizetransition.com, Jibri-Recording MP4 verifiziert in shared Volume). /qa PASS (RPT-120). Naechster Schritt: /backend SLC-413 Whisper-Adapter-Layer.
-- Current Phase: V4.1 Implementation (SLC-411 + SLC-412 done, 7 slices remaining)
+- Current Focus: SLC-413 done (Whisper-Adapter-Layer: TranscriptionProvider Interface + OpenAI-Provider + Azure/Selfhosted-Stubs + Factory + Route-Refactor). Naechster Schritt: /qa SLC-413, dann /backend SLC-414.
+- Current Phase: V4.1 Implementation (SLC-411 + SLC-412 + SLC-413 done, 6 slices remaining)
 
 ## Immediate Next Steps
-1. /backend SLC-413 — Whisper-Adapter-Layer (Transkriptions-Abstraktion, DEC-035/041)
-2. Weiter: SLC-414 (Meeting-Start + JWT + Consent-Check) → SLC-415 (Recording-Upload + Retention, inkl. Jibri-finalize.sh fuer ISSUE-035) → SLC-416 (Transkript + Summary-Pipeline) → SLC-417 (user_settings + Reminder-Cron + .ics) → SLC-418 (Browser-Push + Service Worker) → SLC-419 (KI-Agenda). Jeweils mit /qa.
+1. /qa SLC-413 — Whisper-Adapter-Layer (TypeScript-Check, Pattern-Konsistenz, Acceptance Criteria)
+2. /backend SLC-414 — Meeting-Start + Jitsi-JWT + Consent-Check
+3. Weiter: SLC-415 (Recording-Upload + Retention, inkl. Jibri-finalize.sh fuer ISSUE-035) → SLC-416 (Transkript + Summary-Pipeline) → SLC-417 (user_settings + Reminder-Cron + .ics) → SLC-418 (Browser-Push + Service Worker) → SLC-419 (KI-Agenda). Jeweils mit /qa.
 3. V4-Nachzug parallel: Cal.com Admin-Password staerken (15+ Zeichen + 2FA), Live-Testbuchung — kein V4.1-Blocker
 4. VAPID_SUBJECT in Coolify auf immo@bellaerts.de umstellen (steht auf nicht-existentem admin@...) — kein V4.1-Blocker
 5. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037) — sonst bricht Jibri nach Reboot
