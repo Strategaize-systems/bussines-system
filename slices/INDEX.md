@@ -114,4 +114,4 @@
 | SLC-416 | [Transkript + Summary-Pipeline](SLC-416-transcript-summary-pipeline.md) | FEAT-404 | done | High | 2026-04-15 |
 | SLC-417 | [user_settings + Reminder-Cron + .ics](SLC-417-user-settings-reminder-ics.md) | FEAT-409 | done | High | 2026-04-15 |
 | SLC-418 | [Browser-Push + Service Worker](SLC-418-browser-push-service-worker.md) | FEAT-409 | done | Medium | 2026-04-15 |
-| SLC-419 | [KI-Agenda (on-click + auto)](SLC-419-ki-agenda.md) | FEAT-409 | planned | Medium | 2026-04-15 |
+| SLC-419 | [KI-Agenda (on-click + auto)](SLC-419-ki-agenda.md) | FEAT-409 | done | Medium | 2026-04-15 |

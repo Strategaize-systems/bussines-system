@@ -435,7 +435,7 @@
       "title": "Call Intelligence (Jitsi + Jibri + Whisper + Bedrock-Summary)",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V4.1",
       "description": "FEAT-404: Browser-basiertes Video-Meeting via Jitsi, automatische Aufzeichnung via Jibri, Transkription via Whisper-Adapter (OpenAI V4.1), Summary via Bedrock Claude Sonnet 4. Ergebnis als Meeting-Activity in Deal-Timeline. Recording nur bei geprueftem Consent (FEAT-411).",
       "createdAt": "2026-04-01"
@@ -1057,7 +1057,7 @@
       "title": "KI-Agenda-Vorbereitung vor Meetings (Bedrock + Deal-Kontext)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V4.1",
       "description": "FEAT-409 Teil C: Bedrock-Call mit Deal-Historie, Kontakten, offenen Tasks -> strukturierte Agenda (letzte Kommunikation, offene Punkte, Entscheider, Meeting-Ziel-Vorschlag). Per-User-Setting: auto / on_click / off (Default on_click). Kostenschutz: ein LLM-Call pro Agenda.",
       "createdAt": "2026-04-15"

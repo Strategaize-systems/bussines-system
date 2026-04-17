@@ -95,9 +95,9 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-404 | Call Intelligence (Jitsi + Jibri + Whisper + Summary) | in_progress | [Spec](FEAT-404-call-intelligence.md) | 2026-04-09 |
-| FEAT-409 | Meeting-Erinnerungen (extern + intern + KI-Agenda) | in_progress | [Spec](FEAT-409-meeting-erinnerungen.md) | 2026-04-11 |
-| FEAT-411 | DSGVO-Einwilligungsflow fuer Aufzeichnung | in_progress | [Spec](FEAT-411-dsgvo-einwilligung.md) | 2026-04-15 |
+| FEAT-404 | Call Intelligence (Jitsi + Jibri + Whisper + Summary) | done | [Spec](FEAT-404-call-intelligence.md) | 2026-04-09 |
+| FEAT-409 | Meeting-Erinnerungen (extern + intern + KI-Agenda) | done | [Spec](FEAT-409-meeting-erinnerungen.md) | 2026-04-11 |
+| FEAT-411 | DSGVO-Einwilligungsflow fuer Aufzeichnung | done | [Spec](FEAT-411-dsgvo-einwilligung.md) | 2026-04-15 |
 
 ## V4.2 Features (Wissensbasis Cross-Source — planned)
 

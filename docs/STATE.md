@@ -9,17 +9,18 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: SLC-418 done (Browser-Push + Service Worker: web-push, SW, PushSubscribeButton, subscribe API, push helper, cron push-first/SMTP-fallback, iOS hint). Naechster Schritt: /qa SLC-418, dann /backend SLC-419.
-- Current Phase: V4.1 Implementation (SLC-411..418 done, 1 slice remaining)
+- High-Level State: qa
+- Current Focus: SLC-419 done (KI-Agenda on-click + auto via Bedrock). Alle 9/9 V4.1 Slices done. Naechster Schritt: /qa SLC-419, dann Gesamt-QA V4.1.
+- Current Phase: V4.1 QA (alle Slices done, Gesamt-QA + Final-Check + Deploy ausstehend)
 
 ## Immediate Next Steps
-1. /qa SLC-418 — Browser-Push + Service Worker (SW-Registration, Push-Permission, Subscription-API, Cron Push/SMTP-Fallback, iOS-Hint, 410-Cleanup)
-2. /backend SLC-419 — KI-Agenda (on-click + auto)
-3. Gesamt-QA V4.1 nach SLC-419
-3. V4-Nachzug parallel: Cal.com Admin-Password staerken (15+ Zeichen + 2FA), Live-Testbuchung — kein V4.1-Blocker
-4. VAPID_SUBJECT in Coolify auf immo@bellaerts.de umstellen (steht auf nicht-existentem admin@...) — kein V4.1-Blocker
-5. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037) — sonst bricht Jibri nach Reboot
+1. /qa SLC-419 — KI-Agenda (Prompt-Qualitaet, Mode-Logik, Privacy, Idempotenz, JSON-Validation, Kosten-Check)
+2. Gesamt-QA V4.1 — alle 9 Slices (SLC-411..419) zusammen pruefen
+3. /final-check V4.1
+4. Coolify Redeploy + Smoke-Tests
+5. V4-Nachzug parallel: Cal.com Admin-Password staerken (15+ Zeichen + 2FA), Live-Testbuchung — kein V4.1-Blocker
+6. VAPID_SUBJECT in Coolify auf immo@bellaerts.de umstellen (steht auf nicht-existentem admin@...) — kein V4.1-Blocker
+7. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037) — sonst bricht Jibri nach Reboot
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (active, Architecture done):**
