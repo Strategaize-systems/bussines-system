@@ -1296,6 +1296,8 @@ Teil des Classify-Cron (/api/cron/classify)
 | `/api/cron/classify` | POST | E-Mail Batch-Klassifikation | CRON_SECRET |
 | `/api/cron/followups` | POST | KI-Wiedervorlagen generieren | CRON_SECRET |
 | `/api/cron/retention` | POST | E-Mail Retention Cleanup | CRON_SECRET |
+| `/api/cron/meeting-recording-poll` | POST | Jibri-MP4 Upload nach Supabase Storage (alle 2 Min) | CRON_SECRET |
+| `/api/cron/recording-retention` | POST | Recordings >30d loeschen (taeglich 04:00 UTC) | CRON_SECRET |
 | `/api/webhooks/calcom` | POST | Cal.com Webhook Receiver | CALCOM_WEBHOOK_SECRET |
 
 ### Bestehende API Routes (erweitert)
@@ -1371,6 +1373,9 @@ CALCOM_API_KEY=...                     # Cal.com API Key fuer Sync
 CALCOM_WEBHOOK_SECRET=...              # Webhook-Verifizierung
 CALCOM_BASE_URL=http://calcom:3000     # Interner URL (Container-zu-Container)
 NEXT_PUBLIC_CALCOM_URL=https://cal.strategaizetransition.com  # Externer URL
+
+# Recording (V4.1 SLC-415 NEU)
+RECORDING_RETENTION_DAYS=30            # Tage bis Recording-Loeschung (Default 30, DEC-043)
 ```
 
 ## V4 Server Sizing

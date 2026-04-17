@@ -40,8 +40,9 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# Install wget for healthcheck (must be before USER switch)
-RUN apk add --no-cache wget
+# Install wget for healthcheck + ffmpeg for ffprobe (recording duration extraction)
+# Must be before USER switch
+RUN apk add --no-cache wget ffmpeg
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
