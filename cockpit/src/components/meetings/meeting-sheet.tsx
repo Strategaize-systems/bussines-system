@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { MeetingForm } from "./meeting-form";
 import { MeetingIntelligence } from "./meeting-intelligence";
+import { AgendaPanel } from "./agenda-panel";
 import { FollowUpDialog } from "./follow-up-dialog";
 import {
   createMeeting,
@@ -125,12 +126,19 @@ export function MeetingSheet({
               defaultAgenda={defaultAgenda}
             />
             {meeting && (
-              <MeetingIntelligence
-                meeting={meeting}
-                onSaveTranscript={async (text) => {
-                  await updateTranscript(meeting.id, text);
-                }}
-              />
+              <>
+                <AgendaPanel
+                  meetingId={meeting.id}
+                  aiAgenda={meeting.ai_agenda}
+                  aiAgendaGeneratedAt={meeting.ai_agenda_generated_at}
+                />
+                <MeetingIntelligence
+                  meeting={meeting}
+                  onSaveTranscript={async (text) => {
+                    await updateTranscript(meeting.id, text);
+                  }}
+                />
+              </>
             )}
           </div>
         </SheetContent>

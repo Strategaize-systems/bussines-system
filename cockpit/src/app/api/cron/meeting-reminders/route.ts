@@ -20,6 +20,13 @@ import {
 } from "@/lib/email/templates/meeting-reminder-de";
 import { sendPushNotification } from "@/lib/push/send";
 import { buildReminderBody } from "@/lib/push/build-reminder-body";
+import { queryLLM } from "@/lib/ai/bedrock-client";
+import { buildAgendaContext } from "@/lib/meetings/deal-context";
+import {
+  buildMeetingAgendaPrompt,
+  parseMeetingAgenda,
+  MEETING_AGENDA_SYSTEM_PROMPT,
+} from "@/lib/ai/prompts/meeting-agenda";
 import nodemailer from "nodemailer";
 import type { ReminderSentEntry } from "@/app/(app)/meetings/actions";
 
@@ -357,8 +364,93 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ── Auto-Agenda Generation (SLC-419 MT-4) ──────────────────
+    // For users with meeting_agenda_mode='auto', generate AI agenda
+    // for meetings within 25h that don't have one yet.
+    let agendasGenerated = 0;
+
+    for (const meeting of meetings) {
+      // Skip if already has agenda
+      if (meeting.ai_agenda) continue;
+
+      // Check host settings for auto mode
+      const hostSettings = meeting.created_by
+        ? settingsMap.get(meeting.created_by)
+        : null;
+
+      if (hostSettings?.meeting_agenda_mode !== "auto") continue;
+
+      try {
+        const context = await buildAgendaContext(admin, meeting);
+        const prompt = buildMeetingAgendaPrompt(context);
+
+        const llmResult = await queryLLM(
+          prompt,
+          MEETING_AGENDA_SYSTEM_PROMPT,
+          { temperature: 0.3, maxTokens: 1500, timeoutMs: 30_000 }
+        );
+
+        if (!llmResult.success || !llmResult.data) {
+          console.error(
+            `[Cron/MeetingReminders] Auto-agenda LLM failed for meeting ${meeting.id}:`,
+            llmResult.error
+          );
+          continue;
+        }
+
+        const agenda = parseMeetingAgenda(llmResult.data);
+        if (!agenda) {
+          console.error(
+            `[Cron/MeetingReminders] Auto-agenda parse failed for meeting ${meeting.id}`
+          );
+          continue;
+        }
+
+        await admin
+          .from("meetings")
+          .update({
+            ai_agenda: JSON.stringify(agenda),
+            ai_agenda_generated_at: new Date().toISOString(),
+          })
+          .eq("id", meeting.id);
+
+        // Cost logging
+        const inputTokensEst = Math.ceil(prompt.length / 4);
+        const outputTokensEst = Math.ceil(llmResult.data.length / 4);
+        const costEst =
+          (inputTokensEst * 3) / 1_000_000 +
+          (outputTokensEst * 15) / 1_000_000;
+
+        console.log(
+          `[Cron/MeetingReminders] Auto-agenda generated for meeting ${meeting.id} cost≈$${costEst.toFixed(4)}`
+        );
+
+        // Audit log (no actor — cron-generated)
+        await admin.from("audit_log").insert({
+          actor_id: null,
+          action: "ai_agenda_generated",
+          entity_type: "meeting",
+          entity_id: meeting.id,
+          changes: {
+            mode: "auto",
+            input_tokens_est: inputTokensEst,
+            output_tokens_est: outputTokensEst,
+            cost_usd_est: parseFloat(costEst.toFixed(4)),
+          },
+          context: "KI-Agenda auto-generiert (Cron)",
+        });
+
+        agendasGenerated++;
+      } catch (err) {
+        console.error(
+          `[Cron/MeetingReminders] Auto-agenda error for meeting ${meeting.id}:`,
+          err instanceof Error ? err.message : err
+        );
+      }
+    }
+
     console.log(
-      `[Cron/MeetingReminders] Done. meetings=${meetings.length} sent=${totalSent} skipped=${totalSkipped}`
+      `[Cron/MeetingReminders] Done. meetings=${meetings.length} sent=${totalSent} skipped=${totalSkipped} agendas=${agendasGenerated}`
     );
 
     return NextResponse.json({
@@ -366,6 +458,7 @@ export async function POST(request: NextRequest) {
       meetings_checked: meetings.length,
       sent: totalSent,
       skipped: totalSkipped,
+      agendas_generated: agendasGenerated,
     });
   } catch (err) {
     console.error("[Cron/MeetingReminders] Error:", err);
