@@ -10,10 +10,12 @@ import {
   type UserSettings,
   type MeetingAgendaMode,
 } from "@/app/actions/user-settings";
+import { PushSubscribeButton } from "./PushSubscribeButton";
 import { Bell, Calendar, Brain, X, Plus } from "lucide-react";
 
 interface Props {
   initial: UserSettings | null;
+  vapidPublicKey: string;
 }
 
 const AGENDA_MODE_OPTIONS: { value: MeetingAgendaMode; label: string; desc: string }[] = [
@@ -24,7 +26,7 @@ const AGENDA_MODE_OPTIONS: { value: MeetingAgendaMode; label: string; desc: stri
 
 const INTERNAL_MINUTES_OPTIONS = [5, 10, 15, 30, 60];
 
-export function MeetingSettingsForm({ initial }: Props) {
+export function MeetingSettingsForm({ initial, vapidPublicKey }: Props) {
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
@@ -139,9 +141,13 @@ export function MeetingSettingsForm({ initial }: Props) {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Sie selbst erhalten eine Erinnerung per E-Mail vor Ihrem Meeting.
-            Browser-Push kommt in einem spaeteren Update.
+            Sie selbst erhalten eine Erinnerung vor Ihrem Meeting — per Browser-Push oder E-Mail.
           </p>
+
+          <PushSubscribeButton
+            vapidPublicKey={vapidPublicKey}
+            hasSubscription={!!initial?.push_subscription}
+          />
 
           <div className="flex items-center gap-3">
             <input

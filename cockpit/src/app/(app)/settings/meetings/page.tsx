@@ -3,6 +3,7 @@ import { MeetingSettingsForm } from "@/components/settings/MeetingSettingsForm";
 
 export default async function MeetingSettingsPage() {
   const settings = await getUserSettings();
+  const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || "";
 
   return (
     <div className="space-y-6">
@@ -13,7 +14,7 @@ export default async function MeetingSettingsPage() {
         </p>
       </div>
 
-      <MeetingSettingsForm initial={settings} />
+      <MeetingSettingsForm initial={settings} vapidPublicKey={vapidPublicKey} />
     </div>
   );
 }

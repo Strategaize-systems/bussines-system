@@ -18,6 +18,8 @@ import {
   meetingReminderText,
   meetingReminderHtml,
 } from "@/lib/email/templates/meeting-reminder-de";
+import { sendPushNotification } from "@/lib/push/send";
+import { buildReminderBody } from "@/lib/push/build-reminder-body";
 import nodemailer from "nodemailer";
 import type { ReminderSentEntry } from "@/app/(app)/meetings/actions";
 
@@ -232,7 +234,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // ── Internal Reminder (to host via SMTP) ──
+      // ── Internal Reminder (to host: Push first, SMTP fallback) ──
 
       if (
         hostSettings?.meeting_reminder_internal_enabled &&
@@ -249,51 +251,97 @@ export async function POST(request: NextRequest) {
         ) {
           const reminderKey = makeReminderKey("internal", internalMinutes);
           if (!wasReminderSent(remindersSent, reminderKey, hostEmail)) {
-            const icsContent = buildMeetingIcs({
-              meetingId: meeting.id,
-              title: meeting.title,
-              scheduledAt,
-              durationMinutes: meeting.duration_minutes || 60,
-              location: meeting.location,
-              description: meeting.agenda,
-              organizerName: hostName,
-              organizerEmail: hostEmail,
-            });
+            let delivered = false;
 
-            const templateInput = {
-              firstName: hostName.split(" ")[0] || hostName,
-              lastName: hostName.split(" ").slice(1).join(" ") || "",
-              meetingTitle: meeting.title,
-              meetingDate: formatMeetingDate(scheduledAt),
-              hostName,
-              reminderHours: Math.round(internalMinutes / 60 * 10) / 10,
-              agenda: meeting.agenda ?? undefined,
-            };
+            // ── Try Push first ──
+            if (hostSettings.push_subscription) {
+              const contact = meeting.contacts;
+              const contacts = contact
+                ? Array.isArray(contact) ? contact : [contact]
+                : [];
 
-            try {
-              await smtp.transporter.sendMail({
-                from: smtp.fromAddress,
-                to: hostEmail,
-                subject: meetingReminderSubject(templateInput),
-                text: meetingReminderText(templateInput),
-                html: meetingReminderHtml(templateInput),
-                icalEvent: {
-                  method: "REQUEST",
-                  content: icsContent,
-                },
+              const contactNames = contacts.map(
+                (c: { first_name?: string; last_name?: string }) =>
+                  `${c.first_name || ""} ${c.last_name || ""}`.trim()
+              ).filter(Boolean);
+
+              const pushPayload = buildReminderBody({
+                meetingTitle: meeting.title,
+                meetingId: meeting.id,
+                contactNames,
+                lastContactDate: meeting.last_contact_date ?? null,
+                openActionItems: 0, // Would need separate query — kept simple
+                dealName: null, // Deal name not in meeting join — kept simple
               });
 
+              const pushResult = await sendPushNotification(
+                meeting.created_by,
+                pushPayload
+              );
+
+              if (pushResult.success) {
+                delivered = true;
+                console.log(
+                  `[Cron/MeetingReminders] Push sent to host for meeting ${meeting.id}`
+                );
+              } else {
+                console.log(
+                  `[Cron/MeetingReminders] Push failed (${pushResult.error}), falling back to SMTP`
+                );
+              }
+            }
+
+            // ── SMTP fallback ──
+            if (!delivered) {
+              const icsContent = buildMeetingIcs({
+                meetingId: meeting.id,
+                title: meeting.title,
+                scheduledAt,
+                durationMinutes: meeting.duration_minutes || 60,
+                location: meeting.location,
+                description: meeting.agenda,
+                organizerName: hostName,
+                organizerEmail: hostEmail,
+              });
+
+              const templateInput = {
+                firstName: hostName.split(" ")[0] || hostName,
+                lastName: hostName.split(" ").slice(1).join(" ") || "",
+                meetingTitle: meeting.title,
+                meetingDate: formatMeetingDate(scheduledAt),
+                hostName,
+                reminderHours: Math.round(internalMinutes / 60 * 10) / 10,
+                agenda: meeting.agenda ?? undefined,
+              };
+
+              try {
+                await smtp.transporter.sendMail({
+                  from: smtp.fromAddress,
+                  to: hostEmail,
+                  subject: meetingReminderSubject(templateInput),
+                  text: meetingReminderText(templateInput),
+                  html: meetingReminderHtml(templateInput),
+                  icalEvent: {
+                    method: "REQUEST",
+                    content: icsContent,
+                  },
+                });
+                delivered = true;
+              } catch (err) {
+                console.error(
+                  `[Cron/MeetingReminders] Failed to send internal SMTP reminder to ${hostEmail}:`,
+                  err instanceof Error ? err.message : err
+                );
+              }
+            }
+
+            if (delivered) {
               newReminders.push({
                 type: reminderKey,
                 recipient: hostEmail,
                 sent_at: now.toISOString(),
               });
               totalSent++;
-            } catch (err) {
-              console.error(
-                `[Cron/MeetingReminders] Failed to send internal reminder to ${hostEmail}:`,
-                err instanceof Error ? err.message : err
-              );
             }
           }
         }
