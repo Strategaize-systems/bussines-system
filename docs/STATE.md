@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: SLC-417 done (user_settings + Reminder-Cron + .ics: Backfill-SQL, Server Actions, Settings-UI, ics-Builder, Mail-Templates, Reminder-Cron, Invite-Flow-Upgrade). Naechster Schritt: /qa SLC-417, dann /backend SLC-418.
-- Current Phase: V4.1 Implementation (SLC-411..417 done, 2 slices remaining)
+- Current Focus: SLC-418 done (Browser-Push + Service Worker: web-push, SW, PushSubscribeButton, subscribe API, push helper, cron push-first/SMTP-fallback, iOS hint). Naechster Schritt: /qa SLC-418, dann /backend SLC-419.
+- Current Phase: V4.1 Implementation (SLC-411..418 done, 1 slice remaining)
 
 ## Immediate Next Steps
-1. /qa SLC-417 — user_settings + Reminder-Cron + .ics (Backfill, Settings-UI, ics-Builder, Cron-Idempotenz, Opt-out, Invite-Upgrade)
-2. /backend SLC-418 — Browser-Push + Service Worker
-3. Weiter: SLC-419 (KI-Agenda). Jeweils mit /qa.
+1. /qa SLC-418 — Browser-Push + Service Worker (SW-Registration, Push-Permission, Subscription-API, Cron Push/SMTP-Fallback, iOS-Hint, 410-Cleanup)
+2. /backend SLC-419 — KI-Agenda (on-click + auto)
+3. Gesamt-QA V4.1 nach SLC-419
 3. V4-Nachzug parallel: Cal.com Admin-Password staerken (15+ Zeichen + 2FA), Live-Testbuchung — kein V4.1-Blocker
 4. VAPID_SUBJECT in Coolify auf immo@bellaerts.de umstellen (steht auf nicht-existentem admin@...) — kein V4.1-Blocker
 5. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037) — sonst bricht Jibri nach Reboot
