@@ -91,6 +91,6 @@ export function buildReminderBody(input: ReminderBodyInput): PushPayload {
     title: input.meetingTitle,
     body: parts.join(" \u00b7 "), // middle dot separator
     tag: `meeting-${input.meetingId}`,
-    url: `/meetings/${input.meetingId}`,
+    url: `/termine`,
   };
 }

@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCronSecret } from "../verify-cron-secret";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { buildMeetingIcs, type IcsInput } from "@/lib/meetings/ics-builder";
+import { buildMeetingIcs } from "@/lib/meetings/ics-builder";
 import {
   meetingReminderSubject,
   meetingReminderText,
