@@ -9,18 +9,17 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: qa
-- Current Focus: Gesamt-QA V4.1 PASS (RPT-128). 5 Medium Findings, 0 Blocker. F-1 (reload-Fix) und F-3 (.env.example) sollten vor Go-Live gefixt werden.
-- Current Phase: V4.1 Final-Check (Gesamt-QA done, Final-Check + Deploy ausstehend)
+- High-Level State: go-live
+- Current Focus: Gesamt-QA PASS (RPT-128) + Final-Check PASS (RPT-129). 0 Blocker, 0 High. npm audit fix + reload-Fix + .env.example inline erledigt.
+- Current Phase: V4.1 Go-Live (QA + Final-Check done, Go-Live + Deploy ausstehend)
 
 ## Immediate Next Steps
-1. F-1 fixen — window.location.reload() in summary-panel.tsx + transcript-panel.tsx durch lokalen State-Update ersetzen
-2. F-3 fixen — .env.example um fehlende V4/V4.1 Variablen ergaenzen
-3. /final-check V4.1
-4. Coolify Redeploy + Smoke-Tests
-5. /go-live V4.1
-6. VAPID_SUBJECT in Coolify auf immo@bellaerts.de umstellen (ISSUE-038) — kein V4.1-Blocker
-7. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
+1. /go-live V4.1 — Go/No-Go-Entscheidung + Release-Vorbereitung
+2. Coolify Redeploy ausloesen
+3. VAPID_SUBJECT in Coolify auf immo@bellaerts.de umstellen (ISSUE-038)
+4. Smoke-Tests nach Redeploy (6-8 Tests)
+5. Browser-Push Live-Test (SLC-418)
+6. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (active, Architecture done):**
