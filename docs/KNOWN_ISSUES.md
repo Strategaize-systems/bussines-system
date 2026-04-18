@@ -295,8 +295,8 @@
 - Next Action: Erledigt 2026-04-15 — Trigger, Funktion und die 5 leeren Tabellen gedropped, `_set_updated_at()` Helper mitentfernt. Verifikation: 25 Tabellen im public-Schema (erwartet), User + Profile intakt. Präventiv: SSH-Zugang via Claude-Code-Agent eingerichtet, alle DB-Eingriffe laufen jetzt nur noch via Agent (keine User-Paste-Sessions mehr), Hostname-Kollision kann sich damit nicht wiederholen (Adressierung nur noch per Public-IP).
 
 ### ISSUE-038 — VAPID_SUBJECT zeigt auf nicht-existierende E-Mail-Adresse
-- Status: open
+- Status: resolved
 - Severity: Low
 - Area: Push Notifications / ENV
-- Summary: VAPID_SUBJECT in Coolify steht auf `mailto:admin@strategaizetransition.com` — diese Adresse existiert nicht. Korrekt waere `mailto:immo@bellaerts.de`. Kein Runtime-Blocker, da Push trotzdem funktioniert, aber Push-Provider koennten die Adresse zur Kontaktaufnahme bei Abuse verwenden.
-- Next Action: In Coolify ENV aendern: `VAPID_SUBJECT=mailto:immo@bellaerts.de`. Kein Redeploy noetig (wird bei naechstem Container-Start gelesen).
+- Summary: VAPID_SUBJECT in Coolify stand auf `mailto:admin@strategaizetransition.com` — diese Adresse existierte nicht. Geaendert auf `mailto:immo@bellaerts.de` am 2026-04-18 vor V4.1 Redeploy.
+- Next Action: Erledigt.

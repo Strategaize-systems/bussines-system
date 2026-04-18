@@ -9,16 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: deploying
-- Current Focus: V4.1 Go-Live GO (REL-010). Coolify Redeploy + Smoke-Tests ausstehend.
-- Current Phase: V4.1 Deployment (Go-Live GO, Deploy + Post-Launch ausstehend)
+- High-Level State: stable
+- Current Focus: V4.1 released und stabil (REL-010, RPT-130). 8/8 Smoke-Tests PASS. 3 Post-Deploy-Fixes erledigt.
+- Current Phase: Stable (V4.1 released)
 
 ## Immediate Next Steps
-1. Coolify Redeploy ausloesen (manuell via Coolify UI)
-2. VAPID_SUBJECT in Coolify ENV auf mailto:immo@bellaerts.de aendern (ISSUE-038)
-3. Smoke-Tests nach Redeploy (8 Tests: Login, Meeting-Start, Consent-Page, Recording-Upload, KI-Agenda, Settings, Reminder-Cron, Push-Registration)
-4. /post-launch V4.1
-5. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
+1. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
+2. Naechstes Redeploy: Padding-Fix (fa5f5d6) wird automatisch mit ausgerollt
+3. Naechste inhaltliche Arbeit: V4.2 Planning (Wissensbasis Cross-Source) oder anderes Projekt
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (active, Architecture done):**
