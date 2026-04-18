@@ -1097,7 +1097,7 @@
       "title": "pgvector Setup + knowledge_chunks Tabelle + Chunking-Service",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V4.2",
       "description": "FEAT-401a: pgvector Extension aktivieren, knowledge_chunks Tabelle mit vector(1024) + HNSW-Index anlegen, Chunking-Service mit quelltypspezifischer Strategie (Meetings paragraph-basiert, E-Mails pro Mail, Activities pro Eintrag, Dokumente seiten-/absatzbasiert).",
       "createdAt": "2026-04-18"
@@ -1107,7 +1107,7 @@
       "title": "Embedding-Adapter-Pattern + Titan V2 Provider",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V4.2",
       "description": "FEAT-401a/DEC-047: EmbeddingProvider Interface in /lib/ai/embeddings/. TitanEmbeddingProvider als V4.2-Implementierung (Bedrock eu-central-1). Factory mit EMBEDDING_PROVIDER ENV. Analog zu Whisper-Adapter (DEC-035).",
       "createdAt": "2026-04-18"
