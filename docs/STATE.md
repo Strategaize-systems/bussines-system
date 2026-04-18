@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V4.2 Wissensbasis Cross-Source — SLC-421..425 done (5/6), naechster Schritt /qa SLC-425 dann /backend SLC-426
+- Current Focus: V4.2 Wissensbasis Cross-Source — SLC-421..425 done + QA PASS (5/6), naechster Schritt /backend SLC-426
 - Current Phase: V4.2 Implementation
 
 ## Immediate Next Steps
-1. /qa SLC-425 — Deal Knowledge Query UI QA
-2. /backend SLC-426 — Auto-Embedding Trigger
-3. Gesamt-QA V4.2
+1. /backend SLC-426 — Auto-Embedding Trigger (letzter V4.2 Slice)
+2. /qa SLC-426
+3. Gesamt-QA V4.2 + /final-check
 4. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
 
 ## Active Scope
