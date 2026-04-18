@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { indexDocument } from "@/lib/knowledge/indexer";
+import { isExtractableFormat } from "@/lib/knowledge/chunker";
 
 export type Document = {
   id: string;
@@ -63,7 +65,7 @@ export async function uploadDocument(formData: FormData) {
   if (uploadError) return { error: uploadError.message };
 
   // Save metadata
-  const { error: dbError } = await supabase.from("documents").insert({
+  const { data: inserted, error: dbError } = await supabase.from("documents").insert({
     contact_id: contactId,
     company_id: companyId,
     deal_id: dealId,
@@ -72,9 +74,16 @@ export async function uploadDocument(formData: FormData) {
     file_type: file.type || null,
     file_size: file.size,
     category: (formData.get("category") as string) || null,
-  });
+  }).select("id").single();
 
   if (dbError) return { error: dbError.message };
+
+  // Auto-embed document into knowledge base (fire-and-forget, only extractable formats)
+  if (inserted?.id && isExtractableFormat(file.name)) {
+    indexDocument(inserted.id)
+      .then((r) => console.log(`[Document] Auto-embedded ${inserted.id}: ${r.stored} chunks`))
+      .catch((err) => console.error(`[Document] Auto-embed failed: ${inserted.id}`, err.message));
+  }
 
   if (contactId) revalidatePath(`/contacts/${contactId}`);
   if (companyId) revalidatePath(`/companies/${companyId}`);

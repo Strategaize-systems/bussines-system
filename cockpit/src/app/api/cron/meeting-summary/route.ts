@@ -9,6 +9,7 @@ import {
   parseMeetingSummary,
   type MeetingSummaryContext,
 } from "@/lib/ai/prompts/meeting-summary";
+import { indexMeeting } from "@/lib/knowledge/indexer";
 
 export const maxDuration = 120;
 
@@ -112,6 +113,11 @@ export async function POST(request: NextRequest) {
             summary_status: "completed",
           })
           .eq("id", meeting.id);
+
+        // Auto-embed meeting into knowledge base (fire-and-forget)
+        indexMeeting(meeting.id)
+          .then((r) => console.log(`[Cron/Summary] Auto-embedded meeting ${meeting.id}: ${r.stored} chunks`))
+          .catch((err) => console.error(`[Cron/Summary] Auto-embed meeting failed: ${meeting.id}`, err.message));
 
         // Insert Activity (idempotent: check for existing)
         if (meeting.deal_id) {

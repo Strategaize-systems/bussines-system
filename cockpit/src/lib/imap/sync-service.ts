@@ -3,6 +3,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parseEmail, normalizeSubject, type ParsedEmail } from "./parser";
 import { matchContact, type ContactMatch } from "./contact-matcher";
+import { indexEmail } from "@/lib/knowledge/indexer";
 
 export interface SyncResult {
   synced: number;
@@ -133,7 +134,7 @@ export async function syncEmails(): Promise<SyncResult> {
           const retentionDate = new Date(
             Date.now() + RETENTION_DAYS * 24 * 60 * 60 * 1000
           );
-          await supabase.from("email_messages").insert({
+          const { data: insertedEmail } = await supabase.from("email_messages").insert({
             message_id: parsed.messageId,
             in_reply_to: parsed.inReplyTo,
             references_header: parsed.references,
@@ -152,7 +153,14 @@ export async function syncEmails(): Promise<SyncResult> {
             attachments: parsed.attachments,
             headers_json: parsed.headersJson,
             retention_expires_at: retentionDate.toISOString(),
-          });
+          }).select("id").single();
+
+          // Auto-embed email into knowledge base (fire-and-forget)
+          if (insertedEmail?.id) {
+            indexEmail(insertedEmail.id)
+              .then((r) => console.log(`[IMAP-Sync] Auto-embedded email ${insertedEmail.id}: ${r.stored} chunks`))
+              .catch((err) => console.error(`[IMAP-Sync] Auto-embed email failed: ${insertedEmail.id}`, err.message));
+          }
 
           // Update thread stats if existing thread
           if (!threadResult.isNew && threadResult.threadId) {

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { indexActivity } from "@/lib/knowledge/indexer";
 
 export type Activity = {
   id: string;
@@ -53,13 +54,15 @@ export async function createActivity(formData: FormData) {
   const companyId = (formData.get("company_id") as string) || null;
   const dealId = (formData.get("deal_id") as string) || null;
 
-  const { error } = await supabase.from("activities").insert({
+  const description = (formData.get("description") as string) || null;
+
+  const { data: inserted, error } = await supabase.from("activities").insert({
     contact_id: contactId,
     company_id: companyId,
     deal_id: dealId,
     type: formData.get("type") as string,
     title: (formData.get("title") as string) || null,
-    description: (formData.get("description") as string) || null,
+    description,
     due_date: (formData.get("due_date") as string) || null,
     conversation_type: (formData.get("conversation_type") as string) || null,
     participants: (formData.get("participants") as string) || null,
@@ -69,9 +72,16 @@ export async function createActivity(formData: FormData) {
     risks: (formData.get("risks") as string) || null,
     next_steps: (formData.get("next_steps") as string) || null,
     qualification_signals: (formData.get("qualification_signals") as string) || null,
-  });
+  }).select("id").single();
 
   if (error) return { error: error.message };
+
+  // Auto-embed activity into knowledge base (fire-and-forget, only if has description)
+  if (inserted?.id && description && description.trim().length > 0) {
+    indexActivity(inserted.id)
+      .then((r) => console.log(`[Activity] Auto-embedded ${inserted.id}: ${r.stored} chunks`))
+      .catch((err) => console.error(`[Activity] Auto-embed failed: ${inserted.id}`, err.message));
+  }
 
   if (contactId) revalidatePath(`/contacts/${contactId}`);
   if (companyId) revalidatePath(`/companies/${companyId}`);
