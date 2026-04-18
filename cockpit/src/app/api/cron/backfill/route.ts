@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyCronSecret } from "../../cron/verify-cron-secret";
+import { verifyCronSecret } from "../verify-cron-secret";
 import { runBackfill } from "@/lib/knowledge/backfill";
 
 export const maxDuration = 60;
