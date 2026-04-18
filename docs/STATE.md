@@ -10,17 +10,17 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: qa
-- Current Focus: SLC-419 done (KI-Agenda on-click + auto via Bedrock). Alle 9/9 V4.1 Slices done. Naechster Schritt: /qa SLC-419, dann Gesamt-QA V4.1.
-- Current Phase: V4.1 QA (alle Slices done, Gesamt-QA + Final-Check + Deploy ausstehend)
+- Current Focus: Gesamt-QA V4.1 PASS (RPT-128). 5 Medium Findings, 0 Blocker. F-1 (reload-Fix) und F-3 (.env.example) sollten vor Go-Live gefixt werden.
+- Current Phase: V4.1 Final-Check (Gesamt-QA done, Final-Check + Deploy ausstehend)
 
 ## Immediate Next Steps
-1. /qa SLC-419 — KI-Agenda (Prompt-Qualitaet, Mode-Logik, Privacy, Idempotenz, JSON-Validation, Kosten-Check)
-2. Gesamt-QA V4.1 — alle 9 Slices (SLC-411..419) zusammen pruefen
+1. F-1 fixen — window.location.reload() in summary-panel.tsx + transcript-panel.tsx durch lokalen State-Update ersetzen
+2. F-3 fixen — .env.example um fehlende V4/V4.1 Variablen ergaenzen
 3. /final-check V4.1
 4. Coolify Redeploy + Smoke-Tests
-5. V4-Nachzug parallel: Cal.com Admin-Password staerken (15+ Zeichen + 2FA), Live-Testbuchung — kein V4.1-Blocker
-6. VAPID_SUBJECT in Coolify auf immo@bellaerts.de umstellen (steht auf nicht-existentem admin@...) — kein V4.1-Blocker
-7. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037) — sonst bricht Jibri nach Reboot
+5. /go-live V4.1
+6. VAPID_SUBJECT in Coolify auf immo@bellaerts.de umstellen (ISSUE-038) — kein V4.1-Blocker
+7. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (active, Architecture done):**

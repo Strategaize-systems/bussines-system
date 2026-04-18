@@ -27,6 +27,9 @@ export function TranscriptPanel({
   const [isRetrying, startRetry] = useTransition();
   const [isSaving, startSave] = useTransition();
   const [edited, setEdited] = useState(false);
+  const [localStatus, setLocalStatus] = useState<TranscriptStatus | null>(null);
+
+  const effectiveStatus = localStatus || transcriptStatus;
 
   const handleRetry = () => {
     startRetry(async () => {
@@ -34,7 +37,7 @@ export function TranscriptPanel({
         method: "POST",
       });
       if (res.ok) {
-        window.location.reload();
+        setLocalStatus("pending");
       }
     });
   };
@@ -68,8 +71,8 @@ export function TranscriptPanel({
             )}
           </CardTitle>
           <div className="flex items-center gap-2">
-            <MeetingStatusBadge type="transcript" status={transcriptStatus} />
-            {transcriptStatus === "failed" && (
+            <MeetingStatusBadge type="transcript" status={effectiveStatus} />
+            {effectiveStatus === "failed" && (
               <Button
                 size="sm"
                 variant="outline"
@@ -85,13 +88,13 @@ export function TranscriptPanel({
         </div>
       </CardHeader>
       <CardContent>
-        {transcriptStatus === "processing" && (
+        {effectiveStatus === "processing" && (
           <p className="text-sm text-muted-foreground">
             Transkription wird erstellt...
           </p>
         )}
 
-        {transcriptStatus === "completed" && transcript && (
+        {effectiveStatus === "completed" && transcript && (
           <>
             {isEditing ? (
               <div className="space-y-2">
@@ -141,19 +144,19 @@ export function TranscriptPanel({
           </>
         )}
 
-        {!transcriptStatus && (
+        {!effectiveStatus && (
           <p className="text-sm text-muted-foreground">
             Kein Transkript verfügbar.
           </p>
         )}
 
-        {transcriptStatus === "pending" && (
+        {effectiveStatus === "pending" && (
           <p className="text-sm text-muted-foreground">
             Transkript wird vorbereitet...
           </p>
         )}
 
-        {transcriptStatus === "failed" && (
+        {effectiveStatus === "failed" && (
           <p className="text-sm text-destructive">
             Transkription fehlgeschlagen. Klicke &quot;Retry&quot; um es erneut zu versuchen.
           </p>

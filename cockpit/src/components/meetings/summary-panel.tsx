@@ -27,6 +27,9 @@ export function SummaryPanel({
   summaryStatus,
 }: SummaryPanelProps) {
   const [isRetrying, startRetry] = useTransition();
+  const [localStatus, setLocalStatus] = useState<SummaryStatus | null>(null);
+
+  const effectiveStatus = localStatus || summaryStatus;
 
   const handleRetry = () => {
     startRetry(async () => {
@@ -34,7 +37,7 @@ export function SummaryPanel({
         method: "POST",
       });
       if (res.ok) {
-        window.location.reload();
+        setLocalStatus("pending");
       }
     });
   };
@@ -48,8 +51,8 @@ export function SummaryPanel({
             KI-Zusammenfassung
           </CardTitle>
           <div className="flex items-center gap-2">
-            <MeetingStatusBadge type="summary" status={summaryStatus} />
-            {summaryStatus === "failed" && (
+            <MeetingStatusBadge type="summary" status={effectiveStatus} />
+            {effectiveStatus === "failed" && (
               <Button
                 size="sm"
                 variant="outline"
@@ -65,13 +68,13 @@ export function SummaryPanel({
         </div>
       </CardHeader>
       <CardContent>
-        {summaryStatus === "processing" && (
+        {effectiveStatus === "processing" && (
           <p className="text-sm text-muted-foreground">
             Zusammenfassung wird erstellt...
           </p>
         )}
 
-        {summaryStatus === "completed" && aiSummary && (
+        {effectiveStatus === "completed" && aiSummary && (
           <div className="space-y-4">
             {/* Outcome */}
             {aiSummary.outcome && (
@@ -139,19 +142,19 @@ export function SummaryPanel({
           </div>
         )}
 
-        {!summaryStatus && (
+        {!effectiveStatus && (
           <p className="text-sm text-muted-foreground">
             Keine Zusammenfassung verfügbar.
           </p>
         )}
 
-        {summaryStatus === "pending" && (
+        {effectiveStatus === "pending" && (
           <p className="text-sm text-muted-foreground">
             Zusammenfassung wird vorbereitet...
           </p>
         )}
 
-        {summaryStatus === "failed" && (
+        {effectiveStatus === "failed" && (
           <p className="text-sm text-destructive">
             Zusammenfassung fehlgeschlagen. Klicke &quot;Retry&quot; um es erneut zu versuchen.
           </p>
