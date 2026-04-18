@@ -1137,7 +1137,7 @@
       "title": "RAG Query API (/api/knowledge/query)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V4.2",
       "description": "FEAT-401b: Query embedden → pgvector Similarity Search → Top-20 Chunks → Context Assembly → Bedrock Claude Sonnet → strukturierte Antwort mit Quellenangaben. Scope-Logik (deal/contact/company/all). Confidence-Level.",
       "createdAt": "2026-04-18"

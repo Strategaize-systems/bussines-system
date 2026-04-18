@@ -123,6 +123,6 @@
 | SLC-421 | [pgvector + Schema + Embedding-Adapter](SLC-421-pgvector-schema-embedding-adapter.md) | FEAT-401 | done | Blocker | 2026-04-18 |
 | SLC-422 | [Chunking-Service + Indexer](SLC-422-chunking-service-indexer.md) | FEAT-401 | done | High | 2026-04-18 |
 | SLC-423 | [Backfill + Embedding-Sync-Cron](SLC-423-backfill-embedding-sync-cron.md) | FEAT-401 | done | High | 2026-04-18 |
-| SLC-424 | [RAG Query API](SLC-424-rag-query-api.md) | FEAT-401 | planned | High | 2026-04-18 |
+| SLC-424 | [RAG Query API](SLC-424-rag-query-api.md) | FEAT-401 | done | High | 2026-04-18 |
 | SLC-425 | [Deal Knowledge Query UI](SLC-425-deal-knowledge-query-ui.md) | FEAT-401 | planned | High | 2026-04-18 |
 | SLC-426 | [Auto-Embedding Trigger](SLC-426-auto-embedding-trigger.md) | FEAT-401 | planned | Medium | 2026-04-18 |
