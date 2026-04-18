@@ -445,9 +445,9 @@
       "title": "Automatische Signal-Extraktion",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "in_progress",
       "version": "V4.3",
-      "description": "FEAT-202: KI erkennt Signale in Gespraechen/Mails automatisch und schlaegt Property-Aenderungen an Deal/Kontakt vor. Geht durch Insight-Review-Queue (V4.3), weil schreibende KI-Aenderungen sind.",
+      "description": "FEAT-412: KI erkennt Signale in Meetings/Mails automatisch und schlaegt Property-Aenderungen an Deal/Kontakt vor. Geht durch Insight-Review-Queue (FEAT-402). Detail-Items: BL-361 (Meeting), BL-362 (E-Mail), BL-363 (manueller Trigger).",
       "createdAt": "2026-04-01"
     },
     {
@@ -1157,10 +1157,70 @@
       "title": "Insight-Review-Queue fuer schreibende KI-Aenderungen",
       "type": "feature",
       "priority": "high",
+      "status": "in_progress",
+      "version": "V4.3",
+      "description": "FEAT-402: Queue NUR fuer schreibende KI-Aktionen (Deal-Status, Stage, Property-Aenderungen, Tag-Aenderungen). Informative KI-Outputs bleiben direkt sichtbar (DEC-037). Aktions-Typen: property_change, status_change, tag_change, value_change. Freigabe-UI im Cockpit, Batch-Approval moeglich. DEC-049: ai_action_queue erweitern statt neue Tabelle.",
+      "createdAt": "2026-04-15"
+    },
+    {
+      "id": "BL-358",
+      "title": "ai_action_queue Schema-Erweiterung (target_entity, proposed_changes, confidence)",
+      "type": "feature",
+      "priority": "high",
       "status": "open",
       "version": "V4.3",
-      "description": "FEAT-402: Queue NUR fuer schreibende KI-Aktionen (Deal-Status, Stage, Property-Aenderungen, Tag-Aenderungen). Informative KI-Outputs bleiben direkt sichtbar (DEC-037). Aktions-Typen: property_change, status_change, tag_change, value_change. Freigabe-UI im Cockpit, Batch-Approval moeglich.",
-      "createdAt": "2026-04-15"
+      "description": "FEAT-402a: ai_action_queue um neue Spalten erweitern: target_entity_type, target_entity_id, proposed_changes JSONB, confidence FLOAT. Neue action_types registrieren. Migration + RLS-Policies anpassen.",
+      "createdAt": "2026-04-18"
+    },
+    {
+      "id": "BL-359",
+      "title": "Unified Freigabe-UI in Mein Tag (alle Queue-Typen einheitlich)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V4.3",
+      "description": "FEAT-402b: Mein Tag Queue-Section zeigt alle offenen Vorschlaege (Followups + Gatekeeper + Property-Aenderungen) einheitlich. Approve/Reject einzeln + Batch. Confidence, Reasoning, Source-Link pro Item.",
+      "createdAt": "2026-04-18"
+    },
+    {
+      "id": "BL-360",
+      "title": "KI-Badge + Audit-Trail fuer angewandte KI-Aenderungen",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V4.3",
+      "description": "FEAT-402c: KI-Badge auf Deal/Kontakt-Properties die durch Queue-Approval geaendert wurden. Audit-Trail (ai_feedback erweitert) dokumentiert alle Approve/Reject-Entscheidungen. Auto-Expire nach 7 Tagen.",
+      "createdAt": "2026-04-18"
+    },
+    {
+      "id": "BL-361",
+      "title": "Meeting-Signal-Extraktion (Summary → Property-Vorschlaege)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V4.3",
+      "description": "FEAT-412a: Nach Meeting-Summary (Cron) extrahiert ein LLM-Call Signale: stage_suggestion, value_update, tag_addition, priority_change. Jedes Signal → ai_action_queue. RAG-Kontext fuer bessere Qualitaet. Confidence-Score.",
+      "createdAt": "2026-04-18"
+    },
+    {
+      "id": "BL-362",
+      "title": "E-Mail-Signal-Extraktion (Classify → Property-Vorschlaege)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V4.3",
+      "description": "FEAT-412b: Nach Gatekeeper-Klassifikation (classification anfrage/antwort) extrahiert ein LLM-Call Signale aus relevanten E-Mails. Gleiche Signal-Typen wie Meeting-Extraktion. Nur bei zugeordneten E-Mails mit Deal-Kontext.",
+      "createdAt": "2026-04-18"
+    },
+    {
+      "id": "BL-363",
+      "title": "Manueller Signal-Trigger im Deal-Workspace",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V4.3",
+      "description": "FEAT-412c: Button 'Signale extrahieren' im Deal-Workspace. Analysiert aktuellen Deal-Kontext (RAG + letzte Meetings + letzte E-Mails) und erzeugt Signal-Vorschlaege on-demand.",
+      "createdAt": "2026-04-18"
     }
   ]
 }

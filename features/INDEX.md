@@ -105,11 +105,12 @@
 |----|---------|--------|------|---------|
 | FEAT-401 | Wissensbasis Cross-Source (RAG, Voice-Deal-Chat) | deployed | [Spec](FEAT-401-wissensbasis-cross-source.md) | 2026-04-09 |
 
-## V4.3 Features (Insight Governance — planned)
+## V4.3 Features (Insight Governance — active)
 
-| ID | Feature | Status | Created |
-|----|---------|--------|---------|
-| FEAT-402 | Insight-Review-Queue (nur schreibende KI-Aenderungen) | planned | 2026-04-09 |
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-402 | Insight-Review-Queue (nur schreibende KI-Aenderungen) | planned | [Spec](FEAT-402-insight-review-queue.md) | 2026-04-09 |
+| FEAT-412 | Automatische Signal-Extraktion (Meeting + E-Mail → Queue) | planned | [Spec](FEAT-412-automatic-signal-extraction.md) | 2026-04-18 |
 
 ## V5 Features (Automatisierung + Skalierung — planned)
 

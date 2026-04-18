@@ -1294,16 +1294,120 @@ V4.2 ist erfolgreich wenn:
 
 ---
 
-# V4.3 — Insight Governance (planned)
+# V4.3 — Insight Governance
 
 ## V4.3 Purpose
 
-V4.3 fuehrt die Insight-Review-Queue ein: Alle schreibenden KI-Aenderungen an Deal/Kontakt-Properties (Status, Werte, Tags, Rollen) landen in einer Queue. Mensch reviewt, genehmigt, lehnt ab. Informative KI-Ausgaben (Timeline-Summaries, Insights) bleiben direkt sichtbar, aber klar als KI-generiert markiert und editierbar.
+V4.3 fuehrt die Insight-Review-Queue ein und liefert die erste automatische Signal-Extraktion. Alle schreibenden KI-Aenderungen an Deal/Kontakt-Properties (Status, Stage, Werte, Tags) landen in einer Queue. Mensch reviewt, genehmigt, lehnt ab. Informative KI-Ausgaben (Timeline-Summaries, Insights, KI-Analysen) bleiben direkt sichtbar, klar als KI-generiert markiert und editierbar.
 
-V4.3 setzt FEAT-402 um.
+V4.3 setzt FEAT-402 (Insight-Review-Queue) und FEAT-412 (Automatische Signal-Extraktion) um.
 
-## V4.3 Scope-Prinzip
+## V4.3 Vision
 
-V4.3 wird erst nach V4.1 + V4.2 sinnvoll, weil erst dann genug KI-basierte Schreib-Operationen entstehen, die eine Queue rechtfertigen. Heute (V4) gehen die meisten KI-Aktionen bereits durch Freigabe (Wiedervorlagen).
+Bisher erzeugt die KI informative Outputs (Meeting-Summaries, E-Mail-Klassifikation, Deal-Briefings, RAG-Antworten), die der User liest. V4.3 ist der naechste Evolutionsschritt: Die KI erkennt jetzt aktiv Handlungsbedarf in Meetings und E-Mails und schlaegt konkrete Property-Aenderungen vor. Der User behaelt volle Kontrolle durch die Review-Queue — die KI handelt NIE autonom an Geschaeftsdaten.
 
-Detail-Requirements werden geschrieben, sobald V4.2 stabil ist.
+Das Grundprinzip bleibt DEC-037: Queue NUR fuer schreibende KI-Aktionen. Informative Outputs ueberspringen die Queue.
+
+## V4.3 Scope
+
+### In Scope
+
+**FEAT-402 — Insight-Review-Queue:**
+- Erweiterung der bestehenden `ai_action_queue` um neue Aktionstypen: `property_change`, `status_change`, `tag_change`, `value_change` (DEC-049)
+- Unified Freigabe-UI in Mein Tag — zeigt alle KI-Vorschlaege (Followups, Gatekeeper-Aktionen, Property-Aenderungen) in einer einheitlichen Ansicht
+- Einzelne Freigabe: Approve / Reject mit optionalem Grund
+- Batch-Approval: Mehrere Vorschlaege gleichzeitig genehmigen
+- Confidence-Anzeige pro Vorschlag (hoch/mittel/niedrig)
+- Reasoning-Anzeige: Warum schlaegt die KI diese Aenderung vor?
+- Source-Verlinkung: Welches Meeting / welche E-Mail hat den Vorschlag ausgeloest?
+- KI-Badge auf allen angewandten Aenderungen (sichtbar in Deal-/Kontakt-Workspace)
+- Auto-Expire: Stale Vorschlaege nach 7 Tagen automatisch dismisst
+- Audit-Trail: Wer hat wann was genehmigt/abgelehnt (erweitert bestehenden ai_feedback-Mechanismus)
+
+**FEAT-412 — Automatische Signal-Extraktion:**
+- Meeting-Signal-Extraktion: Nach Meeting-Summary (V4.1 Pipeline) analysiert ein zweiter LLM-Call den Summary und extrahiert vorgeschlagene Property-Aenderungen
+- E-Mail-Signal-Extraktion: Nach Gatekeeper-Klassifikation (V4 Pipeline) analysiert ein optionaler LLM-Call relevante E-Mails auf Deal-Signale
+- Signal-Typen:
+  - `stage_suggestion` — Deal sollte in naechste Stage ruecken (z.B. "Angebot besprochen → Verhandlung")
+  - `value_update` — Budget/Wert wurde im Gespraech erwaehnt (z.B. "Kunde spricht von 75k Projektvolumen")
+  - `tag_addition` — Relevantes Keyword erkannt (z.B. "Wettbewerber ABC erwaehnt → Tag 'Wettbewerb: ABC'")
+  - `priority_change` — Dringlichkeits-Signal erkannt (z.B. "Deadline Q3 erwaehnt → Prioritaet hochsetzen")
+- Alle extrahierten Signale landen in der ai_action_queue (FEAT-402) — nie direkt auf dem Entity
+- RAG-Kontext fuer bessere Signalqualitaet: Embedding-Lookup liefert Deal-Historie als Kontext fuer die Signal-Extraktion
+- On-demand per Deal (manueller Trigger) + automatisch nach Meeting-Summary-Cron und Classify-Cron
+- Confidence-Score pro Signal basierend auf LLM-Output
+
+### Out of Scope (spaeter)
+
+- Automatische Signal-Extraktion aus Dokumenten (V5 Scope)
+- Cross-Deal-Signale (z.B. "Firma X taucht in 3 verschiedenen Deals auf") — spaeter
+- Signal-Learning aus historischen Approve/Reject-Entscheidungen — spaeter
+- Automatische Approval-Rules (z.B. "Stage-Vorschlaege mit Confidence >0.9 auto-approve") — bewusst nicht in V4.3, User soll erst Vertrauen aufbauen
+- Kontakt-Property-Aenderungen (z.B. neue Rolle, neue E-Mail) — spaeter, nach Deal-Property-Baseline
+- Notification-Push bei neuen Queue-Items — spaeter (V4.1 Push-Infra existiert bereits, aber Queue-Notifications koennen ueberwaeiltgend werden)
+
+## V4.3 User Stories
+
+### Insight-Review-Queue (FEAT-402)
+
+**US-001:** Als User sehe ich in Mein Tag alle offenen KI-Vorschlaege (Followups + Gatekeeper + Property-Aenderungen) in einer einheitlichen Liste, damit ich morgens in 5 Minuten alles durcharbeiten kann.
+
+**US-002:** Als User sehe ich pro Vorschlag: was soll geaendert werden, warum, woher kommt der Vorschlag, und wie sicher ist die KI — damit ich informiert entscheiden kann.
+
+**US-003:** Als User kann ich einen Vorschlag mit einem Klick genehmigen — die Aenderung wird sofort auf das Entity angewandt.
+
+**US-004:** Als User kann ich einen Vorschlag ablehnen und optional einen Grund eingeben — die KI lernt daraus (ai_feedback).
+
+**US-005:** Als User kann ich mehrere niedrig-risiko Vorschlaege gleichzeitig genehmigen (Batch-Approve), damit ich nicht jeden einzeln anklicken muss.
+
+**US-006:** Als User sehe ich im Deal-Workspace, welche Properties durch KI-Vorschlaege geaendert wurden (KI-Badge mit Datum und Quelle).
+
+**US-007:** Als User werden Vorschlaege die aelter als 7 Tage sind automatisch als "expired" markiert und verschwinden aus der aktiven Liste.
+
+### Automatische Signal-Extraktion (FEAT-412)
+
+**US-008:** Als User bekomme ich nach einem Meeting automatisch KI-Vorschlaege: "Deal sollte in Stage X ruecken" / "Wert auf Y aktualisieren" / "Tag Z hinzufuegen" — basierend auf dem Meeting-Inhalt.
+
+**US-009:** Als User bekomme ich bei relevanten E-Mails KI-Vorschlaege fuer Deal-Aenderungen — z.B. wenn ein Kunde ein Budget erwaehnt oder eine Deadline nennt.
+
+**US-010:** Als User kann ich im Deal-Workspace manuell "Signale extrahieren" ausloesen, damit die KI den aktuellen Deal-Kontext nochmal analysiert.
+
+**US-011:** Als User sehe ich bei jedem Signal-Vorschlag die Quelle (Meeting-Titel + Datum, E-Mail-Betreff + Datum) und kann mit einem Klick zur Quelle navigieren.
+
+## V4.3 Constraints
+
+- **Bedrock-Kosten:** Signal-Extraktion erzeugt zusaetzliche LLM-Calls (1 pro Meeting-Summary, 1 pro relevante E-Mail). Geschaetzte Kosten bei aktuellem Volumen (~5 Meetings/Woche, ~20 relevante Mails/Woche): ~$2-3/Monat. Akzeptabel.
+- **Latenz:** Signal-Extraktion laeuft asynchron im Cron — kein User wartet auf das Ergebnis. Queue-UI kann beim naechsten Mein-Tag-Besuch neue Items zeigen.
+- **DSGVO:** Keine neuen Datenkategorien. Signals basieren auf bereits verarbeiteten Meetings/E-Mails. Audit-Trail dokumentiert KI-Entscheidungen.
+- **Single-Tenant:** Wie bei V4.2 kein Multi-Tenant-Overhead. Queue ist pro User (created_by).
+- **Bestehende ai_action_queue:** Wird erweitert, nicht ersetzt (DEC-049). Followup- und Gatekeeper-Aktionen funktionieren weiterhin unveraendert.
+
+## V4.3 Risks / Assumptions
+
+- **Risk:** LLM-Halluzinationen bei Signal-Extraktion (z.B. falscher Deal-Wert). Mitigation: Confidence-Score + Queue-Pflicht. Kein Auto-Approve in V4.3.
+- **Risk:** Queue-Ueberlastung bei vielen Signalen. Mitigation: Nur tatsaechlich relevante Signale erzeugen (Confidence-Schwelle im Prompt), Auto-Expire nach 7 Tagen.
+- **Assumption:** Bestehende ai_action_queue kann ohne Breaking Changes erweitert werden (neue action_types + optionale JSONB-Felder).
+- **Assumption:** Meeting-Summary und E-Mail-Klassifikation liefern ausreichend Kontext fuer Signal-Extraktion (kein separater Roh-Transkript-Zugriff noetig).
+- **Assumption:** User oeffnet Mein Tag regelmaessig (taeglich) und bearbeitet Queue-Items zeitnah.
+
+## V4.3 Success Criteria
+
+V4.3 ist erfolgreich wenn:
+1. User sieht alle KI-Property-Vorschlaege in einer einheitlichen Queue in Mein Tag
+2. Approve/Reject funktioniert mit einem Klick (einzeln und batch)
+3. Genehmigte Aenderungen werden sofort auf das Entity angewandt + KI-Badge gesetzt
+4. Nach jedem Meeting erscheinen relevante Signal-Vorschlaege in der Queue (sofern vorhanden)
+5. Nach relevanten E-Mails erscheinen Signal-Vorschlaege in der Queue (sofern vorhanden)
+6. Confidence-Score und Reasoning sind bei jedem Vorschlag sichtbar
+7. Source-Link fuehrt direkt zum Meeting/E-Mail das den Vorschlag ausgeloest hat
+8. Stale Vorschlaege (>7 Tage) werden automatisch als expired markiert
+9. Bestehende Followup- und Gatekeeper-Queue funktioniert weiterhin unveraendert
+10. Audit-Trail dokumentiert alle Approve/Reject-Entscheidungen
+
+## V4.3 Open Questions (fuer /architecture)
+
+- Schema-Erweiterung ai_action_queue: Welche neuen Spalten genau? `target_entity_type`, `target_entity_id`, `proposed_changes JSONB`, `confidence FLOAT`? Oder reicht das bestehende `metadata JSONB`?
+- Signal-Extraktion-Prompt: Ein generischer Prompt fuer alle Signal-Typen oder je ein spezialisierter Prompt pro Typ (Stage, Value, Tag, Priority)?
+- Batch-UI: Checkboxen + "Alle genehmigen" Button? Oder Swipe-Geste (approve links, reject rechts)?
+- KI-Badge: Neues Feld `ai_applied_at` + `ai_source_id` auf Entity-Ebene? Oder separates Tracking?
+- E-Mail-Signal-Schwelle: Nur E-Mails mit classification `anfrage` / `antwort` analysieren? Oder alle nicht-spam?

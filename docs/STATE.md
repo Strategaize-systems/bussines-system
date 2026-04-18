@@ -9,12 +9,12 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: stable
-- Current Focus: V4.2 Wissensbasis Cross-Source — deployed, Post-Launch STABIL (RPT-145, REL-011)
-- Current Phase: Stable (V4.3 Planning)
+- High-Level State: requirements
+- Current Focus: V4.3 Insight Governance — Requirements abgeschlossen, naechster Schritt /architecture
+- Current Phase: V4.3 Requirements
 
 ## Immediate Next Steps
-1. V4.3 Insight Governance planen (FEAT-402) — oder andere Projekte priorisieren
+1. /architecture fuer V4.3 (Schema-Erweiterung ai_action_queue, Signal-Extraktion-Modul, UI-Integration)
 2. Embedding-Qualitaet nach einigen Tagen Live-Nutzung evaluieren
 3. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
 
@@ -34,7 +34,11 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - Backlog: BL-350 (Umbrella) + BL-352..357 (Detail-Items)
 - Geschaetzte Gesamt-Implementierung: 7-9.5 Tage
 
-**V4.3 — Insight Governance (planned):** FEAT-402 Queue (nach V4.2 stabil).
+**V4.3 — Insight Governance (active, Requirements done):**
+- FEAT-402 Insight-Review-Queue — Erweiterung ai_action_queue + Unified Freigabe-UI + Batch-Approval
+- FEAT-412 Automatische Signal-Extraktion — Meeting + E-Mail → Property-Vorschlaege via Queue
+- DEC-049: ai_action_queue erweitern statt neue Tabelle
+- Backlog: BL-351 (Umbrella Queue) + BL-358..360 (Detail Queue) + BL-202 (Umbrella Signals) + BL-361..363 (Detail Signals)
 
 ## Blockers
 - aktuell keine (ISSUE-031 + ISSUE-032 durch Slice-Record-Updates 2026-04-15 resolved)
