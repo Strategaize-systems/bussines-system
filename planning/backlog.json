@@ -1097,7 +1097,7 @@
       "title": "pgvector Setup + knowledge_chunks Tabelle + Chunking-Service",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V4.2",
       "description": "FEAT-401a: pgvector Extension aktivieren, knowledge_chunks Tabelle mit vector(1024) + HNSW-Index anlegen, Chunking-Service mit quelltypspezifischer Strategie (Meetings paragraph-basiert, E-Mails pro Mail, Activities pro Eintrag, Dokumente seiten-/absatzbasiert).",
       "createdAt": "2026-04-18"
