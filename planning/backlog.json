@@ -1147,7 +1147,7 @@
       "title": "Deal Knowledge Query UI (Wissen-Tab im Deal-Workspace)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V4.2",
       "description": "FEAT-401c: Wissen-Tab im Deal-Workspace. Text-Input + Voice-Input (Whisper). Ergebnis: Antwort-Text + Quellen-Cards (Typ, Titel, Datum, Snippet, Link). Scope-Toggle. On-click (DEC-030).",
       "createdAt": "2026-04-18"
