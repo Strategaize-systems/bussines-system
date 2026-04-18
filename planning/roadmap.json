@@ -66,7 +66,7 @@
     {
       "id": "v4-2",
       "name": "V4.2",
-      "status": "active",
+      "status": "released",
       "summary": "Wissensbasis Cross-Source: RAG-Pipeline (pgvector + Bedrock Titan Embeddings V2) fuer semantische Suche ueber Meetings, E-Mails, Deal-Daten und Dokumente. Natuerliche Sprache (Text + Voice) aus Deal-Workspace. DEC-046/047.",
       "order": 10
     },

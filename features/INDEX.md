@@ -99,11 +99,11 @@
 | FEAT-409 | Meeting-Erinnerungen (extern + intern + KI-Agenda) | deployed | [Spec](FEAT-409-meeting-erinnerungen.md) | 2026-04-11 |
 | FEAT-411 | DSGVO-Einwilligungsflow fuer Aufzeichnung | deployed | [Spec](FEAT-411-dsgvo-einwilligung.md) | 2026-04-15 |
 
-## V4.2 Features (Wissensbasis Cross-Source — active)
+## V4.2 Features (Wissensbasis Cross-Source — deployed)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-401 | Wissensbasis Cross-Source (RAG, Voice-Deal-Chat) | done | [Spec](FEAT-401-wissensbasis-cross-source.md) | 2026-04-09 |
+| FEAT-401 | Wissensbasis Cross-Source (RAG, Voice-Deal-Chat) | deployed | [Spec](FEAT-401-wissensbasis-cross-source.md) | 2026-04-09 |
 
 ## V4.3 Features (Insight Governance — planned)
 

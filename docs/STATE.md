@@ -9,16 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: go-live
-- Current Focus: V4.2 Wissensbasis Cross-Source — Go-Live GO (RPT-143), bereit fuer /deploy
-- Current Phase: V4.2 Deploy
+- High-Level State: released
+- Current Focus: V4.2 Wissensbasis Cross-Source — deployed + Smoke-Test PASS (REL-011)
+- Current Phase: V4.2 Post-Launch
 
 ## Immediate Next Steps
-1. /deploy V4.2 (Commit+Push, SQL Migrations, Redeploy auf Hetzner)
-2. Coolify Cron embedding-sync anlegen (*/5, Container "app")
-3. Backfill einmalig ausloesen
-4. Browser-Smoke-Test Wissen-Tab nach Redeploy
-5. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
+1. /post-launch V4.2 — Live-Monitoring, Embedding-Qualitaet beobachten
+2. V4.3 Insight Governance planen (FEAT-402)
+3. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (released, REL-010):**
@@ -42,7 +40,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - aktuell keine (ISSUE-031 + ISSUE-032 durch Slice-Record-Updates 2026-04-15 resolved)
 
 ## Last Stable Version
-- V4.1 — 2026-04-18 — deployed auf Hetzner (Meeting Intelligence Basis, 9/9 Slices, REL-010)
+- V4.2 — 2026-04-18 — deployed auf Hetzner (Wissensbasis Cross-Source, 6/6 Slices, REL-011)
 
 ## Notes
 V4 Deployment in zwei Phasen: SLC-401..403 am 2026-04-12 (IMAP live), SLC-404..409 am 2026-04-14 abends (Redeploy). Smoke-Tests am 2026-04-15 morgen durchgelaufen: Login, IMAP-Inbox, Mein Tag KI-Wiedervorlagen, Gesamtkalender, KI-Analyse Cockpit, Focus 2-Spalten-Layout — alle PASS. Cal.com Self-Hosted läuft seit 2026-04-13 mit Webhook-Integration. CALCOM_API_KEY bewusst leer (AGPLv3). Bedrock Claude Sonnet 4 via Frankfurt-Region.
