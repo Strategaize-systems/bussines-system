@@ -2089,3 +2089,711 @@ Geschaetzt 9 Slices. Jedes nach 1-2 Tagen implementierbar.
 ## V4.1 Recommended Next Step
 
 `/slice-planning` — V4.1-Slices strukturiert ausdefinieren (Acceptance, Dependencies, QA-Fokus, Testfaelle). Danach pro Slice `/backend` oder `/frontend` + `/qa`.
+
+---
+
+# V4.2 Architektur — Wissensbasis Cross-Source (RAG)
+
+## V4.2 Architecture Summary
+
+V4.2 fuegt eine RAG-Pipeline (Retrieval-Augmented Generation) hinzu, die alle geschaeftsrelevanten Textdaten semantisch durchsuchbar macht. Vier Quellen — Meeting-Transkripte (V4.1), E-Mails (V4 IMAP), Deal-Activities (V2+) und Dokumente — werden in Vektor-Embeddings umgewandelt und via pgvector in der bestehenden PostgreSQL durchsucht.
+
+**Kern-Entscheidung (DEC-046):** RAG statt Context-Window-Stuffing, weil: skaliert unbegrenzt, findet semantisch verwandte Inhalte, ~10x guenstiger pro Query.
+
+**Infrastruktur-Footprint:** Minimal. pgvector ist bereits in `supabase/postgres:15.6.1.145` enthalten (ein `CREATE EXTENSION`). Titan Embeddings V2 laeuft ueber denselben Bedrock-Account in Frankfurt. Kein neuer Container, kein neuer Service.
+
+## V4.2 Main Components
+
+```
+Browser (User)                           Hetzner CPX32 (bestehend)
+─────────────────                        ────────────────────────────────
+Deal-Workspace UI    ───────► Next.js App (Port 3000)
+  └── "Wissen"-Tab (NEU)                 ├── /app/deals/[id]/wissen (NEU V4.2)
+       ├── Text-Query                    │
+       ├── Voice-Query (Whisper)         ├── /lib/ai/embeddings/       (NEU V4.2)
+       └── Ergebnis + Quellen           │     ├── provider.ts  (Interface)
+                                         │     ├── titan.ts     (V4.2 Implementierung)
+                                         │     └── factory.ts   (ENV-Switch)
+                                         │
+                                         ├── /lib/knowledge/            (NEU V4.2)
+                                         │     ├── chunker.ts   (Quelltypspezifisch)
+                                         │     ├── indexer.ts   (Chunk → Embed → Insert)
+                                         │     ├── search.ts    (Query → Embed → pgvector)
+                                         │     └── backfill.ts  (Einmaliger Bestandsimport)
+                                         │
+                                         ├── /api/knowledge/query (NEU V4.2)
+                                         ├── /api/cron/embedding-sync  (NEU V4.2)
+                                         │
+                                         ├── /lib/ai/bedrock-client.ts (bestehend)
+                                         ├── /lib/ai/transcription/    (bestehend V4.1)
+                                         └── /api/transcribe           (bestehend)
+
+                                         PostgreSQL (supabase/postgres:15.6.1.145)
+                                         ├── pgvector Extension (NEU V4.2, bereits im Image)
+                                         ├── knowledge_chunks Tabelle (NEU V4.2)
+                                         │     └── HNSW-Index auf embedding vector(1024)
+                                         └── Bestehende Tabellen (unveraendert)
+
+External (bestehend, keine Aenderung)
+────────
+AWS Bedrock (Frankfurt, eu-central-1)
+  ├── Claude Sonnet 4   ← Antwortgenerierung (bestehend)
+  └── Titan Text V2     ← Embedding-Generierung (NEU V4.2)
+OpenAI Whisper API      ← Voice-Input Transkription (bestehend)
+SMTP (IONOS)            ← bestehend
+```
+
+## V4.2 Responsibilities
+
+| Komponente | Verantwortung |
+|---|---|
+| `/lib/ai/embeddings/` | Embedding-Adapter-Pattern: Interface + Titan-V2-Provider + Factory (DEC-047) |
+| `/lib/knowledge/chunker.ts` | Quelltypspezifische Text-Zerlegung in Chunks |
+| `/lib/knowledge/indexer.ts` | Chunks embedden und in knowledge_chunks speichern |
+| `/lib/knowledge/search.ts` | Query embedden, pgvector Similarity Search, Context Assembly |
+| `/lib/knowledge/backfill.ts` | Einmaliger Embedding-Import aller Bestandsdaten |
+| `/api/knowledge/query` | Authentifizierte API-Route fuer RAG-Queries |
+| `/api/cron/embedding-sync` | Cron: Verpasste Auto-Embeddings nachholen (alle 15 Min) |
+| pgvector + knowledge_chunks | Vektor-Speicher + Similarity Search in bestehender PostgreSQL |
+| Bedrock Titan Text V2 | Embedding-Generierung (eu-central-1) |
+| Bedrock Claude Sonnet 4 | Antwortgenerierung aus RAG-Context (bestehend) |
+
+## V4.2 Data Model
+
+### Neue Tabelle: knowledge_chunks (FEAT-401a)
+
+```sql
+-- Voraussetzung: pgvector Extension aktivieren
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE knowledge_chunks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  source_type TEXT NOT NULL,              -- 'meeting', 'email', 'deal_activity', 'document'
+  source_id UUID NOT NULL,                -- FK zur Quell-Tabelle (meetings.id, email_messages.id, etc.)
+  chunk_index INTEGER NOT NULL,           -- Position innerhalb des Quelldokuments (0-basiert)
+  chunk_text TEXT NOT NULL,               -- Der tatsaechliche Text-Chunk
+  embedding vector(1024) NOT NULL,        -- Titan V2 Embedding (DEC-048)
+  metadata JSONB DEFAULT '{}' NOT NULL,   -- Kontextuelle Metadaten (siehe unten)
+  embedding_model TEXT NOT NULL,          -- 'amazon.titan-embed-text-v2:0'
+  status TEXT DEFAULT 'active' NOT NULL,  -- 'active', 'pending', 'failed', 'deleted'
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- HNSW-Index fuer schnelle Approximate Nearest Neighbor Search
+-- m=16: Konnektivitaet pro Knoten (Standard, guter Tradeoff)
+-- ef_construction=64: Build-Qualitaet (hoeher = besser, langsamer Build)
+CREATE INDEX idx_knowledge_chunks_embedding ON knowledge_chunks
+  USING hnsw (embedding vector_cosine_ops)
+  WITH (m = 16, ef_construction = 64);
+
+-- Lookup-Indizes
+CREATE INDEX idx_knowledge_chunks_source ON knowledge_chunks(source_type, source_id);
+CREATE INDEX idx_knowledge_chunks_status ON knowledge_chunks(status)
+  WHERE status != 'active';
+CREATE INDEX idx_knowledge_chunks_deal ON knowledge_chunks((metadata->>'deal_id'))
+  WHERE metadata->>'deal_id' IS NOT NULL;
+
+-- Unique Constraint: kein doppeltes Embedding fuer gleichen Source+Chunk
+CREATE UNIQUE INDEX idx_knowledge_chunks_unique
+  ON knowledge_chunks(source_type, source_id, chunk_index);
+
+-- RLS
+ALTER TABLE knowledge_chunks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated_full_access" ON knowledge_chunks
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+GRANT ALL ON knowledge_chunks TO authenticated;
+GRANT ALL ON knowledge_chunks TO service_role;
+```
+
+### Tabellen-Uebersicht V4.2: 29 Tabellen (28 bestehend + 1 neu)
+
+```
+BESTEHEND (unveraendert):                NEU (V4.2):
+├── companies                            └── knowledge_chunks (+ pgvector Extension)
+├── contacts
+├── pipelines
+├── pipeline_stages
+├── deals
+├── emails (outbound SMTP)
+├── email_messages (IMAP, V4)
+├── email_threads (V4)
+├── email_sync_state (V4)
+├── proposals
+├── fit_assessments
+├── tasks
+├── handoffs
+├── referrals
+├── signals
+├── documents
+├── activities
+├── profiles
+├── meetings
+├── calendar_events
+├── audit_log
+├── email_templates (V3.1)
+├── ai_action_queue (V4)
+├── ai_feedback (V4)
+└── user_settings (V4.1)
+```
+
+Keine bestehende Tabelle wird geaendert. V4.2 ist rein additiv.
+
+### metadata JSONB Schema
+
+Jeder Chunk traegt in `metadata` kontextuelle Informationen fuer Quellenangabe und Scope-Filterung:
+
+```json
+{
+  "title": "Meeting mit Firma X - Vertragsverhandlung",
+  "date": "2026-04-15T10:00:00Z",
+  "deal_id": "uuid-or-null",
+  "contact_id": "uuid-or-null",
+  "company_id": "uuid-or-null",
+  "source_url": "/deals/abc-123"
+}
+```
+
+- `title`: Lesbarer Titel fuer Quellen-Card (Meeting-Titel, E-Mail-Betreff, Dokument-Name, Activity-Summary)
+- `date`: ISO 8601 Zeitstempel der Quelle
+- `deal_id`, `contact_id`, `company_id`: FK-UUIDs fuer Scope-Filterung (pgvector WHERE-Clause)
+- `source_url`: Relative URL fuer Klick-Navigation zum Original
+
+## V4.2 Embedding-Pipeline (Flow)
+
+```
+Datenquelle           Trigger                     Verarbeitung
+────────────────────  ─────────────────────────   ────────────────────────────────
+Meeting-Transkript    summary_status = completed  1. meetings.transcript laden
+                      (nach V4.1 Summary-Pipeline) 2. chunker.chunkMeeting(transcript, metadata)
+                                                   3. indexer.embedAndStore(chunks)
+
+E-Mail synchronisiert  IMAP-Sync INSERT           1. email_messages.body_text + subject laden
+                                                   2. chunker.chunkEmail(body, metadata)
+                                                   3. indexer.embedAndStore(chunks)
+
+Activity erstellt      Server Action INSERT        1. activities.body laden
+                                                   2. chunker.chunkActivity(body, metadata)
+                                                   3. indexer.embedAndStore(chunks)
+
+Dokument hochgeladen   Upload Server Action        1. document Content laden (PDF→Text / DOCX→Text)
+                                                   2. chunker.chunkDocument(text, metadata)
+                                                   3. indexer.embedAndStore(chunks)
+```
+
+### Embedding-Trigger-Implementierung
+
+Die Trigger werden als Post-Processing-Calls in bestehende Server Actions / Cron-Endpoints integriert:
+
+1. **Meetings**: In `/api/cron/meeting-summary` (V4.1 bestehend) — nach `summary_status = 'completed'` einen `indexer.indexMeeting(meetingId)` Call anhaengen
+2. **E-Mails**: In `/api/cron/imap-sync` (V4 bestehend) — nach jedem INSERT einen `indexer.indexEmail(emailId)` Call anhaengen
+3. **Activities**: In die bestehenden Activity-Create-Actions — `indexer.indexActivity(activityId)` Call anhaengen
+4. **Dokumente**: In die Upload-Action — `indexer.indexDocument(documentId)` Call anhaengen
+
+Alle Trigger sind fire-and-forget mit Error-Handling: Bei Fehler wird `status = 'failed'` gesetzt und der Embedding-Sync-Cron holt es nach.
+
+### Embedding-Sync-Cron
+
+```
+/api/cron/embedding-sync (alle 15 Minuten)
+  │
+  ├── 1. Cron-Secret pruefen
+  ├── 2. knowledge_chunks mit status = 'pending' oder 'failed' laden (LIMIT 50)
+  ├── 3. Retry-Logik: failed Chunks max 3 Versuche (Zaehler in metadata.retry_count)
+  ├── 4. embeddingProvider.embedBatch(chunk_texts)
+  ├── 5. UPDATE knowledge_chunks SET embedding = ..., status = 'active'
+  └── 6. Response: { processed: N, failed: N, skipped: N }
+```
+
+## V4.2 Chunking-Strategie (DEC-048)
+
+### Design-Entscheidung: DEC-048 — Sentence-Boundary-Aware Chunking mit quelltypspezifischen Limits
+
+Chunks werden an Satzgrenzen (`.`, `!`, `?` gefolgt von Whitespace) geschnitten, nicht mitten im Satz. Ueberlappung am Anfang jedes Chunks stellt Kontext-Erhalt sicher.
+
+| Quelltyp | Strategie | Target-Groesse | Overlap | Begründung |
+|---|---|---|---|---|
+| Meeting-Transkripte | Absatz-basiert, sentence-boundary | ~600-800 Tokens | 100 Tokens | Lange Texte, Kontext-Erhalt wichtig |
+| E-Mails | Pro E-Mail als Single-Chunk; Split bei >800 Tokens | Max 800 Tokens | Kein Overlap | Meiste Mails sind kurz genug |
+| Activities | Pro Activity als Single-Chunk | Meist <500 Tokens | Kein Overlap | Kurze strukturierte Eintraege |
+| Dokumente | Seiten-/Absatz-basiert, sentence-boundary | ~600-800 Tokens | 100 Tokens | Analog zu Meeting-Transkripten |
+
+### Chunker-Implementierung
+
+```typescript
+// /lib/knowledge/chunker.ts
+
+interface Chunk {
+  text: string;
+  index: number;
+  metadata: Record<string, unknown>;
+}
+
+function chunkMeeting(meetingId: string, transcript: string, meeting: Meeting): Chunk[] {
+  // 1. Transcript + ai_summary.outcome als Kontext-Header pro Chunk
+  // 2. Sentence-boundary split bei ~700 Tokens
+  // 3. 100-Token Overlap
+  // 4. Metadata: {title, date, deal_id, contact_id, company_id, source_url}
+}
+
+function chunkEmail(email: EmailMessage): Chunk[] {
+  // 1. Subject + Body als ein Text
+  // 2. Wenn <800 Tokens: Single-Chunk
+  // 3. Wenn >800 Tokens: sentence-boundary split
+  // 4. Metadata: {title: subject, date: received_at, deal_id, contact_id, company_id}
+}
+
+function chunkActivity(activity: Activity): Chunk[] {
+  // 1. activity.body als Single-Chunk (fast immer <500 Tokens)
+  // 2. Metadata: {title: activity.type, date: activity.created_at, deal_id, contact_id}
+}
+
+function chunkDocument(doc: Document, extractedText: string): Chunk[] {
+  // 1. Seiten-/Absatz-Split
+  // 2. sentence-boundary bei ~700 Tokens
+  // 3. 100-Token Overlap
+  // 4. Metadata: {title: doc.name, date: doc.created_at, deal_id}
+}
+```
+
+### Token-Zaehlung
+
+Fuer V4.2 wird eine einfache Heuristik verwendet: `tokens ≈ text.length / 4` (fuer deutsche Texte). Keine externe Tokenizer-Library noetig — die Ungenauigkeit (+/- 10%) ist fuer Chunk-Groessen-Steuerung akzeptabel. Titan V2 unterstuetzt max 8.192 Tokens pro Embedding-Call — bei Target 800 Tokens gibt es grossen Sicherheitspuffer.
+
+## V4.2 Embedding-Adapter-Layer (DEC-047)
+
+Analog zum Whisper-Adapter-Pattern (DEC-035, DEC-041):
+
+```
+/lib/ai/embeddings/
+  ├── provider.ts     — EmbeddingProvider Interface
+  ├── titan.ts        — Amazon Titan Text Embeddings V2 (V4.2 aktiv)
+  ├── cohere.ts       — Cohere Embed Multilingual V3 (Platzhalter)
+  └── factory.ts      — Factory: liest EMBEDDING_PROVIDER ENV
+```
+
+### Interface
+
+```typescript
+// /lib/ai/embeddings/provider.ts
+export interface EmbeddingProvider {
+  /** Single text → embedding vector */
+  embed(text: string): Promise<number[]>;
+  /** Batch texts → embedding vectors (efficient) */
+  embedBatch(texts: string[]): Promise<number[][]>;
+  /** Number of dimensions this provider produces */
+  dimensions(): number;
+  /** Model identifier for storage tracking */
+  modelId(): string;
+}
+
+export interface EmbeddingProviderConfig {
+  region?: string;     // Default: eu-central-1
+  dimensions?: number; // Default: 1024
+}
+```
+
+### Titan V2 Provider
+
+```typescript
+// /lib/ai/embeddings/titan.ts
+import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
+
+export class TitanEmbeddingProvider implements EmbeddingProvider {
+  private client: BedrockRuntimeClient;
+  private dim: number;
+  private model = "amazon.titan-embed-text-v2:0";
+
+  constructor(config?: EmbeddingProviderConfig) {
+    this.dim = config?.dimensions ?? 1024;
+    this.client = new BedrockRuntimeClient({
+      region: config?.region ?? process.env.EMBEDDING_REGION ?? "eu-central-1",
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? "",
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? "",
+      },
+    });
+  }
+
+  async embed(text: string): Promise<number[]> {
+    const command = new InvokeModelCommand({
+      modelId: this.model,
+      contentType: "application/json",
+      accept: "application/json",
+      body: JSON.stringify({
+        inputText: text,
+        dimensions: this.dim,
+        normalize: true,
+      }),
+    });
+    const response = await this.client.send(command);
+    const body = JSON.parse(new TextDecoder().decode(response.body));
+    return body.embedding;
+  }
+
+  async embedBatch(texts: string[]): Promise<number[][]> {
+    // Titan V2 unterstuetzt kein natives Batch-Embedding
+    // Sequential mit Rate-Limiting (max 10 concurrent)
+    const results: number[][] = [];
+    for (const text of texts) {
+      results.push(await this.embed(text));
+    }
+    return results;
+  }
+
+  dimensions(): number { return this.dim; }
+  modelId(): string { return this.model; }
+}
+```
+
+### Factory
+
+```typescript
+// /lib/ai/embeddings/factory.ts
+export function getEmbeddingProvider(): EmbeddingProvider {
+  const provider = process.env.EMBEDDING_PROVIDER ?? "titan";
+  const dimensions = parseInt(process.env.EMBEDDING_DIMENSIONS ?? "1024");
+  const region = process.env.EMBEDDING_REGION ?? "eu-central-1";
+
+  switch (provider) {
+    case "cohere":
+      return new CohereEmbeddingProvider({ region, dimensions });
+    case "titan":
+    default:
+      return new TitanEmbeddingProvider({ region, dimensions });
+  }
+}
+```
+
+Business-Code ruft ausschliesslich `getEmbeddingProvider().embed(...)`. Kein direkter Bedrock-Import ausserhalb des Adapter-Moduls.
+
+## V4.2 RAG Query Pipeline (Flow)
+
+```
+User-Frage ("Hat Kunde X die Vollmacht unterschrieben?")
+  │
+  ├── 1. Optional: Voice-Input → Whisper-Transkription (bestehendes Pattern)
+  │
+  ├── 2. Query-Embedding: embeddingProvider.embed(query)
+  │      └── Titan V2 → 1024-dim Vektor (~50ms)
+  │
+  ├── 3. pgvector Similarity Search
+  │      └── SELECT chunk_text, metadata, similarity
+  │          FROM knowledge_chunks
+  │          WHERE status = 'active'
+  │            AND (metadata->>'deal_id' = $dealId OR $scope = 'all')
+  │          ORDER BY embedding <=> $queryVector
+  │          LIMIT 20
+  │      └── Ergebnis: Top-20 relevanteste Chunks (~20ms)
+  │
+  ├── 4. Context Assembly
+  │      ├── Top-20 Chunks als nummerierte Quellen-Liste formatieren
+  │      ├── Deal-Metadaten hinzufuegen (Name, Stage, Kontakt, Firma)
+  │      └── Gesamt-Context: ~5.000-15.000 Tokens (statt 100k+ bei Context-Stuffing)
+  │
+  ├── 5. Bedrock Claude Sonnet 4 — Antwortgenerierung
+  │      ├── System-Prompt: "Beantworte die Frage basierend auf den Quellen..."
+  │      ├── User-Prompt: Context + Query
+  │      └── Output-Schema:
+  │           {
+  │             "answer": "Ja, Kunde X hat die Vollmacht am 12.04. unterschrieben...",
+  │             "sources": [
+  │               {"index": 3, "type": "meeting", "relevance": "high"},
+  │               {"index": 7, "type": "email", "relevance": "medium"}
+  │             ],
+  │             "confidence": "high"
+  │           }
+  │      └── Latenz: ~3-5 Sekunden (Embedding 50ms + pgvector 20ms + Bedrock 3-5s)
+  │
+  └── 6. Response Assembly
+         ├── answer: Markdown-formatierter Antworttext
+         ├── sources: Angereichert mit title, date, snippet, source_url aus Chunk-Metadata
+         └── confidence: high / medium / low (basierend auf Top-Chunk-Similarity-Score)
+```
+
+### System-Prompt fuer RAG-Antworten
+
+```
+Du bist ein Business-Intelligence-Assistent. Du beantwortest Fragen basierend auf
+den bereitgestellten Quellen aus einem CRM-System.
+
+REGELN:
+- Antworte auf Deutsch, praezise und direkt.
+- Beziehe dich NUR auf die bereitgestellten Quellen. Erfinde keine Informationen.
+- Wenn die Frage nicht aus den Quellen beantwortet werden kann, sag das ehrlich.
+- Nenne Quellen-Nummern [1], [2] etc. in deiner Antwort.
+- Gib bei Datumsangaben das konkrete Datum an.
+
+Antworte als JSON:
+{
+  "answer": "Deine Antwort mit [Quellen-Nummern]",
+  "sources": [{"index": N, "type": "meeting|email|...", "relevance": "high|medium|low"}],
+  "confidence": "high|medium|low"
+}
+
+Confidence-Regeln:
+- high: Mindestens eine Quelle beantwortet die Frage direkt
+- medium: Quellen enthalten relevante Informationen, aber keine direkte Antwort
+- low: Keine der Quellen scheint relevant zu sein
+```
+
+### Scope-Logik
+
+| Scope | WHERE-Clause | Anwendungsfall |
+|---|---|---|
+| `deal` (Default) | `metadata->>'deal_id' = $dealId` | "Hat dieser Kunde..." |
+| `contact` | `metadata->>'contact_id' = $contactId` | "Was hat Kontakt X je gesagt..." |
+| `company` | `metadata->>'company_id' = $companyId` | "Alle Informationen zu Firma Y..." |
+| `all` | Kein Filter (nur `status = 'active'`) | "Hat irgendein Kontakt ueber Thema Z gesprochen?" |
+
+Default im Deal-Workspace: `deal`. Toggle auf `all` ueber UI-Switch.
+
+## V4.2 Document Text-Extraktion
+
+Fuer die `documents`-Tabelle: Textextraktion aus hochgeladenen Dateien.
+
+| Dateiformat | Library | Ansatz |
+|---|---|---|
+| PDF | `pdf-parse` (npm) | Buffer → Text pro Seite |
+| DOCX | `mammoth` (npm) | Buffer → Plain-Text |
+| TXT / MD | — | Direkter Zugriff |
+| Bilder (PNG, JPG) | — | **Out of Scope** (kein OCR in V4.2) |
+| Excel / CSV | — | **Out of Scope** (strukturierte Daten, nicht fuer RAG geeignet) |
+
+Extraktion wird beim Indexing ausgefuehrt: `backfill.ts` und `indexer.ts` laden den Datei-Inhalt aus Supabase Storage, extrahieren Text, chunken und embedden.
+
+## V4.2 Deal-Workspace UI (FEAT-401c)
+
+### Neues "Wissen"-Tab
+
+```
+Deal-Workspace (/deals/[id])
+  ├── Timeline │ Aufgaben │ Angebote │ Dokumente │ Edit │ Wissen (NEU V4.2)
+  │
+  └── Wissen-Tab:
+      ┌─────────────────────────────────────────────────────────────┐
+      │ 🔍 Frage zur Wissensbasis stellen...            [🎤] [➤]  │
+      │                                    [Nur dieser Deal ▾]     │
+      ├─────────────────────────────────────────────────────────────┤
+      │                                                             │
+      │ Antwort:                                                    │
+      │ Ja, Kunde X hat die Vollmacht am 12.04. unterschrieben.    │
+      │ Das wurde im Meeting vom 12.04. [1] besprochen und per     │
+      │ E-Mail am 13.04. [2] bestaetigt.                           │
+      │                                                             │
+      │ ┌─── Quellen ──────────────────────────────────────────┐   │
+      │ │ [1] 🎥 Meeting: Vertragsverhandlung Firma X          │   │
+      │ │     12.04.2026 │ "...die Vollmacht wurde von..."     │   │
+      │ │     [Zum Meeting →]                                   │   │
+      │ │                                                       │   │
+      │ │ [2] 📧 E-Mail: Re: Vollmacht + Unterlagen            │   │
+      │ │     13.04.2026 │ "...anbei die unterschriebene..."   │   │
+      │ │     [Zur E-Mail →]                                    │   │
+      │ └──────────────────────────────────────────────────────┘   │
+      │                                                             │
+      │ Vertrauen: ●●●○ hoch                                       │
+      └─────────────────────────────────────────────────────────────┘
+```
+
+### UI-Komponenten
+
+- `KnowledgeQueryInput`: Text-Input + Mikrofon-Button (Whisper, bestehendes Pattern aus V2.1+) + Submit-Button
+- `KnowledgeAnswer`: Markdown-Renderer fuer Antworttext
+- `KnowledgeSourceCard`: Pro Quelle: Typ-Icon (Meeting/E-Mail/Activity/Dokument), Titel, Datum, Snippet, Klick-Link
+- `ScopeToggle`: Dropdown "Nur dieser Deal" / "Alle Daten"
+- `ConfidenceBadge`: Visueller Indikator (hoch/mittel/niedrig)
+
+On-click, kein auto-load (konsistent mit DEC-030 / BL-330 Kostenschutz).
+
+## V4.2 API Routes
+
+### Neue API Routes
+
+| Route | Methode | Zweck | Auth |
+|---|---|---|---|
+| `POST /api/knowledge/query` | POST | RAG-Query: Embed → Search → LLM → Response | Authenticated |
+| `POST /api/cron/embedding-sync` | POST | Verpasste Embeddings nachholen | CRON_SECRET |
+| `POST /api/knowledge/backfill` | POST | Einmaliger Backfill aller Bestandsdaten | Authenticated (Admin) |
+
+### Bestehende Endpoints (erweitert)
+
+| Route | Erweiterung |
+|---|---|
+| `/api/cron/imap-sync` | + Embedding-Trigger nach E-Mail-INSERT |
+| `/api/cron/meeting-summary` | + Embedding-Trigger nach Summary-Completion |
+
+## V4.2 Cron-Konfiguration
+
+```
+Coolify Cron (erweitert)
+  │
+  ├── bestehend (unveraendert):
+  │   ├── alle 5 Min  → POST /api/cron/imap-sync
+  │   ├── alle 5 Min  → POST /api/cron/meeting-transcript
+  │   ├── alle 5 Min  → POST /api/cron/meeting-summary
+  │   ├── alle 5 Min  → POST /api/cron/meeting-reminders
+  │   ├── alle 15 Min → POST /api/cron/classify
+  │   ├── alle 6h     → POST /api/cron/followups
+  │   ├── taeglich    → POST /api/cron/retention
+  │   ├── alle 2 Min  → POST /api/cron/meeting-recording-poll
+  │   ├── taeglich    → POST /api/cron/recording-retention
+  │   └── taeglich    → POST /api/cron/pending-consent-renewal
+  │
+  └── NEU (V4.2):
+      └── alle 15 Min → POST /api/cron/embedding-sync  (Header: x-cron-secret)
+```
+
+## V4.2 Env Vars — Neue Variablen
+
+```bash
+# Embedding Provider (V4.2 NEU, DEC-047)
+EMBEDDING_PROVIDER=titan                    # titan | cohere
+EMBEDDING_DIMENSIONS=1024                   # 256 | 512 | 1024 (DEC-048)
+EMBEDDING_REGION=eu-central-1               # Immer EU
+
+# Bestehende AWS-Credentials werden wiederverwendet:
+# AWS_ACCESS_KEY_ID (bestehend)
+# AWS_SECRET_ACCESS_KEY (bestehend)
+# AWS_REGION (bestehend, eu-central-1)
+```
+
+Keine neuen AWS-Credentials noetig — Titan Embeddings V2 laeuft ueber dasselbe IAM-Konto wie Bedrock Claude. Die IAM-Policy muss `bedrock:InvokeModel` fuer `amazon.titan-embed-text-v2:0` erlauben (pruefen in erster Slice-QA).
+
+## V4.2 Backfill-Strategie
+
+### Einmaliger Bestandsimport
+
+Bei V4.2-Deploy werden alle bestehenden Daten embedded:
+
+```
+/api/knowledge/backfill (einmaliger Admin-Call)
+  │
+  ├── 1. Meetings mit transcript IS NOT NULL
+  │      └── Geschaetzt: <20 Meetings (System ist seit V4.1 aktiv)
+  │
+  ├── 2. email_messages mit body_text IS NOT NULL
+  │      └── Geschaetzt: 500-2.000 E-Mails (90-Tage-IMAP-Bestand)
+  │
+  ├── 3. activities mit body IS NOT NULL
+  │      └── Geschaetzt: 200-500 Activities
+  │
+  ├── 4. documents (Textextraktion + Embedding)
+  │      └── Geschaetzt: <50 Dokumente
+  │
+  └── Gesamt-Schaetzung: ~1.000-3.000 Chunks, ~$1-3 Embedding-Kosten
+```
+
+Idempotent: Unique Constraint auf `(source_type, source_id, chunk_index)` verhindert Duplikate bei erneutem Aufruf.
+
+### Re-Embedding bei Quell-Aenderungen
+
+Wenn ein Meeting-Transkript nachtraeglich korrigiert wird oder ein Dokument aktualisiert wird:
+1. Bestehende Chunks fuer diese `source_id` werden auf `status = 'deleted'` gesetzt
+2. Neue Chunks werden erstellt und embedded
+3. Alte Chunks werden endgueltig geloescht (DELETE WHERE status = 'deleted' AND source_id = ...)
+
+## V4.2 Server Sizing
+
+### Kein zusaetzlicher RAM-Bedarf
+
+pgvector laeuft in der bestehenden PostgreSQL-Instanz. Der HNSW-Index fuer ~50.000 Chunks mit 1024 Dimensionen benoetigt ca. 200-300 MB RAM. Bei aktuellem Sizing (CPX32, 8 GB RAM, ~6-6.5 GB unter V4.1-Last) ist das unkritisch.
+
+| Komponente | RAM-Delta |
+|---|---|
+| pgvector HNSW-Index (~50k Chunks) | +200-300 MB |
+| Embedding-Client (in Next.js) | vernachlaessigbar |
+| **Gesamt V4.2 zusaetzlich** | **~300 MB** |
+
+Gesamt-Schaetzung: ~6.5-7 GB von 8 GB unter V4.1+V4.2-Last (ohne aktives Jibri-Recording). Reicht fuer V4.2.
+
+## V4.2 Security / Privacy
+
+### EU-only Datenhaltung fuer Embeddings
+
+```
+Quell-Daten:           Hetzner PostgreSQL (Deutschland)
+Embedding-Generierung: AWS Bedrock Titan V2 (Frankfurt, eu-central-1)
+Vektor-Speicher:       Hetzner PostgreSQL pgvector (Deutschland)
+LLM-Antwort:           AWS Bedrock Claude Sonnet (Frankfurt, eu-central-1)
+```
+
+Kein Datenfluss in US-Regionen. Titan Embeddings V2 in eu-central-1 ist DPA-abgedeckt durch bestehendes AWS-DPA (gleicher Account wie Bedrock Claude).
+
+### Audit-Trail
+
+Jeder Embedding-API-Call wird geloggt (konsistent mit Data-Residency-Regel):
+- Provider: "Amazon Titan"
+- Region: "eu-central-1"
+- Modell-ID: "amazon.titan-embed-text-v2:0"
+- Chunk-Count
+- Zeitstempel
+
+RAG-Query-Calls werden in bestehende `/api/ai/query`-Logging-Logik integriert.
+
+### Keine zusaetzlichen Privacy-Risiken
+
+knowledge_chunks enthaelt Textfragmente aus bestehenden Tabellen (Meetings, E-Mails, Activities, Dokumente). Dieselben RLS-Policies und Zugangskontrollen gelten. Keine neuen personenbezogenen Daten werden erhoben — nur bestehende Daten werden als Vektoren indiziert.
+
+## V4.2 Constraints & Tradeoffs
+
+| Entscheidung | Tradeoff |
+|---|---|
+| pgvector in bestehender DB statt separater Vektor-Service | Einfacher, kein neuer Container. Aber: HNSW-Index-Rebuild bei grossen Aenderungen kann langsam sein. Fuer V4.2-Volume OK. |
+| Titan V2 statt Cohere Embed Multilingual V3 | Gleicher Provider = einfacher. Deutsch-Performance ist Open Question — Evaluierung in QA, Cohere als Fallback via Adapter. |
+| 1024 Dimensionen statt 512 (DEC-048) | Beste Qualitaet, mehr Speicher. Bei <50k Chunks ist Speicher-Unterschied irrelevant (~50 MB). |
+| Token-Heuristik statt Tokenizer-Library | Einfacher, +/-10% Ungenauigkeit. Fuer Chunk-Groessen-Steuerung ausreichend. |
+| Kein Multi-Turn-Chat in V4.2 | Einzelne Fragen, kein persistenter Gespraechskontext. Reduziert Komplexitaet erheblich. Spaeter erweiterbar. |
+| Embedding im Cron-Fallback statt in-Request | Async ist richtig fuer I/O-bound Embedding. Aber: bis zu 15 Min Delay bei verpasstem Inline-Trigger. Fuer Single-User akzeptabel. |
+
+## V4.2 Technische Risiken
+
+| Risiko | Wahrscheinlichkeit | Impact | Mitigation |
+|---|---|---|---|
+| pgvector Extension fehlt in Supabase-Image | Niedrig | Blocker | `supabase/postgres:15.6.1.145` enthaelt pgvector. Im ersten Slice via `CREATE EXTENSION IF NOT EXISTS vector` verifizieren. |
+| Titan V2 Deutsch-Qualitaet unzureichend | Mittel | Hoch | Evaluierung mit echten Meeting-Transkripten in Slice-QA. Fallback: Cohere Embed Multilingual V3 via Bedrock Frankfurt (ebenfalls verfuegbar). Adapter-Pattern macht Switch einfach. |
+| IAM-Policy fehlt fuer Titan Embeddings | Mittel | Blocker | AWS IAM Policy muss `bedrock:InvokeModel` fuer `amazon.titan-embed-text-v2:0` erlauben. Im ersten Slice pruefen. |
+| HNSW-Index zu langsam bei >100k Chunks | Niedrig | Niedrig | Fuer V4.2 Volume (<50k Chunks) kein Problem. Bei Wachstum: `ef_search`-Parameter tunen. |
+| PDF-Extraktion scheitert bei komplexen Layouts | Mittel | Niedrig | `pdf-parse` funktioniert gut fuer Text-PDFs. Gescannte PDFs/Bilder sind explizit Out-of-Scope. |
+| Bedrock Rate-Limiting bei Backfill | Niedrig | Niedrig | Backfill verarbeitet Chunks sequentiell mit Pausen. ~3.000 Chunks bei ~50ms/Embedding = ~2.5 Minuten total. |
+
+## V4.2 Migration Plan
+
+### MIG-014 — V4.2 pgvector + knowledge_chunks Schema
+
+```sql
+-- 1. pgvector Extension aktivieren
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- 2. knowledge_chunks Tabelle (siehe Data Model oben)
+-- 3. HNSW-Index
+-- 4. Lookup-Indizes + Unique Constraint
+-- 5. RLS + Grants
+```
+
+Rein additiv. Kein Impact auf bestehende Tabellen. Kein Downtime noetig.
+
+## V4.2 Dependencies (package.json)
+
+```json
+{
+  "pdf-parse": "^1.1.1",
+  "mammoth": "^1.8.0"
+}
+```
+
+`@aws-sdk/client-bedrock-runtime` ist bereits installiert (V3 Bedrock Client). Titan Embeddings V2 nutzt denselben SDK-Client mit anderem `modelId`.
+
+## V4.2 Empfohlene Slice-Reihenfolge
+
+1. **SLC-421 pgvector + Schema + Embedding-Adapter** — Extension aktivieren, knowledge_chunks Tabelle, EmbeddingProvider Interface + TitanProvider + Factory. Basis-Slice, blockiert alle folgenden.
+2. **SLC-422 Chunking-Service + Indexer** — Quelltypspezifischer Chunker, Indexer (Chunk → Embed → Store). Unit-Tests mit echten Texten.
+3. **SLC-423 Backfill + Embedding-Sync-Cron** — Bestehende Daten embedden, Cron fuer verpasste Embeddings. Danach: echte Vektoren in DB fuer Query-Tests.
+4. **SLC-424 RAG Query API** — `/api/knowledge/query` mit Scope-Logik, Context Assembly, Bedrock-Prompt, strukturierte Response. Kern-Feature.
+5. **SLC-425 Deal Knowledge Query UI** — "Wissen"-Tab im Deal-Workspace, Text+Voice-Input, Ergebnis-Darstellung mit Quellen-Cards.
+6. **SLC-426 Auto-Embedding Trigger** — Integration in bestehende Cron-Jobs und Server Actions (IMAP-Sync, Meeting-Summary, Activity-Create, Document-Upload).
+
+Geschaetzt 6 Slices. Jeder nach 1-2 Tagen implementierbar.
+
+## V4.2 Recommended Next Step
+
+`/slice-planning` — V4.2-Slices strukturiert ausdefinieren (Acceptance Criteria, Dependencies, QA-Fokus, Micro-Tasks). Danach pro Slice `/backend` oder `/frontend` + `/qa`.

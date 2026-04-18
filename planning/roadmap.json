@@ -66,8 +66,8 @@
     {
       "id": "v4-2",
       "name": "V4.2",
-      "status": "planned",
-      "summary": "Wissensbasis Cross-Source: Meetings + E-Mails + Dokumente + Deal-Daten zusammen durchsuchbar via natuerliche Sprache (Text + Voice). FEAT-401 komplett, nicht halbgar.",
+      "status": "active",
+      "summary": "Wissensbasis Cross-Source: RAG-Pipeline (pgvector + Bedrock Titan Embeddings V2) fuer semantische Suche ueber Meetings, E-Mails, Deal-Daten und Dokumente. Natuerliche Sprache (Text + Voice) aus Deal-Workspace. DEC-046/047.",
       "order": 10
     },
     {

@@ -224,3 +224,23 @@
 - Status: accepted
 - Reason: Jibri erzeugt standardmaessig MP4 (ffmpeg-Pipeline, H.264 + AAC). MP4 ist universell kompatibel mit OpenAI Whisper API (keine Pre-Conversion noetig), ffprobe (Duration), Browser-Playback im Deal-Workspace. WebM (VP8/Opus) waere ~20-30% kleiner, erfordert aber Jibri-Config-Hacks und ist bei OpenAI Whisper API nicht nativ unterstuetzt. Fuer V4.1 Volume (1-2 Meetings/Tag) ist Dateigroesse irrelevant.
 - Consequence: Jibri laeuft mit Default-Config, MP4-Output nach `/recordings/{room}.mp4`. Upload-Cron detektiert `.mp4`-Files, laedt sie in Supabase Storage Bucket `meeting-recordings`. Whisper-Adapter reicht File direkt an OpenAI weiter ohne Konvertierung. ffprobe liefert `recording_duration_seconds`.
+
+## DEC-046 — RAG mit pgvector + Bedrock Titan Embeddings V2 statt Context-Window-Stuffing
+- Status: accepted
+- Reason: Drei Gruende fuer RAG statt Context-Window-Stuffing:
+  (1) Skalierbarkeit: Context-Window (200k Tokens) reicht fuer ~10 Meeting-Transkripte. Bei 50+ Meetings pro Deal ist das nicht mehr moeglich. RAG skaliert unbegrenzt.
+  (2) Qualitaet: SQL kann nicht semantisch filtern. "Vollmacht" findet nicht "Vertretungsbefugnis". Embedding-basierte Suche findet semantisch verwandte Inhalte.
+  (3) Kosten: RAG-Queries sind ~10x guenstiger pro Anfrage (10k statt 100k Tokens im LLM-Context). Embedding-Generierung kostet ~$0.0002/1k Tokens (vernachlaessigbar).
+  Infrastruktur-Aufwand ist gering: pgvector ist in Supabase PostgreSQL enthalten (ein CREATE EXTENSION Befehl). Titan Embeddings V2 laeuft ueber denselben Bedrock-Account in Frankfurt. Kein neuer Container, kein neuer Provider, kein neues DPA.
+  Das Pattern ist wiederverwendbar fuer Intelligence Studio, Onboarding-Plattform und alle zukuenftigen Strategaize-Systeme mit Wissensbasis-Anforderungen.
+- Consequence: V4.2 implementiert RAG-Pipeline: Chunking → Titan Embeddings V2 (eu-central-1) → pgvector in PostgreSQL → Similarity Search → Bedrock Claude Sonnet fuer Antwortgenerierung. `knowledge_chunks` Tabelle mit vector(1024) Spalte + HNSW-Index. Embedding-Adapter-Pattern analog zu Whisper-Adapter (DEC-047). Backfill aller bestehenden Daten bei Deploy. Dev-System-Regel `rag-embedding-pattern.md` dokumentiert das Pattern fuer Wiederverwendung.
+
+## DEC-047 — Embedding-Adapter-Pattern (analog Whisper-Adapter DEC-035)
+- Status: accepted
+- Reason: Konsistenz mit bestehendem Provider-Adapter-Pattern (DEC-035 Whisper, Data-Residency-Regel). V4.2 nutzt Amazon Titan Embeddings V2. Spaeterer Wechsel zu Cohere Embed Multilingual V3 (besseres Deutsch?) oder anderem Modell muss ohne Feature-Rewrite moeglich sein. Region-Config ueber ENV (gleiche Regel wie LLM und Whisper). Interface analog: `embed(text) → number[]`, `embedBatch(texts[]) → number[][]`.
+- Consequence: `/lib/ai/embeddings/provider.ts` definiert `EmbeddingProvider` Interface. `titan.ts` implementiert V4.2-Provider (Bedrock Titan V2). `factory.ts` liest `EMBEDDING_PROVIDER` ENV-Variable. Business-Code ruft ausschliesslich `getEmbeddingProvider().embed(...)`. Kein direkter Bedrock-Import ausserhalb des Adapter-Moduls. Bei Provider-Wechsel: neue Adapter-Klasse + ENV-Aenderung + Re-Embedding aller Daten (bewusster Tradeoff: Embeddings sind modellspezifisch, kein Mix moeglich).
+
+## DEC-048 — Embedding-Dimensionen 1024 + Sentence-Boundary Chunking
+- Status: accepted
+- Reason: Titan V2 unterstuetzt 256/512/1024 Dimensionen. 1024 liefert die beste Retrieval-Qualitaet (hoechste semantische Aufloesung). Speicher-Overhead bei <50k Chunks (realstische V4.2-Menge) ist ~50 MB Unterschied zwischen 512 und 1024 — irrelevant auf CPX32. Chunking an Satzgrenzen statt fixen Token-Positionen vermeidet abgeschnittene Saetze, die die Embedding-Qualitaet verschlechtern. Token-Heuristik (text.length/4) reicht fuer Chunk-Groessen-Steuerung — kein externer Tokenizer noetig.
+- Consequence: `EMBEDDING_DIMENSIONS=1024` als Default in ENV. `knowledge_chunks.embedding` ist `vector(1024)`. Chunker schneidet an Satzgrenzen (Regex: `/[.!?]\s+/`), Target 600-800 Tokens, Overlap 100 Tokens bei Meeting-Transkripten und Dokumenten. E-Mails und Activities als Single-Chunk wenn <800 Tokens. Bei spaeterem Wechsel auf 512: HNSW-Index muss neu gebaut werden (ALTER COLUMN + Re-Embedding).

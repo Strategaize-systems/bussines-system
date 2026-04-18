@@ -1133,19 +1133,164 @@ V4.1 ist erfolgreich wenn:
 
 ---
 
-# V4.2 — Wissensbasis (planned)
+# V4.2 — Wissensbasis Cross-Source (Requirements)
 
 ## V4.2 Purpose
 
-V4.2 baut die Cross-Source-Wissensbasis: Meeting-Summaries (aus V4.1), E-Mail-Inhalte (aus V4 IMAP), Deal-Daten, Kontakt-Historie und hochgeladene Dokumente werden in einer durchsuchbaren Struktur zusammengefuehrt. Abfrage per natuerlicher Sprache (Text + Voice) aus Deal-Workspace ("Hat Kunde X die Vollmacht unterschrieben?") — wie im KI-Analyse-Cockpit-Paradigma, aber Deal-kontextspezifisch.
+V4.2 baut die Cross-Source-Wissensbasis: Alle geschaeftsrelevanten Informationen aus vier Quellen — Meeting-Transkripte und Summaries (V4.1), E-Mail-Inhalte (V4 IMAP), Deal-/Kontakt-/Firmen-Daten (V2+) und hochgeladene Dokumente — werden ueber eine semantische Embedding-Pipeline (RAG) durchsuchbar gemacht. Abfrage per natuerlicher Sprache (Text + Voice) aus dem Deal-Workspace-Kontext.
 
 V4.2 setzt FEAT-401 um.
 
+## V4.2 Problem Statement
+
+Geschaeftskritisches Wissen ist ueber vier getrennte Datenquellen verteilt. Um die Frage "Hat Kunde X die Vollmacht unterschrieben?" zu beantworten, muss der User heute manuell Meeting-Notizen, E-Mails, Deal-Timeline und Dokumente durchsuchen. Das kostet Zeit und fuehrt dazu, dass Informationen uebersehen werden — besonders wenn die relevante Information in einem 60-Minuten-Transkript versteckt ist oder in einer E-Mail von vor 3 Wochen steht.
+
+Bisherige KI-Abfragen (Mein Tag Query, Pipeline-Suche) arbeiten mit SQL-Pre-Filtering + Context-Window-Stuffing. Das funktioniert fuer strukturierte Daten (Deals, Tasks), skaliert aber nicht fuer unstrukturierte Inhalte (Transkripte, E-Mail-Texte, Dokumente). Eine breite Frage wie "Hat irgendjemand ueber Thema X gesprochen?" kann nicht beantwortet werden, weil SQL nicht semantisch filtern kann.
+
+## V4.2 Goal / Intended Outcome
+
+Der User kann aus dem Deal-Workspace heraus eine natuerlichsprachliche Frage stellen (Text oder Voice) und erhaelt eine praezise Antwort mit Quellenangabe — egal ob die Information in einem Meeting-Transkript, einer E-Mail, einem Dokument oder in strukturierten Deal-Daten steckt.
+
+Technisch: RAG-Pipeline (Retrieval-Augmented Generation) mit pgvector fuer semantische Suche und Bedrock Titan Embeddings V2 fuer die Vektorisierung. Das Pattern wird so gebaut, dass es in anderen Strategaize-Systemen (Intelligence Studio, Onboarding-Plattform) wiederverwendbar ist.
+
+## V4.2 Primary Users
+
+Eigentuemer/Operator im Deal-Workspace-Kontext.
+
 ## V4.2 Scope-Prinzip
 
-Wenn V4.2 es nicht schafft, alle relevanten Quellen durchsuchbar zu machen, dann ist V4.2 nicht fertig. Kein Halbzeug — entweder Cross-Source vollstaendig oder verschieben.
+Wenn V4.2 es nicht schafft, alle vier relevanten Quellen (Meetings, E-Mails, Deals, Dokumente) durchsuchbar zu machen, dann ist V4.2 nicht fertig. Kein Halbzeug — entweder Cross-Source vollstaendig oder verschieben.
 
-Detail-Requirements werden geschrieben, sobald V4.1 stabil ist.
+## V4.2 Scope — In Scope
+
+### Datenquellen (alle vier muessen abgedeckt sein)
+
+1. **Meeting-Transkripte + Summaries** — `meetings.transcript` (Volltext, 10.000-15.000 Woerter pro Stunde) + `meetings.ai_summary` (strukturiertes JSON: outcome, decisions, action_items, next_step). Quelle: V4.1 Whisper + Bedrock Pipeline.
+2. **E-Mail-Inhalte** — `email_messages.body_text` + `email_messages.subject`. Quelle: V4 IMAP-Sync.
+3. **Deal-Kontext** — `deals` (Stage, Wert, Status, next_action), `activities` (Gespraechsnotizen, Summary), `tasks` (offene/erledigte Aufgaben), `proposals` (Angebotsversionen, Status), `signals` (Kauf-/Warnsignale). Quelle: V2+.
+4. **Dokumente** — `documents` Tabelle (Dateiname, Beschreibung, Inhalt wo verfuegbar). Textextraktion fuer PDFs und Office-Dokumente ist V4.2-Scope, soweit technisch machbar (PDF → Text, DOCX → Text). Bilder und Scans (OCR) sind Out-of-Scope.
+
+### Embedding-Pipeline
+
+- Chunking-Service: Zerlegung aller Textinhalte in ueberlappende Chunks (optimale Groesse pro Quelltyp)
+- Embedding-Generierung: Amazon Titan Text Embeddings V2 via Bedrock Frankfurt (eu-central-1) — gleicher Provider, gleiche Region, gleiches DPA wie bestehender LLM-Service
+- Vektor-Speicher: pgvector Extension in bestehender Supabase PostgreSQL — kein zusaetzlicher Container oder Service
+- Auto-Embedding: Neue Meetings, E-Mails und Dokumente werden bei Erstellung/Update automatisch embedded
+- Backfill: Alle bestehenden Daten (historische Meetings, E-Mails, Deal-Activities) werden einmalig embedded
+
+### RAG Query Pipeline
+
+- Query-Embedding: User-Frage wird als Vektor embedded
+- Semantische Suche: pgvector findet die relevantesten Chunks ueber alle Quellen
+- Context Assembly: Top-N relevante Chunks + Deal-Metadaten werden als Kontext an Bedrock Claude Sonnet geschickt
+- LLM-Antwort: Strukturierte Antwort mit Quellenangaben (Quelltyp, Zeitpunkt, Link zur Originalquelle)
+
+### Query-UI
+
+- Deal-Workspace-Integration: Neues "Wissensbasis"-Tab oder Widget im Deal-Workspace (/deals/[id])
+- Text-Input: Natuerlichsprachliches Eingabefeld
+- Voice-Input: Mikrofon-Button mit Whisper-Transkription (bestehendes Pattern aus V2.1+)
+- Ergebnis-Darstellung: Antworttext + Quellen-Cards (Typ-Icon, Titel, Datum, Snippet, Link zum Original)
+- Deal-Kontext-Awareness: Queries werden automatisch auf den aktiven Deal + zugehoerige Kontakte/Firma fokussiert, koennen aber explizit erweitert werden ("Suche in allen Deals")
+
+## V4.2 Scope — Out of Scope
+
+- **Schreibende KI-Aktionen** — Wissensbasis ist read-only. KI schlaegt keine Property-Aenderungen vor. Das ist V4.3 (Insight Governance).
+- **OCR / Bild-Analyse** — Gescannte Dokumente oder Bilder werden nicht verarbeitet.
+- **Globale Suche ausserhalb Deal-Kontext** — V4.2 fokussiert auf Deal-Workspace. Eine globale Suchseite (alle Deals uebergreifend) ist V4.2+-Scope, nicht V4.2 Kern.
+- **Chat-Verlauf / Multi-Turn-Konversation** — Einzelne Fragen, kein persistenter Chat.
+- **Automatische Re-Indexierung bei Schema-Aenderungen** — Wenn sich das Schema aendert, wird manueller Backfill ausgeloest.
+- **Embedding-Modell-Wechsel zur Laufzeit** — V4.2 nutzt Titan V2. Modell-Wechsel erfordert Re-Embedding aller Daten (bewusste Entscheidung, kein Hot-Swap).
+- **Echtzeit-Streaming-Antworten** — Antwort kommt als Ganzes, kein Token-Streaming in V4.2.
+
+## V4.2 Core Features
+
+### FEAT-401a — Embedding-Pipeline + Vektor-Speicher
+
+- pgvector Extension aktivieren in bestehender Supabase PostgreSQL
+- `knowledge_chunks` Tabelle: id, source_type (meeting/email/deal_activity/document), source_id, chunk_index, chunk_text, embedding (vector), metadata JSONB, created_at
+- Chunking-Service mit quelltypspezifischer Strategie:
+  - Meetings: Paragraph-basiert mit Zeitstempel-Kontext (~500-800 Tokens pro Chunk, 100 Token Overlap)
+  - E-Mails: Pro E-Mail als einzelner Chunk (die meisten sind kurz genug), bei langen Mails Split
+  - Deal-Activities: Pro Activity als einzelner Chunk mit Deal-/Kontakt-Metadaten
+  - Dokumente: Seiten-/Absatz-basiert, abhaengig von Dokumenttyp
+- Embedding via Amazon Titan Text Embeddings V2 (`amazon.titan-embed-text-v2:0`, Bedrock eu-central-1)
+- Adapter-Pattern analog zum bestehenden Whisper-Adapter (DEC-035): `EmbeddingProvider` Interface mit `TitanEmbeddingProvider` als V4.2-Implementierung
+- Auto-Trigger: Embedding wird asynchron ausgeloest bei:
+  - Meeting-Transkript fertig (nach Whisper-Pipeline)
+  - E-Mail synchronisiert (nach IMAP-Sync)
+  - Activity erstellt/aktualisiert
+  - Dokument hochgeladen
+- Backfill-Script: Einmaliges Embedding aller bestehenden Daten, idempotent (skip wenn Chunks fuer source_id bereits existieren)
+
+### FEAT-401b — RAG Query API
+
+- API-Route `/api/knowledge/query` (authentifiziert, rate-limited)
+- Input: `{ query: string, dealId?: string, scope: 'deal' | 'contact' | 'company' | 'all' }`
+- Pipeline: Query embedden → pgvector Similarity Search (cosine distance) → Top-20 Chunks holen → Kontext + Deal-Metadaten assemblieren → Bedrock Claude Sonnet Prompt → strukturierte Antwort
+- Scope-Logik:
+  - `deal`: Nur Chunks die zum Deal gehoeren (via source_id → deal_id FK-Chain)
+  - `contact`: Alle Chunks zum Kontakt (egal welcher Deal)
+  - `company`: Alle Chunks zur Firma
+  - `all`: Ueber alle Daten (mit Relevanz-Ranking)
+- Response: `{ answer: string, sources: [{ type, title, date, snippet, url, relevance }], confidence: 'high' | 'medium' | 'low' }`
+- Confidence basiert auf Vektor-Distanz der Top-Treffer
+
+### FEAT-401c — Deal Knowledge Query UI
+
+- Neues "Wissen"-Tab im Deal-Workspace (`/deals/[id]`)
+- Eingabefeld mit Placeholder: "Frage zur Wissensbasis stellen..."
+- Mikrofon-Button fuer Voice-Input (bestehendes Whisper-Pattern)
+- Ergebnis-Bereich:
+  - Antwort-Text (Markdown-formatiert)
+  - Quellen-Cards darunter: Icon (Meeting/E-Mail/Activity/Dokument), Titel, Datum, relevanter Snippet, Klick oeffnet Original
+- Scope-Toggle: "Nur dieser Deal" (Default) / "Alle Daten"
+- Loading-State waehrend LLM-Verarbeitung (erwartete Latenz: 3-8 Sekunden)
+- Kostenschutz: on-click, kein auto-load (konsistent mit DEC-030 / BL-330)
+
+### FEAT-401d — Backfill + Monitoring
+
+- Einmaliger Backfill aller bestehenden Daten beim V4.2-Deploy
+- Monitoring: Logging jedes Embedding-Calls (Anbieter, Region, Modell-ID, Chunk-Count, Zeitstempel) — konsistent mit Data-Residency Audit-Pfad-Regel
+- Cron-Job `/api/cron/embedding-sync`: Faengt verpasste Auto-Embeddings ab (z.B. wenn Embedding bei Meeting-Transcript fehlschlug). Laeuft alle 15 Minuten, verarbeitet Chunks mit Status `pending`.
+
+## V4.2 Constraints
+
+- **EU-only**: Embedding-Modell muss via Bedrock eu-central-1 laufen (Data-Residency-Regel). Amazon Titan Text Embeddings V2 ist dort verfuegbar.
+- **Kein neuer Container**: pgvector laeuft in der bestehenden Supabase PostgreSQL. Kein Pinecone, kein Weaviate, kein separater Vektor-DB-Container.
+- **Adapter-Pattern**: Embedding-Provider muss ueber Adapter gekapselt sein (analog Whisper-Adapter DEC-035), damit spaeterer Wechsel zu anderem Embedding-Modell ohne Feature-Rewrite moeglich ist.
+- **Kosten-Bewusstsein**: Embedding-Kosten sind niedrig (~$0.0002/1k Tokens), aber bei Backfill grosser Datenmengen muessen Batch-Limits beachtet werden. Rate-Limiting auf Bedrock-Ebene.
+- **Chunk-Groesse**: Muss zum Embedding-Modell passen. Titan V2 unterstuetzt max 8.192 Tokens pro Embedding-Call. Chunks muessen kleiner sein.
+
+## V4.2 Risks & Assumptions
+
+- **Risk:** Titan Embeddings V2 Qualitaet fuer deutschsprachige Texte moeglicherweise suboptimal. Mitigation: Evaluierung mit echten Meeting-Transkripten + E-Mails in der ersten Slice-QA. Fallback: Cohere Embed Multilingual V3 via Bedrock (ebenfalls eu-central-1 verfuegbar).
+- **Risk:** pgvector Performance bei >100.000 Chunks. Mitigation: HNSW-Index (statt IVFFlat) ab Beginn, regelmaessiges VACUUM. Fuer V4.2-Volume (realstisch <50.000 Chunks) kein Problem.
+- **Risk:** Chunking-Strategie beeinflusst Retrieval-Qualitaet stark. Zu grosse Chunks = unpraezise Suche. Zu kleine = Kontext geht verloren. Mitigation: Quelltypspezifische Chunking-Strategie, iteratives Tuning in QA.
+- **Assumption:** Supabase Self-Hosted PostgreSQL unterstuetzt pgvector Extension (Standard seit Supabase 0.22+). Muss beim ersten Slice verifiziert werden.
+- **Assumption:** Document-Textextraktion (PDF → Text) ist mit serverseitigen Libraries (pdf-parse) machbar ohne externen Service.
+
+## V4.2 Success Criteria
+
+V4.2 ist erfolgreich wenn:
+1. User kann im Deal-Workspace eine natuerlichsprachliche Frage stellen und erhaelt eine praezise Antwort
+2. Antworten enthalten Quellenangaben (Typ, Datum, Link) — User kann die Quelle direkt aufrufen
+3. Alle vier Datenquellen (Meetings, E-Mails, Deal-Daten, Dokumente) sind durchsuchbar
+4. Semantische Suche findet auch Ergebnisse wenn die exakten Suchbegriffe nicht vorkommen ("Vollmacht" findet "Vertretungsbefugnis")
+5. Voice-Input funktioniert (Whisper → Text → Query)
+6. Bestehende Daten (vor V4.2) sind ebenfalls durchsuchbar (Backfill)
+7. Embedding-Provider ist ueber Adapter gekapselt (analog Whisper-Adapter)
+8. Alle Embedding-Calls laufen ueber Bedrock Frankfurt (eu-central-1) — kein US-Traffic
+9. Query-Latenz <10 Sekunden (Embedding + Search + LLM zusammen)
+
+## V4.2 Open Questions (fuer /architecture)
+
+- pgvector Extension: Ist sie in der aktuellen Supabase-Version auf Hetzner bereits installiert oder muss sie nachinstalliert werden?
+- Embedding-Dimensionen: Titan V2 bietet 256/512/1024 Dimensionen. Welche Dimension ist der beste Tradeoff zwischen Qualitaet und Speicher/Performance?
+- Chunk-Overlap-Strategie: Festes Overlap (z.B. 100 Tokens) oder sentence-boundary-aware?
+- Document-Upload: Gibt es bereits hochgeladene Dokumente in der `documents`-Tabelle oder ist die leer?
+- Scope-Default: Bei Query ohne expliziten Scope — auf aktiven Deal beschraenken oder alles durchsuchen?
+- Re-Embedding-Trigger: Wenn ein Meeting-Transkript nachtraeglich korrigiert wird, muessen die alten Chunks geloescht und neu embedded werden. Automatisch oder manuell?
 
 ---
 

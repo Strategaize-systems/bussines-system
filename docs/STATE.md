@@ -9,31 +9,37 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: stable
-- Current Focus: V4.1 released und stabil (REL-010, RPT-130). 8/8 Smoke-Tests PASS. 3 Post-Deploy-Fixes erledigt.
-- Current Phase: Stable (V4.1 released)
+- High-Level State: architecture
+- Current Focus: V4.2 Wissensbasis Cross-Source — Requirements + Architecture done, naechster Schritt /slice-planning
+- Current Phase: V4.2 Architecture
 
 ## Immediate Next Steps
-1. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
-2. Naechstes Redeploy: Padding-Fix (fa5f5d6) wird automatisch mit ausgerollt
-3. Naechste inhaltliche Arbeit: V4.2 Planning (Wissensbasis Cross-Source) oder anderes Projekt
+1. /slice-planning fuer V4.2 (6 Slices: SLC-421..426)
+2. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
+3. Naechstes Redeploy: Padding-Fix (fa5f5d6) wird automatisch mit ausgerollt
 
 ## Active Scope
-**V4.1 — Meeting Intelligence Basis (active, Architecture done):**
-- FEAT-404 Call Intelligence (Jitsi + Jibri + Whisper + Bedrock-Summary)
-- FEAT-409 Meeting-Erinnerungen (extern + intern + KI-Agenda)
-- FEAT-411 DSGVO-Einwilligungsflow (einmalig, widerrufbar)
+**V4.1 — Meeting Intelligence Basis (released, REL-010):**
+- FEAT-404 Call Intelligence — deployed
+- FEAT-409 Meeting-Erinnerungen — deployed
+- FEAT-411 DSGVO-Einwilligungsflow — deployed
 
-Kern-Design-Entscheidungen: Whisper-Adapter-Pattern (DEC-035), Jitsi shared-infrastructure (DEC-036), Queue nur schreibend (DEC-037, V4.3), Einwilligung einmalig (DEC-038), V4.x Scope-Split (DEC-039), Jitsi Co-Location auf CPX32 (DEC-040), Whisper-Adapter als Library (DEC-041), /consent/{token} Public-URL (DEC-042), Recording-Retention 30d ENV-konfigurierbar (DEC-043), Ad-hoc-Kontakte auto-Anlage (DEC-044), Jibri MP4 Default (DEC-045).
+**V4.2 — Wissensbasis Cross-Source (active, Architecture done):**
+- FEAT-401 Cross-Source-Wissensbasis mit RAG-Pipeline (pgvector + Bedrock Titan Embeddings V2)
+- 4 Datenquellen: Meeting-Transkripte, E-Mails, Deal-Daten, Dokumente
+- Query per natuerlicher Sprache (Text + Voice) aus Deal-Workspace
+- DEC-046 RAG, DEC-047 Embedding-Adapter, DEC-048 Dimensionen+Chunking
+- MIG-014: pgvector Extension + knowledge_chunks Tabelle
+- 6 empfohlene Slices: SLC-421..426
+- Backlog: BL-350 (Umbrella) + BL-352..357 (Detail-Items)
 
-**V4.2 — Wissensbasis (planned):** FEAT-401 Cross-Source (nach V4.1 stabil).
 **V4.3 — Insight Governance (planned):** FEAT-402 Queue (nach V4.2 stabil).
 
 ## Blockers
 - aktuell keine (ISSUE-031 + ISSUE-032 durch Slice-Record-Updates 2026-04-15 resolved)
 
 ## Last Stable Version
-- V4 — 2026-04-14 — deployed auf Hetzner (KI-Gatekeeper + Externe Integrationen, 9/9 Slices, REL-009)
+- V4.1 — 2026-04-18 — deployed auf Hetzner (Meeting Intelligence Basis, 9/9 Slices, REL-010)
 
 ## Notes
 V4 Deployment in zwei Phasen: SLC-401..403 am 2026-04-12 (IMAP live), SLC-404..409 am 2026-04-14 abends (Redeploy). Smoke-Tests am 2026-04-15 morgen durchgelaufen: Login, IMAP-Inbox, Mein Tag KI-Wiedervorlagen, Gesamtkalender, KI-Analyse Cockpit, Focus 2-Spalten-Layout — alle PASS. Cal.com Self-Hosted läuft seit 2026-04-13 mit Webhook-Integration. CALCOM_API_KEY bewusst leer (AGPLv3). Bedrock Claude Sonnet 4 via Frankfurt-Region.

@@ -1087,10 +1087,70 @@
       "title": "Wissensbasis Cross-Source (Meetings + E-Mails + Dokumente + Deal-Daten)",
       "type": "feature",
       "priority": "high",
+      "status": "in_progress",
+      "version": "V4.2",
+      "description": "FEAT-401: RAG-basierte Cross-Source-Wissensbasis. pgvector + Bedrock Titan Embeddings V2 (DEC-046). Vier Quellen: Meeting-Transkripte, E-Mails, Deal-Daten, Dokumente. Abfrage per natuerlicher Sprache (Text + Voice) aus Deal-Workspace. Cross-Source vollstaendig, kein Halbzeug (DEC-039).",
+      "createdAt": "2026-04-15"
+    },
+    {
+      "id": "BL-352",
+      "title": "pgvector Setup + knowledge_chunks Tabelle + Chunking-Service",
+      "type": "feature",
+      "priority": "high",
       "status": "open",
       "version": "V4.2",
-      "description": "FEAT-401: Alle Wissensquellen in einer durchsuchbaren Struktur. Abfrage per natuerlicher Sprache (Text + Voice) aus Deal-Workspace. Beispiel: 'Hat Kunde X die Vollmacht unterschrieben?'. Anforderung: Cross-Source-Search vollstaendig, kein Halbzeug (DEC-039).",
-      "createdAt": "2026-04-15"
+      "description": "FEAT-401a: pgvector Extension aktivieren, knowledge_chunks Tabelle mit vector(1024) + HNSW-Index anlegen, Chunking-Service mit quelltypspezifischer Strategie (Meetings paragraph-basiert, E-Mails pro Mail, Activities pro Eintrag, Dokumente seiten-/absatzbasiert).",
+      "createdAt": "2026-04-18"
+    },
+    {
+      "id": "BL-353",
+      "title": "Embedding-Adapter-Pattern + Titan V2 Provider",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V4.2",
+      "description": "FEAT-401a/DEC-047: EmbeddingProvider Interface in /lib/ai/embeddings/. TitanEmbeddingProvider als V4.2-Implementierung (Bedrock eu-central-1). Factory mit EMBEDDING_PROVIDER ENV. Analog zu Whisper-Adapter (DEC-035).",
+      "createdAt": "2026-04-18"
+    },
+    {
+      "id": "BL-354",
+      "title": "Auto-Embedding Pipeline (Meeting/E-Mail/Activity/Document Trigger)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V4.2",
+      "description": "FEAT-401a: Automatisches Embedding bei neuen Daten — nach Whisper-Pipeline (Meeting-Transkript), nach IMAP-Sync (E-Mail), bei Activity-Erstellung, bei Dokument-Upload. Asynchron, idempotent, mit Status-Tracking.",
+      "createdAt": "2026-04-18"
+    },
+    {
+      "id": "BL-355",
+      "title": "Backfill bestehender Daten + Embedding-Sync Cron",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V4.2",
+      "description": "FEAT-401d: Einmaliges Embedding aller bestehenden Meetings, E-Mails, Activities, Dokumente. Idempotent (skip wenn Chunks existieren). Cron-Job /api/cron/embedding-sync alle 15 Min fuer verpasste Auto-Embeddings.",
+      "createdAt": "2026-04-18"
+    },
+    {
+      "id": "BL-356",
+      "title": "RAG Query API (/api/knowledge/query)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V4.2",
+      "description": "FEAT-401b: Query embedden → pgvector Similarity Search → Top-20 Chunks → Context Assembly → Bedrock Claude Sonnet → strukturierte Antwort mit Quellenangaben. Scope-Logik (deal/contact/company/all). Confidence-Level.",
+      "createdAt": "2026-04-18"
+    },
+    {
+      "id": "BL-357",
+      "title": "Deal Knowledge Query UI (Wissen-Tab im Deal-Workspace)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V4.2",
+      "description": "FEAT-401c: Wissen-Tab im Deal-Workspace. Text-Input + Voice-Input (Whisper). Ergebnis: Antwort-Text + Quellen-Cards (Typ, Titel, Datum, Snippet, Link). Scope-Toggle. On-click (DEC-030).",
+      "createdAt": "2026-04-18"
     },
     {
       "id": "BL-351",
