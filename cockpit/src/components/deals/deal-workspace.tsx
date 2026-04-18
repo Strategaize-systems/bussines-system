@@ -8,6 +8,7 @@ import { DealProposals } from "./deal-proposals";
 import { DealDocuments } from "./deal-documents";
 import { DealEdit } from "./deal-edit";
 import { DealActions } from "./deal-actions";
+import { KnowledgeQueryPanel } from "@/components/knowledge/KnowledgeQueryPanel";
 import { ProcessCheckPanel } from "./process-check-panel";
 import { AIBriefingPanel } from "./ai-briefing-panel";
 import { getProcessChecks } from "@/lib/process-check";
@@ -16,13 +17,14 @@ import type { Task } from "@/app/(app)/aufgaben/actions";
 import type { Meeting } from "@/app/(app)/meetings/actions";
 import type { DealBriefingContext } from "@/lib/ai/types";
 
-type TabId = "timeline" | "tasks" | "proposals" | "documents" | "edit";
+type TabId = "timeline" | "tasks" | "proposals" | "documents" | "wissen" | "edit";
 
 const tabs: { id: TabId; label: string }[] = [
   { id: "timeline", label: "Timeline" },
   { id: "tasks", label: "Aufgaben" },
   { id: "proposals", label: "Angebote" },
   { id: "documents", label: "Dokumente" },
+  { id: "wissen", label: "Wissen" },
   { id: "edit", label: "Bearbeiten" },
 ];
 
@@ -153,6 +155,9 @@ export function DealWorkspace({
             )}
             {activeTab === "documents" && (
               <DealDocuments documents={documents} dealId={deal.id} />
+            )}
+            {activeTab === "wissen" && (
+              <KnowledgeQueryPanel dealId={deal.id} />
             )}
             {activeTab === "edit" && (
               <DealEdit
