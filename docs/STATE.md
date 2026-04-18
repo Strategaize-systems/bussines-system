@@ -9,13 +9,13 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: released
-- Current Focus: V4.2 Wissensbasis Cross-Source — deployed + Smoke-Test PASS (REL-011)
-- Current Phase: V4.2 Post-Launch
+- High-Level State: stable
+- Current Focus: V4.2 Wissensbasis Cross-Source — deployed, Post-Launch STABIL (RPT-145, REL-011)
+- Current Phase: Stable (V4.3 Planning)
 
 ## Immediate Next Steps
-1. /post-launch V4.2 — Live-Monitoring, Embedding-Qualitaet beobachten
-2. V4.3 Insight Governance planen (FEAT-402)
+1. V4.3 Insight Governance planen (FEAT-402) — oder andere Projekte priorisieren
+2. Embedding-Qualitaet nach einigen Tagen Live-Nutzung evaluieren
 3. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
 
 ## Active Scope
