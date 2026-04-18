@@ -103,7 +103,7 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-401 | Wissensbasis Cross-Source (RAG, Voice-Deal-Chat) | in_progress | [Spec](FEAT-401-wissensbasis-cross-source.md) | 2026-04-09 |
+| FEAT-401 | Wissensbasis Cross-Source (RAG, Voice-Deal-Chat) | done | [Spec](FEAT-401-wissensbasis-cross-source.md) | 2026-04-09 |
 
 ## V4.3 Features (Insight Governance — planned)
 
