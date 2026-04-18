@@ -59,7 +59,7 @@
     {
       "id": "v4-1",
       "name": "V4.1",
-      "status": "active",
+      "status": "released",
       "summary": "Meeting Intelligence Basis: Jitsi + Jibri Self-Hosted (shared mit Blueprint), Whisper-Adapter-Pattern (OpenAI jetzt, Azure/Self-Hosted tauschbar), Call Intelligence (Transkription + Bedrock-Summary), Meeting-Erinnerungen (extern .ics + intern Push + KI-Agenda), DSGVO-Einwilligungsflow (einmalig, widerrufbar)",
       "order": 9
     },

@@ -847,7 +847,7 @@
       "title": "Meeting-Erinnerungen an Teilnehmer + Kalender-Integration",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V4.1",
       "description": "Automatische Meeting-Erinnerungen an externe Teilnehmer: (1) E-Mail X Stunden vor Meeting (konfigurierbar, z.B. 2h oder 4h) mit Meeting-Details, Agenda, Einwahl-Link. (2) Kalender-Integration: Bei Meeting-Zusage automatisch .ics / CalDAV-Eintrag senden, damit es im Kalender des Teilnehmers landet (Google Cal, Outlook, Apple Calendar). (3) Spaeter: Cal.com-Sync fuer bidirektionale Buchung (bereits als FEAT-406 geplant). Meeting-Erinnerungen duerfen automatisch laufen — das sind eigene Termine, kein Kunden-Nachfass.",
       "createdAt": "2026-04-10"
