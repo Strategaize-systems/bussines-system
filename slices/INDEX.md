@@ -115,3 +115,14 @@
 | SLC-417 | [user_settings + Reminder-Cron + .ics](SLC-417-user-settings-reminder-ics.md) | FEAT-409 | done | High | 2026-04-15 |
 | SLC-418 | [Browser-Push + Service Worker](SLC-418-browser-push-service-worker.md) | FEAT-409 | done | Medium | 2026-04-15 |
 | SLC-419 | [KI-Agenda (on-click + auto)](SLC-419-ki-agenda.md) | FEAT-409 | done | Medium | 2026-04-15 |
+
+## V4.2 Slices (Wissensbasis Cross-Source)
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-421 | [pgvector + Schema + Embedding-Adapter](SLC-421-pgvector-schema-embedding-adapter.md) | FEAT-401 | planned | Blocker | 2026-04-18 |
+| SLC-422 | [Chunking-Service + Indexer](SLC-422-chunking-service-indexer.md) | FEAT-401 | planned | High | 2026-04-18 |
+| SLC-423 | [Backfill + Embedding-Sync-Cron](SLC-423-backfill-embedding-sync-cron.md) | FEAT-401 | planned | High | 2026-04-18 |
+| SLC-424 | [RAG Query API](SLC-424-rag-query-api.md) | FEAT-401 | planned | High | 2026-04-18 |
+| SLC-425 | [Deal Knowledge Query UI](SLC-425-deal-knowledge-query-ui.md) | FEAT-401 | planned | High | 2026-04-18 |
+| SLC-426 | [Auto-Embedding Trigger](SLC-426-auto-embedding-trigger.md) | FEAT-401 | planned | Medium | 2026-04-18 |

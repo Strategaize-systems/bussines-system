@@ -9,14 +9,15 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: architecture
-- Current Focus: V4.2 Wissensbasis Cross-Source — Requirements + Architecture done, naechster Schritt /slice-planning
-- Current Phase: V4.2 Architecture
+- High-Level State: slice-planning
+- Current Focus: V4.2 Wissensbasis Cross-Source — Slice-Planning done, naechster Schritt /backend SLC-421
+- Current Phase: V4.2 Slice Planning
 
 ## Immediate Next Steps
-1. /slice-planning fuer V4.2 (6 Slices: SLC-421..426)
-2. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
-3. Naechstes Redeploy: Padding-Fix (fa5f5d6) wird automatisch mit ausgerollt
+1. /backend SLC-421 — pgvector + Schema + Embedding-Adapter (Basis-Slice, blockiert alle folgenden)
+2. /backend SLC-422 — Chunking-Service + Indexer
+3. /backend SLC-423 — Backfill + Embedding-Sync-Cron
+4. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (released, REL-010):**
@@ -30,8 +31,9 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - Query per natuerlicher Sprache (Text + Voice) aus Deal-Workspace
 - DEC-046 RAG, DEC-047 Embedding-Adapter, DEC-048 Dimensionen+Chunking
 - MIG-014: pgvector Extension + knowledge_chunks Tabelle
-- 6 empfohlene Slices: SLC-421..426
+- 6 Slices ausdefiniert: SLC-421 (pgvector+Schema+Adapter), SLC-422 (Chunker+Indexer), SLC-423 (Backfill+Cron), SLC-424 (RAG Query API), SLC-425 (Query UI), SLC-426 (Auto-Trigger)
 - Backlog: BL-350 (Umbrella) + BL-352..357 (Detail-Items)
+- Geschaetzte Gesamt-Implementierung: 7-9.5 Tage
 
 **V4.3 — Insight Governance (planned):** FEAT-402 Queue (nach V4.2 stabil).
 
