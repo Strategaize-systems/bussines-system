@@ -1127,7 +1127,7 @@
       "title": "Backfill bestehender Daten + Embedding-Sync Cron",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V4.2",
       "description": "FEAT-401d: Einmaliges Embedding aller bestehenden Meetings, E-Mails, Activities, Dokumente. Idempotent (skip wenn Chunks existieren). Cron-Job /api/cron/embedding-sync alle 15 Min fuer verpasste Auto-Embeddings.",
       "createdAt": "2026-04-18"

@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V4.2 Wissensbasis Cross-Source — SLC-421+422 done (2/6), naechster Schritt /qa SLC-422 dann /backend SLC-423
+- Current Focus: V4.2 Wissensbasis Cross-Source — SLC-421..423 done (3/6), naechster Schritt /qa SLC-423 dann /backend SLC-424
 - Current Phase: V4.2 Implementation
 
 ## Immediate Next Steps
-1. /qa SLC-422 — Chunking-Service + Indexer QA
-2. /backend SLC-423 — Backfill + Embedding-Sync-Cron
-3. /backend SLC-424 — RAG Query API
+1. /qa SLC-423 — Backfill + Embedding-Sync-Cron QA
+2. /backend SLC-424 — RAG Query API
+3. /frontend SLC-425 — Deal Knowledge Query UI
 4. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
 
 ## Active Scope
