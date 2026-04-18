@@ -9,15 +9,15 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: V4.2 Wissensbasis Cross-Source — alle 6/6 Slices done, naechster Schritt /qa SLC-426 dann Gesamt-QA + /final-check
-- Current Phase: V4.2 QA
+- High-Level State: go-live
+- Current Focus: V4.2 Wissensbasis Cross-Source — Go-Live GO (RPT-143), bereit fuer /deploy
+- Current Phase: V4.2 Deploy
 
 ## Immediate Next Steps
-1. /qa SLC-426 — Auto-Embedding Trigger QA
-2. Gesamt-QA V4.2 (alle 6 Slices)
-3. /final-check V4.2
-4. /go-live + /deploy V4.2
+1. /deploy V4.2 (Commit+Push, SQL Migrations, Redeploy auf Hetzner)
+2. Coolify Cron embedding-sync anlegen (*/5, Container "app")
+3. Backfill einmalig ausloesen
+4. Browser-Smoke-Test Wissen-Tab nach Redeploy
 5. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
 
 ## Active Scope
