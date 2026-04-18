@@ -6,7 +6,7 @@ export default async function MeetingSettingsPage() {
   const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || "";
 
   return (
-    <div className="space-y-6">
+    <main className="px-8 py-8 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Meeting-Einstellungen</h1>
         <p className="text-sm text-muted-foreground">
@@ -15,6 +15,6 @@ export default async function MeetingSettingsPage() {
       </div>
 
       <MeetingSettingsForm initial={settings} vapidPublicKey={vapidPublicKey} />
-    </div>
+    </main>
   );
 }

@@ -30,7 +30,7 @@ export default async function SettingsPage() {
   const roleLabel = role === "admin" ? "Administrator" : "Operator";
 
   return (
-    <div className="space-y-6">
+    <main className="px-8 py-8 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Einstellungen</h1>
         <p className="text-sm text-muted-foreground">
@@ -71,6 +71,6 @@ export default async function SettingsPage() {
       <PipelineConfig pipelines={pipelines} stagesByPipeline={stagesByPipeline} />
 
       <TemplatesConfig templates={templates} />
-    </div>
+    </main>
   );
 }
