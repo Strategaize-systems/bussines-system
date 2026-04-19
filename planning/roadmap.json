@@ -83,6 +83,13 @@
       "status": "planned",
       "summary": "Automatisierung + Skalierung: Cadences/Sequences, Routing/Territories, Teamlead-Rolle, Intelligence-Platform-Export",
       "order": 12
+    },
+    {
+      "id": "v6",
+      "name": "V6",
+      "status": "planned",
+      "summary": "Zielsetzung + Performance-Tracking: Produkt-Stammdaten, Ziel-Objekt-Modell (Umsatz/Deal-Count/Abschlussquote), Persoenliches Performance-Cockpit (Soll-Ist + Prognose + KI-Empfehlung), KPI-Snapshots, CSV-Import",
+      "order": 13
     }
   ]
 }

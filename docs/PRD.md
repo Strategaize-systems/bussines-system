@@ -614,9 +614,9 @@ Eigene Kalender-Datenquelle fuer Mein Tag.
 - Basis-RLS-Umbau
 
 ### Out of Scope (V3.1+)
-- Persoenliches Analyse-Cockpit
-- Ziel-Objekt + Zielabgleich
-- KPI-Snapshots
+- ~~Persoenliches Analyse-Cockpit~~ → V6 (FEAT-603)
+- ~~Ziel-Objekt + Zielabgleich~~ → V6 (FEAT-602)
+- ~~KPI-Snapshots~~ → V6 (FEAT-604)
 - Exception Queue als eigene Seite
 - Automatische Folgeaktivitaeten
 - KI-Summaries fuer Firmen/Kontakte aktiv
@@ -1411,3 +1411,271 @@ V4.3 ist erfolgreich wenn:
 - Batch-UI: Checkboxen + "Alle genehmigen" Button? Oder Swipe-Geste (approve links, reject rechts)?
 - KI-Badge: Neues Feld `ai_applied_at` + `ai_source_id` auf Entity-Ebene? Oder separates Tracking?
 - E-Mail-Signal-Schwelle: Nur E-Mails mit classification `anfrage` / `antwort` analysieren? Oder alle nicht-spam?
+
+## V6 — Zielsetzung, Performance-Tracking & Produkttypen
+
+### V6 Problem Statement
+
+Das Business System hat seit V2 umfangreiche Reporting-Faehigkeiten: Pipeline-Forecast, Funnel-Report, Win/Loss-Analyse, Management-Cockpit mit LLM-Analysen. Aber es fehlt die Gegenseite: **Soll-Vorgaben**.
+
+Ohne Ziele ist Reporting nur Rueckblick. Man sieht, was passiert ist, aber nicht, ob es genug war. Es fehlt:
+- "Bin ich auf Kurs fuer mein Jahresziel?"
+- "Reicht meine aktuelle Pipeline, um mein Quartalsziel zu erreichen?"
+- "Wie viele Deals muss ich noch abschliessen?"
+- "Welches Produkt laeuft unter Plan?"
+
+V6 bringt den Uebergang von **Reporting** ("Was ist passiert?") zu **Performance Management** ("Bist du auf Kurs?").
+
+### V6 Goal / Intended Outcome
+
+Vertriebsmitarbeiter (aktuell: Eigentuemer als Single User) koennen:
+1. Ziele definieren oder importieren (Umsatz, Deal-Anzahl, Abschlussquote)
+2. Produkte als Stammdaten anlegen und auf Deals zuordnen
+3. Soll-Ist-Abgleich in Echtzeit sehen (persoenliches Performance-Cockpit)
+4. Prognosen erhalten (Pipeline-gewichtet + historisch)
+5. KI-gestuetzte Handlungsempfehlungen bekommen ("Du brauchst noch X Deals")
+
+### V6 Budgetplanung — bewusste Grenze
+
+Die eigentliche Budgetplanung (Kosten, Investitionen, Marktanalyse, Preisfindung, Produktentwicklung) passiert **bewusst ausserhalb** dieses Systems — in Excel oder spaeter im Intelligence Studio (System 4).
+
+Das Business System nimmt nur **Endresultate** entgegen:
+- Fertiges Produkt mit Name, Standardpreis, Status
+- Jahresziel pro Produkt (Umsatz, Deal-Count)
+- Gesamt-Umsatzziel
+
+Der Planungsprozess selbst ist nicht Teil dieses Systems.
+
+### V6 Features
+
+#### FEAT-601 — Produkt-Stammdaten
+
+Einfaches Verwaltungsmodul fuer fertige Produkte. Kein Produktentwicklungs-Feature — Produktentwicklung, Marktrecherche und Pricing-Analyse gehoeren ins Intelligence Studio (System 4).
+
+**Objekte:** Produkt
+
+**Felder:**
+- Name (Pflicht)
+- Beschreibung (optional)
+- Kategorie (optional, frei definierbar)
+- Standardpreis (EUR, optional — Deal-Preis kann abweichen)
+- Status: aktiv / inaktiv / archiviert
+- Erstellt am / Aktualisiert am
+
+**Funktionen:**
+- Produkte anlegen, bearbeiten, archivieren
+- Produktliste mit Filter (Status, Kategorie)
+- Produkt auf Deal zuordnen (1:n — ein Deal kann mehrere Produkte haben)
+- Deal-Wert kann pro Produkt aufgeteilt werden
+- Einfacher Settings-Bereich ("Verwaltung > Produkte")
+
+**Acceptance Criteria:**
+1. Produkte koennen angelegt und bearbeitet werden
+2. Produkte koennen auf Deals zugeordnet werden (einzeln oder mehrere)
+3. Deal-Wert kann optional auf Produkte aufgeteilt werden
+4. Produkt-Filter nach Status und Kategorie funktioniert
+5. Inaktive Produkte sind nicht mehr fuer neue Deal-Zuordnungen waehlbar
+6. Bestehende Deals mit inaktiven Produkten behalten ihre Zuordnung
+
+**Schnittstellendefinition (fuer spaetere Intelligence-Studio-Integration):**
+Folgende Felder muessen in System 4 erzeugt und an System 3 exportiert werden koennen:
+- name (string, Pflicht)
+- description (text, optional)
+- category (string, optional)
+- standard_price (decimal, optional)
+- status (enum: active/inactive)
+
+Das Export-Format (API oder CSV) wird in V6 noch nicht implementiert, nur die Empfangsstruktur definiert.
+
+#### FEAT-602 — Ziel-Objekt-Modell
+
+Datenmodell und Verwaltungsoberflaeche fuer persoenliche Vertriebsziele.
+
+**Zieltypen (V6):**
+- Umsatz (EUR) — gesamt oder pro Produkt
+- Deal-Anzahl — gesamt oder pro Produkt
+- Abschlussquote (%) — Won-Deals / Gesamt-Deals im Zeitraum
+
+**Zeitraeume:**
+- Monat
+- Quartal
+- Jahr
+
+**Objekte:** Goal (Ziel)
+
+**Felder:**
+- Typ: revenue | deal_count | win_rate
+- Zeitraum: month | quarter | year
+- Zeitraum-Start (Datum, z.B. 2026-01-01 fuer Januar oder Q1)
+- Sollwert (Zahl — EUR bei revenue, Stueck bei deal_count, Prozent bei win_rate)
+- Produkt-Referenz (optional — NULL = Gesamtziel, sonst produktspezifisch)
+- User-Referenz (Pflicht — wem gehoert das Ziel)
+- Status: active | completed | cancelled
+- Quelle: manual | imported
+- Erstellt am / Aktualisiert am
+
+**Funktionen:**
+- Ziele manuell anlegen, bearbeiten, stornieren
+- Ziele per Excel/CSV importieren (definiertes Template)
+- Ziel-Uebersicht (alle Ziele eines Zeitraums auf einen Blick)
+- Ziel-Fortschritt automatisch berechnet aus Pipeline-Daten
+
+**Acceptance Criteria:**
+1. Ziele koennen pro Typ, Zeitraum und optional pro Produkt angelegt werden
+2. Ziel-Fortschritt wird automatisch aus bestehenden Pipeline-Daten berechnet
+3. Import aus Excel/CSV mit definiertem Template funktioniert
+4. Fehlerhafte Import-Zeilen werden gemeldet, nicht still verschluckt
+5. Ziele koennen storniert werden, ohne historische Daten zu verlieren
+6. Ziel-Quelle (manuell vs. importiert) ist sichtbar
+
+#### FEAT-603 — Persoenliches Performance-Cockpit
+
+Eigene Seite "Meine Performance" mit Soll-Ist-Abgleich, Fortschrittsanzeige und Prognose.
+
+**Bereiche:**
+
+1. **Ziel-Uebersicht (Hero-Bereich)**
+   - Aktueller Monat / Quartal / Jahr als Toggle
+   - Pro Ziel: Sollwert, Istwert, Fortschritt (%), Prognose
+   - Visuell: Fortschrittsbalken oder Ring-Diagramm
+   - Farbcodierung: Gruen (>= 90% auf Kurs), Gelb (70-89%), Rot (<70%)
+
+2. **Prognose-Block**
+   - Pipeline-gewichtete Prognose: "Deine offenen Deals haben gewichtet X EUR Potenzial"
+   - Historische Prognose: "Bei aktuellem Tempo erreichst du Y EUR bis Periodenende"
+   - Kombinierte Prognose: "Realistisch erreichbar: Z EUR (A% des Ziels)"
+   - Delta: "Dir fehlen noch N EUR / M Deals"
+
+3. **Handlungsempfehlung (KI-gestuetzt)**
+   - Bedrock analysiert Ziel-Status und gibt konkrete Empfehlung
+   - Beispiel: "Du brauchst noch 3 Abschlüsse. Bei deiner aktuellen Abschlussquote von 25% brauchst du mindestens 12 aktive Deals. Du hast aktuell 8 — generiere 4 weitere Opportunities."
+   - On-click (nicht auto-load — Kostenregel DEC-028)
+
+4. **Produkt-Aufschluesselung**
+   - Pro Produkt: Soll vs. Ist (wenn produktspezifische Ziele existieren)
+   - Mini-Balken pro Produkt
+
+5. **Trend-Vergleich**
+   - Dieser Monat vs. letzter Monat
+   - Dieses Quartal vs. letztes Quartal
+   - Basiert auf KPI-Snapshots (FEAT-604)
+
+**Acceptance Criteria:**
+1. Performance-Cockpit zeigt alle aktiven Ziele mit Soll-Ist-Abgleich
+2. Zeitraum-Toggle (Monat/Quartal/Jahr) funktioniert
+3. Farbcodierung reflektiert korrekten Zielerreichungsgrad
+4. Pipeline-gewichtete Prognose nutzt bestehende Stage-Wahrscheinlichkeiten
+5. Historische Prognose basiert auf bisherigem Tempo im aktuellen Zeitraum
+6. KI-Handlungsempfehlung ist on-click abrufbar
+7. Produkt-Aufschluesselung zeigt korrekte Werte pro Produkt
+8. Trend-Vergleich zeigt Vorperiode wenn KPI-Snapshots vorhanden
+
+**Navigation:**
+- Eigener Menue-Eintrag unter "Analyse" (neben Dashboard)
+- Oder: Dashboard-Integration als Top-Widget auf "Mein Tag" (Entscheidung in /architecture)
+
+#### FEAT-604 — KPI-Snapshots & Trend-Engine
+
+Automatische periodische Speicherung der Kern-KPIs fuer historische Vergleiche und Trendanalyse.
+
+**KPIs die gesnapshot werden:**
+- Gesamtumsatz (Won Deals) im Zeitraum
+- Deal-Anzahl (Won) im Zeitraum
+- Abschlussquote (Won / Total Closed) im Zeitraum
+- Pipeline-Wert (offene Deals, gewichtet)
+- Pipeline-Wert (offene Deals, ungewichtet)
+- Durchschnittlicher Deal-Wert
+- Aktivitaetszahl (Meetings, Anrufe, E-Mails)
+- Pro Produkt: Umsatz + Deal-Count (wenn Produkt-Zuordnung vorhanden)
+
+**Snapshot-Frequenz:**
+- Taeglich (Cron, analog zu bestehenden Cron-Jobs)
+- Aggregation: woechentlich, monatlich (berechnet aus Tages-Snapshots)
+
+**Objekte:** KpiSnapshot
+
+**Felder:**
+- Datum (Tag des Snapshots)
+- KPI-Typ (enum der obigen Liste)
+- Wert (numerisch)
+- Produkt-Referenz (optional)
+- User-Referenz
+- Berechnungsbasis (JSON — z.B. welche Deals eingeflossen sind)
+
+**Funktionen:**
+- Automatischer taeglicher Snapshot (Cron)
+- Vergleichsansicht: aktuelle Periode vs. Vorperiode
+- Trend-Linie (letzte N Tage/Wochen/Monate)
+- API fuer Performance-Cockpit (FEAT-603)
+
+**Acceptance Criteria:**
+1. Taeglicher Cron erstellt KPI-Snapshots automatisch
+2. Snapshots sind idempotent (doppelter Run am selben Tag ueberschreibt, erstellt keinen Duplikat)
+3. Woechentliche und monatliche Aggregation funktioniert
+4. Trend-Daten sind im Performance-Cockpit abrufbar
+5. Snapshot-History ist unbegrenzt (kein Auto-Cleanup in V6)
+6. Pro-Produkt-KPIs werden gesnapshot wenn Produkt-Zuordnung existiert
+
+### V6 Scope — Zusammenfassung
+
+#### In Scope
+- 4 Features (FEAT-601 bis FEAT-604)
+- Produkt-Stammdaten mit Deal-Zuordnung
+- Ziel-Objekte (Umsatz, Deal-Count, Abschlussquote) pro Zeitraum und optional pro Produkt
+- Excel/CSV-Import fuer Ziele
+- Persoenliches Performance-Cockpit mit Soll-Ist, Prognose, KI-Empfehlung
+- KPI-Snapshots (taeglich, automatisch) fuer Trend-Analyse
+- Schnittstellendefinition fuer Intelligence Studio (Produkt-Export)
+- Single User (Self-Service-Ziele)
+
+#### Out of Scope (V6)
+- Budgetplanung, Kostenrechnung, Marktanalyse (bleibt in Excel / Intelligence Studio)
+- Produktentwicklung, Pricing-Analyse (Intelligence Studio)
+- Team-Aggregation, Abteilungsziele (V7, braucht V5 Teamlead-Rolle)
+- Automatische Zielvorschlaege durch KI
+- Coaching-Modus / Einwandmuster
+- Gamification
+- Cross-System-Ziele
+- Provisions- / Verguetungsberechnung
+- OKR-Framework oder komplexe Ziel-Hierarchien
+- Produktkatalog-Export an System 1 (Onboarding-Plattform)
+
+### V6 Constraints
+- Single User (Eigentuemer) — wie V1-V5
+- Self-hosted auf Hetzner (bestehender Server)
+- Bestehende Next.js + Supabase Infrastruktur
+- Bedrock Claude Sonnet fuer KI-Empfehlungen (gleicher Provider)
+- Produkttypen sind Stammdaten, keine komplexen Produktstrukturen
+- Import-Format: CSV mit definiertem Template (kein Excel-Parser noetig)
+- Alle bestehenden Features (V2-V4.3) bleiben unveraendert
+
+### V6 Risks & Assumptions
+
+| Risiko | Mitigation |
+|---|---|
+| Produkt-Zuordnung auf bestehende Deals ist aufwaendig (Altdaten) | Produkt-Zuordnung optional auf Deals, Backfill als bewusster manueller Schritt |
+| KPI-Snapshot-Tabelle waechst unbegrenzt | Bei taeglichem Snapshot + 10 KPIs + 5 Produkte = ~18.000 Zeilen/Jahr — vernachlaessigbar |
+| Prognose-Logik ist anfaellig fuer kleine Datenmengen | Klare Mindest-Schwelle: Prognose erst ab N Datenpunkten anzeigen, sonst "Nicht genug Daten" |
+| Excel-Import ist fehleranfaellig | Striktes Template, Validierung, Fehler-Report pro Zeile |
+| Abschlussquote-Berechnung ist unklar bei wenigen Deals | Definition: Won / (Won + Lost) im Zeitraum, Minimum 5 abgeschlossene Deals fuer aussagekraeftige Quote |
+
+### V6 Success Criteria
+
+1. User kann Produkte anlegen und auf Deals zuordnen
+2. User kann Ziele pro Typ, Zeitraum und optional pro Produkt setzen
+3. User kann Ziele per CSV importieren
+4. Performance-Cockpit zeigt Soll-Ist-Abgleich mit Prognose
+5. KI-Empfehlung gibt konkrete Handlungsanweisung basierend auf Ziel-Delta
+6. KPI-Snapshots laufen taeglich automatisch
+7. Trend-Vergleich (aktuelle vs. Vorperiode) funktioniert
+8. Bestehende Features (Pipeline, Dashboard, Workspace) bleiben unveraendert
+9. Schnittstellenfelder fuer Intelligence Studio sind dokumentiert
+
+### V6 Open Questions (fuer /architecture)
+
+- Produkt-Deal-Zuordnung: Separate Tabelle `deal_products` (n:m) oder Array-Feld auf Deals? n:m ist sauberer fuer Auswertungen.
+- KPI-Snapshot-Tabelle: Eine Tabelle mit KPI-Typ-Spalte oder separate Tabellen pro KPI? Eine Tabelle ist flexibler.
+- Performance-Cockpit: Eigene Seite unter "Analyse" oder Widget auf "Mein Tag"? Wahrscheinlich beides (Kurzversion auf Mein Tag, Vollversion unter Analyse).
+- CSV-Import: Server Action oder dedizierte API-Route? Server Action reicht fuer Internal Tool.
+- Prognose-Berechnung: Soll die Pipeline-gewichtete Prognose die Stage-Wahrscheinlichkeiten aus `pipeline_stages.probability` nutzen (bestehendes Feld)?
+- Produkt-Kategorien: Freie Tags oder vordefinierte Enum? Empfehlung: Freitext mit Autocomplete (wie Branchen).

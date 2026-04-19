@@ -9,15 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: released
-- Current Focus: V4.3 Insight Governance released (REL-012). Naechster Schritt: Post-Launch-Monitoring oder V5-Planung.
-- Current Phase: V4.3 Released
+- High-Level State: requirements
+- Current Focus: V6 Requirements abgeschlossen (Zielsetzung, Performance-Tracking, Produkttypen). 4 Features definiert (FEAT-601..604), 8 Backlog-Items (BL-365..372). Naechster Schritt: /architecture fuer V6.
+- Current Phase: V6 Requirements
 
 ## Immediate Next Steps
-1. Post-Launch-Monitoring: Signal-Extraktion-Cron beobachten (erstes echtes Meeting mit Recording)
-2. Embedding-Qualitaet nach einigen Tagen Live-Nutzung evaluieren
-3. V5 Planung (Cadences, Routing, Teams) oder sonstige Projekte
-4. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
+1. /architecture fuer V6 (Produkt-Tabelle, Ziel-Tabelle, KPI-Snapshot-Tabelle, Performance-Cockpit-Seite)
+2. Post-Launch-Monitoring V4.3: Signal-Extraktion-Cron beobachten (erstes echtes Meeting mit Recording)
+3. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (released, REL-010):**

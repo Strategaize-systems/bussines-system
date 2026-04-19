@@ -120,3 +120,12 @@
 | FEAT-502 | Routing / Territories | planned | 2026-04-09 |
 | FEAT-503 | Teamlead-Rolle mit Teamsicht | planned | 2026-04-09 |
 | FEAT-504 | Intelligence-Platform-Export-API | planned | 2026-04-09 |
+
+## V6 Features (Zielsetzung + Performance-Tracking — planned)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-601 | Produkt-Stammdaten | planned | [Spec](FEAT-601-produkt-stammdaten.md) | 2026-04-19 |
+| FEAT-602 | Ziel-Objekt-Modell (Umsatz, Deal-Count, Quote) | planned | [Spec](FEAT-602-ziel-objekt-modell.md) | 2026-04-19 |
+| FEAT-603 | Persoenliches Performance-Cockpit | planned | [Spec](FEAT-603-performance-cockpit.md) | 2026-04-19 |
+| FEAT-604 | KPI-Snapshots & Trend-Engine | planned | [Spec](FEAT-604-kpi-snapshots.md) | 2026-04-19 |

@@ -1231,6 +1231,86 @@
       "version": "V4.3",
       "description": "Deal-Workspace (/deals/[id]) komplett auf Style Guide V2 bringen. Aktuell altbacken und nicht premium genug. Scope: (1) Deal-Header: Card mit Gradient-Highlight, Stage-Badge farbig, Wert prominent. (2) Action-Buttons (Task, E-Mail, Meeting, Starten, Aktivitaet): Premium-Buttons mit Icons statt plain Text-Links. (3) Tab-Leiste (Timeline, Aufgaben, Angebote, Dokumente, Signale, Wissen, Bearbeiten): Styled Tabs mit Active-State-Gradient, Icons pro Tab. (4) Prozess-Check Sidebar: Card mit Shadow, Status-Icons (Checkmarks gruen, Warnung gelb), Progress-Indicator. (5) Content-Bereiche: Cards mit Rounded Corners + Subtle Shadow statt nackter Text. (6) Wissen-Tab: Source-Cards nach Style Guide (Typ-Badge, Datum, Snippet). (7) Timeline-Eintraege: Visuell aufgewertete Cards mit Typ-Icons und KI-Badge wo relevant. Bezieht den STYLE_GUIDE_REFERENCE.md und die Brand-Farben (#120774, #4454b8, #00a84f, #4dcb8b, #f2b705) mit ein. Kandidat fuer /ui-update Skill.",
       "createdAt": "2026-04-18"
+    },
+    {
+      "id": "BL-365",
+      "title": "Produkt-Stammdaten: Verwaltungsmodul fuer fertige Produkte",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V6",
+      "description": "FEAT-601: Produkte anlegen/bearbeiten/archivieren. Felder: Name, Beschreibung, Kategorie, Standardpreis, Status. Settings-Bereich 'Verwaltung > Produkte'. Schnittstellendefinition fuer Intelligence Studio Export.",
+      "createdAt": "2026-04-19"
+    },
+    {
+      "id": "BL-366",
+      "title": "Produkt-Deal-Zuordnung (n:m mit Wert-Aufteilung)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V6",
+      "description": "FEAT-601b: Deals koennen einem oder mehreren Produkten zugeordnet werden. Deal-Wert kann optional auf Produkte aufgeteilt werden. Separate Zuordnungstabelle deal_products.",
+      "createdAt": "2026-04-19"
+    },
+    {
+      "id": "BL-367",
+      "title": "Ziel-Objekt-Modell: Ziele pro Typ, Zeitraum, Produkt",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V6",
+      "description": "FEAT-602: Ziel-Tabelle (goals) mit Typ (revenue/deal_count/win_rate), Zeitraum (month/quarter/year), Sollwert, optionaler Produkt-Referenz. Manuelles Anlegen + Bearbeiten + Stornieren.",
+      "createdAt": "2026-04-19"
+    },
+    {
+      "id": "BL-368",
+      "title": "CSV-Import fuer Ziele (Template-basiert)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V6",
+      "description": "FEAT-602b: CSV-Upload mit definiertem Template. Validierung pro Zeile, Fehler-Report, Produkt-Name-Matching gegen bestehende Produkte. Import-Quelle wird auf Ziel-Objekt markiert.",
+      "createdAt": "2026-04-19"
+    },
+    {
+      "id": "BL-369",
+      "title": "Persoenliches Performance-Cockpit: Soll-Ist + Prognose",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V6",
+      "description": "FEAT-603: Eigene Seite 'Meine Performance' unter Analyse. Hero-Bereich mit Zeitraum-Toggle. Soll-Ist pro Ziel mit Fortschrittsbalken/Ring. Farbcodierung (gruen/gelb/rot). Pipeline-gewichtete + historische Prognose. Delta-Anzeige.",
+      "createdAt": "2026-04-19"
+    },
+    {
+      "id": "BL-370",
+      "title": "KI-Handlungsempfehlung im Performance-Cockpit",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V6",
+      "description": "FEAT-603b: Bedrock analysiert Ziel-Delta + Pipeline-Status und gibt konkrete Empfehlung. On-click (DEC-028). Beispiel: 'Du brauchst noch 3 Abschluesse bei 25% Quote → 12 aktive Deals noetig'.",
+      "createdAt": "2026-04-19"
+    },
+    {
+      "id": "BL-371",
+      "title": "KPI-Snapshots: Taeglicher Cron + Trend-Engine",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V6",
+      "description": "FEAT-604: Taeglicher Cron speichert 8+ KPI-Typen (Umsatz, Deal-Count, Quote, Pipeline-Wert gewichtet/ungewichtet, Ø Deal-Wert, Aktivitaeten, Pro-Produkt). Idempotent. Woechentliche/monatliche Aggregation.",
+      "createdAt": "2026-04-19"
+    },
+    {
+      "id": "BL-372",
+      "title": "Trend-Vergleich: Aktuelle Periode vs. Vorperiode",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V6",
+      "description": "FEAT-604b: Vergleichsansicht im Performance-Cockpit: aktueller Monat vs. letzter Monat, aktuelles Quartal vs. letztes Quartal. Trend-Linie letzte N Perioden. Basiert auf KPI-Snapshot-Daten.",
+      "createdAt": "2026-04-19"
     }
   ]
 }
