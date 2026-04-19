@@ -1,5 +1,6 @@
 // =============================================================
-// AI Action Queue Types — Human-in-the-Loop (FEAT-407, FEAT-408)
+// AI Action Queue Types — Human-in-the-Loop
+// (FEAT-407, FEAT-408, FEAT-402, FEAT-412)
 // =============================================================
 
 /** Action type for ai_action_queue entries */
@@ -10,13 +11,22 @@ export type AIActionType =
   | "assign_contact"
   | "reclassify"
   | "task"
-  | "info";
+  | "info"
+  // V4.3 Insight Governance — property change suggestions
+  | "property_change"
+  | "status_change"
+  | "tag_change"
+  | "value_change";
 
 /** Source that generated the action suggestion */
 export type AIActionSource =
   | "gatekeeper"
   | "followup_engine"
-  | "auto_reply_detector";
+  | "auto_reply_detector"
+  // V4.3 Signal-Extraktion sources
+  | "signal_meeting"
+  | "signal_email"
+  | "signal_manual";
 
 /** Status workflow for action queue entries */
 export type AIActionStatus =
@@ -32,6 +42,26 @@ export type AIActionEntityType =
   | "deal"
   | "contact"
   | "company";
+
+/** Target entity types for insight suggestions (V4.3) */
+export type AITargetEntityType = "deal" | "contact";
+
+/** Proposed change structure for insight suggestions (V4.3) */
+export interface ProposedChange {
+  field: string;
+  old?: string | number | null;
+  new: string | number;
+  action?: "add" | "remove";
+  currency?: string;
+  tag?: string;
+}
+
+/** Signal type for structured signal extraction (V4.3) */
+export type SignalType =
+  | "stage_suggestion"
+  | "value_update"
+  | "tag_addition"
+  | "priority_change";
 
 /** AI action queue entry — a suggestion waiting for human decision */
 export interface AIActionQueueItem {
@@ -52,6 +82,11 @@ export interface AIActionQueueItem {
   dedup_key: string | null;
   expires_at: string | null;
   created_at: string;
+  // V4.3 Insight Governance — nullable, only for signal-based entries
+  target_entity_type: AITargetEntityType | null;
+  target_entity_id: string | null;
+  proposed_changes: ProposedChange | null;
+  confidence: number | null;
 }
 
 /** Feedback on a rejected or modified action (for learning) */

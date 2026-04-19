@@ -13,6 +13,8 @@ import type {
   AIActionType,
   AIActionSource,
   AIActionEntityType,
+  AITargetEntityType,
+  ProposedChange,
 } from "@/types/ai-queue";
 
 // -------------------------------------------------------------
@@ -40,6 +42,11 @@ export async function createAction(input: {
   source: AIActionSource;
   dedup_key?: string;
   expires_at?: string;
+  // V4.3 Insight Governance — optional fields for signal-based entries
+  target_entity_type?: AITargetEntityType;
+  target_entity_id?: string;
+  proposed_changes?: ProposedChange;
+  confidence?: number;
 }): Promise<AIActionQueueItem> {
   const supabase = createAdminClient();
 
@@ -71,6 +78,11 @@ export async function createAction(input: {
       source: input.source,
       dedup_key: input.dedup_key ?? null,
       expires_at: input.expires_at ?? null,
+      // V4.3 fields
+      target_entity_type: input.target_entity_type ?? null,
+      target_entity_id: input.target_entity_id ?? null,
+      proposed_changes: input.proposed_changes ?? null,
+      confidence: input.confidence ?? null,
     })
     .select("*")
     .single();
