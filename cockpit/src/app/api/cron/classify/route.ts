@@ -79,12 +79,18 @@ export async function POST(request: NextRequest) {
 
       if (ruleResult.classification !== null) {
         // Rule matched — update email and move on
+        // V4.3: mark for signal extraction if relevant classification + deal-linked
+        const signalEligible =
+          (ruleResult.classification === "anfrage" || ruleResult.classification === "antwort") &&
+          !!email.deal_id;
+
         const { error: updateError } = await supabase
           .from("email_messages")
           .update({
             classification: ruleResult.classification,
             priority: ruleResult.priority,
             analyzed_at: new Date().toISOString(),
+            ...(signalEligible ? { signal_status: "pending" } : {}),
           })
           .eq("id", email.id);
 
@@ -243,6 +249,11 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
+        // V4.3: mark for signal extraction if relevant classification + deal-linked
+        const llmSignalEligible =
+          (llmResult.classification === "anfrage" || llmResult.classification === "antwort") &&
+          !!email.deal_id;
+
         // Update email with LLM classification
         const { error: llmUpdateError } = await supabase
           .from("email_messages")
@@ -251,6 +262,7 @@ export async function POST(request: NextRequest) {
             priority: llmResult.priority,
             gatekeeper_summary: llmResult.gatekeeper_summary,
             analyzed_at: new Date().toISOString(),
+            ...(llmSignalEligible ? { signal_status: "pending" } : {}),
           })
           .eq("id", email.id);
 

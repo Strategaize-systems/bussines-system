@@ -105,12 +105,14 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Save summary
+        // Save summary + mark for signal extraction if deal-linked
         await admin
           .from("meetings")
           .update({
             ai_summary: summary,
             summary_status: "completed",
+            // V4.3: trigger signal extraction for deal-linked meetings
+            ...(meeting.deal_id ? { signal_status: "pending" } : {}),
           })
           .eq("id", meeting.id);
 
