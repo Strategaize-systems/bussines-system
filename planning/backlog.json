@@ -1187,7 +1187,7 @@
       "title": "KI-Badge + Audit-Trail fuer angewandte KI-Aenderungen",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "in_progress",
       "version": "V4.3",
       "description": "FEAT-402c: KI-Badge auf Deal/Kontakt-Properties die durch Queue-Approval geaendert wurden. Audit-Trail (ai_feedback erweitert) dokumentiert alle Approve/Reject-Entscheidungen. Auto-Expire nach 7 Tagen.",
       "createdAt": "2026-04-18"
