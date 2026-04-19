@@ -52,7 +52,7 @@ export function DealHeader({ deal, stages }: DealHeaderProps) {
 
       <div className="p-6">
         <div className="flex items-start gap-4">
-          <Link href="/pipeline">
+          <Link href="/deals">
             <Button
               variant="ghost"
               size="icon"
