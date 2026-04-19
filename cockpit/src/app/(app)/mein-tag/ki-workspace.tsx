@@ -27,6 +27,7 @@ import { TaskSheet } from "../aufgaben/task-sheet";
 import { EmailSheet } from "../emails/email-sheet";
 import { MeetingSheet } from "@/components/meetings/meeting-sheet";
 import { FollowupSuggestions } from "./followup-suggestions";
+import { InsightSuggestions } from "./insight-suggestions";
 import { getYesterdayReview, getUnseenEvents, updateLastLogin } from "./actions";
 import type { TodayData, CalendarSlot, ExceptionData, YesterdayReview, UnseenEvents } from "./actions";
 import type { DailySummary, ClassifiedEvent } from "@/lib/ai/types";
@@ -73,9 +74,10 @@ interface KIWorkspaceProps {
   deals: { id: string; title: string }[];
   searchContext: SearchContext;
   followupSuggestions: AIActionQueueItem[];
+  insightSuggestions: AIActionQueueItem[];
 }
 
-export function KIWorkspace({ data, calendarSlots, exceptions, contacts, companies, deals, searchContext, followupSuggestions }: KIWorkspaceProps) {
+export function KIWorkspace({ data, calendarSlots, exceptions, contacts, companies, deals, searchContext, followupSuggestions, insightSuggestions }: KIWorkspaceProps) {
   const [wsTab, setWsTab] = useState<WorkspaceTab>("tagesanalyse");
 
   // Tagesanalyse state
@@ -273,7 +275,7 @@ export function KIWorkspace({ data, calendarSlots, exceptions, contacts, compani
             { key: "tagesanalyse" as const, label: "Tagesanalyse", icon: Sparkles, badge: 0 },
             { key: "gestern" as const, label: "Gestern", icon: History, badge: 0 },
             { key: "seit-login" as const, label: "Seit Login", icon: Eye, badge: 0 },
-            { key: "wiedervorlagen" as const, label: "Wiedervorlagen", icon: Lightbulb, badge: followupSuggestions.length },
+            { key: "wiedervorlagen" as const, label: "Wiedervorlagen", icon: Lightbulb, badge: followupSuggestions.length + insightSuggestions.length },
           ]).map((tab) => (
             <button
               key={tab.key}
@@ -441,13 +443,34 @@ export function KIWorkspace({ data, calendarSlots, exceptions, contacts, compani
         {/* ── TAB: Wiedervorlagen ────────────────── */}
         {wsTab === "wiedervorlagen" && (
           <>
-            {followupSuggestions.length === 0 ? (
+            {followupSuggestions.length === 0 && insightSuggestions.length === 0 ? (
               <div className="text-center py-8">
                 <Lightbulb size={24} className="mx-auto text-slate-300 mb-2" />
                 <p className="text-sm text-slate-400">Keine offenen Wiedervorlagen-Vorschlaege.</p>
               </div>
             ) : (
-              <FollowupSuggestions suggestions={followupSuggestions} embedded />
+              <div className="space-y-4">
+                {/* KI-Vorschlaege (Insight Signals) */}
+                {insightSuggestions.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold text-violet-600 uppercase tracking-wide mb-2">
+                      KI-Vorschlaege ({insightSuggestions.length})
+                    </p>
+                    <InsightSuggestions suggestions={insightSuggestions} embedded />
+                  </div>
+                )}
+                {/* Wiedervorlagen (Followup Engine) */}
+                {followupSuggestions.length > 0 && (
+                  <div>
+                    {insightSuggestions.length > 0 && (
+                      <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wide mb-2">
+                        Wiedervorlagen ({followupSuggestions.length})
+                      </p>
+                    )}
+                    <FollowupSuggestions suggestions={followupSuggestions} embedded />
+                  </div>
+                )}
+              </div>
             )}
           </>
         )}

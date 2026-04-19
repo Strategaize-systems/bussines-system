@@ -53,6 +53,7 @@ interface MeinTagClientProps {
   topDeals: TopDeal[];
   gatekeeperSummary: GatekeeperSummary;
   followupSuggestions: AIActionQueueItem[];
+  insightSuggestions: AIActionQueueItem[];
   dateLabel: string;
 }
 
@@ -78,7 +79,7 @@ const statusStyles: Record<string, string> = {
 
 const WORKDAY_MINUTES = 480; // 8h workday
 
-export function MeinTagClient({ data, stages, contacts, companies, deals, pipelines, calendarSlots, exceptions, nextMeeting, topDeals, gatekeeperSummary, followupSuggestions, dateLabel }: MeinTagClientProps) {
+export function MeinTagClient({ data, stages, contacts, companies, deals, pipelines, calendarSlots, exceptions, nextMeeting, topDeals, gatekeeperSummary, followupSuggestions, insightSuggestions, dateLabel }: MeinTagClientProps) {
   const totalItems = data.stats.overdueCount + data.stats.todayCount + data.stats.upcomingCount;
   const completedItems = 0;
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
@@ -348,6 +349,7 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                 companies={companies}
                 deals={deals}
                 followupSuggestions={followupSuggestions}
+                insightSuggestions={insightSuggestions}
                 searchContext={{
                   todaysTasks: allItems.map((item) => ({
                     title: item.title,

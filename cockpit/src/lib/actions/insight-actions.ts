@@ -26,6 +26,31 @@ interface BatchResult {
   errors: string[];
 }
 
+// ── Loader: Get pending insight items (SLC-435, MT-2) ────────
+
+/**
+ * Loads all pending insight queue items (signal-based) for display
+ * in the Unified Queue UI on Mein Tag.
+ */
+export async function getPendingInsights(): Promise<AIActionQueueItem[]> {
+  const admin = createAdminClient();
+
+  const { data, error } = await admin
+    .from("ai_action_queue")
+    .select("*")
+    .in("source", ["signal_meeting", "signal_email", "signal_manual"])
+    .eq("status", "pending")
+    .order("suggested_at", { ascending: false })
+    .limit(20);
+
+  if (error) {
+    console.error("[insights] Failed to load pending insights:", error.message);
+    return [];
+  }
+
+  return (data ?? []) as AIActionQueueItem[];
+}
+
 // ── Helper: Get current user ID ───────────────────────────────
 
 async function getCurrentUserId(): Promise<string | null> {
