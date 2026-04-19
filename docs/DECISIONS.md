@@ -249,3 +249,28 @@
 - Status: accepted
 - Reason: Die bestehende ai_action_queue hat bereits das richtige Pattern (suggest → approve/reject, status-Tracking, expires_at, decided_at, decided_by, ai_feedback). Neue Aktionstypen (property_change, status_change, tag_change, value_change) ergaenzen die bestehenden (followup, gatekeeper). Eine neue Tabelle wuerde Duplikation erzeugen und die Freigabe-UI fragmentieren — zwei separate Queues zu reviewen waere fuer den User schlechter als eine einheitliche.
 - Consequence: ai_action_queue wird um neue Spalten erweitert: target_entity_type (TEXT), target_entity_id (UUID), proposed_changes (JSONB), confidence (FLOAT). Bestehende Followup- und Gatekeeper-Eintraege sind nicht betroffen (neue Spalten nullable). Die Freigabe-UI in Mein Tag zeigt alle Queue-Typen einheitlich. Schema-Migration als Teil von V4.3 SLC-Planung.
+
+## DEC-050 — Separater signal-extract Cron statt inline in meeting-summary/classify
+- Status: accepted
+- Reason: Signal-Extraktion ist ein eigener LLM-Call mit eigenem Prompt und eigener Fehlerdomaene. Inline in den bestehenden Crons wuerde Timeouts ueberlasten (meeting-summary bereits 120s), Fehlerisolation verletzen und Retry-Verhalten verkomplizieren. Meeting-Summary und E-Mail-Classify setzen nur `signal_status = 'pending'`, der signal-extract Cron verarbeitet asynchron.
+- Consequence: Neuer Cron-Job alle 5 Minuten. Max 3 Items pro Durchlauf (Bedrock-Rate-Limit-Schutz). Latenz zwischen Summary und Signal: maximal 5 Minuten (akzeptabel, User sieht Signale beim naechsten Mein-Tag-Besuch).
+
+## DEC-051 — Ein generischer Signal-Prompt statt pro-Typ spezialisiert
+- Status: accepted
+- Reason: Kontextuelle Signale ueberlappen (ein Satz kann Stage + Value erwaehnen). Ein Call statt vier spart ~75% Bedrock-Kosten. Zod-Schema erzwingt Struktur unabhaengig vom Prompt-Design. Bei schlechter Qualitaet kann spaeter auf spezialisierte Prompts umgestellt werden.
+- Consequence: Ein Signal-Extraktion-Prompt mit Zod-Schema (SignalSchema) fuer alle 4 Signal-Typen. Ein LLM-Call pro Meeting/E-Mail.
+
+## DEC-052 — Confidence-Schwelle 0.4 fuer Signal-Queue-Eintrag
+- Status: accepted
+- Reason: Niedrig-Confidence-Signale (< 0.4) ueberfluten die Queue mit schlechten Vorschlaegen. Besser wenige gute als viele schlechte. Schwellwert als ENV konfigurierbar (AI_SIGNAL_MIN_CONFIDENCE).
+- Consequence: Signale unter 0.4 werden still verworfen (nur geloggt, nicht in Queue). Kann nach Erfahrungswerten angepasst werden.
+
+## DEC-053 — E-Mail-Signale nur bei classification anfrage/antwort
+- Status: accepted
+- Reason: Nur geschaeftsrelevante E-Mails (Anfragen, Antworten) enthalten Deal-Signale. Newsletter, Spam, Auto-Replies, Info-Mails haben keinen Handlungsbedarf fuer Property-Aenderungen. Reduziert LLM-Kosten und Queue-Noise.
+- Consequence: Der classify Cron setzt signal_status nur bei classification IN ('anfrage', 'antwort'). Andere E-Mails erhalten keinen signal_status.
+
+## DEC-054 — KI-Badge via Activities statt Entity-Spalte
+- Status: accepted
+- Reason: Eine Spalte `ai_applied_at` auf deals wuerde nur die letzte Aenderung speichern und erfordert Schema-Aenderung. Activities bieten volle Historie (was wurde wann geaendert, welche Queue-Aktion) und existieren bereits. 30-Tage-Fenster fuer Badge-Anzeige verhindert UI-Ueberladung.
+- Consequence: Jede angewandte Queue-Aktion erzeugt eine Activity (type='ai_applied'). Deal-Workspace prueft Activities mit ai_generated=true der letzten 30 Tage. Keine Schema-Aenderung an deals/contacts noetig.

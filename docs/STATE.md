@@ -9,15 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: requirements
-- Current Focus: V4.3 Insight Governance — Requirements abgeschlossen, naechster Schritt /architecture
-- Current Phase: V4.3 Requirements
+- High-Level State: architecture
+- Current Focus: V4.3 Insight Governance — Architecture abgeschlossen, naechster Schritt /slice-planning
+- Current Phase: V4.3 Architecture
 
 ## Immediate Next Steps
-1. BL-364 Deal-Workspace UI-Upgrade auf Style Guide V2 — done (Commit 470a828)
-2. /architecture fuer V4.3 (Schema-Erweiterung ai_action_queue, Signal-Extraktion-Modul, UI-Integration)
-3. Embedding-Qualitaet nach einigen Tagen Live-Nutzung evaluieren
-4. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
+1. /slice-planning fuer V4.3 (6 Slices: SLC-431..436)
+2. Embedding-Qualitaet nach einigen Tagen Live-Nutzung evaluieren
+3. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (released, REL-010):**

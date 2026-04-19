@@ -2797,3 +2797,325 @@ Geschaetzt 6 Slices. Jeder nach 1-2 Tagen implementierbar.
 ## V4.2 Recommended Next Step
 
 `/slice-planning` — V4.2-Slices strukturiert ausdefinieren (Acceptance Criteria, Dependencies, QA-Fokus, Micro-Tasks). Danach pro Slice `/backend` oder `/frontend` + `/qa`.
+
+# V4.3 Architektur — Insight Governance
+
+## V4.3 Architecture Summary
+
+V4.3 macht die KI schreibfaehig — kontrolliert. Die bisherige Architektur erzeugt informative KI-Outputs (Summaries, Klassifikationen, RAG-Antworten), die der User liest. V4.3 ergaenzt einen zweiten Pfad: Die KI erkennt in Meetings und E-Mails aktiv Handlungsbedarf und schlaegt konkrete Property-Aenderungen vor. Alle Vorschlaege landen in der bestehenden `ai_action_queue` (DEC-049) — nie direkt auf dem Entity. Der User reviewt in Mein Tag und entscheidet per Klick.
+
+**Zwei Features:**
+- **FEAT-402 Insight-Review-Queue:** Erweitert ai_action_queue + Unified Freigabe-UI + Batch-Approval + Confidence/Reasoning/Source + KI-Badge + Auto-Expire
+- **FEAT-412 Signal-Extraktion:** Zweiter LLM-Call nach Meeting-Summary und E-Mail-Classify — extrahiert Property-Vorschlaege und speist sie in die Queue
+
+**Infrastruktur-Footprint:** Minimal. Kein neuer Container, kein neuer Service. Schema-Migration erweitert bestehende Tabelle, neues Signal-Modul in `/lib/ai/signals/`, UI-Erweiterung in Mein Tag. Bestehende Cron-Jobs (meeting-summary, classify) erhalten einen zusaetzlichen Schritt am Ende.
+
+## V4.3 Main Components
+
+```
+Browser (User)                           Hetzner CPX32 (bestehend)
+─────────────────                        ────────────────────────────────
+Mein Tag                 ───────► Next.js App (Port 3000)
+  └── KI-Wiedervorlagen (bestehend)      │
+       ├── Followup-Suggestions          │  BESTEHEND (unveraendert):
+       ├── Gatekeeper-Actions            │  ├── /lib/ai/action-queue.ts
+       └── Insight-Suggestions (NEU)     │  ├── /lib/ai/prompts/meeting-summary.ts
+            ├── Property-Change Cards    │  ├── /lib/ai/prompts/email-classify.ts
+            ├── Confidence + Reasoning   │  ├── /api/cron/meeting-summary
+            ├── Source-Link              │  └── /api/cron/classify
+            ├── Approve / Reject         │
+            └── Batch-Approve            │  NEU (V4.3):
+                                         ├── /lib/ai/signals/          (NEU V4.3)
+Deal-Workspace           ───────►        │     ├── extractor.ts  (Kern-Logik)
+  ├── KI-Badge auf Properties (NEU)      │     ├── prompts.ts    (Signal-Prompts)
+  └── "Signale extrahieren" (NEU)        │     └── applier.ts    (Approve → Write)
+                                         │
+                                         ├── /api/cron/signal-extract  (NEU V4.3)
+                                         ├── /api/signals/extract      (NEU V4.3)
+                                         │
+                                         └── action-queue.ts (ERWEITERT)
+                                              └── applyAction() (NEU)
+
+                                         PostgreSQL (bestehend)
+                                         ├── ai_action_queue (ERWEITERT: +4 Spalten)
+                                         ├── ai_feedback (bestehend, unveraendert)
+                                         └── deals, contacts, etc. (bestehend)
+
+External (bestehend, keine Aenderung)
+────────
+AWS Bedrock (Frankfurt, eu-central-1)
+  ├── Claude Sonnet 4   ← Signal-Extraktion + Antworten (bestehend)
+  └── Titan Text V2     ← RAG-Kontext fuer Signale (bestehend)
+```
+
+## V4.3 Responsibilities
+
+| Komponente | Verantwortung |
+|---|---|
+| `/lib/ai/signals/extractor.ts` | Kern-Logik: nimmt Text (Summary/E-Mail) + Deal-Kontext, ruft Bedrock, parst Signal-Vorschlaege, schreibt in ai_action_queue |
+| `/lib/ai/signals/prompts.ts` | Signal-Extraktion-Prompts mit Zod-Schema fuer strukturierte Antwort |
+| `/lib/ai/signals/applier.ts` | Fuehrt genehmigte Aenderungen aus: UPDATE deals/contacts + KI-Badge-Tracking |
+| `/lib/ai/action-queue.ts` | ERWEITERT: `applyAction()` fuer property_change/status_change/tag_change/value_change |
+| `/api/cron/signal-extract` | Cron-Route: findet verarbeitete Meetings/E-Mails ohne Signale, ruft Extractor |
+| `/api/signals/extract` | On-Demand-API: manueller Trigger "Signale extrahieren" pro Deal |
+| `/api/cron/meeting-summary` | ERWEITERT: nach Summary-Completion → Signal-Extraktion einreihen |
+| `/api/cron/classify` | ERWEITERT: nach Klassifikation relevanter E-Mails → Signal-Extraktion einreihen |
+| Mein Tag UI | ERWEITERT: Unified Queue zeigt alle Typen, Batch-Approve, Confidence/Reasoning/Source |
+| Deal-Workspace UI | ERWEITERT: KI-Badge auf Properties, "Signale extrahieren" Button |
+
+## V4.3 Data Model
+
+### Schema-Erweiterung: ai_action_queue (DEC-049)
+
+4 neue Spalten, alle nullable (bestehende Eintraege sind nicht betroffen):
+
+```sql
+-- V4.3 Schema-Erweiterung ai_action_queue
+ALTER TABLE ai_action_queue ADD COLUMN IF NOT EXISTS target_entity_type TEXT;
+ALTER TABLE ai_action_queue ADD COLUMN IF NOT EXISTS target_entity_id UUID;
+ALTER TABLE ai_action_queue ADD COLUMN IF NOT EXISTS proposed_changes JSONB;
+ALTER TABLE ai_action_queue ADD COLUMN IF NOT EXISTS confidence FLOAT;
+
+-- Index fuer Target-Entity-Lookups (KI-Badge-Anzeige)
+CREATE INDEX IF NOT EXISTS idx_ai_queue_target
+  ON ai_action_queue(target_entity_type, target_entity_id)
+  WHERE target_entity_id IS NOT NULL;
+
+-- Index fuer Cron: Signal-Status-Tracking
+-- meetings.signal_status und email_messages.signal_status (neue Spalten)
+ALTER TABLE meetings ADD COLUMN IF NOT EXISTS signal_status TEXT;
+ALTER TABLE email_messages ADD COLUMN IF NOT EXISTS signal_status TEXT;
+```
+
+### Spalten-Semantik
+
+| Spalte | Typ | Zweck |
+|---|---|---|
+| `target_entity_type` | TEXT | Ziel der vorgeschlagenen Aenderung: `deal`, `contact` |
+| `target_entity_id` | UUID | ID des Ziel-Deals/Kontakts |
+| `proposed_changes` | JSONB | Strukturierte Aenderung, z.B. `{"field": "stage", "old": "Qualifiziert", "new": "Verhandlung"}` |
+| `confidence` | FLOAT | 0.0–1.0, LLM-Confidence fuer diesen Vorschlag |
+| `signal_status` (meetings) | TEXT | `null` → `pending` → `completed` / `no_signals` |
+| `signal_status` (email_messages) | TEXT | `null` → `pending` → `completed` / `no_signals` |
+
+### proposed_changes JSONB-Format
+
+```jsonc
+// stage_suggestion
+{"field": "stage", "old": "Qualifiziert", "new": "Verhandlung"}
+
+// value_update
+{"field": "value", "old": null, "new": 75000, "currency": "EUR"}
+
+// tag_addition
+{"field": "tags", "action": "add", "tag": "Wettbewerb: ABC"}
+
+// priority_change
+{"field": "priority", "old": "mittel", "new": "hoch"}
+```
+
+### Type-Erweiterungen
+
+Neue `AIActionType`-Werte: `property_change`, `status_change`, `tag_change`, `value_change`
+Neue `AIActionSource`-Werte: `signal_meeting`, `signal_email`, `signal_manual`
+
+### Tabellen-Uebersicht V4.3: 29 Tabellen (keine neuen, 3 erweitert)
+
+```
+ERWEITERT (V4.3):
+├── ai_action_queue  (+4 Spalten: target_entity_type, target_entity_id, proposed_changes, confidence)
+├── meetings         (+1 Spalte: signal_status)
+└── email_messages   (+1 Spalte: signal_status)
+
+BESTEHEND (unveraendert): alle 26 weiteren
+```
+
+## V4.3 Signal-Extraktion — Architektur-Detail
+
+### Hook-Punkte in bestehende Pipelines
+
+Signal-Extraktion wird NICHT als separater Cron implementiert der Meetings/E-Mails erneut sucht. Stattdessen wird sie am Ende der bestehenden Pipelines eingehaengt:
+
+**Meeting-Pipeline (meeting-summary Cron):**
+```
+Meeting fertig transkribiert
+  → [bestehend] Cron: meeting-summary → LLM → ai_summary gespeichert
+  → [NEU] Signal-Status auf "pending" setzen
+  → [NEU] Cron: signal-extract → findet pending Meetings → LLM → Signale → ai_action_queue
+```
+
+**E-Mail-Pipeline (classify Cron):**
+```
+E-Mail synchronisiert + unklassifiziert
+  → [bestehend] Cron: classify → Rule-based + LLM → classification gespeichert
+  → [NEU] Bei classification = anfrage|antwort: Signal-Status auf "pending"
+  → [NEU] Cron: signal-extract → findet pending E-Mails → LLM → Signale → ai_action_queue
+```
+
+**Manueller Trigger:**
+```
+User klickt "Signale extrahieren" im Deal-Workspace
+  → POST /api/signals/extract { deal_id }
+  → Laedt letzte 5 Meetings + 10 E-Mails des Deals
+  → LLM-Call mit RAG-Kontext → Signale → ai_action_queue
+```
+
+### Warum separater signal-extract Cron statt inline
+
+Die Signal-Extraktion ist ein eigener LLM-Call mit eigenem Prompt. Inline in meeting-summary oder classify wuerde:
+- die bestehenden Cron-Timeouts ueberlasten (bereits 120s/60s)
+- die Fehlerisolation verletzen (Summary-Fehler ≠ Signal-Fehler)
+- das Retry-Verhalten verkomplizieren
+
+Eigener Cron (alle 5 Min, DEC-050) haelt die Pipelines sauber getrennt.
+
+### Signal-Extraktion-Prompt (DEC-051)
+
+**Ein generischer Prompt** fuer alle Signal-Typen statt je ein spezialisierter Prompt. Gruende:
+- Kontextuelle Signale ueberlappen: ein Satz kann Stage UND Value erwaehnen
+- Ein Call statt vier spart ~75% Bedrock-Kosten
+- Schema-basierte Extraktion (Zod) erzwingt Struktur unabhaengig von Prompt-Count
+
+```typescript
+// Zod-Schema fuer Signal-Extraktion-Response
+const SignalSchema = z.object({
+  signals: z.array(z.object({
+    type: z.enum(["stage_suggestion", "value_update", "tag_addition", "priority_change"]),
+    field: z.string(),
+    current_value: z.string().nullable(),
+    proposed_value: z.string(),
+    confidence: z.number().min(0).max(1),
+    reasoning: z.string().max(300),
+  })),
+});
+```
+
+Prompt erhaelt: Source-Text (Summary oder E-Mail-Body) + Deal-Kontext (Stage, Value, Tags, Kontakte) + optional RAG-Chunks (letzte relevante Wissensbasis-Eintraege).
+
+### RAG-Kontext fuer bessere Signale
+
+Signal-Extraktion profitiert von Deal-Historie. Beispiel: "Kunde erwaehnt 75k" ist nur dann ein Value-Signal, wenn der aktuelle Deal-Wert anders ist.
+
+```
+Signal-Prompt Input:
+  1. Source-Text (Meeting-Summary oder E-Mail-Body)
+  2. Deal-Kontext (aktuelle Properties: stage, value, tags, priority)
+  3. RAG-Chunks (Top-5 aus knowledge_chunks WHERE deal_id = X)
+```
+
+RAG-Lookup ist optional — wenn keine Chunks fuer den Deal existieren, wird ohne gearbeitet. Kein Blocker.
+
+### Confidence-Schwelle (DEC-052)
+
+Signale mit Confidence < 0.4 werden NICHT in die Queue geschrieben. Sie wuerden den User mit niedrig-qualitativen Vorschlaegen ueberfluten. Der Schwellwert ist als ENV-Variable konfigurierbar: `AI_SIGNAL_MIN_CONFIDENCE=0.4`.
+
+### E-Mail-Signal-Schwelle (DEC-053)
+
+Nur E-Mails mit `classification IN ('anfrage', 'antwort')` werden fuer Signal-Extraktion beruecksichtigt. Andere Klassifikationen (newsletter, spam, intern, auto-reply, info) enthalten keine geschaeftsrelevanten Deal-Signale. Der Classify-Cron setzt `signal_status = 'pending'` nur bei diesen beiden Klassen.
+
+## V4.3 Queue-UI — Architektur-Detail
+
+### Unified Queue in Mein Tag
+
+Die bestehende `followup-suggestions.tsx` Komponente rendert aktuell nur Followup-Vorschlaege (`source = 'followup_engine'`). V4.3 erweitert die Queue-Ansicht:
+
+```
+KI-Wiedervorlagen (Mein Tag)
+  ├── Followup-Suggestions (bestehend, source=followup_engine)
+  ├── Gatekeeper-Actions (bestehend, source=gatekeeper)
+  └── Insight-Suggestions (NEU, source=signal_meeting|signal_email|signal_manual)
+       ├── PropertyChangeCard (NEU)
+       │    ├── Entity-Name + Link
+       │    ├── Vorgeschlagene Aenderung (old → new)
+       │    ├── Confidence-Badge (hoch/mittel/niedrig)
+       │    ├── Reasoning-Text
+       │    ├── Source-Link (Meeting/E-Mail)
+       │    ├── Approve-Button
+       │    └── Reject-Button (mit optionalem Grund)
+       └── Batch-Approve-Bar (NEU)
+            └── Checkbox-Selection + "X Vorschlaege genehmigen"
+```
+
+### Approve-Flow (Server Action)
+
+```
+User klickt "Approve"
+  → Server Action: approveInsightAction(id)
+    → 1. ai_action_queue.status = 'approved', decided_at, decided_by
+    → 2. applyAction(item):
+         reads proposed_changes JSONB
+         → UPDATE deals SET stage = 'Verhandlung' WHERE id = target_entity_id
+         → INSERT activities (type='ai_applied', ai_generated=true, source_type='signal', source_id=queue_item_id)
+    → 3. ai_action_queue.execution_result = 'applied'
+    → 4. revalidatePath (Mein Tag + Deal-Workspace)
+```
+
+### KI-Badge-Tracking (DEC-054)
+
+KI-angewandte Aenderungen werden NICHT als separate Spalte auf der Entity-Tabelle getrackt (`ai_applied_at` wuerde nur den letzten Wert speichern). Stattdessen:
+
+**Activities als Audit-Trail:** Jede angewandte Queue-Aktion erzeugt eine Activity (type=`ai_applied`, ai_generated=true) im Deal. Die Activity enthaelt in description was geaendert wurde und in metadata das Queue-Item-Referenz.
+
+**KI-Badge im UI:** Der Deal-Workspace prueft beim Laden: `SELECT * FROM activities WHERE deal_id = X AND type = 'ai_applied' AND created_at > now() - interval '30 days'`. Gibt es Eintraege, werden die betroffenen Felder mit einem KI-Badge markiert (kleines Icon + Tooltip mit Datum und Quelle).
+
+Vorteil: Keine Schema-Aenderung an deals/contacts, volle Historie, natuerlich ablaufend (Badge verschwindet nach 30 Tagen).
+
+## V4.3 Docker Compose Aenderungen
+
+Keine. V4.3 ist rein additiver Anwendungs-Code + Schema-Migration. Kein neuer Container, kein neuer Service, keine neuen Ports, keine neuen Volumes.
+
+## V4.3 Env Vars — Neue Variablen
+
+```bash
+# Signal-Extraktion
+AI_SIGNAL_MIN_CONFIDENCE=0.4     # Minimum Confidence fuer Queue-Eintrag (0.0-1.0)
+AI_SIGNAL_EXPIRE_DAYS=7          # Auto-Expire fuer nicht-bearbeitete Vorschlaege
+```
+
+Beide optional mit sinnvollen Defaults. Keine Aenderung an bestehenden ENV-Variablen.
+
+## V4.3 Cron-Jobs
+
+| Name | Route | Frequenz | Neu/Bestehend |
+|---|---|---|---|
+| signal-extract | POST /api/cron/signal-extract | alle 5 Min | NEU |
+| meeting-summary | POST /api/cron/meeting-summary | alle 5 Min | ERWEITERT (setzt signal_status) |
+| classify | POST /api/cron/classify | alle 5 Min | ERWEITERT (setzt signal_status bei anfrage/antwort) |
+
+Der signal-extract Cron pickt Meetings mit `signal_status = 'pending'` und E-Mails mit `signal_status = 'pending'`, verarbeitet max 3 pro Durchlauf (Bedrock-Rate-Limit-Schutz), setzt Status auf `completed` oder `no_signals`.
+
+## V4.3 Kosten-Schaetzung
+
+| Operation | Kosten/Einheit | Geschaetztes Volumen | Monatlich |
+|---|---|---|---|
+| Signal-Extraktion (Meeting) | ~$0.02/Call | ~20 Meetings/Monat | ~$0.40 |
+| Signal-Extraktion (E-Mail) | ~$0.01/Call | ~80 relevante E-Mails/Monat | ~$0.80 |
+| RAG-Kontext-Lookup | ~$0.0001/Query | ~100 Lookups/Monat | ~$0.01 |
+| **Gesamt V4.3** | | | **~$1.20/Monat** |
+
+Vernachlaessigbar. Kein Cost-Control-Mechanismus noetig ueber die Confidence-Schwelle hinaus.
+
+## V4.3 Risiken
+
+| Risiko | Mitigation |
+|---|---|
+| LLM-Halluzinationen (falscher Wert, falsche Stage) | Queue-Pflicht + Confidence-Score + kein Auto-Approve |
+| Queue-Ueberflutung bei vielen Meetings/E-Mails | Confidence-Schwelle 0.4 + Auto-Expire 7 Tage |
+| Signal-Extraktion verlangsamt Meeting-Summary-Cron | Entkoppelt als eigener Cron (signal-extract) |
+| Bestehende Followup/Gatekeeper-Queue bricht | Neue Spalten nullable, Type-Union erweitert, kein Breaking Change |
+| KI-Badge-Ueberlast (zu viele Badges im Deal) | 30-Tage-Fenster fuer Badge-Anzeige |
+
+## V4.3 Empfohlene Slice-Reihenfolge
+
+1. **SLC-431 Schema-Migration + Type-Erweiterung** — ALTER ai_action_queue (+4 Spalten), ALTER meetings + email_messages (+signal_status), TypeScript-Types erweitern. Basis-Slice, blockiert alle folgenden.
+2. **SLC-432 Signal-Extraktion-Modul** — `/lib/ai/signals/` (extractor.ts, prompts.ts), Zod-Schema, Bedrock-Call, RAG-Kontext-Lookup. Rein Backend, kein UI.
+3. **SLC-433 Signal-Cron + Pipeline-Hooks** — `/api/cron/signal-extract`, meeting-summary Hook (signal_status=pending), classify Hook (signal_status=pending bei anfrage/antwort). Integration mit bestehenden Pipelines.
+4. **SLC-434 Applier + Approve-Flow** — `/lib/ai/signals/applier.ts`, Server Action approveInsightAction/rejectInsightAction, Activity-Eintrag bei Approve.
+5. **SLC-435 Unified Queue UI** — Mein Tag: PropertyChangeCard, Confidence/Reasoning/Source, Batch-Approve. Erweitert bestehende followup-suggestions.tsx.
+6. **SLC-436 Deal-Workspace KI-Badge + Manual Trigger** — KI-Badge-Anzeige, "Signale extrahieren" Button, `/api/signals/extract`.
+
+Geschaetzt 6 Slices, je 1-1.5 Tage. Gesamtschaetzung: ~6-9 Tage.
+
+## V4.3 Recommended Next Step
+
+`/slice-planning` — V4.3-Slices strukturiert ausdefinieren (Acceptance Criteria, Dependencies, QA-Fokus, Micro-Tasks). Danach pro Slice `/backend` oder `/frontend` + `/qa`.
