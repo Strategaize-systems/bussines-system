@@ -10,11 +10,11 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V4.3 Insight Governance — SLC-431..434 done (QA PASS), naechster Schritt /frontend SLC-435 Unified Queue UI
+- Current Focus: V4.3 Insight Governance — SLC-431..435 done, naechster Schritt /qa SLC-435 dann /frontend SLC-436
 - Current Phase: V4.3 Implementation
 
 ## Immediate Next Steps
-1. /frontend SLC-435 Unified Queue UI
+1. /qa SLC-435 Unified Queue UI
 2. /frontend SLC-436 KI-Badge + Manual Trigger
 3. Embedding-Qualitaet nach einigen Tagen Live-Nutzung evaluieren
 4. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)

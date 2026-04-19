@@ -1177,7 +1177,7 @@
       "title": "Unified Freigabe-UI in Mein Tag (alle Queue-Typen einheitlich)",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V4.3",
       "description": "FEAT-402b: Mein Tag Queue-Section zeigt alle offenen Vorschlaege (Followups + Gatekeeper + Property-Aenderungen) einheitlich. Approve/Reject einzeln + Batch. Confidence, Reasoning, Source-Link pro Item.",
       "createdAt": "2026-04-18"
@@ -1197,7 +1197,7 @@
       "title": "Meeting-Signal-Extraktion (Summary → Property-Vorschlaege)",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V4.3",
       "description": "FEAT-412a: Nach Meeting-Summary (Cron) extrahiert ein LLM-Call Signale: stage_suggestion, value_update, tag_addition, priority_change. Jedes Signal → ai_action_queue. RAG-Kontext fuer bessere Qualitaet. Confidence-Score.",
       "createdAt": "2026-04-18"
@@ -1207,7 +1207,7 @@
       "title": "E-Mail-Signal-Extraktion (Classify → Property-Vorschlaege)",
       "type": "feature",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V4.3",
       "description": "FEAT-412b: Nach Gatekeeper-Klassifikation (classification anfrage/antwort) extrahiert ein LLM-Call Signale aus relevanten E-Mails. Gleiche Signal-Typen wie Meeting-Extraktion. Nur bei zugeordneten E-Mails mit Deal-Kontext.",
       "createdAt": "2026-04-18"
