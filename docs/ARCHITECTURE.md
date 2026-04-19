@@ -3119,3 +3119,591 @@ Geschaetzt 6 Slices, je 1-1.5 Tage. Gesamtschaetzung: ~6-9 Tage.
 ## V4.3 Recommended Next Step
 
 `/slice-planning` — V4.3-Slices strukturiert ausdefinieren (Acceptance Criteria, Dependencies, QA-Fokus, Micro-Tasks). Danach pro Slice `/backend` oder `/frontend` + `/qa`.
+
+---
+
+# V6 — Zielsetzung, Performance-Tracking & Produkttypen
+
+## V6 Architecture Summary
+
+V6 bringt den Uebergang von Reporting zu Performance Management. Vier neue Tabellen, ein neuer Cron-Job, eine neue Seite, ein neuer Settings-Bereich. Kein neuer externer Service. Die bestehende Bedrock-Integration wird fuer KI-Empfehlungen wiederverwendet.
+
+**Strategie:** Rein additiv. Keine bestehende Tabelle wird strukturell geaendert. Deals bekommen ueber eine n:m-Verknuepfungstabelle (`deal_products`) eine optionale Produkt-Zuordnung. Alle neuen Tabellen folgen dem bestehenden RLS-Pattern.
+
+## V6 Main Components
+
+```
+Bestehende Infrastruktur (unveraendert):
+  Next.js BD Cockpit → Supabase Stack → PostgreSQL
+  Bedrock Claude Sonnet (eu-central-1) → KI-Empfehlungen
+  Coolify Cron-Jobs → KPI-Snapshot-Cron (NEU)
+
+Neue Komponenten (V6):
+  /app/(app)/products/         → Produkt-Verwaltung (Settings-Bereich)
+  /app/(app)/performance/      → Performance-Cockpit (Analyse-Bereich)
+  /lib/goals/                  → Ziel-Berechnung, Prognose-Engine, CSV-Parser
+  /api/cron/kpi-snapshot       → Taeglicher KPI-Snapshot-Cron
+```
+
+## V6 Data Model
+
+### Tabellen-Uebersicht V6: 33 Tabellen (29 bestehend + 4 neu)
+
+```
+BESTEHEND (unveraendert):                NEU (V6):
+├── companies                            ├── products
+├── contacts                             ├── deal_products (n:m Verknuepfung)
+├── pipelines                            ├── goals
+├── pipeline_stages                      └── kpi_snapshots
+├── deals
+├── emails (outbound SMTP)
+├── email_messages (IMAP, V4)
+├── email_threads (V4)
+├── email_sync_state (V4)
+├── proposals
+├── fit_assessments
+├── tasks
+├── handoffs
+├── referrals
+├── signals
+├── documents
+├── activities
+├── profiles
+├── meetings
+├── calendar_events
+├── audit_log
+├── email_templates (V3.1)
+├── ai_action_queue (V4)
+├── ai_feedback (V4)
+├── user_settings (V4.1)
+└── knowledge_chunks (V4.2)
+```
+
+### Neue Tabelle: products (FEAT-601, DEC-055)
+
+```sql
+CREATE TABLE products (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  description TEXT,
+  category TEXT,
+  standard_price NUMERIC(12,2),
+  status TEXT NOT NULL DEFAULT 'active',
+  created_by UUID REFERENCES profiles(id),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_products_status ON products(status);
+CREATE INDEX idx_products_category ON products(category) WHERE category IS NOT NULL;
+
+-- RLS
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated_full_access" ON products
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+GRANT ALL ON products TO authenticated;
+GRANT ALL ON products TO service_role;
+```
+
+**status-Werte:** `active`, `inactive`, `archived`
+**category:** Freitext mit Autocomplete (wie Branchen auf Firmen — DEC-056). Kein Enum, weil Produkt-Kategorien sich schnell aendern koennen.
+**standard_price:** Optionaler Richtpreis. Der Deal-spezifische Preis lebt auf `deal_products.price`.
+
+### Neue Tabelle: deal_products (FEAT-601, DEC-057)
+
+```sql
+CREATE TABLE deal_products (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  deal_id UUID NOT NULL REFERENCES deals(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+  price NUMERIC(12,2),
+  quantity INT DEFAULT 1,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_deal_products_deal ON deal_products(deal_id);
+CREATE INDEX idx_deal_products_product ON deal_products(product_id);
+CREATE UNIQUE INDEX idx_deal_products_unique ON deal_products(deal_id, product_id);
+
+-- RLS
+ALTER TABLE deal_products ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated_full_access" ON deal_products
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+GRANT ALL ON deal_products TO authenticated;
+GRANT ALL ON deal_products TO service_role;
+```
+
+**Warum n:m statt Array-Feld (DEC-057):**
+- SQL-Joins fuer Auswertungen (Umsatz pro Produkt) sind mit Tabelle trivial, mit Array komplex
+- Price/Quantity pro Zuordnung moeglich (ein Deal kann 2x Blueprint haben)
+- Unique Constraint verhindert versehentliche Doppelzuordnung desselben Produkts
+- `ON DELETE RESTRICT` auf product_id: Produkte mit bestehenden Deal-Zuordnungen koennen nicht geloescht werden (nur archiviert)
+
+### Neue Tabelle: goals (FEAT-602, DEC-058)
+
+```sql
+CREATE TABLE goals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id),
+  type TEXT NOT NULL,
+  period TEXT NOT NULL,
+  period_start DATE NOT NULL,
+  target_value NUMERIC(12,2) NOT NULL,
+  product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'active',
+  source TEXT NOT NULL DEFAULT 'manual',
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_goals_user_period ON goals(user_id, period_start);
+CREATE INDEX idx_goals_type ON goals(type);
+CREATE INDEX idx_goals_status ON goals(status) WHERE status = 'active';
+CREATE INDEX idx_goals_product ON goals(product_id) WHERE product_id IS NOT NULL;
+
+-- Unique: Ein User kann pro Typ+Zeitraum+Produkt nur ein Ziel haben
+CREATE UNIQUE INDEX idx_goals_unique ON goals(user_id, type, period, period_start, COALESCE(product_id, '00000000-0000-0000-0000-000000000000'::UUID));
+
+-- RLS
+ALTER TABLE goals ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated_full_access" ON goals
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+GRANT ALL ON goals TO authenticated;
+GRANT ALL ON goals TO service_role;
+```
+
+**type-Werte:** `revenue`, `deal_count`, `win_rate`
+**period-Werte:** `month`, `quarter`, `year`
+**period_start:** Erster Tag des Zeitraums (z.B. 2026-01-01 fuer Januar, 2026-04-01 fuer Q2, 2026-01-01 fuer Jahresziel)
+**product_id:** NULL = Gesamtziel, sonst produktspezifisch
+**source-Werte:** `manual`, `imported`
+**status-Werte:** `active`, `completed`, `cancelled`
+
+**Unique Constraint (DEC-058):** Ein User kann nicht zwei Revenue-Jahresziele fuer 2026 fuer dasselbe Produkt haben. Der COALESCE-Trick erlaubt aber separate Gesamtziele (product_id=NULL) und produktspezifische Ziele gleichzeitig.
+
+### Neue Tabelle: kpi_snapshots (FEAT-604, DEC-059)
+
+```sql
+CREATE TABLE kpi_snapshots (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  snapshot_date DATE NOT NULL,
+  user_id UUID NOT NULL REFERENCES profiles(id),
+  kpi_type TEXT NOT NULL,
+  kpi_value NUMERIC(14,4) NOT NULL,
+  product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+  period TEXT NOT NULL DEFAULT 'day',
+  calculation_basis JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Idempotenz: Doppelter Cron-Run ueberschreibt statt dupliziert
+CREATE UNIQUE INDEX idx_kpi_snapshots_unique ON kpi_snapshots(
+  snapshot_date, user_id, kpi_type, period,
+  COALESCE(product_id, '00000000-0000-0000-0000-000000000000'::UUID)
+);
+
+CREATE INDEX idx_kpi_snapshots_lookup ON kpi_snapshots(user_id, kpi_type, snapshot_date DESC);
+CREATE INDEX idx_kpi_snapshots_date ON kpi_snapshots(snapshot_date DESC);
+
+-- RLS
+ALTER TABLE kpi_snapshots ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated_full_access" ON kpi_snapshots
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+GRANT ALL ON kpi_snapshots TO authenticated;
+GRANT ALL ON kpi_snapshots TO service_role;
+```
+
+**kpi_type-Werte (DEC-059):**
+- `revenue_won` — Umsatz aus Won-Deals im laufenden Monat/Quartal/Jahr
+- `deal_count_won` — Anzahl Won-Deals
+- `win_rate` — Won / (Won + Lost) in Prozent
+- `pipeline_value_weighted` — Summe (Deal-Wert × Stage-Probability) aller offenen Deals
+- `pipeline_value_unweighted` — Summe Deal-Wert aller offenen Deals
+- `avg_deal_value` — Durchschnittlicher Deal-Wert (Won-Deals)
+- `activity_count` — Anzahl Activities (Meetings + Anrufe + E-Mails)
+- `product_revenue` — Umsatz pro Produkt (mit product_id)
+- `product_deal_count` — Deal-Anzahl pro Produkt (mit product_id)
+
+**period-Werte:** `day` (taeglicher Snapshot), `week`, `month` (aggregiert)
+**calculation_basis:** JSONB mit Details zur Nachvollziehbarkeit, z.B.:
+```json
+{
+  "deals_included": 12,
+  "date_range": "2026-01-01..2026-01-31",
+  "calculation": "SUM(deals.value) WHERE status='won' AND closed_at IN range"
+}
+```
+
+**Warum eine generische Tabelle statt separate pro KPI (DEC-059):**
+- Eine Tabelle = ein Cron-Job, ein Index-Pattern, ein Query-Pattern
+- Neue KPIs hinzufuegen = nur neuer kpi_type-Wert, kein Schema-Change
+- Speicherverbrauch: ~10 KPIs × 365 Tage × 5 Produkte = ~18.000 Zeilen/Jahr — vernachlaessigbar
+
+## V6 Prognose-Engine
+
+Die Prognose-Engine berechnet fuer jedes aktive Ziel eine realistische Erreichungsprognose.
+
+### Berechnungslogik
+
+```
+Fuer ein Revenue-Ziel (z.B. 500.000 EUR / Jahr):
+
+1. IST-Wert:
+   SELECT SUM(d.value)
+   FROM deals d
+   WHERE d.status = 'won'
+     AND d.closed_at >= goal.period_start
+     AND d.closed_at < goal.period_end
+     [AND dp.product_id = goal.product_id]  -- nur bei produktspezifischen Zielen
+
+2. Pipeline-gewichtete Prognose:
+   SELECT SUM(d.value * ps.probability / 100)
+   FROM deals d
+   JOIN pipeline_stages ps ON d.stage_id = ps.id
+   WHERE d.status = 'active'
+     [AND dp.product_id = goal.product_id]
+
+3. Historische Prognose:
+   ist_pro_tag = IST-Wert / vergangene_tage_im_zeitraum
+   hochrechnung = ist_pro_tag * gesamt_tage_im_zeitraum
+
+4. Kombinierte Prognose:
+   prognose = IST-Wert + Pipeline-gewichtete Prognose
+   (konservativer als historisch, weil nur reale Pipeline-Deals gezaehlt werden)
+
+5. Delta:
+   delta = goal.target_value - prognose
+   delta_deals = delta / avg_deal_value  -- "Du brauchst noch N Deals"
+```
+
+### Fuer Deal-Count-Ziele:
+Analog, aber COUNT statt SUM, und Pipeline-gewichtet = COUNT × probability.
+
+### Fuer Win-Rate-Ziele:
+```
+win_rate = COUNT(won) / COUNT(won + lost) * 100
+prognose_win_rate = (won + pipeline_expected_wins) / (won + lost + pipeline_total) * 100
+```
+
+### Mindest-Schwelle
+Prognose wird erst angezeigt wenn:
+- Fuer Revenue: mindestens 1 Won-Deal im Zeitraum ODER mindestens 3 aktive Pipeline-Deals
+- Fuer Deal-Count: mindestens 1 abgeschlossener Deal im Zeitraum
+- Fuer Win-Rate: mindestens 5 abgeschlossene Deals (Won + Lost) im Zeitraum
+
+Darunter: "Nicht genug Daten fuer eine Prognose".
+
+## V6 KI-Empfehlung (FEAT-603)
+
+Die KI-Empfehlung nutzt den bestehenden Bedrock-Client (`/lib/ai/bedrock-client.ts`) und ein neues Prompt-Template.
+
+### Prompt-Struktur
+
+```
+/lib/ai/prompts/performance-recommendation.ts
+
+System: Du bist ein Vertriebsberater. Analysiere die Ziel-Erreichung und gib eine
+konkrete, actionable Empfehlung. Maximal 3 Saetze. Keine Floskeln.
+
+Context:
+- Ziel: {type} {target_value} bis {period_end}
+- IST: {current_value} ({percent}%)
+- Pipeline: {pipeline_weighted} gewichtet, {pipeline_count} aktive Deals
+- Abschlussquote: {win_rate}%
+- Durchschn. Deal-Wert: {avg_deal_value} EUR
+- Verbleibende Tage: {days_remaining}
+
+Frage: Was muss der User konkret tun, um sein Ziel zu erreichen?
+```
+
+**Kosten:** ~$0.01 pro Empfehlung (kurzer Context, kurze Antwort). On-click (DEC-028), nicht auto-load.
+
+## V6 KPI-Snapshot-Cron
+
+### Cron-Konfiguration (Coolify)
+
+```
+Job: kpi-snapshot
+Schedule: 0 2 * * * (taeglich um 02:00 UTC)
+Command: node -e "fetch('http://localhost:3000/api/cron/kpi-snapshot', {method:'POST', headers:{'Authorization':'Bearer '+process.env.CRON_SECRET}})"
+Container: app
+```
+
+### Cron-Ablauf
+
+```
+1. Authentifizierung pruefen (CRON_SECRET)
+2. Aktuellen User laden (Single User — spaeter: alle aktiven User)
+3. Fuer jeden KPI-Typ:
+   a. Wert aus DB berechnen (SQL-Query)
+   b. UPSERT in kpi_snapshots (Idempotenz via Unique Index)
+4. Fuer jedes aktive Produkt:
+   a. product_revenue + product_deal_count berechnen
+   b. UPSERT mit product_id
+5. Response: { snapshotsCreated: N, date: "2026-04-19" }
+```
+
+### Woechentliche/monatliche Aggregation
+
+Keine separate Cron-Job. Die Aggregation wird on-demand im Performance-Cockpit berechnet:
+
+```sql
+-- Monatsdurchschnitt
+SELECT AVG(kpi_value) FROM kpi_snapshots
+WHERE kpi_type = 'pipeline_value_weighted'
+  AND snapshot_date >= '2026-03-01' AND snapshot_date < '2026-04-01';
+
+-- Wochenvergleich
+SELECT snapshot_date, kpi_value FROM kpi_snapshots
+WHERE kpi_type = 'revenue_won'
+  AND snapshot_date >= now() - interval '8 weeks'
+ORDER BY snapshot_date;
+```
+
+## V6 CSV-Import (FEAT-602)
+
+### Import-Ablauf
+
+```
+1. User waehlt CSV-Datei im Browser (File Input)
+2. Client-Side: Papa Parse (bestehend, keine neue Dependency noetig) liest CSV
+3. Client-Side: Validierung pro Zeile:
+   - type muss in [revenue, deal_count, win_rate] sein
+   - period muss in [month, quarter, year] sein
+   - period_start muss gueltiges Datum sein
+   - target_value muss positive Zahl sein
+   - product_name muss existierendem Produkt entsprechen (oder leer fuer Gesamtziel)
+4. Ergebnis-Preview: Tabelle mit "wird importiert" / "Fehler" pro Zeile
+5. User bestaetigt Import
+6. Server Action: Bulk-Insert in goals-Tabelle, source='imported'
+7. Ergebnis-Report: N importiert, M Fehler
+```
+
+### CSV-Template
+
+```csv
+type,period,period_start,target_value,product_name
+revenue,year,2026-01-01,500000,
+revenue,year,2026-01-01,200000,Blueprint Classic
+deal_count,quarter,2026-04-01,15,
+win_rate,year,2026-01-01,30,
+```
+
+**Implementation:** Server Action (kein separater API-Endpoint — DEC-060). Fuer Internal Tool ist eine Server Action ausreichend und einfacher.
+
+## V6 UI-Architektur
+
+### Navigation
+
+```
+ANALYSE (bestehend)
+  Dashboard (bestehend)
+  Meine Performance (V6 NEU)    ← /performance
+
+VERWALTUNG (bestehend)
+  Pipeline-Verwaltung (bestehend)
+  Produkte (V6 NEU)             ← /settings/products
+  ... (bestehende Settings)
+```
+
+### Performance-Cockpit Seite (/performance)
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Meine Performance                    [Monat|Quartal|Jahr] │
+├─────────────────────────────────────────────────────────┤
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐                 │
+│ │ Umsatz   │ │ Deals    │ │ Quote    │  ← KPI-Cards    │
+│ │ ████░░░  │ │ ████████ │ │ ██░░░░░  │     mit Ring    │
+│ │ 320k/500k│ │ 12/10    │ │ 22%/30%  │                 │
+│ │ 64% ↑    │ │ 120% ✓   │ │ 73% ↓    │                 │
+│ └──────────┘ └──────────┘ └──────────┘                 │
+├─────────────────────────────────────────────────────────┤
+│ Prognose                                                │
+│ Pipeline-gewichtet: 420.000 EUR (+100k offen)           │
+│ Historisch:         480.000 EUR (bei aktuellem Tempo)    │
+│ Delta:              -80.000 EUR (noch 4 Deals noetig)   │
+├─────────────────────────────────────────────────────────┤
+│ [KI-Empfehlung abrufen]                   (on-click)   │
+│ "Du brauchst noch 4 Abschluesse. Bei 22% Quote         │
+│  brauchst du 18 aktive Deals. Du hast 11 — generiere   │
+│  7 weitere Opportunities."                              │
+├─────────────────────────────────────────────────────────┤
+│ Pro Produkt                                             │
+│ Blueprint Classic  ████████░░  180k/200k  90%           │
+│ Blueprint Premium  ███░░░░░░░   90k/150k  60%           │
+│ Consulting         ██░░░░░░░░   50k/150k  33%           │
+├─────────────────────────────────────────────────────────┤
+│ Trend (vs. Vorperiode)                                  │
+│ Umsatz:  +15% vs. letzter Monat                        │
+│ Deals:   +2 vs. letzter Monat                          │
+│ Quote:   -3pp vs. letzter Monat                        │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Mein-Tag-Widget (optional, Entscheidung bei /slice-planning)
+
+Kurze Ziel-Zusammenfassung als Card auf "Mein Tag":
+```
+┌─────────────────────────────────┐
+│ Ziele diesen Monat              │
+│ Umsatz: 64% ████░░░ (320k/500k)│
+│ Deals:  120% ████████ ✓         │
+│ [→ Meine Performance]           │
+└─────────────────────────────────┘
+```
+
+### Produkt-Verwaltung (/settings/products)
+
+Standard-CRUD-Seite im Settings-Bereich:
+- Tabelle mit Produkten (Name, Kategorie, Preis, Status)
+- Inline-Edit oder Modal fuer Anlegen/Bearbeiten
+- Status-Toggle (aktiv → inaktiv → archiviert)
+- Kein komplexes UI noetig (Internal Tool)
+
+### Deal-Workspace Erweiterung
+
+Im bestehenden Deal-Workspace (/deals/[id]):
+- Neues Feld/Section: "Produkte" mit Dropdown-Zuordnung
+- Preis pro Zuordnung editierbar
+- Kein separater Tab — eingebettet in bestehenden "Bearbeiten"-Tab oder als eigene Section
+
+## V6 Server Actions
+
+```
+/app/actions/
+  products.ts           (NEU)
+    createProduct()
+    updateProduct()
+    archiveProduct()
+    listProducts()
+
+  goals.ts              (NEU)
+    createGoal()
+    updateGoal()
+    cancelGoal()
+    listGoals()
+    importGoalsFromCSV()
+    getGoalProgress()     ← Prognose-Berechnung
+
+  deal-products.ts      (NEU)
+    assignProduct()
+    removeProduct()
+    updateDealProduct()
+    listDealProducts()
+
+  kpi-snapshots.ts      (NEU)
+    getSnapshotTrend()
+    getSnapshotComparison()
+```
+
+## V6 API Routes
+
+```
+/api/cron/kpi-snapshot   (NEU — POST, CRON_SECRET-Auth)
+```
+
+Keine weiteren API-Routes. Alles andere laeuft ueber Server Actions.
+
+## V6 Lib-Module
+
+```
+/lib/goals/              (NEU)
+  calculator.ts          ← Soll-Ist-Berechnung, Prognose-Engine
+  csv-parser.ts          ← CSV-Validierung + Parsing
+  types.ts               ← Goal, GoalProgress, KpiSnapshot Types
+
+/lib/ai/prompts/
+  performance-recommendation.ts  (NEU — Prompt-Template)
+```
+
+## V6 Entscheidungen
+
+### DEC-055 — Produkt-Stammdaten als eigenstaendige Tabelle
+- Status: accepted
+- Reason: Produkte sind eigenstaendige Entitaeten mit eigenem Lebenszyklus (aktiv/inaktiv/archiviert), eigenen Feldern und eigenen Auswertungen. Kein JSON-Feld auf Deals, sondern normalisierte Tabelle.
+- Consequence: Neue Tabelle `products` mit Standard-CRUD. Zuordnung zu Deals ueber `deal_products` (n:m).
+
+### DEC-056 — Produkt-Kategorien als Freitext mit Autocomplete
+- Status: accepted
+- Reason: Produkt-Kategorien aendern sich mit dem Geschaeft. Ein festes Enum wuerde staendig Migrationen erfordern. Freitext mit Autocomplete (wie Branchen auf Firmen) ist flexibler und bereits erprobtes UI-Pattern.
+- Consequence: `products.category` ist TEXT, kein Enum. Frontend bietet Autocomplete basierend auf bestehenden Werten.
+
+### DEC-057 — Deal-Produkt-Zuordnung als n:m-Tabelle
+- Status: accepted
+- Reason: (1) SQL-Joins fuer Umsatz-pro-Produkt-Auswertungen sind trivial mit Tabelle, komplex mit Array. (2) Preis und Menge pro Zuordnung moeglich. (3) Referentielle Integritaet (FK-Constraints). Array-Feld waere denormalisiert und wuerde jede Auswertung verkomplizieren.
+- Consequence: Neue Tabelle `deal_products` mit deal_id, product_id, price, quantity. Unique Constraint auf (deal_id, product_id).
+
+### DEC-058 — Ziel-Unique-Constraint mit COALESCE
+- Status: accepted
+- Reason: Ein User soll nicht zwei Umsatz-Jahresziele fuer 2026 fuer dasselbe Produkt haben koennen. Gleichzeitig muss ein Gesamtziel (product_id=NULL) neben produktspezifischen Zielen existieren koennen. PostgreSQL behandelt NULL != NULL bei Unique Constraints, daher COALESCE auf einen Sentinel-UUID.
+- Consequence: `CREATE UNIQUE INDEX ... ON goals(user_id, type, period, period_start, COALESCE(product_id, '00000000-...'::UUID))`.
+
+### DEC-059 — KPI-Snapshots als generische Tabelle
+- Status: accepted
+- Reason: Eine Tabelle mit kpi_type-Spalte statt separate Tabellen pro KPI. (1) Ein Cron-Job, ein Index-Pattern, ein Query-Pattern. (2) Neue KPIs hinzufuegen = nur neuer kpi_type-Wert, kein Schema-Change. (3) Speicherverbrauch vernachlaessigbar (~18.000 Zeilen/Jahr).
+- Consequence: Neue Tabelle `kpi_snapshots` mit kpi_type TEXT. Idempotenz ueber Unique Index auf (date, user, type, period, product).
+
+### DEC-060 — CSV-Import als Server Action
+- Status: accepted
+- Reason: Fuer Internal Tool ist eine Server Action einfacher als ein separater API-Endpoint. Client-Side CSV-Parsing (Papa Parse), Validierung und Preview, dann Server Action fuer den tatsaechlichen Insert. Kein File-Upload an Server noetig.
+- Consequence: Server Action `importGoalsFromCSV()` empfaengt validierte Daten, kein File. CSV-Parsing und Validierung passieren im Browser.
+
+## V6 Migration
+
+### MIG-017 — V6 Schema (Produkte, Ziele, KPI-Snapshots)
+
+- Date: TBD (bei Implementation)
+- Scope: 4 neue Tabellen (products, deal_products, goals, kpi_snapshots), Indexes, RLS-Policies, Grants
+- Reason: Datenbasis fuer Produkt-Stammdaten, Ziel-Tracking und KPI-History
+- Affected Areas: Deal-Workspace (Produkt-Zuordnung), neue Performance-Seite, neuer Settings-Bereich, neuer Cron-Job
+- Risk: Gering — rein additiv, keine bestehenden Tabellen werden geaendert
+- Rollback Notes: `DROP TABLE kpi_snapshots, goals, deal_products, products CASCADE;`
+
+**Migrations-Datei:** `sql/17_v6_migration.sql`
+
+Die Migration enthaelt:
+1. `CREATE TABLE products` + Indexes + RLS
+2. `CREATE TABLE deal_products` + Indexes + RLS
+3. `CREATE TABLE goals` + Indexes + RLS (inkl. COALESCE Unique)
+4. `CREATE TABLE kpi_snapshots` + Indexes + RLS (inkl. COALESCE Unique)
+
+Keine bestehende Tabelle wird veraendert. V6 ist rein additiv.
+
+## V6 Kosten-Schaetzung
+
+| Operation | Kosten/Einheit | Geschaetztes Volumen | Monatlich |
+|---|---|---|---|
+| KI-Empfehlung (on-click) | ~$0.01/Call | ~30 Aufrufe/Monat | ~$0.30 |
+| KPI-Snapshot-Cron | Kein API-Call | 1x taeglich | $0.00 |
+| **Gesamt V6** | | | **~$0.30/Monat** |
+
+Vernachlaessigbar. Kein Cost-Control-Mechanismus noetig.
+
+## V6 Risiken
+
+| Risiko | Mitigation |
+|---|---|
+| Produkt-Zuordnung auf Altdaten fehlt | Produkt-Zuordnung ist optional auf Deals. Altdaten koennen schrittweise zugeordnet werden. Gesamtziele (ohne Produkt) funktionieren sofort. |
+| Prognose bei wenigen Daten unzuverlaessig | Mindest-Schwelle: Prognose erst ab N Datenpunkten. Darunter: "Nicht genug Daten". |
+| CSV-Import mit fehlerhaften Daten | Client-Side Validierung + Zeilen-basierter Fehler-Report + Preview vor Import. |
+| KPI-Snapshot-Cron faellt aus | Idempotenz: Naechster Run holt nach. Keine kumulative Berechnung, sondern Point-in-Time-Snapshot. Fehlender Tag = Luecke im Trend, kein Datenverlust. |
+| Zu viele KPI-Typen fuellen Tabelle | Bei 10 KPIs × 365 Tage × 5 Produkte = ~18.000 Zeilen/Jahr — PostgreSQL handhabt das problemlos. Kein Cleanup noetig. |
+
+## V6 Empfohlene Slice-Reihenfolge
+
+1. **SLC-601 Schema-Migration + Produkt-CRUD** — 4 Tabellen anlegen (MIG-017), Produkt-Server-Actions, Produkt-Verwaltungsseite (/settings/products). Basis-Slice, blockiert alle folgenden.
+2. **SLC-602 Deal-Produkt-Zuordnung** — deal_products Server Actions, Produkt-Zuordnung im Deal-Workspace (Bearbeiten-Tab), Umsatz-pro-Produkt-Query.
+3. **SLC-603 Ziel-CRUD + CSV-Import** — goals Server Actions, Ziel-Verwaltung (manuell anlegen/bearbeiten/stornieren), CSV-Import mit Preview und Validierung.
+4. **SLC-604 Prognose-Engine** — `/lib/goals/calculator.ts`, Soll-Ist-Berechnung, Pipeline-gewichtete + historische Prognose, Delta-Berechnung. Rein Backend/Logik.
+5. **SLC-605 KPI-Snapshot-Cron** — `/api/cron/kpi-snapshot`, Cron-Job-Konfiguration, Idempotenz-Tests, Snapshot-Query-Funktionen.
+6. **SLC-606 Performance-Cockpit UI** — `/performance`-Seite, Hero-KPI-Cards mit Ring/Balken, Prognose-Block, Produkt-Aufschluesselung, Trend-Vergleich.
+7. **SLC-607 KI-Empfehlung + Mein-Tag-Widget** — Bedrock-Prompt, On-click-Empfehlung im Cockpit, optionales Ziel-Widget auf Mein Tag.
+
+Geschaetzt 7 Slices, je 1-1.5 Tage. Gesamtschaetzung: ~7-10.5 Tage.
+
+## V6 Recommended Next Step
+
+`/slice-planning` — V6-Slices strukturiert ausdefinieren (Acceptance Criteria, Dependencies, QA-Fokus, Micro-Tasks). Danach pro Slice `/backend` oder `/frontend` + `/qa`.

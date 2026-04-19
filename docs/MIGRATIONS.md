@@ -127,3 +127,11 @@
 - Affected Areas: ai_action_queue (erweitert), meetings (erweitert), email_messages (erweitert). TypeScript-Types in ai-queue.ts.
 - Risk: Gering — rein additive ALTERs, nullable Spalten, keine bestehenden Daten betroffen.
 - Rollback Notes: ALTER TABLE ai_action_queue DROP COLUMN target_entity_type, DROP COLUMN target_entity_id, DROP COLUMN proposed_changes, DROP COLUMN confidence; ALTER TABLE meetings DROP COLUMN signal_status; ALTER TABLE email_messages DROP COLUMN signal_status;
+
+### MIG-017 — V6 Schema (Produkte, Ziele, KPI-Snapshots)
+- Date: TBD
+- Scope: 4 neue Tabellen (products, deal_products, goals, kpi_snapshots) mit Indexes, Unique Constraints (COALESCE-Pattern fuer nullable product_id), RLS-Policies (authenticated_full_access), Grants. Rein additiv — keine bestehenden Tabellen werden geaendert.
+- Reason: Datenbasis fuer V6 Produkt-Stammdaten (FEAT-601), Ziel-Tracking (FEAT-602), Performance-Cockpit (FEAT-603) und KPI-History (FEAT-604).
+- Affected Areas: Deal-Workspace (Produkt-Zuordnung), neue Performance-Seite, neuer Settings-Bereich, neuer Cron-Job.
+- Risk: Gering — rein additiv, keine ALTERs auf bestehende Tabellen.
+- Rollback Notes: DROP TABLE kpi_snapshots, goals, deal_products, products CASCADE;

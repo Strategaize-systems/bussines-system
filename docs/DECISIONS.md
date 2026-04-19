@@ -274,3 +274,33 @@
 - Status: accepted
 - Reason: Eine Spalte `ai_applied_at` auf deals wuerde nur die letzte Aenderung speichern und erfordert Schema-Aenderung. Activities bieten volle Historie (was wurde wann geaendert, welche Queue-Aktion) und existieren bereits. 30-Tage-Fenster fuer Badge-Anzeige verhindert UI-Ueberladung.
 - Consequence: Jede angewandte Queue-Aktion erzeugt eine Activity (type='ai_applied'). Deal-Workspace prueft Activities mit ai_generated=true der letzten 30 Tage. Keine Schema-Aenderung an deals/contacts noetig.
+
+## DEC-055 — Produkt-Stammdaten als eigenstaendige Tabelle
+- Status: accepted
+- Reason: Produkte sind eigenstaendige Entitaeten mit eigenem Lebenszyklus (aktiv/inaktiv/archiviert), eigenen Feldern und eigenen Auswertungen. Kein JSON-Feld auf Deals, sondern normalisierte Tabelle. Ermoeglicht spaetere Integration mit Intelligence Studio (System 4).
+- Consequence: Neue Tabelle `products` mit Standard-CRUD. Zuordnung zu Deals ueber `deal_products` (n:m).
+
+## DEC-056 — Produkt-Kategorien als Freitext mit Autocomplete
+- Status: accepted
+- Reason: Produkt-Kategorien aendern sich mit dem Geschaeft. Ein festes Enum wuerde staendig Migrationen erfordern. Freitext mit Autocomplete ist flexibler und bereits erprobtes UI-Pattern (wie Branchen auf Firmen).
+- Consequence: `products.category` ist TEXT, kein Enum. Frontend bietet Autocomplete basierend auf bestehenden Werten.
+
+## DEC-057 — Deal-Produkt-Zuordnung als n:m-Tabelle
+- Status: accepted
+- Reason: SQL-Joins fuer Umsatz-pro-Produkt-Auswertungen sind trivial mit Tabelle, komplex mit Array. Preis und Menge pro Zuordnung moeglich. Referentielle Integritaet durch FK-Constraints. Array-Feld waere denormalisiert und wuerde jede Auswertung verkomplizieren.
+- Consequence: Neue Tabelle `deal_products` mit deal_id, product_id, price, quantity. Unique Constraint auf (deal_id, product_id). ON DELETE RESTRICT auf product_id (Produkte mit Deal-Zuordnungen koennen nicht geloescht, nur archiviert werden).
+
+## DEC-058 — Ziel-Unique-Constraint mit COALESCE
+- Status: accepted
+- Reason: Ein User soll nicht zwei Umsatz-Jahresziele fuer 2026 fuer dasselbe Produkt haben koennen. Gleichzeitig muss ein Gesamtziel (product_id=NULL) neben produktspezifischen Zielen existieren koennen. PostgreSQL behandelt NULL != NULL bei Unique Constraints, daher COALESCE auf einen Sentinel-UUID.
+- Consequence: Unique Index auf goals(user_id, type, period, period_start, COALESCE(product_id, '00000000-...'::UUID)).
+
+## DEC-059 — KPI-Snapshots als generische Tabelle
+- Status: accepted
+- Reason: Eine Tabelle mit kpi_type-Spalte statt separate Tabellen pro KPI. Ein Cron-Job, ein Index-Pattern, ein Query-Pattern. Neue KPIs hinzufuegen = nur neuer kpi_type-Wert, kein Schema-Change. Speicherverbrauch vernachlaessigbar (~18.000 Zeilen/Jahr).
+- Consequence: Neue Tabelle `kpi_snapshots` mit kpi_type TEXT. Idempotenz ueber Unique Index auf (date, user, type, period, product).
+
+## DEC-060 — CSV-Import als Server Action
+- Status: accepted
+- Reason: Fuer Internal Tool ist eine Server Action einfacher als ein separater API-Endpoint. Client-Side CSV-Parsing (Papa Parse), Validierung und Preview, dann Server Action fuer den tatsaechlichen Insert. Kein File-Upload an Server noetig.
+- Consequence: Server Action `importGoalsFromCSV()` empfaengt validierte Daten, kein File. CSV-Parsing und Validierung passieren im Browser.
