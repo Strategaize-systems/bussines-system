@@ -73,7 +73,7 @@
     {
       "id": "v4-3",
       "name": "V4.3",
-      "status": "active",
+      "status": "released",
       "summary": "Insight Governance: Insight-Review-Queue (FEAT-402) fuer schreibende KI-Aenderungen + Automatische Signal-Extraktion (FEAT-412) aus Meetings und E-Mails. KI schlaegt Property-Aenderungen vor, User genehmigt/lehnt ab.",
       "order": 11
     },

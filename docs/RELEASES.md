@@ -63,6 +63,13 @@
 - Risks: Hetzner-Cloud-Firewall-UI-Regel erfordert manuelle Re-Verifizierung vor SLC-412-Smoke-Test (nicht via SSH pruefbar, nur Hetzner Cloud Console). Bei NAT-strikten Kunden-Netzwerken kann UDP/10000 blockiert sein — dokumentiert als Risk in ARCHITECTURE V4.1 (TURN-Server deferred auf BL-206-Nachbar).
 - Rollback Notes: Keine Artefakte produziert. Rollback = Firewall-Regel entfernen, Coolify-Subdomain abkoppeln, Supabase-Bucket loeschen. Kein Effekt auf V4 Produktion.
 
+### REL-012 — V4.3 Insight Governance
+- Date: 2026-04-19
+- Scope: 6 Slices (SLC-431..436), 2 Features (FEAT-402, FEAT-412), 6 DECs (DEC-049..054), MIG-016. Insight-Review-Queue fuer schreibende KI-Aenderungen (Queue-Erweiterung, Signal-Extraktion-Modul, Cron-Hooks, Applier + Approve-Flow, Unified Queue UI, KI-Badge + Manual Trigger). Automatische Signal-Extraktion aus Meeting-Summaries und E-Mails. Manueller Trigger im Deal-Workspace. PropertyChangeCards mit Confidence-Badge, Batch-Approve. KI-Badge auf geaenderten Deal-Properties (30-Tage-Fenster).
+- Summary: Deployment als Coolify Redeploy. Gesamt-QA PASS (RPT-154, 41/42 ACs, 5 Medium, 0 Blocker). Final-Check READY (RPT-155, 7/7 Dimensionen PASS). Browser-Smoke-Test bestanden (Mein Tag, Deal-Workspace, Signale-Button). 1 neuer Cron-Job (signal-extract */5). Schema rein additiv (nullable Spalten).
+- Risks: Tag/Priority-Apply nicht moeglich (Spalten fehlen, V5). Activity-Limit 20 fuer Badge (1-User-Nutzung unrealistisch). Pipeline-Stages nicht im LLM-Prompt (Human-Review). Bedrock-Kosten: max 6 Calls/5min (weit unter Limits).
+- Rollback Notes: Rein additiv. Docker Image Rollback via Coolify auf V4.2 Image. Schema-Rollback: ALTER ai_action_queue DROP COLUMN target_entity_type, target_entity_id, proposed_changes, confidence; ALTER meetings DROP COLUMN signal_status; ALTER email_messages DROP COLUMN signal_status; Cron signal-extract in Coolify deaktivieren.
+
 ### REL-011 — V4.2 Wissensbasis Cross-Source
 - Date: 2026-04-18
 - Scope: 6 Slices (SLC-421..426), 1 Feature (FEAT-401), 8 V4.2-Backlog-Items (BL-350..357). MIG-014 pgvector Extension + knowledge_chunks Tabelle (vector(1024), HNSW-Index). MIG-015 search_knowledge_chunks RPC-Funktion. RAG-Pipeline (pgvector + Bedrock Titan Embeddings V2 eu-central-1). 4 Datenquellen: Meeting-Transkripte, E-Mails, Deal-Activities, Dokumente. Chunking-Service (quelltypspezifisch, Sentence-Boundary), Embedding-Adapter-Pattern (DEC-047), Backfill + Embedding-Sync-Cron, RAG Query API mit Scope-Filter + Confidence-Level, Deal Knowledge Query UI (Wissen-Tab mit Text + Voice), Auto-Embedding Trigger (fire-and-forget bei neuen Daten).
