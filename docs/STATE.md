@@ -9,12 +9,12 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: architecture
-- Current Focus: V4.3 Insight Governance — Architecture abgeschlossen, naechster Schritt /slice-planning
-- Current Phase: V4.3 Architecture
+- High-Level State: slice-planning
+- Current Focus: V4.3 Insight Governance — Slice-Planning abgeschlossen, naechster Schritt /backend SLC-431
+- Current Phase: V4.3 Implementation
 
 ## Immediate Next Steps
-1. /slice-planning fuer V4.3 (6 Slices: SLC-431..436)
+1. /backend SLC-431 Schema-Migration + Type-Erweiterung (Blocker fuer alle folgenden Slices)
 2. Embedding-Qualitaet nach einigen Tagen Live-Nutzung evaluieren
 3. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
 
