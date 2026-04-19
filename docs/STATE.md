@@ -10,13 +10,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V4.3 Insight Governance — SLC-431 done, naechster Schritt /backend SLC-432
+- Current Focus: V4.3 Insight Governance — SLC-431+432 done, naechster Schritt /qa SLC-432 dann /backend SLC-433
 - Current Phase: V4.3 Implementation
 
 ## Immediate Next Steps
-1. /backend SLC-432 Signal-Extraktion-Modul (extractor.ts, prompts.ts, Zod-Schema, Bedrock-Call)
-2. Embedding-Qualitaet nach einigen Tagen Live-Nutzung evaluieren
-3. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
+1. /qa SLC-432 Signal-Extraktion-Modul
+2. /backend SLC-433 Signal-Cron + Pipeline-Hooks
+3. Embedding-Qualitaet nach einigen Tagen Live-Nutzung evaluieren
+4. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (released, REL-010):**
