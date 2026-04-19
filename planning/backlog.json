@@ -1177,7 +1177,7 @@
       "title": "Unified Freigabe-UI in Mein Tag (alle Queue-Typen einheitlich)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V4.3",
       "description": "FEAT-402b: Mein Tag Queue-Section zeigt alle offenen Vorschlaege (Followups + Gatekeeper + Property-Aenderungen) einheitlich. Approve/Reject einzeln + Batch. Confidence, Reasoning, Source-Link pro Item.",
       "createdAt": "2026-04-18"

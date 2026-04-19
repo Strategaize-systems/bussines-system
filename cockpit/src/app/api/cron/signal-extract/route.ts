@@ -145,15 +145,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ── 3. Return stats ───────────────────────────────────────
+    // ── 3. Auto-expire old signal queue items (DEC-052) ──────
+
+    const expireDays = parseInt(process.env.AI_SIGNAL_EXPIRE_DAYS || "7", 10);
+    const expireCutoff = new Date();
+    expireCutoff.setDate(expireCutoff.getDate() - expireDays);
+
+    const { data: expiredItems } = await admin
+      .from("ai_action_queue")
+      .update({ status: "expired" })
+      .eq("status", "pending")
+      .in("source", ["signal_meeting", "signal_email", "signal_manual"])
+      .lt("created_at", expireCutoff.toISOString())
+      .select("id");
+
+    const expiredCount = expiredItems?.length ?? 0;
+    if (expiredCount > 0) {
+      console.log(`[Cron/Signal] Auto-expired ${expiredCount} old signal items`);
+    }
+
+    // ── 4. Return stats ───────────────────────────────────────
 
     console.log(
-      `[Cron/Signal] Done — meetings=${stats.meetingsProcessed}, emails=${stats.emailsProcessed}, signals=${stats.signalsCreated}, errors=${stats.errors.length}`
+      `[Cron/Signal] Done — meetings=${stats.meetingsProcessed}, emails=${stats.emailsProcessed}, signals=${stats.signalsCreated}, expired=${expiredCount}, errors=${stats.errors.length}`
     );
 
     return NextResponse.json({
       success: true,
       ...stats,
+      expired: expiredCount,
     });
   } catch (err) {
     console.error("[Cron/Signal] Fatal error:", err);
