@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { moveDealToStage } from "@/app/(app)/pipeline/actions";
 import { TaskSheet } from "@/app/(app)/aufgaben/task-sheet";
@@ -8,7 +8,7 @@ import { MeetingSheet } from "@/components/meetings/meeting-sheet";
 import { EmailSheet } from "@/app/(app)/emails/email-sheet";
 import { ActivityForm } from "@/components/activities/activity-form";
 import { Button } from "@/components/ui/button";
-import { ListTodo, Mail, Calendar, ChevronDown } from "lucide-react";
+import { ListTodo, Mail, Calendar, ChevronDown, Sparkles, Loader2 } from "lucide-react";
 import type { PipelineStage } from "@/app/(app)/pipeline/actions";
 import { getContextPrefill } from "@/lib/context-prefill";
 import { StartMeetingButton } from "@/components/meetings/start-meeting-button";
@@ -29,6 +29,8 @@ export function DealActions({
   dealsForSelect,
 }: DealActionsProps) {
   const [isPending, startTransition] = useTransition();
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractResult, setExtractResult] = useState<string | null>(null);
   const router = useRouter();
 
   const prefill = getContextPrefill({
@@ -151,6 +153,55 @@ export function DealActions({
           contactId={deal.contact_id ?? undefined}
           companyId={deal.company_id ?? undefined}
         />
+
+        <div className="h-8 w-px bg-slate-200" />
+
+        {/* Signale extrahieren (SLC-436, MT-2) */}
+        <button
+          onClick={async () => {
+            setIsExtracting(true);
+            setExtractResult(null);
+            try {
+              const res = await fetch("/api/signals/extract", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ deal_id: deal.id }),
+              });
+              const data = await res.json();
+              if (data.success) {
+                setExtractResult(
+                  data.signalCount > 0
+                    ? `${data.signalCount} Signale erkannt`
+                    : "Keine neuen Signale"
+                );
+                router.refresh();
+              } else {
+                setExtractResult(data.error ?? "Fehler bei Extraktion");
+              }
+            } catch {
+              setExtractResult("Netzwerkfehler");
+            } finally {
+              setIsExtracting(false);
+              setTimeout(() => setExtractResult(null), 4000);
+            }
+          }}
+          disabled={isExtracting}
+          className="relative flex items-center gap-2.5 h-10 px-4 rounded-lg border-2 border-slate-200 bg-white text-sm font-bold text-slate-700 hover:border-purple-300 hover:bg-purple-50 hover:shadow-md transition-all cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+        >
+          <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-500 flex items-center justify-center shadow-sm">
+            {isExtracting ? (
+              <Loader2 className="h-3.5 w-3.5 text-white animate-spin" strokeWidth={2.5} />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+            )}
+          </span>
+          {isExtracting ? "Analysiere..." : "Signale extrahieren"}
+          {extractResult && (
+            <span className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1 text-xs font-medium text-white shadow-lg">
+              {extractResult}
+            </span>
+          )}
+        </button>
       </div>
     </div>
   );

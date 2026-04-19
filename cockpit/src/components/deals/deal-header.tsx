@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Building2, User, Calendar, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import type { PipelineStage } from "@/app/(app)/pipeline/actions";
+import { KIBadge } from "./ki-badge";
+import type { KIBadgeInfo } from "./ki-badge";
 
 const fmt = new Intl.NumberFormat("de-DE", {
   style: "currency",
@@ -18,32 +20,75 @@ const statusConfig: Record<
     bg: "bg-blue-100",
     text: "text-blue-700",
     border: "border-blue-200",
-    icon: "🔥",
+    icon: "\u{1f525}",
   },
   won: {
     label: "Gewonnen",
     bg: "bg-emerald-100",
     text: "text-emerald-700",
     border: "border-emerald-200",
-    icon: "⭐",
+    icon: "\u2B50",
   },
   lost: {
     label: "Verloren",
     bg: "bg-red-100",
     text: "text-red-700",
     border: "border-red-200",
-    icon: "✕",
+    icon: "\u2715",
   },
 };
+
+// ── Helper: extract KI-Badge info from ai_applied activities ──
+
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+function getKIBadgesFromActivities(
+  activities: any[],
+): Map<string, KIBadgeInfo> {
+  const badges = new Map<string, KIBadgeInfo>();
+  const cutoff = Date.now() - THIRTY_DAYS_MS;
+
+  for (const activity of activities) {
+    if (activity.type !== "ai_applied") continue;
+
+    const createdAt = new Date(activity.created_at).getTime();
+    if (createdAt < cutoff) continue;
+
+    const title: string = activity.title ?? "";
+    const source: string = activity.source_type ?? "signal";
+
+    // Parse which field was changed from the activity title
+    // Format: "KI-Vorschlag angewendet: Phase geaendert: X → Y"
+    //         "KI-Vorschlag angewendet: Wert geaendert: X → Y EUR"
+    if (title.includes("Phase") || title.includes("stage")) {
+      badges.set("stage", {
+        date: activity.created_at,
+        source,
+        detail: title.replace("KI-Vorschlag angewendet: ", ""),
+      });
+    } else if (title.includes("Wert") || title.includes("value")) {
+      badges.set("value", {
+        date: activity.created_at,
+        source,
+        detail: title.replace("KI-Vorschlag angewendet: ", ""),
+      });
+    }
+  }
+
+  return badges;
+}
 
 interface DealHeaderProps {
   deal: any;
   stages: PipelineStage[];
+  activities?: any[];
 }
 
-export function DealHeader({ deal, stages }: DealHeaderProps) {
+export function DealHeader({ deal, stages, activities = [] }: DealHeaderProps) {
   const st = statusConfig[deal.status] ?? statusConfig.active;
   const stage = stages.find((s) => s.id === deal.stage_id);
+
+  const kiBadges = getKIBadgesFromActivities(activities);
 
   return (
     <div className="bg-white rounded-xl border-2 border-slate-200 shadow-lg relative overflow-hidden">
@@ -75,19 +120,27 @@ export function DealHeader({ deal, stages }: DealHeaderProps) {
                 {st.label}
               </span>
               {stage && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border border-[#4454b8]/20 bg-[#4454b8]/10 text-[#4454b8]">
-                  <TrendingUp className="h-3 w-3" />
-                  {stage.name}
-                  {stage.probability > 0 && ` · ${stage.probability}%`}
-                </span>
+                <>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border border-[#4454b8]/20 bg-[#4454b8]/10 text-[#4454b8]">
+                    <TrendingUp className="h-3 w-3" />
+                    {stage.name}
+                    {stage.probability > 0 && ` \u00B7 ${stage.probability}%`}
+                  </span>
+                  {kiBadges.has("stage") && (
+                    <KIBadge info={kiBadges.get("stage")!} />
+                  )}
+                </>
               )}
             </div>
 
             {/* Value + Meta Row */}
             <div className="flex items-center gap-5 mt-3">
               {deal.value != null && (
-                <span className="text-2xl font-bold text-slate-900">
+                <span className="inline-flex items-center gap-2 text-2xl font-bold text-slate-900">
                   {fmt.format(deal.value)}
+                  {kiBadges.has("value") && (
+                    <KIBadge info={kiBadges.get("value")!} />
+                  )}
                 </span>
               )}
               <div className="flex items-center gap-4 text-sm text-slate-500">

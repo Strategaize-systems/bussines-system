@@ -116,7 +116,7 @@ export function DealWorkspace({
 
   return (
     <div className="space-y-6">
-      <DealHeader deal={deal} stages={stages} />
+      <DealHeader deal={deal} stages={stages} activities={activities} />
 
       <DealActions
         deal={deal}
