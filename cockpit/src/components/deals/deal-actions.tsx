@@ -91,14 +91,12 @@ export function DealActions({
           defaultDealId={deal.id}
           defaultTitle={prefill.suggestedTaskTitle}
           trigger={
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-10 px-4 rounded-lg border-2 border-slate-200 text-sm font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-all"
-            >
-              <ListTodo className="mr-2 h-4 w-4" />
+            <button className="flex items-center gap-2.5 h-10 px-4 rounded-lg border-2 border-slate-200 bg-white text-sm font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md transition-all cursor-pointer">
+              <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 to-amber-400 flex items-center justify-center shadow-sm">
+                <ListTodo className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+              </span>
               Task
-            </Button>
+            </button>
           }
         />
 
@@ -111,14 +109,12 @@ export function DealActions({
           companyId={deal.company_id ?? undefined}
           dealId={deal.id}
           trigger={
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-10 px-4 rounded-lg border-2 border-slate-200 text-sm font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-all"
-            >
-              <Mail className="mr-2 h-4 w-4" />
+            <button className="flex items-center gap-2.5 h-10 px-4 rounded-lg border-2 border-slate-200 bg-white text-sm font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md transition-all cursor-pointer">
+              <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-sm">
+                <Mail className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+              </span>
               E-Mail
-            </Button>
+            </button>
           }
         />
 
@@ -133,14 +129,12 @@ export function DealActions({
           defaultParticipants={prefill.suggestedParticipants}
           defaultAgenda={prefill.suggestedAgenda}
           trigger={
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-10 px-4 rounded-lg border-2 border-slate-200 text-sm font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-all"
-            >
-              <Calendar className="mr-2 h-4 w-4" />
+            <button className="flex items-center gap-2.5 h-10 px-4 rounded-lg border-2 border-slate-200 bg-white text-sm font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md transition-all cursor-pointer">
+              <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-violet-400 flex items-center justify-center shadow-sm">
+                <Calendar className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+              </span>
               Meeting
-            </Button>
+            </button>
           }
         />
 

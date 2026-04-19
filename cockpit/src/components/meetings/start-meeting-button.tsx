@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Video } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { StartMeetingModal } from "./start-meeting-modal";
 
 interface Contact {
@@ -28,15 +27,15 @@ export function StartMeetingButton({
 
   return (
     <>
-      <Button
-        variant="outline"
-        size="sm"
-        className="h-10 px-4 rounded-lg border-0 bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-sm font-bold hover:shadow-lg transition-all"
+      <button
+        className="flex items-center gap-2.5 h-10 px-4 rounded-lg border-2 border-slate-200 bg-white text-sm font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md transition-all cursor-pointer"
         onClick={() => setIsOpen(true)}
       >
-        <Video className="mr-2 h-4 w-4" />
+        <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#00a84f] to-[#4dcb8b] flex items-center justify-center shadow-sm">
+          <Video className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+        </span>
         Starten
-      </Button>
+      </button>
 
       {isOpen && (
         <StartMeetingModal
