@@ -31,11 +31,11 @@ export function StartMeetingButton({
       <Button
         variant="outline"
         size="sm"
-        className="text-xs"
+        className="h-10 px-4 rounded-lg border-0 bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-sm font-bold hover:shadow-lg transition-all"
         onClick={() => setIsOpen(true)}
       >
-        <Video className="mr-1.5 h-3.5 w-3.5" />
-        Meeting starten
+        <Video className="mr-2 h-4 w-4" />
+        Starten
       </Button>
 
       {isOpen && (

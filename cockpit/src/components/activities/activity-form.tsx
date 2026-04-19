@@ -59,9 +59,14 @@ export function ActivityForm({ contactId, companyId, dealId }: ActivityFormProps
 
   if (!showForm) {
     return (
-      <Button size="sm" variant="outline" onClick={() => setShowForm(true)}>
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-10 px-4 rounded-lg border-0 bg-gradient-to-r from-[#120774] to-[#4454b8] text-white text-sm font-bold hover:shadow-lg transition-all"
+        onClick={() => setShowForm(true)}
+      >
         <Plus className="mr-2 h-4 w-4" />
-        Aktivität hinzufügen
+        Aktivität
       </Button>
     );
   }
