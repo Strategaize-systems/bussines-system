@@ -1227,7 +1227,7 @@
       "title": "Deal-Workspace UI-Upgrade auf Style Guide V2 (Premium-Redesign)",
       "type": "improvement",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V4.3",
       "description": "Deal-Workspace (/deals/[id]) komplett auf Style Guide V2 bringen. Aktuell altbacken und nicht premium genug. Scope: (1) Deal-Header: Card mit Gradient-Highlight, Stage-Badge farbig, Wert prominent. (2) Action-Buttons (Task, E-Mail, Meeting, Starten, Aktivitaet): Premium-Buttons mit Icons statt plain Text-Links. (3) Tab-Leiste (Timeline, Aufgaben, Angebote, Dokumente, Signale, Wissen, Bearbeiten): Styled Tabs mit Active-State-Gradient, Icons pro Tab. (4) Prozess-Check Sidebar: Card mit Shadow, Status-Icons (Checkmarks gruen, Warnung gelb), Progress-Indicator. (5) Content-Bereiche: Cards mit Rounded Corners + Subtle Shadow statt nackter Text. (6) Wissen-Tab: Source-Cards nach Style Guide (Typ-Badge, Datum, Snippet). (7) Timeline-Eintraege: Visuell aufgewertete Cards mit Typ-Icons und KI-Badge wo relevant. Bezieht den STYLE_GUIDE_REFERENCE.md und die Brand-Farben (#120774, #4454b8, #00a84f, #4dcb8b, #f2b705) mit ein. Kandidat fuer /ui-update Skill.",
       "createdAt": "2026-04-18"

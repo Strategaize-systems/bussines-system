@@ -14,9 +14,10 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - Current Phase: V4.3 Requirements
 
 ## Immediate Next Steps
-1. /architecture fuer V4.3 (Schema-Erweiterung ai_action_queue, Signal-Extraktion-Modul, UI-Integration)
-2. Embedding-Qualitaet nach einigen Tagen Live-Nutzung evaluieren
-3. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
+1. BL-364 Deal-Workspace UI-Upgrade auf Style Guide V2 — done (Commit 470a828)
+2. /architecture fuer V4.3 (Schema-Erweiterung ai_action_queue, Signal-Extraktion-Modul, UI-Integration)
+3. Embedding-Qualitaet nach einigen Tagen Live-Nutzung evaluieren
+4. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (released, REL-010):**
