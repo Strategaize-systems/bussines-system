@@ -62,88 +62,102 @@ export function DealActions({
   };
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      {/* Stage Change */}
-      <div className="relative">
-        <select
-          value={deal.stage_id ?? ""}
-          onChange={handleStageChange}
-          disabled={isPending}
-          className="h-9 rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm font-medium text-slate-700 appearance-none cursor-pointer hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#4454b8]/20 disabled:opacity-50"
-        >
-          {stages.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-        <ChevronDown className="absolute right-2 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
+    <div className="bg-white rounded-xl border-2 border-slate-200 shadow-lg p-4">
+      <div className="flex items-center gap-3 flex-wrap">
+        {/* Stage Change */}
+        <div className="relative">
+          <select
+            value={deal.stage_id ?? ""}
+            onChange={handleStageChange}
+            disabled={isPending}
+            className="h-10 rounded-lg border-2 border-slate-200 bg-white pl-3 pr-8 text-sm font-semibold text-slate-700 appearance-none cursor-pointer hover:border-slate-300 focus:outline-none focus:border-[#4454b8] focus:ring-2 focus:ring-[#4454b8]/20 transition-all disabled:opacity-50"
+          >
+            {stages.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-2.5 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
+        </div>
+
+        <div className="h-8 w-px bg-slate-200" />
+
+        {/* + Task */}
+        <TaskSheet
+          contacts={contacts}
+          companies={companies}
+          deals={dealsForSelect}
+          defaultDealId={deal.id}
+          defaultTitle={prefill.suggestedTaskTitle}
+          trigger={
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-10 px-4 rounded-lg border-2 border-slate-200 text-sm font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-all"
+            >
+              <ListTodo className="mr-2 h-4 w-4" />
+              Task
+            </Button>
+          }
+        />
+
+        {/* + Email */}
+        <EmailSheet
+          defaultTo={deal.contacts?.email ?? ""}
+          defaultSubject={prefill.suggestedSubject}
+          defaultFollowUpDate={prefill.suggestedFollowUpDate}
+          contactId={deal.contact_id ?? undefined}
+          companyId={deal.company_id ?? undefined}
+          dealId={deal.id}
+          trigger={
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-10 px-4 rounded-lg border-2 border-slate-200 text-sm font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-all"
+            >
+              <Mail className="mr-2 h-4 w-4" />
+              E-Mail
+            </Button>
+          }
+        />
+
+        {/* + Meeting (planen) */}
+        <MeetingSheet
+          contacts={contacts}
+          companies={companies}
+          deals={dealsForSelect}
+          defaultDealId={deal.id}
+          defaultContactId={deal.contact_id ?? undefined}
+          defaultCompanyId={deal.company_id ?? undefined}
+          defaultParticipants={prefill.suggestedParticipants}
+          defaultAgenda={prefill.suggestedAgenda}
+          trigger={
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-10 px-4 rounded-lg border-2 border-slate-200 text-sm font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-all"
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              Meeting
+            </Button>
+          }
+        />
+
+        {/* Meeting starten (Jitsi) */}
+        <StartMeetingButton
+          dealId={deal.id}
+          dealTitle={deal.title}
+          contacts={contacts}
+        />
+
+        {/* + Activity/Note */}
+        <ActivityForm
+          dealId={deal.id}
+          contactId={deal.contact_id ?? undefined}
+          companyId={deal.company_id ?? undefined}
+        />
       </div>
-
-      <div className="h-6 w-px bg-slate-200" />
-
-      {/* + Task */}
-      <TaskSheet
-        contacts={contacts}
-        companies={companies}
-        deals={dealsForSelect}
-        defaultDealId={deal.id}
-        defaultTitle={prefill.suggestedTaskTitle}
-        trigger={
-          <Button variant="outline" size="sm" className="text-xs">
-            <ListTodo className="mr-1.5 h-3.5 w-3.5" />
-            Task
-          </Button>
-        }
-      />
-
-      {/* + Email */}
-      <EmailSheet
-        defaultTo={deal.contacts?.email ?? ""}
-        defaultSubject={prefill.suggestedSubject}
-        defaultFollowUpDate={prefill.suggestedFollowUpDate}
-        contactId={deal.contact_id ?? undefined}
-        companyId={deal.company_id ?? undefined}
-        dealId={deal.id}
-        trigger={
-          <Button variant="outline" size="sm" className="text-xs">
-            <Mail className="mr-1.5 h-3.5 w-3.5" />
-            E-Mail
-          </Button>
-        }
-      />
-
-      {/* + Meeting (planen) */}
-      <MeetingSheet
-        contacts={contacts}
-        companies={companies}
-        deals={dealsForSelect}
-        defaultDealId={deal.id}
-        defaultContactId={deal.contact_id ?? undefined}
-        defaultCompanyId={deal.company_id ?? undefined}
-        defaultParticipants={prefill.suggestedParticipants}
-        defaultAgenda={prefill.suggestedAgenda}
-        trigger={
-          <Button variant="outline" size="sm" className="text-xs">
-            <Calendar className="mr-1.5 h-3.5 w-3.5" />
-            Meeting
-          </Button>
-        }
-      />
-
-      {/* Meeting starten (Jitsi) */}
-      <StartMeetingButton
-        dealId={deal.id}
-        dealTitle={deal.title}
-        contacts={contacts}
-      />
-
-      {/* + Activity/Note */}
-      <ActivityForm
-        dealId={deal.id}
-        contactId={deal.contact_id ?? undefined}
-        companyId={deal.company_id ?? undefined}
-      />
     </div>
   );
 }

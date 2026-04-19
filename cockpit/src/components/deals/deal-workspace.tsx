@@ -12,6 +12,14 @@ import { KnowledgeQueryPanel } from "@/components/knowledge/KnowledgeQueryPanel"
 import { ProcessCheckPanel } from "./process-check-panel";
 import { AIBriefingPanel } from "./ai-briefing-panel";
 import { getProcessChecks } from "@/lib/process-check";
+import {
+  Clock,
+  ListTodo,
+  FileText,
+  FolderOpen,
+  BookOpen,
+  Settings,
+} from "lucide-react";
 import type { PipelineStage, Pipeline } from "@/app/(app)/pipeline/actions";
 import type { Task } from "@/app/(app)/aufgaben/actions";
 import type { Meeting } from "@/app/(app)/meetings/actions";
@@ -19,13 +27,13 @@ import type { DealBriefingContext } from "@/lib/ai/types";
 
 type TabId = "timeline" | "tasks" | "proposals" | "documents" | "wissen" | "edit";
 
-const tabs: { id: TabId; label: string }[] = [
-  { id: "timeline", label: "Timeline" },
-  { id: "tasks", label: "Aufgaben" },
-  { id: "proposals", label: "Angebote" },
-  { id: "documents", label: "Dokumente" },
-  { id: "wissen", label: "Wissen" },
-  { id: "edit", label: "Bearbeiten" },
+const tabs: { id: TabId; label: string; icon: typeof Clock }[] = [
+  { id: "timeline", label: "Timeline", icon: Clock },
+  { id: "tasks", label: "Aufgaben", icon: ListTodo },
+  { id: "proposals", label: "Angebote", icon: FileText },
+  { id: "documents", label: "Dokumente", icon: FolderOpen },
+  { id: "wissen", label: "Wissen", icon: BookOpen },
+  { id: "edit", label: "Bearbeiten", icon: Settings },
 ];
 
 interface DealWorkspaceProps {
@@ -121,21 +129,26 @@ export function DealWorkspace({
       {/* Two-column layout: Main content + Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main: Tabs + Content */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex gap-1 border-b border-slate-200">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
-                  activeTab === tab.id
-                    ? "border-[#4454b8] text-[#4454b8]"
-                    : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex gap-1 bg-white rounded-xl border-2 border-slate-200 shadow-lg p-1.5">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                    isActive
+                      ? "bg-gradient-to-r from-[#120774] to-[#4454b8] text-white shadow-lg"
+                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
 
           <div>
@@ -172,8 +185,8 @@ export function DealWorkspace({
           </div>
         </div>
 
-        {/* Sidebar: Process Check + AI Briefing */}
-        <div className="space-y-4">
+        {/* Sidebar: Process Check + AI Briefing (Sticky) */}
+        <div className="lg:sticky lg:top-32 space-y-6 self-start">
           <ProcessCheckPanel checks={processChecks} />
           <AIBriefingPanel context={briefingContext} />
         </div>

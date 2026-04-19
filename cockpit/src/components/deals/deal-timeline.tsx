@@ -6,6 +6,7 @@ import {
   Clock,
   Calendar,
   Zap,
+  Sparkles,
 } from "lucide-react";
 import type { Meeting } from "@/app/(app)/meetings/actions";
 
@@ -19,15 +20,37 @@ const typeIcons: Record<string, typeof MessageSquare> = {
   signal: Zap,
 };
 
-const typeColors: Record<string, string> = {
-  email: "bg-blue-50 text-blue-600",
-  meeting: "bg-purple-50 text-purple-600",
-  stage_change: "bg-amber-50 text-amber-600",
-  signal: "bg-orange-50 text-orange-600",
-  call: "bg-green-50 text-green-600",
+const typeConfig: Record<
+  string,
+  { bg: string; iconColor: string; label: string; isAI?: boolean }
+> = {
+  email: { bg: "bg-blue-100", iconColor: "text-blue-600", label: "E-Mail" },
+  meeting: {
+    bg: "bg-purple-100",
+    iconColor: "text-purple-600",
+    label: "Meeting",
+  },
+  stage_change: {
+    bg: "bg-amber-100",
+    iconColor: "text-amber-600",
+    label: "Stage",
+  },
+  signal: {
+    bg: "bg-orange-100",
+    iconColor: "text-orange-600",
+    label: "Signal",
+    isAI: true,
+  },
+  call: { bg: "bg-green-100", iconColor: "text-green-600", label: "Anruf" },
+  note: { bg: "bg-slate-100", iconColor: "text-slate-500", label: "Notiz" },
+  task: { bg: "bg-slate-100", iconColor: "text-slate-500", label: "Aufgabe" },
 };
 
-const defaultColor = "bg-slate-50 text-slate-500";
+const defaultConfig = {
+  bg: "bg-slate-100",
+  iconColor: "text-slate-500",
+  label: "Aktivität",
+};
 
 interface TimelineItem {
   id: string;
@@ -87,43 +110,63 @@ export function DealTimeline({
 
   if (items.length === 0) {
     return (
-      <p className="text-sm text-slate-400 py-8 text-center">
-        Keine Aktivitäten vorhanden.
-      </p>
+      <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center">
+        <Clock className="mx-auto h-8 w-8 text-slate-300 mb-3" />
+        <p className="text-sm text-slate-500">
+          Keine Aktivitäten vorhanden.
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       {items.map((item) => {
         const Icon = typeIcons[item.type] || MessageSquare;
-        const colorClass = typeColors[item.type] || defaultColor;
+        const config = typeConfig[item.type] || defaultConfig;
         return (
           <div
             key={item.id}
-            className="flex gap-3 py-2.5 border-b border-slate-50 last:border-0"
+            className="bg-white rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-md transition-all group"
           >
-            <div className={`rounded-lg p-1.5 shrink-0 ${colorClass}`}>
-              <Icon className="h-3.5 w-3.5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-medium text-slate-700">
-                {item.title}
-              </p>
-              {item.summary && (
-                <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
-                  {item.summary}
+            <div className="flex gap-3">
+              <div
+                className={`rounded-lg p-2 shrink-0 ${config.bg} ${config.iconColor}`}
+              >
+                <Icon className="h-4 w-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-slate-700 group-hover:text-slate-900 transition-colors truncate">
+                    {item.title}
+                  </p>
+                  {config.isAI && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 shrink-0">
+                      <Sparkles className="h-2.5 w-2.5" />
+                      KI
+                    </span>
+                  )}
+                  <span
+                    className={`ml-auto inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border shrink-0 ${config.bg} ${config.iconColor}`}
+                  >
+                    {config.label}
+                  </span>
+                </div>
+                {item.summary && (
+                  <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                    {item.summary}
+                  </p>
+                )}
+                <p className="text-[11px] text-slate-400 mt-1.5">
+                  {new Date(item.date).toLocaleDateString("de-DE", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </p>
-              )}
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                {new Date(item.date).toLocaleDateString("de-DE", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
+              </div>
             </div>
           </div>
         );

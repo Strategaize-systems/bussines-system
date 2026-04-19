@@ -55,64 +55,72 @@ export function AIBriefingPanel({ context }: AIBriefingPanelProps) {
   }, [context]);
 
   return (
-    <div className="rounded-xl border border-slate-200 p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Brain className="h-4 w-4 text-[#4454b8]" />
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[#4454b8]">
-            KI-Briefing
-          </h3>
-        </div>
-        {loaded && (
-          <div className="flex items-center gap-1">
-            <AiLoadButton
-              onClick={fetchBriefing}
-              loading={loading}
-              loaded={true}
-              refreshVariant="icon"
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => setExpanded(!expanded)}
-            >
-              {expanded ? (
-                <ChevronUp className="h-3.5 w-3.5" />
-              ) : (
-                <ChevronDown className="h-3.5 w-3.5" />
-              )}
-            </Button>
+    <div className="bg-white rounded-xl border-2 border-slate-200 shadow-lg overflow-hidden">
+      {/* Header */}
+      <div className="p-4 border-b border-slate-100 bg-gradient-to-br from-slate-50 to-white">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center shadow-md">
+              <Brain className="h-4 w-4 text-white" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-900">
+              KI-Briefing
+            </h3>
           </div>
-        )}
-      </div>
-
-      {!expanded && briefing && (
-        <p className="text-xs text-slate-500 line-clamp-2">
-          {briefing.summary}
-        </p>
-      )}
-
-      {(expanded || !loaded) && (
-        <AiResultPanel
-          loading={loading}
-          error={error}
-          onRetry={fetchBriefing}
-          loadingMessage="Analysiere Deal..."
-        >
-          {!loaded && (
-            <div className="text-center py-3">
+          {loaded && (
+            <div className="flex items-center gap-1">
               <AiLoadButton
                 onClick={fetchBriefing}
-                loading={false}
-                loaded={false}
-                label="KI-Analyse laden"
+                loading={loading}
+                loaded={true}
+                refreshVariant="icon"
               />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setExpanded(!expanded)}
+              >
+                {expanded ? (
+                  <ChevronUp className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronDown className="h-3.5 w-3.5" />
+                )}
+              </Button>
             </div>
           )}
-          {briefing && <BriefingContent briefing={briefing} />}
-        </AiResultPanel>
-      )}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-4 space-y-3">
+        {!expanded && briefing && (
+          <p className="text-xs text-slate-500 line-clamp-2">
+            {briefing.summary}
+          </p>
+        )}
+
+        {(expanded || !loaded) && (
+          <AiResultPanel
+            loading={loading}
+            error={error}
+            onRetry={fetchBriefing}
+            loadingMessage="Analysiere Deal..."
+          >
+            {!loaded && (
+              <div className="text-center py-3">
+                <AiLoadButton
+                  onClick={fetchBriefing}
+                  loading={false}
+                  loaded={false}
+                  label="KI-Analyse laden"
+                />
+              </div>
+            )}
+            {briefing && <BriefingContent briefing={briefing} />}
+          </AiResultPanel>
+        )}
+      </div>
     </div>
   );
 }
