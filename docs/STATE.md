@@ -10,14 +10,16 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V4.3 Insight Governance — SLC-431..435 done, naechster Schritt /qa SLC-435 dann /frontend SLC-436
-- Current Phase: V4.3 Implementation
+- Current Focus: V4.3 Insight Governance — alle 6 Slices done (SLC-431..436), naechster Schritt Gesamt-QA V4.3
+- Current Phase: V4.3 QA
 
 ## Immediate Next Steps
-1. /qa SLC-435 Unified Queue UI
-2. /frontend SLC-436 KI-Badge + Manual Trigger
-3. Embedding-Qualitaet nach einigen Tagen Live-Nutzung evaluieren
-4. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
+1. /qa SLC-436 KI-Badge + Manual Trigger
+2. Gesamt-QA V4.3 (alle 6 Slices)
+3. /final-check V4.3
+4. /go-live + /deploy (User deployt manuell ueber Coolify)
+5. ENV-Vars AI_SIGNAL_MIN_CONFIDENCE + AI_SIGNAL_EXPIRE_DAYS in Coolify setzen
+6. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (released, REL-010):**

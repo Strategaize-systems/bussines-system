@@ -136,4 +136,4 @@
 | SLC-433 | [Signal-Cron + Pipeline-Hooks](SLC-433-signal-cron-pipeline-hooks.md) | FEAT-412 | done | High | 2026-04-19 |
 | SLC-434 | [Applier + Approve-Flow](SLC-434-applier-approve-flow.md) | FEAT-402 | done | High | 2026-04-19 |
 | SLC-435 | [Unified Queue UI](SLC-435-unified-queue-ui.md) | FEAT-402 | done | High | 2026-04-19 |
-| SLC-436 | [KI-Badge + Manual Trigger](SLC-436-ki-badge-manual-trigger.md) | FEAT-402, FEAT-412 | planned | Medium | 2026-04-19 |
+| SLC-436 | [KI-Badge + Manual Trigger](SLC-436-ki-badge-manual-trigger.md) | FEAT-402, FEAT-412 | done | Medium | 2026-04-19 |
