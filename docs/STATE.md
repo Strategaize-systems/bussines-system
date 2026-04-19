@@ -9,13 +9,13 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: architecture
-- Current Focus: V6 Architecture abgeschlossen (4 neue Tabellen, 6 DECs, 1 MIG, Prognose-Engine, KPI-Cron, UI-Layout). Naechster Schritt: /slice-planning fuer V6.
-- Current Phase: V6 Architecture
+- High-Level State: slice-planning
+- Current Focus: V6 Slice-Planning abgeschlossen (7 Slices: SLC-601..607, 26 Micro-Tasks). Naechster Schritt: /backend SLC-601 (Schema-Migration + Produkt-CRUD).
+- Current Phase: V6 Slice-Planning
 
 ## Immediate Next Steps
-1. /slice-planning fuer V6 (7 Slices vorgeschlagen: SLC-601..607)
-2. Post-Launch-Monitoring V4.3: Signal-Extraktion-Cron beobachten (erstes echtes Meeting mit Recording)
+1. /backend SLC-601 (Schema-Migration + Produkt-CRUD — Blocker-Slice)
+2. Post-Launch-Monitoring V4.3: Signal-Extraktion-Cron beobachten
 3. Vor Server-Reboot: `apt install linux-modules-extra-$(uname -r)` fuer kommenden Kernel 6.8.0-107 (ISSUE-037)
 
 ## Active Scope

@@ -137,3 +137,15 @@
 | SLC-434 | [Applier + Approve-Flow](SLC-434-applier-approve-flow.md) | FEAT-402 | done | High | 2026-04-19 |
 | SLC-435 | [Unified Queue UI](SLC-435-unified-queue-ui.md) | FEAT-402 | done | High | 2026-04-19 |
 | SLC-436 | [KI-Badge + Manual Trigger](SLC-436-ki-badge-manual-trigger.md) | FEAT-402, FEAT-412 | done | Medium | 2026-04-19 |
+
+## V6 Slices (Zielsetzung + Performance-Tracking)
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-601 | [Schema-Migration + Produkt-CRUD](SLC-601-schema-produkt-crud.md) | FEAT-601 | planned | Blocker | 2026-04-19 |
+| SLC-602 | [Deal-Produkt-Zuordnung](SLC-602-deal-produkt-zuordnung.md) | FEAT-601 | planned | High | 2026-04-19 |
+| SLC-603 | [Ziel-CRUD + CSV-Import](SLC-603-ziel-crud-csv-import.md) | FEAT-602 | planned | High | 2026-04-19 |
+| SLC-604 | [Prognose-Engine](SLC-604-prognose-engine.md) | FEAT-602, FEAT-603 | planned | High | 2026-04-19 |
+| SLC-605 | [KPI-Snapshot-Cron](SLC-605-kpi-snapshot-cron.md) | FEAT-604 | planned | High | 2026-04-19 |
+| SLC-606 | [Performance-Cockpit UI](SLC-606-performance-cockpit-ui.md) | FEAT-603 | planned | High | 2026-04-19 |
+| SLC-607 | [KI-Empfehlung + Mein-Tag-Widget](SLC-607-ki-empfehlung-mein-tag-widget.md) | FEAT-603 | planned | Medium | 2026-04-19 |
