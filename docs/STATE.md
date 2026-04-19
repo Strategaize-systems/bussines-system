@@ -34,10 +34,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - Backlog: BL-350 (Umbrella) + BL-352..357 (Detail-Items)
 - Geschaetzte Gesamt-Implementierung: 7-9.5 Tage
 
-**V4.3 — Insight Governance (active, Requirements done):**
+**V4.3 — Insight Governance (active, Architecture done):**
 - FEAT-402 Insight-Review-Queue — Erweiterung ai_action_queue + Unified Freigabe-UI + Batch-Approval
 - FEAT-412 Automatische Signal-Extraktion — Meeting + E-Mail → Property-Vorschlaege via Queue
 - DEC-049: ai_action_queue erweitern statt neue Tabelle
+- DEC-050..054: Schema-Design, Signal-Extraktion, Confidence-Scoring, UI-Patterns, Batch-Flow
+- MIG-016: ai_action_queue erweitern (neue Spalten)
+- 6 Slices empfohlen: SLC-431..436
 - Backlog: BL-351 (Umbrella Queue) + BL-358..360 (Detail Queue) + BL-202 (Umbrella Signals) + BL-361..363 (Detail Signals)
 
 ## Blockers
