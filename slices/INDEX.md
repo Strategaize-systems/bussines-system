@@ -131,7 +131,7 @@
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-431 | [Schema-Migration + Type-Erweiterung](SLC-431-schema-migration-type-erweiterung.md) | FEAT-402, FEAT-412 | planned | Blocker | 2026-04-19 |
+| SLC-431 | [Schema-Migration + Type-Erweiterung](SLC-431-schema-migration-type-erweiterung.md) | FEAT-402, FEAT-412 | done | Blocker | 2026-04-19 |
 | SLC-432 | [Signal-Extraktion-Modul](SLC-432-signal-extraktion-modul.md) | FEAT-412 | planned | High | 2026-04-19 |
 | SLC-433 | [Signal-Cron + Pipeline-Hooks](SLC-433-signal-cron-pipeline-hooks.md) | FEAT-412 | planned | High | 2026-04-19 |
 | SLC-434 | [Applier + Approve-Flow](SLC-434-applier-approve-flow.md) | FEAT-402 | planned | High | 2026-04-19 |
