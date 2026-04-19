@@ -109,8 +109,8 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-402 | Insight-Review-Queue (nur schreibende KI-Aenderungen) | planned | [Spec](FEAT-402-insight-review-queue.md) | 2026-04-09 |
-| FEAT-412 | Automatische Signal-Extraktion (Meeting + E-Mail → Queue) | planned | [Spec](FEAT-412-automatic-signal-extraction.md) | 2026-04-18 |
+| FEAT-402 | Insight-Review-Queue (nur schreibende KI-Aenderungen) | in_progress | [Spec](FEAT-402-insight-review-queue.md) | 2026-04-09 |
+| FEAT-412 | Automatische Signal-Extraktion (Meeting + E-Mail → Queue) | in_progress | [Spec](FEAT-412-automatic-signal-extraction.md) | 2026-04-18 |
 
 ## V5 Features (Automatisierung + Skalierung — planned)
 

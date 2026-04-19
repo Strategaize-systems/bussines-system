@@ -1167,7 +1167,7 @@
       "title": "ai_action_queue Schema-Erweiterung (target_entity, proposed_changes, confidence)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V4.3",
       "description": "FEAT-402a: ai_action_queue um neue Spalten erweitern: target_entity_type, target_entity_id, proposed_changes JSONB, confidence FLOAT. Neue action_types registrieren. Migration + RLS-Policies anpassen.",
       "createdAt": "2026-04-18"
