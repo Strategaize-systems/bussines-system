@@ -14,7 +14,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - Current Phase: V6 Implementation (Erweiterung Activity-KPIs)
 
 ## Immediate Next Steps
-1. /backend SLC-608 (Jahresziele auf Quartal/Monat runterbrechen)
+1. /qa SLC-608 (Ziel-Runterbrechen Verifikation)
 2. /backend SLC-609 (Tages-Aktivitaets-KPIs — Schema + Server Actions)
 3. /frontend SLC-610 (Tages-Check UI auf /performance)
 

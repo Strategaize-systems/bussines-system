@@ -65,6 +65,11 @@ export function GoalCard({ goal }: { goal: GoalWithProgress }) {
           </div>
           <ProgressRing percent={progress.progressPercent} />
         </div>
+        {goal.derived && (
+          <p className="mt-3 text-xs text-blue-600 bg-blue-50 rounded-md px-2 py-1">
+            Abgeleitet aus Jahresziel
+          </p>
+        )}
         {!progress.hasEnoughData && (
           <p className="mt-3 text-xs text-amber-600 bg-amber-50 rounded-md px-2 py-1">
             Nicht genug Daten fuer belastbare Prognose

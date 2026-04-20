@@ -247,6 +247,7 @@ import type { GoalProgress } from "@/types/goals";
 
 export type GoalWithProgress = GoalWithProduct & {
   progress: GoalProgress;
+  derived?: boolean;
 };
 
 export async function getGoalProgress(
@@ -282,6 +283,9 @@ export async function getGoalsWithProgress(filters?: {
   if (!user) return [];
 
   const admin = createAdminClient();
+  const requestedPeriod = filters?.period;
+
+  // First: try to find explicit goals for the requested period
   let query = admin
     .from("goals")
     .select("*, products(name)")
@@ -289,24 +293,73 @@ export async function getGoalsWithProgress(filters?: {
     .eq("status", "active")
     .order("period_start", { ascending: false });
 
-  if (filters?.period) {
-    query = query.eq("period", filters.period);
+  if (requestedPeriod) {
+    query = query.eq("period", requestedPeriod);
   }
 
   const { data } = await query;
-  if (!data || data.length === 0) return [];
 
-  const results: GoalWithProgress[] = [];
-  for (const g of data) {
-    const goalWithProduct: GoalWithProduct = {
-      ...g,
-      product_name: (g as any).products?.name ?? null,
-    };
-    const progress = await calculateGoalProgress(g as Goal);
-    results.push({ ...goalWithProduct, progress });
+  // If we have explicit goals for this period, use them directly
+  if (data && data.length > 0) {
+    const results: GoalWithProgress[] = [];
+    for (const g of data) {
+      const goalWithProduct: GoalWithProduct = {
+        ...g,
+        product_name: (g as any).products?.name ?? null,
+      };
+      const progress = await calculateGoalProgress(g as Goal);
+      results.push({ ...goalWithProduct, progress });
+    }
+    return results;
   }
 
-  return results;
+  // No explicit goals for this period — derive from yearly goals
+  if (requestedPeriod && requestedPeriod !== "year") {
+    const { data: yearlyGoals } = await admin
+      .from("goals")
+      .select("*, products(name)")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .eq("period", "year")
+      .order("period_start", { ascending: false });
+
+    if (yearlyGoals && yearlyGoals.length > 0) {
+      const divisor = requestedPeriod === "quarter" ? 4 : 12;
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = now.getMonth();
+
+      // Calculate current period start
+      let periodStart: string;
+      if (requestedPeriod === "month") {
+        periodStart = `${y}-${String(m + 1).padStart(2, "0")}-01`;
+      } else {
+        const qStart = Math.floor(m / 3) * 3;
+        periodStart = `${y}-${String(qStart + 1).padStart(2, "0")}-01`;
+      }
+
+      const results: GoalWithProgress[] = [];
+      for (const g of yearlyGoals) {
+        // Create a derived goal with proportional target
+        const derivedGoal: Goal = {
+          ...(g as Goal),
+          period: requestedPeriod,
+          period_start: periodStart,
+          target_value: Number(g.target_value) / divisor,
+        };
+
+        const goalWithProduct: GoalWithProduct = {
+          ...derivedGoal,
+          product_name: (g as any).products?.name ?? null,
+        };
+        const progress = await calculateGoalProgress(derivedGoal);
+        results.push({ ...goalWithProduct, progress, derived: true });
+      }
+      return results;
+    }
+  }
+
+  return [];
 }
 
 // ── KI-Empfehlung ────────────────────────────────────────────

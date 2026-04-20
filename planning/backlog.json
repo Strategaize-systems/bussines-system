@@ -1317,7 +1317,7 @@
       "title": "Jahresziele automatisch auf Quartal/Monat runterbrechen",
       "type": "improvement",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V6",
       "description": "Wenn ein Jahresziel angelegt wird, sollen automatisch Quartals- und Monatsziele daraus abgeleitet werden (gleichmaessig verteilt). Aktuell sieht der User bei Monat/Quartal-Toggle nichts, wenn nur Jahresziele existieren.",
       "createdAt": "2026-04-20"
