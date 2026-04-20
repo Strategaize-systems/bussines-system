@@ -5,12 +5,12 @@ type AdminClient = ReturnType<typeof createAdminClient>;
 
 function todayRange(): { start: string; end: string } {
   const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
   return {
-    start: `${y}-${m}-${d}T00:00:00`,
-    end: `${y}-${m}-${String(now.getDate() + 1).padStart(2, "0")}T00:00:00`,
+    start: today.toISOString(),
+    end: tomorrow.toISOString(),
   };
 }
 
