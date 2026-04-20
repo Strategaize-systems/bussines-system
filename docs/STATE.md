@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V6 Implementation — SLC-601..605 done. FEAT-601+602+604 komplett. Naechster Schritt: /qa SLC-605, dann /frontend SLC-606 (Performance-Cockpit UI).
+- Current Focus: V6 Implementation — SLC-601..606 done. FEAT-601+602+604 komplett. Naechster Schritt: /qa SLC-606, dann /backend SLC-607 (KI-Empfehlung + Mein-Tag-Widget).
 - Current Phase: V6 Implementation
 
 ## Immediate Next Steps
-1. /qa SLC-605 (KPI-Snapshot-Cron Verifikation)
-2. /frontend SLC-606 (Performance-Cockpit UI)
-3. /backend SLC-607 (KI-Empfehlung + Mein-Tag-Widget)
+1. /qa SLC-606 (Performance-Cockpit UI Verifikation)
+2. /backend SLC-607 (KI-Empfehlung + Mein-Tag-Widget)
+3. Gesamt-QA V6
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (released, REL-010):**
