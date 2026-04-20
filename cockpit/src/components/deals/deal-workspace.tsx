@@ -24,6 +24,8 @@ import type { PipelineStage, Pipeline } from "@/app/(app)/pipeline/actions";
 import type { Task } from "@/app/(app)/aufgaben/actions";
 import type { Meeting } from "@/app/(app)/meetings/actions";
 import type { DealBriefingContext } from "@/lib/ai/types";
+import type { DealProductWithName } from "@/app/actions/deal-products";
+import type { Product } from "@/types/products";
 
 type TabId = "timeline" | "tasks" | "proposals" | "documents" | "wissen" | "edit";
 
@@ -51,6 +53,8 @@ interface DealWorkspaceProps {
   companies: { id: string; name: string }[];
   dealsForSelect: { id: string; title: string }[];
   referrals: { id: string; label: string }[];
+  dealProducts: DealProductWithName[];
+  activeProducts: Product[];
 }
 
 export function DealWorkspace({
@@ -68,6 +72,8 @@ export function DealWorkspace({
   companies,
   dealsForSelect,
   referrals,
+  dealProducts,
+  activeProducts,
 }: DealWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<TabId>("timeline");
 
@@ -180,6 +186,8 @@ export function DealWorkspace({
                 contacts={contacts}
                 companies={companies}
                 referrals={referrals}
+                dealProducts={dealProducts}
+                activeProducts={activeProducts}
               />
             )}
           </div>

@@ -10,8 +10,11 @@ import {
 } from "@/app/(app)/pipeline/actions";
 import type { PipelineStage, Pipeline } from "@/app/(app)/pipeline/actions";
 import { InsightSheet } from "@/components/insights/insight-sheet";
+import { DealProductsSection } from "./deal-products-section";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import type { DealProductWithName } from "@/app/actions/deal-products";
+import type { Product } from "@/types/products";
 
 interface DealEditProps {
   deal: any;
@@ -20,6 +23,8 @@ interface DealEditProps {
   contacts: { id: string; first_name: string; last_name: string }[];
   companies: { id: string; name: string }[];
   referrals: { id: string; label: string }[];
+  dealProducts: DealProductWithName[];
+  activeProducts: Product[];
 }
 
 export function DealEdit({
@@ -29,6 +34,8 @@ export function DealEdit({
   contacts,
   companies,
   referrals,
+  dealProducts,
+  activeProducts,
 }: DealEditProps) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -74,6 +81,13 @@ export function DealEdit({
         referrals={referrals}
         onSubmit={handleSubmit}
         isPending={isPending}
+      />
+
+      {/* Products */}
+      <DealProductsSection
+        dealId={deal.id}
+        dealProducts={dealProducts}
+        activeProducts={activeProducts}
       />
 
       {/* Insight Button for won/lost deals */}

@@ -10,12 +10,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V6 Implementation — SLC-601 done (Schema-Migration + Produkt-CRUD). Naechster Schritt: /qa SLC-601, dann /backend SLC-602 (Deal-Produkt-Zuordnung).
+- Current Focus: V6 Implementation — SLC-601+602 done (Schema + Produkt-CRUD + Deal-Zuordnung). FEAT-601 komplett. Naechster Schritt: /qa SLC-602, dann /backend SLC-603.
 - Current Phase: V6 Implementation
 
 ## Immediate Next Steps
-1. /qa SLC-601 (Schema + Produkt-CRUD Verifikation)
-2. /backend SLC-602 (Deal-Produkt-Zuordnung)
+1. /qa SLC-602 (Deal-Produkt-Zuordnung Verifikation)
+2. /backend SLC-603 (Ziel-CRUD + CSV-Import)
 3. Post-Launch-Monitoring V4.3: Signal-Extraktion-Cron beobachten
 
 ## Active Scope

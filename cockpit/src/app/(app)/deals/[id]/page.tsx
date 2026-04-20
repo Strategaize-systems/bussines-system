@@ -4,6 +4,8 @@ import { getTasks } from "@/app/(app)/aufgaben/actions";
 import { getDocuments } from "@/lib/actions/document-actions";
 import { getContactsForSelect } from "@/app/(app)/contacts/actions";
 import { getCompaniesForSelect } from "@/app/(app)/companies/actions";
+import { listDealProducts } from "@/app/actions/deal-products";
+import { listProducts } from "@/app/actions/products";
 import { DealWorkspace } from "@/components/deals/deal-workspace";
 import { notFound } from "next/navigation";
 
@@ -23,7 +25,7 @@ export default async function DealPage({
 
   const deal = relations.deal;
 
-  const [stages, pipelines, tasks, meetings, documents, contacts, companies, dealsForSelect, referrals] = await Promise.all([
+  const [stages, pipelines, tasks, meetings, documents, contacts, companies, dealsForSelect, referrals, dealProducts, activeProducts] = await Promise.all([
     getPipelineStages(deal.pipeline_id),
     getPipelines(),
     getTasks({ dealId: id }),
@@ -33,6 +35,8 @@ export default async function DealPage({
     getCompaniesForSelect(),
     getDealsForSelect(),
     getReferralsForSelect(),
+    listDealProducts(id),
+    listProducts("active"),
   ]);
 
   return (
@@ -52,6 +56,8 @@ export default async function DealPage({
       companies={companies}
       dealsForSelect={dealsForSelect}
       referrals={referrals}
+      dealProducts={dealProducts}
+      activeProducts={activeProducts}
     />
     </div>
   );
