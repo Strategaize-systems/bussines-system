@@ -87,8 +87,8 @@
     {
       "id": "v6",
       "name": "V6",
-      "status": "active",
-      "summary": "Zielsetzung + Performance-Tracking: Produkt-Stammdaten, Ziel-Objekt-Modell (Umsatz/Deal-Count/Abschlussquote), Persoenliches Performance-Cockpit (Soll-Ist + Prognose + KI-Empfehlung), KPI-Snapshots, CSV-Import",
+      "status": "released",
+      "summary": "Zielsetzung + Performance-Tracking: Produkt-Stammdaten, Ziel-Objekt-Modell (Umsatz/Deal-Count/Abschlussquote), Persoenliches Performance-Cockpit (Soll-Ist + Prognose + KI-Empfehlung), KPI-Snapshots, CSV-Import, Tages-Check mit Activity-KPIs",
       "order": 13
     }
   ]

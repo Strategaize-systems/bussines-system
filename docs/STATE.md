@@ -9,14 +9,13 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: V6 Implementation — alle 10 Slices done (SLC-601..610). Alle 4 Features done. Naechster Schritt: /qa SLC-610, dann Gesamt-QA V6 (erweitert), dann /final-check.
-- Current Phase: V6 Implementation (alle Slices abgeschlossen)
+- High-Level State: released
+- Current Focus: V6 released (REL-013). Naechster Schritt: V6.1 UI-Update (Premium Look, Layout-Umbau, Wochen-Check).
+- Current Phase: V6 Released
 
 ## Immediate Next Steps
-1. /qa SLC-610 (Tages-Check UI Verifikation)
-2. Gesamt-QA V6 (erweitert — inkl. SLC-608..610)
-3. /final-check → /go-live → /deploy
+1. Coolify Cron fuer KPI-Snapshot anlegen (0 2 * * *)
+2. V6.1 UI-Update: Premium Look, Goal-Cards + Prognose 4-spaltig, "Win-Rate" → "Abschlussquote", Wochen-Check
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (released, REL-010):**
@@ -44,10 +43,10 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - Backlog: BL-351 (Umbrella Queue) + BL-358..360 (Detail Queue) + BL-202 (Umbrella Signals) + BL-361..363 (Detail Signals)
 
 ## Blockers
-- aktuell keine (ISSUE-031 + ISSUE-032 durch Slice-Record-Updates 2026-04-15 resolved)
+- aktuell keine
 
 ## Last Stable Version
-- V4.3 — 2026-04-19 — deployed auf Hetzner (Insight Governance, 6/6 Slices, REL-012)
+- V6 — 2026-04-20 — deployed auf Hetzner (Zielsetzung + Performance-Tracking, 10/10 Slices, REL-013)
 
 ## Notes
 V4 Deployment in zwei Phasen: SLC-401..403 am 2026-04-12 (IMAP live), SLC-404..409 am 2026-04-14 abends (Redeploy). Smoke-Tests am 2026-04-15 morgen durchgelaufen: Login, IMAP-Inbox, Mein Tag KI-Wiedervorlagen, Gesamtkalender, KI-Analyse Cockpit, Focus 2-Spalten-Layout — alle PASS. Cal.com Self-Hosted läuft seit 2026-04-13 mit Webhook-Integration. CALCOM_API_KEY bewusst leer (AGPLv3). Bedrock Claude Sonnet 4 via Frankfurt-Region.

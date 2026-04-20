@@ -63,6 +63,13 @@
 - Risks: Hetzner-Cloud-Firewall-UI-Regel erfordert manuelle Re-Verifizierung vor SLC-412-Smoke-Test (nicht via SSH pruefbar, nur Hetzner Cloud Console). Bei NAT-strikten Kunden-Netzwerken kann UDP/10000 blockiert sein — dokumentiert als Risk in ARCHITECTURE V4.1 (TURN-Server deferred auf BL-206-Nachbar).
 - Rollback Notes: Keine Artefakte produziert. Rollback = Firewall-Regel entfernen, Coolify-Subdomain abkoppeln, Supabase-Bucket loeschen. Kein Effekt auf V4 Produktion.
 
+### REL-013 — V6 Zielsetzung + Performance-Tracking
+- Date: 2026-04-20
+- Scope: 10 Slices (SLC-601..610), 4 Features (FEAT-601..604), 2 DECs (DEC-055..056), MIG-017 + MIG-018. Produkt-Stammdaten (CRUD + Deal-Zuordnung), Ziel-Objekt-Modell (Umsatz/Deal-Count/Abschlussquote, Jahres-→Monats-/Quartals-Ableitung, CSV-Import), Performance-Cockpit (/performance mit Goal-Cards, Prognose-Engine, KI-Empfehlung via Bedrock, Tages-Check mit Activity-KPIs, Wochen-Vergleich, Trend-Vergleich, Produkt-Breakdown), KPI-Snapshots (taeglicher Cron, 8+ KPI-Typen, Trend-Engine).
+- Summary: Deployment als Coolify Redeploy. Gesamt-QA PASS (RPT-171, 10/10 Slices, 4/4 Features, 11 Backlog-Items). Final-Check READY (RPT-172, 0 Blocker, 0 High). User-Browser-Smoke-Test PASS. 2 neue DB-Tabellen-Gruppen (MIG-017: products, deal_products, goals, kpi_snapshots; MIG-018: activity_kpi_targets). 1 neuer Cron-Job (kpi-snapshot, taeglich 02:00). Rein additiv, kein Einfluss auf bestehende Features. todayRange()-Bug in QA gefunden und gefixt (IMP-096).
+- Risks: KPI-Snapshot-Cron muss in Coolify konfiguriert werden. userId nicht in KPI-Queries (Single-User OK). Win-Rate-Ableitung semantisch vereinfacht (V1-akzeptabel). Keine automatisierten Tests.
+- Rollback Notes: Rein additiv. Docker Image Rollback via Coolify auf V4.3 Image. Schema-Rollback: DROP TABLE activity_kpi_targets, kpi_snapshots, goals, deal_products, products CASCADE; Cron kpi-snapshot in Coolify deaktivieren.
+
 ### REL-012 — V4.3 Insight Governance
 - Date: 2026-04-19
 - Scope: 6 Slices (SLC-431..436), 2 Features (FEAT-402, FEAT-412), 6 DECs (DEC-049..054), MIG-016. Insight-Review-Queue fuer schreibende KI-Aenderungen (Queue-Erweiterung, Signal-Extraktion-Modul, Cron-Hooks, Applier + Approve-Flow, Unified Queue UI, KI-Badge + Manual Trigger). Automatische Signal-Extraktion aus Meeting-Summaries und E-Mails. Manueller Trigger im Deal-Workspace. PropertyChangeCards mit Confidence-Badge, Batch-Approve. KI-Badge auf geaenderten Deal-Properties (30-Tage-Fenster).
