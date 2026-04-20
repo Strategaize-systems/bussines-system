@@ -1257,7 +1257,7 @@
       "title": "Ziel-Objekt-Modell: Ziele pro Typ, Zeitraum, Produkt",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V6",
       "description": "FEAT-602: Ziel-Tabelle (goals) mit Typ (revenue/deal_count/win_rate), Zeitraum (month/quarter/year), Sollwert, optionaler Produkt-Referenz. Manuelles Anlegen + Bearbeiten + Stornieren.",
       "createdAt": "2026-04-19"
@@ -1267,7 +1267,7 @@
       "title": "CSV-Import fuer Ziele (Template-basiert)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V6",
       "description": "FEAT-602b: CSV-Upload mit definiertem Template. Validierung pro Zeile, Fehler-Report, Produkt-Name-Matching gegen bestehende Produkte. Import-Quelle wird auf Ziel-Objekt markiert.",
       "createdAt": "2026-04-19"
