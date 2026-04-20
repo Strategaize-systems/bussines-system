@@ -304,3 +304,18 @@
 - Status: accepted
 - Reason: Fuer Internal Tool ist eine Server Action einfacher als ein separater API-Endpoint. Client-Side CSV-Parsing (Papa Parse), Validierung und Preview, dann Server Action fuer den tatsaechlichen Insert. Kein File-Upload an Server noetig.
 - Consequence: Server Action `importGoalsFromCSV()` empfaengt validierte Daten, kein File. CSV-Parsing und Validierung passieren im Browser.
+
+## DEC-061 — GoalCard Premium-Styling statt KPICard-Ersatz (V6.1)
+- Status: accepted
+- Reason: GoalCard hat komplexere Logik als KPICard (Progress-Ring, Prognose-Integration, abgeleitete Ziele). Ersetzen wuerde Funktionalitaet verlieren. Stattdessen wird GoalCard mit KPICard-Styling aufgeruestet (Gradient-Akzentlinie, Brand-Shadows, hover-Effekte).
+- Consequence: GoalCard behaelt eigene Implementierung, uebernimmt aber visuelles Pattern von KPICard. Kein Rewrite, sondern CSS/Tailwind-Anpassung.
+
+## DEC-062 — Prognose als kompakte ForecastCard statt Full-Width-Block (V6.1)
+- Status: accepted
+- Reason: User-Feedback: "alles noch ein bisschen zu wuchtig". Drei separate Forecast-Werte (Pipeline-gewichtet, historisch, kombiniert) in Full-Width-Block ist zu breit. Kompakte Kachel neben Goal-Cards spart Platz und verbessert Uebersicht.
+- Consequence: ForecastBlock wird zu ForecastCard umgebaut. Zeigt nur kombinierten Forecast + Delta + Deals-noetig. Detail-Werte optional per Hover/Tooltip.
+
+## DEC-063 — Wochen-Check als Tab-Toggle in DailyActivityCheck (V6.1)
+- Status: accepted
+- Reason: Kein separater Route oder Seite noetig. Heute/Woche-Toggle ist natuerlicher Wechsel innerhalb derselben Karte. WeeklyComparison-Komponente wird ueberfluessig und entfaellt.
+- Consequence: DailyActivityCheck erweitert um Toggle + 5-Spalten-Tagesraster. WeeklyComparison entfaellt. Neue Server Action fuer per-Tag-Abfrage.

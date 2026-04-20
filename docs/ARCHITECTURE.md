@@ -3707,3 +3707,158 @@ Geschaetzt 7 Slices, je 1-1.5 Tage. Gesamtschaetzung: ~7-10.5 Tage.
 ## V6 Recommended Next Step
 
 `/slice-planning` — V6-Slices strukturiert ausdefinieren (Acceptance Criteria, Dependencies, QA-Fokus, Micro-Tasks). Danach pro Slice `/backend` oder `/frontend` + `/qa`.
+
+---
+
+# V6.1 — Performance Premium UI
+
+## V6.1 Summary
+
+Reine Frontend-Arbeit: Premium Look auf /performance, kompakteres Layout, Label-Korrektur, Wochen-Check-Erweiterung. Kein neues Schema, keine Migration, keine neuen externen Dependencies.
+
+## V6.1 Architektur-Entscheidungen
+
+### DEC-061 — GoalCard wird nicht durch KPICard ersetzt, sondern an dessen Muster angepasst
+
+GoalCard hat komplexere Logik als KPICard (Progress-Ring, Prognose-Integration, abgeleitete Ziele). Statt GoalCard durch KPICard zu ersetzen, wird GoalCard mit dem KPICard-Styling aufgeruestet: Gradient-Akzentlinie, Brand-Icon-Container, hover-shadow-xl, -translate-y-0.5 Transition.
+
+### DEC-062 — Prognose als ForecastCard statt separater ForecastBlock
+
+Der bisherige ForecastBlock (Full-Width-Card mit 3 Sub-Spalten) wird ersetzt durch eine kompakte ForecastCard, die als 4. Kachel in die Goal-Card-Reihe passt. Die ForecastCard zeigt nur den kombinierten Forecast + Delta + "Noch X Deals noetig" — die Details (Pipeline-gewichtet, historisch, kombiniert) sind bei Bedarf per Klick/Hover erreichbar, nicht dauerhaft sichtbar.
+
+### DEC-063 — Wochen-Check als Tab-Toggle statt separater Komponente
+
+DailyActivityCheck wird erweitert um einen "Heute | Woche" Toggle. Die Wochen-Ansicht zeigt ein 5-Spalten-Raster (Mo-Fr) mit Ist/Soll pro KPI pro Tag. Die bestehende Tages-Ansicht bleibt unveraendert. Kein separater Route oder Seitenwechsel.
+
+## V6.1 Aenderungsarchitektur
+
+```
+Betroffene Dateien — Uebersicht
+================================
+
+FRONTEND (Aendern):
+  /components/performance/goal-card.tsx       — Premium-Styling, kompakter
+  /components/performance/forecast-block.tsx  — Umbau zu ForecastCard (kompakt)
+  /components/performance/daily-activity-check.tsx — Heute/Woche Toggle + Tagesraster
+  /components/performance/weekly-comparison.tsx — ENTFAELLT (in DailyActivityCheck integriert)
+  /app/(app)/performance/page.tsx             — Grid 4-spaltig, WeeklyComparison entfernt
+
+FRONTEND (Label-Fix, search+replace):
+  /components/performance/goal-card.tsx       — "Win-Rate" → "Abschlussquote"
+  /components/performance/forecast-block.tsx  — "Win-Rate" → "Abschlussquote"
+  /components/goals/goal-form.tsx             — "Win-Rate" → "Abschlussquote"
+  /components/goals/goal-list.tsx             — "Win-Rate" → "Abschlussquote"
+  /components/goals/csv-import-dialog.tsx     — "Win-Rate" → "Abschlussquote"
+
+BACKEND (Kleine Erweiterung):
+  /app/actions/activity-kpis.ts               — neue Funktion getWeeklyActivityKpisPerDay()
+  /lib/goals/activity-kpi-queries.ts          — Hilfsfunktion dayRangesForWeek()
+
+TYPES (Erweiterung):
+  /types/activity-kpis.ts                     — neuer Typ WeekDayKpiStatus
+```
+
+## V6.1 Datenfluss — Wochen-Check
+
+```
+DailyActivityCheck (Toggle: "Woche")
+    |
+    v
+getWeeklyActivityKpisPerDay()        ← neue Server Action
+    |
+    v
+dayRangesForWeek()                   ← generiert Mo..Fr Tages-Ranges
+    |
+    v
+getActivityKpiActual(admin, key, dayRange)  ← bestehende Query, pro Tag aufgerufen
+    |
+    v
+WeekDayKpiStatus[]                   ← Array mit 5 Eintraegen (Mo-Fr)
+    |
+    v
+DailyActivityCheck rendert 5-Spalten-Raster
+```
+
+## V6.1 Neuer Typ: WeekDayKpiStatus
+
+```typescript
+export type WeekDayKpiStatus = {
+  kpiKey: ActivityKpiKey;
+  label: string;
+  dailyTarget: number;
+  days: {
+    date: string;      // ISO-Datum
+    dayLabel: string;   // "Mo", "Di", "Mi", "Do", "Fr"
+    actual: number;
+    isToday: boolean;
+  }[];
+};
+```
+
+## V6.1 Premium-Styling-Pattern
+
+Alle Performance-Cards folgen dem KPICard-Muster:
+
+```
+┌──────────────────────────────────────────┐
+│ ████████████████████████████████  ← Gradient-Akzentlinie (h-1)
+│                                          │
+│  [Icon]  Label                    [Ring] │ ← Brand-Gradient Icon-Container
+│          Sublabel                        │
+│                                          │
+│  Wert  Einheit                          │ ← text-2xl font-bold
+│  Ziel: X                                │
+│                                          │
+│  [Badge: abgeleitet / nicht genug Daten]│
+└──────────────────────────────────────────┘
+```
+
+CSS-Tokens aus KPICard:
+- `border-2 border-slate-200`
+- `rounded-xl`
+- `shadow-lg` → `hover:shadow-xl hover:-translate-y-0.5`
+- `transition-all duration-300`
+- Gradient-Akzentlinie: `h-1 bg-gradient-to-r from-[#120774] to-[#4454b8]`
+- Icon-Container: `w-10 h-10 rounded-lg bg-gradient-to-br ${gradient}`
+
+## V6.1 Layout-Aenderung
+
+### Vorher (V6):
+```
+[Goal 1] [Goal 2] [Goal 3]     ← 3 Spalten
+[    Forecast Block (full)    ] ← volle Breite
+[    KI-Empfehlung            ]
+[    Tages-Check              ]
+[    Weekly Comparison        ] ← separate Komponente
+[    Product Breakdown        ]
+[    Trend Comparison         ]
+```
+
+### Nachher (V6.1):
+```
+[Goal 1] [Goal 2] [Goal 3] [Forecast] ← 4 Spalten
+[    KI-Empfehlung                   ]
+[    Tages-Check (Heute|Woche Toggle)]  ← integriert
+[    Product Breakdown               ]
+[    Trend Comparison                ]
+```
+
+## V6.1 Risiko-Matrix
+
+| Risiko | Mitigation |
+|--------|------------|
+| 4 Kacheln passen nicht auf schmale Screens | `lg:grid-cols-4 sm:grid-cols-2 grid-cols-1` — responsive Fallback |
+| Wochen-Check 5×N Queries (pro Tag pro KPI) | Max 5 KPIs × 5 Tage = 25 Queries. Parallelisiert via Promise.all. Bei Single-User akzeptabel. |
+| ForecastCard zu kompakt fuer alle Infos | Nur kombinierter Forecast + Delta + Deals-noetig. Details bei Hover oder als Tooltip. |
+
+## V6.1 Empfohlene Slice-Reihenfolge
+
+1. **SLC-611 Label-Fix + Premium-Styling** — "Win-Rate" → "Abschlussquote" (5 Dateien), GoalCard Premium-Styling (Gradient-Akzentlinie, Shadows, Icon-Container). Kleiner Slice, schnell testbar.
+2. **SLC-612 ForecastCard + 4-Kachel-Layout** — ForecastBlock → ForecastCard Umbau, Grid auf 4-spaltig, Page-Layout anpassen, WeeklyComparison entfernen.
+3. **SLC-613 Wochen-Check mit Tagesaufloesung** — Server Action Erweiterung (getWeeklyActivityKpisPerDay), DailyActivityCheck mit Heute/Woche Toggle, 5-Spalten-Tagesraster.
+
+Geschaetzt 3 Slices, je 2-3 Stunden. Gesamtschaetzung: ~1 Tag.
+
+## V6.1 Recommended Next Step
+
+`/slice-planning` — 3 Slices ausdefinieren mit Acceptance Criteria, Micro-Tasks, QA-Fokus.
