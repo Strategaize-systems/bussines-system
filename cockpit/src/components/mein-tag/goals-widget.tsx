@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Target, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { GoalProgress } from "@/types/goals";
 
 type GoalSummary = {
   type: string;
