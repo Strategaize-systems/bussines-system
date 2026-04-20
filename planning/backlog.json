@@ -1337,7 +1337,7 @@
       "title": "Tages-Check-Ansicht: Aktivitaets-KPIs Soll/Ist",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V6",
       "description": "Tages-Check auf /performance: 'Heute: 3/5 Telefonate, 1/2 Meetings, 4/10 Deals bewegt'. Wochen-Aggregation. Farbcodierung (gruen/gelb/rot). Historischer Vergleich (diese Woche vs. letzte Woche). Alle Daten automatisch aus DB, kein manuelles Eingeben.",
       "createdAt": "2026-04-20"

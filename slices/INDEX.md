@@ -151,4 +151,4 @@
 | SLC-607 | [KI-Empfehlung + Mein-Tag-Widget](SLC-607-ki-empfehlung-mein-tag-widget.md) | FEAT-603 | done | Medium | 2026-04-19 |
 | SLC-608 | [Jahresziele auf Quartal/Monat runterbrechen](SLC-608-ziel-runterbrechen.md) | FEAT-602, FEAT-603 | done | High | 2026-04-20 |
 | SLC-609 | [Tages-Aktivitaets-KPIs](SLC-609-activity-kpi-targets.md) | FEAT-603 | done | High | 2026-04-20 |
-| SLC-610 | [Tages-Check UI](SLC-610-tages-check-ui.md) | FEAT-603 | planned | High | 2026-04-20 |
+| SLC-610 | [Tages-Check UI](SLC-610-tages-check-ui.md) | FEAT-603 | done | High | 2026-04-20 |

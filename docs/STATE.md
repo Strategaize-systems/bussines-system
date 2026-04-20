@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V6 Implementation — SLC-601..607 done. 3 neue Slices (SLC-608..610): Ziel-Runterbrechen + Activity-KPIs + Tages-Check. FEAT-603 wieder in_progress.
-- Current Phase: V6 Implementation (Erweiterung Activity-KPIs)
+- Current Focus: V6 Implementation — alle 10 Slices done (SLC-601..610). Alle 4 Features done. Naechster Schritt: /qa SLC-610, dann Gesamt-QA V6 (erweitert), dann /final-check.
+- Current Phase: V6 Implementation (alle Slices abgeschlossen)
 
 ## Immediate Next Steps
-1. /qa SLC-609 (Activity-KPIs Verifikation)
-2. /frontend SLC-610 (Tages-Check UI auf /performance)
-3. Gesamt-QA V6 (erweitert) → /final-check
+1. /qa SLC-610 (Tages-Check UI Verifikation)
+2. Gesamt-QA V6 (erweitert — inkl. SLC-608..610)
+3. /final-check → /go-live → /deploy
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (released, REL-010):**
