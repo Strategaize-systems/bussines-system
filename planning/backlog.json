@@ -1297,7 +1297,7 @@
       "title": "KPI-Snapshots: Taeglicher Cron + Trend-Engine",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V6",
       "description": "FEAT-604: Taeglicher Cron speichert 8+ KPI-Typen (Umsatz, Deal-Count, Quote, Pipeline-Wert gewichtet/ungewichtet, Ø Deal-Wert, Aktivitaeten, Pro-Produkt). Idempotent. Woechentliche/monatliche Aggregation.",
       "createdAt": "2026-04-19"
@@ -1307,7 +1307,7 @@
       "title": "Trend-Vergleich: Aktuelle Periode vs. Vorperiode",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V6",
       "description": "FEAT-604b: Vergleichsansicht im Performance-Cockpit: aktueller Monat vs. letzter Monat, aktuelles Quartal vs. letztes Quartal. Trend-Linie letzte N Perioden. Basiert auf KPI-Snapshot-Daten.",
       "createdAt": "2026-04-19"
