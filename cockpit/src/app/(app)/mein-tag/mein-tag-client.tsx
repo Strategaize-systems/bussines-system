@@ -39,7 +39,6 @@ import { CallSheet } from "./call-sheet";
 import { KIWorkspace } from "./ki-workspace";
 import { startMeeting } from "@/app/actions/meetings";
 import type { AIActionQueueItem } from "@/types/ai-queue";
-import { GoalsWidget } from "@/components/mein-tag/goals-widget";
 
 interface MeinTagClientProps {
   data: TodayData;
@@ -55,7 +54,6 @@ interface MeinTagClientProps {
   gatekeeperSummary: GatekeeperSummary;
   followupSuggestions: AIActionQueueItem[];
   insightSuggestions: AIActionQueueItem[];
-  goalsSummary: { type: string; progressPercent: number; currentValue: number; targetValue: number }[];
   dateLabel: string;
 }
 
@@ -81,7 +79,7 @@ const statusStyles: Record<string, string> = {
 
 const WORKDAY_MINUTES = 480; // 8h workday
 
-export function MeinTagClient({ data, stages, contacts, companies, deals, pipelines, calendarSlots, exceptions, nextMeeting, topDeals, gatekeeperSummary, followupSuggestions, insightSuggestions, goalsSummary, dateLabel }: MeinTagClientProps) {
+export function MeinTagClient({ data, stages, contacts, companies, deals, pipelines, calendarSlots, exceptions, nextMeeting, topDeals, gatekeeperSummary, followupSuggestions, insightSuggestions, dateLabel }: MeinTagClientProps) {
   const totalItems = data.stats.overdueCount + data.stats.todayCount + data.stats.upcomingCount;
   const completedItems = 0;
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
@@ -510,8 +508,6 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                   </div>
                 )}
 
-                {/* Goals Widget */}
-                <GoalsWidget goals={goalsSummary} />
               </div>
             </div>
 
