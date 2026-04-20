@@ -308,3 +308,37 @@ export async function getGoalsWithProgress(filters?: {
 
   return results;
 }
+
+// ── KI-Empfehlung ────────────────────────────────────────────
+
+import { queryLLM } from "@/lib/ai/bedrock-client";
+import {
+  PERFORMANCE_SYSTEM_PROMPT,
+  buildPerformancePrompt,
+} from "@/lib/ai/prompts/performance-recommendation";
+
+export async function getPerformanceRecommendation(
+  progressData: GoalProgress[],
+): Promise<{ recommendation?: string; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht authentifiziert" };
+
+  if (progressData.length === 0) {
+    return { error: "Keine Zieldaten vorhanden" };
+  }
+
+  const prompt = buildPerformancePrompt(progressData);
+  const result = await queryLLM(prompt, PERFORMANCE_SYSTEM_PROMPT, {
+    maxTokens: 512,
+    temperature: 0.5,
+  });
+
+  if (!result.success || !result.data) {
+    return { error: result.error ?? "KI-Empfehlung konnte nicht generiert werden" };
+  }
+
+  return { recommendation: result.data };
+}

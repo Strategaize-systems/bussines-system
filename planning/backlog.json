@@ -1287,7 +1287,7 @@
       "title": "KI-Handlungsempfehlung im Performance-Cockpit",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V6",
       "description": "FEAT-603b: Bedrock analysiert Ziel-Delta + Pipeline-Status und gibt konkrete Empfehlung. On-click (DEC-028). Beispiel: 'Du brauchst noch 3 Abschluesse bei 25% Quote → 12 aktive Deals noetig'.",
       "createdAt": "2026-04-19"

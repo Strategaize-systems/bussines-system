@@ -7,6 +7,7 @@ import { ForecastBlock } from "@/components/performance/forecast-block";
 import { ProductBreakdown } from "@/components/performance/product-breakdown";
 import { TrendComparison } from "@/components/performance/trend-comparison";
 import { PerformanceEmptyState } from "@/components/performance/empty-state";
+import { AiRecommendation } from "@/components/performance/ai-recommendation";
 import { BarChart3, Settings } from "lucide-react";
 import Link from "next/link";
 import type { KpiType } from "@/types/kpi-snapshots";
@@ -137,6 +138,9 @@ export default async function PerformancePage({
 
       {/* Forecast */}
       <ForecastBlock goals={overallGoals} />
+
+      {/* AI Recommendation */}
+      <AiRecommendation progressData={overallGoals.map((g) => g.progress)} />
 
       {/* Product Breakdown */}
       <ProductBreakdown goals={goals} />
