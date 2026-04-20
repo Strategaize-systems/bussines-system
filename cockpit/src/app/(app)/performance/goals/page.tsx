@@ -1,15 +1,18 @@
 import { listGoals } from "@/app/actions/goals";
 import { listProducts } from "@/app/actions/products";
+import { listActivityKpiTargets } from "@/app/actions/activity-kpis";
 import { GoalList } from "@/components/goals/goal-list";
 import { GoalForm } from "@/components/goals/goal-form";
 import { CsvImportDialog } from "@/components/goals/csv-import-dialog";
+import { ActivityKpiSettings } from "@/components/goals/activity-kpi-settings";
 import { Button } from "@/components/ui/button";
 import { Plus, Upload, Target } from "lucide-react";
 
 export default async function GoalsPage() {
-  const [goals, products] = await Promise.all([
+  const [goals, products, activityTargets] = await Promise.all([
     listGoals(),
     listProducts("active"),
+    listActivityKpiTargets(),
   ]);
 
   return (
@@ -49,6 +52,8 @@ export default async function GoalsPage() {
       </div>
 
       <GoalList goals={goals} products={products} />
+
+      <ActivityKpiSettings targets={activityTargets} />
     </main>
   );
 }

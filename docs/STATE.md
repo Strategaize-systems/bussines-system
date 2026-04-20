@@ -14,9 +14,9 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - Current Phase: V6 Implementation (Erweiterung Activity-KPIs)
 
 ## Immediate Next Steps
-1. /qa SLC-608 (Ziel-Runterbrechen Verifikation)
-2. /backend SLC-609 (Tages-Aktivitaets-KPIs — Schema + Server Actions)
-3. /frontend SLC-610 (Tages-Check UI auf /performance)
+1. /qa SLC-609 (Activity-KPIs Verifikation)
+2. /frontend SLC-610 (Tages-Check UI auf /performance)
+3. Gesamt-QA V6 (erweitert) → /final-check
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (released, REL-010):**

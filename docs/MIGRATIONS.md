@@ -135,3 +135,11 @@
 - Affected Areas: Deal-Workspace (Produkt-Zuordnung), neue Performance-Seite, neuer Settings-Bereich, neuer Cron-Job.
 - Risk: Gering — rein additiv, keine ALTERs auf bestehende Tabellen.
 - Rollback Notes: DROP TABLE kpi_snapshots, goals, deal_products, products CASCADE;
+
+### MIG-018 — V6 Activity KPI Targets
+- Date: 2026-04-20
+- Scope: 1 neue Tabelle (activity_kpi_targets) mit Unique Index (user_id, kpi_key), RLS, Grants. Speichert definierbare Tages-Sollwerte fuer Aktivitaets-KPIs (Telefonate, Meetings, Deal-Bewegungen, etc.).
+- Reason: Basis fuer Activity-based KPI-Tracking — taegliche Disziplin-Messung als Hebel fuer Umsatzziele.
+- Affected Areas: Performance-Cockpit (/performance), Ziel-Verwaltung (/performance/goals).
+- Risk: Gering — rein additiv, 1 neue Tabelle.
+- Rollback Notes: DROP TABLE activity_kpi_targets CASCADE;

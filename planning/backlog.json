@@ -1327,7 +1327,7 @@
       "title": "Tages-Aktivitaets-KPIs definierbar",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V6",
       "description": "Tages-Sollwerte fuer Aktivitaeten definierbar: Telefonate/Tag, Meetings/Tag, Deal-Bewegungen (Stage-Wechsel)/Tag, neue Deals/Tag. DB-Tabelle activity_kpi_targets + CRUD. Daten kommen aus bestehenden activities, meetings, deals — kein manuelles Tracking noetig.",
       "createdAt": "2026-04-20"
