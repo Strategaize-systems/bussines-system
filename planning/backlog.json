@@ -1319,7 +1319,27 @@
       "priority": "high",
       "status": "open",
       "version": "V6",
-      "description": "Wenn ein Jahresziel angelegt wird, sollen automatisch Quartals- und Monatsziele daraus abgeleitet werden (gleichmaessig verteilt oder konfigurierbar). Aktuell sieht der User bei Monat/Quartal-Toggle nichts, wenn nur Jahresziele existieren.",
+      "description": "Wenn ein Jahresziel angelegt wird, sollen automatisch Quartals- und Monatsziele daraus abgeleitet werden (gleichmaessig verteilt). Aktuell sieht der User bei Monat/Quartal-Toggle nichts, wenn nur Jahresziele existieren.",
+      "createdAt": "2026-04-20"
+    },
+    {
+      "id": "BL-374",
+      "title": "Tages-Aktivitaets-KPIs definierbar",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V6",
+      "description": "Tages-Sollwerte fuer Aktivitaeten definierbar: Telefonate/Tag, Meetings/Tag, Deal-Bewegungen (Stage-Wechsel)/Tag, neue Deals/Tag. DB-Tabelle activity_kpi_targets + CRUD. Daten kommen aus bestehenden activities, meetings, deals — kein manuelles Tracking noetig.",
+      "createdAt": "2026-04-20"
+    },
+    {
+      "id": "BL-375",
+      "title": "Tages-Check-Ansicht: Aktivitaets-KPIs Soll/Ist",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V6",
+      "description": "Tages-Check auf /performance: 'Heute: 3/5 Telefonate, 1/2 Meetings, 4/10 Deals bewegt'. Wochen-Aggregation. Farbcodierung (gruen/gelb/rot). Historischer Vergleich (diese Woche vs. letzte Woche). Alle Daten automatisch aus DB, kein manuelles Eingeben.",
       "createdAt": "2026-04-20"
     }
   ]
