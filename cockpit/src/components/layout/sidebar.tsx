@@ -22,6 +22,7 @@ import {
   Shield,
   Briefcase,
   Target,
+  Package,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -78,6 +79,7 @@ const navGroups: NavGroup[] = [
       { name: "Proposals", href: "/proposals", icon: FileText },
       { name: "Handoffs", href: "/handoffs", icon: ArrowRightLeft },
       { name: "Referrals", href: "/referrals", icon: Award },
+      { name: "Produkte", href: "/settings/products", icon: Package },
       { name: "Settings", href: "/settings", icon: Settings },
       { name: "Audit-Log", href: "/audit-log", icon: Shield },
     ],
@@ -92,7 +94,7 @@ export function Sidebar() {
   );
   const [verwaltungOpen, setVerwaltungOpen] = useState(() => {
     // Auto-open Verwaltung if current route is inside it
-    const verwaltungPaths = ["/aufgaben", "/termine", "/emails", "/proposals", "/handoffs", "/referrals", "/settings", "/audit-log"];
+    const verwaltungPaths = ["/aufgaben", "/termine", "/emails", "/proposals", "/handoffs", "/referrals", "/settings", "/audit-log", "/settings/products"];
     return verwaltungPaths.some((p) => pathname.startsWith(p));
   });
 

@@ -1237,7 +1237,7 @@
       "title": "Produkt-Stammdaten: Verwaltungsmodul fuer fertige Produkte",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V6",
       "description": "FEAT-601: Produkte anlegen/bearbeiten/archivieren. Felder: Name, Beschreibung, Kategorie, Standardpreis, Status. Settings-Bereich 'Verwaltung > Produkte'. Schnittstellendefinition fuer Intelligence Studio Export.",
       "createdAt": "2026-04-19"
