@@ -145,7 +145,7 @@
 | SLC-601 | [Schema-Migration + Produkt-CRUD](SLC-601-schema-produkt-crud.md) | FEAT-601 | done | Blocker | 2026-04-19 |
 | SLC-602 | [Deal-Produkt-Zuordnung](SLC-602-deal-produkt-zuordnung.md) | FEAT-601 | done | High | 2026-04-19 |
 | SLC-603 | [Ziel-CRUD + CSV-Import](SLC-603-ziel-crud-csv-import.md) | FEAT-602 | done | High | 2026-04-19 |
-| SLC-604 | [Prognose-Engine](SLC-604-prognose-engine.md) | FEAT-602, FEAT-603 | planned | High | 2026-04-19 |
+| SLC-604 | [Prognose-Engine](SLC-604-prognose-engine.md) | FEAT-602, FEAT-603 | done | High | 2026-04-19 |
 | SLC-605 | [KPI-Snapshot-Cron](SLC-605-kpi-snapshot-cron.md) | FEAT-604 | planned | High | 2026-04-19 |
 | SLC-606 | [Performance-Cockpit UI](SLC-606-performance-cockpit-ui.md) | FEAT-603 | planned | High | 2026-04-19 |
 | SLC-607 | [KI-Empfehlung + Mein-Tag-Widget](SLC-607-ki-empfehlung-mein-tag-widget.md) | FEAT-603 | planned | Medium | 2026-04-19 |

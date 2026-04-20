@@ -239,3 +239,72 @@ export async function importGoalsFromCSV(
   revalidatePath("/performance/goals");
   return { imported, errors };
 }
+
+// ── Goal Progress (Prognose-Engine) ───────────────────────────
+
+import { calculateGoalProgress } from "@/lib/goals/calculator";
+import type { GoalProgress } from "@/types/goals";
+
+export type GoalWithProgress = GoalWithProduct & {
+  progress: GoalProgress;
+};
+
+export async function getGoalProgress(
+  goalId: string,
+): Promise<{ error?: string; progress?: GoalProgress }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht authentifiziert" };
+
+  const admin = createAdminClient();
+  const { data: goal } = await admin
+    .from("goals")
+    .select("*")
+    .eq("id", goalId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!goal) return { error: "Ziel nicht gefunden" };
+
+  const progress = await calculateGoalProgress(goal as Goal);
+  return { progress };
+}
+
+export async function getGoalsWithProgress(filters?: {
+  period?: GoalPeriod;
+}): Promise<GoalWithProgress[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const admin = createAdminClient();
+  let query = admin
+    .from("goals")
+    .select("*, products(name)")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .order("period_start", { ascending: false });
+
+  if (filters?.period) {
+    query = query.eq("period", filters.period);
+  }
+
+  const { data } = await query;
+  if (!data || data.length === 0) return [];
+
+  const results: GoalWithProgress[] = [];
+  for (const g of data) {
+    const goalWithProduct: GoalWithProduct = {
+      ...g,
+      product_name: (g as any).products?.name ?? null,
+    };
+    const progress = await calculateGoalProgress(g as Goal);
+    results.push({ ...goalWithProduct, progress });
+  }
+
+  return results;
+}

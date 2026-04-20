@@ -17,3 +17,22 @@ export type Goal = {
   created_at: string;
   updated_at: string;
 };
+
+export type GoalProgress = {
+  goalId: string;
+  goalType: GoalType;
+  targetValue: number;
+  currentValue: number;
+  progressPercent: number;
+  pipelineForecast: number;
+  historicForecast: number;
+  combinedForecast: number;
+  delta: number;
+  dealsNeeded: number | null;
+  hasEnoughData: boolean;
+  periodStart: string;
+  periodEnd: string;
+  daysElapsed: number;
+  daysTotal: number;
+  productId: string | null;
+};

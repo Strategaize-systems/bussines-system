@@ -1277,7 +1277,7 @@
       "title": "Persoenliches Performance-Cockpit: Soll-Ist + Prognose",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V6",
       "description": "FEAT-603: Eigene Seite 'Meine Performance' unter Analyse. Hero-Bereich mit Zeitraum-Toggle. Soll-Ist pro Ziel mit Fortschrittsbalken/Ring. Farbcodierung (gruen/gelb/rot). Pipeline-gewichtete + historische Prognose. Delta-Anzeige.",
       "createdAt": "2026-04-19"
