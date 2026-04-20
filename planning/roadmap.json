@@ -90,6 +90,13 @@
       "status": "released",
       "summary": "Zielsetzung + Performance-Tracking: Produkt-Stammdaten, Ziel-Objekt-Modell (Umsatz/Deal-Count/Abschlussquote), Persoenliches Performance-Cockpit (Soll-Ist + Prognose + KI-Empfehlung), KPI-Snapshots, CSV-Import, Tages-Check mit Activity-KPIs",
       "order": 13
+    },
+    {
+      "id": "v6-1",
+      "name": "V6.1",
+      "status": "active",
+      "summary": "Performance Premium UI: Style Guide V2 auf /performance, 4-Kachel-Layout (Goal-Cards + Prognose), Label Abschlussquote, Wochen-Check mit Tagesaufloesung",
+      "order": 14
     }
   ]
 }

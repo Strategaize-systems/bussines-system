@@ -129,3 +129,9 @@
 | FEAT-602 | Ziel-Objekt-Modell (Umsatz, Deal-Count, Quote) | deployed | [Spec](FEAT-602-ziel-objekt-modell.md) | 2026-04-19 |
 | FEAT-603 | Persoenliches Performance-Cockpit | deployed | [Spec](FEAT-603-performance-cockpit.md) | 2026-04-19 |
 | FEAT-604 | KPI-Snapshots & Trend-Engine | deployed | [Spec](FEAT-604-kpi-snapshots.md) | 2026-04-19 |
+
+## V6.1 Features (Performance Premium UI — planned)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-611 | Performance-Cockpit Premium UI | planned | [Spec](FEAT-611-performance-premium-ui.md) | 2026-04-20 |

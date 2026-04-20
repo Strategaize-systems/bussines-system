@@ -9,13 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: released
-- Current Focus: V6 released (REL-013). Naechster Schritt: V6.1 UI-Update (Premium Look, Layout-Umbau, Wochen-Check).
-- Current Phase: V6 Released
+- High-Level State: requirements
+- Current Focus: V6.1 Requirements done (FEAT-611). Naechster Schritt: /architecture.
+- Current Phase: V6.1 Requirements
 
 ## Immediate Next Steps
-1. Coolify Cron fuer KPI-Snapshot anlegen (0 2 * * *)
-2. V6.1 UI-Update: Premium Look, Goal-Cards + Prognose 4-spaltig, "Win-Rate" → "Abschlussquote", Wochen-Check
+1. /architecture fuer V6.1
+2. /slice-planning
+3. /frontend (reine UI-Arbeit, kein Backend)
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (released, REL-010):**

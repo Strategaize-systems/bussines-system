@@ -1341,6 +1341,46 @@
       "version": "V6",
       "description": "Tages-Check auf /performance: 'Heute: 3/5 Telefonate, 1/2 Meetings, 4/10 Deals bewegt'. Wochen-Aggregation. Farbcodierung (gruen/gelb/rot). Historischer Vergleich (diese Woche vs. letzte Woche). Alle Daten automatisch aus DB, kein manuelles Eingeben.",
       "createdAt": "2026-04-20"
+    },
+    {
+      "id": "BL-376",
+      "title": "Premium Look (Style Guide V2) auf /performance",
+      "type": "improvement",
+      "priority": "high",
+      "status": "open",
+      "version": "V6.1",
+      "description": "FEAT-611: Brand-Gradients, KPICard-Muster, konsistente Shadows, Gradient-Akzentlinien auf allen Performance-Karten. Visuell auf Dashboard-Niveau bringen.",
+      "createdAt": "2026-04-20"
+    },
+    {
+      "id": "BL-377",
+      "title": "4-Kachel-Layout: Goal-Cards + Prognose kompakt",
+      "type": "improvement",
+      "priority": "high",
+      "status": "open",
+      "version": "V6.1",
+      "description": "FEAT-611: Goal-Cards kleiner, Prognose als 4. Kachel in derselben Reihe (lg:grid-cols-4). Kombinierter Forecast + Delta + Deals-noetig in einer kompakten Karte.",
+      "createdAt": "2026-04-20"
+    },
+    {
+      "id": "BL-378",
+      "title": "Label Win-Rate → Abschlussquote",
+      "type": "fix",
+      "priority": "medium",
+      "status": "open",
+      "version": "V6.1",
+      "description": "FEAT-611: Ueberall auf /performance und /performance/goals 'Win-Rate' durch 'Abschlussquote' ersetzen.",
+      "createdAt": "2026-04-20"
+    },
+    {
+      "id": "BL-379",
+      "title": "Wochen-Check mit Tagesaufloesung",
+      "type": "improvement",
+      "priority": "high",
+      "status": "open",
+      "version": "V6.1",
+      "description": "FEAT-611: Tages-Check erweitern um Wochenansicht mit Mo-Fr Aufloesung. Pro Tag pro KPI Ist/Soll mit Farbcodierung. Heute/Woche Toggle.",
+      "createdAt": "2026-04-20"
     }
   ]
 }
