@@ -17,29 +17,16 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 1. Naechste Version planen
 
 ## Active Scope
-**V4.1 — Meeting Intelligence Basis (released, REL-010):**
-- FEAT-404 Call Intelligence — deployed
-- FEAT-409 Meeting-Erinnerungen — deployed
-- FEAT-411 DSGVO-Einwilligungsflow — deployed
+Alle Versionen bis V6.1 sind released und deployed. Naechste geplante Version: V5 (Automatisierung + Skalierung) oder neues Feature nach Bedarf.
 
-**V4.2 — Wissensbasis Cross-Source (active, Architecture done):**
-- FEAT-401 Cross-Source-Wissensbasis mit RAG-Pipeline (pgvector + Bedrock Titan Embeddings V2)
-- 4 Datenquellen: Meeting-Transkripte, E-Mails, Deal-Daten, Dokumente
-- Query per natuerlicher Sprache (Text + Voice) aus Deal-Workspace
-- DEC-046 RAG, DEC-047 Embedding-Adapter, DEC-048 Dimensionen+Chunking
-- MIG-014: pgvector Extension + knowledge_chunks Tabelle
-- 6 Slices ausdefiniert: SLC-421 (pgvector+Schema+Adapter), SLC-422 (Chunker+Indexer), SLC-423 (Backfill+Cron), SLC-424 (RAG Query API), SLC-425 (Query UI), SLC-426 (Auto-Trigger)
-- Backlog: BL-350 (Umbrella) + BL-352..357 (Detail-Items)
-- Geschaetzte Gesamt-Implementierung: 7-9.5 Tage
+**Released Versions (aktuell deployed):**
+- V2..V3.3 — CRM-Basis, Workspaces, KI-Integration, UI-Polish
+- V4..V4.3 — IMAP, KI-Gatekeeper, Cal.com, Meeting Intelligence, Wissensbasis RAG, Insight Governance
+- V6 — Zielsetzung + Performance-Tracking (10 Slices, REL-013)
+- V6.1 — Performance Premium UI (3 Slices, REL-014)
 
-**V4.3 — Insight Governance (active, Architecture done):**
-- FEAT-402 Insight-Review-Queue — Erweiterung ai_action_queue + Unified Freigabe-UI + Batch-Approval
-- FEAT-412 Automatische Signal-Extraktion — Meeting + E-Mail → Property-Vorschlaege via Queue
-- DEC-049: ai_action_queue erweitern statt neue Tabelle
-- DEC-050..054: Schema-Design, Signal-Extraktion, Confidence-Scoring, UI-Patterns, Batch-Flow
-- MIG-016: ai_action_queue erweitern (neue Spalten)
-- 6 Slices empfohlen: SLC-431..436
-- Backlog: BL-351 (Umbrella Queue) + BL-358..360 (Detail Queue) + BL-202 (Umbrella Signals) + BL-361..363 (Detail Signals)
+**Planned:**
+- V5 — Automatisierung + Skalierung (Cadences, Routing, Teamlead-Rolle, Export-API)
 
 ## Blockers
 - aktuell keine
@@ -48,12 +35,4 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - V6.1 — 2026-04-21 — deployed auf Hetzner (Performance Premium UI, 3/3 Slices, REL-014)
 
 ## Notes
-V4 Deployment in zwei Phasen: SLC-401..403 am 2026-04-12 (IMAP live), SLC-404..409 am 2026-04-14 abends (Redeploy). Smoke-Tests am 2026-04-15 morgen durchgelaufen: Login, IMAP-Inbox, Mein Tag KI-Wiedervorlagen, Gesamtkalender, KI-Analyse Cockpit, Focus 2-Spalten-Layout — alle PASS. Cal.com Self-Hosted läuft seit 2026-04-13 mit Webhook-Integration. CALCOM_API_KEY bewusst leer (AGPLv3). Bedrock Claude Sonnet 4 via Frankfurt-Region.
-
-V4.1 Requirements am 2026-04-15 erstellt: PRD erweitert, 5 neue DECs (DEC-035..039), 3 Feature-Specs (FEAT-404, FEAT-409, FEAT-411), roadmap.json mit V4.2 + V4.3 ergaenzt, backlog.json um BL-342..351 erweitert. Prinzip "wenn wir es machen, machen wir es richtig" — deshalb V4.x-Split statt einer grossen Version.
-
-V4.1 Architecture am 2026-04-15 erstellt: ARCHITECTURE.md um ~420 Zeilen V4.1-Block erweitert (Jitsi-Stack, Recording-Pipeline, Whisper-Adapter-Layer, DSGVO-Consent-Flow, Reminder-Pipeline, Docker-Compose-Aenderungen, Env-Vars, Sizing, Risk-Matrix). 6 neue DECs (DEC-040 Jitsi-CPX32-Sizing, DEC-041 Library-Adapter, DEC-042 /consent-URL, DEC-043 ENV-Retention, DEC-044 Ad-hoc-Kontakte, DEC-045 MP4-Format). MIG-011 Schema-Migration geplant (user_settings-Tabelle neu, contacts+6, meetings+11, activities.ai_generated). 9 Slices empfohlen fuer Implementierung.
-
-V4.1 Slice-Planning am 2026-04-15 abgeschlossen: 9 Slice-Dateien erstellt (SLC-411 Consent-Schema + Public-Page, SLC-412 Jitsi+Jibri Deployment, SLC-413 Whisper-Adapter-Layer, SLC-414 Meeting-Start + JWT + Consent-Check, SLC-415 Recording-Upload + Retention, SLC-416 Transkript + Summary-Pipeline, SLC-417 user_settings + Reminder-Cron + .ics, SLC-418 Browser-Push + Service Worker, SLC-419 KI-Agenda). Jeder Slice mit Micro-Tasks (MT-1..N), Acceptance Criteria, Dependencies, QA-Fokus und Aufwandsschaetzung. Gesamt-Aufwandsschaetzung V4.1: ~13-15 Entwicklungstage. SLC-411 = Blocker-Schema (MIG-011 vollstaendig), SLC-412 = schwerster Infra-Slice mit Firewall/Subdomain-Vorarbeit. Pre-Slice-Checks (Hetzner-Firewall 10000/udp, Coolify-Subdomain, VAPID-Keys, Supabase-Bucket) sind vor SLC-412-Start zu erledigen. MIG-011 wurde vollstaendig in SLC-411 konsolidiert (alle additiven Schema-Aenderungen in einer Migration, analog zu V4/SLC-401 Precedent).
-
-SLC-411 am 2026-04-16 implementiert: MIG-011 via sql/13_v41_migration.sql auf Hetzner angewendet (ALTER auf contacts/meetings/activities, user_settings neu, audit_log.actor_id nullable). Alle 8 Micro-Tasks erledigt: Rate-Limit + IP-Hash-Helper, Middleware-Whitelist fuer /consent, Consent Server Actions (create/grant/decline/revoke manual+public, setOptOutCommunication), 3 Public-Consent-Pages (grant/decline/revoke/confirmed) mit Client-Forms, DE-Consent-Mail-Template + SMTP-Versand, Kontakt-Workspace UI (ConsentBadge + ConsentActions + OptOutToggle), Pending-Renewal-Cron (taeglich, nur Zaehler). `npm run build` gruen. Noch offen: /qa, Browser-Smoke-Test mit echtem Token + SMTP-Versand.
+14 Releases deployed (REL-001..REL-014). Technologie-Stack: Next.js + Supabase (self-hosted) + Bedrock Claude Sonnet (Frankfurt) + Jitsi/Jibri (shared Infra) + pgvector RAG. Hosting: Hetzner CPX32 via Coolify. Bedrock-Kosten kontrolliert durch on-click Pattern (DEC-313). Cal.com Self-Hosted mit Webhook-Integration (CALCOM_API_KEY bewusst leer, AGPLv3). OpenAI Whisper fuer Transkription (Azure-Migration geplant, DEC-035).
