@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { classifyByRules } from "@/lib/ai/classifiers/rule-based";
 import { classifyByLLM } from "@/lib/ai/classifiers/llm-based";
 import { extractAbsenceInfo } from "@/lib/ai/classifiers/auto-reply-analyzer";
+import { matchContactByAI } from "@/lib/ai/classifiers/contact-matcher-ai";
 import { createAction, expireOldActions } from "@/lib/ai/action-queue";
 
 export const maxDuration = 60;
@@ -317,7 +318,89 @@ export async function POST(request: NextRequest) {
     }
 
     // ------------------------------------------------------------------
-    // 3. Expire old pending actions
+    // 3. KI-Match fuer nicht-zugeordnete E-Mails (FEAT-505 Stufe 2)
+    // ------------------------------------------------------------------
+
+    let kiMatched = 0;
+    let kiSuggested = 0;
+
+    const { data: unassignedEmails } = await supabase
+      .from("email_messages")
+      .select("id, from_address, from_name, subject")
+      .is("contact_id", null)
+      .is("assignment_source", null)
+      .in("classification", ["anfrage", "antwort"])
+      .order("received_at", { ascending: true })
+      .limit(5);
+
+    if (unassignedEmails && unassignedEmails.length > 0) {
+      // Load contacts once for all matches
+      const { data: contacts } = await supabase
+        .from("contacts")
+        .select("id, first_name, last_name, email, company_id, companies(name)")
+        .neq("status", "archived")
+        .limit(200);
+
+      const contactList = (contacts ?? []).map((c) => ({
+        id: c.id,
+        first_name: c.first_name,
+        last_name: c.last_name,
+        email: c.email,
+        company_id: c.company_id as string | null,
+        company_name: (c.companies as unknown as { name: string } | null)?.name ?? null,
+      }));
+
+      for (const email of unassignedEmails) {
+        try {
+          const matchResult = await matchContactByAI({
+            fromName: email.from_name,
+            fromAddress: email.from_address,
+            subject: email.subject,
+            contacts: contactList,
+          });
+
+          if (!matchResult || !matchResult.contactId) continue;
+
+          if (matchResult.confidence >= 0.7) {
+            // Auto-assign
+            const matchedContact = contactList.find((c) => c.id === matchResult.contactId);
+            await supabase
+              .from("email_messages")
+              .update({
+                contact_id: matchResult.contactId,
+                company_id: matchedContact?.company_id ?? null,
+                assignment_source: "ki_match",
+                ai_match_confidence: matchResult.confidence,
+              })
+              .eq("id", email.id);
+
+            kiMatched++;
+            console.log(`[Cron/Classify] KI-Match auto-assigned ${email.id} → ${matchResult.contactId} (${matchResult.confidence})`);
+          } else if (matchResult.confidence >= 0.3) {
+            // Suggest via ai_action_queue
+            await createAction({
+              type: "assign_contact",
+              action_description: `KI-Vorschlag: E-Mail von ${email.from_name || email.from_address} zuordnen zu Kontakt (Confidence: ${Math.round(matchResult.confidence * 100)}%)`,
+              reasoning: matchResult.reasoning,
+              entity_type: "email_message",
+              entity_id: email.id,
+              source: "gatekeeper",
+              priority: "normal",
+              dedup_key: `ki-match-${email.id}`,
+              context_json: { suggested_contact_id: matchResult.contactId, confidence: matchResult.confidence },
+            });
+
+            kiSuggested++;
+            console.log(`[Cron/Classify] KI-Match suggested ${email.id} → ${matchResult.contactId} (${matchResult.confidence})`);
+          }
+        } catch (matchError) {
+          console.error(`[Cron/Classify] KI-Match error for ${email.id}:`, matchError);
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // 4. Expire old pending actions
     // ------------------------------------------------------------------
 
     const expired = await expireOldActions();
@@ -326,12 +409,12 @@ export async function POST(request: NextRequest) {
     }
 
     // ------------------------------------------------------------------
-    // 4. Return stats
+    // 5. Return stats
     // ------------------------------------------------------------------
 
     const processed = ruleClassified + llmClassified + llmFailed;
     console.log(
-      `[Cron/Classify] Done — processed=${processed}, rule=${ruleClassified}, llm=${llmClassified}, failed=${llmFailed}, autoReplyAdjusted=${autoReplyAdjusted}, expired=${expired}`
+      `[Cron/Classify] Done — processed=${processed}, rule=${ruleClassified}, llm=${llmClassified}, failed=${llmFailed}, autoReplyAdjusted=${autoReplyAdjusted}, kiMatched=${kiMatched}, kiSuggested=${kiSuggested}, expired=${expired}`
     );
 
     return NextResponse.json({
@@ -341,6 +424,8 @@ export async function POST(request: NextRequest) {
       llmClassified,
       llmFailed,
       autoReplyAdjusted,
+      kiMatched,
+      kiSuggested,
       expired,
     });
   } catch (err) {

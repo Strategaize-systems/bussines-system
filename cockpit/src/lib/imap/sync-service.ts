@@ -150,6 +150,7 @@ export async function syncEmails(): Promise<SyncResult> {
             contact_id: contactMatch?.contactId ?? null,
             company_id: contactMatch?.companyId ?? null,
             deal_id: contactMatch?.dealId ?? null,
+            assignment_source: contactMatch?.source ?? null,
             attachments: parsed.attachments,
             headers_json: parsed.headersJson,
             retention_expires_at: retentionDate.toISOString(),

@@ -1,9 +1,12 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 
+export type MatchSource = "exact_match" | "domain_match";
+
 export interface ContactMatch {
   contactId: string;
   companyId: string | null;
   dealId: string | null;
+  source: MatchSource;
 }
 
 /**
@@ -35,6 +38,7 @@ export async function matchContact(
       contactId: contact.id,
       companyId: contact.company_id,
       dealId,
+      source: "exact_match",
     };
   }
 
@@ -59,6 +63,7 @@ export async function matchContact(
       contactId: domainContact.id,
       companyId: domainContact.company_id,
       dealId,
+      source: "domain_match",
     };
   }
 
