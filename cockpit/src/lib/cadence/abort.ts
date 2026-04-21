@@ -70,7 +70,7 @@ export async function checkAbort(
       .filter((id): id is string => id !== null);
 
     if (emailIds.length > 0) {
-      // Get tracking_ids of sent emails to find thread replies
+      // Get subjects of sent emails to find thread replies
       const { data: sentEmailRecords } = await supabase
         .from("emails")
         .select("id, subject")
