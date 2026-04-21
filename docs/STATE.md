@@ -9,13 +9,12 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: released
-- Current Focus: V6.1 released als REL-014. Alle 3 Slices deployed, Smoke-Test PASS.
-- Current Phase: V6.1 Released
+- High-Level State: stable
+- Current Focus: V6.1 released + post-launch STABLE (RPT-179). Vollstaendiger Lifecycle abgeschlossen.
+- Current Phase: Stable (V6.1)
 
 ## Immediate Next Steps
-1. /post-launch V6.1
-2. Naechste Version planen
+1. Naechste Version planen
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (released, REL-010):**
