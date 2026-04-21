@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import nodemailer from "nodemailer";
+import { sendEmailWithTracking } from "@/lib/email/send";
 import { createFollowUpTask } from "@/app/(app)/aufgaben/actions";
 
 export type Email = {
@@ -71,70 +71,20 @@ export async function sendEmail(formData: FormData) {
   const dealId = (formData.get("deal_id") as string) || null;
   const followUpDate = (formData.get("follow_up_date") as string) || null;
 
-  const smtpHost = process.env.SMTP_HOST;
-  const smtpPort = Number(process.env.SMTP_PORT || "587");
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASSWORD;
-  const fromAddress = process.env.SMTP_FROM_EMAIL || smtpUser;
-
-  if (!smtpHost || !smtpUser || !smtpPass) {
-    // Save as draft if SMTP not configured
-    const { error } = await supabase.from("emails").insert({
-      contact_id: contactId,
-      company_id: companyId,
-      deal_id: dealId,
-      direction: "outbound",
-      from_address: fromAddress || null,
-      to_address: toAddress,
-      subject,
-      body,
-      status: "draft",
-      follow_up_status: followUpDate ? "pending" : "none",
-      follow_up_date: followUpDate,
-    });
-
-    if (error) return { error: error.message };
-
-    revalidatePath("/emails");
-    return { error: "", warning: "SMTP nicht konfiguriert — als Entwurf gespeichert." };
-  }
-
-  // Send via SMTP
-  try {
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpPort === 465,
-      auth: { user: smtpUser, pass: smtpPass },
-    });
-
-    await transporter.sendMail({
-      from: fromAddress,
-      to: toAddress,
-      subject,
-      text: body,
-    });
-  } catch (err) {
-    return { error: `SMTP-Fehler: ${err instanceof Error ? err.message : "Unbekannter Fehler"}` };
-  }
-
-  // Log sent email
-  const { error } = await supabase.from("emails").insert({
-    contact_id: contactId,
-    company_id: companyId,
-    deal_id: dealId,
-    direction: "outbound",
-    from_address: fromAddress,
-    to_address: toAddress,
+  // Send via Shared Email-Send-Layer (DEC-069)
+  const result = await sendEmailWithTracking({
+    to: toAddress,
     subject,
     body,
-    status: "sent",
-    follow_up_status: followUpDate ? "pending" : "none",
-    follow_up_date: followUpDate,
-    sent_at: new Date().toISOString(),
+    contactId,
+    companyId,
+    dealId,
+    followUpDate,
   });
 
-  if (error) return { error: error.message };
+  if (!result.success) {
+    return { error: result.error || "Unbekannter Fehler" };
+  }
 
   // Auto-create follow-up task when follow_up_date is set
   if (followUpDate) {
@@ -155,6 +105,10 @@ export async function sendEmail(formData: FormData) {
 
   if (contactId) revalidatePath(`/contacts/${contactId}`);
   revalidatePath("/emails");
+
+  if (result.warning) {
+    return { error: "", warning: result.warning };
+  }
   return { error: "" };
 }
 

@@ -166,7 +166,7 @@
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-501 | [Schema-Migration + Types](SLC-501-schema-migration-types.md) | FEAT-501,505,506 | done | Blocker | 2026-04-21 |
-| SLC-502 | [Shared Email-Send-Layer + Tracking-API](SLC-502-shared-email-send-tracking-api.md) | FEAT-506 | planned | High | 2026-04-21 |
+| SLC-502 | [Shared Email-Send-Layer + Tracking-API](SLC-502-shared-email-send-tracking-api.md) | FEAT-506 | done | High | 2026-04-21 |
 | SLC-503 | [E-Mail Auto-Zuordnung](SLC-503-email-auto-zuordnung.md) | FEAT-505 | planned | High | 2026-04-21 |
 | SLC-504 | [Cadence-Backend](SLC-504-cadence-backend.md) | FEAT-501 | planned | High | 2026-04-21 |
 | SLC-505 | [Cadence-Frontend](SLC-505-cadence-frontend.md) | FEAT-501 | planned | High | 2026-04-21 |

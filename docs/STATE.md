@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5 Implementierung. SLC-501 (Schema-Migration) done. Naechster Schritt: /qa SLC-501, dann /backend SLC-502.
-- Current Phase: V5 Implementation (1/7 Slices done)
+- Current Focus: V5 Implementierung. SLC-501 + SLC-502 done. Naechster Schritt: /qa SLC-502, dann /backend SLC-503 oder SLC-504.
+- Current Phase: V5 Implementation (2/7 Slices done)
 
 ## Immediate Next Steps
-1. /qa SLC-501
-2. /backend SLC-502 (Shared Email-Send-Layer + Tracking-API)
-3. /backend SLC-503 (E-Mail Auto-Zuordnung) — parallel moeglich
+1. /qa SLC-502
+2. /backend SLC-503 (E-Mail Auto-Zuordnung)
+3. /backend SLC-504 (Cadence-Backend)
 
 ## Active Scope
 **V5 — Automatisierung + Vertriebsintelligenz (active, Requirements done):**
