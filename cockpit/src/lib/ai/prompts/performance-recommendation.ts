@@ -24,7 +24,7 @@ export function buildPerformancePrompt(goals: GoalProgress[]): string {
         ? "Umsatz"
         : g.goalType === "deal_count"
           ? "Abschluesse"
-          : "Win-Rate";
+          : "Abschlussquote";
 
     const unit = g.goalType === "revenue" ? "EUR" : g.goalType === "win_rate" ? "%" : "Deals";
 

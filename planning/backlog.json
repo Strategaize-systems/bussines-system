@@ -1347,7 +1347,7 @@
       "title": "Premium Look (Style Guide V2) auf /performance",
       "type": "improvement",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V6.1",
       "description": "FEAT-611: Brand-Gradients, KPICard-Muster, konsistente Shadows, Gradient-Akzentlinien auf allen Performance-Karten. Visuell auf Dashboard-Niveau bringen.",
       "createdAt": "2026-04-20"
@@ -1367,7 +1367,7 @@
       "title": "Label Win-Rate → Abschlussquote",
       "type": "fix",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V6.1",
       "description": "FEAT-611: Ueberall auf /performance und /performance/goals 'Win-Rate' durch 'Abschlussquote' ersetzen.",
       "createdAt": "2026-04-20"

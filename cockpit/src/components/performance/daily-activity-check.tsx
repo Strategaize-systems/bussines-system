@@ -1,12 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ActivityKpiStatus } from "@/types/activity-kpis";
 import Link from "next/link";
 
-function getBarColor(actual: number, target: number, isWarning: boolean): string {
+export function getBarColor(actual: number, target: number, isWarning: boolean): string {
   if (isWarning) {
-    // For stagnant deals: more = worse
     return actual > target ? "bg-red-500" : "bg-emerald-500";
   }
   const pct = target > 0 ? (actual / target) * 100 : 0;
@@ -15,7 +13,7 @@ function getBarColor(actual: number, target: number, isWarning: boolean): string
   return "bg-red-500";
 }
 
-function getBarTrack(actual: number, target: number, isWarning: boolean): string {
+export function getBarTrack(actual: number, target: number, isWarning: boolean): string {
   if (isWarning) {
     return actual > target ? "bg-red-100" : "bg-emerald-100";
   }
@@ -25,7 +23,7 @@ function getBarTrack(actual: number, target: number, isWarning: boolean): string
   return "bg-red-100";
 }
 
-function getTextColor(actual: number, target: number, isWarning: boolean): string {
+export function getTextColor(actual: number, target: number, isWarning: boolean): string {
   if (isWarning) {
     return actual > target ? "text-red-600" : "text-emerald-600";
   }
@@ -42,14 +40,17 @@ type Props = {
 export function DailyActivityCheck({ kpis }: Props) {
   if (kpis.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-blue-500" />
+      <div className="bg-white rounded-xl border-2 border-slate-200 shadow-lg relative overflow-hidden hover:shadow-xl transition-all duration-300">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#120774] to-[#4454b8]" />
+        <div className="p-4 pb-0">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#120774] to-[#4454b8] shadow-sm">
+              <Activity className="h-4 w-4 text-white" strokeWidth={2.5} />
+            </div>
             Tages-Check
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          </h3>
+        </div>
+        <div className="p-4">
           <p className="text-sm text-slate-500">
             Keine Tages-KPIs definiert.{" "}
             <Link
@@ -59,20 +60,23 @@ export function DailyActivityCheck({ kpis }: Props) {
               Tages-KPIs definieren →
             </Link>
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Activity className="h-4 w-4 text-blue-500" />
+    <div className="bg-white rounded-xl border-2 border-slate-200 shadow-lg relative overflow-hidden hover:shadow-xl transition-all duration-300">
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#120774] to-[#4454b8]" />
+      <div className="p-4 pb-0">
+        <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#120774] to-[#4454b8] shadow-sm">
+            <Activity className="h-4 w-4 text-white" strokeWidth={2.5} />
+          </div>
           Tages-Check
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        </h3>
+      </div>
+      <div className="p-4 space-y-4">
         {/* Daily KPIs */}
         <div>
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Heute</p>
@@ -137,7 +141,7 @@ export function DailyActivityCheck({ kpis }: Props) {
             })}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

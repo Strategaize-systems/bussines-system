@@ -94,7 +94,7 @@ export default async function PerformancePage({
   const trendKpis: { label: string; kpiType: KpiType; unit: string }[] = [
     { label: "Umsatz", kpiType: "revenue_won", unit: "EUR" },
     { label: "Deals", kpiType: "deal_count_won", unit: "Deals" },
-    { label: "Win-Rate", kpiType: "win_rate", unit: "%" },
+    { label: "Abschlussquote", kpiType: "win_rate", unit: "%" },
   ];
 
   const trendComparisons = await Promise.all(

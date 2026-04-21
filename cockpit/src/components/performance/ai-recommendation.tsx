@@ -35,14 +35,17 @@ export function AiRecommendation({ progressData }: Props) {
   if (progressData.length === 0) return null;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-purple-500" />
+    <div className="bg-white rounded-xl border-2 border-slate-200 shadow-lg relative overflow-hidden hover:shadow-xl transition-all duration-300">
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-purple-600" />
+      <div className="p-4 pb-0">
+        <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 shadow-sm">
+            <Sparkles className="h-4 w-4 text-white" strokeWidth={2.5} />
+          </div>
           KI-Empfehlung
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+        </h3>
+      </div>
+      <div className="p-4">
         {!recommendation && !loading && !error && (
           <button
             onClick={handleClick}
@@ -88,7 +91,7 @@ export function AiRecommendation({ progressData }: Props) {
             </button>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
