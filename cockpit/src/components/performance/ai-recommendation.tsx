@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { getPerformanceRecommendation } from "@/app/actions/goals";
 import type { GoalProgress } from "@/types/goals";
