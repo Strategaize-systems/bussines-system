@@ -319,3 +319,33 @@
 - Status: accepted
 - Reason: Kein separater Route oder Seite noetig. Heute/Woche-Toggle ist natuerlicher Wechsel innerhalb derselben Karte. WeeklyComparison-Komponente wird ueberfluessig und entfaellt.
 - Consequence: DailyActivityCheck erweitert um Toggle + 5-Spalten-Tagesraster. WeeklyComparison entfaellt. Neue Server Action fuer per-Tag-Abfrage.
+
+## DEC-064 — Eigener Cadence-Execute-Cron statt IMAP-Sync-Erweiterung (V5)
+- Status: accepted
+- Reason: Cadence-Execution hat andere Intervalle (15 Min vs. 5 Min), andere Logik (Template-Rendering, Abort-Check, Step-Advance) und andere Fehlerbehandlung als IMAP-Sync. Mischung in einen Cron wuerde beide Pipelines fehleranfaellig machen.
+- Consequence: Neuer `/api/cron/cadence-execute` Endpoint (alle 15 Min). Neuer Coolify Cron-Job. Bestehende Crons bleiben unveraendert.
+
+## DEC-065 — E-Mail-Zuordnung 3-Stufen im bestehenden Pipeline (V5)
+- Status: accepted
+- Reason: Stufe 1 (exakter Adress-Match) ist bereits im IMAP-Sync implementiert und erfordert nur das Setzen von assignment_source. Stufe 2 (KI-Match) passt natuerlich in den Classify-Cron, der bereits Bedrock nutzt und E-Mails nach Klassifikation verarbeitet. Ein separater Zuordnungs-Cron waere Overhead ohne Vorteil.
+- Consequence: IMAP-Sync wird um assignment_source erweitert (minimal). Classify-Cron erhaelt KI-Match-Logik fuer nicht-zugeordnete relevante E-Mails. Kein neuer Cron-Endpoint noetig.
+
+## DEC-066 — Self-hosted Tracking via eigene API-Route (V5)
+- Status: accepted
+- Reason: Tracking-Pixel und Link-Wrapping sind technisch simpel (1x1 GIF + 302 Redirect). Ein externer Tracking-Service wuerde Abhaengigkeit, Kosten und Datenschutz-Komplexitaet einfuehren ohne Mehrwert fuer Single-User internes Tool. Eigene Route `/api/track/[id]` unter voller Kontrolle.
+- Consequence: Oeffentliche API-Route ohne Auth. Middleware-Whitelist-Erweiterung. Tracking-Zuverlaessigkeit ~50-70% (Pixel-Blocking akzeptiert). Keine externe Abhaengigkeit.
+
+## DEC-067 — Export-API-Key als ENV-Variable statt user_settings (V5)
+- Status: accepted
+- Reason: Single-User-System. Ein API-Key reicht. user_settings wuerde UI fuer Key-Management erfordern (Generierung, Anzeige, Rotation) — Overengineering fuer den Anwendungsfall. ENV ist konsistent mit bestehenden Secrets (CRON_SECRET, SMTP_PASSWORD).
+- Consequence: `EXPORT_API_KEY` in Coolify ENV. Key-Rotation erfordert Redeploy. Bei spaeterem Multi-User (V7): Migration zu user_settings oder OAuth2 moeglich.
+
+## DEC-068 — Cadence-Abbruch via Thread-ID primaer + From-Address Fallback (V5)
+- Status: accepted
+- Reason: Thread-ID-Match (via email_messages.thread_id auf Threads der Cadence-E-Mails) ist praezise aber setzt voraus, dass der Empfaenger im selben Thread antwortet. From-Address-Fallback (email_messages WHERE from_address = kontakt.email AND received_at > enrollment.started_at) fängt Antworten auf, die den Thread brechen. Zusammen decken beide Pfade >95% der realen Antwort-Szenarien ab.
+- Consequence: Cadence-Abort-Check prueft beide Bedingungen. False-Positive moeglich bei From-Address-Fallback (Kontakt schreibt unabhaengige E-Mail → Cadence stoppt). Akzeptabel, weil false-positive (zu frueh stoppen) besser ist als false-negative (trotz Antwort weiter mailen).
+
+## DEC-069 — Shared Email-Send-Layer mit Tracking-Injection (V5)
+- Status: accepted
+- Reason: Manueller E-Mail-Versand (emails/actions.ts) und Cadence-E-Mail-Versand brauchen denselben SMTP-Pfad, dieselbe DB-Logging-Logik und dieselbe Tracking-Injection. Ohne Shared Layer wuerde Code dupliziert und Tracking nur in einem Pfad funktionieren.
+- Consequence: Neuer `/lib/email/send.ts` als zentraler Versand-Layer. Bestehender sendEmail in actions.ts wird Wrapper um den Shared Layer. Cadence-Execution nutzt denselben Layer. Tracking-Pixel und Link-Wrapping werden transparent injiziert.

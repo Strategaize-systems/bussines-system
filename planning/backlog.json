@@ -1387,7 +1387,7 @@
       "title": "Cadences / Sequences — Follow-up-Automatisierung",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V5",
       "description": "FEAT-501: Cadence-Templates mit Schritten (E-Mail, Aufgabe, Wartezeit). Enrollment auf Deals/Kontakte. Automatische Ausfuehrung via Cron. Abbruch bei Antwort oder Deal-Status.",
       "createdAt": "2026-04-21"
@@ -1397,7 +1397,7 @@
       "title": "E-Mail Auto-Zuordnung (IMAP → Kontakt-Match)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V5",
       "description": "FEAT-505: 3-Stufen-Zuordnung: Exakter Adress-Match (automatisch), KI-Match via Bedrock (Confidence), Nicht-zugeordnet-Queue (manuell).",
       "createdAt": "2026-04-21"
@@ -1407,7 +1407,7 @@
       "title": "E-Mail Open/Click-Tracking",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "in_progress",
       "version": "V5",
       "description": "FEAT-506: Tracking-Pixel fuer Open-Detection, Link-Wrapping fuer Click-Detection. Events auf E-Mail-/Kontakt-Ebene angezeigt.",
       "createdAt": "2026-04-21"
@@ -1417,7 +1417,7 @@
       "title": "Intelligence-Platform-Export-API (System 4)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "in_progress",
       "version": "V5",
       "description": "FEAT-504: 5 read-only JSON-Endpoints (Deals, Contacts, Activities, Signals, Insights) mit API-Key-Auth, Pagination, Zeitraum-Filter.",
       "createdAt": "2026-04-21"

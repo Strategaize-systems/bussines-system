@@ -112,14 +112,14 @@
 | FEAT-402 | Insight-Review-Queue (nur schreibende KI-Aenderungen) | deployed | [Spec](FEAT-402-insight-review-queue.md) | 2026-04-09 |
 | FEAT-412 | Automatische Signal-Extraktion (Meeting + E-Mail → Queue) | deployed | [Spec](FEAT-412-automatic-signal-extraction.md) | 2026-04-18 |
 
-## V5 Features (Automatisierung + Vertriebsintelligenz — planned)
+## V5 Features (Automatisierung + Vertriebsintelligenz — in_progress)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-501 | Cadences / Sequences | planned | [Spec](FEAT-501-cadences-sequences.md) | 2026-04-09 |
-| FEAT-504 | Intelligence-Platform-Export-API | planned | [Spec](FEAT-504-export-api.md) | 2026-04-09 |
-| FEAT-505 | E-Mail Auto-Zuordnung | planned | [Spec](FEAT-505-email-auto-zuordnung.md) | 2026-04-21 |
-| FEAT-506 | E-Mail Open/Click-Tracking | planned | [Spec](FEAT-506-email-tracking.md) | 2026-04-21 |
+| FEAT-501 | Cadences / Sequences | in_progress | [Spec](FEAT-501-cadences-sequences.md) | 2026-04-09 |
+| FEAT-504 | Intelligence-Platform-Export-API | in_progress | [Spec](FEAT-504-export-api.md) | 2026-04-09 |
+| FEAT-505 | E-Mail Auto-Zuordnung | in_progress | [Spec](FEAT-505-email-auto-zuordnung.md) | 2026-04-21 |
+| FEAT-506 | E-Mail Open/Click-Tracking | in_progress | [Spec](FEAT-506-email-tracking.md) | 2026-04-21 |
 
 ## V7 Features (Multi-User + Erweiterung — planned)
 

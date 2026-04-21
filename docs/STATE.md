@@ -9,13 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: requirements
-- Current Focus: V5 Requirements abgeschlossen. 4 Features (FEAT-501, 504, 505, 506). Naechster Schritt: /architecture.
-- Current Phase: V5 Requirements
+- High-Level State: implementing
+- Current Focus: V5 Implementierung. SLC-501 (Schema-Migration) done. Naechster Schritt: /qa SLC-501, dann /backend SLC-502.
+- Current Phase: V5 Implementation (1/7 Slices done)
 
 ## Immediate Next Steps
-1. /architecture V5
-2. /slice-planning V5
+1. /qa SLC-501
+2. /backend SLC-502 (Shared Email-Send-Layer + Tracking-API)
+3. /backend SLC-503 (E-Mail Auto-Zuordnung) — parallel moeglich
 
 ## Active Scope
 **V5 — Automatisierung + Vertriebsintelligenz (active, Requirements done):**

@@ -3862,3 +3862,682 @@ Geschaetzt 3 Slices, je 2-3 Stunden. Gesamtschaetzung: ~1 Tag.
 ## V6.1 Recommended Next Step
 
 `/slice-planning` — 3 Slices ausdefinieren mit Acceptance Criteria, Micro-Tasks, QA-Fokus.
+
+---
+
+# V5 — Automatisierung + Vertriebsintelligenz
+
+## V5 Architecture Summary
+
+V5 bringt vier neue Faehigkeiten: automatisierte Follow-up-Ketten (Cadences), automatische E-Mail-Kontakt-Zuordnung, Open/Click-Tracking fuer ausgehende E-Mails, und eine strukturierte Export-API fuer System 4 (Intelligence Studio).
+
+**Strategie:** Rein additiv. 5 neue Tabellen, 2 bestehende Tabellen erweitert. Ein neuer Cron-Job. Eine neue oeffentliche API-Route (Tracking). 5 neue geschuetzte API-Routes (Export). Kein neuer externer Service. Bestehende Infrastruktur (SMTP, IMAP-Sync, Bedrock, Cron-Pattern) wird wiederverwendet und erweitert.
+
+**Kern-Architektur-Entscheidungen:**
+- Eigener Cadence-Execute-Cron (DEC-064)
+- E-Mail-Zuordnung 3-Stufen im bestehenden Pipeline (DEC-065)
+- Self-hosted Tracking via eigene API-Route (DEC-066)
+- Export-API-Key als ENV-Variable (DEC-067)
+- Cadence-Abbruch via Thread-ID + From-Address (DEC-068)
+- Shared Email-Send-Layer mit Tracking-Injection (DEC-069)
+
+## V5 Main Components
+
+```
+Bestehende Infrastruktur (unveraendert):
+  Next.js BD Cockpit → Supabase Stack → PostgreSQL
+  Bedrock Claude Sonnet (eu-central-1) → KI-Match fuer E-Mail-Zuordnung
+  Coolify Cron-Jobs → Cadence-Execute-Cron (NEU)
+  nodemailer / SMTP → Cadence-E-Mail-Versand (via Shared Layer)
+
+Neue Komponenten (V5):
+  /app/(app)/cadences/              → Cadence-Verwaltung (Templates + Builder)
+  /app/(app)/emails/unassigned/     → Nicht-zugeordnete E-Mails Queue
+  /lib/email/send.ts                → Shared Email-Send-Layer (NEU — DEC-069)
+  /lib/email/tracking.ts            → Tracking-Pixel + Link-Wrapping Injection
+  /lib/cadence/                     → Cadence-Engine (Execution, Abort-Check, Template-Rendering)
+  /api/track/[id]/route.ts          → Tracking-Endpoint (oeffentlich, kein Auth)
+  /api/cron/cadence-execute         → Cadence-Ausfuehrungs-Cron (NEU — DEC-064)
+  /api/export/deals                 → Export-Endpoint (API-Key-Auth)
+  /api/export/contacts              → Export-Endpoint
+  /api/export/activities            → Export-Endpoint
+  /api/export/signals               → Export-Endpoint
+  /api/export/insights              → Export-Endpoint
+```
+
+## V5 Responsibilities
+
+| Component | Verantwortung |
+|---|---|
+| `/lib/email/send.ts` | Zentraler E-Mail-Versand: SMTP via nodemailer, Tracking-Injection, DB-Logging. Ersetzt direkte nodemailer-Aufrufe in actions.ts |
+| `/lib/email/tracking.ts` | Tracking-Pixel (1x1 GIF) in HTML einbetten, Link-Wrapping (Redirect-URLs), Tracking-ID-Generierung |
+| `/lib/cadence/` | Cadence-Logik: Template-Rendering mit Variablen, Enrollment-Management, Step-Execution, Abort-Check |
+| `/api/track/[id]` | Oeffentlicher Endpoint: Open-Event (liefert 1x1 GIF) + Click-Event (loggt + Redirect). Kein Auth. |
+| `/api/cron/cadence-execute` | Faellige Enrollments laden, Schritte ausfuehren (E-Mail/Task/Wait), Abort-Bedingungen pruefen |
+| `/api/cron/classify` (erweitert) | ZUSAETZLICH: KI-Match fuer nicht-zugeordnete E-Mails (Stufe 2, DEC-065) |
+| `/api/export/*` | 5 read-only JSON-Endpoints mit API-Key-Auth, Pagination, Zeitraum-Filter |
+
+## V5 Data Model
+
+### Tabellen-Uebersicht V5: 38 Tabellen (33 bestehend + 5 neu)
+
+```
+BESTEHEND (unveraendert):              NEU (V5):
+├── companies                          ├── cadences
+├── contacts                           ├── cadence_steps
+├── pipelines                          ├── cadence_enrollments
+├── pipeline_stages                    ├── cadence_executions
+├── deals                              └── email_tracking_events
+├── proposals
+├── fit_assessments                    BESTEHEND (erweitert V5):
+├── tasks                              ├── emails (+2: tracking_id, tracking_enabled)
+├── handoffs                           └── email_messages (+2: assignment_source, ai_match_confidence)
+├── referrals
+├── signals
+├── documents
+├── activities
+├── profiles
+├── meetings
+├── calendar_events
+├── audit_log
+├── email_templates (V3.1)
+├── email_messages (IMAP, V4)
+├── email_threads (V4)
+├── email_sync_state (V4)
+├── ai_action_queue (V4)
+├── ai_feedback (V4)
+├── user_settings (V4.1)
+├── knowledge_chunks (V4.2)
+├── products (V6)
+├── deal_products (V6)
+├── goals (V6)
+└── kpi_snapshots (V6)
+```
+
+### Neue Tabelle: cadences (FEAT-501)
+
+```sql
+CREATE TABLE cadences (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  description TEXT,
+  status TEXT NOT NULL DEFAULT 'active',
+  created_by UUID REFERENCES profiles(id),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_cadences_status ON cadences(status);
+
+-- RLS
+ALTER TABLE cadences ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated_full_access" ON cadences
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+GRANT ALL ON cadences TO authenticated;
+GRANT ALL ON cadences TO service_role;
+```
+
+**status-Werte:** `active`, `paused`, `archived`
+
+### Neue Tabelle: cadence_steps (FEAT-501)
+
+```sql
+CREATE TABLE cadence_steps (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  cadence_id UUID NOT NULL REFERENCES cadences(id) ON DELETE CASCADE,
+  step_order INT NOT NULL,
+  step_type TEXT NOT NULL,
+  delay_days INT NOT NULL DEFAULT 0,
+  -- E-Mail-Schritt
+  email_template_id UUID REFERENCES email_templates(id) ON DELETE SET NULL,
+  email_subject TEXT,
+  email_body TEXT,
+  -- Aufgaben-Schritt
+  task_title TEXT,
+  task_description TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_cadence_steps_cadence ON cadence_steps(cadence_id, step_order);
+
+-- RLS
+ALTER TABLE cadence_steps ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated_full_access" ON cadence_steps
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+GRANT ALL ON cadence_steps TO authenticated;
+GRANT ALL ON cadence_steps TO service_role;
+```
+
+**step_type-Werte:** `email`, `task`, `wait`
+**delay_days:** Wartezeit in Tagen vor Ausfuehrung dieses Schritts (0 = sofort nach vorherigem Schritt)
+**email_template_id:** Referenz auf bestehendes email_templates. Alternativ: Inline email_subject + email_body fuer einfache Cadences ohne Template.
+**task_title/task_description:** Werden bei Ausfuehrung in die bestehende tasks-Tabelle geschrieben.
+
+### Neue Tabelle: cadence_enrollments (FEAT-501)
+
+```sql
+CREATE TABLE cadence_enrollments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  cadence_id UUID NOT NULL REFERENCES cadences(id) ON DELETE CASCADE,
+  -- Enrollment-Target: entweder Deal oder Kontakt
+  deal_id UUID REFERENCES deals(id) ON DELETE CASCADE,
+  contact_id UUID REFERENCES contacts(id) ON DELETE CASCADE,
+  -- Status
+  status TEXT NOT NULL DEFAULT 'active',
+  current_step_order INT NOT NULL DEFAULT 1,
+  next_execute_at TIMESTAMPTZ NOT NULL,
+  -- Tracking
+  started_at TIMESTAMPTZ DEFAULT now(),
+  completed_at TIMESTAMPTZ,
+  stopped_at TIMESTAMPTZ,
+  stop_reason TEXT,
+  created_by UUID REFERENCES profiles(id),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  -- Constraint: mindestens Deal oder Kontakt
+  CONSTRAINT enrollment_target CHECK (deal_id IS NOT NULL OR contact_id IS NOT NULL)
+);
+
+CREATE INDEX idx_cadence_enrollments_active ON cadence_enrollments(status, next_execute_at)
+  WHERE status = 'active';
+CREATE INDEX idx_cadence_enrollments_cadence ON cadence_enrollments(cadence_id);
+CREATE INDEX idx_cadence_enrollments_deal ON cadence_enrollments(deal_id)
+  WHERE deal_id IS NOT NULL;
+CREATE INDEX idx_cadence_enrollments_contact ON cadence_enrollments(contact_id)
+  WHERE contact_id IS NOT NULL;
+-- Kein doppeltes Enrollment desselben Targets in dieselbe Cadence
+CREATE UNIQUE INDEX idx_cadence_enrollments_unique ON cadence_enrollments(
+  cadence_id,
+  COALESCE(deal_id, '00000000-0000-0000-0000-000000000000'::UUID),
+  COALESCE(contact_id, '00000000-0000-0000-0000-000000000000'::UUID)
+) WHERE status = 'active';
+
+-- RLS
+ALTER TABLE cadence_enrollments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated_full_access" ON cadence_enrollments
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+GRANT ALL ON cadence_enrollments TO authenticated;
+GRANT ALL ON cadence_enrollments TO service_role;
+```
+
+**status-Werte:** `active`, `completed`, `stopped`, `paused`
+**stop_reason-Werte:** `reply_received`, `deal_won`, `deal_lost`, `manual`, `cadence_paused`
+**next_execute_at:** Zeitpunkt, wann der naechste Schritt faellig ist. Wird bei jedem Schritt-Advance um `delay_days` des naechsten Schritts vorwaerts gesetzt.
+**Unique-Constraint:** Verhindert, dass ein Deal/Kontakt gleichzeitig zweimal in derselben Cadence eingebucht ist (nur fuer aktive Enrollments).
+
+### Neue Tabelle: cadence_executions (FEAT-501)
+
+```sql
+CREATE TABLE cadence_executions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  enrollment_id UUID NOT NULL REFERENCES cadence_enrollments(id) ON DELETE CASCADE,
+  step_id UUID NOT NULL REFERENCES cadence_steps(id) ON DELETE CASCADE,
+  step_order INT NOT NULL,
+  step_type TEXT NOT NULL,
+  -- Ergebnis
+  status TEXT NOT NULL DEFAULT 'executed',
+  result_detail TEXT,
+  -- Referenzen auf erstellte Objekte
+  email_id UUID REFERENCES emails(id) ON DELETE SET NULL,
+  task_id UUID REFERENCES tasks(id) ON DELETE SET NULL,
+  executed_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_cadence_executions_enrollment ON cadence_executions(enrollment_id);
+CREATE INDEX idx_cadence_executions_step ON cadence_executions(step_id);
+
+-- RLS
+ALTER TABLE cadence_executions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated_full_access" ON cadence_executions
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+GRANT ALL ON cadence_executions TO authenticated;
+GRANT ALL ON cadence_executions TO service_role;
+```
+
+**status-Werte:** `executed`, `skipped`, `failed`
+**email_id:** Referenz auf die gesendete E-Mail (bei email-Schritten)
+**task_id:** Referenz auf die erstellte Aufgabe (bei task-Schritten)
+
+### Neue Tabelle: email_tracking_events (FEAT-506)
+
+```sql
+CREATE TABLE email_tracking_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tracking_id UUID NOT NULL,
+  email_id UUID NOT NULL REFERENCES emails(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL,
+  -- Click-spezifisch
+  link_url TEXT,
+  link_index INT,
+  -- Metadaten
+  ip_address TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_tracking_events_tracking ON email_tracking_events(tracking_id);
+CREATE INDEX idx_tracking_events_email ON email_tracking_events(email_id);
+CREATE INDEX idx_tracking_events_type ON email_tracking_events(event_type);
+
+-- RLS
+ALTER TABLE email_tracking_events ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated_full_access" ON email_tracking_events
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+GRANT ALL ON email_tracking_events TO authenticated;
+GRANT ALL ON email_tracking_events TO service_role;
+```
+
+**event_type-Werte:** `open`, `click`
+**tracking_id:** UUID, generiert beim E-Mail-Versand, verbindet Pixel-/Link-Events mit der E-Mail
+**link_url:** Original-URL des geklickten Links (bei click-Events)
+**link_index:** Position des Links im E-Mail-Body (fuer Auswertung welcher Link geklickt wurde)
+**ip_address + user_agent:** Fuer grundlegende Engagement-Analyse, keine Personen-Identifikation
+
+### Tabellen-Erweiterung: emails (FEAT-506)
+
+```sql
+ALTER TABLE emails ADD COLUMN IF NOT EXISTS tracking_id UUID;
+ALTER TABLE emails ADD COLUMN IF NOT EXISTS tracking_enabled BOOLEAN DEFAULT TRUE;
+
+CREATE UNIQUE INDEX idx_emails_tracking ON emails(tracking_id) WHERE tracking_id IS NOT NULL;
+```
+
+**tracking_id:** Generiert beim Versand durch den Shared Email-Send-Layer. Verbindet E-Mail mit Tracking-Events.
+**tracking_enabled:** Default TRUE. Erlaubt Opt-out pro E-Mail.
+
+### Tabellen-Erweiterung: email_messages (FEAT-505)
+
+```sql
+ALTER TABLE email_messages ADD COLUMN IF NOT EXISTS assignment_source TEXT;
+ALTER TABLE email_messages ADD COLUMN IF NOT EXISTS ai_match_confidence NUMERIC(3,2);
+
+CREATE INDEX idx_email_messages_unassigned ON email_messages(contact_id)
+  WHERE contact_id IS NULL AND classification NOT IN ('spam', 'newsletter', 'auto_reply');
+```
+
+**assignment_source-Werte:** `exact_match`, `domain_match`, `ki_match`, `manual`, `null` (noch nicht zugeordnet)
+**ai_match_confidence:** 0.00-1.00, nur bei `ki_match` gesetzt. Confidence des Bedrock-Match.
+**Index:** Optimiert die "Unzugeordnet"-Queue-Abfrage.
+
+## V5 Shared Email-Send-Layer (DEC-069)
+
+Aktuell sendet `emails/actions.ts` direkt via nodemailer. V5 zentralisiert den E-Mail-Versand in `/lib/email/send.ts`, damit sowohl manueller Versand als auch Cadence-Execution denselben Pfad nutzen — inklusive Tracking-Injection.
+
+```
+Ausloeser (manuell oder Cadence)
+    |
+    v
+/lib/email/send.ts — sendEmail(params)
+    |
+    ├── 1. tracking_id generieren (UUID)
+    ├── 2. HTML-Body erzeugen (Text → HTML Wrapping)
+    ├── 3. Tracking-Pixel einbetten (1x1 GIF am Ende des Body)
+    │       <img src="https://business.strategaizetransition.com/api/track/{tracking_id}?t=open" width="1" height="1" />
+    ├── 4. Links wrappen (jede <a href="..."> → /api/track/{tracking_id}?t=click&url={encoded_original})
+    ├── 5. nodemailer.sendMail({ from, to, subject, html })
+    ├── 6. INSERT emails { ..., tracking_id, tracking_enabled, status: 'sent' }
+    └── 7. Return { emailId, trackingId }
+```
+
+### Template-Rendering (Cadence)
+
+Cadence-E-Mail-Schritte rendern Templates mit Kontakt-/Deal-Variablen:
+
+```
+Verfuegbare Variablen:
+  {{kontakt.vorname}}     → contacts.first_name
+  {{kontakt.nachname}}    → contacts.last_name
+  {{kontakt.email}}       → contacts.email
+  {{kontakt.firma}}       → companies.name (via contact.company_id)
+  {{deal.name}}           → deals.name
+  {{deal.wert}}           → deals.value
+  {{deal.stage}}          → pipeline_stages.name
+  {{absender.name}}       → profiles.full_name (Eigentuemer)
+```
+
+Rendering ist einfaches String-Replace (`{{key}}` → Wert). Kein Template-Engine-Framework noetig fuer V5.
+
+## V5 Cadence-Execution Flow (FEAT-501)
+
+```
+/api/cron/cadence-execute (alle 15 Min)
+  │
+  ├── 1. Cron-Secret pruefen
+  ├── 2. Aktive Enrollments laden WHERE status='active' AND next_execute_at <= now()
+  │      └── LIMIT 20 pro Lauf (Batching bei Single-User ausreichend)
+  │
+  ├── 3. Pro Enrollment:
+  │      │
+  │      ├── 3a. Abort-Check (VOR Schritt-Ausfuehrung):
+  │      │      ├── Antwort empfangen? (DEC-068)
+  │      │      │   ├── Primaer: email_messages WHERE thread_id IN (threads der Cadence-E-Mails)
+  │      │      │   │   AND from_address != SMTP_FROM_EMAIL AND received_at > enrollment.started_at
+  │      │      │   └── Fallback: email_messages WHERE from_address = enrollment.contact.email
+  │      │      │       AND received_at > enrollment.started_at
+  │      │      ├── Deal gewonnen? (deals.status = 'won')
+  │      │      └── Deal verloren? (deals.status = 'lost')
+  │      │      │
+  │      │      └── Wenn Abort → enrollment.status='stopped', stop_reason setzen, SKIP
+  │      │
+  │      ├── 3b. Aktuellen Schritt laden (cadence_steps WHERE cadence_id AND step_order = current_step_order)
+  │      │
+  │      ├── 3c. Schritt ausfuehren:
+  │      │      ├── email: Template rendern → sendEmail() → cadence_executions INSERT
+  │      │      ├── task: tasks INSERT → cadence_executions INSERT
+  │      │      └── wait: Kein Seiteneffekt (Wartezeit ist im delay_days des naechsten Schritts)
+  │      │
+  │      └── 3d. Naechsten Schritt vorbereiten:
+  │             ├── Naechster Schritt existiert?
+  │             │   ├── Ja: current_step_order++, next_execute_at = now() + naechster.delay_days
+  │             │   └── Nein: enrollment.status='completed', completed_at=now()
+  │             └── UPDATE cadence_enrollments
+  │
+  └── 4. Response: { processed: N, stopped: N, completed: N, errors: N }
+```
+
+### Enrollment-Lifecycle
+
+```
+[Nicht eingebucht]
+       │
+       v  (Einbuchen-Aktion auf Deal/Kontakt-Workspace)
+     active ──────────────────────────────────────────── stopped
+       │                                                   ^
+       │  (Schritte werden nacheinander ausgefuehrt)       │
+       │                                                   ├── reply_received
+       │                                                   ├── deal_won
+       │                                                   ├── deal_lost
+       │                                                   ├── manual
+       v                                                   └── cadence_paused
+   completed
+```
+
+## V5 E-Mail Auto-Zuordnung Flow (FEAT-505, DEC-065)
+
+### Stufe 1: Exakter Match — im IMAP-Sync (bestehend, erweitert)
+
+Der bestehende IMAP-Sync (`/api/cron/imap-sync`) macht bereits Kontakt-Matching:
+```
+from_address → contacts.email → match → contact_id setzen
+```
+
+**Erweiterung V5:** Bei Match → `assignment_source = 'exact_match'` setzen.
+Bei Domain-Match → `assignment_source = 'domain_match'` setzen.
+Kein Match → `assignment_source = NULL` (fuer Stufe 2).
+
+### Stufe 2: KI-Match — im Classify-Cron (bestehend, erweitert)
+
+```
+/api/cron/classify (bestehend, alle 15 Min)
+  │
+  ├── ... bestehende Klassifikation ...
+  │
+  ├── NEU: Nach Klassifikation, falls contact_id IS NULL
+  │        UND classification IN ('anfrage', 'antwort'):
+  │
+  │   ├── 1. Name aus From-Header extrahieren (from_name)
+  │   ├── 2. Name aus E-Mail-Signatur extrahieren (body_text, letzte 5 Zeilen)
+  │   ├── 3. Kontakt-Kandidaten laden:
+  │   │      SELECT id, first_name, last_name, email, company_id
+  │   │      FROM contacts WHERE status != 'archived' LIMIT 200
+  │   ├── 4. Bedrock-Match-Prompt:
+  │   │      Input: { from_name, from_address, signature_name, subject, kontakt_liste }
+  │   │      Output: { contact_id: UUID|null, confidence: 0.0-1.0, reasoning: string }
+  │   ├── 5. Wenn confidence >= 0.7 → automatisch zuordnen:
+  │   │      email_messages UPDATE SET contact_id, company_id, assignment_source='ki_match', ai_match_confidence
+  │   └── 6. Wenn confidence 0.3-0.69 → ai_action_queue INSERT (type='assign_contact', Vorschlag)
+  │          Wenn confidence < 0.3 → assignment_source bleibt NULL (Stufe 3)
+  │
+  └── ...
+```
+
+### Stufe 3: Manuelle Zuordnung — Unassigned-Queue UI
+
+```
+/app/(app)/emails/unassigned/
+  │
+  ├── Tabelle: email_messages WHERE contact_id IS NULL
+  │           AND classification NOT IN ('spam', 'newsletter', 'auto_reply')
+  │           ORDER BY received_at DESC
+  │
+  ├── Pro E-Mail: From, Subject, Preview, KI-Vorschlag (wenn vorhanden aus ai_action_queue)
+  │
+  └── Aktionen:
+      ├── Kontakt zuordnen (Dropdown/Suche) → assignment_source='manual'
+      ├── Als irrelevant markieren → classification='spam' oder 'newsletter'
+      └── Neuen Kontakt erstellen (Out of Scope V5, aber Platzhalter-Button)
+```
+
+## V5 Tracking Flow (FEAT-506, DEC-066)
+
+### Open-Tracking
+
+```
+E-Mail-Empfaenger oeffnet E-Mail
+    │
+    v
+E-Mail-Client laedt Pixel-Bild:
+  GET /api/track/{tracking_id}?t=open
+    │
+    v
+/api/track/[id]/route.ts
+    ├── 1. tracking_id aus URL
+    ├── 2. email_id via tracking_id Lookup (emails.tracking_id)
+    ├── 3. INSERT email_tracking_events { tracking_id, email_id, event_type: 'open', ip, user_agent }
+    └── 4. Response: 1x1 transparent GIF (image/gif), Cache-Control: no-cache
+```
+
+### Click-Tracking
+
+```
+E-Mail-Empfaenger klickt Link
+    │
+    v
+Browser laedt Redirect-URL:
+  GET /api/track/{tracking_id}?t=click&url={encoded_original_url}&idx={link_index}
+    │
+    v
+/api/track/[id]/route.ts
+    ├── 1. tracking_id + url + idx aus URL
+    ├── 2. email_id via tracking_id Lookup
+    ├── 3. INSERT email_tracking_events { tracking_id, email_id, event_type: 'click', link_url, link_index, ip, user_agent }
+    └── 4. Response: 302 Redirect → original_url
+```
+
+### Tracking-API-Route Sicherheit
+
+- **Kein Auth**: E-Mail-Clients senden keine Cookies oder Bearer-Tokens. Der Endpoint muss oeffentlich sein.
+- **Keine PII**: IP-Adresse und User-Agent werden gespeichert, aber nicht mit Personen korreliert. Dient nur der Engagement-Analyse.
+- **Rate-Limiting**: Kein aktives Rate-Limiting noetig (Single-User, geringes Volumen). Bei Abuse: Cloudflare/Hetzner-Firewall.
+- **Middleware-Whitelist**: `/api/track/*` wird zur bestehenden Auth-Middleware-Whitelist hinzugefuegt (wie bereits `/api/cron/*` und `/consent/*`).
+
+### Tracking-Aggregation (UI)
+
+Auf E-Mail-Detail und in der Timeline:
+```
+Aggregation: SELECT event_type, COUNT(*) FROM email_tracking_events
+             WHERE email_id = $1 GROUP BY event_type
+
+Anzeige: "3× geoeffnet, 1 Link geklickt" oder "Nicht geoeffnet"
+```
+
+## V5 Export-API Flow (FEAT-504, DEC-067)
+
+```
+System 4 (Intelligence Studio)
+    │
+    v
+GET /api/export/deals?since=2026-01-01&until=2026-04-21&page=1&limit=50
+  Header: Authorization: Bearer {EXPORT_API_KEY}
+    │
+    v
+/api/export/[entity]/route.ts
+    ├── 1. API-Key pruefen (Bearer Token == process.env.EXPORT_API_KEY)
+    │      Fehler: 401 Unauthorized
+    ├── 2. Query-Parameter parsen (since, until, page, limit)
+    ├── 3. Supabase-Query mit service_role (kein User-Auth noetig)
+    ├── 4. Pagination: OFFSET = (page-1) * limit, LIMIT = limit (max 100)
+    └── 5. Response: { data: [...], pagination: { page, limit, total, hasMore } }
+```
+
+### Export-Endpoints Detail
+
+| Endpoint | Daten | Join-Tabellen |
+|---|---|---|
+| `GET /api/export/deals` | Deals mit Stage, Value, Products, Status | pipeline_stages, deal_products, products |
+| `GET /api/export/contacts` | Kontakte mit Firma, Beziehungstyp, Qualitaetsfelder | companies |
+| `GET /api/export/activities` | Activities mit Typ, Entity-Referenz | — |
+| `GET /api/export/signals` | Extrahierte Signale (V4.3) | meetings, email_messages |
+| `GET /api/export/insights` | Genehmigte KI-Insights aus ai_action_queue | — |
+
+### Export-API Sicherheit
+
+- API-Key als `EXPORT_API_KEY` ENV-Variable (DEC-067). Single-User, ein Key reicht.
+- Kein OAuth2 (nachruestbar in V7 bei Multi-User oder externem Zugriff).
+- Rate-Limiting: 100 Requests/Minute (einfacher In-Memory-Counter, kein Redis noetig).
+- service_role Client fuer DB-Zugriff (kein User-Auth-Context, da System-zu-System).
+
+## V5 API Routes
+
+| Route | Methode | Beschreibung | Auth |
+|---|---|---|---|
+| `/api/cron/cadence-execute` | POST | Faellige Cadence-Schritte ausfuehren | CRON_SECRET |
+| `/api/track/[id]` | GET | Tracking-Event erfassen (Open/Click) | Keine (oeffentlich) |
+| `/api/export/deals` | GET | Deals exportieren | EXPORT_API_KEY |
+| `/api/export/contacts` | GET | Kontakte exportieren | EXPORT_API_KEY |
+| `/api/export/activities` | GET | Aktivitaeten exportieren | EXPORT_API_KEY |
+| `/api/export/signals` | GET | Signale exportieren | EXPORT_API_KEY |
+| `/api/export/insights` | GET | Insights exportieren | EXPORT_API_KEY |
+
+### Bestehende Routes — Erweiterungen
+
+| Route | Aenderung |
+|---|---|
+| `/api/cron/imap-sync` | + assignment_source setzen bei Kontakt-Match (Stufe 1) |
+| `/api/cron/classify` | + KI-Match fuer nicht-zugeordnete E-Mails (Stufe 2) |
+
+## V5 Cron-Konfiguration
+
+```
+Coolify Cron
+  │
+  ├── BESTEHEND (unveraendert):
+  │   ├── alle 5 Min  → POST /api/cron/imap-sync           (ERWEITERT: assignment_source)
+  │   ├── alle 5 Min  → POST /api/cron/meeting-transcript
+  │   ├── alle 5 Min  → POST /api/cron/meeting-summary
+  │   ├── alle 5 Min  → POST /api/cron/meeting-reminders
+  │   ├── alle 5 Min  → POST /api/cron/signal-extract
+  │   ├── alle 15 Min → POST /api/cron/classify             (ERWEITERT: KI-Match Stufe 2)
+  │   ├── alle 15 Min → POST /api/cron/embedding-sync
+  │   ├── alle 6h     → POST /api/cron/followups
+  │   ├── taeglich    → POST /api/cron/retention
+  │   ├── alle 2 Min  → POST /api/cron/meeting-recording-poll
+  │   ├── taeglich    → POST /api/cron/recording-retention
+  │   ├── taeglich    → POST /api/cron/pending-consent-renewal
+  │   └── taeglich    → POST /api/cron/kpi-snapshot
+  │
+  └── NEU (V5):
+      └── alle 15 Min → POST /api/cron/cadence-execute      (Header: x-cron-secret)
+```
+
+### Coolify Cron-Job Setup
+
+```
+Cron Expression: */15 * * * *
+Container: app
+Command: node -e "fetch('http://localhost:3000/api/cron/cadence-execute', {method:'POST', headers:{'Authorization':'Bearer '+process.env.CRON_SECRET}})"
+```
+
+## V5 Env Vars — Neue Variablen
+
+```bash
+# Export-API (DEC-067)
+EXPORT_API_KEY=...                    # API-Key fuer System 4 Export-Endpoints (generiert via openssl rand -hex 32)
+
+# Tracking (DEC-066)
+TRACKING_BASE_URL=...                 # Optional. Default: APP_URL. Base-URL fuer Tracking-Pixel/Links.
+                                      # Format: https://business.strategaizetransition.com
+                                      # Wird nur gesetzt wenn Tracking ueber andere Domain laufen soll.
+```
+
+Bestehende Variablen die weiterverwendet werden:
+- `CRON_SECRET` — fuer cadence-execute Cron
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL` — fuer Cadence-E-Mail-Versand
+- `BEDROCK_REGION`, `BEDROCK_ACCESS_KEY_ID`, `BEDROCK_SECRET_ACCESS_KEY` — fuer KI-Match (Stufe 2)
+
+## V5 Security / Privacy
+
+### Tracking-Daten
+
+- Tracking-Events erfassen IP-Adresse und User-Agent. Diese Daten sind technisch notwendig fuer die Engagement-Analyse, aber keine personenbezogenen Daten im engeren Sinne (kein Login, keine Cookies).
+- Tracking-Events werden mit der E-Mail verknuepft, nicht mit einer Person. Die Zuordnung Person → E-Mail existiert bereits im CRM.
+- Retention: Tracking-Events werden mit der E-Mail geloescht (ON DELETE CASCADE).
+
+### Export-API
+
+- API-Key-Authentifizierung schuetzt vor unautorisiertem Zugriff.
+- service_role Zugriff umgeht RLS — akzeptabel, weil die API nur System-zu-System ist und keine User-Session hat.
+- Export-Endpoints liefern nur Daten, die der Eigentuemer sowieso im CRM sieht. Kein zusaetzliches Datenschutzrisiko.
+
+### Cadence-E-Mails
+
+- Cadence-E-Mails werden ueber denselben SMTP-Pfad gesendet wie manuelle E-Mails. Kein zusaetzlicher Sicherheitsaspekt.
+- Cadence-Abbruch bei Antwort schuetzt davor, dass ein Kontakt trotz Antwort weiter bombardiert wird.
+- Cadences haben kein automatisches Volumen-Limit in V5. Bei Single-User und 20-50 Deals ist das Risiko gering. Bei Skalierung: Rate-Limit nachruestbar.
+
+### Middleware-Whitelist Erweiterung
+
+Bestehende oeffentliche Routen: `/api/cron/*`, `/consent/*`
+Neu: `/api/track/*`
+
+## V5 Constraints & Tradeoffs
+
+| Entscheidung | Konsequenz |
+|---|---|
+| Eigener Cadence-Cron (DEC-064) | Saubere Trennung, aber ein Cron mehr in Coolify. Bei Single-User kein Performance-Problem. |
+| KI-Match im Classify-Cron (DEC-065) | Keine zusaetzliche Cron-Route noetig, aber Classify-Cron wird komplexer. Max-Laufzeit von 60s beachten. |
+| Self-hosted Tracking (DEC-066) | Volle Kontrolle, aber keine Zuverlaessigkeits-Garantie (Pixel-Blocking ~30-50%). Akzeptabel als Indikator. |
+| ENV-API-Key (DEC-067) | Simpel, aber Key-Rotation erfordert Redeploy. Bei Single-User akzeptabel. |
+| Thread-ID + From-Address Fallback (DEC-068) | Zwei Pfade fuer Abort-Erkennung. Robuster als nur Thread-ID, aber kann False-Positives bei From-Address-Fallback haben (Kontakt schreibt unabhaengige E-Mail → Cadence stoppt). Akzeptabel fuer V5. |
+| Shared Email-Send-Layer (DEC-069) | Refactoring des bestehenden sendEmail. Einmaliger Aufwand, spart Code-Duplikation zwischen manuell und Cadence. |
+| emails Tabelle erweitert (nicht neue Tabelle) | Tracking als Erweiterung der bestehenden outbound-Tabelle, nicht als separate Tabelle. Weniger Joins, sauberer. |
+| Cadence-Variablen als String-Replace | Simpel, aber keine Verschachtelung, keine Conditionals. Fuer V5-Scope ausreichend. |
+
+## V5 Technische Risiken
+
+| Risiko | Wahrscheinlichkeit | Impact | Mitigation |
+|---|---|---|---|
+| Pixel-Blocking durch E-Mail-Clients (Apple Mail, Outlook) | Hoch | Niedrig | Tracking ist Indikator, nicht absolute Metrik. UI zeigt "nicht geoeffnet" als Default. |
+| IMAP-Delay bei Cadence-Abort | Mittel | Mittel | 5-Min-Sync-Intervall. Im Worst Case wird ein Schritt ausgefuehrt bevor die Antwort synchronisiert ist. Bei 15-Min-Cadence-Intervall: max 20 Min Verzoegerung. |
+| Classify-Cron-Laufzeit mit KI-Match | Niedrig | Mittel | KI-Match nur fuer E-Mails ohne Kontakt UND classification anfrage/antwort. Typisch <5 E-Mails pro Lauf. |
+| Export-API-Performance bei grossen Datenmengen | Niedrig | Niedrig | Pagination mit max 100 Items pro Request. Bei Single-User-Datenvolumen (~500 Deals, ~2000 Kontakte) kein Problem. |
+| Cadence-E-Mail als Spam klassifiziert | Mittel | Mittel | Selber SMTP-Pfad wie manuelle E-Mails. SPF/DKIM vom bestehenden Provider (IONOS). |
+
+## V5 Empfohlene Slice-Reihenfolge
+
+1. **SLC-501 Schema-Migration + Types** — Alle 5 neuen Tabellen, 2 Tabellen-Erweiterungen, TypeScript-Types. Basis-Slice, blockiert alle folgenden.
+2. **SLC-502 Shared Email-Send-Layer + Tracking-API** — `/lib/email/send.ts`, `/lib/email/tracking.ts`, `/api/track/[id]`, Refactoring von emails/actions.ts, email_tracking_events INSERT. Grundlage fuer Cadence-Versand und Tracking-UI.
+3. **SLC-503 E-Mail Auto-Zuordnung** — IMAP-Sync-Erweiterung (assignment_source), Classify-Cron-Erweiterung (KI-Match), Unassigned-Queue UI, manuelle Zuordnung.
+4. **SLC-504 Cadence-Backend** — CRUD Server Actions fuer cadences/steps/enrollments, Cadence-Execute-Cron, Abort-Check-Logik, Template-Rendering.
+5. **SLC-505 Cadence-Frontend** — Cadence-Builder UI, Enrollment-Aktion auf Deal/Kontakt-Workspace, Enrollment-Status-Anzeige, Cadence-Uebersichtsseite.
+6. **SLC-506 Export-API** — 5 Export-Endpoints, API-Key-Middleware, Pagination, Zeitraum-Filter. Unabhaengig von Slices 2-5.
+7. **SLC-507 Tracking-UI + Engagement-Indikatoren** — Open/Click-Status auf E-Mail-Detail, Engagement-Badge in Timeline/Workspace, Cadence-Enrollment-Status auf Deal/Kontakt-Workspace.
+
+### Abhaengigkeiten
+
+```
+SLC-501 (Schema)
+  ├── SLC-502 (Tracking-Layer)
+  │     ├── SLC-504 (Cadence-Backend) — benoetigt sendEmail mit Tracking
+  │     │     └── SLC-505 (Cadence-Frontend)
+  │     └── SLC-507 (Tracking-UI) — benoetigt Tracking-Events
+  ├── SLC-503 (Auto-Zuordnung) — unabhaengig von Tracking/Cadence
+  └── SLC-506 (Export-API) — unabhaengig von Tracking/Cadence
+```
+
+SLC-503 und SLC-506 koennen parallel zu SLC-502 implementiert werden.
+
+Geschaetzt 7 Slices, je 0.5-1.5 Tage. Gesamtschaetzung: ~5-8 Tage.
+
+## V5 Recommended Next Step
+
+`/slice-planning` — V5-Slices strukturiert ausdefinieren (Acceptance Criteria, Dependencies, QA-Fokus, Micro-Tasks). Danach pro Slice `/backend` oder `/frontend` + `/qa`.

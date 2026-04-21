@@ -31,7 +31,13 @@ export interface EmailMessage {
   retention_expires_at: string | null;
   headers_json: Record<string, unknown> | null;
   created_by: string | null;
+  // V5: Auto-Zuordnung (FEAT-505)
+  assignment_source: AssignmentSource | null;
+  ai_match_confidence: number | null;
 }
+
+/** How an inbound email was assigned to a contact (V5, FEAT-505) */
+export type AssignmentSource = "exact_match" | "domain_match" | "ki_match" | "manual";
 
 export type EmailClassification =
   | "unclassified"
