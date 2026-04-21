@@ -9,7 +9,7 @@ import { TrendComparison } from "@/components/performance/trend-comparison";
 import { PerformanceEmptyState } from "@/components/performance/empty-state";
 import { AiRecommendation } from "@/components/performance/ai-recommendation";
 import { DailyActivityCheck } from "@/components/performance/daily-activity-check";
-import { getDailyActivityKpis } from "@/app/actions/activity-kpis";
+import { getDailyActivityKpis, getWeeklyActivityKpisPerDay } from "@/app/actions/activity-kpis";
 import { BarChart3, Settings } from "lucide-react";
 import Link from "next/link";
 import type { KpiType } from "@/types/kpi-snapshots";
@@ -58,9 +58,10 @@ export default async function PerformancePage({
       ? params.period
       : "year";
 
-  const [goals, activityKpis] = await Promise.all([
+  const [goals, activityKpis, weeklyPerDay] = await Promise.all([
     getGoalsWithProgress({ period }),
     getDailyActivityKpis(),
+    getWeeklyActivityKpisPerDay(),
   ]);
 
   if (goals.length === 0) {
@@ -146,7 +147,7 @@ export default async function PerformancePage({
       <AiRecommendation progressData={overallGoals.map((g) => g.progress)} />
 
       {/* Daily Activity Check */}
-      <DailyActivityCheck kpis={activityKpis} />
+      <DailyActivityCheck kpis={activityKpis} weeklyPerDay={weeklyPerDay} />
 
       {/* Product Breakdown */}
       <ProductBreakdown goals={goals} />

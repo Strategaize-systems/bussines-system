@@ -134,4 +134,4 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-611 | Performance-Cockpit Premium UI | planned | [Spec](FEAT-611-performance-premium-ui.md) | 2026-04-20 |
+| FEAT-611 | Performance-Cockpit Premium UI | done | [Spec](FEAT-611-performance-premium-ui.md) | 2026-04-20 |

@@ -1377,7 +1377,7 @@
       "title": "Wochen-Check mit Tagesaufloesung",
       "type": "improvement",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V6.1",
       "description": "FEAT-611: Tages-Check erweitern um Wochenansicht mit Mo-Fr Aufloesung. Pro Tag pro KPI Ist/Soll mit Farbcodierung. Heute/Woche Toggle.",
       "createdAt": "2026-04-20"

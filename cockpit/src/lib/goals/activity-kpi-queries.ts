@@ -101,6 +101,45 @@ async function countDealsStagnant(admin: AdminClient): Promise<number> {
   return count ?? 0;
 }
 
+// ── Day ranges for current week (Mo-Fr) ──────────────────────
+
+export type DayRange = {
+  start: string;
+  end: string;
+  dayLabel: string;
+  date: string;
+  isToday: boolean;
+};
+
+export function dayRangesForWeek(): DayRange[] {
+  const now = new Date();
+  const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dayOfWeek = now.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(todayDate);
+  monday.setDate(todayDate.getDate() + mondayOffset);
+
+  const labels = ["Mo", "Di", "Mi", "Do", "Fr"];
+  const ranges: DayRange[] = [];
+
+  for (let i = 0; i < 5; i++) {
+    const day = new Date(monday);
+    day.setDate(monday.getDate() + i);
+    const nextDay = new Date(day);
+    nextDay.setDate(day.getDate() + 1);
+
+    ranges.push({
+      start: day.toISOString(),
+      end: nextDay.toISOString(),
+      dayLabel: labels[i],
+      date: day.toISOString().split("T")[0],
+      isToday: day.getTime() === todayDate.getTime(),
+    });
+  }
+
+  return ranges;
+}
+
 // ── Public API ────────────────────────────────────────────────
 
 export async function getActivityKpiActual(
@@ -119,6 +158,28 @@ export async function getActivityKpiActual(
       return countDealsMoved(admin, range.start, range.end);
     case "deals_created":
       return countDealsCreated(admin, range.start, range.end);
+    case "deals_stagnant":
+      return countDealsStagnant(admin);
+    default:
+      return 0;
+  }
+}
+
+export async function getActivityKpiActualForRange(
+  admin: AdminClient,
+  kpiKey: ActivityKpiKey,
+  start: string,
+  end: string,
+): Promise<number> {
+  switch (kpiKey) {
+    case "calls":
+      return countCalls(admin, start, end);
+    case "meetings":
+      return countMeetings(admin, start, end);
+    case "deals_moved":
+      return countDealsMoved(admin, start, end);
+    case "deals_created":
+      return countDealsCreated(admin, start, end);
     case "deals_stagnant":
       return countDealsStagnant(admin);
     default:

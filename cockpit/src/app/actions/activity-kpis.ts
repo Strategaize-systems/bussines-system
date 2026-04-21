@@ -3,9 +3,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
-import type { ActivityKpiKey, ActivityKpiTarget, ActivityKpiStatus } from "@/types/activity-kpis";
+import type { ActivityKpiKey, ActivityKpiTarget, ActivityKpiStatus, WeekDayKpiStatus } from "@/types/activity-kpis";
 import { ACTIVITY_KPI_LABELS } from "@/types/activity-kpis";
-import { getActivityKpiActual } from "@/lib/goals/activity-kpi-queries";
+import { getActivityKpiActual, getActivityKpiActualForRange, dayRangesForWeek } from "@/lib/goals/activity-kpi-queries";
 
 // ── List targets ─────────────────────────────────────────────
 
@@ -130,6 +130,51 @@ export async function getDailyActivityKpis(): Promise<ActivityKpiStatus[]> {
       weekTarget,
       weekActual,
       active: t.active,
+    });
+  }
+
+  return results;
+}
+
+// ── Get weekly activity KPIs per day (Mo-Fr) ────────────────
+
+export async function getWeeklyActivityKpisPerDay(): Promise<WeekDayKpiStatus[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const admin = createAdminClient();
+  const { data: targets } = await admin
+    .from("activity_kpi_targets")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("active", true)
+    .order("kpi_key");
+
+  if (!targets || targets.length === 0) return [];
+
+  const days = dayRangesForWeek();
+  const results: WeekDayKpiStatus[] = [];
+
+  for (const t of targets) {
+    const kpiKey = t.kpi_key as ActivityKpiKey;
+
+    const dayActuals = await Promise.all(
+      days.map(async (day) => ({
+        date: day.date,
+        dayLabel: day.dayLabel,
+        actual: await getActivityKpiActualForRange(admin, kpiKey, day.start, day.end),
+        isToday: day.isToday,
+      }))
+    );
+
+    results.push({
+      kpiKey,
+      label: ACTIVITY_KPI_LABELS[kpiKey] ?? kpiKey,
+      dailyTarget: t.daily_target,
+      days: dayActuals,
     });
   }
 

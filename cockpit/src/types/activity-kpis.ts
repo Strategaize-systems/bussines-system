@@ -33,6 +33,18 @@ export const ACTIVITY_KPI_LABELS: Record<ActivityKpiKey, string> = {
   deals_stagnant: "Stagnante Deals",
 };
 
+export type WeekDayKpiStatus = {
+  kpiKey: ActivityKpiKey;
+  label: string;
+  dailyTarget: number;
+  days: {
+    date: string;
+    dayLabel: string;
+    actual: number;
+    isToday: boolean;
+  }[];
+};
+
 export const ACTIVITY_KPI_DEFAULTS: { key: ActivityKpiKey; target: number }[] = [
   { key: "calls", target: 5 },
   { key: "meetings", target: 2 },
