@@ -152,3 +152,11 @@
 | SLC-608 | [Jahresziele auf Quartal/Monat runterbrechen](SLC-608-ziel-runterbrechen.md) | FEAT-602, FEAT-603 | done | High | 2026-04-20 |
 | SLC-609 | [Tages-Aktivitaets-KPIs](SLC-609-activity-kpi-targets.md) | FEAT-603 | done | High | 2026-04-20 |
 | SLC-610 | [Tages-Check UI](SLC-610-tages-check-ui.md) | FEAT-603 | done | High | 2026-04-20 |
+
+## V6.1 Slices (Performance Premium UI)
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-611 | [Label-Fix + Premium-Styling](SLC-611-label-fix-premium-styling.md) | FEAT-611 | planned | High | 2026-04-21 |
+| SLC-612 | [ForecastCard + 4-Kachel-Layout](SLC-612-forecast-card-4-kachel.md) | FEAT-611 | planned | High | 2026-04-21 |
+| SLC-613 | [Wochen-Check mit Tagesaufloesung](SLC-613-wochen-check.md) | FEAT-611 | planned | High | 2026-04-21 |

@@ -9,14 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: requirements
-- Current Focus: V6.1 Requirements done (FEAT-611). Naechster Schritt: /architecture.
-- Current Phase: V6.1 Requirements
+- High-Level State: implementing
+- Current Focus: V6.1 Slice-Planning done (3 Slices). Naechster Schritt: /frontend SLC-611.
+- Current Phase: V6.1 Implementation
 
 ## Immediate Next Steps
-1. /architecture fuer V6.1
-2. /slice-planning
-3. /frontend (reine UI-Arbeit, kein Backend)
+1. /frontend SLC-611 (Label-Fix + Premium-Styling)
+2. /frontend SLC-612 (ForecastCard + 4-Kachel-Layout)
+3. /frontend SLC-613 (Wochen-Check mit Tagesaufloesung)
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (released, REL-010):**
