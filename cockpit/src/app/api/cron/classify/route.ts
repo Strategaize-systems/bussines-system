@@ -338,7 +338,6 @@ export async function POST(request: NextRequest) {
       const { data: contacts } = await supabase
         .from("contacts")
         .select("id, first_name, last_name, email, company_id, companies(name)")
-        .neq("status", "archived")
         .limit(200);
 
       const contactList = (contacts ?? []).map((c) => ({

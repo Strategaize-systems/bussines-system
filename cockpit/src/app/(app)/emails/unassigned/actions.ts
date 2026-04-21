@@ -59,7 +59,6 @@ export async function getContactsForAssignment() {
   const { data, error } = await supabase
     .from("contacts")
     .select("id, first_name, last_name, email, companies(name)")
-    .neq("status", "archived")
     .order("last_name", { ascending: true })
     .limit(500);
 
