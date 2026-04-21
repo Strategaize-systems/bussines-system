@@ -158,5 +158,5 @@
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-611 | [Label-Fix + Premium-Styling](SLC-611-label-fix-premium-styling.md) | FEAT-611 | done | High | 2026-04-21 |
-| SLC-612 | [ForecastCard + 4-Kachel-Layout](SLC-612-forecast-card-4-kachel.md) | FEAT-611 | planned | High | 2026-04-21 |
+| SLC-612 | [ForecastCard + 4-Kachel-Layout](SLC-612-forecast-card-4-kachel.md) | FEAT-611 | done | High | 2026-04-21 |
 | SLC-613 | [Wochen-Check mit Tagesaufloesung](SLC-613-wochen-check.md) | FEAT-611 | planned | High | 2026-04-21 |

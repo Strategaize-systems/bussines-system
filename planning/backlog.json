@@ -1357,7 +1357,7 @@
       "title": "4-Kachel-Layout: Goal-Cards + Prognose kompakt",
       "type": "improvement",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V6.1",
       "description": "FEAT-611: Goal-Cards kleiner, Prognose als 4. Kachel in derselben Reihe (lg:grid-cols-4). Kombinierter Forecast + Delta + Deals-noetig in einer kompakten Karte.",
       "createdAt": "2026-04-20"

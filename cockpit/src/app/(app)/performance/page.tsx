@@ -9,8 +9,7 @@ import { TrendComparison } from "@/components/performance/trend-comparison";
 import { PerformanceEmptyState } from "@/components/performance/empty-state";
 import { AiRecommendation } from "@/components/performance/ai-recommendation";
 import { DailyActivityCheck } from "@/components/performance/daily-activity-check";
-import { WeeklyComparison } from "@/components/performance/weekly-comparison";
-import { getDailyActivityKpis, getWeeklyComparison } from "@/app/actions/activity-kpis";
+import { getDailyActivityKpis } from "@/app/actions/activity-kpis";
 import { BarChart3, Settings } from "lucide-react";
 import Link from "next/link";
 import type { KpiType } from "@/types/kpi-snapshots";
@@ -59,10 +58,9 @@ export default async function PerformancePage({
       ? params.period
       : "year";
 
-  const [goals, activityKpis, weeklyComp] = await Promise.all([
+  const [goals, activityKpis] = await Promise.all([
     getGoalsWithProgress({ period }),
     getDailyActivityKpis(),
-    getWeeklyComparison(),
   ]);
 
   if (goals.length === 0) {
@@ -136,28 +134,19 @@ export default async function PerformancePage({
         </div>
       </div>
 
-      {/* KPI Goal Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* KPI Goal Cards + Forecast */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {overallGoals.map((goal) => (
           <GoalCard key={goal.id} goal={goal} />
         ))}
+        <ForecastBlock goals={overallGoals} />
       </div>
-
-      {/* Forecast */}
-      <ForecastBlock goals={overallGoals} />
 
       {/* AI Recommendation */}
       <AiRecommendation progressData={overallGoals.map((g) => g.progress)} />
 
       {/* Daily Activity Check */}
       <DailyActivityCheck kpis={activityKpis} />
-
-      {/* Weekly Comparison */}
-      <WeeklyComparison
-        thisWeek={weeklyComp.thisWeek}
-        lastWeek={weeklyComp.lastWeek}
-        changePercent={weeklyComp.changePercent}
-      />
 
       {/* Product Breakdown */}
       <ProductBreakdown goals={goals} />
