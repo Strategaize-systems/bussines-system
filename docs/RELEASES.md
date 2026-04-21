@@ -63,6 +63,13 @@
 - Risks: Hetzner-Cloud-Firewall-UI-Regel erfordert manuelle Re-Verifizierung vor SLC-412-Smoke-Test (nicht via SSH pruefbar, nur Hetzner Cloud Console). Bei NAT-strikten Kunden-Netzwerken kann UDP/10000 blockiert sein — dokumentiert als Risk in ARCHITECTURE V4.1 (TURN-Server deferred auf BL-206-Nachbar).
 - Rollback Notes: Keine Artefakte produziert. Rollback = Firewall-Regel entfernen, Coolify-Subdomain abkoppeln, Supabase-Bucket loeschen. Kein Effekt auf V4 Produktion.
 
+### REL-014 — V6.1 Performance Premium UI
+- Date: 2026-04-21
+- Scope: 3 Slices (SLC-611..613), 1 Feature (FEAT-611), 3 DECs (DEC-061..063). Premium-Styling auf allen Performance-Karten (Gradient-Akzentlinien, Brand-Icons, Shadow-Upgrade), ForecastCard als 4. Kachel im Grid, Label-Korrektur "Abschlussquote" statt "Win-Rate", Wochen-Check mit Mo-Fr Tagesaufloesung und Heute/Woche Toggle.
+- Summary: Reine Frontend-UI-Erweiterung. Gesamt-QA PASS (RPT-176, 3/3 Slices, 1/1 Feature). Final-Check READY (RPT-177, 0 Blocker, 0 High, 7/7 Dimensionen). User-Browser-Smoke-Test PASS (4 Kacheln, Gradient-Linien, Toggle, Wochen-Raster). Keine Schema-Migrationen, keine neuen APIs, keine neuen Dependencies, keine neuen Cron-Jobs.
+- Risks: Keine V6.1-spezifischen Risiken. Responsive nicht explizit getestet (Desktop-only internal-tool).
+- Rollback Notes: Rein additiv. Docker Image Rollback via Coolify auf V6 Image. Keine Schema-Aenderungen.
+
 ### REL-013 — V6 Zielsetzung + Performance-Tracking
 - Date: 2026-04-20
 - Scope: 10 Slices (SLC-601..610), 4 Features (FEAT-601..604), 2 DECs (DEC-055..056), MIG-017 + MIG-018. Produkt-Stammdaten (CRUD + Deal-Zuordnung), Ziel-Objekt-Modell (Umsatz/Deal-Count/Abschlussquote, Jahres-→Monats-/Quartals-Ableitung, CSV-Import), Performance-Cockpit (/performance mit Goal-Cards, Prognose-Engine, KI-Empfehlung via Bedrock, Tages-Check mit Activity-KPIs, Wochen-Vergleich, Trend-Vergleich, Produkt-Breakdown), KPI-Snapshots (taeglicher Cron, 8+ KPI-Typen, Trend-Engine).

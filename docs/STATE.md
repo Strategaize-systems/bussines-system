@@ -9,13 +9,13 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: go-live
-- Current Focus: V6.1 Final-Check READY (RPT-177). User hat bereits redeployt + Smoke-Test PASS. Naechster Schritt: /go-live → REL-014.
-- Current Phase: V6.1 Go-Live
+- High-Level State: released
+- Current Focus: V6.1 released als REL-014. Alle 3 Slices deployed, Smoke-Test PASS.
+- Current Phase: V6.1 Released
 
 ## Immediate Next Steps
-1. /go-live V6.1 → REL-014 erstellen
-2. /post-launch V6.1
+1. /post-launch V6.1
+2. Naechste Version planen
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (released, REL-010):**
@@ -46,7 +46,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - aktuell keine
 
 ## Last Stable Version
-- V6 — 2026-04-20 — deployed auf Hetzner (Zielsetzung + Performance-Tracking, 10/10 Slices, REL-013)
+- V6.1 — 2026-04-21 — deployed auf Hetzner (Performance Premium UI, 3/3 Slices, REL-014)
 
 ## Notes
 V4 Deployment in zwei Phasen: SLC-401..403 am 2026-04-12 (IMAP live), SLC-404..409 am 2026-04-14 abends (Redeploy). Smoke-Tests am 2026-04-15 morgen durchgelaufen: Login, IMAP-Inbox, Mein Tag KI-Wiedervorlagen, Gesamtkalender, KI-Analyse Cockpit, Focus 2-Spalten-Layout — alle PASS. Cal.com Self-Hosted läuft seit 2026-04-13 mit Webhook-Integration. CALCOM_API_KEY bewusst leer (AGPLv3). Bedrock Claude Sonnet 4 via Frankfurt-Region.

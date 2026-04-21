@@ -130,8 +130,8 @@
 | FEAT-603 | Persoenliches Performance-Cockpit | deployed | [Spec](FEAT-603-performance-cockpit.md) | 2026-04-19 |
 | FEAT-604 | KPI-Snapshots & Trend-Engine | deployed | [Spec](FEAT-604-kpi-snapshots.md) | 2026-04-19 |
 
-## V6.1 Features (Performance Premium UI — planned)
+## V6.1 Features (Performance Premium UI — released)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-611 | Performance-Cockpit Premium UI | done | [Spec](FEAT-611-performance-premium-ui.md) | 2026-04-20 |
+| FEAT-611 | Performance-Cockpit Premium UI | deployed | [Spec](FEAT-611-performance-premium-ui.md) | 2026-04-20 |
