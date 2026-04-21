@@ -80,9 +80,16 @@
     {
       "id": "v5",
       "name": "V5",
-      "status": "planned",
-      "summary": "Automatisierung + Skalierung: Cadences/Sequences, Routing/Territories, Teamlead-Rolle, Intelligence-Platform-Export",
+      "status": "active",
+      "summary": "Automatisierung + Vertriebsintelligenz: Cadences/Sequences, E-Mail Auto-Zuordnung, E-Mail Open/Click-Tracking, Intelligence-Platform-Export-API",
       "order": 12
+    },
+    {
+      "id": "v7",
+      "name": "V7",
+      "status": "planned",
+      "summary": "Multi-User + Erweiterung: Routing/Territories, Teamlead-Rolle mit Teamsicht, Workflow-Automation, Kampagnen-Attribution, Jigasi Telefon-Integration",
+      "order": 15
     },
     {
       "id": "v6",

@@ -1412,6 +1412,177 @@ V4.3 ist erfolgreich wenn:
 - KI-Badge: Neues Feld `ai_applied_at` + `ai_source_id` auf Entity-Ebene? Oder separates Tracking?
 - E-Mail-Signal-Schwelle: Nur E-Mails mit classification `anfrage` / `antwort` analysieren? Oder alle nicht-spam?
 
+## V5 — Automatisierung + Vertriebsintelligenz
+
+### V5 Problem Statement
+
+Das Business System hat seit V4.x eine vollstaendige KI-Pipeline (Gatekeeper, Wissensbasis, Signal-Extraktion, Insight-Governance). Aber die **Ausfuehrung** bleibt manuell: Follow-ups muessen einzeln geplant werden, eingehende E-Mails werden nicht automatisch Kontakten zugeordnet, und es gibt keine Sichtbarkeit ob gesendete E-Mails gelesen wurden.
+
+Gleichzeitig existiert kein strukturierter Datenkanal zu System 4 (Intelligence Studio). Erkenntnisse aus dem BD-Prozess bleiben im Business System gefangen und koennen nicht systematisch fuer Content-Strategie oder Marktanalyse genutzt werden.
+
+V5 bringt den Uebergang von **manuellem Follow-up** zu **strukturierter Vertriebsautomatisierung** und oeffnet die Datenpipeline nach System 4.
+
+### V5 Goal / Intended Outcome
+
+Der Eigentuemer (Single User) kann:
+1. Follow-up-Ketten (Cadences) definieren und automatisch ausfuehren lassen
+2. Eingehende E-Mails automatisch dem richtigen Kontakt zugeordnet bekommen
+3. Sehen, ob gesendete E-Mails geoeffnet/geklickt wurden
+4. Vertriebsdaten strukturiert an System 4 exportieren
+
+### V5 Scope
+
+**In Scope:**
+- Cadence-Objekt mit Schritten (E-Mail, Aufgabe, Wartezeit)
+- Cadence-Zuordnung an Deals oder Kontakte
+- Automatische Cadence-Ausfuehrung via Cron
+- E-Mail Auto-Zuordnung (IMAP → Kontakt-Match via Adresse + KI-Wahrscheinlichkeit)
+- E-Mail Open/Click-Tracking (Pixel + Link-Wrapping)
+- Export-API fuer Intelligence Studio (strukturierte JSON-Endpoints)
+
+**Out of Scope:**
+- Routing / Territories (V7 — Multi-User)
+- Teamlead-Rolle mit Teamsicht (V7 — Multi-User)
+- Generische Workflow-Automation "Wenn X dann Y" (V7 — Cadences decken den Hauptfall ab)
+- Jigasi Telefon-Integration (V7 — SIP-Infra noetig)
+- Kampagnen-Attribution / Kampagnen-Objekt (spaeter)
+- Multi-Channel-Cadences (LinkedIn, SMS) — nur E-Mail + Aufgabe in V5
+
+### V5 Features
+
+#### FEAT-501 — Cadences / Sequences
+
+Strukturierte Follow-up-Ketten fuer Deals und Kontakte. Eine Cadence besteht aus Schritten mit Typ (E-Mail, Aufgabe, Wartezeit), Reihenfolge und Zeitabstand. Der Eigentuemer kann Cadence-Templates erstellen, sie auf Deals/Kontakte anwenden, und die Ausfuehrung laeuft automatisch.
+
+**Kern-Objekte:**
+- `cadences` — Template: Name, Beschreibung, Schritte, Status (active/paused/archived)
+- `cadence_steps` — Schritt: Typ (email/task/wait), Reihenfolge, Verzögerung (Tage), Template-Referenz
+- `cadence_enrollments` — Zuordnung: Cadence → Deal/Kontakt, aktueller Schritt, Status, naechster Ausfuehrungszeitpunkt
+- `cadence_executions` — Log: Was wurde wann ausgefuehrt, Ergebnis
+
+**Ausfuehrungslogik:**
+- Cron (z.B. alle 15 Min) prueft faellige Enrollments
+- E-Mail-Schritte: Senden via bestehendem SMTP + Template-Rendering mit Kontakt-/Deal-Variablen
+- Aufgaben-Schritte: Erstellen einer Aufgabe im bestehenden Task-System
+- Wartezeit-Schritte: Naechsten Schritt um N Tage verschieben
+- Abbruch-Bedingungen: Antwort-E-Mail empfangen (IMAP-Match), Deal gewonnen/verloren, manueller Stop
+
+**UI:**
+- Cadence-Verwaltung unter Settings oder eigene Seite
+- Cadence-Builder: Schritte hinzufuegen/sortieren/konfigurieren
+- Enrollment-Uebersicht: Wer ist in welcher Cadence, welcher Schritt
+- Deal-/Kontakt-Workspace: "In Cadence einbuchen" Aktion
+
+**Acceptance Criteria:**
+- AC1: Cadence mit mindestens 3 Schritten (E-Mail, Wartezeit, Aufgabe) erstellen
+- AC2: Deal in Cadence einbuchen → erster Schritt wird automatisch ausgefuehrt
+- AC3: Nach Wartezeit wird naechster Schritt automatisch ausgefuehrt
+- AC4: Antwort-E-Mail stoppt Cadence automatisch (IMAP-Match)
+- AC5: E-Mail-Schritte nutzen Templates mit Variablen ({{kontakt.vorname}}, {{deal.name}})
+- AC6: Enrollment-Status sichtbar auf Deal-/Kontakt-Workspace
+- AC7: Cadence pausieren/stoppen moeglich
+
+#### FEAT-505 — E-Mail Auto-Zuordnung
+
+Eingehende E-Mails aus dem IMAP-Sync werden automatisch dem passenden Kontakt zugeordnet.
+
+**3 Stufen:**
+1. **Exakter Match** — Absender-E-Mail-Adresse matcht Kontakt-E-Mail → 100% Zuordnung, automatisch
+2. **KI-Match** — Name in Header/Signatur → Bedrock-Abgleich mit Kontaktdatenbank → Confidence-Score (z.B. 85%)
+3. **Unbekannt** — Kein Match → "Nicht zugeordnet"-Queue fuer taegliche manuelle Pruefung
+
+**Integration:**
+- Laeuft als Erweiterung des bestehenden IMAP-Sync-Crons (SLC-402)
+- Nutzt bestehenden Bedrock-Client fuer KI-Match
+- Zeigt Zuordnung + Confidence in der E-Mail-Inbox-UI
+
+**Acceptance Criteria:**
+- AC1: E-Mail mit bekannter Absender-Adresse wird automatisch zugeordnet (exakter Match)
+- AC2: E-Mail ohne Adress-Match aber mit erkennbarem Namen → KI-Vorschlag mit Confidence
+- AC3: Nicht zuordenbare E-Mails in "Nicht zugeordnet"-Queue sichtbar
+- AC4: Manuelle Zuordnung/Korrektur moeglich
+- AC5: Zuordnung sichtbar auf Kontakt-Workspace (zugeordnete E-Mails)
+
+#### FEAT-506 — E-Mail Open/Click-Tracking
+
+Sichtbarkeit ob gesendete E-Mails geoeffnet und Links geklickt wurden.
+
+**Mechanismen:**
+- **Open-Tracking:** 1x1 transparentes Tracking-Pixel in ausgehende E-Mails einbetten
+- **Click-Tracking:** Links in ausgehenden E-Mails durch Redirect-URLs ersetzen (Link-Wrapping)
+- **Webhook/API-Route:** Empfaengt Pixel-Loads und Link-Klicks, speichert Events
+
+**Daten:**
+- `email_tracking_events` — Event-Typ (open/click), Zeitstempel, E-Mail-Referenz, Link-URL (bei Klick)
+- Aggregation: "3x geoeffnet, 1 Link geklickt" auf E-Mail-Ebene
+
+**UI:**
+- E-Mail-Detail: Tracking-Status (geoeffnet/nicht geoeffnet, Klick-Zaehler)
+- Kontakt-/Deal-Workspace: Engagement-Indikator auf E-Mail-Eintraegen
+
+**Acceptance Criteria:**
+- AC1: Ausgehende E-Mails enthalten Tracking-Pixel (opt-in pro E-Mail oder global)
+- AC2: Links werden automatisch gewrappt
+- AC3: Open-Events werden korrekt erfasst und angezeigt
+- AC4: Click-Events werden korrekt erfasst (welcher Link, wann)
+- AC5: Tracking-Status sichtbar auf E-Mail-Detail und in Timeline
+
+#### FEAT-504 — Intelligence-Platform-Export-API
+
+Strukturierte JSON-Endpoints die System 4 (Intelligence Studio) abrufen kann, um Vertriebsdaten fuer Content-Strategie und Marktanalyse zu nutzen.
+
+**Endpoints:**
+- `GET /api/export/deals` — aktive/gewonnene/verlorene Deals mit Metadaten
+- `GET /api/export/contacts` — Kontakte mit Beziehungstyp, Qualitaetsfeldern
+- `GET /api/export/activities` — Aktivitaeten mit Typen und Zeitstempel
+- `GET /api/export/signals` — Extrahierte Signale aus KI-Analyse
+- `GET /api/export/insights` — Genehmigte KI-Insights
+
+**Sicherheit:**
+- API-Key-Authentifizierung (Bearer Token)
+- Rate-Limiting
+- Nur lesender Zugriff
+
+**Acceptance Criteria:**
+- AC1: 5 Export-Endpoints liefern valides JSON
+- AC2: API-Key-Authentifizierung funktioniert
+- AC3: Ohne API-Key → 401
+- AC4: Pagination fuer grosse Datenmengen
+- AC5: Filter nach Zeitraum (since/until)
+
+### V5 Constraints
+
+- Delivery Mode: internal-tool
+- Single-User (Eigentuemer)
+- Cadence-Ausfuehrung via Coolify Cron (wie bestehende Crons)
+- E-Mail-Tracking: Tracking-Pixel koennen von E-Mail-Clients blockiert werden — das ist akzeptabel, kein 100%-Anspruch
+- KI-Match fuer E-Mail-Zuordnung ueber bestehenden Bedrock-Client (Frankfurt, kein neuer Provider)
+- Export-API: Kein Echtzeit-Sync, Pull-basiert (System 4 ruft ab)
+- Alle neuen Tabellen additiv (keine Breaking Changes an bestehender DB)
+
+### V5 Risks & Assumptions
+
+- **Cadence-Volumen:** Bei 1 User und ~20-50 aktiven Deals ist das Volumen gering. Kein Batching/Queue noetig.
+- **E-Mail-Tracking-Zuverlaessigkeit:** Open-Tracking ist ~50-70% zuverlaessig (Pixel-Blocking durch Apple Mail, Outlook). Ausreichend als Indikator, nicht als absolute Metrik.
+- **IMAP-Delay:** E-Mail-Zuordnung haengt vom IMAP-Sync-Intervall ab (aktuell alle 5 Min). Akzeptabel.
+- **Export-API-Sicherheit:** API-Key reicht fuer Internal-Tool. Bei externem Zugriff spaeter OAuth2 nachruestbar.
+
+### V5 Success Criteria
+
+1. Cadence mit 3+ Schritten laeuft automatisch durch (E-Mail → Wartezeit → Aufgabe)
+2. >80% der eingehenden E-Mails werden automatisch korrekt zugeordnet
+3. Open/Click-Tracking zeigt plausible Daten auf E-Mail-Ebene
+4. System 4 kann ueber Export-API Deal- und Kontaktdaten abrufen
+5. Keine Regression auf bestehende V6.1-Features
+
+### V5 Open Questions (fuer /architecture)
+
+- Cadence-Cron: Eigener Cron oder Erweiterung des bestehenden Cron-Patterns? Empfehlung: Eigener Cron (`cadence-execute`).
+- E-Mail-Zuordnung: Im IMAP-Sync-Cron inline oder als separater Post-Processing-Cron? Empfehlung: Inline im IMAP-Sync.
+- Tracking-Pixel-Hosting: Eigene API-Route (`/api/track/open`) oder externer Service? Empfehlung: Eigene Route.
+- Export-API-Key-Verwaltung: In user_settings oder ENV? Empfehlung: ENV (EXPORT_API_KEY), Single-User.
+- Cadence-Abbruch bei Antwort: Exakter E-Mail-Thread-Match oder Reply-To-Header? Empfehlung: Beides — Thread-ID Match (primaer) + From-Address Match (Fallback).
+
 ## V6 — Zielsetzung, Performance-Tracking & Produkttypen
 
 ### V6 Problem Statement

@@ -9,24 +9,26 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: stable
-- Current Focus: V6.1 released + post-launch STABLE (RPT-179). Vollstaendiger Lifecycle abgeschlossen.
-- Current Phase: Stable (V6.1)
+- High-Level State: requirements
+- Current Focus: V5 Requirements abgeschlossen. 4 Features (FEAT-501, 504, 505, 506). Naechster Schritt: /architecture.
+- Current Phase: V5 Requirements
 
 ## Immediate Next Steps
-1. Naechste Version planen
+1. /architecture V5
+2. /slice-planning V5
 
 ## Active Scope
-Alle Versionen bis V6.1 sind released und deployed. Naechste geplante Version: V5 (Automatisierung + Skalierung) oder neues Feature nach Bedarf.
+**V5 — Automatisierung + Vertriebsintelligenz (active, Requirements done):**
+- FEAT-501 Cadences / Sequences — Follow-up-Ketten automatisieren
+- FEAT-505 E-Mail Auto-Zuordnung — IMAP → Kontakt-Match (3 Stufen)
+- FEAT-506 E-Mail Open/Click-Tracking — Pixel + Link-Wrapping
+- FEAT-504 Intelligence-Platform-Export-API — 5 JSON-Endpoints fuer System 4
 
-**Released Versions (aktuell deployed):**
-- V2..V3.3 — CRM-Basis, Workspaces, KI-Integration, UI-Polish
-- V4..V4.3 — IMAP, KI-Gatekeeper, Cal.com, Meeting Intelligence, Wissensbasis RAG, Insight Governance
-- V6 — Zielsetzung + Performance-Tracking (10 Slices, REL-013)
-- V6.1 — Performance Premium UI (3 Slices, REL-014)
+**Released (deployed):**
+- V2..V4.3, V6, V6.1
 
 **Planned:**
-- V5 — Automatisierung + Skalierung (Cadences, Routing, Teamlead-Rolle, Export-API)
+- V7 — Multi-User + Erweiterung (Routing, Teamlead, Workflow-Automation, Jigasi)
 
 ## Blockers
 - aktuell keine

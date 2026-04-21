@@ -386,7 +386,7 @@
       "type": "feature",
       "priority": "low",
       "status": "open",
-      "version": "V5",
+      "version": "V7",
       "description": "Regel-basierte Automation: z.B. 'Wenn Deal in Stage Angebot → E-Mail-Template senden + Aufgabe erstellen'. Visueller Rule Builder.",
       "createdAt": "2026-04-03"
     },
@@ -395,9 +395,9 @@
       "title": "E-Mail Open/Click-Tracking",
       "type": "feature",
       "priority": "low",
-      "status": "open",
+      "status": "done",
       "version": "V5",
-      "description": "Tracking-Pixel und Link-Wrapping für gesendete E-Mails. Zeigt ob und wann eine E-Mail geöffnet/geklickt wurde.",
+      "description": "Tracking-Pixel und Link-Wrapping für gesendete E-Mails. Zeigt ob und wann eine E-Mail geöffnet/geklickt wurde. [Absorbed into BL-382/FEAT-506]",
       "createdAt": "2026-04-03"
     },
     {
@@ -405,9 +405,9 @@
       "title": "Eingehende E-Mail-Zuordnung (Auto-Match + KI-Wahrscheinlichkeit)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V5",
-      "description": "Eingehende E-Mails (IMAP) automatisch an Kontakte zuordnen. Stufe 1: E-Mail-Adresse matcht Kontakt → 100% Zuordnung. Stufe 2: Name in E-Mail-Body/Signatur → KI-Wahrscheinlichkeit (z.B. 85%). Stufe 3: Nicht zuordenbar → 'Unbekannt'-Queue zur täglichen manuellen Prüfung. Im E-Mail-Postfach sichtbar: zugeordneter Kontakt + Confidence-Level. Abhängig von BL-203 (IMAP-Integration).",
+      "description": "Eingehende E-Mails (IMAP) automatisch an Kontakte zuordnen. Stufe 1: E-Mail-Adresse matcht Kontakt → 100% Zuordnung. Stufe 2: Name in E-Mail-Body/Signatur → KI-Wahrscheinlichkeit (z.B. 85%). Stufe 3: Nicht zuordenbar → 'Unbekannt'-Queue zur täglichen manuellen Prüfung. Im E-Mail-Postfach sichtbar: zugeordneter Kontakt + Confidence-Level. Abhängig von BL-203 (IMAP-Integration). [Absorbed into BL-381/FEAT-505]",
       "createdAt": "2026-04-03"
     },
     {
@@ -416,7 +416,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": "V5",
+      "version": "V7",
       "description": "Kampagnen als eigenes Objekt: Name, Typ (E-Mail, LinkedIn, Event, Ads), Start/Ende, Zielgruppe. Kontakte/Firmen bekommen Feld 'Kampagnen-Quelle' (welche Kampagne hat den Lead gebracht). UTM-Parameter oder Tracking-Links für digitale Kampagnen. Auswertung: Leads pro Kampagne, Conversion-Rate, Won-Deals pro Kampagne. Kampagnen-Erstellung bleibt in System 4, Attribution wird hier im Business System getrackt. Feedback-Loop zurück zu System 4 (was war erfolgreich).",
       "createdAt": "2026-04-03"
     },
@@ -465,9 +465,9 @@
       "title": "Handoff an System 4 (Intelligence Studio)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V5",
-      "description": "FEAT-204: Strukturierte Daten aus BD-System an Intelligence Studio übergeben.",
+      "description": "FEAT-204: Strukturierte Daten aus BD-System an Intelligence Studio übergeben. [Absorbed into BL-383/FEAT-504]",
       "createdAt": "2026-04-01"
     },
     {
@@ -487,7 +487,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": "V5",
+      "version": "V7",
       "description": "Jigasi als SIP-Gateway für Jitsi: Telefonnummern direkt aus dem System anrufen, Gespräche aufnehmen + transkribieren. Benötigt SIP-Trunk-Provider (z.B. sipgate). Telefonate durchlaufen gleiche Pipeline wie Video-Meetings: Aufnahme → Whisper → LLM-Summary → Deal-Activity.",
       "createdAt": "2026-04-04"
     },
@@ -1381,6 +1381,46 @@
       "version": "V6.1",
       "description": "FEAT-611: Tages-Check erweitern um Wochenansicht mit Mo-Fr Aufloesung. Pro Tag pro KPI Ist/Soll mit Farbcodierung. Heute/Woche Toggle.",
       "createdAt": "2026-04-20"
+    },
+    {
+      "id": "BL-380",
+      "title": "Cadences / Sequences — Follow-up-Automatisierung",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V5",
+      "description": "FEAT-501: Cadence-Templates mit Schritten (E-Mail, Aufgabe, Wartezeit). Enrollment auf Deals/Kontakte. Automatische Ausfuehrung via Cron. Abbruch bei Antwort oder Deal-Status.",
+      "createdAt": "2026-04-21"
+    },
+    {
+      "id": "BL-381",
+      "title": "E-Mail Auto-Zuordnung (IMAP → Kontakt-Match)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V5",
+      "description": "FEAT-505: 3-Stufen-Zuordnung: Exakter Adress-Match (automatisch), KI-Match via Bedrock (Confidence), Nicht-zugeordnet-Queue (manuell).",
+      "createdAt": "2026-04-21"
+    },
+    {
+      "id": "BL-382",
+      "title": "E-Mail Open/Click-Tracking",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V5",
+      "description": "FEAT-506: Tracking-Pixel fuer Open-Detection, Link-Wrapping fuer Click-Detection. Events auf E-Mail-/Kontakt-Ebene angezeigt.",
+      "createdAt": "2026-04-21"
+    },
+    {
+      "id": "BL-383",
+      "title": "Intelligence-Platform-Export-API (System 4)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V5",
+      "description": "FEAT-504: 5 read-only JSON-Endpoints (Deals, Contacts, Activities, Signals, Insights) mit API-Key-Auth, Pagination, Zeitraum-Filter.",
+      "createdAt": "2026-04-21"
     }
   ]
 }
