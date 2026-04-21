@@ -9,14 +9,13 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: qa
-- Current Focus: V6.1 alle 3 Slices done (SLC-611..613). Naechster Schritt: /qa SLC-613 + Gesamt-QA + /final-check.
-- Current Phase: V6.1 QA
+- High-Level State: go-live
+- Current Focus: V6.1 Final-Check READY (RPT-177). User hat bereits redeployt + Smoke-Test PASS. Naechster Schritt: /go-live → REL-014.
+- Current Phase: V6.1 Go-Live
 
 ## Immediate Next Steps
-1. /qa SLC-613 (Wochen-Check)
-2. Gesamt-QA V6.1
-3. /final-check → /go-live → /deploy
+1. /go-live V6.1 → REL-014 erstellen
+2. /post-launch V6.1
 
 ## Active Scope
 **V4.1 — Meeting Intelligence Basis (released, REL-010):**
