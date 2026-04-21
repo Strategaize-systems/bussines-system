@@ -220,8 +220,6 @@ function WeekView({ kpis, weeklyPerDay }: { kpis: ActivityKpiStatus[]; weeklyPer
     );
   }
 
-  const dayLabels = weeklyPerDay[0]?.days.map((d) => d.dayLabel) ?? [];
-
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
