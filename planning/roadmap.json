@@ -87,8 +87,8 @@
     {
       "id": "v5-1",
       "name": "V5.1",
-      "status": "planned",
-      "summary": "Jigasi Telefon-Integration: SIP/PSTN Gateway fuer Jitsi, Telefonate aufnehmen + transkribieren + summarizen, gleiche Pipeline wie Video-Meetings",
+      "status": "active",
+      "summary": "Asterisk Telefonie + SMAO Voice-Agent: Eigene PBX (Docker), Click-to-Call aus Deal-Workspace, Aufnahme → Whisper → Summary → Deal-Activity, SMAO-Adapter vorbereitet",
       "order": 13
     },
     {

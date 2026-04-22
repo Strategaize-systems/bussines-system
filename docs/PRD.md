@@ -1850,3 +1850,185 @@ Automatische periodische Speicherung der Kern-KPIs fuer historische Vergleiche u
 - CSV-Import: Server Action oder dedizierte API-Route? Server Action reicht fuer Internal Tool.
 - Prognose-Berechnung: Soll die Pipeline-gewichtete Prognose die Stage-Wahrscheinlichkeiten aus `pipeline_stages.probability` nutzen (bestehendes Feld)?
 - Produkt-Kategorien: Freie Tags oder vordefinierte Enum? Empfehlung: Freitext mit Autocomplete (wie Branchen).
+
+---
+
+## V5.1 — Asterisk Telefonie + SMAO Voice-Agent-Vorbereitung
+
+### V5.1 Problem Statement
+
+Aktuell kann der Eigentuemer nur ueber Video-Meetings (Jitsi) oder klassisches Telefon kommunizieren. Telefonate werden nicht erfasst, nicht transkribiert, nicht zusammengefasst. Kein Anruf erzeugt automatisch eine Deal-Activity. Eingehende Anrufe koennen nicht intelligent geroutet werden — entweder nimmt der Eigentuemer ab oder der Anruf geht verloren.
+
+Gleichzeitig wird eine professionelle Telefonie-Loesung benoetigt, die:
+- Ausgehende Anrufe direkt aus dem Deal-Workspace ermoeglicht (Click-to-Call)
+- Jedes Telefonat automatisch aufnimmt, transkribiert und zusammenfasst
+- Eingehende Anrufe spaeter durch einen KI-Voice-Agenten (SMAO) vorqualifizieren kann
+- Unabhaengig vom SIP-Anbieter funktioniert (Provider-Wechsel ohne Umbau)
+- Auf dem Handy nutzbar ist (spaeter, ueber SIP-Softphone)
+
+### V5.1 Goal
+
+Eine eigene Asterisk-basierte Telefonanlage auf dem Hetzner-Server, die:
+1. Ausgehende Anrufe aus dem Browser per WebRTC ermoeglicht
+2. Gespraeche automatisch aufnimmt und durch die bestehende Whisper-Summary-Pipeline schickt
+3. Die SMAO-Integration so vorbereitet, dass sie spaeter per Config-Aenderung aktiviert werden kann
+4. Intern testbar ist ohne externe Kosten (SIP-Trunk wird spaeter angeschlossen)
+
+### V5.1 Primary User
+
+Eigentuemer — fuehrt Vertriebs- und Beratungstelefonate, will diese strukturiert erfassen und auswerten.
+
+### V5.1 Features (4 Features)
+
+#### FEAT-511 — Asterisk PBX Deployment + SIP-Trunk-Adapter
+
+**Zweck:** Eigene Telefonanlage als Docker-Container auf Hetzner. SIP-Trunk-Konfiguration ueber ENV (nicht hardcoded). Intern testbar ohne externen Trunk.
+
+**Scope:**
+- Asterisk Docker-Container im bestehenden Compose-Stack
+- PJSIP-Konfiguration fuer WebRTC (Browser-Telefonie)
+- SIP-Trunk-Konfiguration ueber ENV-Variablen (SIP_TRUNK_HOST, SIP_TRUNK_USER, SIP_TRUNK_PASS)
+- Interner Test-Modus: Asterisk-zu-Asterisk Calls ohne externen Trunk
+- Dialplan-Grundstruktur: Ausgehend, Eingehend, Intern
+- MixMonitor-Konfiguration fuer automatische Gespraechsaufnahme
+
+**Acceptance Criteria:**
+- AC1: Asterisk-Container startet und ist healthy im Docker-Stack
+- AC2: WebRTC-Endpunkt ist konfiguriert (PJSIP + WSS)
+- AC3: SIP-Trunk-Credentials kommen aus ENV (kein Hardcoding)
+- AC4: Ohne SIP-Trunk: interne Testanrufe zwischen zwei WebRTC-Clients funktionieren
+- AC5: Jedes Gespraech wird automatisch als Audio-Datei aufgezeichnet (MixMonitor)
+- AC6: Audio-Dateien landen in einem definierten Verzeichnis (Volume-Mount)
+
+#### FEAT-512 — Click-to-Call aus Deal-Workspace
+
+**Zweck:** Anruf-Button im Deal-Workspace, der ein Telefonat ueber den Browser startet. WebRTC-Client integriert in die bestehende UI.
+
+**Scope:**
+- "Anrufen"-Button im Deal-Workspace (neben bestehenden Quick-Actions)
+- WebRTC-Client-Komponente (SIP.js oder JsSIP) — verbindet sich mit Asterisk
+- Anruf-UI: Waehlen, Klingeln, Verbunden, Auflegen — minimales In-Call-Widget
+- Anrufer-ID: Hauptnummer wird angezeigt (aus ENV)
+- Kontakt-Nummer wird aus Deal-Kontext vorausgefuellt
+- Nach Gespraechsende: Automatischer Summary-Trigger
+
+**Acceptance Criteria:**
+- AC1: Deal-Workspace zeigt "Anrufen"-Button wenn Kontakt eine Telefonnummer hat
+- AC2: Klick oeffnet In-Call-Widget im Browser (Mikrofon-Zugriff)
+- AC3: Ausgehender Anruf ueber Asterisk → SIP-Trunk (oder interner Test)
+- AC4: In-Call-Widget zeigt Status: Waehlen → Klingeln → Verbunden → Beendet
+- AC5: Kontakt-Name + Nummer im Widget sichtbar
+- AC6: Auflegen beendet den Anruf sauber (keine haengenden Sessions)
+
+#### FEAT-513 — Anruf-Aufnahme → Whisper → Summary → Deal-Activity
+
+**Zweck:** Jedes Telefonat durchlaeuft die gleiche Pipeline wie Video-Meetings: Aufnahme → Transkription → KI-Summary → automatische Deal-Activity.
+
+**Scope:**
+- Nach Gespraechsende: Audio-Datei wird erkannt (Cron oder Event-Trigger)
+- Audio → bestehender Whisper-Adapter (gleicher Code wie Meeting-Transkription)
+- Transkript → bestehender Bedrock Summary-Service
+- Summary → neue `call_activities`-Eintrag oder bestehende `activities`-Tabelle mit type="call"
+- Verknuepfung zu Deal/Kontakt (aus dem Call-Kontext)
+- Transkript + Summary sichtbar im Deal-Workspace Timeline
+- Audio-Retention: Konfigurierbar (30/60/90 Tage), danach automatisch loeschen
+
+**Acceptance Criteria:**
+- AC1: Nach Gespraechsende wird Audio automatisch transkribiert (Whisper)
+- AC2: Transkript wird durch Bedrock zu strukturiertem Summary verdichtet
+- AC3: Summary erscheint als Activity (type="call") in der Deal-Timeline
+- AC4: Transkript ist im Activity-Detail einsehbar
+- AC5: Call-Activity zeigt: Kontakt, Dauer, Datum/Uhrzeit, Summary
+- AC6: Audio-Dateien werden nach konfigurierbarer Retention geloescht
+
+#### FEAT-514 — SMAO Voice-Agent Adapter (vorbereitet, nicht verbunden)
+
+**Zweck:** Integration mit SMAO (oder alternativem Voice-Agent-Anbieter) fuer eingehende Anrufe vorbereiten. Adapter-Pattern: Code ist fertig, Verbindung wird spaeter per ENV aktiviert.
+
+**Scope:**
+- SMAO-Adapter nach Provider-Pattern (wie Bedrock-Client, Whisper-Adapter)
+- Webhook-Endpoint: POST /api/webhooks/voice-agent — empfaengt Call-Daten von SMAO
+- Webhook verarbeitet: Transkript, Klassifikation (dringend/rueckruf/info), Kontakt-Zuordnung
+- Automatische Aktionen basierend auf Klassifikation:
+  - Dringend: Push-Notification an User
+  - Rueckruf: Task erstellen mit Transkript
+  - Meeting-Anfrage: Cal.com-Buchungslink zuruecksenden (Konzept)
+- Asterisk-Dialplan vorbereitet: Eingehende Anrufe koennen an SMAO-SIP-Endpunkt geroutet werden (per ENV aktivierbar)
+- ENV-Variablen: SMAO_ENABLED=false (default), SMAO_SIP_URI, SMAO_WEBHOOK_SECRET, SMAO_API_KEY
+
+**Acceptance Criteria:**
+- AC1: Webhook-Endpoint /api/webhooks/voice-agent existiert und validiert SMAO_WEBHOOK_SECRET
+- AC2: Webhook verarbeitet Transkript + Klassifikation und erstellt passende Aktionen (Task/Notification)
+- AC3: Adapter-Interface definiert (VoiceAgentProvider) — SMAO ist erste Implementierung
+- AC4: Ohne SMAO_ENABLED=true: Eingehende Anrufe werden normal geroutet (Asterisk-Default)
+- AC5: Mit SMAO_ENABLED=true: Eingehende Anrufe gehen zuerst an SMAO-SIP-URI
+- AC6: Provider-Wechsel (SMAO → Synthflow) ist ohne Feature-Rewrite moeglich
+
+### V5.1 Architekturleitplanken
+
+1. **Asterisk als Docker-Container** — im bestehenden Compose-Stack auf Hetzner, kein separater Server
+2. **Adapter-Pattern ueberall** — SIP-Trunk via ENV, Voice-Agent via ENV, Audio-Pipeline via bestehendem Whisper-Adapter
+3. **Kein externer Kostenblock in V5.1** — alles ist intern testbar. SIP-Trunk + SMAO-Account werden erst bei Go-Live aktiviert
+4. **WebRTC ueber WSS** — Browser-Telefonie ueber bestehenden Traefik-Proxy (eigene Subdomain z.B. sip.strategaizetransition.com)
+5. **Bestehende Pipeline wiederverwenden** — Whisper-Adapter, Bedrock Summary-Service, Activity-System, Timeline-Rendering
+6. **EU-only Datenhaltung** — Audio-Dateien auf Hetzner, Transkription via bestehenden Whisper-Pfad, Summary via Bedrock Frankfurt
+
+### V5.1 In Scope
+
+- Asterisk PBX als Docker-Container
+- WebRTC-basierte Browser-Telefonie (ausgehend)
+- Click-to-Call aus Deal-Workspace
+- Automatische Aufnahme + Transkription + Summary
+- Call-Activities in Deal-Timeline
+- SMAO-Adapter + Webhook (vorbereitet, nicht verbunden)
+- Eingehende-Anrufe-Routing (Dialplan vorbereitet)
+
+### V5.1 Out of Scope
+
+- SIP-Trunk-Beschaffung (wird bei Go-Live gemacht)
+- SMAO-Account-Aktivierung (wird bei Go-Live gemacht)
+- Mobile-App / SIP-Softphone (spaeter, V5.3)
+- KI-Assistent-Gespraechsfuehrung (SMAO-seitig, nicht unser Code)
+- Multi-User-Telefonie (V7)
+- Voicemail (spaeter)
+- Call-Warteschlange (V7, Team-Feature)
+- DSGVO-Einwilligungsflow fuer Telefonat-Aufnahme (separater Slice, analog FEAT-411)
+
+### V5.1 Constraints
+
+- **Adapter-Pattern-Pflicht** — SIP-Trunk und Voice-Agent muessen ueber ENV konfigurierbar sein. Kein Hardcoding.
+- **Bestehende Pipeline nutzen** — Whisper-Adapter und Bedrock-Summary muessen wiederverwendet werden. Kein neuer Transkriptions-Service.
+- **Kein externer Traffic in V5.1** — alles muss intern testbar sein ohne SIP-Trunk-Kosten.
+- **Audio-Retention** — Aufnahmen muessen nach konfigurierbarer Frist automatisch geloescht werden.
+- **WebRTC ueber TLS** — Browser-Audio muss ueber WSS (verschluesselt) laufen, nicht unverschluesselt.
+
+### V5.1 Risks & Assumptions
+
+- **Risk:** Asterisk + WebRTC + Traefik-WSS-Proxy ist infrastrukturell anspruchsvoll. UDP-Ports + WSS muessen korrekt konfiguriert werden.
+- **Risk:** Hetzner CPX32 RAM-Budget. Asterisk braucht ~200MB, aber zusammen mit Jitsi+Jibri+Supabase wird es eng bei parallelen Calls + Recordings. Moeglicherweise Server-Upgrade noetig.
+- **Risk:** SMAO-API koennte sich aendern oder SMAO als Firma koennte verschwinden (kleines Startup). Adapter-Pattern mitigiert das — Synthflow als Backup.
+- **Assumption:** WebRTC-Audio-Qualitaet ueber Browser ist ausreichend fuer Business-Telefonate.
+- **Assumption:** MixMonitor-Aufnahmen sind qualitativ gut genug fuer Whisper-Transkription.
+- **Assumption:** easybell oder sipgate akzeptieren NL-Firmensitz mit DE-Nummer (EU B2B Standard).
+
+### V5.1 Success Criteria
+
+V5.1 ist erfolgreich wenn:
+1. Eigentuemer kann aus dem Deal-Workspace einen Kontakt per Klick anrufen (Browser + Mikrofon)
+2. Das Gespraech wird automatisch aufgenommen
+3. Nach dem Gespraech erscheint innerhalb <10 Minuten ein Transkript + Summary als Call-Activity im Deal
+4. Interne Testanrufe (ohne SIP-Trunk) funktionieren
+5. SMAO-Webhook-Endpoint ist bereit und verarbeitet Test-Payloads korrekt
+6. Eingehende-Anrufe-Routing im Dialplan ist vorbereitet (aktivierbar per ENV)
+7. Kein externes System muss fuer V5.1-Tests bezahlt werden
+
+### V5.1 Open Questions (fuer /architecture)
+
+- Asterisk-Version: Asterisk 20 LTS oder 21? Empfehlung: 20 LTS (Support bis 2028)
+- WebRTC-Library: SIP.js vs. JsSIP vs. Offen-Alternative? SIP.js ist am weitesten verbreitet.
+- Audio-Format: WAV (gross, beste Qualitaet) vs. Opus (klein, Whisper-kompatibel)?
+- WSS-Subdomain: Eigene Subdomain (sip.strategaizetransition.com) oder Pfad-basiert (/ws/sip)?
+- Call-Activity-Schema: Bestehende `activities`-Tabelle mit type="call" oder separate `calls`-Tabelle?
+- SMAO-Webhook-Format: Muessen wir deren exaktes Payload-Format recherchieren, oder reicht ein generisches Interface?
+- Asterisk-Konfiguration: Statische Config-Files (traditionell) oder ARI (Asterisk REST Interface) fuer dynamische Steuerung?
+- Hetzner Firewall: Welche UDP-Ports muessen fuer RTP-Media geoeffnet werden?
