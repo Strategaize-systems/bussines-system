@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from("ai_action_queue")
     .select(
-      "id, type, action_description, reasoning, entity_type, entity_id, source, priority, status, suggested_at, approved_at, created_at"
+      "id, type, action_description, reasoning, entity_type, entity_id, source, priority, status, suggested_at, decided_at, decided_by, execution_result, created_at"
     )
     .eq("status", "approved")
     .order("created_at", { ascending: false })

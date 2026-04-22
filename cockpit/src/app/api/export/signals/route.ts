@@ -10,15 +10,15 @@ export async function GET(request: NextRequest) {
   const supabase = createAdminClient();
   const offset = (params.page - 1) * params.limit;
 
-  let countQuery = supabase.from("deal_signals").select("id", { count: "exact", head: true });
+  let countQuery = supabase.from("signals").select("id", { count: "exact", head: true });
   if (params.since) countQuery = countQuery.gte("created_at", params.since);
   if (params.until) countQuery = countQuery.lte("created_at", params.until);
   const { count } = await countQuery;
 
   let query = supabase
-    .from("deal_signals")
+    .from("signals")
     .select(
-      "id, deal_id, source_type, source_id, signal_type, field_name, current_value, suggested_value, confidence, reasoning, status, reviewed_at, created_at"
+      "id, deal_id, contact_id, company_id, activity_id, signal_type, description, created_at"
     )
     .order("created_at", { ascending: false })
     .range(offset, offset + params.limit - 1);
