@@ -18,10 +18,15 @@ export SIP_TRUNK_PASS="${SIP_TRUNK_PASS:-trunk-pass}"
 export SMAO_ENABLED="${SMAO_ENABLED:-false}"
 export SMAO_SIP_URI="${SMAO_SIP_URI:-sip:agent@smao.example.com}"
 
-# Render main config files (envsubst for $VARIABLE patterns)
+# Render main config files (envsubst with EXPLICIT variable list only).
+# CRITICAL: Without the variable list, envsubst replaces ALL ${...} patterns
+# including Asterisk's own runtime variables (${CALLERID}, ${EXTEN}, ${UNIQUEID},
+# ${CALL_ID}, ${PJSIP_HEADER}, etc.) with empty strings. This breaks recordings,
+# routing, and caller ID. Only substitute OUR env vars.
+ENVSUBST_VARS='$ASTERISK_WEBRTC_PASSWORD $SIP_CALLER_ID'
 for tmpl in /etc/asterisk-templates/*.conf; do
     filename=$(basename "$tmpl")
-    envsubst < "$tmpl" > "/etc/asterisk/$filename"
+    envsubst "$ENVSUBST_VARS" < "$tmpl" > "/etc/asterisk/$filename"
     echo "  Rendered: $filename"
 done
 
