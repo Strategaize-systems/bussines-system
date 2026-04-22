@@ -177,7 +177,7 @@
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-511 | [Schema-Migration + Types (calls)](SLC-511-schema-migration-calls.md) | FEAT-511,512,513,514 | planned | Blocker | 2026-04-22 |
+| SLC-511 | [Schema-Migration + Types (calls)](SLC-511-schema-migration-calls.md) | FEAT-511,512,513,514 | done | Blocker | 2026-04-22 |
 | SLC-512 | [Asterisk Docker-Setup + Traefik-WSS](SLC-512-asterisk-docker-setup.md) | FEAT-511 | planned | Blocker | 2026-04-22 |
 | SLC-513 | [WebRTC Click-to-Call + In-Call-Widget](SLC-513-webrtc-click-to-call.md) | FEAT-512 | planned | High | 2026-04-22 |
 | SLC-514 | [Call-Recording-Pipeline](SLC-514-call-recording-pipeline.md) | FEAT-513 | planned | High | 2026-04-22 |

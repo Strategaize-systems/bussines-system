@@ -9,14 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: V5.1 Slice-Planning done (5 Slices, 24 Micro-Tasks). Naechster Schritt: /backend SLC-511.
-- Current Phase: V5.1 Slice-Planning
+- High-Level State: implementing
+- Current Focus: V5.1 SLC-511 done (calls-Tabelle + Types + Actions). Naechster Schritt: /qa SLC-511.
+- Current Phase: V5.1 Implementation (1/5 Slices)
 
 ## Immediate Next Steps
-1. /backend SLC-511 (Schema-Migration + Types)
-2. /qa SLC-511
-3. /backend SLC-512 (Asterisk Docker-Setup + Traefik-WSS)
+1. /qa SLC-511
+2. /backend SLC-512 (Asterisk Docker-Setup + Traefik-WSS)
+3. /frontend SLC-513 (WebRTC Click-to-Call)
 
 ## Active Scope
 **V5.1 — Asterisk Telefonie + SMAO Voice-Agent-Vorbereitung (requirements done):**
