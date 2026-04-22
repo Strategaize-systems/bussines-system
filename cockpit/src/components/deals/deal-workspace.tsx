@@ -11,6 +11,7 @@ import { DealActions } from "./deal-actions";
 import { KnowledgeQueryPanel } from "@/components/knowledge/KnowledgeQueryPanel";
 import { ProcessCheckPanel } from "./process-check-panel";
 import { AIBriefingPanel } from "./ai-briefing-panel";
+import { EnrollmentBadge } from "@/components/cadences/enrollment-badge";
 import { getProcessChecks } from "@/lib/process-check";
 import {
   Clock,
@@ -26,6 +27,7 @@ import type { Meeting } from "@/app/(app)/meetings/actions";
 import type { DealBriefingContext } from "@/lib/ai/types";
 import type { DealProductWithName } from "@/app/actions/deal-products";
 import type { Product } from "@/types/products";
+import type { CadenceEnrollmentWithContext } from "@/types/cadence";
 
 type TabId = "timeline" | "tasks" | "proposals" | "documents" | "wissen" | "edit";
 
@@ -55,6 +57,7 @@ interface DealWorkspaceProps {
   referrals: { id: string; label: string }[];
   dealProducts: DealProductWithName[];
   activeProducts: Product[];
+  enrollments?: CadenceEnrollmentWithContext[];
 }
 
 export function DealWorkspace({
@@ -74,6 +77,7 @@ export function DealWorkspace({
   referrals,
   dealProducts,
   activeProducts,
+  enrollments,
 }: DealWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<TabId>("timeline");
 
@@ -131,6 +135,11 @@ export function DealWorkspace({
         companies={companies}
         dealsForSelect={dealsForSelect}
       />
+
+      {/* Cadence Enrollment Badges (SLC-505) */}
+      {enrollments && enrollments.length > 0 && (
+        <EnrollmentBadge enrollments={enrollments} />
+      )}
 
       {/* Two-column layout: Main content + Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

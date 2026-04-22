@@ -15,6 +15,9 @@ import { getInboxEmailsForContact } from "../../emails/imap-actions";
 import { getMeetingsForContact } from "@/app/(app)/meetings/actions";
 import { getProposalsForContact } from "../../proposals/actions";
 import { DocumentList } from "@/components/documents/document-list";
+import { getEnrollmentsForContact } from "@/app/(app)/cadences/enrollment-actions";
+import { EnrollButton } from "@/components/cadences/enroll-button";
+import { EnrollmentBadge } from "@/components/cadences/enrollment-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -159,7 +162,7 @@ export default async function ContactDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [contact, companies, activities, documents, fitAssessment, signals, deals, emails, meetings, proposals, inboxEmails] = await Promise.all([
+  const [contact, companies, activities, documents, fitAssessment, signals, deals, emails, meetings, proposals, inboxEmails, enrollments] = await Promise.all([
     getContact(id),
     getCompaniesForSelect(),
     getActivities({ contactId: id }),
@@ -171,6 +174,7 @@ export default async function ContactDetailPage({
     getMeetingsForContact(id),
     getProposalsForContact(id),
     getInboxEmailsForContact(id),
+    getEnrollmentsForContact(id),
   ]);
 
   const absenceInfo = await getContactAbsenceInfo(id);
@@ -220,6 +224,7 @@ export default async function ContactDetailPage({
             </a>
           ) : null;
         })()}
+        <EnrollButton contactId={contact.id} />
         {contact.email && (
           <EmailSheet
             defaultTo={contact.email}
@@ -258,6 +263,11 @@ export default async function ContactDetailPage({
             </p>
           </div>
         </div>
+      )}
+
+      {/* Cadence Enrollment Badges (SLC-505) */}
+      {enrollments && enrollments.length > 0 && (
+        <EnrollmentBadge enrollments={enrollments} />
       )}
 
       <div className="grid gap-6 md:grid-cols-2">

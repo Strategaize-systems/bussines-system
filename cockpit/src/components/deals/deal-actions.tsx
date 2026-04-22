@@ -12,6 +12,7 @@ import { ListTodo, Mail, Calendar, ChevronDown, Sparkles, Loader2 } from "lucide
 import type { PipelineStage } from "@/app/(app)/pipeline/actions";
 import { getContextPrefill } from "@/lib/context-prefill";
 import { StartMeetingButton } from "@/components/meetings/start-meeting-button";
+import { EnrollButton } from "@/components/cadences/enroll-button";
 
 interface DealActionsProps {
   deal: any;
@@ -153,6 +154,9 @@ export function DealActions({
           contactId={deal.contact_id ?? undefined}
           companyId={deal.company_id ?? undefined}
         />
+
+        {/* Cadence einbuchen (SLC-505) */}
+        <EnrollButton dealId={deal.id} />
 
         <div className="h-8 w-px bg-slate-200" />
 

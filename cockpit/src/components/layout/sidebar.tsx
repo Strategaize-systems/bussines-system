@@ -25,6 +25,7 @@ import {
   Package,
   LogOut,
   BarChart3,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -61,6 +62,7 @@ const navGroups: NavGroup[] = [
       { name: "Alle Firmen", href: "/companies", icon: Building2 },
       { name: "Alle Kontakte", href: "/contacts", icon: Users },
       { name: "Multiplikatoren", href: "/multiplikatoren", icon: Handshake },
+      { name: "Cadences", href: "/cadences", icon: Zap },
     ],
   },
   {

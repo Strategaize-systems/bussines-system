@@ -1387,7 +1387,7 @@
       "title": "Cadences / Sequences — Follow-up-Automatisierung",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5",
       "description": "FEAT-501: Cadence-Templates mit Schritten (E-Mail, Aufgabe, Wartezeit). Enrollment auf Deals/Kontakte. Automatische Ausfuehrung via Cron. Abbruch bei Antwort oder Deal-Status.",
       "createdAt": "2026-04-21"

@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5 Implementierung. SLC-501..504 done (4/7). Naechster Schritt: /qa SLC-504, dann /frontend SLC-505 (Cadence-Frontend).
-- Current Phase: V5 Implementation (4/7 Slices done)
+- Current Focus: V5 Implementierung. SLC-501..505 done (5/7). Naechster Schritt: /qa SLC-505, dann /backend SLC-506 (Export-API).
+- Current Phase: V5 Implementation (5/7 Slices done)
 
 ## Immediate Next Steps
-1. /qa SLC-504 (Cadence-Backend)
-2. /frontend SLC-505 (Cadence-Frontend)
-3. /backend SLC-506 (Export-API)
+1. /qa SLC-505 (Cadence-Frontend)
+2. /backend SLC-506 (Export-API)
+3. /frontend SLC-507 (Tracking-UI + Engagement)
 
 ## Active Scope
 **V5 — Automatisierung + Vertriebsintelligenz (active, Requirements done):**
