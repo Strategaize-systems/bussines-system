@@ -1407,7 +1407,7 @@
       "title": "E-Mail Open/Click-Tracking",
       "type": "feature",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5",
       "description": "FEAT-506: Tracking-Pixel fuer Open-Detection, Link-Wrapping fuer Click-Detection. Events auf E-Mail-/Kontakt-Ebene angezeigt.",
       "createdAt": "2026-04-21"

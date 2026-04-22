@@ -9,21 +9,22 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: V5 Implementierung. SLC-501..506 done (6/7). Naechster Schritt: /qa SLC-506, dann /frontend SLC-507 (Tracking-UI + Engagement).
-- Current Phase: V5 Implementation (6/7 Slices done)
+- High-Level State: qa
+- Current Focus: V5 komplett implementiert (7/7 Slices done). Naechster Schritt: /qa SLC-507, dann Gesamt-QA V5, dann /final-check + /go-live + /deploy V5.
+- Current Phase: V5 QA (alle Slices implementiert)
 
 ## Immediate Next Steps
-1. /qa SLC-506 (Export-API)
-2. /frontend SLC-507 (Tracking-UI + Engagement)
-3. Gesamt-QA V5
+1. /qa SLC-507 (Tracking-UI + Engagement)
+2. Gesamt-QA V5
+3. /final-check V5
+4. /go-live + /deploy V5
 
 ## Active Scope
-**V5 — Automatisierung + Vertriebsintelligenz (active, Requirements done):**
-- FEAT-501 Cadences / Sequences — Follow-up-Ketten automatisieren
-- FEAT-505 E-Mail Auto-Zuordnung — IMAP → Kontakt-Match (3 Stufen)
-- FEAT-506 E-Mail Open/Click-Tracking — Pixel + Link-Wrapping
-- FEAT-504 Intelligence-Platform-Export-API — 5 JSON-Endpoints fuer System 4
+**V5 — Automatisierung + Vertriebsintelligenz (alle Slices done):**
+- FEAT-501 Cadences / Sequences — done
+- FEAT-504 Intelligence-Platform-Export-API — done
+- FEAT-505 E-Mail Auto-Zuordnung — done
+- FEAT-506 E-Mail Open/Click-Tracking — done
 
 **Released (deployed):**
 - V2..V4.3, V6, V6.1
