@@ -66,9 +66,8 @@ export type Call = {
   created_by: string | null;
   created_at: string;
   updated_at: string;
-  // Relations
+  // Relations (companies via contacts, kein direkter FK auf calls)
   contacts?: { id: string; first_name: string; last_name: string; phone: string | null } | null;
-  companies?: { id: string; name: string } | null;
   deals?: { id: string; title: string } | null;
 };
 
@@ -79,7 +78,7 @@ export async function getCallsByDeal(dealId: string) {
   const { data, error } = await supabase
     .from("calls")
     .select(
-      "*, contacts(id, first_name, last_name, phone), companies:contacts(company_id)"
+      "*, contacts(id, first_name, last_name, phone), deals(id, title)"
     )
     .eq("deal_id", dealId)
     .order("created_at", { ascending: false });
