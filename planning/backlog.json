@@ -1417,7 +1417,7 @@
       "title": "Intelligence-Platform-Export-API (System 4)",
       "type": "feature",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5",
       "description": "FEAT-504: 5 read-only JSON-Endpoints (Deals, Contacts, Activities, Signals, Insights) mit API-Key-Auth, Pagination, Zeitraum-Filter.",
       "createdAt": "2026-04-21"

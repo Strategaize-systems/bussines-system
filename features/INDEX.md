@@ -117,7 +117,7 @@
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
 | FEAT-501 | Cadences / Sequences | done | [Spec](FEAT-501-cadences-sequences.md) | 2026-04-09 |
-| FEAT-504 | Intelligence-Platform-Export-API | in_progress | [Spec](FEAT-504-export-api.md) | 2026-04-09 |
+| FEAT-504 | Intelligence-Platform-Export-API | done | [Spec](FEAT-504-export-api.md) | 2026-04-09 |
 | FEAT-505 | E-Mail Auto-Zuordnung | done | [Spec](FEAT-505-email-auto-zuordnung.md) | 2026-04-21 |
 | FEAT-506 | E-Mail Open/Click-Tracking | in_progress | [Spec](FEAT-506-email-tracking.md) | 2026-04-21 |
 
