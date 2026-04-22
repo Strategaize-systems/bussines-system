@@ -92,6 +92,13 @@
       "order": 13
     },
     {
+      "id": "v5-2",
+      "name": "V5.2",
+      "status": "planned",
+      "summary": "E-Mail Composing Studio: 3-Panel-Layout (Vorlagen + Erfassen + Live-Preview), Systemvorlagen, eigene Vorlagen, KI-Diktat, Branding, Echtzeit-Vorschau",
+      "order": 14
+    },
+    {
       "id": "v7",
       "name": "V7",
       "status": "planned",
