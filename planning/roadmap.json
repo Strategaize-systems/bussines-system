@@ -85,10 +85,17 @@
       "order": 12
     },
     {
+      "id": "v5-1",
+      "name": "V5.1",
+      "status": "planned",
+      "summary": "Jigasi Telefon-Integration: SIP/PSTN Gateway fuer Jitsi, Telefonate aufnehmen + transkribieren + summarizen, gleiche Pipeline wie Video-Meetings",
+      "order": 13
+    },
+    {
       "id": "v7",
       "name": "V7",
       "status": "planned",
-      "summary": "Multi-User + Erweiterung: Routing/Territories, Teamlead-Rolle mit Teamsicht, Workflow-Automation, Kampagnen-Attribution, Jigasi Telefon-Integration",
+      "summary": "Multi-User + Erweiterung: Routing/Territories, Teamlead-Rolle mit Teamsicht, Workflow-Automation, Kampagnen-Attribution",
       "order": 15
     },
     {

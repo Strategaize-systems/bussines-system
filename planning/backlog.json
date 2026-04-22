@@ -485,9 +485,9 @@
       "id": "BL-206",
       "title": "Jigasi — Telefon-Integration für Jitsi (SIP/PSTN Gateway)",
       "type": "feature",
-      "priority": "medium",
+      "priority": "high",
       "status": "open",
-      "version": "V7",
+      "version": "V5.1",
       "description": "Jigasi als SIP-Gateway für Jitsi: Telefonnummern direkt aus dem System anrufen, Gespräche aufnehmen + transkribieren. Benötigt SIP-Trunk-Provider (z.B. sipgate). Telefonate durchlaufen gleiche Pipeline wie Video-Meetings: Aufnahme → Whisper → LLM-Summary → Deal-Activity.",
       "createdAt": "2026-04-04"
     },
@@ -1427,9 +1427,9 @@
       "title": "Account Enrichment Layer (Firmen-/Kontaktdaten automatisch anreichern)",
       "type": "idea",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": null,
-      "description": "Firmen- und Kontaktdaten automatisch mit externen Quellen anreichern: Funding-Status, Tech-Stack, Hiring-Signale, Buying Intent. Muss EU-konform sein (kein US-SaaS wie Clay direkt). Moegliche Ansaetze: Bedrock-basierte Web-Recherche, EU-konforme Datenanbieter, strukturierte LinkedIn-Daten. Wuerde KI-Briefings, Cadence-Templates und Signal-Erkennung dramatisch verbessern. Inspiration: Clay+Claude Workflow im B2B-Sales.",
+      "description": "GESCHLOSSEN: Enrichment gehoert in Intelligence Platform (System 4), nicht ins Business System. Deals kommen bereits angereichert ueber Lead Management rein. Bei Bedarf wuerde Enrichment in Intelligence Platform gebaut und Ergebnisse hierher synchronisiert. Auch strategisch: Enrichment als Argument fuer Intelligence-Platform-Lizenz.",
       "createdAt": "2026-04-22"
     },
     {
