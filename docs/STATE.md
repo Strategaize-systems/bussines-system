@@ -9,14 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: requirements
-- Current Focus: V5.1 Requirements done. Naechster Schritt: /architecture V5.1 (Asterisk Telefonie + SMAO Voice-Agent).
-- Current Phase: V5.1 Requirements
+- High-Level State: architecture
+- Current Focus: V5.1 Architecture done (8 DECs, MIG-020). Naechster Schritt: /slice-planning V5.1.
+- Current Phase: V5.1 Architecture
 
 ## Immediate Next Steps
-1. /architecture V5.1
-2. /slice-planning V5.1
-3. /backend V5.1 (Asterisk Deployment)
+1. /slice-planning V5.1
+2. /backend SLC-511 (Schema-Migration)
+3. /backend SLC-512 (Asterisk Docker-Setup)
 
 ## Active Scope
 **V5.1 — Asterisk Telefonie + SMAO Voice-Agent-Vorbereitung (requirements done):**

@@ -349,3 +349,43 @@
 - Status: accepted
 - Reason: Manueller E-Mail-Versand (emails/actions.ts) und Cadence-E-Mail-Versand brauchen denselben SMTP-Pfad, dieselbe DB-Logging-Logik und dieselbe Tracking-Injection. Ohne Shared Layer wuerde Code dupliziert und Tracking nur in einem Pfad funktionieren.
 - Consequence: Neuer `/lib/email/send.ts` als zentraler Versand-Layer. Bestehender sendEmail in actions.ts wird Wrapper um den Shared Layer. Cadence-Execution nutzt denselben Layer. Tracking-Pixel und Link-Wrapping werden transparent injiziert.
+
+## DEC-070 — Asterisk 20 LTS als PBX-Container (V5.1)
+- Status: accepted
+- Reason: Asterisk ist die etablierteste Open-Source-PBX. Version 20 ist LTS (Support bis 2028). Docker-Container auf bestehendem Hetzner-Server minimiert Infrastruktur-Kosten. PJSIP-Stack unterstuetzt WebRTC nativ (WSS-Transport, DTLS-SRTP, Opus). Alternative FreeSWITCH ist komplexer zu konfigurieren und weniger verbreitet. Asterisk idle RAM: ~50-80 MB — vernachlaessigbar neben Jitsi.
+- Consequence: Neuer Docker-Service `asterisk` im docker-compose.yml. Custom Dockerfile auf Debian Bookworm mit Asterisk 20 LTS. PJSIP als einziger SIP-Stack (kein chan_sip). Config-Dateien im Repo unter `/asterisk/config/`. ENV-basierte SIP-Trunk- und SMAO-Konfiguration ueber entrypoint.sh Template-Rendering.
+
+## DEC-071 — SIP.js als WebRTC-Library (V5.1)
+- Status: accepted
+- Reason: SIP.js ist die am aktivsten gewartete SIP-over-WebSocket Library (letzer Release 2024, TypeScript-native). Saubere API fuer UserAgent, Registerer, Inviter, Session. JsSIP ist aelter und weniger aktiv gewartet. Beide Libraries sind funktional aehnlich, aber SIP.js hat bessere TypeScript-Typen und klarere Dokumentation.
+- Consequence: `sip.js` als neue package.json Dependency (~200 KB Bundle). Browser-seitige WebRTC-Integration ueber SIP.js UserAgent. Registrierung bei Asterisk via WSS (TLS-terminiert durch Traefik). Session-Events steuern die CallWidget-UI.
+
+## DEC-072 — WSS ueber eigene Subdomain sip.strategaizetransition.com (V5.1)
+- Status: accepted
+- Reason: WebSocket-Verbindungen fuer SIP sind persistent und haben andere Lastcharakteristik als HTTP-Requests. Eigene Subdomain trennt SIP-Traffic sauber von HTTP-Traffic. Traefik routet nach Host-Header — keine Pfad-Kollisionen mit Next.js. Pfad-basierter Ansatz (/ws/sip) wuerde komplexeres Next.js-Middleware-Setup erfordern und koennte mit bestehenden WebSocket-Nutzungen kollidieren.
+- Consequence: DNS A-Record `sip.strategaizetransition.com` → gleiche Server-IP. Coolify-Domain-Konfiguration fuer `asterisk`-Service. Traefik-Labels analog zu `jitsi-web`-Pattern. TLS-Zertifikat via Let's Encrypt (Coolify-Standard).
+
+## DEC-073 — WAV-Aufnahme via MixMonitor (V5.1)
+- Status: accepted
+- Reason: MixMonitor ist Asterisk's native Recording-Applikation. WAV (PCM, 16-bit) ist das Default-Format und wird von OpenAI Whisper API direkt akzeptiert — keine Konvertierung noetig. Opus waere ~5x kleiner, erfordert aber MixMonitor-Nachbearbeitung oder Custom-Encoding. Bei V5.1-Volumen (1-5 Calls/Tag, <30 Min) ist Dateigroesse irrelevant (~10 MB/Min WAV). Retention-Cron loescht nach 30 Tagen.
+- Consequence: MixMonitor schreibt WAV nach `/var/spool/asterisk/monitor/{callId}.wav`. call-processing-Cron laedt WAV direkt in Supabase Storage. Whisper-Adapter erhaelt WAV ohne Konvertierung. Spaeterer Wechsel auf Opus-Recording moeglich ueber MixMonitor-Options (kein Code-Change, nur Config).
+
+## DEC-074 — Calls als eigene Tabelle (V5.1, erweitert DEC-021)
+- Status: accepted
+- Reason: DEC-021 hat bereits festgelegt: "Activities bleibt polymorpher Timeline-Store, Meetings/Calls als eigene Tabellen. Calls-Tabelle folgt bei Bedarf." V5.1 implementiert nun die Calls-Tabelle. Calls brauchen reichere Felder als Activities (Recording-URL, Transcript, Summary, Voice-Agent-Klassifikation, Dauer, Richtung). Bestehende Activities-Tabelle zeigt Call-Summary in der Timeline ueber source_type='call' + source_id.
+- Consequence: Neue `calls`-Tabelle mit Recording-Pipeline-Feldern (analog meetings). Activity-Insert mit type='call' und source_id-Verlinkung. Deal-Workspace Timeline rendert Call-Activities mit Dauer und Summary-Preview.
+
+## DEC-075 — Generisches VoiceAgentProvider-Interface (V5.1)
+- Status: accepted
+- Reason: SMAO (Berlin, KI-Voice-Agent) ist ein kleines Startup — API kann sich aendern oder Firma kann verschwinden. Synthflow (Berlin, besser funded) ist Backup. Adapter-Pattern ist konsistent zu bestehenden Providern: Whisper (DEC-035), Embeddings (DEC-047), LLM (DEC-018). Generic Interface definiert was wir brauchen (Transcript, Classification, CallerInfo), nicht was der Provider liefert.
+- Consequence: `/lib/telephony/voice-agent/provider.ts` definiert `VoiceAgentProvider`-Interface. `smao.ts` ist erste Implementierung. `synthflow.ts` ist Platzhalter. `factory.ts` liest `VOICE_AGENT_PROVIDER` ENV. Provider-Wechsel = neue Adapter-Klasse + ENV-Aenderung. Kein Feature-Code muss sich aendern.
+
+## DEC-076 — Statische Asterisk-Konfiguration, kein ARI (V5.1)
+- Status: accepted
+- Reason: ARI (Asterisk REST Interface) ermoeglicht dynamische Call-Steuerung via HTTP-API — maechtig, aber komplex. V5.1 braucht nur: ausgehende Anrufe, eingehende Routing, MixMonitor, Echo-Test. Das ist mit statischen Config-Dateien (pjsip.conf, extensions.conf) sauber abbildbar. ARI wuerde einen zusaetzlichen HTTP-Client im Next.js-Backend erfordern und die Fehlerdomaene vergroessern. Bei Multi-User-Telefonie (V7): ARI nachruestbar.
+- Consequence: Asterisk-Config als statische `.conf`-Dateien im Repo unter `/asterisk/config/`. ENV-Variablen werden beim Container-Start via `entrypoint.sh` (envsubst) in die Config geschrieben. Config-Aenderungen erfordern Container-Rebuild. Fuer Single-User akzeptabel.
+
+## DEC-077 — RTP-Port-Range 16384-16484 (V5.1)
+- Status: accepted
+- Reason: Asterisk-Default ist 10000-20000. Port 10000 ist bereits von Jitsi JVB belegt. Engere Range (100 Ports) reicht fuer 50 parallele Calls (weit mehr als Single-User braucht). 16384 als Start ist SIP-Industrie-Standard (RFC 3550 empfiehlt 16384-32767). Weniger offene Ports auf Hetzner-Firewall = kleinere Angriffsflaeche.
+- Consequence: `rtp.conf` mit `rtpstart=16384`, `rtpend=16484`. Hetzner Cloud Firewall: UDP 16384-16484 eingehend oeffnen. Kein Konflikt mit Jitsi JVB (Port 10000). Bei Bedarf erweiterbar.

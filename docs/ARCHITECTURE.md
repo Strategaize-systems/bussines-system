@@ -4541,3 +4541,880 @@ Geschaetzt 7 Slices, je 0.5-1.5 Tage. Gesamtschaetzung: ~5-8 Tage.
 ## V5 Recommended Next Step
 
 `/slice-planning` — V5-Slices strukturiert ausdefinieren (Acceptance Criteria, Dependencies, QA-Fokus, Micro-Tasks). Danach pro Slice `/backend` oder `/frontend` + `/qa`.
+
+---
+
+# V5.1 Architektur — Asterisk Telefonie + SMAO Voice-Agent-Vorbereitung
+
+## V5.1 Architecture Summary
+
+V5.1 bringt eine eigene Asterisk-basierte Telefonanlage als Docker-Container auf den bestehenden Hetzner-Server. Browser-Telefonie ueber WebRTC (SIP.js → WSS → Asterisk) ermoeglicht Click-to-Call direkt aus dem Deal-Workspace. Jedes Gespraech wird automatisch aufgezeichnet (MixMonitor), durch die bestehende Whisper-Transkriptions-Pipeline und Bedrock-Summary geschickt und als Call-Activity in der Deal-Timeline angezeigt.
+
+**Strategie:** Additiv. Ein neuer Docker-Container (Asterisk), eine neue Tabelle (`calls`), eine neue Subdomain (WSS), ein neuer Cron-Job. Bestehende Infrastruktur (Whisper-Adapter, Bedrock, Supabase Storage, Activity-System, Retention-Cron) wird wiederverwendet. Kein externer Kostenblock — alles intern testbar ohne SIP-Trunk.
+
+**Kern-Architektur-Entscheidungen:**
+- Asterisk 20 LTS als Docker-Container (DEC-070)
+- SIP.js als WebRTC-Library im Browser (DEC-071)
+- WSS ueber eigene Subdomain sip.strategaizetransition.com (DEC-072)
+- WAV-Aufnahme via MixMonitor (DEC-073)
+- Calls als eigene Tabelle, Activity fuer Timeline (DEC-074, erweitert DEC-021)
+- Generisches VoiceAgentProvider-Interface fuer SMAO (DEC-075)
+- Statische Asterisk-Konfiguration, kein ARI (DEC-076)
+- RTP-Port-Range 16384-16484, kein Konflikt mit Jitsi JVB (DEC-077)
+
+## V5.1 Main Components
+
+```
+Browser (User)                           Hetzner CPX32 (bestehend)
+─────────────────                        ────────────────────────────────
+Deal-Workspace UI    ───────► Next.js App (Port 3000)
+  └── "Anrufen"-Button                   ├── /app/(app)/deals/[id]/   (ERWEITERT)
+       ├── Click-to-Call                  │     └── CallWidget (NEU V5.1)
+       ├── In-Call-Widget                 │
+       │   (Waehlen/Klingeln/            ├── /lib/telephony/            (NEU V5.1)
+       │    Verbunden/Beendet)           │     ├── sip-config.ts
+       ├── Call-Verlauf                   │     └── call-manager.ts
+       └── Summary in Timeline           │
+                                         ├── /lib/telephony/voice-agent/ (NEU V5.1)
+SIP.js (im Browser)                      │     ├── provider.ts  (Interface)
+  ├── UserAgent                          │     ├── smao.ts      (V5.1 Implementierung)
+  ├── Registerer                         │     ├── synthflow.ts (Platzhalter)
+  ├── Inviter (ausgehend)                │     └── factory.ts   (ENV-Switch)
+  └── Session (In-Call)                  │
+       │                                 ├── /api/webhooks/voice-agent   (NEU V5.1)
+       │ WSS                             ├── /api/cron/call-processing   (NEU V5.1)
+       │                                 │
+       └──────► Traefik (TLS-Terminierung)
+                   │                     Asterisk PBX (NEU V5.1, Docker)
+                   └──► asterisk:8089    ├── PJSIP (res_pjsip)
+                        (WebSocket)      ├── WebSocket Transport (res_pjsip_transport_websocket)
+                                         ├── Dialplan (extensions.conf)
+                                         │   ├── [webrtc-outbound] → SIP-Trunk (wenn enabled)
+                                         │   ├── [from-trunk]      → Eingehend (Asterisk oder SMAO)
+                                         │   └── [internal-test]   → Echo-Test, Browser-zu-Browser
+                                         ├── MixMonitor → /var/spool/asterisk/monitor/{callId}.wav
+                                         └── SIP-Trunk-Endpoint (via ENV, deaktiviert in V5.1)
+
+                                         Bestehend (unveraendert):
+                                         ├── /lib/ai/transcription/    (Whisper-Adapter V4.1)
+                                         ├── /lib/ai/bedrock/          (LLM-Layer)
+                                         ├── /lib/ai/embeddings/       (RAG V4.2)
+                                         └── Jitsi Stack (5 Container, V4.1)
+
+External
+────────
+SIP-Trunk (sipgate/easybell)  ◄──── Asterisk (ERST BEI GO-LIVE, nicht V5.1)
+SMAO Voice-Agent              ◄──── Asterisk SIP + Webhook (VORBEREITET, nicht verbunden)
+OpenAI Whisper API            ◄──── /lib/ai/transcription/ (bestehend)
+AWS Bedrock (Frankfurt)       ◄──── /lib/ai/bedrock/ (bestehend)
+```
+
+## V5.1 Responsibilities
+
+| Komponente | Verantwortung |
+|---|---|
+| Asterisk PBX (Docker) | SIP-Server, WebRTC-Endpunkt via WSS, Dialplan-Routing, MixMonitor-Aufnahme, SIP-Trunk-Gateway (spaeter) |
+| SIP.js (Browser-Library) | WebRTC SIP User Agent: Registrierung, INVITE/BYE, Audio-Stream, Call-Status-Events |
+| Traefik (bestehend) | TLS-Terminierung fuer sip.strategaizetransition.com, WSS → WS-Proxy zu Asterisk:8089 |
+| `/lib/telephony/` | SIP-Verbindungs-Config, Call-Lifecycle-Management, Server Actions fuer Call-CRUD |
+| `/lib/telephony/voice-agent/` | VoiceAgentProvider-Interface, SMAO-Adapter, Synthflow-Platzhalter |
+| `/api/webhooks/voice-agent` | Empfaengt SMAO-Webhooks: Transkript, Klassifikation, Kontakt-Zuordnung |
+| `/api/cron/call-processing` | WAV-Upload → Supabase Storage → Whisper → Bedrock Summary → Activity-Insert |
+| CallWidget (React) | In-Call-UI: Waehlen, Klingeln, Verbunden, Beendet. Mikrofon-Zugriff. Im Deal-Workspace eingebettet. |
+| Bestehende Pipeline | Whisper-Adapter (DEC-035), Bedrock-Summary, Supabase Storage, Activity-System, Retention-Cron |
+
+## V5.1 Data Model
+
+### Neue Tabelle: calls (FEAT-512, FEAT-513, DEC-074)
+
+```sql
+CREATE TABLE calls (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  deal_id UUID REFERENCES deals(id) ON DELETE SET NULL,
+  contact_id UUID REFERENCES contacts(id) ON DELETE SET NULL,
+  -- Call-Metadata
+  direction TEXT NOT NULL DEFAULT 'outbound',
+  status TEXT NOT NULL DEFAULT 'initiated',
+  phone_number TEXT,
+  caller_id TEXT,
+  -- Zeitstempel
+  started_at TIMESTAMPTZ,
+  connected_at TIMESTAMPTZ,
+  ended_at TIMESTAMPTZ,
+  duration_seconds INT,
+  -- Recording (gleiches Pattern wie meetings)
+  recording_url TEXT,
+  recording_status TEXT DEFAULT 'not_recording',
+  -- Transcription + Summary (gleiches Pattern wie meetings)
+  transcript TEXT,
+  transcript_status TEXT DEFAULT 'pending',
+  ai_summary JSONB,
+  summary_status TEXT DEFAULT 'pending',
+  -- Voice-Agent (SMAO/Synthflow)
+  voice_agent_handled BOOLEAN DEFAULT FALSE,
+  voice_agent_classification TEXT,
+  voice_agent_transcript TEXT,
+  -- Asterisk-Referenz
+  asterisk_channel_id TEXT,
+  sip_call_id TEXT,
+  -- Ownership
+  created_by UUID REFERENCES profiles(id),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Indizes
+CREATE INDEX idx_calls_deal ON calls(deal_id) WHERE deal_id IS NOT NULL;
+CREATE INDEX idx_calls_contact ON calls(contact_id) WHERE contact_id IS NOT NULL;
+CREATE INDEX idx_calls_status ON calls(status);
+CREATE INDEX idx_calls_recording ON calls(recording_status)
+  WHERE recording_status IN ('pending', 'processing');
+CREATE INDEX idx_calls_direction ON calls(direction);
+
+-- RLS
+ALTER TABLE calls ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated_full_access" ON calls
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+GRANT ALL ON calls TO authenticated;
+GRANT ALL ON calls TO service_role;
+```
+
+**direction-Werte:** `outbound` (Click-to-Call), `inbound` (SIP-Trunk/SMAO)
+**status-Werte:** `initiated`, `ringing`, `connected`, `completed`, `failed`, `missed`
+**recording_status-Werte:** `not_recording`, `pending`, `recording`, `uploading`, `completed`, `failed`, `deleted` (konsistent mit meetings)
+**transcript_status / summary_status:** `pending`, `processing`, `completed`, `failed` (konsistent mit meetings)
+**voice_agent_classification-Werte:** `urgent`, `callback`, `info`, `meeting_request` (null bei manuellen Calls)
+**asterisk_channel_id:** Asterisk Unique-ID, fuer MixMonitor-Dateiname-Matching (Fallback)
+
+### Tabellen-Uebersicht V5.1: 39 Tabellen (38 bestehend + 1 neu)
+
+```
+BESTEHEND (unveraendert):              NEU (V5.1):
+├── companies                          └── calls
+├── contacts
+├── pipelines                          BESTEHEND (keine Schema-Aenderung):
+├── pipeline_stages                    └── activities (type='call' nutzt bestehendes source_type/source_id)
+├── deals
+├── proposals
+├── fit_assessments
+├── tasks
+├── handoffs
+├── referrals
+├── signals
+├── documents
+├── activities
+├── profiles
+├── meetings
+├── calendar_events
+├── audit_log
+├── email_templates
+├── email_messages
+├── email_threads
+├── email_sync_state
+├── ai_action_queue
+├── ai_feedback
+├── user_settings
+├── knowledge_chunks
+├── products
+├── deal_products
+├── goals
+├── kpi_snapshots
+├── cadences
+├── cadence_steps
+├── cadence_enrollments
+├── cadence_executions
+├── email_tracking_events
+├── emails
+└── ...
+```
+
+### Activity-Integration (bestehend, keine Schema-Aenderung)
+
+Jeder abgeschlossene Call erzeugt eine Activity:
+```sql
+INSERT INTO activities (
+  type, body, source_type, source_id, ai_generated,
+  deal_id, contact_id, company_id, created_by
+) VALUES (
+  'call',
+  '{ai_summary.outcome}',
+  'call', '{call.id}', true,
+  '{call.deal_id}', '{call.contact_id}', '{contact.company_id}', '{call.created_by}'
+);
+```
+
+Das bestehende `source_type` + `source_id` Pattern (V3, DEC-021) verlinkt die Activity zurueck zur `calls`-Tabelle. Die Deal-Timeline rendert Call-Activities mit Dauer, Summary-Preview und Link zum Detail.
+
+## V5.1 Asterisk Docker-Container
+
+### Dockerfile-Anforderungen
+
+- **Basis:** Debian Bookworm Slim + Asterisk 20 LTS (aus Asterisk-Repo oder Build)
+- **Benoetigte Module:**
+  - `res_pjsip` — PJSIP SIP-Stack
+  - `res_pjsip_transport_websocket` — WebSocket-Transport fuer WebRTC
+  - `res_http_websocket` — HTTP-WebSocket-Support
+  - `codec_opus` — Opus-Codec fuer WebRTC-Audio
+  - `app_mixmonitor` — Gespraechsaufnahme
+  - `app_echo` — Echo-Test fuer interne Tests
+  - `res_musiconhold` — Music-on-Hold (Warteton)
+- **Config-Mount:** `/asterisk/config/` aus dem Repo → `/etc/asterisk/` im Container
+- **Recording-Volume:** `/var/spool/asterisk/monitor/` → `asterisk-recordings` Volume
+
+### Asterisk Config-Dateien (im Repo unter /asterisk/config/)
+
+| Datei | Zweck |
+|---|---|
+| `pjsip.conf` | PJSIP-Endpunkte: WebRTC-User, SIP-Trunk (ENV), SMAO-Endpoint (ENV) |
+| `extensions.conf` | Dialplan: Ausgehend, Eingehend, Intern-Test, Echo-Test |
+| `rtp.conf` | RTP-Port-Range: 16384-16484 |
+| `http.conf` | HTTP-Server fuer WebSocket auf Port 8089 |
+| `modules.conf` | Modul-Loading (PJSIP, kein chan_sip) |
+| `musiconhold.conf` | Warteton-Konfiguration |
+| `logger.conf` | Logging-Konfiguration |
+
+### PJSIP-Konfiguration (Kern-Auszug)
+
+```ini
+; === Transports ===
+
+[transport-wss]
+type=transport
+protocol=wss
+bind=0.0.0.0:8089
+
+[transport-udp]
+type=transport
+protocol=udp
+bind=0.0.0.0:5060
+
+; === WebRTC-Endpunkt (Browser-Telefonie) ===
+
+[webrtc-user]
+type=endpoint
+transport=transport-wss
+context=webrtc-outbound
+disallow=all
+allow=opus
+allow=ulaw
+webrtc=yes
+dtls_auto_generate_cert=yes
+media_encryption=dtls
+
+[webrtc-user]
+type=auth
+auth_type=userpass
+username=webrtc-user
+password=${ASTERISK_WEBRTC_PASSWORD}    ; aus ENV
+
+[webrtc-user]
+type=aor
+max_contacts=5
+remove_existing=yes
+
+; === SIP-Trunk (ENV-konfigurierbar, V5.1 deaktiviert) ===
+; Wird per entrypoint-Script nur geschrieben wenn SIP_TRUNK_ENABLED=true
+
+; === SMAO SIP-Endpoint (V5.1 deaktiviert) ===
+; Wird per entrypoint-Script nur geschrieben wenn SMAO_ENABLED=true
+```
+
+### Dialplan (extensions.conf, Kern-Auszug)
+
+```ini
+; === Ausgehend (vom Browser) ===
+[webrtc-outbound]
+; Externer Anruf (wenn SIP-Trunk enabled)
+exten => _+X.,1,NoOp(Outbound call to ${EXTEN})
+ same => n,Set(CALL_UUID=${PJSIP_HEADER(read,X-Call-ID)})
+ same => n,MixMonitor(/var/spool/asterisk/monitor/${CALL_UUID}.wav,b)
+ same => n,Set(CALLERID(num)=${SIP_CALLER_ID})
+ same => n,Dial(PJSIP/${EXTEN}@trunk,60,g)
+ same => n,Hangup()
+
+; Interne Test-Extension (Echo-Test)
+exten => 600,1,Answer()
+ same => n,Set(CALL_UUID=${PJSIP_HEADER(read,X-Call-ID)})
+ same => n,MixMonitor(/var/spool/asterisk/monitor/${CALL_UUID}.wav,b)
+ same => n,Echo()
+ same => n,Hangup()
+
+; Interne Test-Extension (Browser-zu-Browser)
+exten => 1001,1,Set(CALL_UUID=${PJSIP_HEADER(read,X-Call-ID)})
+ same => n,MixMonitor(/var/spool/asterisk/monitor/${CALL_UUID}.wav,b)
+ same => n,Dial(PJSIP/webrtc-user,30)
+ same => n,Hangup()
+
+; === Eingehend (vom SIP-Trunk) ===
+[from-trunk]
+exten => _X.,1,NoOp(Incoming call from ${CALLERID(num)})
+ same => n,GotoIf($[${SMAO_ENABLED}=true]?smao-route,${EXTEN},1)
+ same => n,Set(CALL_UUID=${UNIQUEID})
+ same => n,MixMonitor(/var/spool/asterisk/monitor/${CALL_UUID}.wav,b)
+ same => n,Dial(PJSIP/webrtc-user,30)
+ same => n,VoiceMail(1001@default,u)
+ same => n,Hangup()
+
+; === SMAO-Weiterleitung (wenn aktiviert) ===
+[smao-route]
+exten => _X.,1,Dial(PJSIP/${EXTEN}@smao-endpoint,60)
+ same => n,Hangup()
+```
+
+### MixMonitor Filename-Strategie
+
+Das Call-UUID wird als Custom SIP-Header `X-Call-ID` vom Browser (SIP.js) mitgeschickt. Der Dialplan liest diesen Header und verwendet ihn als Dateinamen:
+
+```
+Set(CALL_UUID=${PJSIP_HEADER(read,X-Call-ID)})
+MixMonitor(/var/spool/asterisk/monitor/${CALL_UUID}.wav,b)
+```
+
+Der `call-processing`-Cron matched WAV-Dateien direkt ueber `calls.id` = Dateiname (ohne Extension). Kein Asterisk-Channel-ID-Matching noetig.
+
+**Fallback:** Falls der Header nicht gesetzt ist (z.B. eingehende Anrufe ohne Custom-Header), wird `UNIQUEID` als Dateiname verwendet und in `calls.asterisk_channel_id` gespeichert.
+
+## V5.1 WebRTC Click-to-Call Flow
+
+```
+1. User oeffnet Deal-Workspace
+   └── Deal hat Kontakt mit Telefonnummer → "Anrufen"-Button sichtbar
+
+2. User klickt "Anrufen"
+   └── Browser: Mikrofon-Zugriff anfragen (getUserMedia)
+   └── Server Action: createCall(dealId, contactId, phoneNumber)
+        ├── INSERT calls (status='initiated', direction='outbound')
+        └── Return { callId, sipConfig }
+
+3. SIP.js initiiert Anruf
+   └── UserAgent registriert sich bei Asterisk (WSS)
+        ├── WSS: wss://sip.strategaizetransition.com
+        ├── Credentials: webrtc-user / ASTERISK_WEBRTC_PASSWORD
+        └── Traefik terminiert TLS → Proxy zu asterisk:8089 (WS)
+   └── Inviter sendet INVITE mit:
+        ├── Target: phone_number (Dialplan routet via Trunk/Intern)
+        ├── Header X-Call-ID: callId (fuer MixMonitor-Dateiname)
+        └── Media: Opus codec via DTLS-SRTP
+
+4. Asterisk verarbeitet INVITE
+   └── Dialplan [webrtc-outbound]:
+        ├── Liest X-Call-ID Header
+        ├── Startet MixMonitor (WAV-Aufnahme)
+        ├── Setzt CallerID aus ENV
+        └── Dial() via SIP-Trunk (oder Intern-Test)
+
+5. In-Call (Browser zeigt CallWidget)
+   └── Status-Updates via SIP.js Session Events:
+        ├── 'trying' → UI: "Waehlen..."
+        ├── 'ringing' → UI: "Klingeln..."
+        ├── 'accepted' → UI: "Verbunden" + Timer
+        │    └── Server Action: updateCallStatus(callId, 'connected')
+        └── 'terminated' → UI: "Beendet"
+             └── Server Action: updateCallStatus(callId, 'completed')
+                  ├── calls.ended_at = now()
+                  ├── calls.duration_seconds = berechnet
+                  └── calls.recording_status = 'pending'
+
+6. User kann jederzeit auflegen
+   └── SIP.js sendet BYE → Asterisk stoppt MixMonitor → WAV finalisiert
+```
+
+### SIP.js Integration (Browser-seitig)
+
+```typescript
+// Vereinfachter Flow — tatsaechliche Implementierung im /frontend Slice
+
+import { UserAgent, Registerer, Inviter } from 'sip.js'
+
+const userAgent = new UserAgent({
+  uri: UserAgent.makeURI('sip:webrtc-user@sip.strategaizetransition.com'),
+  transportOptions: {
+    server: 'wss://sip.strategaizetransition.com'
+  },
+  authorizationUsername: 'webrtc-user',
+  authorizationPassword: sipConfig.password,  // aus Server Action
+  sessionDescriptionHandlerFactoryOptions: {
+    peerConnectionConfiguration: {
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    }
+  }
+})
+
+// Registrierung
+const registerer = new Registerer(userAgent)
+await userAgent.start()
+await registerer.register()
+
+// Anruf starten
+const target = UserAgent.makeURI(`sip:${phoneNumber}@sip.strategaizetransition.com`)
+const inviter = new Inviter(userAgent, target, {
+  extraHeaders: [`X-Call-ID: ${callId}`]
+})
+await inviter.invite()
+
+// Session-Events → UI-Status-Updates
+inviter.stateChange.addListener((state) => {
+  // 'Initial' → 'Establishing' → 'Established' → 'Terminated'
+})
+```
+
+### SIP.js-Authentifizierung (Single-User V5.1)
+
+- Ein WebRTC-Endpunkt `webrtc-user` mit Passwort aus ENV
+- Passwort wird per Server Action an den authentifizierten Browser-User uebergeben
+- Server Action prueft Supabase-Auth bevor SIP-Credentials zurueckgegeben werden
+- Kein SIP-Credential-Leak: Passwort ist nur fuer registrierte App-User sichtbar
+
+Fuer Multi-User (V7): Jeder User bekommt eigenen PJSIP-Endpunkt mit individuellen Credentials.
+
+## V5.1 Call-Processing Pipeline (Flow)
+
+```
+1. Call endet → WAV-Datei liegt in /var/spool/asterisk/monitor/{callId}.wav
+   └── Volume: asterisk-recordings (shared mit App-Container)
+
+2. Cron /api/cron/call-processing (alle 2 Minuten)
+   └── SELECT * FROM calls WHERE recording_status = 'pending'
+        │
+        ├── Pro Call:
+        │   ├── 2a. WAV-Datei pruefen: /recordings-calls/{callId}.wav existiert?
+        │   │      └── Nein → Skip (Datei noch nicht finalisiert, naechster Cron-Lauf)
+        │   │      └── Ja → Weiter
+        │   │
+        │   ├── 2b. Upload → Supabase Storage (Bucket: call-recordings)
+        │   │      ├── calls.recording_url = storage_path
+        │   │      ├── calls.recording_status = 'uploading' → 'completed'
+        │   │      └── calls.duration_seconds aus WAV-Header (oder ffprobe)
+        │   │
+        │   ├── 2c. Transkription (bestehender Whisper-Adapter)
+        │   │      ├── calls.transcript_status = 'processing'
+        │   │      ├── getTranscriptionProvider().transcribe(recording_url)
+        │   │      ├── calls.transcript = result.transcript
+        │   │      └── calls.transcript_status = 'completed'
+        │   │
+        │   ├── 2d. Summary (bestehender Bedrock-Layer)
+        │   │      ├── calls.summary_status = 'processing'
+        │   │      ├── bedrockClient.callSummary(transcript, deal_context)
+        │   │      │   → Strukturierter Output: {outcome, action_items[], next_step, key_topics[]}
+        │   │      ├── calls.ai_summary = result
+        │   │      └── calls.summary_status = 'completed'
+        │   │
+        │   └── 2e. Activity-Insert (Timeline)
+        │          └── INSERT activities (type='call', source_type='call', source_id=callId,
+        │              body=ai_summary.outcome, ai_generated=true, deal_id, contact_id)
+        │
+        └── Response: { processed: N, errors: N }
+
+3. Retention (bestehender /api/cron/recording-retention erweitert)
+   └── ZUSAETZLICH: calls WHERE recording_status = 'completed'
+        AND ended_at < now() - RECORDING_RETENTION_DAYS
+        ├── Supabase Storage Remove (call-recordings bucket)
+        ├── calls.recording_status = 'deleted'
+        └── transcript + ai_summary bleiben permanent
+```
+
+**Fehler-Handling:** Identisch zum Meeting-Pattern (V4.1): Bei Whisper 429/5xx → Exponential Backoff (3 Versuche). Bei finalem Fehlschlag → `transcript_status = 'failed'`, User sieht Retry-Option im Deal-Workspace.
+
+## V5.1 SMAO Voice-Agent Adapter (FEAT-514, DEC-075)
+
+### Provider-Interface
+
+```typescript
+// /lib/telephony/voice-agent/provider.ts
+
+export interface VoiceAgentProvider {
+  /** Webhook-Signatur validieren */
+  validateWebhook(request: Request, secret: string): Promise<boolean>
+  /** Payload in generisches Format parsen */
+  parsePayload(body: unknown): VoiceAgentCallResult
+  /** Provider-Name fuer Logging/Audit */
+  getProviderName(): string
+}
+
+export interface VoiceAgentCallResult {
+  callerNumber: string
+  callerName?: string
+  transcript: string
+  classification: 'urgent' | 'callback' | 'info' | 'meeting_request'
+  confidence: number
+  durationSeconds: number
+  recordingUrl?: string
+  metadata?: Record<string, unknown>
+}
+```
+
+### Provider-Implementierungen
+
+| Provider | Datei | Status V5.1 |
+|---|---|---|
+| SMAO | `/lib/telephony/voice-agent/smao.ts` | Implementiert (nicht verbunden) |
+| Synthflow | `/lib/telephony/voice-agent/synthflow.ts` | Platzhalter |
+
+### Factory + ENV
+
+```typescript
+// /lib/telephony/voice-agent/factory.ts
+export function getVoiceAgentProvider(): VoiceAgentProvider {
+  switch (process.env.VOICE_AGENT_PROVIDER) {
+    case 'synthflow': return new SynthflowProvider()
+    case 'smao':
+    default:          return new SmaoProvider()
+  }
+}
+```
+
+### Webhook-Endpoint
+
+```
+POST /api/webhooks/voice-agent
+  │
+  ├── 1. SMAO_ENABLED pruefen (false → 404)
+  ├── 2. Webhook-Secret validieren (SMAO_WEBHOOK_SECRET)
+  ├── 3. Provider-Adapter: parsePayload(body) → VoiceAgentCallResult
+  ├── 4. Kontakt-Zuordnung:
+  │      └── callerNumber → contacts.phone Match
+  │         └── Wenn Match: contact_id + deal_id (aktuellster offener Deal)
+  │         └── Kein Match: contact_id = null (manuell zuordnen)
+  │
+  ├── 5. Call-Record erstellen:
+  │      └── INSERT calls (direction='inbound', voice_agent_handled=true,
+  │          voice_agent_classification, voice_agent_transcript, phone_number,
+  │          contact_id, deal_id, status='completed')
+  │
+  ├── 6. Klassifikations-basierte Aktionen:
+  │      ├── urgent:
+  │      │   └── Push-Notification an User (bestehender web-push aus V4.1)
+  │      │   └── Activity (type='call', body='DRINGEND: {summary}')
+  │      ├── callback:
+  │      │   └── Task erstellen (tasks INSERT: 'Rueckruf: {callerName}, {reason}')
+  │      │   └── Activity (type='call', body='Rueckruf erbeten: {summary}')
+  │      ├── info:
+  │      │   └── Activity (type='call', body='Info-Anruf: {summary}')
+  │      └── meeting_request:
+  │          └── Task erstellen ('Meeting-Anfrage: {callerName}')
+  │          └── Activity (type='call', body='Meeting-Anfrage: {summary}')
+  │          └── Konzept: Cal.com-Buchungslink zuruecksenden (V5.2+)
+  │
+  └── 7. Response: 200 OK
+
+Fehler: 401 (Secret falsch), 404 (SMAO_ENABLED=false), 500 (Verarbeitungsfehler)
+```
+
+### Asterisk-Dialplan fuer SMAO-Routing
+
+Im Dialplan `[from-trunk]` ist die SMAO-Weiterleitung vorbereitet:
+- `SMAO_ENABLED=false` (Default): Eingehende Anrufe → direkt an WebRTC-User (Browser klingelt)
+- `SMAO_ENABLED=true`: Eingehende Anrufe → zuerst an SMAO SIP-URI (SMAO handled den Anruf, sendet Webhook)
+
+ENV-Variablen werden beim Container-Start in die Asterisk-Config geschrieben (entrypoint.sh Template-Rendering).
+
+## V5.1 Docker Compose Aenderungen
+
+### Neuer Service: asterisk
+
+```yaml
+asterisk:
+  build:
+    context: ./asterisk
+    dockerfile: Dockerfile
+  restart: unless-stopped
+  expose:
+    - "8089"   # WebSocket (Traefik-routed via sip.strategaizetransition.com)
+    - "5060"   # SIP (intern, fuer SMAO-Routing spaeter)
+  ports:
+    - "16384-16484:16384-16484/udp"   # RTP Media (Hetzner-Firewall oeffnen!)
+    - "5060:5060/udp"                  # SIP Trunk (erst bei Go-Live relevant)
+  labels:
+    - "traefik.docker.network=k9f5pn5upfq7etoefb5ukbcg"
+    - "traefik.http.services.asterisk-wss-svc.loadbalancer.server.port=8089"
+    - "traefik.http.routers.http-0-k9f5pn5upfq7etoefb5ukbcg-asterisk.service=asterisk-wss-svc"
+    - "traefik.http.routers.https-0-k9f5pn5upfq7etoefb5ukbcg-asterisk.service=asterisk-wss-svc"
+  volumes:
+    - asterisk-recordings:/var/spool/asterisk/monitor
+  environment:
+    ASTERISK_WEBRTC_PASSWORD: ${ASTERISK_WEBRTC_PASSWORD}
+    SIP_TRUNK_ENABLED: ${SIP_TRUNK_ENABLED:-false}
+    SIP_TRUNK_HOST: ${SIP_TRUNK_HOST:-}
+    SIP_TRUNK_USER: ${SIP_TRUNK_USER:-}
+    SIP_TRUNK_PASS: ${SIP_TRUNK_PASS:-}
+    SIP_CALLER_ID: ${SIP_CALLER_ID:-}
+    SMAO_ENABLED: ${SMAO_ENABLED:-false}
+    SMAO_SIP_URI: ${SMAO_SIP_URI:-}
+  depends_on:
+    - jitsi-prosody    # Nur fuer Netzwerk-Reihenfolge, keine funktionale Abhaengigkeit
+  networks:
+    - business-net
+```
+
+### App-Container Erweiterung
+
+```yaml
+app:
+  volumes:
+    - jitsi-recordings:/recordings:ro           # bestehend (Meetings)
+    - asterisk-recordings:/recordings-calls:ro   # NEU (Calls)
+  environment:
+    # ... bestehende Env Vars ...
+    ASTERISK_WEBRTC_PASSWORD: ${ASTERISK_WEBRTC_PASSWORD}
+    SIP_CALLER_ID: ${SIP_CALLER_ID:-}
+    SMAO_ENABLED: ${SMAO_ENABLED:-false}
+    SMAO_WEBHOOK_SECRET: ${SMAO_WEBHOOK_SECRET:-}
+    VOICE_AGENT_PROVIDER: ${VOICE_AGENT_PROVIDER:-smao}
+```
+
+### Neue Volumes
+
+```yaml
+volumes:
+  # ... bestehende Volumes ...
+  asterisk-recordings:
+    driver: local
+```
+
+### Coolify-Domain-Setup
+
+1. DNS: A-Record `sip.strategaizetransition.com` → gleiche Server-IP (91.98.20.191)
+2. Coolify UI → Configuration → Domains fuer `asterisk`: `https://sip.strategaizetransition.com`
+3. Nach Compose-Change: "Reload Compose File" → "Redeploy" (wie bei Jitsi)
+
+## V5.1 API Routes
+
+### Neue API Routes
+
+| Route | Methode | Beschreibung | Auth |
+|---|---|---|---|
+| `/api/cron/call-processing` | POST | WAV-Upload, Whisper, Summary, Activity | CRON_SECRET |
+| `/api/webhooks/voice-agent` | POST | SMAO/Synthflow Webhook empfangen | SMAO_WEBHOOK_SECRET |
+
+### Bestehende Routes — Erweiterungen
+
+| Route | Aenderung |
+|---|---|
+| `/api/cron/recording-retention` | + calls-Recordings loeschen (gleiche Retention wie Meetings) |
+
+### Middleware-Whitelist Erweiterung
+
+Bestehende oeffentliche Routen: `/api/cron/*`, `/consent/*`, `/api/track/*`
+Neu: `/api/webhooks/voice-agent` (Secret-validiert, kein Supabase-Auth)
+
+## V5.1 Cron-Konfiguration
+
+```
+Coolify Cron
+  │
+  ├── BESTEHEND (unveraendert):
+  │   ├── alle 5 Min  → POST /api/cron/imap-sync
+  │   ├── alle 5 Min  → POST /api/cron/meeting-transcript
+  │   ├── alle 5 Min  → POST /api/cron/meeting-summary
+  │   ├── alle 5 Min  → POST /api/cron/meeting-reminders
+  │   ├── alle 5 Min  → POST /api/cron/signal-extract
+  │   ├── alle 15 Min → POST /api/cron/classify
+  │   ├── alle 15 Min → POST /api/cron/embedding-sync
+  │   ├── alle 15 Min → POST /api/cron/cadence-execute
+  │   ├── alle 6h     → POST /api/cron/followups
+  │   ├── taeglich    → POST /api/cron/retention
+  │   ├── alle 2 Min  → POST /api/cron/meeting-recording-poll
+  │   ├── taeglich    → POST /api/cron/recording-retention   (ERWEITERT: + calls)
+  │   ├── taeglich    → POST /api/cron/pending-consent-renewal
+  │   └── taeglich    → POST /api/cron/kpi-snapshot
+  │
+  └── NEU (V5.1):
+      └── alle 2 Min  → POST /api/cron/call-processing       (Header: x-cron-secret)
+```
+
+### Coolify Cron-Job Setup
+
+```
+Cron Expression: */2 * * * *
+Container: app
+Command: node -e "fetch('http://localhost:3000/api/cron/call-processing', {method:'POST', headers:{'Authorization':'Bearer '+process.env.CRON_SECRET}})"
+```
+
+## V5.1 Env Vars — Neue Variablen
+
+```bash
+# Asterisk PBX (V5.1 NEU)
+ASTERISK_WEBRTC_PASSWORD=...           # Passwort fuer Browser-SIP-Registrierung (openssl rand -hex 16)
+SIP_TRUNK_ENABLED=false                # true erst bei Go-Live mit SIP-Provider
+SIP_TRUNK_HOST=                        # z.B. sip.sipgate.de oder sip.easybell.de
+SIP_TRUNK_USER=                        # SIP-Account-Username
+SIP_TRUNK_PASS=                        # SIP-Account-Passwort
+SIP_CALLER_ID=                         # Ausgehende Rufnummer (z.B. +4930123456)
+
+# SMAO Voice-Agent (V5.1 vorbereitet, nicht verbunden)
+SMAO_ENABLED=false                     # true erst bei Go-Live
+SMAO_SIP_URI=                          # SIP-URI fuer Anruf-Weiterleitung
+SMAO_WEBHOOK_SECRET=                   # Webhook-Signatur-Validierung
+SMAO_API_KEY=                          # API-Key (falls SMAO REST-API benoetigt)
+VOICE_AGENT_PROVIDER=smao              # smao | synthflow
+
+# Call Recording (V5.1 NEU)
+SUPABASE_STORAGE_CALLS_BUCKET=call-recordings
+# RECORDING_RETENTION_DAYS wird fuer Meetings UND Calls gemeinsam verwendet (bestehend, Default 30)
+```
+
+Bestehende Variablen die wiederverwendet werden:
+- `CRON_SECRET` — fuer call-processing Cron
+- `TRANSCRIPTION_PROVIDER`, `OPENAI_API_KEY` — fuer Whisper (bestehend)
+- `RECORDING_RETENTION_DAYS` — fuer Call-Retention (gleicher Wert wie Meetings)
+- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` — fuer Push-Notifications bei urgent-Calls
+
+## V5.1 Server Sizing
+
+### Aktuell (CPX32): 4 vCPU, 8 GB RAM
+
+V5-Bestand (Supabase + Next.js + IMAP + Cal.com + Jitsi + Crons): ~2.5 GB idle, ~6-6.5 GB bei aktivem Jibri-Recording
+
+### V5.1 Zusaetzlich
+
+| Komponente | RAM idle | RAM aktiv | CPU |
+|---|---|---|---|
+| Asterisk Container | ~50-80 MB | ~100-150 MB (waehrend Call) | minimal |
+| SIP.js (Browser) | 0 (Client-seitig) | 0 | 0 |
+
+### Gesamt-Schaetzung
+
+| Szenario | RAM-Verbrauch | Bewertung |
+|---|---|---|
+| Idle (kein Meeting, kein Call) | ~2.6 GB | Komfortabel |
+| 1 aktiver Call (kein Meeting) | ~2.7 GB | Komfortabel |
+| 1 aktives Jitsi-Meeting + Recording (kein Call) | ~6.5 GB | Eng, funktioniert |
+| 1 Jitsi-Meeting + 1 Call gleichzeitig | ~6.7 GB | Eng, aber moeglich |
+| 1 Jibri-Recording + 1 Call gleichzeitig | ~7.0 GB | Grenze (8 GB Max) |
+
+**Schluessel-Einsicht:** Asterisk ist extrem leichtgewichtig verglichen mit Jitsi/Jibri. Ein Telefonat verbraucht ~100 MB; ein Jibri-Recording ~2.5 GB. Gleichzeitige Nutzung ist bei Single-User unwahrscheinlich (gleiche Person kann nicht gleichzeitig telefonieren und im Jitsi-Meeting sein).
+
+**Upgrade-Pfad:** Bleibt CPX32 → CPX42 (8 vCPU / 16 GB) bei Bedarf. Kein Code-Change, nur Hetzner-Resize.
+
+## V5.1 Security / Privacy
+
+### Audio-Verschluesselung
+
+- **Browser → Asterisk:** DTLS-SRTP (WebRTC-Standard, in pjsip.conf konfiguriert)
+- **Asterisk → SIP-Trunk:** SRTP wenn Provider unterstuetzt (TLS+SRTP bei sipgate/easybell Standard)
+- **WSS:** TLS-terminiert durch Traefik (Let's Encrypt Zertifikat)
+
+### Aufnahme-Speicherung
+
+- WAV-Dateien temporaer auf Docker-Volume (Hetzner DE)
+- Nach Upload: Supabase Storage (Hetzner DE) — gleicher Pfad wie Meeting-Recordings
+- Retention: identisch zu Meetings (RECORDING_RETENTION_DAYS, Default 30)
+- Transkript + Summary permanent in PostgreSQL (Hetzner DE)
+
+### Whisper-Transkription
+
+Bestehender Adapter (DEC-035): OpenAI Whisper API (US-Region, DEC-019 akzeptiert). Audio wird uebertragen, OpenAI speichert laut DPA nicht dauerhaft. Provider-Wechsel auf EU via Adapter moeglich.
+
+### SIP-Credentials
+
+- WebRTC-Passwort aus ENV (nicht hardcoded)
+- SIP-Trunk-Credentials aus ENV (nicht hardcoded)
+- Browser erhaelt SIP-Password nur nach Supabase-Auth-Check (Server Action)
+- Kein SIP-Password im Client-Bundle oder localStorage
+
+### SMAO-Webhook
+
+- Secret-basierte Validierung (SMAO_WEBHOOK_SECRET)
+- Middleware-Whitelist fuer `/api/webhooks/voice-agent` (kein Supabase-Auth, Secret stattdessen)
+- Keine PII-Speicherung ueber das hinaus was im Call-Record steht
+
+### DSGVO-Aufnahme-Einwilligung
+
+V5.1 zeichnet Telefonate automatisch auf. Anders als bei Video-Meetings (FEAT-411 Consent-Flow) gibt es bei Telefonaten keine bestehende Consent-Mechanik.
+
+**V5.1-Ansatz:** Fuer internes Testing (keine externen Anrufe) ist kein Consent-Flow noetig. Bei Go-Live mit SIP-Trunk muss vor dem ersten echten Telefonat ein Ansage-basierter Consent implementiert werden (z.B. "Dieses Gespraech wird zu Qualitaetszwecken aufgezeichnet"). Das ist ein separater Slice fuer Go-Live, nicht Teil der V5.1-Implementierung.
+
+**Risiko-Mitigation:** Solange `SIP_TRUNK_ENABLED=false`, werden keine externen Telefonate gefuehrt. Interne Echo-Tests und Browser-zu-Browser-Tests sind nicht DSGVO-relevant.
+
+## V5.1 Constraints & Tradeoffs
+
+| Entscheidung | Tradeoff |
+|---|---|
+| Asterisk auf gleichem Server (DEC-070) | Kein Extra-Server-Kosten. Asterisk ist leichtgewichtig (~100 MB). Kein RAM-Problem. |
+| SIP.js statt JsSIP (DEC-071) | Groesseres Bundle (~200 KB), aber bessere Wartung und TypeScript-Support. |
+| Eigene Subdomain fuer WSS (DEC-072) | Extra DNS-Record + TLS-Cert. Sauberere Trennung als Pfad-basiert. |
+| WAV statt Opus fuer Recording (DEC-073) | Groessere Dateien (~10 MB/Min). Direkte Whisper-Kompatibilitaet. Konvertierung spaeter moeglich. |
+| Statische Asterisk-Config (DEC-076) | Config-Aenderungen erfordern Container-Rebuild. Fuer Single-User ausreichend. ARI fuer V7. |
+| 100-Port RTP-Range (DEC-077) | Enger als Default, aber 50x mehr als noetig. Kein Portkonflikt mit Jitsi JVB. |
+| SMAO vorbereitet aber nicht verbunden | Code existiert, wird bei Go-Live per ENV aktiviert. Kein Risiko, kein Kostenblock. |
+| Kein DSGVO-Consent fuer Telefonate in V5.1 | Kein externer Traffic in V5.1 (SIP_TRUNK_ENABLED=false). Consent-Slice bei Go-Live. |
+
+## V5.1 Technische Risiken
+
+| Risiko | Wahrscheinlichkeit | Impact | Mitigation |
+|---|---|---|---|
+| Traefik WSS-Proxy zu Asterisk funktioniert nicht | Mittel | Blocker | Traefik unterstuetzt WebSocket nativ. Test vor Full-Implementation. Gleiche Coolify-Label-Strategie wie Jitsi. |
+| Asterisk 20 Docker-Image nicht verfuegbar/stabil | Niedrig | Mittel | Custom Dockerfile auf Debian Bookworm. Asterisk 20 ist LTS und stabil. |
+| RTP-Ports blockiert (Hetzner-Firewall) | Mittel | Blocker | Vor Slice-Start Firewall-Regel fuer 16384-16484/UDP anlegen. Gleicher Prozess wie Port 10000/UDP fuer Jitsi. |
+| SIP.js Browser-Kompatibilitaet | Niedrig | Niedrig | SIP.js 0.21+ unterstuetzt Chrome, Firefox, Safari, Edge. WebRTC ist Standard seit 2018. |
+| MixMonitor WAV-Dateien zu gross | Niedrig | Niedrig | ~10 MB/Min. 30 Min Call = 300 MB. Upload-Cron + Retention begrenzt Speicher. |
+| SMAO-API aendert sich vor Integration | Mittel | Niedrig | Adapter-Pattern isoliert Aenderungen. Generic Interface bleibt stabil. Synthflow als Backup. |
+| Browser-Mikrofon-Zugriff verweigert | Niedrig | Mittel | Standard getUserMedia-Prompt. HTTPS ist Voraussetzung (gegeben). UI zeigt Hinweis bei Verweigerung. |
+| Asterisk-PJSIP-ENV-Templating scheitert | Mittel | Mittel | entrypoint.sh mit envsubst oder sed fuer Config-Rendering. Ausfuehrlich testen im Infra-Slice. |
+
+## V5.1 Hetzner Firewall
+
+### Bestehende Regeln
+
+```
+TCP  443   eingehend  (HTTPS — Traefik)
+TCP  80    eingehend  (HTTP → HTTPS Redirect)
+UDP  10000 eingehend  (Jitsi JVB Media)
+```
+
+### Neue Regeln (V5.1)
+
+```
+UDP  16384-16484 eingehend  (Asterisk RTP Media — WebRTC Audio)
+UDP  5060        eingehend  (SIP Trunk — ERST bei Go-Live aktivieren)
+```
+
+**Wichtig:** RTP-Ports muessen auf **Hetzner Cloud Firewall** (Hypervisor-Level) geoeffnet werden, nicht nur auf `ufw`. Gleicher Prozess wie Port 10000/UDP fuer Jitsi.
+
+## V5.1 Dependencies (package.json)
+
+```json
+{
+  "sip.js": "^0.21.2"
+}
+```
+
+Keine weiteren neuen Dependencies. Bestehende werden wiederverwendet:
+- `openai` — Whisper-Adapter (bestehend)
+- `@aws-sdk/client-bedrock-runtime` — Summary (bestehend)
+- `web-push` — Push-Notifications fuer urgent-Calls (bestehend V4.1)
+- `fluent-ffmpeg` — WAV-Dauer-Ermittlung (bestehend V4.1)
+
+## V5.1 Empfohlene Slice-Reihenfolge
+
+1. **SLC-511 Schema-Migration + Types** — calls-Tabelle, TypeScript-Types, RLS, Supabase Storage Bucket. Basis-Slice, blockiert alle folgenden.
+2. **SLC-512 Asterisk Docker-Setup + Traefik-WSS** — Dockerfile, Config-Files, Volumes, Traefik-Labels, DNS, Firewall, Echo-Test-Verifikation. Schwerster Infra-Slice.
+3. **SLC-513 WebRTC Click-to-Call + In-Call-Widget** — SIP.js-Integration, CallWidget-Komponente, Server Actions (createCall, updateCallStatus), Deal-Workspace-Button.
+4. **SLC-514 Call-Recording-Pipeline** — call-processing Cron, WAV-Upload, Whisper-Transkription, Bedrock-Summary, Activity-Insert, Retention-Erweiterung.
+5. **SLC-515 SMAO Voice-Agent Adapter + Webhook** — VoiceAgentProvider-Interface, SMAO-Adapter, Webhook-Endpoint, Klassifikations-Aktionen, Dialplan-Vorbereitung.
+
+### Abhaengigkeiten
+
+```
+SLC-511 (Schema)
+  ├── SLC-512 (Asterisk Docker) — benoetigt calls-Tabelle fuer Verifikation
+  │     └── SLC-513 (Click-to-Call) — benoetigt laufenden Asterisk
+  │           └── SLC-514 (Recording-Pipeline) — benoetigt Calls mit WAV-Dateien
+  └── SLC-515 (SMAO-Adapter) — unabhaengig von SLC-512..514, benoetigt nur Schema
+```
+
+SLC-515 kann parallel zu SLC-512..514 implementiert werden.
+
+Geschaetzt 5 Slices, je 1-2 Tage. Gesamtschaetzung: ~5-8 Tage.
+
+## V5.1 Open Points (fuer /slice-planning)
+
+- Asterisk-Docker-Image: Debian Bookworm + Asterisk-PPA oder Custom-Build. Entscheidung im Infra-Slice.
+- SIP.js-Version: 0.21.x (stable) vs. neuere Pre-Releases. Entscheidung im Frontend-Slice.
+- SMAO Webhook-Payload-Format: Muss bei Go-Live gegen echte SMAO-Dokumentation validiert werden. V5.1 implementiert generisches Interface.
+- Asterisk-Ansage bei aufgenommenen Gespraechen: Erst bei Go-Live mit SIP-Trunk relevant (DSGVO). Nicht in V5.1-Scope.
+- STUN/TURN fuer WebRTC: V5.1 nutzt Google Public STUN (stun.l.google.com:19302). Eigener TURN bei NAT-Problemen spaeter.
+
+## V5.1 Recommended Next Step
+
+`/slice-planning` — V5.1-Slices strukturiert ausdefinieren (Acceptance Criteria, Dependencies, Micro-Tasks, QA-Fokus). Danach pro Slice `/backend` oder `/frontend` + `/qa`.

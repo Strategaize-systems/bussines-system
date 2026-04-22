@@ -151,3 +151,11 @@
 - Affected Areas: E-Mail-Versand (Tracking), IMAP-Sync (Auto-Zuordnung), neue Cadences-Seite, Export-API.
 - Risk: Gering — rein additiv. Neue Tabellen + 4 neue Spalten auf bestehende Tabellen (nullable, kein Breaking Change).
 - Rollback Notes: DROP TABLE email_tracking_events, cadence_executions, cadence_enrollments, cadence_steps, cadences CASCADE; ALTER TABLE emails DROP COLUMN tracking_id, DROP COLUMN tracking_enabled; ALTER TABLE email_messages DROP COLUMN assignment_source, DROP COLUMN ai_match_confidence;
+
+### MIG-020 — V5.1 Asterisk Telefonie Schema
+- Date: 2026-04-22
+- Scope: 1 neue Tabelle (calls) mit 22 Spalten: direction, status, phone_number, caller_id, started_at, connected_at, ended_at, duration_seconds, recording_url, recording_status, transcript, transcript_status, ai_summary (JSONB), summary_status, voice_agent_handled, voice_agent_classification, voice_agent_transcript, asterisk_channel_id, sip_call_id, created_by. 6 Indexes (deal, contact, status, recording, direction). RLS + Grants fuer authenticated + service_role. Supabase Storage Bucket "call-recordings".
+- Reason: Datenbasis fuer V5.1 Click-to-Call (FEAT-512), Anruf-Aufnahme-Pipeline (FEAT-513) und SMAO-Voice-Agent-Adapter (FEAT-514). Folgt DEC-021 Pattern (eigene Tabelle fuer reichere Daten, Activity fuer Timeline).
+- Affected Areas: Deal-Workspace (Anrufen-Button + Call-Timeline), Cron-Pipeline (call-processing), Webhook (voice-agent), Supabase Storage (neuer Bucket).
+- Risk: Gering — rein additiv. Eine neue Tabelle, kein Schema-Change an bestehenden Tabellen.
+- Rollback Notes: DROP TABLE calls CASCADE; Supabase Storage Bucket "call-recordings" loeschen.
