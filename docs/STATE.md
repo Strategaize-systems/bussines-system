@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5.1 SLC-512 in_progress (Asterisk Docker-Setup + Traefik-WSS). Code fertig, Deploy ausstehend.
-- Current Phase: V5.1 Implementation (1/5 Slices done, 1 in_progress)
+- Current Focus: V5.1 SLC-512 done (Asterisk Docker deployed, 9/10 ACs pass). Naechster Schritt: /qa SLC-512.
+- Current Phase: V5.1 Implementation (2/5 Slices done)
 
 ## Immediate Next Steps
-1. SLC-512 Deploy: DNS A-Record + Hetzner-Firewall + Coolify-Redeploy + Smoke-Test
-2. /qa SLC-512
-3. /frontend SLC-513 (WebRTC Click-to-Call)
+1. /qa SLC-512
+2. /frontend SLC-513 (WebRTC Click-to-Call)
+3. /backend SLC-514 (Call-Recording-Pipeline)
 
 ## Active Scope
 **V5.1 — Asterisk Telefonie + SMAO Voice-Agent-Vorbereitung (requirements done):**
