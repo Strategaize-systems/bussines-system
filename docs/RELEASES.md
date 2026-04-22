@@ -56,6 +56,13 @@
 - Risks: Keine Schema-Migrationen. Keine neuen Dependencies. Responsive nicht explizit getestet (Desktop-only internal-tool).
 - Rollback Notes: Docker Image Rollback via Coolify. V3.2 Image als Fallback.
 
+### REL-015 — V5 Automatisierung + Vertriebsintelligenz
+- Date: 2026-04-22
+- Scope: 7 Slices (SLC-501..507), 4 Features (FEAT-501,504,505,506), MIG-019. Cadences/Sequences (Template-Builder, Enrollment, Cron-Execution, Abort-Check), E-Mail Auto-Zuordnung (3-Stufen: Exact/Domain/KI-Match), E-Mail Open/Click-Tracking (Pixel + Link-Wrapping + TrackingBadge + TrackingDetail + Timeline-Indikatoren), Intelligence-Platform-Export-API (5 Endpoints, API-Key-Auth, Rate-Limiting, Pagination), AssignmentBadge auf Inbox, Sidebar-Refactor (Arbeitsbereiche collapsible, Cadence→Automatisierung).
+- Summary: Deployment als Coolify Redeploy. Gesamt-QA PASS (RPT-190, 7/7 Slices, 53 ACs). Final-Check READY (RPT-191, 0 Blocker, 1 Medium). User-Browser-Smoke-Test PASS. 5 neue DB-Tabellen (cadences, cadence_steps, cadence_enrollments, cadence_executions, email_tracking_events). 2 Tabellen erweitert (emails +tracking_id, email_messages +assignment_source). 2 neue Cron-Jobs (cadence-execute 5min, classify 10min). 2 Bugs in QA gefunden und gefixt (signals Tabelle, insights Spalte). Rein additiv, kein Einfluss auf bestehende Features.
+- Risks: EXPORT_API_KEY nicht in Coolify ENV gesetzt (API nicht nutzbar bis Key gesetzt). Rate-Limiting in-memory (Container-Restart setzt zurueck). Pre-V5-Mails haben kein assignment_source (Badge korrekt ausgeblendet).
+- Rollback Notes: Rein additiv. Docker Image Rollback via Coolify auf V6.1 Image. Schema-Rollback: DROP TABLE cadence_executions, cadence_enrollments, cadence_steps, cadences, email_tracking_events CASCADE; ALTER TABLE emails DROP COLUMN tracking_id, DROP COLUMN tracking_enabled; ALTER TABLE email_messages DROP COLUMN assignment_source, DROP COLUMN ai_match_confidence; Crons cadence-execute + classify in Coolify deaktivieren.
+
 ### PRE-V4.1-INFRA — V4.1 Pre-Flight Infrastruktur (Jitsi-Vorbereitung)
 - Date: 2026-04-16
 - Scope: Infrastruktur-Vorarbeit fuer SLC-412 Jitsi+Jibri Deployment. Hetzner-Cloud-Firewall-Regel fuer Port 10000/udp eingehend geoeffnet (via Hetzner Cloud Console). Coolify-Subdomain `meet.strategaizetransition.com` provisioniert (DNS-A-Record auf 91.98.20.191, Traefik-Ready). VAPID-Keys fuer Browser-Push erzeugt (SLC-418-Vorbereitung). Supabase-Storage-Bucket `meeting-recordings` angelegt (SLC-415-Vorbereitung). Kein Code-Deploy, keine Schema-Migration — reine Preparation.

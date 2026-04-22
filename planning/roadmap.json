@@ -80,7 +80,7 @@
     {
       "id": "v5",
       "name": "V5",
-      "status": "active",
+      "status": "released",
       "summary": "Automatisierung + Vertriebsintelligenz: Cadences/Sequences, E-Mail Auto-Zuordnung, E-Mail Open/Click-Tracking, Intelligence-Platform-Export-API",
       "order": 12
     },
