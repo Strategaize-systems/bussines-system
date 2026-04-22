@@ -32,6 +32,9 @@ volumes:
     driver: local
   jitsi-recordings:
     driver: local
+  # V5.1 Asterisk volume (SLC-512)
+  asterisk-recordings:
+    driver: local
 
 services:
 
@@ -51,6 +54,7 @@ services:
       - "3000"
     volumes:
       - jitsi-recordings:/recordings:ro
+      - asterisk-recordings:/recordings-calls:ro
     environment:
       NODE_ENV: production
       SUPABASE_URL: http://supabase-kong:8000
@@ -69,6 +73,13 @@ services:
       CALCOM_PUBLIC_URL: ${CALCOM_PUBLIC_URL:-https://cal.strategaizetransition.com}
       CALCOM_BOOKING_PATH: ${CALCOM_BOOKING_PATH:-}
       RECORDING_RETENTION_DAYS: ${RECORDING_RETENTION_DAYS:-30}
+      # V5.1 Asterisk / Call vars (SLC-512)
+      ASTERISK_WEBRTC_PASSWORD: ${ASTERISK_WEBRTC_PASSWORD:-}
+      SIP_CALLER_ID: ${SIP_CALLER_ID:-+4900000000}
+      SMAO_ENABLED: ${SMAO_ENABLED:-false}
+      SMAO_WEBHOOK_SECRET: ${SMAO_WEBHOOK_SECRET:-}
+      VOICE_AGENT_PROVIDER: ${VOICE_AGENT_PROVIDER:-smao}
+      SUPABASE_STORAGE_CALLS_BUCKET: ${SUPABASE_STORAGE_CALLS_BUCKET:-call-recordings}
     depends_on:
       supabase-db:
         condition: service_healthy
@@ -477,6 +488,46 @@ services:
       - jitsi-recordings:/recordings
     depends_on:
       - jitsi-prosody
+    networks:
+      - business-net
+
+  # ============================================================
+  # V5.1: ASTERISK PBX (FEAT-511, SLC-512)
+  # Asterisk 20 LTS — WebRTC + SIP Trunk (prepared)
+  # DEC-070: Asterisk 20 LTS als Docker-Container
+  # DEC-072: WSS ueber sip.strategaizetransition.com
+  # DEC-077: RTP 16384-16484 (kein Jitsi-Konflikt)
+  # ============================================================
+
+  asterisk:
+    build:
+      context: ./asterisk
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - "8089"
+    ports:
+      - "16384-16484:16384-16484/udp"
+      - "5060:5060/udp"
+    # Traefik WSS routing: sip.strategaizetransition.com -> asterisk:8089
+    # Same Coolify-UUID label strategy as Jitsi (k9f5pn5upfq7etoefb5ukbcg)
+    labels:
+      - "traefik.docker.network=k9f5pn5upfq7etoefb5ukbcg"
+      - "traefik.http.services.asterisk-ws-svc.loadbalancer.server.port=8089"
+      - "traefik.http.routers.http-0-k9f5pn5upfq7etoefb5ukbcg-asterisk.service=asterisk-ws-svc"
+      - "traefik.http.routers.https-0-k9f5pn5upfq7etoefb5ukbcg-asterisk.service=asterisk-ws-svc"
+    volumes:
+      - asterisk-recordings:/var/spool/asterisk/monitor
+    environment:
+      ASTERISK_WEBRTC_PASSWORD: ${ASTERISK_WEBRTC_PASSWORD:-changeme}
+      SIP_CALLER_ID: ${SIP_CALLER_ID:-+4900000000}
+      SIP_TRUNK_ENABLED: ${SIP_TRUNK_ENABLED:-false}
+      SIP_TRUNK_HOST: ${SIP_TRUNK_HOST:-trunk.example.com}
+      SIP_TRUNK_USER: ${SIP_TRUNK_USER:-trunk-user}
+      SIP_TRUNK_PASS: ${SIP_TRUNK_PASS:-trunk-pass}
+      SMAO_ENABLED: ${SMAO_ENABLED:-false}
+      SMAO_SIP_URI: ${SMAO_SIP_URI:-sip:agent@smao.example.com}
+      TZ: Europe/Berlin
     networks:
       - business-net
 
