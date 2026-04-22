@@ -1,19 +1,25 @@
-FROM debian:bookworm-slim
+FROM ubuntu:22.04
 
-# Asterisk 20 LTS — Strategaize Business System V5.1
-# DEC-070: Asterisk 20 LTS als Docker-Container
+# Asterisk 18 (Ubuntu 22.04) — Strategaize Business System V5.1
+# DEC-070: Asterisk als Docker-Container
 # DEC-076: Statische Konfiguration, kein ARI
+# Ubuntu 22.04 ships Asterisk 18.10. PJSIP, WebSocket, MixMonitor, Opus all included.
+# Debian Bookworm does not ship the asterisk package — Ubuntu is the pragmatic choice.
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe/Berlin
 
-# Install Asterisk 20 from Debian Bookworm repos + required codecs/modules
+# Set timezone non-interactively (avoids interactive tzdata prompt)
+RUN ln -snf /usr/share/zoneinfo/Europe/Berlin /etc/localtime && \
+    echo "Europe/Berlin" > /etc/timezone
+
+# Install Asterisk from Ubuntu repos + required codecs/modules
 RUN apt-get update && apt-get install -y --no-install-recommends \
     asterisk \
     asterisk-modules \
     asterisk-core-sounds-en \
     asterisk-core-sounds-en-wav \
     asterisk-moh-opsound-wav \
-    asterisk-opus \
     gettext-base \
     && rm -rf /var/lib/apt/lists/*
 
