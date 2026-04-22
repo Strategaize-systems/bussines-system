@@ -1447,7 +1447,7 @@
       "title": "Asterisk PBX Deployment + SIP-Trunk-Adapter",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V5.1",
       "description": "FEAT-511: Asterisk Docker-Container im Compose-Stack. PJSIP fuer WebRTC. SIP-Trunk via ENV. MixMonitor fuer automatische Aufnahme. Intern testbar ohne Trunk.",
       "createdAt": "2026-04-22"
@@ -1457,7 +1457,7 @@
       "title": "Click-to-Call aus Deal-Workspace (WebRTC)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V5.1",
       "description": "FEAT-512: Anrufen-Button im Deal-Workspace. WebRTC-Client (SIP.js). In-Call-Widget (Waehlen/Klingeln/Verbunden/Auflegen). Kontakt-Nummer aus Deal-Kontext.",
       "createdAt": "2026-04-22"
@@ -1467,7 +1467,7 @@
       "title": "Anruf-Aufnahme → Whisper → Summary → Deal-Activity",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V5.1",
       "description": "FEAT-513: Audio-Pipeline fuer Telefonate. Bestehenden Whisper-Adapter + Bedrock-Summary nutzen. Call-Activity mit type=call in Timeline. Audio-Retention konfigurierbar.",
       "createdAt": "2026-04-22"
@@ -1477,7 +1477,7 @@
       "title": "SMAO Voice-Agent Adapter (vorbereitet, nicht verbunden)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "in_progress",
       "version": "V5.1",
       "description": "FEAT-514: VoiceAgentProvider-Interface. SMAO als erste Implementierung. Webhook POST /api/webhooks/voice-agent. Dialplan-Routing vorbereitet (SMAO_ENABLED=false default). Provider-Wechsel ohne Rewrite.",
       "createdAt": "2026-04-22"

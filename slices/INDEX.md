@@ -172,3 +172,13 @@
 | SLC-505 | [Cadence-Frontend](SLC-505-cadence-frontend.md) | FEAT-501 | done | High | 2026-04-21 |
 | SLC-506 | [Export-API](SLC-506-export-api.md) | FEAT-504 | done | Medium | 2026-04-21 |
 | SLC-507 | [Tracking-UI + Engagement-Indikatoren](SLC-507-tracking-ui-engagement.md) | FEAT-506,501 | done | Medium | 2026-04-21 |
+
+## V5.1 Slices (Asterisk Telefonie + SMAO Voice-Agent)
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-511 | [Schema-Migration + Types (calls)](SLC-511-schema-migration-calls.md) | FEAT-511,512,513,514 | planned | Blocker | 2026-04-22 |
+| SLC-512 | [Asterisk Docker-Setup + Traefik-WSS](SLC-512-asterisk-docker-setup.md) | FEAT-511 | planned | Blocker | 2026-04-22 |
+| SLC-513 | [WebRTC Click-to-Call + In-Call-Widget](SLC-513-webrtc-click-to-call.md) | FEAT-512 | planned | High | 2026-04-22 |
+| SLC-514 | [Call-Recording-Pipeline](SLC-514-call-recording-pipeline.md) | FEAT-513 | planned | High | 2026-04-22 |
+| SLC-515 | [SMAO Voice-Agent Adapter + Webhook](SLC-515-smao-voice-agent-adapter.md) | FEAT-514 | planned | Medium | 2026-04-22 |
