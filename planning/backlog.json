@@ -1421,6 +1421,26 @@
       "version": "V5",
       "description": "FEAT-504: 5 read-only JSON-Endpoints (Deals, Contacts, Activities, Signals, Insights) mit API-Key-Auth, Pagination, Zeitraum-Filter.",
       "createdAt": "2026-04-21"
+    },
+    {
+      "id": "BL-384",
+      "title": "Account Enrichment Layer (Firmen-/Kontaktdaten automatisch anreichern)",
+      "type": "idea",
+      "priority": "medium",
+      "status": "open",
+      "version": null,
+      "description": "Firmen- und Kontaktdaten automatisch mit externen Quellen anreichern: Funding-Status, Tech-Stack, Hiring-Signale, Buying Intent. Muss EU-konform sein (kein US-SaaS wie Clay direkt). Moegliche Ansaetze: Bedrock-basierte Web-Recherche, EU-konforme Datenanbieter, strukturierte LinkedIn-Daten. Wuerde KI-Briefings, Cadence-Templates und Signal-Erkennung dramatisch verbessern. Inspiration: Clay+Claude Workflow im B2B-Sales.",
+      "createdAt": "2026-04-22"
+    },
+    {
+      "id": "BL-385",
+      "title": "Pre-Call Briefing Package (automatisches Meeting-Briefing)",
+      "type": "idea",
+      "priority": "medium",
+      "status": "open",
+      "version": null,
+      "description": "Automatisches Briefing-Paket 30 Minuten vor jedem Meeting: Account-Enrichment + Deal-Kontext + letzte Interaktionen + offene Signale + KI-generierte Gespraechsvorbereitung mit Einwandbehandlung. Trigger: Meeting-Reminder-Cron erkennt anstehenden Termin, baut Briefing, liefert per Push-Notification oder E-Mail. Abhaengig von BL-384 (Enrichment Layer) fuer volle Wirkung, aber auch ohne Enrichment als KI-Summary ueber bestehende Daten nutzbar.",
+      "createdAt": "2026-04-22"
     }
   ]
 }
