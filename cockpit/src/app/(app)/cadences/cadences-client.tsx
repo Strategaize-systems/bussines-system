@@ -83,12 +83,12 @@ export function CadencesClient({ cadences }: { cadences: CadenceWithSteps[] }) {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Cadences"
+        title="Automatisierungen"
         subtitle="Follow-up-Sequenzen automatisieren"
       />
 
       <KPIGrid>
-        <KPICard label="Aktive Cadences" value={activeCadences} icon={Zap} />
+        <KPICard label="Aktive Automatisierungen" value={activeCadences} icon={Zap} />
         <KPICard label="Gesamt-Schritte" value={totalSteps} icon={ListOrdered} />
         <KPICard label="Gesamt" value={cadences.length} icon={Users} />
       </KPIGrid>
@@ -96,7 +96,7 @@ export function CadencesClient({ cadences }: { cadences: CadenceWithSteps[] }) {
       <FilterBar
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
-        searchPlaceholder="Cadence suchen..."
+        searchPlaceholder="Automatisierung suchen..."
       >
         <FilterSelect
           value={statusFilter}
@@ -113,7 +113,7 @@ export function CadencesClient({ cadences }: { cadences: CadenceWithSteps[] }) {
           className="bg-[#120774] hover:bg-[#1a0f9e] text-white"
         >
           <Plus className="h-4 w-4 mr-1.5" />
-          Neue Cadence
+          Neue Automatisierung
         </Button>
       </FilterBar>
 
@@ -124,13 +124,13 @@ export function CadencesClient({ cadences }: { cadences: CadenceWithSteps[] }) {
       {/* New Cadence Dialog (inline) */}
       {showNewDialog && (
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-900 mb-3">Neue Cadence erstellen</h3>
+          <h3 className="text-sm font-semibold text-slate-900 mb-3">Neue Automatisierung erstellen</h3>
           <div className="flex gap-3">
             <input
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="Name der Cadence..."
+              placeholder="Name der Automatisierung..."
               className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#120774]/20 focus:border-[#120774]"
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
               autoFocus
@@ -159,8 +159,8 @@ export function CadencesClient({ cadences }: { cadences: CadenceWithSteps[] }) {
             <Zap className="h-10 w-10 mb-3 opacity-40" />
             <p className="text-sm font-medium">
               {cadences.length === 0
-                ? "Noch keine Cadences erstellt"
-                : "Keine Cadences fuer diesen Filter"}
+                ? "Noch keine Automatisierungen erstellt"
+                : "Keine Automatisierungen fuer diesen Filter"}
             </p>
             {cadences.length === 0 && (
               <p className="text-xs mt-1 text-slate-400">

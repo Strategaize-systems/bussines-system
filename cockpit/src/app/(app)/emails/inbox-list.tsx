@@ -237,10 +237,13 @@ function InboxRow({
               </span>
             )}
 
-            <AssignmentBadge
-              source={email.assignment_source as AssignmentSource | null}
-              confidence={email.ai_match_confidence ?? null}
-            />
+            {/* Show badge only when informative: has source, or truly unassigned */}
+            {(email.assignment_source || !email.contact) && (
+              <AssignmentBadge
+                source={email.assignment_source as AssignmentSource | null}
+                confidence={email.ai_match_confidence ?? null}
+              />
+            )}
           </div>
         </div>
 

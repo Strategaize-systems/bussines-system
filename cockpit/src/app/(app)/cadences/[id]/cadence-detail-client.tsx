@@ -150,7 +150,7 @@ export function CadenceDetailClient({
         >
           <ArrowLeft className="h-4 w-4 text-slate-500" />
         </Link>
-        <PageHeader title={cadence.name} subtitle="Cadence bearbeiten" />
+        <PageHeader title={cadence.name} subtitle="Automatisierung bearbeiten" />
       </div>
 
       {/* Name / Description */}

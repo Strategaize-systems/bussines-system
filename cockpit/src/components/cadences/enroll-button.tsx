@@ -64,7 +64,7 @@ export function EnrollButton({
         <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-sm">
           <Zap className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
         </span>
-        Cadence
+        Automatisierung
       </button>
 
       {/* Dialog */}
@@ -72,7 +72,7 @@ export function EnrollButton({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
           <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-slate-900">In Cadence einbuchen</h3>
+              <h3 className="text-sm font-semibold text-slate-900">In Automatisierung einbuchen</h3>
               <button
                 onClick={() => { setShowDialog(false); setError(""); }}
                 className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
@@ -82,14 +82,14 @@ export function EnrollButton({
             </div>
 
             {loading ? (
-              <p className="text-sm text-slate-500 py-4">Lade Cadences...</p>
+              <p className="text-sm text-slate-500 py-4">Lade Automatisierungen...</p>
             ) : cadences.length === 0 ? (
               <p className="text-sm text-slate-500 py-4">
-                Keine aktiven Cadences vorhanden. Erstelle zuerst eine Cadence.
+                Keine aktiven Automatisierungen vorhanden. Erstelle zuerst eine Automatisierung.
               </p>
             ) : (
               <>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Cadence auswaehlen</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">Automatisierung auswaehlen</label>
                 <select
                   value={selectedCadenceId}
                   onChange={(e) => setSelectedCadenceId(e.target.value)}

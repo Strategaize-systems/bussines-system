@@ -24,7 +24,7 @@ export function EnrollmentBadge({
     <div className="flex flex-wrap gap-2">
       {active.map((enrollment) => {
         const cfg = statusConfig[enrollment.status] ?? statusConfig.active;
-        const cadenceName = enrollment.cadence?.name ?? "Cadence";
+        const cadenceName = enrollment.cadence?.name ?? "Automatisierung";
 
         return (
           <Link

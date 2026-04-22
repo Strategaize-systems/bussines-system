@@ -60,6 +60,7 @@ interface DealWorkspaceProps {
   activeProducts: Product[];
   enrollments?: CadenceEnrollmentWithContext[];
   trackingSummaries?: Record<string, TrackingSummary>;
+  inboxEmails?: any[];
 }
 
 export function DealWorkspace({
@@ -81,6 +82,7 @@ export function DealWorkspace({
   activeProducts,
   enrollments,
   trackingSummaries = {},
+  inboxEmails = [],
 }: DealWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<TabId>("timeline");
 
@@ -177,6 +179,7 @@ export function DealWorkspace({
                 meetings={meetings}
                 signals={signals}
                 trackingSummaries={trackingSummaries}
+                inboxEmails={inboxEmails}
               />
             )}
             {activeTab === "tasks" && (

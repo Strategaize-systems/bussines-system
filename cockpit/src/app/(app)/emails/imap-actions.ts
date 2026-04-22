@@ -208,6 +208,18 @@ export async function getInboxEmailsForCompany(companyId: string) {
   return data ?? [];
 }
 
+export async function getInboxEmailsForDeal(dealId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("email_messages")
+    .select("id, subject, from_address, from_name, received_at, is_read, body_text")
+    .eq("deal_id", dealId)
+    .order("received_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
 // ------------------------------------------------------------------
 // Contacts search (for assignment dropdown)
 // ------------------------------------------------------------------

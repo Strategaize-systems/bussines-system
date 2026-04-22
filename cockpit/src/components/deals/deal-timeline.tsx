@@ -1,5 +1,6 @@
 import {
   Mail,
+  MailOpen,
   Phone,
   MessageSquare,
   ArrowRightLeft,
@@ -16,6 +17,7 @@ const typeIcons: Record<string, typeof MessageSquare> = {
   note: MessageSquare,
   call: Phone,
   email: Mail,
+  inbox: MailOpen,
   meeting: Calendar,
   stage_change: ArrowRightLeft,
   task: Clock,
@@ -27,6 +29,7 @@ const typeConfig: Record<
   { bg: string; iconColor: string; label: string; isAI?: boolean }
 > = {
   email: { bg: "bg-blue-100", iconColor: "text-blue-600", label: "E-Mail" },
+  inbox: { bg: "bg-indigo-100", iconColor: "text-indigo-600", label: "Empfangen" },
   meeting: {
     bg: "bg-purple-100",
     iconColor: "text-purple-600",
@@ -69,6 +72,7 @@ interface DealTimelineProps {
   meetings: Meeting[];
   signals: any[];
   trackingSummaries?: Record<string, TrackingSummary>;
+  inboxEmails?: any[];
 }
 
 export function DealTimeline({
@@ -77,6 +81,7 @@ export function DealTimeline({
   meetings,
   signals,
   trackingSummaries = {},
+  inboxEmails = [],
 }: DealTimelineProps) {
   const items: TimelineItem[] = [
     ...activities.map((a: any) => ({
@@ -93,6 +98,13 @@ export function DealTimeline({
       summary: `An: ${e.to_address}`,
       date: e.sent_at || e.created_at,
       emailId: e.id,
+    })),
+    ...inboxEmails.map((e: any) => ({
+      id: `inbox-${e.id}`,
+      type: "inbox",
+      title: e.subject || "(Kein Betreff)",
+      summary: `Von: ${e.from_name || e.from_address}`,
+      date: e.received_at,
     })),
     ...meetings.map((m) => ({
       id: `meeting-${m.id}`,
