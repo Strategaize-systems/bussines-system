@@ -56,13 +56,14 @@ const navGroups: NavGroup[] = [
   },
   {
     label: "WORKSPACES",
+    collapsible: true,
+    defaultCollapsed: false,
     items: [
-      { name: "Alle Deals", href: "/deals", icon: Briefcase },
+      { name: "Deals", href: "/deals", icon: Briefcase },
       { name: "Pipeline", href: "/pipeline/multiplikatoren", icon: TrendingUp },
-      { name: "Alle Firmen", href: "/companies", icon: Building2 },
-      { name: "Alle Kontakte", href: "/contacts", icon: Users },
+      { name: "Firmen", href: "/companies", icon: Building2 },
+      { name: "Kontakte", href: "/contacts", icon: Users },
       { name: "Multiplikatoren", href: "/multiplikatoren", icon: Handshake },
-      { name: "Automatisierung", href: "/cadences", icon: Zap },
     ],
   },
   {
@@ -84,6 +85,7 @@ const navGroups: NavGroup[] = [
       { name: "Proposals", href: "/proposals", icon: FileText },
       { name: "Handoffs", href: "/handoffs", icon: ArrowRightLeft },
       { name: "Referrals", href: "/referrals", icon: Award },
+      { name: "Automatisierung", href: "/cadences", icon: Zap },
       { name: "Produkte", href: "/settings/products", icon: Package },
       { name: "Settings", href: "/settings", icon: Settings },
       { name: "Audit-Log", href: "/audit-log", icon: Shield },
@@ -97,10 +99,15 @@ export function Sidebar() {
   const [expandedPipeline, setExpandedPipeline] = useState(
     () => pathname.startsWith("/pipeline")
   );
-  const [verwaltungOpen, setVerwaltungOpen] = useState(() => {
-    // Auto-open Verwaltung if current route is inside it
-    const verwaltungPaths = ["/aufgaben", "/termine", "/emails", "/proposals", "/handoffs", "/referrals", "/settings", "/audit-log", "/settings/products"];
-    return verwaltungPaths.some((p) => pathname.startsWith(p));
+  const [groupOpen, setGroupOpen] = useState<Record<string, boolean>>(() => {
+    const state: Record<string, boolean> = {};
+    for (const group of navGroups) {
+      if (group.collapsible) {
+        const isActiveInGroup = group.items.some((item) => pathname.startsWith(item.href));
+        state[group.label] = isActiveInGroup || !group.defaultCollapsed;
+      }
+    }
+    return state;
   });
 
   const isItemActive = (item: NavItem) => {
@@ -204,23 +211,28 @@ export function Sidebar() {
     );
   };
 
+  const toggleGroup = (label: string) => {
+    setGroupOpen((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
+
   const renderGroup = (group: NavGroup) => {
-    // Collapsible group (Verwaltung)
+    // Collapsible group
     if (group.collapsible && !collapsed) {
+      const isOpen = groupOpen[group.label] ?? !group.defaultCollapsed;
       return (
         <div key={group.label}>
           <button
-            onClick={() => setVerwaltungOpen(!verwaltungOpen)}
+            onClick={() => toggleGroup(group.label)}
             className="flex w-full items-center gap-1 px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 hover:text-slate-400 transition-colors"
           >
-            {verwaltungOpen ? (
+            {isOpen ? (
               <ChevronDown className="h-3 w-3 shrink-0" />
             ) : (
               <ChevronRight className="h-3 w-3 shrink-0" />
             )}
             <span>{group.label}</span>
           </button>
-          {verwaltungOpen && (
+          {isOpen && (
             <div className="space-y-0.5">
               {group.items.map((item) => renderNavItem(item))}
             </div>
