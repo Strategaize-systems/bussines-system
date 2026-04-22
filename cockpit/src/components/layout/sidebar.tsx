@@ -55,7 +55,7 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "WORKSPACES",
+    label: "ARBEITSBEREICHE",
     collapsible: true,
     defaultCollapsed: false,
     items: [
@@ -71,7 +71,6 @@ const navGroups: NavGroup[] = [
     items: [
       { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { name: "Meine Performance", href: "/performance", icon: BarChart3 },
-      { name: "Ziele", href: "/performance/goals", icon: Target },
     ],
   },
   {
@@ -85,6 +84,7 @@ const navGroups: NavGroup[] = [
       { name: "Proposals", href: "/proposals", icon: FileText },
       { name: "Handoffs", href: "/handoffs", icon: ArrowRightLeft },
       { name: "Referrals", href: "/referrals", icon: Award },
+      { name: "Ziele", href: "/performance/goals", icon: Target },
       { name: "Automatisierung", href: "/cadences", icon: Zap },
       { name: "Produkte", href: "/settings/products", icon: Package },
       { name: "Settings", href: "/settings", icon: Settings },
@@ -114,10 +114,11 @@ export function Sidebar() {
     if (item.children) {
       return item.children.some((child) => pathname === child.href || pathname.startsWith(child.href));
     }
-    return (
-      pathname === item.href ||
-      (item.href !== "/dashboard" && pathname.startsWith(item.href))
-    );
+    if (pathname === item.href) return true;
+    if (item.href === "/dashboard") return false;
+    // Exact prefix match: /performance matches /performance but not /performance/goals
+    // unless the item href itself includes the sub-path
+    return pathname.startsWith(item.href + "/") || pathname.startsWith(item.href + "?");
   };
 
   const renderNavItem = (item: NavItem) => {
