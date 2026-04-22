@@ -19,6 +19,7 @@ export type Email = {
   follow_up_status: string;
   follow_up_date: string | null;
   template_used: string | null;
+  tracking_id: string | null;
   sent_at: string | null;
   created_at: string;
   contacts?: { id: string; first_name: string; last_name: string; email: string | null } | null;

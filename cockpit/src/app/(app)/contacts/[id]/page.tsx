@@ -16,6 +16,7 @@ import { getMeetingsForContact } from "@/app/(app)/meetings/actions";
 import { getProposalsForContact } from "../../proposals/actions";
 import { DocumentList } from "@/components/documents/document-list";
 import { getEnrollmentsForContact } from "@/app/(app)/cadences/enrollment-actions";
+import { getTrackingSummaries } from "@/lib/email/tracking-queries";
 import { EnrollButton } from "@/components/cadences/enroll-button";
 import { EnrollmentBadge } from "@/components/cadences/enrollment-badge";
 import { Badge } from "@/components/ui/badge";
@@ -177,7 +178,11 @@ export default async function ContactDetailPage({
     getEnrollmentsForContact(id),
   ]);
 
-  const absenceInfo = await getContactAbsenceInfo(id);
+  const emailIds = (emails as any[]).map((e: any) => e.id);
+  const [absenceInfo, trackingSummaries] = await Promise.all([
+    getContactAbsenceInfo(id),
+    getTrackingSummaries(emailIds),
+  ]);
 
   async function handleDelete() {
     "use server";
@@ -523,6 +528,7 @@ export default async function ContactDetailPage({
             signals={signals}
             proposals={proposals}
             inboxEmails={inboxEmails}
+            trackingSummaries={trackingSummaries}
           />
         </CardContent>
       </Card>

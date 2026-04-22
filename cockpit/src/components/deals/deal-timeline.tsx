@@ -8,7 +8,9 @@ import {
   Zap,
   Sparkles,
 } from "lucide-react";
+import { TrackingIndicator } from "@/components/email/tracking-badge";
 import type { Meeting } from "@/app/(app)/meetings/actions";
+import type { TrackingSummary } from "@/types/email-tracking";
 
 const typeIcons: Record<string, typeof MessageSquare> = {
   note: MessageSquare,
@@ -58,6 +60,7 @@ interface TimelineItem {
   title: string;
   summary?: string;
   date: string;
+  emailId?: string;
 }
 
 interface DealTimelineProps {
@@ -65,6 +68,7 @@ interface DealTimelineProps {
   emails: any[];
   meetings: Meeting[];
   signals: any[];
+  trackingSummaries?: Record<string, TrackingSummary>;
 }
 
 export function DealTimeline({
@@ -72,6 +76,7 @@ export function DealTimeline({
   emails,
   meetings,
   signals,
+  trackingSummaries = {},
 }: DealTimelineProps) {
   const items: TimelineItem[] = [
     ...activities.map((a: any) => ({
@@ -87,6 +92,7 @@ export function DealTimeline({
       title: e.subject || "(Kein Betreff)",
       summary: `An: ${e.to_address}`,
       date: e.sent_at || e.created_at,
+      emailId: e.id,
     })),
     ...meetings.map((m) => ({
       id: `meeting-${m.id}`,
@@ -124,6 +130,9 @@ export function DealTimeline({
       {items.map((item) => {
         const Icon = typeIcons[item.type] || MessageSquare;
         const config = typeConfig[item.type] || defaultConfig;
+        const tracking = item.emailId
+          ? trackingSummaries[item.emailId]
+          : undefined;
         return (
           <div
             key={item.id}
@@ -146,6 +155,7 @@ export function DealTimeline({
                       KI
                     </span>
                   )}
+                  {tracking && <TrackingIndicator summary={tracking} />}
                   <span
                     className={`ml-auto inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border shrink-0 ${config.bg} ${config.iconColor}`}
                   >

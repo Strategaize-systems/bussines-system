@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { TrackingIndicator } from "@/components/email/tracking-badge";
+import type { TrackingSummary } from "@/types/email-tracking";
 
 const typeIcons: Record<string, typeof MessageSquare> = {
   note: MessageSquare,
@@ -56,6 +58,7 @@ interface TimelineItem {
   title: string;
   summary?: string;
   date: string;
+  emailId?: string;
 }
 
 interface UnifiedTimelineProps {
@@ -65,6 +68,7 @@ interface UnifiedTimelineProps {
   signals: any[];
   proposals: any[];
   inboxEmails?: any[];
+  trackingSummaries?: Record<string, TrackingSummary>;
 }
 
 export function UnifiedTimeline({
@@ -74,6 +78,7 @@ export function UnifiedTimeline({
   signals,
   proposals,
   inboxEmails = [],
+  trackingSummaries = {},
 }: UnifiedTimelineProps) {
   const [filterType, setFilterType] = useState<string>("all");
 
@@ -91,6 +96,7 @@ export function UnifiedTimeline({
       title: e.subject || "(Kein Betreff)",
       summary: `${e.direction === "inbound" ? "Von" : "An"}: ${e.direction === "inbound" ? e.from_address : e.to_address}`,
       date: e.sent_at || e.created_at,
+      emailId: e.id,
     })),
     ...meetings.map((m: any) => ({
       id: `meeting-${m.id}`,
@@ -182,6 +188,9 @@ export function UnifiedTimeline({
         {filtered.map((item) => {
           const Icon = typeIcons[item.type] || MessageSquare;
           const colorClass = typeColors[item.type] || "bg-slate-50 text-slate-500";
+          const tracking = item.emailId
+            ? trackingSummaries[item.emailId]
+            : undefined;
           return (
             <div
               key={item.id}
@@ -198,6 +207,7 @@ export function UnifiedTimeline({
                   <span className="text-[10px] text-slate-400 shrink-0">
                     {typeLabels[item.type] || item.type}
                   </span>
+                  {tracking && <TrackingIndicator summary={tracking} />}
                 </div>
                 {item.summary && (
                   <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">

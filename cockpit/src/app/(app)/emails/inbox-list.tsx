@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { InboxEmail } from "./imap-actions";
+import { AssignmentBadge } from "@/components/email/assignment-badge";
+import type { AssignmentSource } from "@/types/email";
 import { markEmailRead, reclassifyEmail } from "./imap-actions";
 
 // ------------------------------------------------------------------
@@ -234,6 +236,11 @@ function InboxRow({
                 {email.attachments.length}
               </span>
             )}
+
+            <AssignmentBadge
+              source={email.assignment_source as AssignmentSource | null}
+              confidence={email.ai_match_confidence ?? null}
+            />
           </div>
         </div>
 

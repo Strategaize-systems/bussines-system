@@ -3,12 +3,16 @@
 import { useState, useMemo, useTransition } from "react";
 import {
   Mail, Send, Clock, AlertCircle, CheckCircle2, Trash2, Plus, Calendar,
+  ChevronDown, ChevronUp,
 } from "lucide-react";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
 import { EmailSheet } from "./email-sheet";
 import type { EmailTemplateOption } from "./email-compose";
 import { updateFollowUpStatus, deleteEmail, type Email } from "./actions";
+import { TrackingBadge } from "@/components/email/tracking-badge";
+import { TrackingDetail } from "@/components/email/tracking-detail";
+import type { TrackingSummary } from "@/types/email-tracking";
 import Link from "next/link";
 
 const followUpConfig: Record<string, { label: string; variant: string }> = {
@@ -18,12 +22,17 @@ const followUpConfig: Record<string, { label: string; variant: string }> = {
   overdue: { label: "Überfällig", variant: "bg-red-100 text-red-700 border-red-200" },
 };
 
-interface EmailsClientProps { emails: Email[]; templates?: EmailTemplateOption[]; }
+interface EmailsClientProps {
+  emails: Email[];
+  templates?: EmailTemplateOption[];
+  trackingSummaries?: Record<string, TrackingSummary>;
+}
 
-export function EmailsClient({ emails, templates }: EmailsClientProps) {
+export function EmailsClient({ emails, templates, trackingSummaries = {} }: EmailsClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [followUpFilter, setFollowUpFilter] = useState("");
   const [showNewEmail, setShowNewEmail] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const today = new Date().toISOString().split("T")[0];
 
   const emailsWithOverdue = useMemo(() => emails.map((e) => ({
@@ -41,6 +50,10 @@ export function EmailsClient({ emails, templates }: EmailsClientProps) {
     return result;
   }, [emailsWithOverdue, searchQuery, followUpFilter]);
 
+  const openedCount = useMemo(() => {
+    return emails.filter((e) => trackingSummaries[e.id]?.open_count > 0).length;
+  }, [emails, trackingSummaries]);
+
   return (
     <div>
       <main className="px-8 py-8">
@@ -50,8 +63,9 @@ export function EmailsClient({ emails, templates }: EmailsClientProps) {
               <Plus size={16} strokeWidth={2.5} /> Neue E-Mail
             </button>
           </div>
-          <KPIGrid columns={3}>
+          <KPIGrid columns={4}>
             <KPICard label="Gesendet" value={emails.filter((e) => e.status === "sent").length} icon={Send} gradient="blue" />
+            <KPICard label="Geöffnet" value={openedCount} icon={Mail} gradient="green" />
             <KPICard label="Follow-ups offen" value={emailsWithOverdue.filter((e) => e.follow_up_status === "pending").length} icon={Clock} gradient="yellow" />
             <KPICard label="Überfällig" value={emailsWithOverdue.filter((e) => e.follow_up_status === "overdue").length} icon={AlertCircle} gradient="red" />
           </KPIGrid>
@@ -64,7 +78,15 @@ export function EmailsClient({ emails, templates }: EmailsClientProps) {
           <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
             {filtered.length > 0 ? (
               <div className="divide-y divide-slate-100">
-                {filtered.map((email) => <EmailRow key={email.id} email={email} />)}
+                {filtered.map((email) => (
+                  <EmailRow
+                    key={email.id}
+                    email={email}
+                    tracking={trackingSummaries[email.id]}
+                    isExpanded={expandedId === email.id}
+                    onToggle={() => setExpandedId(expandedId === email.id ? null : email.id)}
+                  />
+                ))}
               </div>
             ) : (
               <div className="p-12 text-center">
@@ -80,42 +102,62 @@ export function EmailsClient({ emails, templates }: EmailsClientProps) {
   );
 }
 
-function EmailRow({ email }: { email: Email }) {
+function EmailRow({
+  email,
+  tracking,
+  isExpanded,
+  onToggle,
+}: {
+  email: Email;
+  tracking: TrackingSummary | undefined;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
   const [isPending, startTransition] = useTransition();
   const fu = followUpConfig[email.follow_up_status] ?? followUpConfig.none;
   return (
-    <div className={`flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors group ${email.follow_up_status === "overdue" ? "bg-red-50/30" : ""}`}>
-      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${email.status === "sent" ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"}`}>
-        <Mail size={18} strokeWidth={2} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-bold text-slate-900 truncate">{email.subject || "(Kein Betreff)"}</div>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-[11px] text-slate-500 truncate">An: {email.to_address}</span>
-          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${fu.variant}`}>{fu.label}</span>
+    <div>
+      <div
+        className={`flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors group cursor-pointer ${email.follow_up_status === "overdue" ? "bg-red-50/30" : ""}`}
+        onClick={onToggle}
+      >
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${email.status === "sent" ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"}`}>
+          <Mail size={18} strokeWidth={2} />
         </div>
-      </div>
-      {email.sent_at && (
-        <div className="text-right shrink-0 w-24">
-          <div className="text-[10px] font-bold text-slate-400 uppercase">Gesendet</div>
-          <div className="text-xs font-semibold text-slate-600">{new Date(email.sent_at).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-bold text-slate-900 truncate">{email.subject || "(Kein Betreff)"}</div>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <span className="text-[11px] text-slate-500 truncate">An: {email.to_address}</span>
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${fu.variant}`}>{fu.label}</span>
+            <TrackingBadge summary={tracking} />
+          </div>
         </div>
-      )}
-      {email.contacts && (
-        <Link href={`/contacts/${email.contacts.id}`} className="text-xs font-medium text-slate-600 shrink-0 hover:text-[#4454b8]" onClick={(e) => e.stopPropagation()}>
-          {email.contacts.first_name} {email.contacts.last_name}
-        </Link>
-      )}
-      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        {(email.follow_up_status === "pending" || email.follow_up_status === "overdue") && (
-          <button onClick={() => startTransition(async () => { await updateFollowUpStatus(email.id, "replied"); })} disabled={isPending} className="p-1.5 rounded-md hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition-colors">
-            <CheckCircle2 size={14} />
-          </button>
+        {email.sent_at && (
+          <div className="text-right shrink-0 w-24">
+            <div className="text-[10px] font-bold text-slate-400 uppercase">Gesendet</div>
+            <div className="text-xs font-semibold text-slate-600">{new Date(email.sent_at).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</div>
+          </div>
         )}
-        <button onClick={() => startTransition(async () => { await deleteEmail(email.id); })} disabled={isPending} className="p-1.5 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors">
-          <Trash2 size={14} />
-        </button>
+        {email.contacts && (
+          <Link href={`/contacts/${email.contacts.id}`} className="text-xs font-medium text-slate-600 shrink-0 hover:text-[#4454b8]" onClick={(e) => e.stopPropagation()}>
+            {email.contacts.first_name} {email.contacts.last_name}
+          </Link>
+        )}
+        <div className="flex items-center gap-1 shrink-0">
+          {isExpanded ? <ChevronUp size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
+        </div>
+        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+          {(email.follow_up_status === "pending" || email.follow_up_status === "overdue") && (
+            <button onClick={() => startTransition(async () => { await updateFollowUpStatus(email.id, "replied"); })} disabled={isPending} className="p-1.5 rounded-md hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition-colors">
+              <CheckCircle2 size={14} />
+            </button>
+          )}
+          <button onClick={() => startTransition(async () => { await deleteEmail(email.id); })} disabled={isPending} className="p-1.5 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors">
+            <Trash2 size={14} />
+          </button>
+        </div>
       </div>
+      {isExpanded && <TrackingDetail summary={tracking} />}
     </div>
   );
 }
