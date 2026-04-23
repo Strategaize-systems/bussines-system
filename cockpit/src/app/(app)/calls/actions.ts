@@ -199,6 +199,54 @@ export async function updateCallStatus(
   return data as Call;
 }
 
+export async function createCallActivity(callId: string) {
+  const supabase = await createClient();
+
+  const call = await getCallById(callId);
+  if (!call.deal_id) return null;
+
+  const contactName = call.contacts
+    ? `${call.contacts.first_name} ${call.contacts.last_name}`.trim()
+    : null;
+  const title = contactName
+    ? `Anruf an ${contactName}`
+    : `Anruf an ${call.phone_number ?? "unbekannt"}`;
+
+  const duration = call.duration_seconds
+    ? `${Math.floor(call.duration_seconds / 60)}:${String(
+        call.duration_seconds % 60
+      ).padStart(2, "0")} min`
+    : null;
+  const description = [
+    call.direction === "outbound" ? "Ausgehend" : "Eingehend",
+    duration,
+    call.status === "completed" ? "verbunden" : call.status,
+    call.phone_number,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { error } = await supabase.from("activities").insert({
+    type: "call",
+    deal_id: call.deal_id,
+    contact_id: call.contact_id,
+    title,
+    description,
+    source_type: "call",
+    source_id: callId,
+    created_by: user?.id ?? null,
+  });
+
+  if (error) {
+    console.error("createCallActivity failed:", error.message);
+  }
+
+  revalidatePath("/deals");
+  return { ok: !error };
+}
+
 export async function getSipConfig() {
   const supabase = await createClient();
 

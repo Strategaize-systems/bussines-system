@@ -13,6 +13,7 @@ import type { PipelineStage } from "@/app/(app)/pipeline/actions";
 import { getContextPrefill } from "@/lib/context-prefill";
 import { StartMeetingButton } from "@/components/meetings/start-meeting-button";
 import { EnrollButton } from "@/components/cadences/enroll-button";
+import { CallButton } from "@/components/calls/call-button";
 
 interface DealActionsProps {
   deal: any;
@@ -147,6 +148,20 @@ export function DealActions({
           dealTitle={deal.title}
           contacts={contacts}
         />
+
+        {/* Anrufen (SLC-513) — nur wenn Kontakt Telefonnummer hat */}
+        {deal.contacts?.phone && (
+          <CallButton
+            phoneNumber={deal.contacts.phone}
+            contactName={
+              deal.contacts
+                ? `${deal.contacts.first_name ?? ""} ${deal.contacts.last_name ?? ""}`.trim() || null
+                : null
+            }
+            dealId={deal.id}
+            contactId={deal.contact_id ?? undefined}
+          />
+        )}
 
         {/* + Activity/Note */}
         <ActivityForm
