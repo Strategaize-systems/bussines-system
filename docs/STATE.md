@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5.1 SLC-513 in_progress (WebRTC Click-to-Call implementiert, Build PASS). Naechster Schritt: Deploy + Browser-Test + /qa.
-- Current Phase: V5.1 Implementation (2/5 Slices done, 1 in_progress)
+- Current Focus: V5.1 SLC-513 done (Click-to-Call E2E verifiziert, MixMonitor Recording funktioniert mit X-Call-ID). Naechster Schritt: /qa SLC-513.
+- Current Phase: V5.1 Implementation (3/5 Slices done)
 
 ## Immediate Next Steps
-1. Coolify Redeploy + Browser-Test (Echo-Test Extension 600)
-2. /qa SLC-513
-3. /backend SLC-514 (Call-Recording-Pipeline)
+1. /qa SLC-513
+2. /backend SLC-514 (Call-Recording-Pipeline)
+3. /backend SLC-515 (SMAO Voice-Agent Adapter)
 
 ## Active Scope
 **V5.1 — Asterisk Telefonie + SMAO Voice-Agent-Vorbereitung (requirements done):**
