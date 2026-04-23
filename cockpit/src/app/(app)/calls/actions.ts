@@ -256,11 +256,13 @@ export async function getSipConfig() {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Nicht authentifiziert");
 
+  const sipDomain = process.env.NEXT_PUBLIC_SIP_DOMAIN || "sip.strategaizetransition.com";
   return {
-    wssUrl: `wss://${process.env.NEXT_PUBLIC_SIP_DOMAIN || "sip.strategaizetransition.com"}`,
+    // /ws path is mandatory — Asterisk http.conf exposes WebSocket endpoint at /ws
+    wssUrl: `wss://${sipDomain}/ws`,
     username: "webrtc-user",
     password: process.env.ASTERISK_WEBRTC_PASSWORD || "",
-    domain: process.env.NEXT_PUBLIC_SIP_DOMAIN || "sip.strategaizetransition.com",
+    domain: sipDomain,
     callerId: process.env.SIP_CALLER_ID || "",
   };
 }
