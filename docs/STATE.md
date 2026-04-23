@@ -10,12 +10,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5.1 SLC-512 done (Asterisk Docker deployed, 9/10 ACs pass). Naechster Schritt: /qa SLC-512.
-- Current Phase: V5.1 Implementation (2/5 Slices done)
+- Current Focus: V5.1 SLC-513 in_progress (WebRTC Click-to-Call implementiert, Build PASS). Naechster Schritt: Deploy + Browser-Test + /qa.
+- Current Phase: V5.1 Implementation (2/5 Slices done, 1 in_progress)
 
 ## Immediate Next Steps
-1. /qa SLC-512
-2. /frontend SLC-513 (WebRTC Click-to-Call)
+1. Coolify Redeploy + Browser-Test (Echo-Test Extension 600)
+2. /qa SLC-513
 3. /backend SLC-514 (Call-Recording-Pipeline)
 
 ## Active Scope
