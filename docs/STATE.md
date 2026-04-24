@@ -10,15 +10,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: qa
-- Current Focus: V5.1 Gesamt-QA abgeschlossen (RPT-200). 5/5 Slices pass, 1 Enum-Dedupe inline gefixt, 1 offenes Medium (ISSUE-041 latent bei SMAO-Go-Live, nicht Release-blockierend), 1 interim-DEC (DEC-078 codec_opus). V5.1-Release ready fuer /final-check.
-- Current Phase: V5.1 Pre-Release (Gesamt-QA done, /final-check offen)
+- Current Focus: V5.1 Final-Check abgeschlossen (RPT-201). Conditionally Ready fuer /go-live. Keine Blocker, keine Highs. Release-Bedingung: Internal-Test-Mode bis V5.2 Compliance-Sprint done (DEC-081). Code-Quality + Security sauber (tsc+eslint+secret-scan clean). Kein healthcheck auf asterisk-Service (Low).
+- Current Phase: V5.1 Pre-Release (Final-Check done, /go-live offen)
 
 ## Immediate Next Steps
-1. /final-check V5.1 — Hygiene, Dependencies, Security-Sweep
-2. /go-live V5.1 — Release-Risk-Assessment + Coolify-Cron-Verifikation
-3. /deploy als REL-016 (User deployt manuell ueber Coolify)
+1. /go-live V5.1 — Release-Risk-Assessment mit expliziter Internal-Test-Mode-Bedingung + Coolify-Cron-Verifikation + Rollback-Plan
+2. /deploy als REL-016 (User deployt manuell ueber Coolify, Cron-Setup-Tabelle liefern)
+3. Nach V5.1-Deploy: /requirements V5.2 Compliance-Sprint (DEC-081) — Consent-Strategie + Retention-Defaults + Azure-Whisper + Call-Consent-Flow
 4. Pre-SMAO-Go-Live (ausserhalb V5.1): ISSUE-041 fixen, SMAO_WEBHOOK_SECRET setzen, Parser gegen SMAO-Doku validieren
-5. Nach V5.1-Deploy: V5.2 Compliance-Sprint starten (DEC-081)
 
 ## Active Scope
 **V5.1 — Asterisk Telefonie + SMAO Voice-Agent-Vorbereitung (requirements done):**
