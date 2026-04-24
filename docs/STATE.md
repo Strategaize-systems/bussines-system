@@ -10,13 +10,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: qa
-- Current Focus: SLC-515 SMAO Voice-Agent Adapter implementiert (RPT-198). VoiceAgentProvider-Interface + SMAO/Synthflow-Adapter + Webhook-Endpoint + Klassifikations-Aktionen (urgent→Push, callback/meeting_request→Task, info→Activity). Dialplan-Routing bereits in SLC-512 korrekt verdrahtet (SMAO_ENABLED globals + [smao-endpoint] bei true). Keine Migration. TypeScript build clean.
+- Current Focus: SLC-515 SMAO Voice-Agent Adapter implementiert + /qa durchgelaufen (RPT-198, RPT-199). 11/11 AC statisch erfuellt, 1 Cross-System-Medium ISSUE-041 dokumentiert (Cron-Interferenz bei SMAO_ENABLED=true, nicht V5.1-Release-blockierend). V5.1 Slice-Scope ready, naechster Schritt: Gesamt-QA V5.1 ueber alle 5 Slices.
 - Current Phase: V5.1 QA-Phase (5/5 Slices implementiert, Gesamt-QA ausstehend)
 
 ## Immediate Next Steps
-1. /qa SLC-515 (einzeln) — Acceptance-Criteria AC1..AC11 pruefen, curl-Smoke-Test
-2. /qa V5.1 Gesamt (alle 5 Slices zusammen) vor /final-check
-3. /final-check V5.1 → /go-live → /deploy REL-016
+1. /qa V5.1 Gesamt (alle 5 Slices zusammen)
+2. /final-check V5.1 → /go-live → /deploy REL-016
+3. Pre-SMAO-Go-Live (ausserhalb V5.1): ISSUE-041 fixen, SMAO_WEBHOOK_SECRET setzen, Parser gegen SMAO-Doku validieren
+4. Nach V5.1-Deploy: V5.2 Compliance-Sprint starten (DEC-081)
 
 ## Active Scope
 **V5.1 — Asterisk Telefonie + SMAO Voice-Agent-Vorbereitung (requirements done):**
