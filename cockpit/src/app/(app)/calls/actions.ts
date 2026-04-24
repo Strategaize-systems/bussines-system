@@ -27,11 +27,8 @@ export type RecordingStatus =
 export type TranscriptStatus = "pending" | "processing" | "completed" | "failed";
 export type SummaryStatus = "pending" | "processing" | "completed" | "failed";
 
-export type VoiceAgentClassification =
-  | "urgent"
-  | "callback"
-  | "info"
-  | "meeting_request";
+export type { VoiceAgentClassification } from "@/lib/telephony/voice-agent";
+import type { VoiceAgentClassification } from "@/lib/telephony/voice-agent";
 
 export type CallAiSummary = {
   outcome?: string;

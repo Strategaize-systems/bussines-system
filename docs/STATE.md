@@ -10,14 +10,15 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: qa
-- Current Focus: SLC-515 SMAO Voice-Agent Adapter implementiert + /qa durchgelaufen (RPT-198, RPT-199). 11/11 AC statisch erfuellt, 1 Cross-System-Medium ISSUE-041 dokumentiert (Cron-Interferenz bei SMAO_ENABLED=true, nicht V5.1-Release-blockierend). V5.1 Slice-Scope ready, naechster Schritt: Gesamt-QA V5.1 ueber alle 5 Slices.
-- Current Phase: V5.1 QA-Phase (5/5 Slices implementiert, Gesamt-QA ausstehend)
+- Current Focus: V5.1 Gesamt-QA abgeschlossen (RPT-200). 5/5 Slices pass, 1 Enum-Dedupe inline gefixt, 1 offenes Medium (ISSUE-041 latent bei SMAO-Go-Live, nicht Release-blockierend), 1 interim-DEC (DEC-078 codec_opus). V5.1-Release ready fuer /final-check.
+- Current Phase: V5.1 Pre-Release (Gesamt-QA done, /final-check offen)
 
 ## Immediate Next Steps
-1. /qa V5.1 Gesamt (alle 5 Slices zusammen)
-2. /final-check V5.1 → /go-live → /deploy REL-016
-3. Pre-SMAO-Go-Live (ausserhalb V5.1): ISSUE-041 fixen, SMAO_WEBHOOK_SECRET setzen, Parser gegen SMAO-Doku validieren
-4. Nach V5.1-Deploy: V5.2 Compliance-Sprint starten (DEC-081)
+1. /final-check V5.1 — Hygiene, Dependencies, Security-Sweep
+2. /go-live V5.1 — Release-Risk-Assessment + Coolify-Cron-Verifikation
+3. /deploy als REL-016 (User deployt manuell ueber Coolify)
+4. Pre-SMAO-Go-Live (ausserhalb V5.1): ISSUE-041 fixen, SMAO_WEBHOOK_SECRET setzen, Parser gegen SMAO-Doku validieren
+5. Nach V5.1-Deploy: V5.2 Compliance-Sprint starten (DEC-081)
 
 ## Active Scope
 **V5.1 — Asterisk Telefonie + SMAO Voice-Agent-Vorbereitung (requirements done):**
