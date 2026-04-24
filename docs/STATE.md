@@ -9,15 +9,16 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: qa
-- Current Focus: V5.1 Go-Live-Assessment abgeschlossen (RPT-202). **Conditional Go fuer REL-016** unter Release-Bedingung "Internal-Test-Mode bis V5.2 Compliance-Sprint done". Keine Blocker. SLC-515 ist additiver Low-Risk-Deploy: keine Schema-Aenderung, kein neuer Cron, kein neues ENV erforderlich. Rollback via Coolify-Redeploy auf cc3222b.
-- Current Phase: V5.1 Release (Go-Live approved, /deploy offen)
+- High-Level State: deploying
+- Current Focus: V5.1 /deploy als REL-016 ausgeloest 2026-04-24 (RPT-203). User-Redeploy ueber Coolify auf Commit 700b17d laeuft durch. Internal-Test-Mode-Bedingung aktiv bis V5.2 Compliance-Sprint (DEC-081). Keine neuen Migrationen, keine neuen Crons, keine neuen ENVs erforderlich. Smoke-Test-Plan nach Redeploy-Abschluss abarbeiten.
+- Current Phase: V5.1 Deploying (REL-016 triggered, Smoke-Test offen)
 
 ## Immediate Next Steps
-1. /deploy als REL-016 — RELEASES.md-Eintrag, Coolify-Redeploy durch User auf Commit 700b17d, Smoke-Test-Plan durchlaufen
-2. /post-launch nach 24-48h Live-Beobachtung
-3. /requirements V5.2 Compliance-Sprint (DEC-081) — Consent-Strategie + Retention-Defaults + Azure-Whisper + Call-Consent-Flow
-4. Pre-SMAO-Go-Live (ausserhalb V5.1): ISSUE-041 fixen, SMAO_WEBHOOK_SECRET setzen, Parser gegen SMAO-Doku validieren
+1. Smoke-Test nach Redeploy: Echo-Test 600, Webhook-Disabled-Check (404), Call-Timeline-Render, Asterisk PJSIP-Endpoints, Retention-Cron-Log
+2. High-Level State auf `stable` setzen sobald Smoke-Test PASS
+3. /post-launch nach 24-48h Live-Beobachtung
+4. /requirements V5.2 Compliance-Sprint (DEC-081) — Consent-Strategie + Retention-Defaults + Azure-Whisper + Call-Consent-Flow
+5. Pre-SMAO-Go-Live (ausserhalb V5.1): ISSUE-041 fixen, SMAO_WEBHOOK_SECRET setzen, Parser gegen SMAO-Doku validieren
 
 ## Active Scope
 **V5.1 — Asterisk Telefonie + SMAO Voice-Agent-Vorbereitung (requirements done):**
@@ -37,6 +38,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - aktuell keine
 
 ## Last Stable Version
+- V5.1 — 2026-04-24 — deploying auf Hetzner (Asterisk + Call-Pipeline + SMAO vorbereitet, REL-016, Internal-Test-Mode)
 - V5 — 2026-04-22 — deployed auf Hetzner (Automatisierung + Vertriebsintelligenz, REL-015)
 
 ## Notes

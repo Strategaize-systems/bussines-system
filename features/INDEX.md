@@ -121,14 +121,14 @@
 | FEAT-505 | E-Mail Auto-Zuordnung | deployed | [Spec](FEAT-505-email-auto-zuordnung.md) | 2026-04-21 |
 | FEAT-506 | E-Mail Open/Click-Tracking | deployed | [Spec](FEAT-506-email-tracking.md) | 2026-04-21 |
 
-## V5.1 Features (Asterisk Telefonie + Voice-Agent — planned)
+## V5.1 Features (Asterisk Telefonie + Voice-Agent — released)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-511 | Asterisk PBX Deployment + SIP-Trunk-Adapter | done | — | 2026-04-22 |
-| FEAT-512 | Click-to-Call aus Deal-Workspace | done | — | 2026-04-22 |
-| FEAT-513 | Anruf-Aufnahme → Whisper → Summary → Deal-Activity | done | — | 2026-04-22 |
-| FEAT-514 | SMAO Voice-Agent Adapter (vorbereitet) | done | — | 2026-04-22 |
+| FEAT-511 | Asterisk PBX Deployment + SIP-Trunk-Adapter | deployed | — | 2026-04-22 |
+| FEAT-512 | Click-to-Call aus Deal-Workspace | deployed | — | 2026-04-22 |
+| FEAT-513 | Anruf-Aufnahme → Whisper → Summary → Deal-Activity | deployed | — | 2026-04-22 |
+| FEAT-514 | SMAO Voice-Agent Adapter (vorbereitet) | deployed | — | 2026-04-22 |
 
 ## V7 Features (Multi-User + Erweiterung — planned)
 

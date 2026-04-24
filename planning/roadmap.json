@@ -87,8 +87,8 @@
     {
       "id": "v5-1",
       "name": "V5.1",
-      "status": "active",
-      "summary": "Asterisk Telefonie + SMAO Voice-Agent: Eigene PBX (Docker), Click-to-Call aus Deal-Workspace, Aufnahme → Whisper → Summary → Deal-Activity, SMAO-Adapter vorbereitet",
+      "status": "released",
+      "summary": "Asterisk Telefonie + SMAO Voice-Agent: Eigene PBX (Docker), Click-to-Call aus Deal-Workspace, Aufnahme → Whisper → Summary → Deal-Activity, SMAO-Adapter vorbereitet. Released 2026-04-24 als REL-016 im Internal-Test-Mode bis V5.2 Compliance-Sprint.",
       "order": 13
     },
     {
