@@ -27,6 +27,15 @@
 - Workaround: Keiner ohne Code-Fix. Manuelle chmod 0755 auf Volume koennte funktionieren, ist aber nicht persistent.
 - Next Action: Erledigt 2026-04-24 — `asterisk/entrypoint.sh` ergaenzt um `chmod 0755 /var/spool/asterisk/monitor/` + `umask 022` vor `exec asterisk`. Asterisk-Container-Redeploy erforderlich, damit neuer Entrypoint greift.
 
+### ISSUE-040 — Supabase Storage Uploads broken (latent seit Supabase-Upgrade)
+- Status: resolved
+- Severity: Blocker
+- Area: Supabase Self-Hosted / Storage / Role Delegation
+- Summary: `supabase_storage_admin` konnte `set_config('role','service_role',...)` nicht ausfuehren, weil die Role-Membership fehlte. ZUSAETZLICH fehlten Schema-Grants auf `storage` und der `search_path` der Request-Rollen. Jeder Upload an irgendeinem Bucket (Meeting + Call) schlug fehl mit PostgreSQL-Error 42501, von der storage-api als "new row violates row-level security policy" gemeldet.
+- Impact: SLC-514 Call-Recording-Pipeline blockiert beim Upload-Schritt. Meeting-Recording-Upload (V4.1) war seit letztem Supabase-Upgrade LATENT kaputt — bisher nicht bemerkt, weil kein Meeting-Recording seit dem Upgrade stattfand. Storage-Buckets `meeting-recordings` und `call-recordings` waren beide objektleer.
+- Workaround: Keiner — ohne die Grants geht kein Upload durch service_role.
+- Next Action: Erledigt 2026-04-24 via MIG-021 (sql/migrations/021_v51_storage_grants_fix.sql): GRANT anon/authenticated/service_role TO supabase_storage_admin, GRANT USAGE ON SCHEMA storage, GRANT CRUD auf storage-Tabellen, search_path=storage,public fuer die Supabase-Request-Rollen. Zusaetzlich MIG-020 um die fehlerhaften call_recordings RLS-Policies bereinigt — wir nutzen BYPASSRLS auf service_role genauso wie meeting-recordings es schon immer tut. E2E-Test am 2026-04-24 gruen: Upload+Whisper+Summary+Activity durchgelaufen.
+
 ## High
 
 ### ISSUE-003 — Supabase DB Init-Scripts werden durch Volume-Mount überschrieben

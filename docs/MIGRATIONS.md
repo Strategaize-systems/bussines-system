@@ -159,3 +159,11 @@
 - Affected Areas: Deal-Workspace (Anrufen-Button + Call-Timeline), Cron-Pipeline (call-processing), Webhook (voice-agent), Supabase Storage (neuer Bucket).
 - Risk: Gering — rein additiv. Eine neue Tabelle, kein Schema-Change an bestehenden Tabellen.
 - Rollback Notes: DROP TABLE calls CASCADE; Supabase Storage Bucket "call-recordings" loeschen.
+
+### MIG-021 — V5.1 Storage Grants + Role Delegation Fix
+- Date: 2026-04-24
+- Scope: Role membership (GRANT anon/authenticated/service_role TO supabase_storage_admin), USAGE on storage schema fuer service_role/anon/authenticated, CRUD-Grants auf storage-Tabellen, search_path=storage,public fuer alle drei Supabase-Rollen. Entfernt die in MIG-020 angelegten call_recordings_* Policies (waren fehlerhaft und unnoetig, da BYPASSRLS auf service_role greift).
+- Reason: Storage-Uploads waren an allen Buckets gebrochen (Meeting + Call). storage-api nutzt set_config('role','service_role',...), was ohne Role-Membership von supabase_storage_admin mit PostgreSQL-Error 42501 fehlschlug — gemeldet als "new row violates row-level security policy". Beim SLC-514 E2E-Test entdeckt (ISSUE-040).
+- Affected Areas: Alle Supabase Storage Buckets (meeting-recordings, call-recordings). Call-Recording-Pipeline, Meeting-Recording-Poll, Retention-Cron. Keine Data-Migration, nur Permissions.
+- Risk: Gering — idempotent, rein additiv auf Permission-Ebene. DROP POLICY nur auf den fehlerhaften MIG-020-Policies.
+- Rollback Notes: Theoretisch REVOKE der Grants + Restore Policies aus MIG-020 — nicht empfohlen, da Pre-Fix-Zustand non-funktional war.

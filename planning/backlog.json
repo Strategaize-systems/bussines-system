@@ -1467,9 +1467,9 @@
       "title": "Anruf-Aufnahme → Whisper → Summary → Deal-Activity",
       "type": "feature",
       "priority": "high",
-      "status": "blocked",
+      "status": "done",
       "version": "V5.1",
-      "description": "FEAT-513: Audio-Pipeline fuer Telefonate. Implementierung done, aber durch ISSUE-039 (Recording-Volume-Permissions) blockiert. Fix: asterisk/entrypoint.sh chmod + umask.",
+      "description": "FEAT-513: Audio-Pipeline fuer Telefonate. E2E verifiziert 2026-04-24: Asterisk WAV → Supabase Storage → Whisper Transkript → Bedrock Call-Summary → Deal-Timeline-Activity. Retention-Cron erweitert um Calls.",
       "createdAt": "2026-04-22"
     },
     {

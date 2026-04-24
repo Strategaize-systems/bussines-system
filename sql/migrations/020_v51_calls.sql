@@ -90,32 +90,18 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- Storage RLS: authenticated users koennen lesen + schreiben
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'call_recordings_auth_select') THEN
-    CREATE POLICY "call_recordings_auth_select" ON storage.objects FOR SELECT TO authenticated
-      USING (bucket_id = 'call-recordings');
-  END IF;
-END $$;
-
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'call_recordings_auth_insert') THEN
-    CREATE POLICY "call_recordings_auth_insert" ON storage.objects FOR INSERT TO authenticated
-      WITH CHECK (bucket_id = 'call-recordings');
-  END IF;
-END $$;
-
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'call_recordings_auth_delete') THEN
-    CREATE POLICY "call_recordings_auth_delete" ON storage.objects FOR DELETE TO authenticated
-      USING (bucket_id = 'call-recordings');
-  END IF;
-END $$;
-
--- service_role braucht Zugriff fuer Cron-Upload + Retention-Cleanup
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'call_recordings_service_all') THEN
-    CREATE POLICY "call_recordings_service_all" ON storage.objects FOR ALL TO service_role
-      USING (bucket_id = 'call-recordings');
-  END IF;
-END $$;
+-- Storage RLS policies intentionally omitted.
+--
+-- Rationale (verified 2026-04-24, SLC-514 E2E test, ISSUE-040):
+--   Custom object-level RLS policies break storage-api uploads because
+--   (a) the policies were mis-specified (FOR ALL USING without WITH
+--   CHECK blocks INSERT) and (b) storage-api uses set_config('role',...)
+--   to delegate requests through supabase_storage_admin, which requires
+--   schema grants and role membership set up in MIG-021.
+--
+--   The `meeting-recordings` bucket has been operating without object
+--   policies since V4.1 and works correctly via BYPASSRLS on service_role.
+--   The same pattern is used here. Retention, upload, and download all
+--   happen via admin/service-role server-side code paths.
+--
+-- See MIG-021 for the role-delegation and schema-grants fix.
