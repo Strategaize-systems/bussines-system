@@ -103,5 +103,13 @@ GLOBALS_EOF
 chown -R asterisk:asterisk /etc/asterisk/
 chown -R asterisk:asterisk /var/spool/asterisk/monitor/
 
+# ISSUE-039 / SLC-514: shared /var/spool/asterisk/monitor volume is also mounted
+# read-only into the app container as /recordings-calls. That container runs as
+# nextjs (UID 1001, group nogroup). Directory default 0750 (asterisk:asterisk)
+# means nextjs cannot list or read — call-processing cron never sees any WAV.
+# Fix: make directory world-readable and ensure new WAV files are 0644 via umask.
+chmod 0755 /var/spool/asterisk/monitor/
+umask 022
+
 echo "=== Asterisk entrypoint: starting Asterisk ==="
 exec asterisk -fvvv

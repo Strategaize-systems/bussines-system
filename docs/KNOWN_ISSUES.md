@@ -19,13 +19,13 @@
 - Next Action: Erledigt — Dockerfile.kong + docker-entrypoint.sh erstellt, docker-compose.yml auf build umgestellt (2026-03-27).
 
 ### ISSUE-039 — Recording-Volume fuer nextjs-User nicht lesbar (Call-Pipeline blockiert)
-- Status: open
+- Status: resolved
 - Severity: Blocker
 - Area: V5.1 / Call-Pipeline / Container-Permissions
 - Summary: `/var/spool/asterisk/monitor` (gemounted als `/recordings-calls:ro` im app-Container) ist mit `drwxr-x---` (0750) owned by UID 101 (asterisk). App-Container laeuft als `nextjs` (UID 1001, group nogroup). Kein Lesezugriff moeglich.
 - Impact: `/api/cron/call-processing` findet keine WAVs, ALLE Calls werden mit "WAV not yet available" skipped. Gesamte SLC-514 Pipeline (Upload + Whisper + Summary + Timeline) steht still. Verifiziert via manueller Cron-Trigger am 2026-04-24 — 1 vorhandener Test-Call blieb in recording_status='not_recording'.
 - Workaround: Keiner ohne Code-Fix. Manuelle chmod 0755 auf Volume koennte funktionieren, ist aber nicht persistent.
-- Next Action: `asterisk/entrypoint.sh` ergaenzen: `chmod 0755 /var/spool/asterisk/monitor/` nach Owner-Setup plus `umask 022` vor `exec asterisk`, damit neu erstellte WAVs 0644-readable sind. Asterisk-Container redeployen.
+- Next Action: Erledigt 2026-04-24 — `asterisk/entrypoint.sh` ergaenzt um `chmod 0755 /var/spool/asterisk/monitor/` + `umask 022` vor `exec asterisk`. Asterisk-Container-Redeploy erforderlich, damit neuer Entrypoint greift.
 
 ## High
 

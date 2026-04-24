@@ -79,8 +79,13 @@ export async function POST(request: NextRequest) {
           .eq("id", call.id);
 
         const buffer = fs.readFileSync(wavPath);
-        if (buffer.length < 44) {
-          throw new Error(`WAV file too small: ${buffer.length} bytes`);
+        // Reject WAVs with header-only or near-empty payload (<1 KB = ~60ms
+        // PCM 8 kHz mono). These occur when a call is hung up before audio flows.
+        // Whisper would reject them anyway — fail fast with a clear message.
+        if (buffer.length < 1000) {
+          throw new Error(
+            `WAV file has no usable audio: ${buffer.length} bytes`,
+          );
         }
 
         console.log(
