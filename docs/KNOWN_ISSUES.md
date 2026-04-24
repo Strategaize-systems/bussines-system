@@ -18,6 +18,15 @@
 - Impact: Kong startet, aber Auth-Keys werden nicht eingesetzt. API entweder komplett offen oder komplett blockiert.
 - Next Action: Erledigt — Dockerfile.kong + docker-entrypoint.sh erstellt, docker-compose.yml auf build umgestellt (2026-03-27).
 
+### ISSUE-039 — Recording-Volume fuer nextjs-User nicht lesbar (Call-Pipeline blockiert)
+- Status: open
+- Severity: Blocker
+- Area: V5.1 / Call-Pipeline / Container-Permissions
+- Summary: `/var/spool/asterisk/monitor` (gemounted als `/recordings-calls:ro` im app-Container) ist mit `drwxr-x---` (0750) owned by UID 101 (asterisk). App-Container laeuft als `nextjs` (UID 1001, group nogroup). Kein Lesezugriff moeglich.
+- Impact: `/api/cron/call-processing` findet keine WAVs, ALLE Calls werden mit "WAV not yet available" skipped. Gesamte SLC-514 Pipeline (Upload + Whisper + Summary + Timeline) steht still. Verifiziert via manueller Cron-Trigger am 2026-04-24 — 1 vorhandener Test-Call blieb in recording_status='not_recording'.
+- Workaround: Keiner ohne Code-Fix. Manuelle chmod 0755 auf Volume koennte funktionieren, ist aber nicht persistent.
+- Next Action: `asterisk/entrypoint.sh` ergaenzen: `chmod 0755 /var/spool/asterisk/monitor/` nach Owner-Setup plus `umask 022` vor `exec asterisk`, damit neu erstellte WAVs 0644-readable sind. Asterisk-Container redeployen.
+
 ## High
 
 ### ISSUE-003 — Supabase DB Init-Scripts werden durch Volume-Mount überschrieben

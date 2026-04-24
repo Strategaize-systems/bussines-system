@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5.1 SLC-514 done (Call-Recording-Pipeline: Upload+Whisper+Bedrock Summary+Timeline-Integration+Retention). Naechster Schritt: /qa SLC-514 dann E2E-Test auf Hetzner + Coolify-Cron-Setup.
-- Current Phase: V5.1 Implementation (4/5 Slices done)
+- Current Focus: SLC-514 QA durchgefuehrt (RPT-196). BLOCKER ISSUE-039: Recording-Volume ist fuer nextjs-User nicht lesbar, Pipeline verarbeitet keine WAVs. Fix: asterisk/entrypoint.sh chmod 0755 + umask 022.
+- Current Phase: V5.1 Implementation (3/5 Slices done, SLC-514 blocked)
 
 ## Immediate Next Steps
-1. /qa SLC-514 (inkl. E2E-Call-to-Summary-Test)
-2. Coolify-Cron-Job fuer /api/cron/call-processing einrichten (siehe RPT-195)
-3. /backend SLC-515 (SMAO Voice-Agent Adapter)
+1. ISSUE-039 fixen (asterisk/entrypoint.sh ergaenzen, Asterisk-Container redeployen)
+2. E2E-Test SLC-514 mit echtem Call, Verifikation Timeline + Storage + DB
+3. /backend SLC-515 (SMAO Voice-Agent Adapter) nach SLC-514 Release
 
 ## Active Scope
 **V5.1 — Asterisk Telefonie + SMAO Voice-Agent-Vorbereitung (requirements done):**
@@ -33,7 +33,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - V7 — Multi-User + Erweiterung
 
 ## Blockers
-- aktuell keine
+- ISSUE-039: Recording-Volume-Permissions blockieren SLC-514 Pipeline (Fix: Asterisk entrypoint.sh chmod+umask)
 
 ## Last Stable Version
 - V5 — 2026-04-22 — deployed auf Hetzner (Automatisierung + Vertriebsintelligenz, REL-015)
