@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: qa
-- Current Focus: V5.1 Final-Check abgeschlossen (RPT-201). Conditionally Ready fuer /go-live. Keine Blocker, keine Highs. Release-Bedingung: Internal-Test-Mode bis V5.2 Compliance-Sprint done (DEC-081). Code-Quality + Security sauber (tsc+eslint+secret-scan clean). Kein healthcheck auf asterisk-Service (Low).
-- Current Phase: V5.1 Pre-Release (Final-Check done, /go-live offen)
+- Current Focus: V5.1 Go-Live-Assessment abgeschlossen (RPT-202). **Conditional Go fuer REL-016** unter Release-Bedingung "Internal-Test-Mode bis V5.2 Compliance-Sprint done". Keine Blocker. SLC-515 ist additiver Low-Risk-Deploy: keine Schema-Aenderung, kein neuer Cron, kein neues ENV erforderlich. Rollback via Coolify-Redeploy auf cc3222b.
+- Current Phase: V5.1 Release (Go-Live approved, /deploy offen)
 
 ## Immediate Next Steps
-1. /go-live V5.1 — Release-Risk-Assessment mit expliziter Internal-Test-Mode-Bedingung + Coolify-Cron-Verifikation + Rollback-Plan
-2. /deploy als REL-016 (User deployt manuell ueber Coolify, Cron-Setup-Tabelle liefern)
-3. Nach V5.1-Deploy: /requirements V5.2 Compliance-Sprint (DEC-081) — Consent-Strategie + Retention-Defaults + Azure-Whisper + Call-Consent-Flow
+1. /deploy als REL-016 — RELEASES.md-Eintrag, Coolify-Redeploy durch User auf Commit 700b17d, Smoke-Test-Plan durchlaufen
+2. /post-launch nach 24-48h Live-Beobachtung
+3. /requirements V5.2 Compliance-Sprint (DEC-081) — Consent-Strategie + Retention-Defaults + Azure-Whisper + Call-Consent-Flow
 4. Pre-SMAO-Go-Live (ausserhalb V5.1): ISSUE-041 fixen, SMAO_WEBHOOK_SECRET setzen, Parser gegen SMAO-Doku validieren
 
 ## Active Scope
