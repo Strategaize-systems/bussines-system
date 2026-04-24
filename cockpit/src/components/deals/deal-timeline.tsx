@@ -10,8 +10,10 @@ import {
   Sparkles,
 } from "lucide-react";
 import { TrackingIndicator } from "@/components/email/tracking-badge";
+import { CallTimelineItem } from "@/components/calls/call-timeline-item";
 import type { Meeting } from "@/app/(app)/meetings/actions";
 import type { TrackingSummary } from "@/types/email-tracking";
+import type { Call } from "@/app/(app)/calls/actions";
 
 const typeIcons: Record<string, typeof MessageSquare> = {
   note: MessageSquare,
@@ -64,6 +66,7 @@ interface TimelineItem {
   summary?: string;
   date: string;
   emailId?: string;
+  call?: Call;
 }
 
 interface DealTimelineProps {
@@ -73,6 +76,7 @@ interface DealTimelineProps {
   signals: any[];
   trackingSummaries?: Record<string, TrackingSummary>;
   inboxEmails?: any[];
+  calls?: Call[];
 }
 
 export function DealTimeline({
@@ -82,14 +86,28 @@ export function DealTimeline({
   signals,
   trackingSummaries = {},
   inboxEmails = [],
+  calls = [],
 }: DealTimelineProps) {
+  // Calls werden aus der calls-Tabelle gerendert (mit Summary + Transcript expandable).
+  // Daher activity-Eintraege mit source_type='call' herausfiltern, damit keine Duplikate erscheinen.
+  const nonCallActivities = activities.filter(
+    (a: any) => a.source_type !== "call",
+  );
+
   const items: TimelineItem[] = [
-    ...activities.map((a: any) => ({
+    ...nonCallActivities.map((a: any) => ({
       id: `act-${a.id}`,
       type: a.type || "note",
       title: a.title || a.type,
       summary: a.summary || a.description,
       date: a.created_at,
+    })),
+    ...calls.map((c) => ({
+      id: `call-${c.id}`,
+      type: "call",
+      title: "", // wird von CallTimelineItem gerendert
+      date: c.ended_at ?? c.started_at ?? c.created_at,
+      call: c,
     })),
     ...emails.map((e: any) => ({
       id: `email-${e.id}`,
@@ -140,6 +158,9 @@ export function DealTimeline({
   return (
     <div className="space-y-2">
       {items.map((item) => {
+        if (item.type === "call" && item.call) {
+          return <CallTimelineItem key={item.id} call={item.call} />;
+        }
         const Icon = typeIcons[item.type] || MessageSquare;
         const config = typeConfig[item.type] || defaultConfig;
         const tracking = item.emailId

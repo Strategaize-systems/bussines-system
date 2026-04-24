@@ -29,6 +29,7 @@ import type { DealProductWithName } from "@/app/actions/deal-products";
 import type { Product } from "@/types/products";
 import type { CadenceEnrollmentWithContext } from "@/types/cadence";
 import type { TrackingSummary } from "@/types/email-tracking";
+import type { Call } from "@/app/(app)/calls/actions";
 
 type TabId = "timeline" | "tasks" | "proposals" | "documents" | "wissen" | "edit";
 
@@ -61,6 +62,7 @@ interface DealWorkspaceProps {
   enrollments?: CadenceEnrollmentWithContext[];
   trackingSummaries?: Record<string, TrackingSummary>;
   inboxEmails?: any[];
+  calls?: Call[];
 }
 
 export function DealWorkspace({
@@ -83,6 +85,7 @@ export function DealWorkspace({
   enrollments,
   trackingSummaries = {},
   inboxEmails = [],
+  calls = [],
 }: DealWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<TabId>("timeline");
 
@@ -180,6 +183,7 @@ export function DealWorkspace({
                 signals={signals}
                 trackingSummaries={trackingSummaries}
                 inboxEmails={inboxEmails}
+                calls={calls}
               />
             )}
             {activeTab === "tasks" && (

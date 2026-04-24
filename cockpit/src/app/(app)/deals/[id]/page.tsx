@@ -9,6 +9,7 @@ import { listProducts } from "@/app/actions/products";
 import { getEnrollmentsForDeal } from "@/app/(app)/cadences/enrollment-actions";
 import { getInboxEmailsForDeal } from "@/app/(app)/emails/imap-actions";
 import { getTrackingSummaries } from "@/lib/email/tracking-queries";
+import { getCallsByDeal } from "@/app/(app)/calls/actions";
 import { DealWorkspace } from "@/components/deals/deal-workspace";
 import { notFound } from "next/navigation";
 
@@ -29,7 +30,7 @@ export default async function DealPage({
   const deal = relations.deal;
 
   const emailIds = relations.emails.map((e: any) => e.id);
-  const [stages, pipelines, tasks, meetings, documents, contacts, companies, dealsForSelect, referrals, dealProducts, activeProducts, enrollments, trackingSummaries, inboxEmails] = await Promise.all([
+  const [stages, pipelines, tasks, meetings, documents, contacts, companies, dealsForSelect, referrals, dealProducts, activeProducts, enrollments, trackingSummaries, inboxEmails, calls] = await Promise.all([
     getPipelineStages(deal.pipeline_id),
     getPipelines(),
     getTasks({ dealId: id }),
@@ -44,6 +45,7 @@ export default async function DealPage({
     getEnrollmentsForDeal(id),
     getTrackingSummaries(emailIds),
     getInboxEmailsForDeal(id),
+    getCallsByDeal(id),
   ]);
 
   return (
@@ -68,6 +70,7 @@ export default async function DealPage({
       enrollments={enrollments}
       trackingSummaries={trackingSummaries}
       inboxEmails={inboxEmails}
+      calls={calls}
     />
     </div>
   );
