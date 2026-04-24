@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyCronSecret } from "../verify-cron-secret";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { removeRecording } from "@/lib/storage/recordings";
+import { removeCallRecording } from "@/lib/storage/call-recordings";
 
 export const maxDuration = 60;
 
@@ -88,18 +89,92 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ── Calls (V5.1, SLC-514) ──────────────────────────────────────
+    const { data: expiredCalls, error: callQueryError } = await admin
+      .from("calls")
+      .select("id, recording_url, recording_status, ended_at, phone_number")
+      .eq("recording_status", "completed")
+      .not("ended_at", "is", null)
+      .lt("ended_at", cutoff.toISOString());
+
+    if (callQueryError) {
+      throw new Error(`Call query failed: ${callQueryError.message}`);
+    }
+
+    let callsDeleted = 0;
+    let callsErrors = 0;
+    const callDetails: string[] = [];
+
+    for (const call of expiredCalls ?? []) {
+      try {
+        if (call.recording_url) {
+          const result = await removeCallRecording(call.recording_url);
+          if (!result.success) {
+            console.warn(
+              `[Cron/RecordingRetention] Call-Storage removal warning for ${call.id}: ${result.error}`,
+            );
+          }
+        }
+
+        await admin
+          .from("calls")
+          .update({
+            recording_url: null,
+            recording_status: "deleted",
+          })
+          .eq("id", call.id);
+
+        await admin.from("audit_log").insert({
+          actor_id: null,
+          action: "update",
+          entity_type: "call",
+          entity_id: call.id,
+          changes: {
+            before: {
+              recording_status: call.recording_status,
+              recording_url: call.recording_url,
+            },
+            after: {
+              recording_status: "deleted",
+              recording_url: null,
+              event: "call_recording_retention_deleted",
+            },
+          },
+          context: `Call retention: deleted after ${retentionDays} days`,
+        });
+
+        callsDeleted++;
+        callDetails.push(
+          `${call.id}: deleted (${call.phone_number || "unknown"})`,
+        );
+      } catch (err) {
+        callsErrors++;
+        callDetails.push(
+          `${call.id}: error — ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    }
+
     console.log(
-      `[Cron/RecordingRetention] Retention complete: ${deleted} deleted, ${errorCount} errors (cutoff: ${cutoff.toISOString()})`,
+      `[Cron/RecordingRetention] Retention complete: meetings=${deleted}/${errorCount} calls=${callsDeleted}/${callsErrors} (cutoff: ${cutoff.toISOString()})`,
     );
 
     return NextResponse.json({
       success: true,
       retention_days: retentionDays,
       cutoff_date: cutoff.toISOString(),
-      candidates: expired?.length ?? 0,
-      deleted,
-      errors: errorCount,
-      details,
+      meetings: {
+        candidates: expired?.length ?? 0,
+        deleted,
+        errors: errorCount,
+        details,
+      },
+      calls: {
+        candidates: expiredCalls?.length ?? 0,
+        deleted: callsDeleted,
+        errors: callsErrors,
+        details: callDetails,
+      },
     });
   } catch (err) {
     console.error("[Cron/RecordingRetention] Fatal error:", err);
