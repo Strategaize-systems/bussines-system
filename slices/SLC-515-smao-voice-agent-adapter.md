@@ -3,7 +3,7 @@
 ## Meta
 - Feature: FEAT-514
 - Priority: Medium
-- Status: planned
+- Status: done
 - Created: 2026-04-22
 
 ## Goal

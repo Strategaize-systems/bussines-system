@@ -128,7 +128,7 @@
 | FEAT-511 | Asterisk PBX Deployment + SIP-Trunk-Adapter | done | — | 2026-04-22 |
 | FEAT-512 | Click-to-Call aus Deal-Workspace | done | — | 2026-04-22 |
 | FEAT-513 | Anruf-Aufnahme → Whisper → Summary → Deal-Activity | done | — | 2026-04-22 |
-| FEAT-514 | SMAO Voice-Agent Adapter (vorbereitet) | planned | — | 2026-04-22 |
+| FEAT-514 | SMAO Voice-Agent Adapter (vorbereitet) | done | — | 2026-04-22 |
 
 ## V7 Features (Multi-User + Erweiterung — planned)
 

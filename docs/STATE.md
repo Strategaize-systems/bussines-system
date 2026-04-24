@@ -9,14 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: SLC-514 Call-Recording-Pipeline E2E verifiziert (RPT-197). 4 Issues im Zuge gefunden + gefixt: ISSUE-039 Volume-Permissions, codec_opus fehlt (ulaw-only Workaround), direct_media=false, ISSUE-040 Storage-Grants. Pipeline produziert Transcript + Bedrock-Summary + Activity korrekt.
-- Current Phase: V5.1 Implementation (4/5 Slices done)
+- High-Level State: qa
+- Current Focus: SLC-515 SMAO Voice-Agent Adapter implementiert (RPT-198). VoiceAgentProvider-Interface + SMAO/Synthflow-Adapter + Webhook-Endpoint + Klassifikations-Aktionen (urgent→Push, callback/meeting_request→Task, info→Activity). Dialplan-Routing bereits in SLC-512 korrekt verdrahtet (SMAO_ENABLED globals + [smao-endpoint] bei true). Keine Migration. TypeScript build clean.
+- Current Phase: V5.1 QA-Phase (5/5 Slices implementiert, Gesamt-QA ausstehend)
 
 ## Immediate Next Steps
-1. /backend SLC-515 (SMAO Voice-Agent Adapter — letzter V5.1 Slice)
-2. Optional: codec_opus.so nachinstallieren fuer bessere Audio-Qualitaet (aktuell ulaw-only Fallback)
-3. Optional: echter SIP-Trunk-Provider konfigurieren fuer ausgehende Anrufe zu echten Nummern
+1. /qa SLC-515 (einzeln) — Acceptance-Criteria AC1..AC11 pruefen, curl-Smoke-Test
+2. /qa V5.1 Gesamt (alle 5 Slices zusammen) vor /final-check
+3. /final-check V5.1 → /go-live → /deploy REL-016
 
 ## Active Scope
 **V5.1 — Asterisk Telefonie + SMAO Voice-Agent-Vorbereitung (requirements done):**

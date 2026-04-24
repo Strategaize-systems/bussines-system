@@ -181,4 +181,4 @@
 | SLC-512 | [Asterisk Docker-Setup + Traefik-WSS](SLC-512-asterisk-docker-setup.md) | FEAT-511 | done | Blocker | 2026-04-22 |
 | SLC-513 | [WebRTC Click-to-Call + In-Call-Widget](SLC-513-webrtc-click-to-call.md) | FEAT-512 | done | High | 2026-04-22 |
 | SLC-514 | [Call-Recording-Pipeline](SLC-514-call-recording-pipeline.md) | FEAT-513 | done | High | 2026-04-22 |
-| SLC-515 | [SMAO Voice-Agent Adapter + Webhook](SLC-515-smao-voice-agent-adapter.md) | FEAT-514 | planned | Medium | 2026-04-22 |
+| SLC-515 | [SMAO Voice-Agent Adapter + Webhook](SLC-515-smao-voice-agent-adapter.md) | FEAT-514 | done | Medium | 2026-04-22 |

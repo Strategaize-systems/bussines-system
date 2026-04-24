@@ -1477,7 +1477,7 @@
       "title": "SMAO Voice-Agent Adapter (vorbereitet, nicht verbunden)",
       "type": "feature",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.1",
       "description": "FEAT-514: VoiceAgentProvider-Interface. SMAO als erste Implementierung. Webhook POST /api/webhooks/voice-agent. Dialplan-Routing vorbereitet (SMAO_ENABLED=false default). Provider-Wechsel ohne Rewrite.",
       "createdAt": "2026-04-22"

@@ -1,0 +1,17 @@
+{
+  "caller": {
+    "number": "+491701234567",
+    "name": "Testkontakt SMAO"
+  },
+  "call": {
+    "duration_seconds": 42,
+    "recording_url": null
+  },
+  "transcript": "Guten Tag, hier ist Testkontakt. Ich wollte mich nochmal wegen unseres Angebots melden und bitte um Rueckruf auf dieser Nummer.",
+  "classification": "callback",
+  "confidence": 0.92,
+  "metadata": {
+    "provider": "smao",
+    "session_id": "sample-test-session"
+  }
+}
