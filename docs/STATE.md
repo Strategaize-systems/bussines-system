@@ -10,12 +10,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5.1 SLC-513 done (Click-to-Call E2E verifiziert, MixMonitor Recording funktioniert mit X-Call-ID). Naechster Schritt: /qa SLC-513.
-- Current Phase: V5.1 Implementation (3/5 Slices done)
+- Current Focus: V5.1 SLC-514 done (Call-Recording-Pipeline: Upload+Whisper+Bedrock Summary+Timeline-Integration+Retention). Naechster Schritt: /qa SLC-514 dann E2E-Test auf Hetzner + Coolify-Cron-Setup.
+- Current Phase: V5.1 Implementation (4/5 Slices done)
 
 ## Immediate Next Steps
-1. /qa SLC-513
-2. /backend SLC-514 (Call-Recording-Pipeline)
+1. /qa SLC-514 (inkl. E2E-Call-to-Summary-Test)
+2. Coolify-Cron-Job fuer /api/cron/call-processing einrichten (siehe RPT-195)
 3. /backend SLC-515 (SMAO Voice-Agent Adapter)
 
 ## Active Scope

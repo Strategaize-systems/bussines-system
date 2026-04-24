@@ -1467,7 +1467,7 @@
       "title": "Anruf-Aufnahme → Whisper → Summary → Deal-Activity",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.1",
       "description": "FEAT-513: Audio-Pipeline fuer Telefonate. Bestehenden Whisper-Adapter + Bedrock-Summary nutzen. Call-Activity mit type=call in Timeline. Audio-Retention konfigurierbar.",
       "createdAt": "2026-04-22"

@@ -1300,7 +1300,8 @@ Teil des Classify-Cron (/api/cron/classify)
 | `/api/cron/followups` | POST | KI-Wiedervorlagen generieren | CRON_SECRET |
 | `/api/cron/retention` | POST | E-Mail Retention Cleanup | CRON_SECRET |
 | `/api/cron/meeting-recording-poll` | POST | Jibri-MP4 Upload nach Supabase Storage (alle 2 Min) | CRON_SECRET |
-| `/api/cron/recording-retention` | POST | Recordings >30d loeschen (taeglich 04:00 UTC) | CRON_SECRET |
+| `/api/cron/call-processing` | POST | Asterisk-WAV → Upload + Whisper + Bedrock Summary + Activity (alle 2 Min, V5.1/SLC-514) | CRON_SECRET |
+| `/api/cron/recording-retention` | POST | Meeting + Call Recordings >30d loeschen (taeglich 04:00 UTC, V5.1-Erweiterung) | CRON_SECRET |
 | `/api/webhooks/calcom` | POST | Cal.com Webhook Receiver | CALCOM_WEBHOOK_SECRET |
 
 ### Bestehende API Routes (erweitert)
