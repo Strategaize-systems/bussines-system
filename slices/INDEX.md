@@ -182,3 +182,13 @@
 | SLC-513 | [WebRTC Click-to-Call + In-Call-Widget](SLC-513-webrtc-click-to-call.md) | FEAT-512 | done | High | 2026-04-22 |
 | SLC-514 | [Call-Recording-Pipeline](SLC-514-call-recording-pipeline.md) | FEAT-513 | done | High | 2026-04-22 |
 | SLC-515 | [SMAO Voice-Agent Adapter + Webhook](SLC-515-smao-voice-agent-adapter.md) | FEAT-514 | done | Medium | 2026-04-22 |
+
+## V5.2 Slices (Compliance-Sprint)
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-521 | [Recording-Retention 7d Hardening](SLC-521-recording-retention-hardening.md) | FEAT-521 | planned | High | 2026-04-25 |
+| SLC-522 | [Azure-Whisper-Adapter Implementierung](SLC-522-azure-whisper-adapter.md) | FEAT-522 | planned | High | 2026-04-25 |
+| SLC-523 | [Compliance-Templates Vertical Slice](SLC-523-compliance-templates.md) | FEAT-523 | planned | High | 2026-04-25 |
+| SLC-524 | [MeetingTimelineItem (UI-Parity)](SLC-524-meeting-timeline-item.md) | FEAT-524 | planned | Medium | 2026-04-25 |
+| SLC-525 | [DSGVO-Compliance-Doku](SLC-525-dsgvo-compliance-doc.md) | FEAT-525 | planned | Medium | 2026-04-25 |

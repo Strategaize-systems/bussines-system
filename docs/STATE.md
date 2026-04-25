@@ -9,15 +9,19 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: architecture
-- Current Focus: V5.2 Compliance-Sprint Architecture done 2026-04-25. 5 DECs (DEC-083..087) entschieden, 1 Migration (MIG-022) festgelegt, 5 Slices (SLC-521..525) empfohlen mit klarer Abhaengigkeit. ARCHITECTURE.md um V5.2-Section erweitert. Naechster Schritt: /slice-planning V5.2.
-- Current Phase: V5.2 Architecture done — Slice-Planning pending. Pre-Go-Live-Tasks (Smoke-Test V5.1, post-launch V5.1) parallel offen.
+- High-Level State: slice-planning
+- Current Focus: V5.2 Compliance-Sprint Slice-Planning done 2026-04-25. 5 Slice-Specs (SLC-521..525) im Repo unter /slices/, alle mit AC, Dependencies, Files-to-Touch, QA-Fokus und Micro-Tasks. /slices/INDEX.md aktualisiert. Naechster Schritt: /backend SLC-521 (Retention-Hardening, kleinster Slice) ODER /backend SLC-522 (Azure-Whisper-Adapter) — beide unabhaengig und parallelisierbar.
+- Current Phase: V5.2 Slice-Planning done — Implementation pending. Pre-Go-Live-Tasks (Smoke-Test V5.1, post-launch V5.1) parallel offen.
 
 ## Immediate Next Steps
-1. /slice-planning V5.2 — 5 Slices SLC-521..525 strukturiert ausdefinieren (AC, Dependencies, Micro-Tasks, QA-Fokus). Empfohlene Reihenfolge per ARCHITECTURE.md: SLC-521 + SLC-522 (parallel), dann SLC-523 + SLC-524 (parallel), dann SLC-525 (zuletzt).
-2. Smoke-Test V5.1 nach User-Redeploy (parallel): Echo-Test 600, Webhook-Disabled-Check (404), Call-Timeline-Render, Asterisk PJSIP-Endpoints, Retention-Cron-Log
-3. /post-launch V5.1 nach 24-48h Live-Beobachtung
-4. Pre-Go-Live (vor erstem externen Recording, ausserhalb V5.2): Azure-Account anlegen, AZURE_OPENAI_*-ENVs in Coolify setzen, TRANSCRIPTION_PROVIDER auf azure umstellen
+1. /backend SLC-521 (Recording-Retention 7d) — kleinster Slice, ~0.5 Tag, kein DB. Ideal als Aufwaermer.
+2. /backend SLC-522 (Azure-Whisper-Adapter) — parallel zu SLC-521, ~1.5 Tage. Kein DB, aber Adapter + Tests.
+3. /backend SLC-523 (Compliance-Templates) — nach SLC-521+522, ~2 Tage, MIG-022 + Backend + Frontend Vertical Slice.
+4. /frontend SLC-524 (MeetingTimelineItem) — parallel zu SLC-523, ~1 Tag, UI-only.
+5. /docs SLC-525 (DSGVO-Compliance-Doku) — LAST, nach SLC-521..524 done, ~0.5 Tag.
+6. Smoke-Test V5.1 nach User-Redeploy (parallel zu V5.2-Implementierung): Echo-Test 600, Webhook-Disabled-Check (404), Call-Timeline-Render, Retention-Cron-Log
+7. /post-launch V5.1 nach 24-48h Live-Beobachtung
+8. Pre-Go-Live (vor erstem externen Recording, ausserhalb V5.2): Azure-Account anlegen, AZURE_OPENAI_*-ENVs in Coolify setzen, TRANSCRIPTION_PROVIDER auf azure umstellen
 
 ## Active Scope
 **V5.1 — Asterisk Telefonie + SMAO Voice-Agent-Vorbereitung (released, Internal-Test-Mode):**
