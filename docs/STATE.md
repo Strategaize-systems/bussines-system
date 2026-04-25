@@ -10,18 +10,17 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5.2 Compliance-Sprint Implementation laeuft 2026-04-25. SLC-521 + SLC-522 done. Vitest als Test-Framework etabliert (8 Unit-Tests grün fuer AzureWhisperProvider). Azure-Adapter voll implementiert, ENV-validiert, Audit-Log analog OpenAI-Pfad. TRANSCRIPTION_PROVIDER bleibt openai (Default), Switch erst Pre-Go-Live mit Azure-Account. Naechster Schritt: /qa SLC-522, dann /backend SLC-523 (Compliance-Templates Vertical Slice mit MIG-022).
-- Current Phase: V5.2 Implementation 2/5 Slices done. Pre-Go-Live-Tasks (Smoke-Test V5.1, post-launch V5.1) parallel offen.
+- Current Focus: V5.2 Compliance-Sprint Implementation laeuft 2026-04-25. SLC-521 + SLC-522 + SLC-523 done. SLC-523 als Vertical Slice (DB + Backend + Frontend) fertig: MIG-022 auf Hetzner angewendet (Tabelle compliance_templates mit 3 Default-Rows), `/settings/compliance` Page mit 3 Template-Bloecken (Edit/Copy/Reset), Mini-Variablen-Engine in `lib/compliance/variables.ts` (8 Unit-Tests gruen). Naechster Schritt: /qa SLC-523.
+- Current Phase: V5.2 Implementation 3/5 Slices done. Pre-Go-Live-Tasks (Smoke-Test V5.1, post-launch V5.1) parallel offen.
 
 ## Immediate Next Steps
-1. /qa SLC-522 — Test-Suite-Pass-Verifikation, Adapter-Code-Review, OpenAI-Pfad Regression-Check.
-2. /backend SLC-523 (Compliance-Templates Vertical Slice) — ~2 Tage. MIG-022 zuerst (SSH), dann Backend + Frontend in einem Slice.
-3. /backend SLC-523 (Compliance-Templates) — nach SLC-521+522, ~2 Tage, MIG-022 + Backend + Frontend Vertical Slice.
-4. /frontend SLC-524 (MeetingTimelineItem) — parallel zu SLC-523, ~1 Tag, UI-only.
-5. /docs SLC-525 (DSGVO-Compliance-Doku) — LAST, nach SLC-521..524 done, ~0.5 Tag.
-6. Smoke-Test V5.1 nach User-Redeploy (parallel zu V5.2-Implementierung): Echo-Test 600, Webhook-Disabled-Check (404), Call-Timeline-Render, Retention-Cron-Log
-7. /post-launch V5.1 nach 24-48h Live-Beobachtung
-8. Pre-Go-Live (vor erstem externen Recording, ausserhalb V5.2): Azure-Account anlegen, AZURE_OPENAI_*-ENVs in Coolify setzen, TRANSCRIPTION_PROVIDER auf azure umstellen
+1. /qa SLC-523 — DB-Verifikation auf Hetzner, Page-Render-Test in Browser, Edit+Save+Reload Round-Trip, Reset-Button, Copy-to-Clipboard, RLS-Check.
+2. /frontend SLC-524 (MeetingTimelineItem) — ~1 Tag, UI-only Parity zu CallTimelineItem.
+3. /docs SLC-525 (DSGVO-Compliance-Doku) — LAST, nach SLC-521..524 done, ~0.5 Tag.
+4. Gesamt-/qa V5.2 nach allen 5 Slices done, dann /final-check + /go-live + /deploy + /post-launch in einem Rutsch.
+5. Smoke-Test V5.1 nach User-Redeploy (parallel zu V5.2-Implementierung): Echo-Test 600, Webhook-Disabled-Check (404), Call-Timeline-Render, Retention-Cron-Log
+6. /post-launch V5.1 nach 24-48h Live-Beobachtung
+7. Pre-Go-Live (vor erstem externen Recording, ausserhalb V5.2): Azure-Account anlegen, AZURE_OPENAI_*-ENVs in Coolify setzen, TRANSCRIPTION_PROVIDER auf azure umstellen
 
 ## Active Scope
 **V5.1 — Asterisk Telefonie + SMAO Voice-Agent-Vorbereitung (released, Internal-Test-Mode):**

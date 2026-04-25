@@ -169,7 +169,7 @@
 - Rollback Notes: Theoretisch REVOKE der Grants + Restore Policies aus MIG-020 — nicht empfohlen, da Pre-Fix-Zustand non-funktional war.
 
 ### MIG-022 — V5.2 Compliance-Templates Schema
-- Date: 2026-04-25 (geplant fuer SLC-523)
+- Date: 2026-04-25 (applied — SLC-523)
 - Scope: 1 neue Tabelle `compliance_templates` mit Spalten: `template_key TEXT PRIMARY KEY` (CHECK in (`'meeting_invitation'`, `'email_footer'`, `'calcom_booking'`)), `body_markdown TEXT NOT NULL` (User-editierter Wert), `default_body_markdown TEXT NOT NULL` (Skill-mitgelieferter Default fuer Reset-Button), `updated_by UUID NULL REFERENCES profiles(id)`, `updated_at TIMESTAMPTZ DEFAULT now()`. RLS-Policy `authenticated_full_access` analog `user_settings`. 3 Default-Rows als INSERT mit ON CONFLICT DO NOTHING (idempotent).
 - Reason: V5.2 FEAT-523 (Einwilligungstexte als Templates) braucht persistenten Speicher fuer 3 Template-Bloecke. DEC-083 hat eigene Tabelle (statt user_settings-Erweiterung) festgelegt — saubere Trennung, einfacher Reset-auf-Default, klare Schema-Validierung pro Spalte.
 - Affected Areas: Settings-Page `/settings/compliance` (neu), Server Actions `getComplianceTemplate` / `updateComplianceTemplate` (neu in `cockpit/src/app/(app)/settings/compliance/actions.ts`). Keine Aenderung an bestehenden Tabellen.

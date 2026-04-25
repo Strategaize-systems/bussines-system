@@ -1507,7 +1507,7 @@
       "title": "Einwilligungstexte als Templates + Settings-Page",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V5.2",
       "description": "FEAT-523: /settings/compliance Settings-Page mit 3 Template-Bloecken (Meeting-Einladung, E-Mail-Footer, Cal.com-Buchungsbestaetigung). Default-Texte als Markdown in lib/compliance/consent-templates.ts. Persistenz in system_settings (oder neue compliance_templates-Tabelle, /architecture entscheidet). Variablen-Engine mit {user_name}, {firma}, {kontakt_email} etc. Copy-to-Clipboard + Reset auf Default. Kein Auto-Anhaengen an Workflows.",
       "createdAt": "2026-04-25"
