@@ -1517,7 +1517,7 @@
       "title": "MeetingTimelineItem analog CallTimelineItem (UI-Parity)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V5.2",
       "description": "FEAT-524: Neue Komponente meeting-timeline-item.tsx analog call-timeline-item.tsx. Expand-Bereich rendert Decisions, Action Items, Key Topics (Badges), Transkript-Toggle. Datenquelle: bestehende Meeting-Summary-Felder (DEC-082 hat key_topics ergaenzt). Backwards Compatibility fuer alte Meetings ohne neue Felder. Identisches Visual-Design wie CallTimelineItem. Integration in unified-timeline.tsx fuer activity_type=meeting.",
       "createdAt": "2026-04-25"

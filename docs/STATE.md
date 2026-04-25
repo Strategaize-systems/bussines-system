@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5.2 Compliance-Sprint Implementation laeuft 2026-04-25. SLC-521 + SLC-522 + SLC-523 done + QA PASS. SLC-523 als Vertical Slice (DB + Backend + Frontend) fertig: MIG-022 auf Hetzner angewendet (Tabelle compliance_templates mit 3 Default-Rows, RLS verifiziert), `/settings/compliance` Page mit 3 Template-Bloecken (Edit/Copy/Reset), Mini-Variablen-Engine in `lib/compliance/variables.ts` (8 Unit-Tests gruen). QA inline-Fix: AC9 (Beispiel-Wert) in ComplianceTemplateBlock ergaenzt. Naechster Schritt: /frontend SLC-524 (MeetingTimelineItem UI-Parity).
-- Current Phase: V5.2 Implementation 3/5 Slices done. Pre-Go-Live-Tasks (Smoke-Test V5.1, post-launch V5.1) parallel offen.
+- Current Focus: V5.2 Compliance-Sprint Implementation laeuft 2026-04-25. SLC-521 + SLC-522 + SLC-523 + SLC-524 done. SLC-524 (MeetingTimelineItem UI-Parity) implementiert: Neue Komponente `meeting-timeline-item.tsx` analog CallTimelineItem mit Calendar-Icon + purple-Theme + "Meeting"-Badge, rendert outcome/decisions/action_items/next_step/key_topics/transcript aus `meeting.ai_summary`. Robust gegen `ai_summary === null` und `summary_status === undefined` (Pre-Bedrock-Meetings). Integration in `deal-timeline.tsx` und `unified-timeline.tsx` (Special-Case fuer type === 'meeting'). TypeScript + Build + Vitest 16/16 gruen. Naechster Schritt: /qa SLC-524.
+- Current Phase: V5.2 Implementation 4/5 Slices done. Nur noch SLC-525 (DSGVO-Doku) offen. Pre-Go-Live-Tasks (Smoke-Test V5.1, post-launch V5.1) parallel offen.
 
 ## Immediate Next Steps
-1. /frontend SLC-524 (MeetingTimelineItem) — ~1 Tag, UI-only Parity zu CallTimelineItem (DEC-087: keine Mapping-Layer, Schemas bit-identisch).
-3. /docs SLC-525 (DSGVO-Compliance-Doku) — LAST, nach SLC-521..524 done, ~0.5 Tag.
-4. Gesamt-/qa V5.2 nach allen 5 Slices done, dann /final-check + /go-live + /deploy + /post-launch in einem Rutsch.
+1. /qa SLC-524 — pruefe MeetingTimelineItem-Komponente (AC1-AC10, Robustheit gegen alte Meetings)
+2. /docs SLC-525 (DSGVO-Compliance-Doku) — nach /qa SLC-524, ~0.5 Tag, /compliance-Skill ausfuehren
+3. Gesamt-/qa V5.2 nach allen 5 Slices done, dann /final-check + /go-live + /deploy + /post-launch in einem Rutsch.
 5. Smoke-Test V5.1 nach User-Redeploy (parallel zu V5.2-Implementierung): Echo-Test 600, Webhook-Disabled-Check (404), Call-Timeline-Render, Retention-Cron-Log
 6. /post-launch V5.1 nach 24-48h Live-Beobachtung
 7. Pre-Go-Live (vor erstem externen Recording, ausserhalb V5.2): Azure-Account anlegen, AZURE_OPENAI_*-ENVs in Coolify setzen, TRANSCRIPTION_PROVIDER auf azure umstellen

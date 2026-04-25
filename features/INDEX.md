@@ -137,7 +137,7 @@
 | FEAT-521 | Recording-Retention auf 7 Tage hardening | done | — | 2026-04-25 |
 | FEAT-522 | Azure-Whisper-Adapter Implementierung (Code-Ready) | done | — | 2026-04-25 |
 | FEAT-523 | Einwilligungstexte als Templates + Settings-Page | done | — | 2026-04-25 |
-| FEAT-524 | MeetingTimelineItem analog CallTimelineItem (UI-Parity) | planned | — | 2026-04-25 |
+| FEAT-524 | MeetingTimelineItem analog CallTimelineItem (UI-Parity) | done | — | 2026-04-25 |
 | FEAT-525 | DSGVO-Compliance-Doku (via /compliance Skill) | planned | — | 2026-04-25 |
 
 ## V7 Features (Multi-User + Erweiterung — planned)

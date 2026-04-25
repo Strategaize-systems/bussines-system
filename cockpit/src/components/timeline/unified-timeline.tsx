@@ -14,7 +14,9 @@ import {
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { TrackingIndicator } from "@/components/email/tracking-badge";
+import { MeetingTimelineItem } from "@/components/meetings/meeting-timeline-item";
 import type { TrackingSummary } from "@/types/email-tracking";
+import type { Meeting } from "@/app/(app)/meetings/actions";
 
 const typeIcons: Record<string, typeof MessageSquare> = {
   note: MessageSquare,
@@ -59,6 +61,7 @@ interface TimelineItem {
   summary?: string;
   date: string;
   emailId?: string;
+  meeting?: Meeting;
 }
 
 interface UnifiedTimelineProps {
@@ -101,13 +104,9 @@ export function UnifiedTimeline({
     ...meetings.map((m: any) => ({
       id: `meeting-${m.id}`,
       type: "meeting",
-      title: m.title,
-      summary: m.location
-        ? `Ort: ${m.location}`
-        : m.agenda
-          ? m.agenda.substring(0, 100)
-          : undefined,
-      date: m.scheduled_at,
+      title: "", // wird von MeetingTimelineItem gerendert
+      date: m.scheduled_at ?? m.created_at,
+      meeting: m as Meeting,
     })),
     ...signals.map((s: any) => ({
       id: `signal-${s.id}`,
@@ -186,6 +185,9 @@ export function UnifiedTimeline({
       {/* Timeline items */}
       <div className="space-y-1">
         {filtered.map((item) => {
+          if (item.type === "meeting" && item.meeting) {
+            return <MeetingTimelineItem key={item.id} meeting={item.meeting} />;
+          }
           const Icon = typeIcons[item.type] || MessageSquare;
           const colorClass = typeColors[item.type] || "bg-slate-50 text-slate-500";
           const tracking = item.emailId

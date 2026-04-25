@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { TrackingIndicator } from "@/components/email/tracking-badge";
 import { CallTimelineItem } from "@/components/calls/call-timeline-item";
+import { MeetingTimelineItem } from "@/components/meetings/meeting-timeline-item";
 import type { Meeting } from "@/app/(app)/meetings/actions";
 import type { TrackingSummary } from "@/types/email-tracking";
 import type { Call } from "@/app/(app)/calls/actions";
@@ -67,6 +68,7 @@ interface TimelineItem {
   date: string;
   emailId?: string;
   call?: Call;
+  meeting?: Meeting;
 }
 
 interface DealTimelineProps {
@@ -127,13 +129,9 @@ export function DealTimeline({
     ...meetings.map((m) => ({
       id: `meeting-${m.id}`,
       type: "meeting",
-      title: m.title,
-      summary: m.location
-        ? `Ort: ${m.location}`
-        : m.agenda
-          ? m.agenda.substring(0, 100)
-          : undefined,
-      date: m.scheduled_at,
+      title: "", // wird von MeetingTimelineItem gerendert
+      date: m.scheduled_at ?? m.created_at,
+      meeting: m,
     })),
     ...signals.map((s: any) => ({
       id: `signal-${s.id}`,
@@ -160,6 +158,9 @@ export function DealTimeline({
       {items.map((item) => {
         if (item.type === "call" && item.call) {
           return <CallTimelineItem key={item.id} call={item.call} />;
+        }
+        if (item.type === "meeting" && item.meeting) {
+          return <MeetingTimelineItem key={item.id} meeting={item.meeting} />;
         }
         const Icon = typeIcons[item.type] || MessageSquare;
         const config = typeConfig[item.type] || defaultConfig;
