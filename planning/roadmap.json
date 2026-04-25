@@ -95,29 +95,29 @@
       "id": "v5-2",
       "name": "V5.2",
       "status": "planned",
-      "summary": "E-Mail Composing Studio: 3-Panel-Layout (Vorlagen + Erfassen + Live-Preview), Systemvorlagen, eigene Vorlagen, KI-Diktat, Branding, Echtzeit-Vorschau",
+      "summary": "Compliance-Sprint (DEC-081): Organisatorische Consent-Strategie (Meeting/E-Mail-first), Rohdaten-Retention 30→7 Tage, TRANSCRIPTION_PROVIDER Azure OpenAI EU, Einwilligungstexte als Templates, MeetingTimelineItem-Parity. Vorbereitung fuer V5.1 SMAO-Go-Live.",
       "order": 14
-    },
-    {
-      "id": "v7",
-      "name": "V7",
-      "status": "planned",
-      "summary": "Multi-User + Erweiterung: Routing/Territories, Teamlead-Rolle mit Teamsicht, Workflow-Automation, Kampagnen-Attribution",
-      "order": 15
     },
     {
       "id": "v6",
       "name": "V6",
       "status": "released",
       "summary": "Zielsetzung + Performance-Tracking: Produkt-Stammdaten, Ziel-Objekt-Modell (Umsatz/Deal-Count/Abschlussquote), Persoenliches Performance-Cockpit (Soll-Ist + Prognose + KI-Empfehlung), KPI-Snapshots, CSV-Import, Tages-Check mit Activity-KPIs",
-      "order": 13
+      "order": 15
     },
     {
       "id": "v6-1",
       "name": "V6.1",
       "status": "released",
       "summary": "Performance Premium UI: Style Guide V2 auf /performance, 4-Kachel-Layout (Goal-Cards + Prognose), Label Abschlussquote, Wochen-Check mit Tagesaufloesung",
-      "order": 14
+      "order": 16
+    },
+    {
+      "id": "v7",
+      "name": "V7",
+      "status": "planned",
+      "summary": "Multi-User + Erweiterung: Routing/Territories, Teamlead-Rolle mit Teamsicht, Workflow-Automation, Kampagnen-Attribution",
+      "order": 17
     }
   ]
 }

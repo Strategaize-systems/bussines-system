@@ -486,9 +486,9 @@
       "title": "Jigasi — Telefon-Integration für Jitsi (SIP/PSTN Gateway)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V5.1",
-      "description": "Jigasi als SIP-Gateway für Jitsi: Telefonnummern direkt aus dem System anrufen, Gespräche aufnehmen + transkribieren. Benötigt SIP-Trunk-Provider (z.B. sipgate). Telefonate durchlaufen gleiche Pipeline wie Video-Meetings: Aufnahme → Whisper → LLM-Summary → Deal-Activity.",
+      "description": "Erfuellt durch V5.1 ueber Asterisk-Ansatz statt Jigasi (DEC-080): Telefonnummern direkt aus dem System anrufen, Gespraeche aufnehmen + transkribieren. Pipeline: Asterisk WAV → Whisper → Bedrock-Summary → Deal-Activity. Identisches Outcome wie ursprueglich gefordert, anderer technischer Weg.",
       "createdAt": "2026-04-04"
     },
     {
@@ -1447,9 +1447,9 @@
       "title": "Asterisk PBX Deployment + SIP-Trunk-Adapter",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.1",
-      "description": "FEAT-511: Asterisk Docker-Container im Compose-Stack. PJSIP fuer WebRTC. SIP-Trunk via ENV. MixMonitor fuer automatische Aufnahme. Intern testbar ohne Trunk.",
+      "description": "FEAT-511: Asterisk Docker-Container im Compose-Stack. PJSIP fuer WebRTC. SIP-Trunk via ENV. MixMonitor fuer automatische Aufnahme. SLC-512 deployed in REL-016 (2026-04-24).",
       "createdAt": "2026-04-22"
     },
     {
@@ -1457,9 +1457,9 @@
       "title": "Click-to-Call aus Deal-Workspace (WebRTC)",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.1",
-      "description": "FEAT-512: Anrufen-Button im Deal-Workspace. WebRTC-Client (SIP.js). In-Call-Widget (Waehlen/Klingeln/Verbunden/Auflegen). Kontakt-Nummer aus Deal-Kontext.",
+      "description": "FEAT-512: Anrufen-Button im Deal-Workspace. WebRTC-Client (SIP.js). In-Call-Widget (Waehlen/Klingeln/Verbunden/Auflegen). Kontakt-Nummer aus Deal-Kontext. SLC-513 deployed in REL-016 (2026-04-24).",
       "createdAt": "2026-04-22"
     },
     {
