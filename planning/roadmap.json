@@ -99,25 +99,32 @@
       "order": 14
     },
     {
+      "id": "v5-3",
+      "name": "V5.3",
+      "status": "planned",
+      "summary": "E-Mail Composing Studio: 3-Panel-Layout (Vorlagen + Erfassen + Live-Preview), Systemvorlagen, eigene Vorlagen, KI-Diktat, Branding, Echtzeit-Vorschau. Urspruenglich als V5.2 geplant, durch DEC-081 Compliance-Sprint nachgelagert.",
+      "order": 15
+    },
+    {
       "id": "v6",
       "name": "V6",
       "status": "released",
       "summary": "Zielsetzung + Performance-Tracking: Produkt-Stammdaten, Ziel-Objekt-Modell (Umsatz/Deal-Count/Abschlussquote), Persoenliches Performance-Cockpit (Soll-Ist + Prognose + KI-Empfehlung), KPI-Snapshots, CSV-Import, Tages-Check mit Activity-KPIs",
-      "order": 15
+      "order": 16
     },
     {
       "id": "v6-1",
       "name": "V6.1",
       "status": "released",
       "summary": "Performance Premium UI: Style Guide V2 auf /performance, 4-Kachel-Layout (Goal-Cards + Prognose), Label Abschlussquote, Wochen-Check mit Tagesaufloesung",
-      "order": 16
+      "order": 17
     },
     {
       "id": "v7",
       "name": "V7",
       "status": "planned",
       "summary": "Multi-User + Erweiterung: Routing/Territories, Teamlead-Rolle mit Teamsicht, Workflow-Automation, Kampagnen-Attribution",
-      "order": 17
+      "order": 18
     }
   ]
 }
