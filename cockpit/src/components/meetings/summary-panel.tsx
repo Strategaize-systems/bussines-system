@@ -139,6 +139,23 @@ export function SummaryPanel({
                 <p className="text-sm font-medium">{aiSummary.next_step}</p>
               </div>
             )}
+
+            {/* Key Topics */}
+            {aiSummary.key_topics && aiSummary.key_topics.length > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <Target className="h-3 w-3" />
+                  Kernthemen
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {aiSummary.key_topics.map((topic, i) => (
+                    <Badge key={i} variant="secondary" className="text-xs">
+                      {topic}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

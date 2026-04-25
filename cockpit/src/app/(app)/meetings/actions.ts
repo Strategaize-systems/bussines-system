@@ -25,6 +25,7 @@ export type AiSummary = {
   decisions?: string[];
   action_items?: (string | ActionItem)[];
   next_step?: string;
+  key_topics?: string[];
 };
 
 export type ReminderSentEntry = {

@@ -16,6 +16,10 @@ export const MeetingSummarySchema = z.object({
   decisions: z.array(z.string()).describe("Getroffene Entscheidungen"),
   action_items: z.array(ActionItemSchema).describe("Vereinbarte naechste Schritte"),
   next_step: z.string().describe("Wichtigster naechster Schritt"),
+  key_topics: z
+    .array(z.string())
+    .optional()
+    .describe("Kernthemen / Stichworte des Meetings fuer Suche und Tagging"),
 });
 
 export type MeetingSummary = z.infer<typeof MeetingSummarySchema>;
@@ -31,7 +35,8 @@ Das JSON muss exakt dieses Schema haben:
   "outcome": "Kernergebnis des Meetings in 1-3 Saetzen (max 500 Zeichen)",
   "decisions": ["Entscheidung 1", "Entscheidung 2"],
   "action_items": [{"owner": "Name oder null", "task": "Aufgabe"}],
-  "next_step": "Wichtigster naechster Schritt"
+  "next_step": "Wichtigster naechster Schritt",
+  "key_topics": ["Thema 1", "Thema 2"]
 }
 
 Regeln:
@@ -39,6 +44,7 @@ Regeln:
 - decisions: Alle klar getroffenen Entscheidungen. Leeres Array wenn keine erkennbar.
 - action_items: Konkrete To-Dos mit Verantwortlichem (owner=null wenn nicht klar). Mindestens 1 wenn erkennbar.
 - next_step: Der wichtigste einzelne naechste Schritt nach dem Meeting.
+- key_topics: 3-6 kurze Stichworte, die das Meeting inhaltlich kennzeichnen. Keine Saetze. Dienen Suche und Tagging.
 
 Schreibe auf Deutsch. Sei konkret, nicht generisch. Beziehe dich auf den Deal-Kontext wenn vorhanden.`;
 
