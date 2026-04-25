@@ -1378,8 +1378,8 @@ CALCOM_WEBHOOK_SECRET=...              # Webhook-Verifizierung
 CALCOM_BASE_URL=http://calcom:3000     # Interner URL (Container-zu-Container)
 NEXT_PUBLIC_CALCOM_URL=https://cal.strategaizetransition.com  # Externer URL
 
-# Recording (V4.1 SLC-415 NEU)
-RECORDING_RETENTION_DAYS=30            # Tage bis Recording-Loeschung (Default 30, DEC-043)
+# Recording (V4.1 SLC-415 NEU; V5.2 FEAT-521: Default auf 7 reduziert, DSGVO-Datensparsamkeit)
+RECORDING_RETENTION_DAYS=7             # Tage bis Recording-Loeschung (V5.2 Default 7, vorher 30, DEC-043)
 ```
 
 ## V4 Server Sizing
@@ -1961,8 +1961,8 @@ OPENAI_API_KEY=sk-...                       # schon aus V3/V4 vorhanden
 AZURE_WHISPER_ENDPOINT=
 AZURE_WHISPER_KEY=
 
-# Recording Retention (V4.1 NEU)
-RECORDING_RETENTION_DAYS=30                 # konfigurierbar (DEC-043)
+# Recording Retention (V4.1 NEU; V5.2 FEAT-521: Default auf 7 reduziert)
+RECORDING_RETENTION_DAYS=7                  # konfigurierbar (V5.2 Default 7, vorher 30, DEC-043)
 SUPABASE_STORAGE_RECORDINGS_BUCKET=meeting-recordings
 
 # Browser Push (V4.1 NEU)
@@ -2031,9 +2031,9 @@ Self-Hosted Jitsi ohne Auth wuerde Raeume oeffentlich zugaenglich machen. JWT-Au
 - Meeting-Summary ist unvermeidlich automatisch, aber pro Meeting nur 1 Bedrock-Call
 - Retry-Logik limitiert auf 3 Versuche gegen Loops
 
-### Recording-Retention (DEC-043)
+### Recording-Retention (DEC-043, ab V5.2 reduziert via FEAT-521)
 
-Rohaufzeichnungen: `RECORDING_RETENTION_DAYS=30` Default, ENV-konfigurierbar. Retention-Cron laeuft taeglich 04:00 UTC, loescht abgelaufene `recording_url`-Dateien in Supabase Storage, markiert Meeting `recording_status='deleted'`. Transkript + Summary bleiben permanent in DB.
+Rohaufzeichnungen: `RECORDING_RETENTION_DAYS=7` Default ab V5.2 (vorher 30, DSGVO-Datensparsamkeit), ENV-konfigurierbar. Retention-Cron laeuft taeglich 04:00 UTC, loescht abgelaufene `recording_url`-Dateien in Supabase Storage, markiert Meeting `recording_status='deleted'`. Transkript + Summary + Activities bleiben permanent in DB — nur Rohdaten werden frueher entfernt.
 
 ### Cal.com Integration (unveraendert)
 
@@ -5251,7 +5251,7 @@ VOICE_AGENT_PROVIDER=smao              # smao | synthflow
 
 # Call Recording (V5.1 NEU)
 SUPABASE_STORAGE_CALLS_BUCKET=call-recordings
-# RECORDING_RETENTION_DAYS wird fuer Meetings UND Calls gemeinsam verwendet (bestehend, Default 30)
+# RECORDING_RETENTION_DAYS wird fuer Meetings UND Calls gemeinsam verwendet (V5.2 Default 7, vorher 30)
 ```
 
 Bestehende Variablen die wiederverwendet werden:
@@ -5299,7 +5299,7 @@ V5-Bestand (Supabase + Next.js + IMAP + Cal.com + Jitsi + Crons): ~2.5 GB idle, 
 
 - WAV-Dateien temporaer auf Docker-Volume (Hetzner DE)
 - Nach Upload: Supabase Storage (Hetzner DE) — gleicher Pfad wie Meeting-Recordings
-- Retention: identisch zu Meetings (RECORDING_RETENTION_DAYS, Default 30)
+- Retention: identisch zu Meetings (RECORDING_RETENTION_DAYS, V5.2 Default 7, vorher 30)
 - Transkript + Summary permanent in PostgreSQL (Hetzner DE)
 
 ### Whisper-Transkription

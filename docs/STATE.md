@@ -9,13 +9,13 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: V5.2 Compliance-Sprint Slice-Planning done 2026-04-25. 5 Slice-Specs (SLC-521..525) im Repo unter /slices/, alle mit AC, Dependencies, Files-to-Touch, QA-Fokus und Micro-Tasks. /slices/INDEX.md aktualisiert. Naechster Schritt: /backend SLC-521 (Retention-Hardening, kleinster Slice) ODER /backend SLC-522 (Azure-Whisper-Adapter) — beide unabhaengig und parallelisierbar.
-- Current Phase: V5.2 Slice-Planning done — Implementation pending. Pre-Go-Live-Tasks (Smoke-Test V5.1, post-launch V5.1) parallel offen.
+- High-Level State: implementing
+- Current Focus: V5.2 Compliance-Sprint Implementation gestartet 2026-04-25. SLC-521 (Recording-Retention 7d) done — Default RECORDING_RETENTION_DAYS auf 7 reduziert in route.ts + docker-compose.yml, .env.example angelegt, ARCHITECTURE.md aktualisiert. Naechster Schritt: /qa SLC-521, dann /backend SLC-522 (Azure-Whisper-Adapter).
+- Current Phase: V5.2 Implementation 1/5 Slices done. Pre-Go-Live-Tasks (Smoke-Test V5.1, post-launch V5.1) parallel offen.
 
 ## Immediate Next Steps
-1. /backend SLC-521 (Recording-Retention 7d) — kleinster Slice, ~0.5 Tag, kein DB. Ideal als Aufwaermer.
-2. /backend SLC-522 (Azure-Whisper-Adapter) — parallel zu SLC-521, ~1.5 Tage. Kein DB, aber Adapter + Tests.
+1. /qa SLC-521 — Cron-Smoke-Test mit ENV-Override gegen Staging-DB, Activities-Erhaltungs-Check.
+2. /backend SLC-522 (Azure-Whisper-Adapter) — ~1.5 Tage. Kein DB, aber Adapter + Tests.
 3. /backend SLC-523 (Compliance-Templates) — nach SLC-521+522, ~2 Tage, MIG-022 + Backend + Frontend Vertical Slice.
 4. /frontend SLC-524 (MeetingTimelineItem) — parallel zu SLC-523, ~1 Tag, UI-only.
 5. /docs SLC-525 (DSGVO-Compliance-Doku) — LAST, nach SLC-521..524 done, ~0.5 Tag.

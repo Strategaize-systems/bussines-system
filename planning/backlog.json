@@ -1487,7 +1487,7 @@
       "title": "Recording-Retention auf 7 Tage hardening",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V5.2",
       "description": "FEAT-521: RECORDING_RETENTION_DAYS-Default in cron route.ts und docker-compose.yml von 30 auf 7 reduzieren. ENV-Override technisch erhalten. Doku in .env.example und ARCHITECTURE.md ergaenzen. AC: Retention-Cron loescht WAV+Transkript aelter als 7d, Activities (Summary) bleiben unangetastet.",
       "createdAt": "2026-04-25"

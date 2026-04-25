@@ -187,7 +187,7 @@
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-521 | [Recording-Retention 7d Hardening](SLC-521-recording-retention-hardening.md) | FEAT-521 | planned | High | 2026-04-25 |
+| SLC-521 | [Recording-Retention 7d Hardening](SLC-521-recording-retention-hardening.md) | FEAT-521 | done | High | 2026-04-25 |
 | SLC-522 | [Azure-Whisper-Adapter Implementierung](SLC-522-azure-whisper-adapter.md) | FEAT-522 | planned | High | 2026-04-25 |
 | SLC-523 | [Compliance-Templates Vertical Slice](SLC-523-compliance-templates.md) | FEAT-523 | planned | High | 2026-04-25 |
 | SLC-524 | [MeetingTimelineItem (UI-Parity)](SLC-524-meeting-timeline-item.md) | FEAT-524 | planned | Medium | 2026-04-25 |

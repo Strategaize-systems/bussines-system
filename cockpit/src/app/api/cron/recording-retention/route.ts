@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   if (authError) return authError;
 
   const retentionDays = parseInt(
-    process.env.RECORDING_RETENTION_DAYS || "30",
+    process.env.RECORDING_RETENTION_DAYS || "7",
     10,
   );
   const admin = createAdminClient();
