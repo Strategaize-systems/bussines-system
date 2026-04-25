@@ -10,12 +10,16 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5.2 Compliance-Sprint Implementation laeuft 2026-04-25. SLC-521 + SLC-522 + SLC-523 + SLC-524 done + QA PASS. SLC-524 (MeetingTimelineItem UI-Parity): alle 10 AC im Code erfuellt, Stub-Scan clean, TypeScript+Build+Vitest 16/16 gruen, 3 Low-Findings sind Call-Vorlage-konsistent (UI-Parity-Anforderung). Browser-Round-Trip auf User nach Coolify-Redeploy verschoben. Naechster Schritt: /docs SLC-525 (DSGVO-Compliance-Doku, letzter V5.2-Slice).
-- Current Phase: V5.2 Implementation 4/5 Slices done + QA PASS. Nur noch SLC-525 (DSGVO-Doku) offen. Pre-Go-Live-Tasks (Smoke-Test V5.1, post-launch V5.1) parallel offen.
+- Current Focus: V5.2 Compliance-Sprint vollstaendig implementiert 2026-04-25. SLC-521..525 done. SLC-525 (DSGVO-Compliance-Doku via /compliance Skill): docs/COMPLIANCE.md mit 8 Pflicht-Sektionen (Erhobene Daten, Datenfluesse, Speicherorte/Regionen, Retention-Policies, Drittanbieter, DPA-Status, Loeschkonzept, Defaults). Header mit Datum + V5.2-Bezug + Anwalts-Disclaimer. Hinweis auf Pre-Go-Live-Switch von OpenAI-US-Whisper auf Azure-EU. Naechster Schritt: Gesamt-/qa V5.2 (alle 5 Slices zusammen) → /final-check → /go-live → /deploy → /post-launch.
+- Current Phase: V5.2 Implementation 5/5 Slices done. Bereit fuer Gesamt-QA. Pre-Go-Live-Tasks (Smoke-Test V5.1, post-launch V5.1) parallel offen.
 
 ## Immediate Next Steps
-1. /docs SLC-525 (DSGVO-Compliance-Doku) — letzter V5.2-Slice, ~0.5 Tag, /compliance-Skill ausfuehren
-2. Gesamt-/qa V5.2 nach allen 5 Slices done, dann /final-check + /go-live + /deploy + /post-launch in einem Rutsch.
+1. Gesamt-/qa V5.2 — alle 5 Slices zusammen, inkl. Markdown-Validitaet COMPLIANCE.md, AC8 V5.2-Werte-Cross-Check
+2. /final-check V5.2
+3. /go-live V5.2
+4. /deploy V5.2 (User-Coolify-Redeploy)
+5. /post-launch V5.2
+6. Pre-Go-Live (vor erstem externen Recording): Azure-Account anlegen, AZURE_OPENAI_*-ENVs in Coolify, TRANSCRIPTION_PROVIDER=azure
 5. Smoke-Test V5.1 nach User-Redeploy (parallel zu V5.2-Implementierung): Echo-Test 600, Webhook-Disabled-Check (404), Call-Timeline-Render, Retention-Cron-Log
 6. /post-launch V5.1 nach 24-48h Live-Beobachtung
 7. Pre-Go-Live (vor erstem externen Recording, ausserhalb V5.2): Azure-Account anlegen, AZURE_OPENAI_*-ENVs in Coolify setzen, TRANSCRIPTION_PROVIDER auf azure umstellen

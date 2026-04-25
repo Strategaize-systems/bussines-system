@@ -1527,7 +1527,7 @@
       "title": "DSGVO-Compliance-Doku (via /compliance Skill)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V5.2",
       "description": "FEAT-525: /compliance-Skill (Dev System) gegen Business System anwenden. Output: docs/COMPLIANCE.md mit 8 Sektionen (erhobene Daten, Datenfluesse, Speicherorte/Regionen, Retention-Policies, Drittanbieter, DPA-Status, Loeschkonzept, Defaults). Verweist auf aktuelle V5.2-Werte (7d Retention, Whisper-Provider laut ENV). Markdown-Output, kein Code.",
       "createdAt": "2026-04-25"
