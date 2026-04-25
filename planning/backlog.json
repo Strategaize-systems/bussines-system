@@ -1483,6 +1483,56 @@
       "createdAt": "2026-04-22"
     },
     {
+      "id": "BL-391",
+      "title": "Recording-Retention auf 7 Tage hardening",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V5.2",
+      "description": "FEAT-521: RECORDING_RETENTION_DAYS-Default in cron route.ts und docker-compose.yml von 30 auf 7 reduzieren. ENV-Override technisch erhalten. Doku in .env.example und ARCHITECTURE.md ergaenzen. AC: Retention-Cron loescht WAV+Transkript aelter als 7d, Activities (Summary) bleiben unangetastet.",
+      "createdAt": "2026-04-25"
+    },
+    {
+      "id": "BL-392",
+      "title": "Azure-Whisper-Adapter Implementierung (Code-Ready, nicht aktiviert)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V5.2",
+      "description": "FEAT-522: cockpit/src/lib/ai/transcription/azure.ts ist aktuell ein Stub. Voll ausimplementieren als HTTP-Client gegen Azure OpenAI Whisper Deployment. ENVs: AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, AZURE_OPENAI_WHISPER_DEPLOYMENT_ID, AZURE_OPENAI_API_VERSION. Default TRANSCRIPTION_PROVIDER bleibt openai. Unit-Tests mit Mock-Response. Audit-Log analog OpenAI-Provider. Pre-Go-Live-Switch-Doku in ARCHITECTURE.md (3-Schritte-Anleitung). Aktivierung erfolgt erst vor echtem Go-Live (kein Azure-Account vorhanden).",
+      "createdAt": "2026-04-25"
+    },
+    {
+      "id": "BL-393",
+      "title": "Einwilligungstexte als Templates + Settings-Page",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V5.2",
+      "description": "FEAT-523: /settings/compliance Settings-Page mit 3 Template-Bloecken (Meeting-Einladung, E-Mail-Footer, Cal.com-Buchungsbestaetigung). Default-Texte als Markdown in lib/compliance/consent-templates.ts. Persistenz in system_settings (oder neue compliance_templates-Tabelle, /architecture entscheidet). Variablen-Engine mit {user_name}, {firma}, {kontakt_email} etc. Copy-to-Clipboard + Reset auf Default. Kein Auto-Anhaengen an Workflows.",
+      "createdAt": "2026-04-25"
+    },
+    {
+      "id": "BL-394",
+      "title": "MeetingTimelineItem analog CallTimelineItem (UI-Parity)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V5.2",
+      "description": "FEAT-524: Neue Komponente meeting-timeline-item.tsx analog call-timeline-item.tsx. Expand-Bereich rendert Decisions, Action Items, Key Topics (Badges), Transkript-Toggle. Datenquelle: bestehende Meeting-Summary-Felder (DEC-082 hat key_topics ergaenzt). Backwards Compatibility fuer alte Meetings ohne neue Felder. Identisches Visual-Design wie CallTimelineItem. Integration in unified-timeline.tsx fuer activity_type=meeting.",
+      "createdAt": "2026-04-25"
+    },
+    {
+      "id": "BL-395",
+      "title": "DSGVO-Compliance-Doku (via /compliance Skill)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V5.2",
+      "description": "FEAT-525: /compliance-Skill (Dev System) gegen Business System anwenden. Output: docs/COMPLIANCE.md mit 8 Sektionen (erhobene Daten, Datenfluesse, Speicherorte/Regionen, Retention-Policies, Drittanbieter, DPA-Status, Loeschkonzept, Defaults). Verweist auf aktuelle V5.2-Werte (7d Retention, Whisper-Provider laut ENV). Markdown-Output, kein Code.",
+      "createdAt": "2026-04-25"
+    },
+    {
       "id": "BL-386",
       "title": "E-Mail Composing Studio (3-Panel: Vorlagen + Erfassen + Live-Preview)",
       "type": "feature",

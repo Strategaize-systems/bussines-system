@@ -2032,3 +2032,216 @@ V5.1 ist erfolgreich wenn:
 - SMAO-Webhook-Format: Muessen wir deren exaktes Payload-Format recherchieren, oder reicht ein generisches Interface?
 - Asterisk-Konfiguration: Statische Config-Files (traditionell) oder ARI (Asterisk REST Interface) fuer dynamische Steuerung?
 - Hetzner Firewall: Welche UDP-Ports muessen fuer RTP-Media geoeffnet werden?
+
+---
+
+## V5.2 — Compliance-Sprint (DSGVO-Hardening vor Go-Live)
+
+### V5.2 Problem Statement
+
+V5.1 ist technisch produktionsreif als REL-016, laeuft aber im **Internal-Test-Mode** — nur Echo-Tests des Eigentuemers. Vor dem ersten echten Kunden-/Interessenten-Anruf muessen mehrere DSGVO-Themen geschlossen werden:
+
+1. **Rohdaten-Retention 30 Tage** ist im Sinne der Datensparsamkeit (DSGVO Art. 5) zu lang. WAV-Dateien und Roh-Transkripte werden technisch nur als Buffer fuer die Pipeline-Wiederholbarkeit gebraucht, nicht 30 Tage.
+2. **Whisper-Transkription laeuft via OpenAI-API in den USA** — seit Schrems II ein Drittlandtransfer-Risiko (DSGVO Art. 44ff). Der Stack bietet keine produktionsreife EU-Alternative, obwohl der Provider-Adapter bereits existiert.
+3. **Einwilligungstexte fuer Recording fehlen.** Der Eigentuemer hat keine zentrale Stelle, an der DSGVO-konforme Texte fuer Meeting-Einladungen, E-Mail-Footer und Cal.com-Buchungsstrecken abrufbar sind. Folge: Cold-Calling-/Cold-Recording-Risiko.
+4. **Meeting-Timeline-Items zeigen weniger Details als Call-Timeline-Items** — Inkonsistenz, die fuer den Nutzer wie ein Bug wirkt. CallTimelineItem rendert Decisions, Action Items und Transkript in einem Expand-Bereich; MeetingTimelineItem nicht.
+5. **DSGVO-Compliance-Doku fehlt.** Es gibt keine zentrale, exportierbare Beschreibung wie das System personenbezogene Daten verarbeitet — wird bei externen Kunden-Anfragen gebraucht.
+
+### V5.2 Goal
+
+Das System ist **DSGVO-belastbar** fuer den ersten Go-Live mit echten externen Calls/Meetings. Konkret:
+- Rohdaten-Retention auf das technisch notwendige Minimum (7 Tage) reduziert.
+- Azure-Whisper-Adapter **vollstaendig implementiert** und per ENV-Switch aktivierbar — die tatsaechliche Umstellung erfolgt erst, wenn der Azure-Account vor Go-Live bereitsteht.
+- Eigentuemer hat eine zentrale Settings-Page, von der er fertige Einwilligungstexte fuer Meeting-Einladungen und E-Mail-Footer abrufen und mit eigenen Variablen anpassen kann.
+- MeetingTimelineItem zeigt dieselben Details wie CallTimelineItem (UI-Parity).
+- Eine generierte Compliance-Doku beschreibt Datenfluesse, Speicherorte, Anbieter-Regionen und Retention.
+
+### V5.2 Primary User
+
+Eigentuemer — beim Onboarding eines neuen Kunden / vor dem ersten echten Recording-Call. Sekundaer: zukuenftige externe Kunden, die DSGVO-Doku einfordern.
+
+### V5.2 Features (5 Features)
+
+#### FEAT-521 — Recording-Retention auf 7 Tage hardening
+
+**Zweck:** Rohdaten (WAV-Aufnahmen + Roh-Transkripte) werden nur noch 7 Tage statt 30 Tagen aufbewahrt. AI-Summary bleibt unveraendert lang erhalten (Activity-Retention).
+
+**Scope:**
+- `RECORDING_RETENTION_DAYS`-Default in `cockpit/src/app/api/cron/recording-retention/route.ts` von `"30"` auf `"7"` reduziert.
+- `RECORDING_RETENTION_DAYS`-Default in `docker-compose.yml` von `:-30` auf `:-7` reduziert.
+- ENV bleibt technisch ueberschreibbar — Coolify-Override pro Umgebung moeglich (z.B. fuer einen Pilotkunden mit 14d-Wunsch).
+- Doku in `.env.example` und `docs/ARCHITECTURE.md` dass 7 Tage der DSGVO-Default ist.
+- Retention-Cron unveraendert (Logik bleibt, nur Default-Wert aendert sich).
+- Verifikation: Cron-Run im Staging zeigt korrekt, dass Calls aelter als 7 Tage in cleanup-Liste aufgenommen werden.
+
+**Acceptance Criteria:**
+- AC1: Default-Wert in Code und Compose-File ist 7 Tage.
+- AC2: ENV-Override funktioniert weiterhin (Test mit RECORDING_RETENTION_DAYS=14).
+- AC3: Retention-Cron loescht Recordings die aelter sind als der Schwellwert.
+- AC4: Activity-Eintraege (Summary) werden NICHT von der Retention beruehrt — nur WAV + Transkript.
+- AC5: `.env.example` enthaelt Kommentar mit DSGVO-Begruendung fuer 7d-Default.
+
+#### FEAT-522 — Azure-Whisper-Adapter Implementierung (Code-Ready, nicht aktiviert)
+
+**Zweck:** Der bestehende `azure.ts`-Adapter ist aktuell nur ein Stub mit "noch nicht implementiert"-Fehlermeldung. Er wird voll ausimplementiert nach demselben Vertrag wie `openai.ts`, sodass der Wechsel zu Azure OpenAI Whisper EU-Region in Produktion eine reine ENV-Aenderung ist (`TRANSCRIPTION_PROVIDER=azure` + Azure-Endpoint-/Key-ENVs).
+
+**Scope:**
+- `cockpit/src/lib/ai/transcription/azure.ts` voll implementieren — HTTP-Client gegen Azure OpenAI Whisper Deployment.
+- ENV-Variablen: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_WHISPER_DEPLOYMENT_ID`, `AZURE_OPENAI_API_VERSION` (Default `2024-06-01`).
+- Default `TRANSCRIPTION_PROVIDER=openai` bleibt unveraendert — keine Live-Umstellung in V5.2.
+- ENVs in `docker-compose.yml` und `.env.example` als kommentierte Eintraege ergaenzt (mit Hinweis "vor Go-Live setzen").
+- Unit-Tests fuer `AzureWhisperProvider`-Klasse: Erfolg, Fehler, leeres Audio, Format-Handling. Tests laufen ohne echten Azure-Call (gemockt).
+- Audit-Log-Eintrag (analog OpenAI-Provider) mit Anbieter, Region, Modell-ID, Request-ID gemaess `data-residency.md`.
+- README-/Doku-Eintrag wie der ENV-Switch im Go-Live-Moment vorzunehmen ist (3-Schritte-Anleitung).
+
+**Acceptance Criteria:**
+- AC1: `AzureWhisperProvider.transcribe()` ruft Azure OpenAI Whisper API korrekt auf und gibt das Transkript zurueck.
+- AC2: Mit `TRANSCRIPTION_PROVIDER=openai` (Default) verhaelt sich das System unveraendert.
+- AC3: Mit `TRANSCRIPTION_PROVIDER=azure` und gesetzten Azure-ENVs werden Test-Audios transkribiert (manueller Smoke-Test optional, weil kein Account).
+- AC4: Mit `TRANSCRIPTION_PROVIDER=azure` und fehlenden Azure-ENVs liefert der Adapter einen klaren Konfig-Fehler statt Stillschweigen.
+- AC5: Unit-Tests decken Erfolgs- und Fehlerpfade ab (gemockt).
+- AC6: Kein OpenAI-Code ist betroffen — Verhalten von OpenAI-Provider bleibt bit-identisch.
+- AC7: Doku in `docs/ARCHITECTURE.md` beschreibt den 3-Schritte-Switch (Azure-Account anlegen, ENVs setzen, Provider auf "azure").
+
+**Nicht-Aktivierung explizit bestaetigt:** Der User hat noch keinen Azure-Account und will V5.2 nicht durch Account-Setup verzoegern. Code-Bereitschaft jetzt, Aktivierung im Pre-Go-Live-Schritt.
+
+#### FEAT-523 — Einwilligungstexte als Templates + Settings-Page
+
+**Zweck:** Eigentuemer hat eine zentrale Settings-Page mit fertigen Einwilligungstexten fuer Recording. Texte enthalten Variablen (`{user_name}`, `{firma}`, `{kontakt_email}`), die er pro Anwendungsfall ausfuellen oder anpassen kann.
+
+**Scope:**
+- Settings-Page `/settings/compliance` mit drei Template-Bloecken:
+  1. **Meeting-Einladungstext** (fuer Cal.com-/.ics-Beschreibung)
+  2. **E-Mail-Footer** (fuer Standard-Mail-Signatur)
+  3. **Cal.com-Buchungsbestaetigungstext** (Hinweis im Buchungs-Dialog)
+- Default-Texte als Markdown in `cockpit/src/lib/compliance/consent-templates.ts` (rechtlich abgesegnet, Standard fuer DE/EU).
+- User kann Texte editieren — Persistenz in `system_settings`-Tabelle (oder analog bestehender Settings-Struktur, bei /architecture entscheiden).
+- Variablen-Engine: einfache `{token}`-Ersetzung mit `user_name`, `user_email`, `firma`, `kontakt_name`, `kontakt_email`, `kontakt_firma`.
+- "Copy to Clipboard"-Button pro Block.
+- "Reset auf Default"-Button pro Block.
+- Kein Auto-Anhaengen an Workflows (User-Entscheidung Q3) — User kopiert die Texte manuell beim ersten Setup von Cal.com/SMTP.
+
+**Acceptance Criteria:**
+- AC1: `/settings/compliance` ist erreichbar und zeigt 3 Text-Bloecke.
+- AC2: Default-Texte sind sichtbar mit eingesetzten User-Variablen.
+- AC3: Edit-Funktion speichert geaenderte Texte persistent.
+- AC4: Variablen-Liste ist im UI sichtbar (Hinweis welche Tokens verfuegbar sind).
+- AC5: Copy-to-Clipboard kopiert den fertigen Text mit Variablen-Ersetzung.
+- AC6: Reset stellt den Default-Text wieder her.
+- AC7: Keine Workflow-Integration in V5.2 (Auto-Anhaengen ist explizit ausgeschlossen).
+
+#### FEAT-524 — MeetingTimelineItem analog CallTimelineItem (UI-Parity)
+
+**Zweck:** Meeting-Activities zeigen in der Deal-Timeline dieselben Details wie Call-Activities — Decisions, Action Items, Transkript, Key Topics — mit identischem Expand-Verhalten.
+
+**Scope:**
+- Neue Komponente `cockpit/src/components/meetings/meeting-timeline-item.tsx` analog `cockpit/src/components/calls/call-timeline-item.tsx`.
+- Expand-Bereich rendert: Summary (bereits da), Decisions, Action Items, Key Topics (Badges), Transkript-Toggle.
+- Datenquelle: bestehende Meeting-Summary-Felder (Schema bereits in DEC-082 erweitert um `key_topics`).
+- `unified-timeline.tsx` integriert die neue Komponente fuer `activity_type="meeting"`.
+- Bestehende Meetings ohne neue Felder rendern weiterhin korrekt (Backwards Compatibility).
+- Identisches Visual-Design wie CallTimelineItem (Style Guide V2).
+
+**Acceptance Criteria:**
+- AC1: Meeting-Activity in der Deal-Timeline zeigt dieselben sektionalen Bloecke wie Call-Activity.
+- AC2: Expand-/Collapse-Verhalten ist identisch zu CallTimelineItem.
+- AC3: Decisions, Action Items, Key Topics werden gerendert wenn vorhanden.
+- AC4: Transkript ist hinter einem Toggle einsehbar.
+- AC5: Alte Meeting-Summaries (ohne `key_topics`) zeigen den Topics-Block nicht — kein Layout-Bruch.
+- AC6: Optisch nicht von CallTimelineItem unterscheidbar (gleiche Spacing-/Typo-Regeln).
+
+#### FEAT-525 — DSGVO-Compliance-Doku (via /compliance Skill)
+
+**Zweck:** Eine zentrale, exportierbare DSGVO-Doku fuer das Business System, die Datenflusse, Speicherorte, Anbieter-Regionen und Retention beschreibt.
+
+**Scope:**
+- `/compliance`-Skill (Dev System) gegen Business System anwenden.
+- Output: `docs/COMPLIANCE.md` mit folgenden Sektionen:
+  1. Erhobene personenbezogene Daten (Kontakte, E-Mails, Calls, Meetings, Recordings, Transkripte, AI-Summaries)
+  2. Datenfluesse pro Quelle (z.B. Call: Browser → Asterisk → MixMonitor → Storage → Whisper → Bedrock → Activity)
+  3. Speicherorte und Regionen (Hetzner Frankfurt, Bedrock Frankfurt, Whisper-Provider laut ENV)
+  4. Retention-Policies (Rohdaten 7d, Activities langfristig)
+  5. Drittanbieter-Liste (AWS Bedrock, OpenAI/Azure Whisper, Cal.com, IMAP-Server)
+  6. Auftragsverarbeitungsvertraege (DPA-Status pro Anbieter)
+  7. Loeschkonzept (Wie kann ein Kontakt seine Daten loeschen lassen?)
+  8. Datenschutzkonforme Defaults (z.B. Recording-Hinweis-Pflicht, Einwilligungs-Texte aus FEAT-523).
+- Doku verweist auf den aktuellen Whisper-Provider (zum V5.2-Release-Zeitpunkt: OpenAI-US — explizit dokumentiert mit Hinweis "wird vor Go-Live auf Azure EU umgestellt").
+- Kein Code-Output, reine Dokumentation.
+
+**Acceptance Criteria:**
+- AC1: `docs/COMPLIANCE.md` existiert und folgt der Skill-Struktur.
+- AC2: Alle 8 Sektionen sind ausgefuellt mit projektspezifischen Inhalten.
+- AC3: Dokument referenziert die V5.2-Default-Werte (7d Retention, Provider laut ENV).
+- AC4: Dokument ist exportierbar (Markdown, kann zu PDF konvertiert werden).
+- AC5: Stale-Data-Hinweis: Datum + V5.2-Release-Bezug ist im Doc-Header sichtbar, sodass spaetere Aenderungen auffallen.
+
+### V5.2 Architekturleitplanken
+
+1. **Keine Schema-Aenderungen mit Breaking-Risiko.** V5.2 ist Compliance-Hardening, nicht Feature-Erweiterung. Falls `system_settings`-Tabelle fuer Compliance-Templates fehlt: kleinste moegliche Migration.
+2. **Adapter-Pattern weiter durchziehen.** Azure-Whisper-Adapter folgt dem gleichen Vertrag wie der bestehende OpenAI-Adapter — kein neues Pattern.
+3. **Keine Live-Provider-Umstellung in V5.2.** Code-Ready: ja. Account-Setup + ENV-Switch: separat vor Go-Live.
+4. **Keine UI-Workflow-Integration der Einwilligungstexte.** Templates + Copy-Funktion reichen — der User entscheidet selbst, wann er sie an externen Stellen einbettet.
+5. **Backwards Compatibility fuer Meeting-Activities.** Alte Meetings ohne `key_topics` muessen weiterhin sauber rendern.
+6. **EU-only-Daten weiterhin verbindlich.** Auch wenn der Whisper-Provider in V5.2 noch OpenAI-US bleibt: Doku weist explizit darauf hin und verbindet die Pre-Go-Live-Umstellung.
+
+### V5.2 In Scope
+
+- Retention-Default 7d (Code + Compose + Doku)
+- Azure-Whisper-Adapter voll implementiert (ohne Aktivierung)
+- Settings-Page fuer Einwilligungstexte mit Variablen-Engine
+- 3 Default-Templates (Meeting-Einladung, E-Mail-Footer, Cal.com-Buchung)
+- MeetingTimelineItem mit Decisions/Action-Items/Key-Topics/Transkript-Expand
+- DSGVO-Compliance-Doku als Markdown
+- Doku-Update fuer ARCHITECTURE.md zum Pre-Go-Live-Switch
+
+### V5.2 Out of Scope
+
+- Aktivierung von Azure-Whisper in Produktion (separate Aktion vor Go-Live, ausserhalb V5.2)
+- Azure-Account-Beschaffung
+- Auto-Anhaengen der Einwilligungstexte an Cal.com-Buchungsworkflow
+- Auto-Einfuegen des E-Mail-Footers in alle ausgehenden Mails
+- Per-Call-Consent-Gating-UI (organisatorische Loesung gewaehlt — Sales-Prozess)
+- Cold-Call-Verhinderung im Code (Sales-Prozess-Disziplin, kein Software-Feature)
+- Ende-zu-Ende-Verschluesselung der Recordings
+- Automatischer Recording-Block bei nicht-zustimmenden Teilnehmern
+- Volltext-Recht-Texte (rechtliche Pruefung der Templates ist User-Sache, nicht Skill-Output)
+- Audit-Log-UI fuer Anbieter-Calls (existiert bereits in DECISIONS-Pattern, kein UI-Bedarf)
+
+### V5.2 Constraints
+
+- **Kein Bruch der laufenden V5.1-Pipeline.** Calls und Meetings muessen waehrend und nach V5.2 weiter funktionieren.
+- **Keine Account-Abhaengigkeit fuer V5.2-Abnahme.** Azure-Adapter wird mit Mocks getestet — keine Cloud-Account-Pflicht fuer QA.
+- **DSGVO-Default = 7d** auch wenn ENV-Override technisch erlaubt bleibt.
+- **Kein UI-Workflow-Disrupt.** Einwilligungstexte sind nur abrufbar, nicht aufgezwungen.
+- **Internal-Test-Mode bleibt** bis V5.2 deployed UND Pre-Go-Live-Azure-Switch durchgefuehrt sind.
+
+### V5.2 Risks & Assumptions
+
+- **Risk:** Azure OpenAI Whisper API-Vertrag koennte sich von OpenAI-direkt unterscheiden (Endpoint-Struktur, Response-Format). Adapter-Implementierung muss Azure-Doku exakt folgen, nicht nur OpenAI-Code copy-pasten.
+  Mitigation: Microsoft-Doku als Quelle, Unit-Tests mit Mock-Response.
+- **Risk:** Retention-Reduzierung von 30 auf 7 Tage koennte einen laufenden Pipeline-Fehler verstecken (Recording wird geloescht, bevor Re-Processing moeglich ist).
+  Mitigation: 7d ist immer noch genug Zeit, der Cron laeuft taeglich, und Pipeline-Fehler werden in den ersten Stunden sichtbar.
+- **Risk:** Settings-Page fuer Compliance-Texte koennte mit bestehenden Settings-Strukturen kollidieren.
+  Mitigation: bei /architecture entscheiden, ob `system_settings`-Tabelle erweitert wird oder neue `compliance_templates`-Tabelle.
+- **Assumption:** Azure-Endpoint-/API-Vertrag ist OpenAI-kompatibel genug, dass der Adapter mit kleinem Delta funktioniert.
+- **Assumption:** User pflegt seine eigenen Variablen (Firma, E-Mail) bereits irgendwo im System (Profil oder Settings) — Variablen-Engine kann darauf zugreifen.
+- **Assumption:** Default-Compliance-Texte werden vom User vor Go-Live noch rechtlich geprueft (Skill liefert Vorlage, nicht Rechtsberatung).
+
+### V5.2 Success Criteria
+
+V5.2 ist erfolgreich wenn:
+1. RECORDING_RETENTION_DAYS-Default ist 7 in Code und Compose-File.
+2. Azure-Whisper-Adapter ist voll implementiert und mit Mock-Tests gruen.
+3. ENV-Switch zu Azure ist mit klarer Pre-Go-Live-Anleitung in der Doku.
+4. `/settings/compliance` ist erreichbar und liefert 3 Templates mit funktionierender Variablen-Engine.
+5. MeetingTimelineItem sieht und verhaelt sich identisch zu CallTimelineItem fuer alle relevanten Attribute.
+6. `docs/COMPLIANCE.md` existiert und ist inhaltlich vollstaendig.
+7. Bestehende V5.1-Pipeline (Calls + Meetings) funktioniert unveraendert weiter.
+
+### V5.2 Open Questions (fuer /architecture)
+
+- Speicherort der Compliance-Templates: Erweiterung der bestehenden `system_settings`-Tabelle (falls vorhanden) oder neue `compliance_templates`-Tabelle? Default: erweitern, weniger Migration.
+- Variablen-Engine: Eigene Mini-Implementierung (`text.replace(/{token}/g, ...)`) oder bestehende Library wie `lodash.template`? Empfehlung: eigene Mini-Implementierung wegen Bundle-Size + voller Kontrolle.
+- Rechtliche Tiefe der Default-Texte: Standard-DE-Floskeln reichen, oder soll der Skill auf eine externe Vorlage (anwalt.de, IHK) verweisen? Empfehlung: pragmatische DE-Default mit Hinweis "vor produktiver Nutzung anwaltlich pruefen".
+- Azure-API-Version pinning: Hardcode (z.B. `2024-06-01`) oder ENV? Empfehlung: ENV mit Default — flexibler bei Microsoft-Updates.
+- MeetingTimelineItem-Datenquelle: Schreibt Bedrock-Summary `decisions` und `action_items` bereits in das Schema, das der UI-Renderer erwartet? Wenn nicht: Mapping-Layer noetig.

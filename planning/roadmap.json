@@ -94,8 +94,8 @@
     {
       "id": "v5-2",
       "name": "V5.2",
-      "status": "planned",
-      "summary": "Compliance-Sprint (DEC-081): Organisatorische Consent-Strategie (Meeting/E-Mail-first), Rohdaten-Retention 30→7 Tage, TRANSCRIPTION_PROVIDER Azure OpenAI EU, Einwilligungstexte als Templates, MeetingTimelineItem-Parity. Vorbereitung fuer V5.1 SMAO-Go-Live.",
+      "status": "active",
+      "summary": "Compliance-Sprint (DEC-081): 5 Features (FEAT-521..525) — Retention 30→7 Tage, Azure-Whisper-Adapter Code-Ready (Aktivierung pre-Go-Live), Einwilligungstexte + Settings-Page, MeetingTimelineItem-Parity, DSGVO-Compliance-Doku. Requirements done 2026-04-25.",
       "order": 14
     },
     {

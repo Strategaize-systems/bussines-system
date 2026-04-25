@@ -9,15 +9,15 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: released
-- Current Focus: V5.1 released als REL-016 (2026-04-24, Internal-Test-Mode bis V5.2 Compliance-Sprint per DEC-081). ISSUE-041 (Pre-SMAO-Cron-Filter) am 2026-04-25 als Mini-Fix gemerged. Naechster Schritt: V5.2 Compliance-Sprint requirements. Cockpit-Records am 2026-04-25 vollstaendig synchronisiert (5/5 V5.1-Backlog-Items auf done).
-- Current Phase: V5.1 Released (REL-016 live, Smoke-Test User-seitig offen, post-launch pending)
+- High-Level State: requirements
+- Current Focus: V5.2 Compliance-Sprint Requirements done 2026-04-25 (DEC-081). 5 Features (FEAT-521..525), 5 Backlog-Items (BL-391..395) angelegt. V5.2 Status auf active. Naechster Schritt: /architecture V5.2. V5.1 bleibt im Internal-Test-Mode bis V5.2 deployed + Pre-Go-Live-Azure-Switch durchgefuehrt sind.
+- Current Phase: V5.2 Requirements done — Architecture pending. Pre-Go-Live-Tasks (Smoke-Test V5.1, post-launch V5.1) parallel offen.
 
 ## Immediate Next Steps
-1. /requirements V5.2 Compliance-Sprint (DEC-081) — Organisatorische Consent-Strategie + Retention 30→7 Tage + Azure-Whisper EU + Einwilligungstexte + MeetingTimelineItem-Parity
-2. Smoke-Test V5.1 nach User-Redeploy: Echo-Test 600, Webhook-Disabled-Check (404), Call-Timeline-Render, Asterisk PJSIP-Endpoints, Retention-Cron-Log
+1. /architecture V5.2 — Open Questions klaeren: Speicherort Compliance-Templates (system_settings vs. neue Tabelle), Variablen-Engine-Wahl, Azure-API-Version-Pinning, MeetingTimelineItem-Datenmapping
+2. Smoke-Test V5.1 nach User-Redeploy (parallel): Echo-Test 600, Webhook-Disabled-Check (404), Call-Timeline-Render, Asterisk PJSIP-Endpoints, Retention-Cron-Log
 3. /post-launch V5.1 nach 24-48h Live-Beobachtung
-4. Pre-SMAO-Go-Live (ausserhalb V5.1): SMAO_WEBHOOK_SECRET setzen, Parser gegen SMAO-Doku validieren (ISSUE-041 erledigt 2026-04-25)
+4. Pre-Go-Live (vor erstem externen Recording, ausserhalb V5.2): Azure-Account anlegen, AZURE_OPENAI_*-ENVs in Coolify setzen, TRANSCRIPTION_PROVIDER auf azure umstellen
 
 ## Active Scope
 **V5.1 — Asterisk Telefonie + SMAO Voice-Agent-Vorbereitung (released, Internal-Test-Mode):**
@@ -29,8 +29,10 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 **Released (deployed):**
 - V2..V4.3, V5, V5.1, V6, V6.1
 
+**Active:**
+- V5.2 — Compliance-Sprint (DEC-081): 5 Features (FEAT-521..525), Requirements done 2026-04-25. Retention 7d, Azure-Whisper Code-Ready, Einwilligungstexte+Settings, MeetingTimelineItem-Parity, DSGVO-Doku. Vorbereitung fuer V5.1 SMAO-Go-Live.
+
 **Planned (Reihenfolge):**
-- V5.2 — Compliance-Sprint (DEC-081): Consent-Strategie, 7d Retention, Azure-Whisper EU, Einwilligungstexte, MeetingTimelineItem-Parity. Vorbereitung fuer V5.1 SMAO-Go-Live.
 - V5.3 — E-Mail Composing Studio (BL-386, urspruenglich V5.2, durch Compliance-Sprint nachgelagert)
 - V7 — Multi-User + Erweiterung
 
