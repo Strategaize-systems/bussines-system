@@ -10,12 +10,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5.2 Compliance-Sprint Implementation gestartet 2026-04-25. SLC-521 (Recording-Retention 7d) done — Default RECORDING_RETENTION_DAYS auf 7 reduziert in route.ts + docker-compose.yml, .env.example angelegt, ARCHITECTURE.md aktualisiert. Naechster Schritt: /qa SLC-521, dann /backend SLC-522 (Azure-Whisper-Adapter).
-- Current Phase: V5.2 Implementation 1/5 Slices done. Pre-Go-Live-Tasks (Smoke-Test V5.1, post-launch V5.1) parallel offen.
+- Current Focus: V5.2 Compliance-Sprint Implementation laeuft 2026-04-25. SLC-521 + SLC-522 done. Vitest als Test-Framework etabliert (8 Unit-Tests grün fuer AzureWhisperProvider). Azure-Adapter voll implementiert, ENV-validiert, Audit-Log analog OpenAI-Pfad. TRANSCRIPTION_PROVIDER bleibt openai (Default), Switch erst Pre-Go-Live mit Azure-Account. Naechster Schritt: /qa SLC-522, dann /backend SLC-523 (Compliance-Templates Vertical Slice mit MIG-022).
+- Current Phase: V5.2 Implementation 2/5 Slices done. Pre-Go-Live-Tasks (Smoke-Test V5.1, post-launch V5.1) parallel offen.
 
 ## Immediate Next Steps
-1. /qa SLC-521 — Cron-Smoke-Test mit ENV-Override gegen Staging-DB, Activities-Erhaltungs-Check.
-2. /backend SLC-522 (Azure-Whisper-Adapter) — ~1.5 Tage. Kein DB, aber Adapter + Tests.
+1. /qa SLC-522 — Test-Suite-Pass-Verifikation, Adapter-Code-Review, OpenAI-Pfad Regression-Check.
+2. /backend SLC-523 (Compliance-Templates Vertical Slice) — ~2 Tage. MIG-022 zuerst (SSH), dann Backend + Frontend in einem Slice.
 3. /backend SLC-523 (Compliance-Templates) — nach SLC-521+522, ~2 Tage, MIG-022 + Backend + Frontend Vertical Slice.
 4. /frontend SLC-524 (MeetingTimelineItem) — parallel zu SLC-523, ~1 Tag, UI-only.
 5. /docs SLC-525 (DSGVO-Compliance-Doku) — LAST, nach SLC-521..524 done, ~0.5 Tag.

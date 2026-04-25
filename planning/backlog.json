@@ -1497,7 +1497,7 @@
       "title": "Azure-Whisper-Adapter Implementierung (Code-Ready, nicht aktiviert)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V5.2",
       "description": "FEAT-522: cockpit/src/lib/ai/transcription/azure.ts ist aktuell ein Stub. Voll ausimplementieren als HTTP-Client gegen Azure OpenAI Whisper Deployment. ENVs: AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, AZURE_OPENAI_WHISPER_DEPLOYMENT_ID, AZURE_OPENAI_API_VERSION. Default TRANSCRIPTION_PROVIDER bleibt openai. Unit-Tests mit Mock-Response. Audit-Log analog OpenAI-Provider. Pre-Go-Live-Switch-Doku in ARCHITECTURE.md (3-Schritte-Anleitung). Aktivierung erfolgt erst vor echtem Go-Live (kein Azure-Account vorhanden).",
       "createdAt": "2026-04-25"

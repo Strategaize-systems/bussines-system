@@ -5530,14 +5530,17 @@ User -> /settings/compliance Page
 ```
 1. Azure-Account anlegen, OpenAI-Resource in westeurope/germanywestcentral
 2. Whisper-Deployment erstellen, Deployment-ID notieren
-3. Coolify ENVs setzen:
-   AZURE_OPENAI_ENDPOINT=https://<resource>.openai.azure.com
+3. Coolify ENVs setzen (alle als compose-injected ENV-Vars unterstuetzt):
+   AZURE_OPENAI_ENDPOINT=https://<resource>.<region>.openai.azure.com
    AZURE_OPENAI_API_KEY=<key>
    AZURE_OPENAI_WHISPER_DEPLOYMENT_ID=<deployment-id>
-   AZURE_OPENAI_API_VERSION=2024-06-01    (optional, hat Default)
+   AZURE_OPENAI_API_VERSION=2024-06-01    (optional, Default ist 2024-06-01)
    TRANSCRIPTION_PROVIDER=azure
-4. Coolify "Restart" (kein Code-Change noetig)
+4. Coolify "Restart" (kein Code-Change noetig — Adapter ist ab V5.2 ready)
 5. Smoke-Test: Click-to-Call -> Recording -> Activity-Timeline mit Transkript
+
+Verhalten bei fehlenden ENVs: Adapter liefert strukturierten Fehler
+`Azure-Konfiguration unvollstaendig: <feldname>` (kein Stack-Trace, kein Crash).
 ```
 
 ### V5.2 Database Changes — MIG-022
