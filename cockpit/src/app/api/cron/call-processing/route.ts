@@ -34,6 +34,8 @@ export async function POST(request: NextRequest) {
   try {
     // Find completed calls that still need processing.
     // Trigger = no recording_url yet AND call is finished (ended_at set).
+    // Exclude SMAO/voice-agent calls — they run their own pipeline and never
+    // produce an Asterisk WAV at /recordings-calls/{id}.wav (ISSUE-041).
     const { data: calls, error: queryError } = await admin
       .from("calls")
       .select(
@@ -41,6 +43,7 @@ export async function POST(request: NextRequest) {
       )
       .is("recording_url", null)
       .eq("status", "completed")
+      .eq("voice_agent_handled", false)
       .not("ended_at", "is", null)
       .order("ended_at", { ascending: true })
       .limit(MAX_CONCURRENT);

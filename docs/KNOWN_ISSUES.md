@@ -120,13 +120,13 @@
 ## Medium
 
 ### ISSUE-041 — Call-Processing-Cron interferiert mit SMAO-Calls (latent bis SMAO_ENABLED=true)
-- Status: open
+- Status: resolved
 - Severity: Medium
 - Area: V5.1 / Call-Processing / SMAO-Integration
 - Summary: Der Cron `/api/cron/call-processing` wuerde SMAO-Calls ohne `recording_url` aufgreifen. Query filtert auf `recording_url IS NULL AND status='completed' AND ended_at IS NOT NULL`. Mein SLC-515 Webhook-Insert setzt exakt diese Felder (status='completed', ended_at=now) und `recording_url=null` wenn SMAO keine URL liefert. Der Cron-Worker versucht dann eine nicht-existente WAV-Datei unter `/recordings-calls/{id}.wav` zu lesen (SMAO-Calls laufen nicht ueber Asterisk-MixMonitor).
 - Impact: Keiner in V5.1-Release (SMAO_ENABLED=false default, keine SMAO-Webhooks). Bei SMAO-Go-Live wuerde der Cron bei jedem SMAO-Call in "WAV not yet available" bzw. "file not found" laufen und eventuell `recording_status='failed'` setzen.
 - Workaround: SMAO_ENABLED=false beibehalten (aktueller Zustand).
-- Next Action: Vor SMAO-Go-Live fixen. Optionen: (a) Cron-Query um `.eq('voice_agent_handled', false)` ergaenzen (cleanster Fix). (b) Webhook-Insert `recording_status='external'` + Cron-Filter anpassen. (c) Webhook-Insert mit Dummy-URL wenn keine SMAO-URL geliefert wird. Empfehlung: Option (a) — als kleinen Fix-Slice vor SMAO-Go-Live aufnehmen.
+- Resolution: 2026-04-25 — Option (a) umgesetzt. Cron-Query in `cockpit/src/app/api/cron/call-processing/route.ts` um `.eq("voice_agent_handled", false)` ergaenzt. SMAO-Calls werden jetzt vom Asterisk-Pipeline-Cron ignoriert. Pre-SMAO-Go-Live-Blocker entfernt.
 
 ### ISSUE-015 — Letzte Aktivität fehlt auf Deal-Cards
 - Status: open
