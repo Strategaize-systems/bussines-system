@@ -117,14 +117,22 @@ export function ComplianceTemplateBlock({
             <Info className="h-3.5 w-3.5" />
             Verfuegbare Variablen
           </div>
-          <ul className="grid grid-cols-1 gap-1 text-xs text-slate-600 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-2 text-xs text-slate-600 sm:grid-cols-2">
             {COMPLIANCE_TOKENS.map((token) => (
-              <li key={token.name} className="flex items-baseline gap-2">
-                <code className="rounded bg-white px-1.5 py-0.5 font-mono text-slate-800">
-                  {`{${token.name}}`}
-                </code>
-                <span className="text-[11px] text-slate-500">
-                  {token.description}
+              <li key={token.name} className="flex flex-col gap-0.5">
+                <div className="flex items-baseline gap-2">
+                  <code className="rounded bg-white px-1.5 py-0.5 font-mono text-slate-800">
+                    {`{${token.name}}`}
+                  </code>
+                  <span className="text-[11px] text-slate-500">
+                    {token.description}
+                  </span>
+                </div>
+                <span className="pl-2 text-[10px] text-slate-400">
+                  Beispiel:{" "}
+                  <span className="font-mono text-slate-500">
+                    {token.example}
+                  </span>
                 </span>
               </li>
             ))}

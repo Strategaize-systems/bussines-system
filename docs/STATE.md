@@ -10,12 +10,11 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5.2 Compliance-Sprint Implementation laeuft 2026-04-25. SLC-521 + SLC-522 + SLC-523 done. SLC-523 als Vertical Slice (DB + Backend + Frontend) fertig: MIG-022 auf Hetzner angewendet (Tabelle compliance_templates mit 3 Default-Rows), `/settings/compliance` Page mit 3 Template-Bloecken (Edit/Copy/Reset), Mini-Variablen-Engine in `lib/compliance/variables.ts` (8 Unit-Tests gruen). Naechster Schritt: /qa SLC-523.
+- Current Focus: V5.2 Compliance-Sprint Implementation laeuft 2026-04-25. SLC-521 + SLC-522 + SLC-523 done + QA PASS. SLC-523 als Vertical Slice (DB + Backend + Frontend) fertig: MIG-022 auf Hetzner angewendet (Tabelle compliance_templates mit 3 Default-Rows, RLS verifiziert), `/settings/compliance` Page mit 3 Template-Bloecken (Edit/Copy/Reset), Mini-Variablen-Engine in `lib/compliance/variables.ts` (8 Unit-Tests gruen). QA inline-Fix: AC9 (Beispiel-Wert) in ComplianceTemplateBlock ergaenzt. Naechster Schritt: /frontend SLC-524 (MeetingTimelineItem UI-Parity).
 - Current Phase: V5.2 Implementation 3/5 Slices done. Pre-Go-Live-Tasks (Smoke-Test V5.1, post-launch V5.1) parallel offen.
 
 ## Immediate Next Steps
-1. /qa SLC-523 — DB-Verifikation auf Hetzner, Page-Render-Test in Browser, Edit+Save+Reload Round-Trip, Reset-Button, Copy-to-Clipboard, RLS-Check.
-2. /frontend SLC-524 (MeetingTimelineItem) — ~1 Tag, UI-only Parity zu CallTimelineItem.
+1. /frontend SLC-524 (MeetingTimelineItem) — ~1 Tag, UI-only Parity zu CallTimelineItem (DEC-087: keine Mapping-Layer, Schemas bit-identisch).
 3. /docs SLC-525 (DSGVO-Compliance-Doku) — LAST, nach SLC-521..524 done, ~0.5 Tag.
 4. Gesamt-/qa V5.2 nach allen 5 Slices done, dann /final-check + /go-live + /deploy + /post-launch in einem Rutsch.
 5. Smoke-Test V5.1 nach User-Redeploy (parallel zu V5.2-Implementierung): Echo-Test 600, Webhook-Disabled-Check (404), Call-Timeline-Render, Retention-Cron-Log
