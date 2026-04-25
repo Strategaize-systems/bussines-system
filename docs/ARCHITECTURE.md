@@ -5419,3 +5419,236 @@ Geschaetzt 5 Slices, je 1-2 Tage. Gesamtschaetzung: ~5-8 Tage.
 ## V5.1 Recommended Next Step
 
 `/slice-planning` — V5.1-Slices strukturiert ausdefinieren (Acceptance Criteria, Dependencies, Micro-Tasks, QA-Fokus). Danach pro Slice `/backend` oder `/frontend` + `/qa`.
+
+---
+
+## V5.2 — Compliance-Sprint Architecture
+
+### Architecture Summary
+
+V5.2 ist ein DSGVO-Hardening-Sprint vor dem ersten externen Go-Live. Es entstehen:
+- 1 neue DB-Tabelle (`compliance_templates`)
+- 1 neue Settings-Seite (`/settings/compliance`)
+- 1 neue UI-Komponente (`MeetingTimelineItem`)
+- 1 voll implementierter Adapter (`AzureWhisperProvider`, nicht aktiviert)
+- 1 reduzierter ENV-Default (`RECORDING_RETENTION_DAYS=7`)
+- 1 generierte Compliance-Doku (`docs/COMPLIANCE.md`)
+
+Keine neuen Services, keine neuen Container, keine Schema-Aenderungen an bestehenden Tabellen.
+
+### V5.2 Main Components
+
+```
+V5.2 — neu hinzukommend
+
+Next.js App (BD Cockpit)
+  |
+  +-- /settings/compliance/page.tsx          (V5.2 NEU — FEAT-523)
+  |   +-- ComplianceTemplateBlock x3
+  |   |   +-- Edit-Form
+  |   |   +-- Variable-Helper (Token-Liste)
+  |   |   +-- Copy-to-Clipboard
+  |   |   +-- Reset-to-Default
+  |   +-- ServerActions: get/update/resetComplianceTemplate
+  |
+  +-- /lib/compliance/                        (V5.2 NEU)
+  |   +-- consent-templates.ts                (Default-Markdown fuer 3 Blocks)
+  |   +-- variables.ts                        (Mini Token-Replacer, DEC-084)
+  |   +-- tokens.ts                           (Erlaubte-Tokens-Liste + Doku)
+  |
+  +-- /lib/ai/transcription/azure.ts          (V5.2 GEFUELLT — DEC-085, DEC-086)
+  |   +-- AzureOpenAI-Client aus openai-NPM-SDK
+  |
+  +-- /components/meetings/
+  |   +-- meeting-timeline-item.tsx           (V5.2 NEU — FEAT-524, DEC-087)
+  |       +-- Render-Logic 1:1 zu CallTimelineItem,
+  |           nur Icon/Type-Badge/Direction-Logic angepasst
+  |
+  +-- /components/timeline/unified-timeline.tsx (V5.2 GEAENDERT)
+  |   +-- Rendert MeetingTimelineItem fuer activity_type=meeting
+  |
+  +-- /api/cron/recording-retention/route.ts  (V5.2 GEAENDERT — FEAT-521)
+      +-- Default 30 -> 7 Tage
+
+Supabase
+  +-- compliance_templates                    (V5.2 NEU — MIG-022)
+      +-- template_key TEXT PK
+      +-- body_markdown TEXT
+      +-- default_body_markdown TEXT
+      +-- updated_by UUID NULL FK profiles
+      +-- updated_at TIMESTAMPTZ
+
+Doku
+  +-- docs/COMPLIANCE.md                      (V5.2 NEU — FEAT-525)
+      +-- 8 Sektionen via /compliance Skill
+
+Docker Compose
+  +-- RECORDING_RETENTION_DAYS: ${...:-7}     (V5.2 GEAENDERT — FEAT-521)
+```
+
+### V5.2 Responsibilities
+
+| Component | Verantwortung |
+|---|---|
+| `compliance_templates`-Tabelle | Persistenter Speicher fuer 3 Template-Blocks mit Reset-Default |
+| `lib/compliance/variables.ts` | Token-Ersetzung `{user_name}` -> Wert; unbekannte Tokens bleiben sichtbar |
+| `lib/compliance/consent-templates.ts` | Lieferung der 3 Default-Markdown-Texte (Skill-mitgeliefert, nicht user-editierbar) |
+| `/settings/compliance` Page | UI fuer Lesen/Editieren/Copy/Reset der 3 Template-Blocks |
+| `AzureWhisperProvider` | Voll funktionsfaehiger Adapter, ENV-aktivierbar, derzeit nicht im Default-Pfad |
+| `MeetingTimelineItem` | Identische Render-Logik wie CallTimelineItem, nur Icon + Type-Badge angepasst |
+| Retention-Cron | Default-Retention auf 7d, ENV-Override bleibt |
+| `docs/COMPLIANCE.md` | Generiertes DSGVO-Dokument fuer externe Kunden-Anfragen |
+
+### V5.2 Data Flow
+
+#### Compliance-Template-Edit-Flow
+
+```
+User -> /settings/compliance Page
+     -> Edit-Form (Markdown-Body bearbeiten)
+     -> "Speichern"-Click
+       -> ServerAction updateComplianceTemplate(key, body)
+         -> Supabase UPDATE compliance_templates
+            SET body_markdown=..., updated_by=auth.uid()
+         -> Return updated row
+     -> UI re-render mit neuem Body
+```
+
+#### Compliance-Template-Copy-Flow
+
+```
+User -> /settings/compliance Page
+     -> "Kopieren"-Click auf Block X
+       -> Frontend: applyTemplateVariables(body, currentUserVars)
+         -> text.replace(/\{(\w+)\}/g, ...)
+       -> navigator.clipboard.writeText(processed)
+     -> Toast "In Zwischenablage kopiert"
+```
+
+#### Azure-Whisper-Aktivierungs-Flow (Pre-Go-Live, NICHT in V5.2)
+
+```
+1. Azure-Account anlegen, OpenAI-Resource in westeurope/germanywestcentral
+2. Whisper-Deployment erstellen, Deployment-ID notieren
+3. Coolify ENVs setzen:
+   AZURE_OPENAI_ENDPOINT=https://<resource>.openai.azure.com
+   AZURE_OPENAI_API_KEY=<key>
+   AZURE_OPENAI_WHISPER_DEPLOYMENT_ID=<deployment-id>
+   AZURE_OPENAI_API_VERSION=2024-06-01    (optional, hat Default)
+   TRANSCRIPTION_PROVIDER=azure
+4. Coolify "Restart" (kein Code-Change noetig)
+5. Smoke-Test: Click-to-Call -> Recording -> Activity-Timeline mit Transkript
+```
+
+### V5.2 Database Changes — MIG-022
+
+```sql
+CREATE TABLE IF NOT EXISTS compliance_templates (
+  template_key TEXT PRIMARY KEY
+    CHECK (template_key IN ('meeting_invitation', 'email_footer', 'calcom_booking')),
+  body_markdown TEXT NOT NULL,
+  default_body_markdown TEXT NOT NULL,
+  updated_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE compliance_templates ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "authenticated_full_access" ON compliance_templates
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON compliance_templates TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON compliance_templates TO service_role;
+
+INSERT INTO compliance_templates (template_key, body_markdown, default_body_markdown)
+VALUES
+  ('meeting_invitation', '<default>', '<default>'),
+  ('email_footer',       '<default>', '<default>'),
+  ('calcom_booking',     '<default>', '<default>')
+ON CONFLICT (template_key) DO NOTHING;
+```
+
+Die 3 Default-Markdown-Bodies werden in `lib/compliance/consent-templates.ts` als TypeScript-Konstanten gefuehrt und beim Migration-Aufruf via Skript-Generator in das SQL eingesetzt — alternativ direkt als Multi-Line-String im Migration-File.
+
+### V5.2 External Dependencies
+
+- **Keine neue Dependency.** Das `openai`-NPM-Package ist bereits installiert (V4.1) und exportiert `AzureOpenAI`-Client.
+- **Keine neue Service-Container.** Azure-Whisper waere ein externer Endpoint, nicht im Stack.
+
+### V5.2 Security / Privacy
+
+- **Compliance-Templates sind nicht sensitiv** — sie enthalten Standardtexte, kein PII. RLS auf `authenticated_full_access` ist ausreichend.
+- **Azure-API-Key** kommt aus Coolify-ENV, nie ins Repo. Adapter validiert Existenz und liefert klaren Konfig-Fehler bei fehlendem Key.
+- **Retention 7d**: WAV + Roh-Transkripte. AI-Summary (Activity) bleibt — das ist der "anonymisierte" operative Wert. Vollstaendige Personenbezugs-Loeschung erfolgt ueber Loeschung des Deals/Kontakts (CASCADE), nicht ueber Retention.
+- **Audit-Log fuer Compliance-Template-Aenderungen**: optional. Nicht-V5.2-Scope, falls noetig in V5.2-Open-Points dokumentiert.
+- **Audit-Log fuer Whisper-API-Calls**: AzureWhisperProvider loggt analog OpenAIWhisperProvider (Anbieter, Region, Modell, Request-ID) per `data-residency.md`-Regel. Implementierung in SLC-522.
+
+### V5.2 Constraints & Tradeoffs
+
+| Entscheidung | Tradeoff |
+|---|---|
+| Eigene Tabelle `compliance_templates` statt user_settings-JSONB | Ein zusaetzliches Migration-File, dafuer sauberer Schema und Reset-Default trivial |
+| Mini-Variablen-Engine statt Library | 15 Zeilen eigener Code, dafuer null Bundle-Kost und volle Kontrolle |
+| Azure ENV-API-Version statt Hardcode | 1 zusaetzliche ENV, dafuer Update-Pfad ohne Code-Aenderung |
+| MeetingTimelineItem ohne Mapping-Layer | Direkter Datenzugriff, dafuer Annahme dass Schemas synchron bleiben — wird durch DEC-082-Pattern (Cross-Source-Konsistenz) abgesichert |
+| Azure-Adapter ohne Live-Switch in V5.2 | Code ist ready, aber QA kann den End-to-End-Pfad gegen Azure-Live nicht verifizieren — Risiko: Azure-API-Drift wird erst beim Pre-Go-Live-Switch sichtbar |
+| Settings-Page ohne Auto-Anhaengen an Workflows | Manueller Copy-Schritt fuer User, dafuer keine Workflow-Disruption und kein UI-Risiko in laufenden Pipelines |
+
+### V5.2 Risks & Open Decisions
+
+- **Azure-API-Drift:** AzureOpenAI-Client koennte sich von OpenAI-Client minimal unterscheiden (z.B. in Whisper-Modell-Namen — Azure nutzt Deployment-IDs, nicht "whisper-1"). Mitigation: SLC-522 Tests gegen Azure-Doku, nicht gegen OpenAI-Doku.
+- **Default-Compliance-Texte juristisch unverbindlich:** Skill liefert pragmatische DE-Standardtexte, kein Anwalts-Output. User-Verantwortung: Vor Produktion-Einsatz anwaltlich pruefen lassen. Hinweis im Settings-UI sichtbar.
+- **MeetingTimelineItem fuer alte Meetings:** Backwards Compatibility ist gegeben (siehe call-timeline-item.tsx Z.35-39 — `hasSummary`-Pruefung filtert leere Felder). Aber: alte Meetings ohne Bedrock-Summary haben gar kein `ai_summary` — Component muss das robust behandeln (`summary == null` -> nur Title + Datum).
+- **Retention 7d zu kurz?** 7d ist Pflicht fuer Datensparsamkeit. Falls technische Pipeline-Fehler erst nach >7d sichtbar werden, geht Recording verloren. Mitigation: Cron laeuft taeglich, Pipeline-Fehler werden in den ersten 24h sichtbar; 7d ist Puffer.
+
+### V5.2 Open Questions (auf /architecture geklaert — keine offen)
+
+Alle 4 Open Questions aus /requirements sind jetzt entschieden:
+
+| Open Question | Entscheidung | DEC |
+|---|---|---|
+| Speicherort Compliance-Templates | Eigene Tabelle `compliance_templates` | DEC-083 |
+| Variablen-Engine | Eigene Mini-Implementation in `lib/compliance/variables.ts` | DEC-084 |
+| Azure-API-Version-Pinning | ENV `AZURE_OPENAI_API_VERSION` mit Default `2024-06-01` | DEC-086 |
+| MeetingTimelineItem-Mapping | Keine — Schemas sind bit-identisch | DEC-087 |
+
+Plus eine Architektur-Entscheidung die in /requirements nicht offen war:
+
+| Architektur-Entscheidung | DEC |
+|---|---|
+| Azure via openai-NPM-SDK (AzureOpenAI-Client), kein eigener HTTP-Client | DEC-085 |
+
+### V5.2 Empfohlene Slice-Struktur
+
+5 Slices, in dieser Reihenfolge:
+
+```
+SLC-521 (Retention 7d)              <- klein, kein DB, kein Risiko
+SLC-522 (Azure-Whisper-Adapter)     <- parallel zu SLC-521
+SLC-523 (Compliance-Templates)      <- MIG-022 + Backend + Frontend (Vertical Slice)
+SLC-524 (MeetingTimelineItem)       <- parallel zu SLC-523
+SLC-525 (DSGVO-Compliance-Doku)     <- LAST, weil Doku auf Endzustand referenziert
+```
+
+#### Abhaengigkeiten
+
+```
+SLC-521 -- unabhaengig
+SLC-522 -- unabhaengig
+SLC-523 -- benoetigt MIG-022 vor Frontend-MTs
+SLC-524 -- unabhaengig (kann parallel zu SLC-523)
+SLC-525 -- benoetigt SLC-521+522+523+524 fuer aktuelle Doku-Werte
+```
+
+Geschaetzte Slice-Groessen:
+- SLC-521 ~0.5 Tag (Defaults aendern + Doku)
+- SLC-522 ~1.5 Tage (Adapter implementieren + Tests + Doku)
+- SLC-523 ~2 Tage (Migration + Server Actions + Settings-Page + Variables-Engine + Tests)
+- SLC-524 ~1 Tag (Component + Integration in unified-timeline)
+- SLC-525 ~0.5 Tag (Skill ausfuehren + Output reviewen)
+
+Gesamtschaetzung: ~5-6 Tage.
+
+### V5.2 Recommended Next Step
+
+`/slice-planning` — V5.2-Slices strukturiert ausdefinieren (Acceptance Criteria, Dependencies, Micro-Tasks, QA-Fokus). Danach pro Slice `/backend` oder `/frontend` + `/qa`.

@@ -9,12 +9,12 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: requirements
-- Current Focus: V5.2 Compliance-Sprint Requirements done 2026-04-25 (DEC-081). 5 Features (FEAT-521..525), 5 Backlog-Items (BL-391..395) angelegt. V5.2 Status auf active. Naechster Schritt: /architecture V5.2. V5.1 bleibt im Internal-Test-Mode bis V5.2 deployed + Pre-Go-Live-Azure-Switch durchgefuehrt sind.
-- Current Phase: V5.2 Requirements done — Architecture pending. Pre-Go-Live-Tasks (Smoke-Test V5.1, post-launch V5.1) parallel offen.
+- High-Level State: architecture
+- Current Focus: V5.2 Compliance-Sprint Architecture done 2026-04-25. 5 DECs (DEC-083..087) entschieden, 1 Migration (MIG-022) festgelegt, 5 Slices (SLC-521..525) empfohlen mit klarer Abhaengigkeit. ARCHITECTURE.md um V5.2-Section erweitert. Naechster Schritt: /slice-planning V5.2.
+- Current Phase: V5.2 Architecture done — Slice-Planning pending. Pre-Go-Live-Tasks (Smoke-Test V5.1, post-launch V5.1) parallel offen.
 
 ## Immediate Next Steps
-1. /architecture V5.2 — Open Questions klaeren: Speicherort Compliance-Templates (system_settings vs. neue Tabelle), Variablen-Engine-Wahl, Azure-API-Version-Pinning, MeetingTimelineItem-Datenmapping
+1. /slice-planning V5.2 — 5 Slices SLC-521..525 strukturiert ausdefinieren (AC, Dependencies, Micro-Tasks, QA-Fokus). Empfohlene Reihenfolge per ARCHITECTURE.md: SLC-521 + SLC-522 (parallel), dann SLC-523 + SLC-524 (parallel), dann SLC-525 (zuletzt).
 2. Smoke-Test V5.1 nach User-Redeploy (parallel): Echo-Test 600, Webhook-Disabled-Check (404), Call-Timeline-Render, Asterisk PJSIP-Endpoints, Retention-Cron-Log
 3. /post-launch V5.1 nach 24-48h Live-Beobachtung
 4. Pre-Go-Live (vor erstem externen Recording, ausserhalb V5.2): Azure-Account anlegen, AZURE_OPENAI_*-ENVs in Coolify setzen, TRANSCRIPTION_PROVIDER auf azure umstellen
