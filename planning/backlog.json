@@ -1541,6 +1541,26 @@
       "version": "V5.3",
       "description": "Kompletter Neubau der E-Mail-Erstellungs-Experience als eigene Vollbild-Seite mit 3-Panel-Layout. LINKS: Vorlagen-Panel — Systemvorlagen (vorgefertigt) + eigene Vorlagen (CRUD). Vorlagen definieren Layout, Branding (Logo, Font, Farben), Textbausteine. Vorlage erstellen per Text oder KI-Diktat. MITTE: E-Mail-Erfassung — wie bisher (Empfaenger, Betreff, Nachricht), aber mit angewandter Vorlage aus dem linken Panel. Empfaenger + Betreff werden aus Deal-Kontext per KI vorausgefuellt. Persoenliche Ergaenzungen per Text oder Diktat moeglich ('nach dem Satz bitte folgendes einbauen'). KI-Composing integriert. RECHTS: Live-Preview — zeigt die Mail exakt so wie sie rausgeht: Vorlage + Inhalt + Branding + Empfaenger. Aktualisiert sich in Echtzeit bei Aenderungen in der Mitte. Finale Kontrolle vor dem Senden. EINSTIEGSPUNKTE: Aus Deal-Workspace heraus (haeufigster Fall — Deal-Kontext wird mitgegeben), aus Mein Tag heraus, aus E-Mail-Seite heraus. VORLAGEN-MANAGEMENT: Systemvorlagen werden mitgeliefert (z.B. Erstansprache, Follow-up, Angebot, Danke). Eigene Vorlagen per Builder erstellbar. Konsistentes Branding ueber alle Vorlagen (Logo, Font, Farbschema — einmal definiert). ABHAENGIGKEITEN: Bestehende E-Mail-Templates (email_templates Tabelle) als Basis. KI-Composing (SLC-315) als Grundlage fuer Diktat-Integration. Tracking (SLC-502/507) bleibt integriert. Moeglicherweise Zusammenarbeit mit Intelligence Platform fuer erweiterte Vorlagen.",
       "createdAt": "2026-04-22"
+    },
+    {
+      "id": "BL-396",
+      "title": "Coolify Cron-Cleanup (Duplikate + kaputter embedding-sync + Klartext-CRON_SECRETs)",
+      "type": "improvement",
+      "priority": "low",
+      "status": "open",
+      "version": null,
+      "description": "Pre-existing Tech-Debt entdeckt waehrend /post-launch V5.2 (RPT-219). 4 Coolify-Cron-Befunde, alle nicht V5.2-eingefuehrt: (1) Cron-Duplikate konsolidieren — 'Classify' vs 'classify-emails' (beide 10min), 'embedding-sync' x2 (5min + 15min), 'Recording Retention' (V5.2-neu) vs 'retention' (V4.1-alt, anderer Endpoint /api/cron/retention). (2) Kaputter Cron 'embedding-sync' mit literalem Placeholder 'CRON_SECRET_VALUE' als x-cron-secret-Wert → 401 Unauthorized auf jedem Run. Loeschen oder reparieren. (3) 3 Coolify-Crons mit Klartext-CRON_SECRET in Command (imap-sync, retention, embedding-sync mit altem Schedule) statt process.env.CRON_SECRET-Pattern. Bei naechster CRON_SECRET-Rotation umstellen. (4) Optional: alten 'retention' Cron (V4.1-Whisper-Retention auf /api/cron/retention) pruefen ob noch benoetigt — V5.2 nutzt /api/cron/recording-retention. Falls nicht mehr genutzt: Cron + Endpoint deprecaten. Aufwand ~30 Min, kein User-Impact, aber sauberer Coolify-Stand.",
+      "createdAt": "2026-04-26"
+    },
+    {
+      "id": "BL-397",
+      "title": "GitHub App Strategaize-systems Org an Coolify anbinden + Repos auf Private",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": null,
+      "description": "Aktuell sind 4 GitHub-Repos der Org Strategaize-systems public, weil Coolify (auf beiden Hetzner-Servern: 91.98.20.191 Business + 159.69.207.29 Onboarding/Blueprint) keine Auth-Anbindung an die Org hat. Coolify zieht die Repos derzeit per anonymem HTTPS-Clone. Action: GitHub App auf Org-Ebene installieren, in beiden Coolify-Instanzen unter Sources/GitHub-Integration anbinden, Repo-Sources umkonfigurieren auf authentifizierten Pull. Dann Repos auf Private umstellen. Test: einmal pro Service redeployen. Aufwand ca. 1h. Defensive Massnahme — nicht zeitkritisch, aber Defense-in-Depth gegen versehentliche Credential-Leaks (siehe ISSUE-042). Repos: bussines-system, onboarding-plattform, strategaize-intelligence-studio, strategaize-project-cockpit. strategaize-dev-system ist bereits private (rbellaerts-Org statt Strategaize-systems-Org).",
+      "createdAt": "2026-04-26"
     }
   ]
 }
