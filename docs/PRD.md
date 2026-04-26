@@ -2245,3 +2245,252 @@ V5.2 ist erfolgreich wenn:
 - Rechtliche Tiefe der Default-Texte: Standard-DE-Floskeln reichen, oder soll der Skill auf eine externe Vorlage (anwalt.de, IHK) verweisen? Empfehlung: pragmatische DE-Default mit Hinweis "vor produktiver Nutzung anwaltlich pruefen".
 - Azure-API-Version pinning: Hardcode (z.B. `2024-06-01`) oder ENV? Empfehlung: ENV mit Default — flexibler bei Microsoft-Updates.
 - MeetingTimelineItem-Datenquelle: Schreibt Bedrock-Summary `decisions` und `action_items` bereits in das Schema, das der UI-Renderer erwartet? Wenn nicht: Mapping-Layer noetig.
+
+## V5.3 — E-Mail Composing Studio
+
+### V5.3 Problem Statement
+
+Die heutige E-Mail-Erstellung ist eine schmale Single-Column-Form (`EmailCompose`) mit Template-Dropdown, Textarea, Voice-Diktat und drei KI-Improve-Buttons (Korrektur / Formaler / Kuerzen). Sie funktioniert, aber sie ist nicht das, womit der Eigentuemer einen Vertriebs- oder Multiplikator-Touch in 30 Sekunden seriös rausschicken will. Konkrete Probleme:
+
+1. **Kein visuelles Branding.** Die Mail geht als Plain-Text-zu-HTML-Konversion (`textToHtml` in `send.ts`) raus. Logo, Schriftfamilie, Markenfarben und konsistente Signatur fehlen. Empfaengerseitig wirkt das amateurhaft.
+2. **Vorlagen sind text-only.** `email_templates`-Tabelle haelt nur `subject_*` und `body_*` (3 Sprachen). Es gibt kein Layout, keine Bloecke, keine Wiederverwendung von Header/Footer. Anpassungen an Branding muessen pro Vorlage manuell mitgepflegt werden.
+3. **Keine Systemvorlagen.** Der User muss jede Vorlage selber anlegen. Es gibt keinen Pool an Standard-B2B-Vertriebsvorlagen (Erstansprache, Follow-up, Nach-Termin, Angebot, Danke, Re-Aktivierung), den der Skill mitliefern koennte.
+4. **Vorlagen-Erstellung ist schwerfaellig.** Der User tippt Subject + Body manuell pro Sprache. Es gibt keine Diktat- oder KI-gestuetzte Vorlagen-Generierung ("erstelle mir eine Erstansprache fuer Steuerberater im Mittelstand").
+5. **Keine Live-Preview.** Der User sieht erst nach dem Versand, wie die Mail beim Empfaenger ankommt. Bei Branding-Ergaenzungen waere ein Echtzeit-Render unverzichtbar.
+6. **Inline-Edit-Diktat fehlt.** Voice-Diktat haengt heute nur am Body an (`prev + " " + text`). Ein gezieltes "ergaenze nach Satz 2 folgendes" oder "ersetze den Schluss durch X" ist nicht vorgesehen.
+7. **Empfaenger und Betreff sind nicht KI-gestuetzt.** Aus dem Deal-Kontext (Kontakt, Firma, letzter Touch, Stage) liesse sich beides praezise vorausfuellen — passiert aber nicht.
+
+V5.3 ist die einzige V5-Version, die dem User seine Mails *im Tagesgeschaeft schoener* macht. Alle anderen V5-Versionen sind Backend-/Compliance-/Telefonie-/Performance-Themen.
+
+### V5.3 Goal
+
+Eine eigenstaendige Vollbild-Seite `/emails/compose` (oder `/emails/compose/[id]`), die in einem 3-Panel-Layout E-Mail-Erstellung als seriose, gebrandete, KI-unterstuetzte Aktion ermoeglicht. Konkret:
+
+- **LINKS:** Vorlagen-Panel — Systemvorlagen + eigene Vorlagen, kategorisiert, suchbar. Vorlage erstellen per Text **oder KI-Diktat** ("erstelle mir eine Re-Aktivierungs-Mail fuer einen Lead, der seit 3 Monaten kalt ist").
+- **MITTE:** Erfassen-Panel — Empfaenger + Betreff aus Deal-Kontext vorausgefuellt, Body editierbar mit angewandter Vorlage, Inline-Diktat-Befehle ("nach dem Satz X folgendes einbauen"), bestehende KI-Improve-Buttons bleiben.
+- **RECHTS:** Live-Preview-Panel — gerenderte Mail exakt wie sie rausgeht (Branding + Inhalt + Empfaenger), aktualisiert sich in Echtzeit.
+
+Branding wird **einmal zentral** gepflegt (Logo, Primaerfarbe, Schrift) und auf alle Vorlagen automatisch angewendet — keine Vorlage-pro-Vorlage-Pflege mehr.
+
+### V5.3 Primary User
+
+Eigentuemer im Tagesgeschaeft — schreibt eine Mail aus dem Deal-Workspace heraus, will in unter 60 Sekunden eine seriose, gebrandete Mail mit korrektem Empfaenger und Betreff rausschicken. Sekundaer: Setup-Phase (einmal Branding + eigene Vorlagen anlegen).
+
+### V5.3 Vision — Die ideale Sequenz
+
+1. User klickt im Deal-Workspace auf "E-Mail schreiben".
+2. `/emails/compose?dealId=...` oeffnet sich — Empfaenger + Betreff sind aus dem Deal-Kontext per KI vorbefuellt.
+3. Mittel-Panel zeigt eine sinnvolle Default-Vorlage (z.B. "Follow-up nach Erstgespraech") schon angewendet.
+4. User korrigiert per Text oder Diktat 1-2 persoenliche Saetze.
+5. Live-Preview rechts zeigt die finale gebrandete Mail.
+6. Klick auf "Senden" — Mail geht raus mit Tracking-Pixel + Logging wie bisher.
+
+Setup-Sequenz (einmalig, separat):
+1. User oeffnet `/settings/branding` und legt Logo, Primaerfarbe, Schrift fest.
+2. User oeffnet `/emails/compose`, klickt "Neue Vorlage" + "KI-Diktat", spricht "ich brauche eine Erstansprache fuer Steuerberater im Mittelstand mit Verweis auf unsere Co-Innovation".
+3. KI generiert Subject + Body. User editiert, speichert. Vorlage erscheint in seinem Pool.
+
+### V5.3 Scope-Prinzip
+
+V5.3 ist eine **UI-zentrische Slice** — der Versand-Layer (`send.ts`, Tracking, IMAP-Sync, Auto-Zuordnung, Cadences) bleibt unveraendert. Es geht ausschliesslich um die Komposition vor dem Versand und um Vorlagen-Verwaltung.
+
+Datenmodell-Erweiterungen sind minimal:
+- `email_templates` bekommt Felder `is_system`, `category`, `language` (heute nur 3 Body-Sprachen-Kolumnen) — und ein `layout`-Feld fuer optionale Block-Struktur (default: einfacher Body).
+- Neues `branding`-Settings (Logo-URL/Base64, Primaerfarbe, Schriftfamilie, Default-Footer) entweder in `system_settings` oder eigene Tabelle.
+- Keine Schema-Aenderung an `emails`-Tabelle.
+
+### V5.3 Features (4 Features)
+
+#### FEAT-531 — Branding-Settings + zentrale Mail-Layout-Engine
+
+**Zweck:** Eine zentrale Stelle (`/settings/branding`), an der Logo, Primaerfarbe, Sekundaerfarbe, Schriftfamilie und Default-Footer-Text gepflegt werden. Diese Werte werden beim HTML-Rendering auf jede Vorlage und Mail angewendet.
+
+**Scope:**
+- Settings-Page `/settings/branding` mit Feldern: Logo (Upload/URL), Primaerfarbe (Hex), Sekundaerfarbe (Hex), Schriftfamilie (Dropdown: System / Inter / Sans / Serif), Default-Footer-Text (Markdown), Kontakt-Block (Name, Firma, Telefon, Web).
+- Persistenz in `system_settings` (Erweiterung) oder neue `branding_settings`-Tabelle — bei /architecture entscheiden.
+- HTML-Renderer-Funktion `renderBrandedHtml(body, branding, vars)` in `cockpit/src/lib/email/render.ts`. Output: vollstaendiges, inline-CSS-versehenes HTML, kompatibel mit gaengigen E-Mail-Clients.
+- `send.ts` ruft den Renderer (statt `textToHtml`) wenn Branding gepflegt ist; faellt zurueck auf `textToHtml`-Verhalten wenn nicht.
+- Live-Preview verwendet **denselben** Renderer — kein Drift zwischen Vorschau und Versand.
+
+**Acceptance Criteria:**
+- AC1: `/settings/branding` ist erreichbar und persistiert eingegebene Werte.
+- AC2: Logo wird im gerenderten HTML als `<img>` mit absoluter URL/Data-URI eingebettet.
+- AC3: Primaerfarbe ist sichtbar in Footer-Linie und/oder Buttons.
+- AC4: Schriftfamilie wird per Inline-Style auf `<body>` und Hauptbereiche gesetzt.
+- AC5: Eine Mail ohne Branding-Settings geht weiterhin als Plain-zu-HTML raus (Backwards Compatibility).
+- AC6: Live-Preview-Render ist bit-identisch zum tatsaechlich versendeten HTML (gleicher Renderer-Aufruf).
+- AC7: Renderer ist Unit-getestet mit Snapshot fuer minimale, vollstaendige und edge-case Branding-Konfigs.
+
+#### FEAT-532 — 3-Panel-Composing-Studio (`/emails/compose`)
+
+**Zweck:** Eine eigene Vollbild-Seite mit 3 Spalten als zentraler E-Mail-Erstellungs-Ort. Ersetzt nicht das `EmailCompose` in der `email-sheet.tsx`-Sheet (kann V5.3 als Mini-Variante bleiben), sondern wird der primaere Einstiegspunkt aus Deal-Workspace, Mein Tag, Focus und Sidebar.
+
+**Scope:**
+- Neue Route `cockpit/src/app/(app)/emails/compose/page.tsx`.
+- 3-Spalten-Layout: links 280-320px Vorlagen-Liste, mitte flex-1 Formular, rechts 420-480px Preview. Mobile-Fallback: Spalten als Tabs.
+- Query-Parameter: `?dealId=...`, `?contactId=...`, `?companyId=...`, `?templateId=...` — initialisieren Empfaenger/Betreff/Body aus Kontext.
+- Vorlagen-Panel:
+  - Systemvorlagen (mit Badge "System") + eigene Vorlagen, getrennt gruppiert.
+  - Such-/Filter-Feld (Kategorie: Erstansprache / Follow-up / Nach-Termin / Angebot / Danke / Re-Aktivierung / Sonstige).
+  - Klick auf Vorlage wendet sie auf das Formular an (mit Variablen-Ersetzung aus Deal-Kontext).
+  - "+ Neue Vorlage"-Button (siehe FEAT-533).
+- Erfassen-Panel:
+  - Felder An, Betreff, Body, Follow-up wie heute.
+  - "KI-Vorschlag An/Betreff"-Button: laedt aus Deal-Kontext (zuletzt schreibender Kontakt + sinnvoller Subject).
+  - Voice-Recording-Button bleibt (Body-anhaengen wie heute).
+  - Inline-Edit-Diktat-Button (siehe FEAT-534): "ergaenze nach Satz X" / "ersetze Absatz Y".
+  - Bestehende KI-Improve-Buttons (Korrektur / Formaler / Kuerzen) bleiben.
+- Live-Preview-Panel:
+  - Rendert kontinuierlich mit `renderBrandedHtml` aus FEAT-531.
+  - Variablen werden mit Deal-Kontext aufgeloest (vorname, nachname, firma, position, deal).
+  - Empfaenger-Header (An: ..., Von: ...) ist sichtbar — wie der Empfaenger es sehen wird.
+  - Aktualisiert sich on-change mit kleinem Debounce (200-300ms).
+  - "Senden"-Button unten — fuehrt zum bestehenden `sendEmail`-Server-Action mit Branding-HTML.
+- Einstiegspunkte umstellen:
+  - Deal-Workspace "E-Mail schreiben" → `/emails/compose?dealId=...&contactId=...`.
+  - Mein Tag E-Mail-Schnellaktion → `/emails/compose?contactId=...`.
+  - Focus E-Mail-Aktion → `/emails/compose?contactId=...`.
+  - Sidebar "E-Mail" bleibt → fuehrt auf `/emails`.
+
+**Acceptance Criteria:**
+- AC1: `/emails/compose` ist erreichbar als Vollbild-Seite mit 3-Panel-Layout.
+- AC2: Mit `?dealId=X` werden Empfaenger und Betreff aus Deal-Kontext (zuletzt schreibender Kontakt, sinnvoller Default-Subject) per KI-Vorschlag vorausfuellbar.
+- AC3: Klick auf eine Vorlage in der linken Spalte fuellt Mitte und Preview konsistent.
+- AC4: Variablen-Ersetzung verwendet vorhandene Deal-/Kontakt-/Firma-Daten.
+- AC5: Live-Preview aktualisiert sich bei Aenderungen in der Mitte (max 300ms Lag).
+- AC6: "Senden" verwendet `sendEmailWithTracking` und produziert dieselben DB-Eintraege wie heute (Tracking + Logging unveraendert).
+- AC7: Mobile-Layout zeigt Tabs statt Spalten — alle 3 Bereiche bleiben erreichbar.
+- AC8: Deal-Workspace-Button "E-Mail schreiben" oeffnet die neue Seite (nicht mehr das Sheet).
+
+#### FEAT-533 — Systemvorlagen + KI-Vorlagen-Generator
+
+**Zweck:** Mitgelieferter Pool an B2B-Vertriebs-Systemvorlagen plus die Moeglichkeit, eigene Vorlagen via KI-Diktat in unter 60 Sekunden zu generieren.
+
+**Scope:**
+- Seed-Migration mit Systemvorlagen (z.B. SQL-Insert oder TypeScript-Seed-Funktion):
+  - Erstansprache Multiplikator (DE)
+  - Erstansprache Unternehmer-Lead (DE)
+  - Follow-up nach Erstgespraech (DE)
+  - Follow-up Angebot ausstehend (DE)
+  - Danke nach Termin (DE)
+  - Re-Aktivierung kalter Lead (DE)
+  - Mindestens 1-2 Vorlagen auch in EN/NL
+- Neue Felder auf `email_templates`: `is_system BOOLEAN DEFAULT false`, `category TEXT`, `language TEXT` (default 'de'), evtl. `layout JSONB` fuer spaetere Block-Struktur (V5.3: ungenutzt, vorbereitet).
+- Systemvorlagen sind read-only fuer den User (kein Edit-/Delete-Button), koennen aber als Basis fuer eine eigene Kopie dienen ("Als Vorlage duplizieren").
+- "+ Neue Vorlage" Modal/Dialog im Composing-Studio:
+  - Modus 1 — manuell: Title, Subject, Body, Sprache.
+  - Modus 2 — KI-Diktat: Voice-/Text-Prompt ("erstelle mir eine Re-Aktivierungs-Mail fuer einen Lead, der seit 3 Monaten kalt ist"). KI generiert Subject + Body in der gewaehlten Sprache. User editiert vor Speichern.
+- KI-Vorlagen-Generator: neuer Prompt `email-template-generate.ts` analog `email-improve.ts`. System-Prompt erzeugt JSON `{title, subject, body, suggestedCategory}`.
+- "Als Vorlage duplizieren" auf Systemvorlagen erstellt eine eigene Kopie (`is_system=false`, mit gleichem Inhalt + Suffix " (Kopie)").
+
+**Acceptance Criteria:**
+- AC1: Mindestens 6 Systemvorlagen sind nach Migration in der DB vorhanden.
+- AC2: Systemvorlagen sind in der linken Spalte mit "System"-Badge sichtbar und nicht editier-/loeschbar.
+- AC3: "Neue Vorlage" mit manueller Eingabe erstellt eine Vorlage mit `is_system=false`.
+- AC4: "Neue Vorlage" mit KI-Diktat erzeugt Subject + Body via Bedrock und zeigt Editier-Vorschau.
+- AC5: KI-generierte Vorlage kann vor Speichern editiert werden.
+- AC6: "Als Vorlage duplizieren" auf einer Systemvorlage erstellt eine eigene editierbare Kopie.
+- AC7: Filter "System" / "Eigene" / "Alle" funktioniert in der Vorlagen-Liste.
+
+#### FEAT-534 — Inline-Edit-Diktat ("ergaenze nach Satz X")
+
+**Zweck:** Zusaetzlich zum bestehenden Voice-Anhaengen erlaubt der User per Voice-Befehl gezielte Modifikationen am Body — ohne den Cursor manuell zu positionieren.
+
+**Scope:**
+- Neuer Voice-Modus im Composing-Studio: "Inline-Edit-Diktat".
+- Workflow: User klickt Mikro, spricht z.B. "nach dem dritten Satz folgendes einbauen: wir haben gerade ein neues Whitepaper veroeffentlicht, das fuer Sie relevant sein koennte". Whisper transkribiert. Bedrock-LLM bekommt Original-Body + Transkript + System-Prompt mit klaren Regeln.
+- KI-Prompt `email-inline-edit.ts`: System-Prompt akzeptiert nur strukturierte Modifikation, gibt JSON `{newBody, summary}` zurueck. Verbotene Aktionen: Inhaltliche Erfindung, Sprachwechsel, Faktenmanipulation.
+- Vorschau-Modal vor dem Uebernehmen: zeigt Diff (alter vs. neuer Body), User akzeptiert oder verwirft.
+- Gilt nur im Composing-Studio (nicht im Mini-`EmailCompose`-Sheet).
+
+**Acceptance Criteria:**
+- AC1: Inline-Edit-Diktat-Button ist sichtbar im Composing-Studio neben dem normalen Voice-Button.
+- AC2: Aufnahme + Transkription verwendet bestehenden Whisper-Adapter (kein neuer Provider).
+- AC3: KI-Prompt liefert valides JSON mit `newBody` und `summary`.
+- AC4: Vorschau-Modal zeigt Diff vor Uebernahme.
+- AC5: Akzeptieren ersetzt den Body, Verwerfen aendert nichts.
+- AC6: KI darf keine erfundenen Fakten einfuegen — System-Prompt regelt das, Smoke-Test verifiziert es an min. 3 Beispielen.
+- AC7: Bei Fehler/leerer Transkription erscheint klarer Hinweis statt stiller Anwendung.
+
+### V5.3 Architekturleitplanken
+
+1. **Versand-Layer bleibt unveraendert.** `send.ts`, Tracking-Injection, IMAP-Auto-Zuordnung, Cadence-Engine — alles unangetastet. V5.3 ist UI-/Compose-Layer.
+2. **Renderer ist die einzige Quelle der Wahrheit fuer HTML-Output.** Live-Preview und tatsaechliches Versenden rufen denselben `renderBrandedHtml`. Kein Drift moeglich.
+3. **Adapter-Pattern fuer KI bleibt.** Neue Prompts (`email-template-generate.ts`, `email-inline-edit.ts`) folgen dem bestehenden Schema in `cockpit/src/lib/ai/prompts/`. Kein neuer LLM-Provider.
+4. **Schema-Aenderungen minimal-invasiv.** `email_templates` bekommt `is_system`, `category`, `language`, `layout` (alle nullable/defaultwertig). `branding_settings` per Architecture-Entscheidung.
+5. **Backwards Compatibility.** Bestehende Vorlagen (alle `is_system=false`, `category=null`) funktionieren weiter. Mails ohne Branding gehen weiter raus wie heute.
+6. **Mobile-First-Tabs als Fallback.** Das 3-Panel-Layout bleibt funktional auf Tablet/Mobile via Tabs.
+7. **KI-Diktat fuer Vorlagen folgt Cost-Discipline (DEC-052 Bedrock Cost Control).** On-click, nicht auto-load. Klare Loading-States.
+
+### V5.3 In Scope
+
+- Branding-Settings-Page + zentrale Render-Engine
+- 3-Panel-Composing-Studio als Vollbild-Seite
+- Mindestens 6 Systemvorlagen (DE) + 1-2 EN/NL
+- KI-Vorlagen-Generator per Voice/Text
+- Inline-Edit-Diktat mit Diff-Preview
+- KI-Vorschlag An/Betreff aus Deal-Kontext
+- Schema-Erweiterung `email_templates` (is_system, category, language, layout)
+- Schema fuer `branding_settings` (Tabelle oder system_settings-Erweiterung)
+- Umleitung der bestehenden "E-Mail schreiben"-Buttons aus Deal-Workspace, Mein Tag, Focus auf neue Seite
+
+### V5.3 Out of Scope
+
+- Block-basierte Mail-Builder (Drag-and-Drop-Bloecke wie Mailchimp) — `layout`-Feld vorbereitet, V5.3 nutzt einfachen Body
+- A/B-Testing von Vorlagen-Varianten
+- Empfaenger-Multi-Select / BCC-Listen / Massenversand-UI (Cadences uebernimmt Massenversand)
+- Anhaenge-Upload-UI (heute auch nicht vorhanden, kein V5.3-Topic)
+- HTML-WYSIWYG-Editor (Markdown + Variablen reicht — Branding kommt vom Renderer)
+- Separater Branding-Account-Wechsler (Multi-Branding, multi-User-Branding) — V7-Topic
+- Auto-Anhaengen des Compliance-Footers aus FEAT-523 (User-Sache, User entscheidet)
+- Tracking-Settings-Toggle pro Mail in der UI (heute Default, kein V5.3-Topic)
+- Outbox-/Draft-Auto-Save in der neuen Seite (Drafts werden bei "Senden ohne SMTP" erstellt — ausreichend)
+- Rechtschreibkorrektur in Echtzeit (KI-Improve-Button bleibt der Weg)
+
+### V5.3 Constraints
+
+- **Bestehende Mail-Sheet (`email-sheet.tsx`) darf weiterhin funktionieren.** V5.3 ergaenzt die Vollbild-Seite, ersetzt nicht abrupt — falls eine Embed-Form irgendwo sinnvoll ist, bleibt sie nutzbar.
+- **Tracking-Pipeline darf nicht brechen.** `send.ts` muss weiterhin die `emails`-Tabelle wie heute fuellen (status=sent, tracking_id, etc.).
+- **Variablen-Ersetzung kompatibel zur bestehenden Logik.** Gleicher Token-Satz `{{vorname}}`, `{{nachname}}`, `{{firma}}`, `{{position}}`, `{{deal}}` — keine Breaking-Tokens.
+- **Bedrock Cost Control (DEC-052).** KI-Composing/Diktat ist on-click, nicht auto-load.
+- **Datenresidenz (data-residency.md).** Bedrock Frankfurt fuer alle KI-Calls. Kein OpenAI direct.
+- **Voice nutzt bestehenden Whisper-Adapter** — kein neuer Provider, kein neuer Auth-Pfad.
+
+### V5.3 Risks & Assumptions
+
+- **Risk:** HTML-E-Mail-Clients haben sehr unterschiedliche CSS-Render-Faehigkeiten. `renderBrandedHtml` muss Inline-Styles und Table-Layouts bevorzugen, nicht Flex/Grid.
+  Mitigation: konservative HTML-Email-Best-Practices, Snapshot-Tests, Smoke-Test mit Gmail/Outlook.com/Apple Mail.
+- **Risk:** KI-generierte Vorlagen produzieren generische, austauschbare Texte ohne Personalisierung.
+  Mitigation: System-Prompt verlangt Branchen-/Beziehungstyp-Hinweis im User-Input. Beispiele in der Doku.
+- **Risk:** Inline-Edit-Diktat aendert mehr als gewollt, weil das LLM "korrigiert" was nicht zu korrigieren war.
+  Mitigation: System-Prompt explizit "minimale Modifikation, sonst Body unveraendert lassen", Diff-Vorschau zwingend.
+- **Risk:** Logo-Upload/Storage ist ohne klare Storage-Strategie heikel.
+  Mitigation: bei /architecture entscheiden (Supabase Storage Bucket oder Data-URI fuer kleine Logos <50KB).
+- **Risk:** Live-Preview-Debounce ist zu langsam → User wartet, oder zu schnell → Tipp-Lag.
+  Mitigation: 200-300ms Debounce, in QA validieren.
+- **Assumption:** Der User pflegt Branding einmal, danach bleibt es stabil. Multi-Branding ist nicht V5.3.
+- **Assumption:** Systemvorlagen im DE-Markt reichen aus. Internationale Anpassung in V5.3 nur fuer 1-2 Vorlagen, Rest folgt bei Bedarf.
+- **Assumption:** Bestehende `email_templates`-Eintraege werden bei Migration auf `is_system=false`, `category=null`, `language='de'` (default) korrekt initialisiert.
+
+### V5.3 Success Criteria
+
+V5.3 ist erfolgreich wenn:
+1. Eine Mail aus dem Deal-Workspace heraus geht in unter 60 Sekunden raus (Empfaenger + Betreff vorausgefuellt, Vorlage angewandt, ggf. Diktat-Korrektur, Senden).
+2. Die versendete Mail enthaelt Logo, Markenfarbe und konsistente Schrift — sichtbar in Gmail, Outlook und Apple Mail.
+3. Live-Preview ist bit-identisch zur tatsaechlich verschickten HTML-Mail.
+4. Mindestens 6 Systemvorlagen sind out-of-the-box verfuegbar.
+5. Eine neue Vorlage per KI-Diktat (Voice oder Text-Prompt) ist in unter 60 Sekunden erstellt.
+6. Inline-Edit-Diktat aendert nur den geforderten Teil und zeigt Diff vor Uebernahme.
+7. Bestehende `EmailCompose`-Pfade funktionieren unveraendert weiter (kein Regression-Bruch beim Versand).
+8. Tracking, IMAP-Auto-Zuordnung und Cadence-Versand bleiben unbeeintraechtigt.
+
+### V5.3 Open Questions (fuer /architecture)
+
+- **Branding-Storage:** Eigene Tabelle `branding_settings` (single row) oder Erweiterung von `system_settings` (key-value-Pattern)? Empfehlung: eigene Tabelle, weil mehrere typisierte Felder (URL, Hex, JSON-Footer) — sauberer als JSON-blob in `system_settings`.
+- **Logo-Storage:** Supabase Storage Bucket `branding/` oder Data-URI in DB (Limit <50KB)? Empfehlung: Storage Bucket, kleinere Bytes in DB, Public-URL stabil.
+- **`layout`-Feld auf `email_templates`:** Schon V5.3 mit JSON-Schema versehen (auch wenn V5.3 es noch nicht nutzt) oder leer lassen? Empfehlung: nullable JSONB ohne Schema — "future-proof" ohne Festlegung.
+- **Systemvorlagen-Seed:** SQL-Migration mit INSERT-Statements oder TS-Seed-Funktion bei App-Start? Empfehlung: SQL-Migration, eine Quelle der Wahrheit, Cockpit-Tracking via MIGRATIONS.md.
+- **Empfaenger-KI-Vorschlag:** "Letzter schreibender Kontakt aus Deal" reicht, oder soll die KI mehrere Kontakte ranken? Empfehlung: einfach starten — letzter schreibender Kontakt, Fallback auf Primary-Contact.
+- **Mobile-Routing:** Soll `/emails/compose` auf Mobile zur Tabs-Variante werden, oder wird der bestehende `email-sheet.tsx` als Mobile-Default beibehalten? Empfehlung: Tabs in der neuen Seite — kein Sheet-Routing-Split.
+- **Inline-Edit-Diktat-Konfidenz:** Soll die KI bei Mehrdeutigkeit ("nach Satz 3" — welcher Satz ist Satz 3?) explizit nachfragen oder pragmatisch raten? Empfehlung: pragmatisch raten, Diff-Vorschau ist der Sicherheits-Net.
+- **Slice-Schnitt:** Strikt 4 Slices (1 pro Feature) oder 5-6 Slices (zerlegen FEAT-532)? Empfehlung: 5 Slices, FEAT-532 (Composing-Studio) wird in "Layout + KI-Vorausfuellung" und "Live-Preview + Send-Integration" geteilt — beides nicht-trivial.

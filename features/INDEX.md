@@ -140,6 +140,15 @@
 | FEAT-524 | MeetingTimelineItem analog CallTimelineItem (UI-Parity) | deployed | — | 2026-04-25 |
 | FEAT-525 | DSGVO-Compliance-Doku (via /compliance Skill) | deployed | — | 2026-04-25 |
 
+## V5.3 Features (E-Mail Composing Studio — planned)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-531 | Branding-Settings + zentrale Mail-Layout-Engine | planned | [Spec](FEAT-531-branding-mail-render.md) | 2026-04-26 |
+| FEAT-532 | 3-Panel-Composing-Studio (`/emails/compose`) | planned | [Spec](FEAT-532-composing-studio.md) | 2026-04-26 |
+| FEAT-533 | Systemvorlagen + KI-Vorlagen-Generator | planned | [Spec](FEAT-533-system-templates-ki-generator.md) | 2026-04-26 |
+| FEAT-534 | Inline-Edit-Diktat ("ergaenze nach Satz X") | planned | [Spec](FEAT-534-inline-edit-diktat.md) | 2026-04-26 |
+
 ## V7 Features (Multi-User + Erweiterung — planned)
 
 | ID | Feature | Status | Created |

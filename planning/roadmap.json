@@ -101,8 +101,8 @@
     {
       "id": "v5-3",
       "name": "V5.3",
-      "status": "planned",
-      "summary": "E-Mail Composing Studio: 3-Panel-Layout (Vorlagen + Erfassen + Live-Preview), Systemvorlagen, eigene Vorlagen, KI-Diktat, Branding, Echtzeit-Vorschau. Urspruenglich als V5.2 geplant, durch DEC-081 Compliance-Sprint nachgelagert.",
+      "status": "active",
+      "summary": "E-Mail Composing Studio: 4 Features (FEAT-531..534) — Branding-Settings + Mail-Layout-Engine, 3-Panel-Vollbild-Composing-Studio, Systemvorlagen + KI-Vorlagen-Generator, Inline-Edit-Diktat. Requirements geschnitten 2026-04-26. Urspruenglich als V5.2 geplant, durch DEC-081 Compliance-Sprint nachgelagert.",
       "order": 15
     },
     {
