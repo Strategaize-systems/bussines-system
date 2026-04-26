@@ -1561,6 +1561,56 @@
       "version": null,
       "description": "Aktuell sind 4 GitHub-Repos der Org Strategaize-systems public, weil Coolify (auf beiden Hetzner-Servern: 91.98.20.191 Business + 159.69.207.29 Onboarding/Blueprint) keine Auth-Anbindung an die Org hat. Coolify zieht die Repos derzeit per anonymem HTTPS-Clone. Action: GitHub App auf Org-Ebene installieren, in beiden Coolify-Instanzen unter Sources/GitHub-Integration anbinden, Repo-Sources umkonfigurieren auf authentifizierten Pull. Dann Repos auf Private umstellen. Test: einmal pro Service redeployen. Aufwand ca. 1h. Defensive Massnahme — nicht zeitkritisch, aber Defense-in-Depth gegen versehentliche Credential-Leaks (siehe ISSUE-042). Repos: bussines-system, onboarding-plattform, strategaize-intelligence-studio, strategaize-project-cockpit. strategaize-dev-system ist bereits private (rbellaerts-Org statt Strategaize-systems-Org).",
       "createdAt": "2026-04-26"
+    },
+    {
+      "id": "BL-398",
+      "title": "V5.3 SLC-531 Branding Foundation",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V5.3",
+      "description": "FEAT-531: Branding-Settings + zentrale Mail-Layout-Engine. MIG-023 Teil 1: Tabelle branding_settings (single-row) + Storage Bucket branding (Public-Read) + Empty-Row. Pure Function renderBrandedHtml(body, branding, vars) in cockpit/src/lib/email/render.ts mit Inline-CSS, Table-Layout, Email-Client-Kompatibilitaet. Snapshot-Tests fuer 3 Cases. Settings-Page /settings/branding mit Logo-Upload (max 2MB, MIME-Whitelist), Color-Picker, Schrift-Dropdown, Footer-Markdown. Renderer-Hook in send.ts mit Fallback auf textToHtml (Backwards Compatibility). Smoke-Test: echte Mail an Gmail+Outlook. AC9: Mail ohne Branding bit-fuer-bit identisch zu V5.2. 7 Micro-Tasks, ~1.5-2 Tage.",
+      "createdAt": "2026-04-26"
+    },
+    {
+      "id": "BL-399",
+      "title": "V5.3 SLC-532 Email-Templates Schema + Systemvorlagen + KI-Generator",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V5.3",
+      "description": "FEAT-533: email_templates-Schema-Erweiterung (is_system, category, language, layout — alle nullable, Backwards Compatibility). MIG-023 Teil 2: ALTER + 2 Indizes + Seed-INSERT 6 DE-Systemvorlagen + 1-2 EN/NL (Erstansprache, Follow-up, Danke, Re-Aktivierung etc.). template-actions.ts erweitert: Filter (System/Eigene/Alle), duplicateSystemTemplate, delete-Guard fuer Systemvorlagen. KI-Prompt email-template-generate.ts mit JSON-Output {title, subject, body, suggestedCategory}. Server Action generateEmailTemplate(prompt, language) ruft Bedrock. Smoke-Test mit 3 Test-Prompts. 7 Micro-Tasks, ~1 Tag.",
+      "createdAt": "2026-04-26"
+    },
+    {
+      "id": "BL-400",
+      "title": "V5.3 SLC-533 Composing-Studio Layout + KI-Vorausfuellung",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V5.3",
+      "description": "FEAT-532 Teil 1 von 2: Vollbild-Seite /emails/compose mit 3-Panel-Layout (Vorlagen / Erfassen / Live-Preview-Placeholder) Skelett. Server-Loader laedt Branding+Templates+Deal-Kontext parallel. Mobile-Tabs in derselben Route (DEC-093). Templates-Panel mit Filter (System/Eigene/Alle), Klick-Anwendung mit Variablen-Replace, Als-Vorlage-duplizieren. Compose-Form mit bestehenden KI-Improve-Buttons + Voice-Anhaengen + KI-Vorschlag-Button (deterministisch via recipient-suggest.ts, KEIN LLM-Call). NewTemplateDialog Modal mit Manuell + KI-Diktat-Modus. Inline-Edit-Diktat-Button als Placeholder (aktiviert in SLC-535). KEIN Live-Preview-Render, KEIN Send (das ist SLC-534). 7 Micro-Tasks, ~1.5 Tage.",
+      "createdAt": "2026-04-26"
+    },
+    {
+      "id": "BL-401",
+      "title": "V5.3 SLC-534 Live-Preview + Send-Integration + Einstiegspunkte",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V5.3",
+      "description": "FEAT-532 Teil 2 von 2: Live-Preview-Komponente mit Debounce 250ms + iframe-Render via renderBrandedHtml (DEC-095 Single-Source-of-Truth). Variablen-Resolver resolveVarsFromDeal Helper. Send-Action sendComposedEmail (Renderer → sendEmailWithTracking). Senden-Button im Compose-Form. Einstiegspunkte umstellen: Deal-Workspace, Mein Tag, Focus → /emails/compose?dealId=...&contactId=... Live-Preview rendert OHNE Tracking-Injection (User-Preview, Bit-Identitaet zur Final-Mail-Logik des Renderers). Tracking + IMAP + Cadences bleiben unbeeintraechtigt (Regression-Check). 8 Micro-Tasks, ~1.5 Tage.",
+      "createdAt": "2026-04-26"
+    },
+    {
+      "id": "BL-402",
+      "title": "V5.3 SLC-535 Inline-Edit-Diktat",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V5.3",
+      "description": "FEAT-534: Inline-Edit-Diktat im Composing-Studio. KI-Prompt email-inline-edit.ts mit harten Constraints (minimale Modifikation, keine Fakten-Erfindung, kein Sprachwechsel, pragmatisch raten DEC-094). Server Action applyInlineEdit ruft Bedrock + parsed JSON {newBody, summary}. Modal mit Voice-Recording (Whisper) + Loading + Diff-Vorschau-State (diff-Library, Hinzufuegungen gruen / Entfernungen rot) + Akzeptieren/Verwerfen-Buttons. Inline-Edit-Button-Placeholder aus SLC-533 ersetzt durch echten Modal-Trigger. Smoke-Test mit 3 dokumentierten Faellen (klar, mehrdeutig, problematisch). 6 Micro-Tasks, ~1 Tag.",
+      "createdAt": "2026-04-26"
     }
   ]
 }
