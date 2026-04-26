@@ -11,7 +11,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 ## Current State
 - High-Level State: stable
 - Current Focus: V5.2 Compliance-Sprint released am 2026-04-26 als REL-017. Smoke-Test in Production PASS (Settings-Compliance + MeetingTimelineItem + V5.1-Regression + Recording-Retention-Cron retention_days=7 verifiziert). ENV-Befund waehrend Smoke-Test: RECORDING_RETENTION_DAYS war in Coolify auf 30 gesetzt — User hat auf 7 korrigiert. Pre-Pflicht offen: ISSUE-042 (OpenAI-API-Key in untrackter Datei, NIE committed) — Key rotieren + neuen Key in Coolify ENV OPENAI_API_KEY + lokale Datei beseitigen, vor erstem produktivem Whisper-Call mit Kundendaten. Naechster Schritt: /post-launch V5.2 (24-48h Cron-Log-Beobachtung).
-- Current Phase: Stable nach V5.2-Release. Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung der COMPLIANCE.md + Switch auf Azure-EU-Whisper.
+- Current Phase: Post-Launch confirmed stable nach V5.2-Release (RPT-219, 4h Live-Beobachtung am 2026-04-26). App-Container healthy, 0 Errors, Recording-Retention-Cron retention_days=7 manuell verifiziert + Coolify-Auto-Cron-Schedule 0 4 * * * UTC bestaetigt. Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung der COMPLIANCE.md + Switch auf Azure-EU-Whisper.
 
 ## Immediate Next Steps
 1. /post-launch V5.2 — 24-48h Cron-Log-Beobachtung (morgen 04:00 UTC erste Auto-Cron-Iteration)
