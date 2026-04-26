@@ -130,15 +130,15 @@
 | FEAT-513 | Anruf-Aufnahme → Whisper → Summary → Deal-Activity | deployed | — | 2026-04-22 |
 | FEAT-514 | SMAO Voice-Agent Adapter (vorbereitet) | deployed | — | 2026-04-22 |
 
-## V5.2 Features (Compliance-Sprint — planned)
+## V5.2 Features (Compliance-Sprint — released REL-017)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-521 | Recording-Retention auf 7 Tage hardening | done | — | 2026-04-25 |
-| FEAT-522 | Azure-Whisper-Adapter Implementierung (Code-Ready) | done | — | 2026-04-25 |
-| FEAT-523 | Einwilligungstexte als Templates + Settings-Page | done | — | 2026-04-25 |
-| FEAT-524 | MeetingTimelineItem analog CallTimelineItem (UI-Parity) | done | — | 2026-04-25 |
-| FEAT-525 | DSGVO-Compliance-Doku (via /compliance Skill) | done | — | 2026-04-25 |
+| FEAT-521 | Recording-Retention auf 7 Tage hardening | deployed | — | 2026-04-25 |
+| FEAT-522 | Azure-Whisper-Adapter Implementierung (Code-Ready) | deployed | — | 2026-04-25 |
+| FEAT-523 | Einwilligungstexte als Templates + Settings-Page | deployed | — | 2026-04-25 |
+| FEAT-524 | MeetingTimelineItem analog CallTimelineItem (UI-Parity) | deployed | — | 2026-04-25 |
+| FEAT-525 | DSGVO-Compliance-Doku (via /compliance Skill) | deployed | — | 2026-04-25 |
 
 ## V7 Features (Multi-User + Erweiterung — planned)
 
