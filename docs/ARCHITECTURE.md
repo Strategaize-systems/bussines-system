@@ -5655,3 +5655,412 @@ Gesamtschaetzung: ~5-6 Tage.
 ### V5.2 Recommended Next Step
 
 `/slice-planning` — V5.2-Slices strukturiert ausdefinieren (Acceptance Criteria, Dependencies, Micro-Tasks, QA-Fokus). Danach pro Slice `/backend` oder `/frontend` + `/qa`.
+
+## V5.3 — E-Mail Composing Studio Architecture
+
+### Architecture Summary
+
+V5.3 ist eine **UI-zentrische Erweiterung** der bestehenden E-Mail-Pipeline. Der Versand-Layer (`send.ts`, Tracking, IMAP-Sync, Auto-Zuordnung, Cadence-Engine) bleibt unangetastet. Neu sind:
+
+1. Eine zentrale **Branding-Engine** (`renderBrandedHtml`) als einzige Quelle der Wahrheit fuer HTML-Output. Live-Preview im neuen Composing-Studio und tatsaechlicher Versand rufen denselben Renderer — kein Drift moeglich.
+2. Eine eigenstaendige Vollbild-Seite **`/emails/compose`** mit 3-Panel-Layout (Vorlagen-Liste links, Erfassen-Form mitte, Live-Preview rechts) als primaerer E-Mail-Erstellungs-Ort, ersetzt die schmale `EmailCompose`-Sheet als Default-Einstieg aus Deal-Workspace, Mein Tag und Focus.
+3. **Schema-Erweiterung** auf `email_templates` (`is_system`, `category`, `language`, `layout`) plus eine neue **`branding_settings`-Tabelle** (single-row) fuer Logo, Markenfarben, Schrift, Footer.
+4. **6+ Systemvorlagen** als Seed via SQL-Migration, plus ein **KI-Vorlagen-Generator** (Voice-Prompt + Bedrock) und ein **Inline-Edit-Diktat** (Voice-Befehl gezielte Modifikation am Body mit Diff-Preview).
+
+Alle KI-Aufrufe folgen DEC-052 (on-click, nicht auto-load) und Datenresidenz (Bedrock Frankfurt, Whisper via bestehendem Adapter — V5.2 openai-default, V5.2 Azure-Code-Ready).
+
+### V5.3 Main Components
+
+| Komponente | Pfad | Typ | Verantwortung |
+|---|---|---|---|
+| Branding-Settings-Page | `cockpit/src/app/(app)/settings/branding/page.tsx` | Page (Server) | Read+Write `branding_settings`-Row |
+| Branding-Form | `cockpit/src/app/(app)/settings/branding/branding-form.tsx` | Client | Logo-Upload, Farb-Picker, Schrift-Dropdown, Footer-Markdown |
+| Branding-Actions | `cockpit/src/app/(app)/settings/branding/actions.ts` | Server Actions | `getBranding`, `updateBranding`, `uploadLogo` |
+| Branding-Renderer | `cockpit/src/lib/email/render.ts` | Pure Function | `renderBrandedHtml(body, branding, vars)` → vollstaendiges HTML mit Inline-CSS |
+| Send-Layer (bestehend) | `cockpit/src/lib/email/send.ts` | Server | Erweitert um Renderer-Hook (faellt auf `textToHtml` zurueck wenn Branding leer) |
+| Composing-Studio Route | `cockpit/src/app/(app)/emails/compose/page.tsx` | Page (Server) | Laedt Templates, Branding, Deal-Kontext aus Query-Params |
+| Composing-Studio Layout | `cockpit/src/app/(app)/emails/compose/compose-studio.tsx` | Client | 3-Panel-Layout, Mobile-Tabs, State-Management |
+| Templates-Panel | `cockpit/src/app/(app)/emails/compose/templates-panel.tsx` | Client | Liste + Filter (System/Eigene), Klick wendet Vorlage an |
+| Compose-Form | `cockpit/src/app/(app)/emails/compose/compose-form.tsx` | Client | An, Betreff, Body + bestehende KI-Improve-Buttons + Voice |
+| Live-Preview | `cockpit/src/app/(app)/emails/compose/live-preview.tsx` | Client | Debounce 250ms, ruft `renderBrandedHtml` |
+| KI-Empfaenger-Vorschlag | `cockpit/src/app/(app)/emails/compose/recipient-suggest.ts` | Server Action | Letzter schreibender Kontakt aus Deal, Fallback Primary-Contact |
+| Template-Generator-Modal | `cockpit/src/app/(app)/emails/compose/new-template-dialog.tsx` | Client | Manuell + KI-Diktat (Voice/Text) |
+| KI-Vorlagen-Prompt | `cockpit/src/lib/ai/prompts/email-template-generate.ts` | Pure Function | System-Prompt + JSON `{title, subject, body, suggestedCategory}` |
+| Inline-Edit-Modal | `cockpit/src/app/(app)/emails/compose/inline-edit-dialog.tsx` | Client | Voice → Whisper → Bedrock → Diff-Preview → Akzeptieren/Verwerfen |
+| KI-Inline-Edit-Prompt | `cockpit/src/lib/ai/prompts/email-inline-edit.ts` | Pure Function | System-Prompt + JSON `{newBody, summary}` mit klaren Constraints |
+| Template-Actions (bestehend) | `cockpit/src/app/(app)/settings/template-actions.ts` | Server Actions | Erweitert um `is_system`/`category`/`language`-Felder + `duplicateSystemTemplate` |
+
+**Bewusst NICHT geaendert:**
+- `cockpit/src/lib/email/send.ts` — Tracking, DB-Logging, Draft-Fallback bleiben Bit-fuer-Bit gleich. Renderer-Hook ist additiv.
+- `cockpit/src/lib/email/tracking.ts` — Pixel-Injection, Link-Wrapping, `textToHtml`-Fallback bleiben.
+- `cockpit/src/app/(app)/emails/email-compose.tsx` — bleibt funktional als Mini-Variante in der bestehenden Sheet (`email-sheet.tsx`); kein Breaking Change.
+- IMAP-Sync, Cadence-Engine, Tracking-API.
+
+### V5.3 Responsibilities
+
+**`renderBrandedHtml(body, branding, vars)` (lib/email/render.ts):**
+- Input: `body: string` (Markdown/Plain), `branding: Branding | null`, `vars: Record<string, string>` (Deal-Kontext fuer Variablen-Ersetzung).
+- Output: vollstaendiges `<!DOCTYPE html>...<body>...</body></html>` mit Inline-CSS.
+- Fallback: wenn `branding === null` oder alle Branding-Felder leer → `textToHtml(body)` aus `tracking.ts` (V5.2-Verhalten).
+- Email-Client-Kompatibilitaet: nur table-Layout + Inline-Styles, keine Flex/Grid, keine externen CSS-Dateien.
+- Variablen-Ersetzung passiert **vor** dem HTML-Render — gleiche Token wie heute (`{{vorname}}`, `{{nachname}}`, `{{firma}}`, `{{position}}`, `{{deal}}`).
+- Pure Function (kein I/O) — Snapshot-Tests sind trivial.
+
+**`/emails/compose` Page (Server-Side):**
+- Liest Query-Params `dealId`, `contactId`, `companyId`, `templateId`.
+- Laedt parallel: `branding_settings` (1 Row), `email_templates` (alle), Deal-Kontext (wenn `dealId` gesetzt).
+- Liefert initiale Werte an Client-Komponente. Kein KI-Call bei Page-Load (DEC-052).
+
+**Compose-Studio (Client):**
+- State: `to`, `subject`, `body`, `templateId`, `language`.
+- Effects:
+  - Template-Auswahl → wendet Subject + Body an, Variablen werden mit Deal-Vars ersetzt.
+  - Body/Subject-Aenderung → Live-Preview rendert mit Debounce 250ms.
+  - "KI-Vorschlag An/Betreff"-Button → Server Action `recipient-suggest.ts` (on-click).
+- Mobile (<768px): 3 Panels werden zu Tabs (Vorlagen / Erfassen / Preview) in derselben Route.
+
+**`recipient-suggest.ts` (Server Action):**
+- Input: `dealId`.
+- Logik:
+  1. Lade letzte 10 Mails fuer den Deal sortiert nach `created_at DESC`.
+  2. Erste Mail mit `direction='inbound'` und `from_address` → Vorschlag (letzter schreibender Kontakt).
+  3. Fallback: Primary-Contact des Deals (`deals.primary_contact_id`).
+  4. Subject-Vorschlag: deterministisch nach Stage (`Erstansprache`, `Follow-up`, `Nach Termin`, etc.) — KEIN LLM-Call. Stage-Mapping ist hartkodiert.
+- Output: `{to: string, subject: string, contactId: string}`.
+
+**`email-template-generate.ts` (Pure Function):**
+- Wie `email-improve.ts`, anderer System-Prompt.
+- JSON: `{title, subject, body, suggestedCategory}`.
+- Categories: `erstansprache | follow-up | nach-termin | angebot | danke | reaktivierung | sonstige`.
+- Sprache aus User-Prompt geraten (default `de`).
+
+**`email-inline-edit.ts` (Pure Function):**
+- Wie `email-improve.ts`, strikter Prompt.
+- Constraints im System-Prompt:
+  - "Aendere nur den Teil, den der User explizit nennt."
+  - "Erfinde keine Fakten, keine Namen, keine Zahlen."
+  - "Behalte Sprache und Ton bei."
+  - "Wenn die Anweisung mehrdeutig ist, waehle die wahrscheinlichste Interpretation."
+- JSON: `{newBody, summary}`.
+- Frontend zeigt Diff-Vorschau (Library: `diff-match-patch` oder simple Line-Diff) vor Uebernahme.
+
+### V5.3 Data Flow
+
+**Flow 1: User schreibt Mail aus Deal-Workspace**
+
+```
+Deal-Workspace "E-Mail schreiben"
+    |
+    +--> Navigate to /emails/compose?dealId=DEAL_ID
+    |
+    +--> Server: page.tsx
+    |     - SELECT * FROM branding_settings LIMIT 1
+    |     - SELECT * FROM email_templates ORDER BY is_system DESC, title
+    |     - SELECT deal + primary_contact + last_inbound_email FROM joined views
+    |
+    +--> Client: ComposeStudio mounts
+    |     - Initial body/subject leer
+    |     - Templates-Panel zeigt System + Eigene
+    |     - User klickt "KI-Vorschlag An/Betreff"
+    |          |
+    |          +--> Server Action recipient-suggest.ts (on-click)
+    |          |    - Query letzte Inbound-Mail fuer Deal
+    |          |    - Fallback Primary-Contact
+    |          |    - Stage-basiertes Subject
+    |          +--> Form-State updated
+    |
+    +--> User waehlt Vorlage (Klick links)
+    |     - Body + Subject aus Vorlage uebernommen
+    |     - Variablen mit Deal-Vars ersetzt
+    |
+    +--> User aendert Body
+    |     - Debounced (250ms) → Live-Preview rendert
+    |          |
+    |          +--> renderBrandedHtml(body, branding, vars)
+    |          |    - Inline-CSS, Table-Layout
+    |          |    - Logo via Public-URL aus Storage Bucket
+    |
+    +--> User klickt "Senden"
+          |
+          +--> Server Action sendComposedEmail
+          |    - renderBrandedHtml(body, branding, vars) → html
+          |    - sendEmailWithTracking({to, subject, body, html, dealId, contactId, ...})
+          |        - injectTracking(html, trackingId)
+          |        - SMTP send
+          |        - INSERT INTO emails (status='sent', tracking_id, ...)
+          |
+          +--> redirect("/emails/SENT_ID") oder Toast
+```
+
+**Flow 2: User erstellt neue Vorlage per KI-Diktat**
+
+```
+Composing-Studio "+ Neue Vorlage" Button
+    |
+    +--> NewTemplateDialog opens
+    |
+    +--> User waehlt "KI-Diktat"-Modus
+    |     - Voice: Whisper-Adapter (bestehend) → Transcript
+    |     - Text: direkt
+    |
+    +--> Server Action generateTemplate(prompt, language)
+    |     - email-template-generate.ts → Bedrock
+    |     - Returns {title, subject, body, suggestedCategory}
+    |
+    +--> Client: Form gefuellt, User editiert
+    |
+    +--> User klickt "Speichern"
+          |
+          +--> Server Action createEmailTemplate
+          |    - INSERT INTO email_templates (is_system=false, category, language, ...)
+```
+
+**Flow 3: User macht Inline-Edit-Diktat**
+
+```
+Composing-Studio "Inline-Edit-Diktat"-Button
+    |
+    +--> InlineEditDialog opens
+    |
+    +--> User spricht Befehl
+    |     - Whisper-Adapter → Transcript
+    |
+    +--> Server Action applyInlineEdit(originalBody, transcript)
+    |     - email-inline-edit.ts → Bedrock
+    |     - System-Prompt verbietet Erfindung, erzwingt minimale Modifikation
+    |     - Returns {newBody, summary}
+    |
+    +--> Client: Diff-Vorschau (alter vs neuer Body)
+    |
+    +--> User klickt "Akzeptieren" oder "Verwerfen"
+          - Akzeptieren: setBody(newBody)
+          - Verwerfen: keine Aenderung
+```
+
+### V5.3 Database Changes — MIG-023
+
+**Neue Tabelle `branding_settings` (single-row):**
+
+```sql
+CREATE TABLE IF NOT EXISTS branding_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  logo_url TEXT NULL,
+  primary_color TEXT NULL,         -- Hex z.B. "#0F172A"
+  secondary_color TEXT NULL,       -- Hex
+  font_family TEXT NULL DEFAULT 'system', -- system | inter | sans | serif
+  footer_markdown TEXT NULL,
+  contact_block JSONB NULL,        -- {name, company, phone, web}
+  updated_by UUID NULL REFERENCES profiles(id),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE branding_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY authenticated_full_access ON branding_settings FOR ALL TO authenticated USING (true) WITH CHECK (true);
+GRANT ALL ON branding_settings TO authenticated;
+
+-- Single-row enforcement at app level (UPSERT auf erste Row, keine zweite anlegen)
+INSERT INTO branding_settings (id) VALUES (gen_random_uuid()) ON CONFLICT DO NOTHING;
+```
+
+**Erweiterung `email_templates`:**
+
+```sql
+ALTER TABLE email_templates ADD COLUMN IF NOT EXISTS is_system BOOLEAN DEFAULT false;
+ALTER TABLE email_templates ADD COLUMN IF NOT EXISTS category TEXT NULL;
+ALTER TABLE email_templates ADD COLUMN IF NOT EXISTS language TEXT NULL DEFAULT 'de';
+ALTER TABLE email_templates ADD COLUMN IF NOT EXISTS layout JSONB NULL;
+CREATE INDEX IF NOT EXISTS idx_email_templates_is_system ON email_templates(is_system);
+CREATE INDEX IF NOT EXISTS idx_email_templates_category ON email_templates(category);
+```
+
+Alle bestehenden Rows: `is_system=false` (Default), `category=null`, `language='de'` (Default), `layout=null` — Backwards Compatibility.
+
+**Seed Systemvorlagen (mind. 6 DE + 1-2 EN/NL):**
+
+```sql
+INSERT INTO email_templates (title, is_system, category, language, subject_de, body_de, placeholders)
+VALUES
+  ('System: Erstansprache Multiplikator', true, 'erstansprache', 'de', '...', '...', '[...]'),
+  ('System: Erstansprache Unternehmer-Lead', true, 'erstansprache', 'de', '...', '...', '[...]'),
+  ('System: Follow-up nach Erstgespraech', true, 'follow-up', 'de', '...', '...', '[...]'),
+  ('System: Follow-up Angebot ausstehend', true, 'follow-up', 'de', '...', '...', '[...]'),
+  ('System: Danke nach Termin', true, 'danke', 'de', '...', '...', '[...]'),
+  ('System: Re-Aktivierung kalter Lead', true, 'reaktivierung', 'de', '...', '...', '[...]'),
+  ('System: Cold Outreach (EN)', true, 'erstansprache', 'en', '...', '...', '[...]'),
+  ('System: Eerste contact (NL)', true, 'erstansprache', 'nl', '...', '...', '[...]')
+ON CONFLICT DO NOTHING;
+```
+
+(Konkrete Body-Texte werden in der Slice-Implementierung ausformuliert — Architektur-Entscheidung ist nur die Seed-Strategie via SQL.)
+
+**Keine Schema-Aenderung** an `emails`, `contacts`, `deals`, `companies`, `cadences`.
+
+### V5.3 Storage — Branding Bucket
+
+Neuer Supabase Storage Bucket **`branding`** (Public-Read, Authenticated-Write):
+
+- **Pfad-Schema:** `branding/logo-{timestamp}.{ext}` (Versionierung via Timestamp, alte Files werden bei neuem Upload geloescht).
+- **Maximale Dateigroesse:** 2 MB (App-Level-Validierung).
+- **Erlaubte MIME-Types:** `image/png`, `image/jpeg`, `image/svg+xml`, `image/webp`.
+- **Public-URL:** `https://<supabase-host>/storage/v1/object/public/branding/logo-XXX.png` — wird in `branding_settings.logo_url` persistiert.
+- **Bucket-Erstellung:** Via SQL-Migration (`storage.buckets`-Insert) oder Supabase-CLI in Pre-Deploy-Script.
+
+Begruendung gegen Data-URI (siehe DEC-089):
+- Logos sind oft 50-300 KB — Data-URI in DB wuerde jede Branding-Read-Query verlangsamen.
+- Public-URL ist stabiler in E-Mail-Clients (Outlook blockt Data-URIs in manchen Konfigurationen).
+- Storage Bucket ist bereits Pattern (siehe `documents`, `recordings`, `call-recordings`).
+
+### V5.3 External Dependencies
+
+| Dependency | Status | Verwendung |
+|---|---|---|
+| Bedrock Claude Sonnet (Frankfurt) | bestehend (DEC-005) | KI-Vorlagen-Generator + Inline-Edit-Prompt |
+| Whisper-Adapter (openai-default) | bestehend (V5.2 DEC-085) | Voice-Input fuer Vorlagen-Diktat + Inline-Edit |
+| Supabase Storage | bestehend | Branding-Logo Bucket (neu) |
+| `nodemailer` | bestehend | Versand-Layer (unveraendert) |
+| `diff-match-patch` (oder eigener Line-Diff) | NEU | Diff-Vorschau im Inline-Edit-Modal |
+
+**Keine** neuen externen Services. Keine neuen Auth-Pfade. Keine neue Region.
+
+### V5.3 Security / Privacy
+
+**Branding-Daten:**
+- Logo + Farben sind nicht-sensitiv (Marketing-Material).
+- Footer-Markdown kann Telefonnummer enthalten — RLS verhindert nicht-authentifizierten Zugriff.
+- Storage Bucket Public-Read: Logos sind ohnehin in jeder versendeten Mail enthalten.
+
+**KI-Calls (Bedrock):**
+- Body + Vorlagen-Inhalte werden an Bedrock Frankfurt gesendet (DEC-005, data-residency.md).
+- Keine PII-Felder im System-Prompt — System-Prompt enthaelt nur Anweisungen, keine Kunden-/Kontakt-Daten ueber den User-Body hinaus.
+- DEC-052: KI-Calls on-click, keine Auto-Loads → User-kontrollierte Kostenverursachung.
+
+**Voice-Input (Whisper):**
+- Audio geht via bestehendem Adapter (V5.2 openai-default, Azure-EU-Switch ausstehend).
+- Internal-Test-Mode bleibt bis Anwalts-Pruefung + Azure-EU-Switch (V5.2-Pre-Pflicht).
+
+**E-Mail-Tracking:**
+- Tracking-Pixel + Link-Wrapping bleiben unveraendert (V4 FEAT-506, DEC-066).
+- Live-Preview rendert OHNE Tracking-Injection (Preview ist nur fuer User-Eyes; Injection passiert in `sendEmailWithTracking` → `injectTracking`).
+
+### V5.3 Constraints & Tradeoffs
+
+**Constraint: Email-Client-Kompatibilitaet**
+- Renderer darf nur table-Layout + Inline-CSS produzieren. Flex/Grid funktioniert in Outlook nicht.
+- Tradeoff: Code-mehr im Renderer (verbose Tables) vs. zuverlaessige Darstellung. → Renderer ist verbose, dafuer testbar via Snapshots.
+
+**Constraint: Backwards Compatibility**
+- Bestehende Mails (heute via `textToHtml`) muessen weiterhin funktionieren wenn `branding_settings` leer.
+- Tradeoff: Doppel-Pfad in `send.ts` (Branding vorhanden → Renderer / leer → `textToHtml`). → Akzeptiert, Pfad ist klein und gut testbar.
+
+**Constraint: Live-Preview Performance**
+- Bei jedem Body-Keystroke darf nicht der gesamte HTML-Tree neu gemounted werden.
+- Tradeoff: Debounce 250ms (User merkt minimalen Lag) + React-Memo auf Renderer-Output. → Akzeptiert.
+
+**Constraint: KI-Inline-Edit Halluzinationen**
+- LLMs erfinden gerne Inhalte, wenn der Prompt vage ist.
+- Tradeoff: Strenger System-Prompt + zwingende Diff-Vorschau (User akzeptiert vor Uebernahme). → Akzeptiert, plus Smoke-Test an min. 3 Beispielen vor Release.
+
+**Tradeoff: Mobile-Composing-Studio = Tabs in derselben Route (DEC-093)**
+- Alternative waere: Mobile bekommt das alte `email-sheet.tsx` weiterhin.
+- Entscheidung: einheitlicher Code-Pfad + responsive-Tabs. → Vermeidet Routing-Split + Doppel-Maintenance.
+
+**Tradeoff: Empfaenger-Vorschlag ohne LLM (DEC-092)**
+- Alternative waere: LLM rankt mehrere Kontakte aus Deal.
+- Entscheidung: deterministische Logik (letzter schreibender Kontakt → Primary-Contact), kein LLM.
+- Begruendung: schneller, deterministisch, keine Bedrock-Kosten, ausreichend fuer V5.3-Scope. KI-Ranking kann V7-Topic werden.
+
+### V5.3 Open Questions (alle aus PRD geklaert)
+
+| PRD-Question | Entscheidung | DEC |
+|---|---|---|
+| Branding-Storage-Tabelle | Eigene Tabelle `branding_settings` (single-row) | DEC-088 |
+| Logo-Storage | Supabase Storage Bucket `branding/`, kein Data-URI | DEC-089 |
+| `layout`-Feld auf `email_templates` | Nullable JSONB ohne Schema, V5.3 ungenutzt | DEC-090 |
+| Systemvorlagen-Seed | SQL-Migration mit INSERT, MIG-023 | DEC-091 |
+| Empfaenger-KI-Vorschlag | Deterministisch (letzter Inbound-Kontakt → Primary-Contact), kein LLM | DEC-092 |
+| Mobile-Routing | Tabs in derselben Route `/emails/compose`, kein Sheet-Routing-Split | DEC-093 |
+| Inline-Edit-Konfidenz | Pragmatisch raten, Diff-Vorschau ist Sicherheitsnetz | DEC-094 |
+| Slice-Schnitt | 5 Slices, FEAT-532 in 2 Slices (siehe naechster Abschnitt) | siehe Empfohlene Slice-Struktur |
+
+Zusaetzliche Architektur-Entscheidung: Renderer als Single-Source-of-Truth (DEC-095) — Live-Preview und Send rufen denselben `renderBrandedHtml`, kein Drift moeglich.
+
+### V5.3 Empfohlene Slice-Struktur
+
+**5 Slices (FEAT-532 in 2 Slices zerlegt — DEC-093):**
+
+**SLC-531 — Branding Foundation**
+- FEAT-531 vollstaendig
+- MIG-023 Tabelle `branding_settings` + Storage Bucket `branding`
+- `cockpit/src/lib/email/render.ts` mit `renderBrandedHtml` (Pure Function + Snapshot-Tests)
+- `/settings/branding`-Page + Form + Server Actions (`getBranding`, `updateBranding`, `uploadLogo`)
+- `send.ts`-Hook: ruft Renderer wenn Branding gepflegt, sonst `textToHtml`
+- Acceptance: Mail mit Branding wird in Gmail/Outlook sichtbar gerendert, ohne Branding bleibt heutiger Output bit-fuer-bit gleich.
+- Schaetzung: ~1.5-2 Tage
+
+**SLC-532 — Email-Templates Schema + Systemvorlagen + KI-Generator**
+- FEAT-533 vollstaendig
+- MIG-023 Erweiterung `email_templates` (`is_system`, `category`, `language`, `layout`) + Seed 6+ Systemvorlagen
+- `template-actions.ts` Erweiterung: Filter `is_system`/`category`, neue Action `duplicateSystemTemplate`
+- `email-template-generate.ts` Prompt + Server Action `generateTemplate`
+- Acceptance: 6+ Systemvorlagen sichtbar, Filter funktioniert, KI-Generator produziert valides JSON.
+- Schaetzung: ~1 Tag
+
+**SLC-533 — Composing-Studio Layout + KI-Vorausfuellung** (FEAT-532 Teil 1)
+- Route `/emails/compose/page.tsx` + Server-Side-Loader (Branding, Templates, Deal-Kontext)
+- 3-Panel-Layout-Komponente (`compose-studio.tsx` + 3 Panel-Komponenten)
+- Mobile-Tabs-Variante in derselben Route
+- KI-Empfaenger/Betreff-Vorschlag (`recipient-suggest.ts`, deterministisch)
+- Templates-Panel mit Filter + Klick-Anwendung + Variablen-Replace
+- Compose-Form mit bestehenden KI-Improve-Buttons + Voice (heute angehaengt)
+- KEINE Live-Preview, KEIN Send (in SLC-534)
+- Acceptance: Seite laedt mit Deal-Kontext, Vorlage anwendbar, KI-Vorschlag funktioniert.
+- Schaetzung: ~1.5 Tage
+
+**SLC-534 — Live-Preview + Send-Integration + Einstiegspunkte** (FEAT-532 Teil 2)
+- Live-Preview-Komponente mit Debounce 250ms + `renderBrandedHtml`-Aufruf
+- Send-Server-Action `sendComposedEmail` (Renderer → `sendEmailWithTracking`)
+- Variablen-Resolver mit Deal-Kontext
+- Einstiegspunkte umstellen: Deal-Workspace, Mein Tag, Focus → Link auf `/emails/compose?dealId=...`
+- Acceptance: Senden produziert dieselben DB-Eintraege wie heute, Preview = versendete Mail bit-identisch.
+- Schaetzung: ~1.5 Tage
+
+**SLC-535 — Inline-Edit-Diktat**
+- FEAT-534 vollstaendig
+- `email-inline-edit.ts` Prompt mit Constraints
+- Server Action `applyInlineEdit`
+- Inline-Edit-Modal mit Voice-Recording + Diff-Vorschau
+- Smoke-Test an min. 3 Beispielen (3 Test-Faelle dokumentiert in QA-Report)
+- Acceptance: Inline-Edit aendert nur den geforderten Teil, KI erfindet keine Fakten, Diff-Vorschau zwingend.
+- Schaetzung: ~1 Tag
+
+**Gesamtschaetzung: ~6-7 Tage**
+
+Abhaengigkeiten:
+- SLC-532 ist unabhaengig von SLC-531 (kann parallel implementiert werden, falls 2 Sessions).
+- SLC-533 braucht SLC-531 (Branding) + SLC-532 (Templates).
+- SLC-534 braucht SLC-533 (Layout) + SLC-531 (Renderer fuer Live-Preview + Send).
+- SLC-535 braucht SLC-533 (Composing-Studio-Layout fuer Modal-Trigger).
+
+Empfohlene Reihenfolge: SLC-531 → SLC-532 → SLC-533 → SLC-534 → SLC-535.
+
+### V5.3 Risks & Open Decisions
+
+**Risk: Email-Client-Snapshot-Tests nicht ausreichend.**
+- Mitigation: Smoke-Test in SLC-531 mit echtem Versand an Gmail/Outlook/Apple Mail (ein Test-Postfach, dokumentiert im QA-Report).
+
+**Risk: Live-Preview-Debounce zu langsam/zu schnell.**
+- Mitigation: 250ms als Default, in SLC-534 QA validieren, ggf. anpassen.
+
+**Risk: KI-Inline-Edit halluziniert trotz strengem System-Prompt.**
+- Mitigation: Diff-Vorschau ist mandatory (User MUSS akzeptieren), 3 Test-Faelle in SLC-535 QA dokumentiert.
+
+**Risk: Bestehende Vorlagen ohne `language`-Wert produzieren `null`-Bugs.**
+- Mitigation: Migration setzt Default `'de'` + ALL nullable. Code muss `language || 'de'` an allen Lesepfaden defensiv sein.
+
+**Open Decision (deferred):** Block-basierter Mail-Builder (`layout`-Feld) — bewusst ungenutzt in V5.3, Schema vorbereitet. Aktivierung in V7+ als eigenes Feature.
+
+**Open Decision (deferred):** KI-Empfaenger-Ranking via LLM (mehrere Kontakte) — V5.3 nutzt deterministische Logik. Aktivierung wenn User-Feedback zeigt dass deterministisch nicht reicht.
+
+### V5.3 Recommended Next Step
+
+`/slice-planning` V5.3 — die 5 Slices SLC-531..SLC-535 strukturiert ausdefinieren mit Acceptance Criteria, Micro-Tasks, QA-Fokus und Cross-Slice-Dependencies. Danach pro Slice `/backend` (SLC-531, SLC-532) und `/frontend` (SLC-533, SLC-534, SLC-535) mit `/qa` nach jedem Slice.

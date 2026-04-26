@@ -175,3 +175,26 @@
 - Affected Areas: Settings-Page `/settings/compliance` (neu), Server Actions `getComplianceTemplate` / `updateComplianceTemplate` (neu in `cockpit/src/app/(app)/settings/compliance/actions.ts`). Keine Aenderung an bestehenden Tabellen.
 - Risk: Gering — rein additiv, eine neue Tabelle ohne FK-Beziehungen ausser nullable `updated_by`. Idempotent (IF NOT EXISTS, ON CONFLICT DO NOTHING).
 - Rollback Notes: `DROP TABLE compliance_templates CASCADE;`
+
+### MIG-023 — V5.3 Branding + Email-Templates Schema + Systemvorlagen-Seed
+- Date: 2026-04-26 (planned — SLC-531 + SLC-532)
+- Scope: 3 Aenderungen in einer Migration `023_v53_branding_email_templates.sql`:
+  1. Neue Tabelle `branding_settings` (single-row): `id UUID PK`, `logo_url TEXT NULL`, `primary_color TEXT NULL`, `secondary_color TEXT NULL`, `font_family TEXT NULL DEFAULT 'system'`, `footer_markdown TEXT NULL`, `contact_block JSONB NULL`, `updated_by UUID NULL REFERENCES profiles(id)`, `updated_at TIMESTAMPTZ DEFAULT now()`. RLS `authenticated_full_access`. Initiale Empty-Row via INSERT ON CONFLICT DO NOTHING (single-row enforcement an App-Level).
+  2. Erweiterung `email_templates` um 4 nullable Spalten: `is_system BOOLEAN DEFAULT false`, `category TEXT NULL`, `language TEXT NULL DEFAULT 'de'`, `layout JSONB NULL`. 2 Indizes: `idx_email_templates_is_system`, `idx_email_templates_category`.
+  3. Storage Bucket `branding` (Public-Read, Authenticated-Write) via `INSERT INTO storage.buckets (id, name, public) VALUES ('branding', 'branding', true) ON CONFLICT DO NOTHING;` plus passende `storage.objects`-RLS-Policies.
+  4. Seed-INSERT fuer 6 DE-Systemvorlagen + 1-2 EN/NL via INSERT ON CONFLICT DO NOTHING (`is_system=true`, `category` gesetzt, `language` gesetzt). Konkrete Body-Texte werden in der Migration ausformuliert.
+- Reason: V5.3 FEAT-531 (Branding-Settings + zentrale Mail-Layout-Engine) braucht typisierte Branding-Spalten und Storage fuer Logo. FEAT-533 (Systemvorlagen + KI-Vorlagen-Generator) braucht Schema-Erweiterung auf `email_templates` fuer Filter `is_system`/`category` und Sprache. DEC-088 (eigene Tabelle), DEC-089 (Storage Bucket), DEC-090 (`layout` als nullable JSONB), DEC-091 (SQL-Seed) haben die Strategie festgelegt.
+- Affected Areas:
+  - Settings-Page `/settings/branding` (neu), Server Actions `getBranding`/`updateBranding`/`uploadLogo` (neu in `cockpit/src/app/(app)/settings/branding/actions.ts`).
+  - `cockpit/src/lib/email/render.ts` (neu, pure Function `renderBrandedHtml`).
+  - `cockpit/src/lib/email/send.ts` Renderer-Hook (additiv: Branding-Pfad neben `textToHtml`-Fallback).
+  - `cockpit/src/app/(app)/settings/template-actions.ts` Erweiterung (Filter `is_system`/`category`, neue Action `duplicateSystemTemplate`).
+  - Composing-Studio Route `/emails/compose` (neu, FEAT-532).
+  - KEINE Aenderung an `emails`, `contacts`, `deals`, `companies`, `cadences`, `compliance_templates`.
+- Risk: Niedrig — rein additive Aenderungen. `branding_settings` ist neue Tabelle ohne FK-Constraints (ausser nullable `updated_by`). `email_templates`-Erweiterung ist nullable mit Defaults — Backwards Compatibility fuer alle bestehenden Rows. Storage Bucket ist additiv. Seed-INSERTs sind idempotent (ON CONFLICT DO NOTHING). Backwards Compatibility-Test: bestehende Mails ohne Branding gehen weiterhin via `textToHtml`-Fallback raus (Bit-fuer-Bit identisch zum heutigen Output).
+- Rollback Notes:
+  - `DROP TABLE branding_settings CASCADE;`
+  - `ALTER TABLE email_templates DROP COLUMN IF EXISTS is_system, DROP COLUMN IF EXISTS category, DROP COLUMN IF EXISTS language, DROP COLUMN IF EXISTS layout;`
+  - `DELETE FROM storage.objects WHERE bucket_id='branding'; DELETE FROM storage.buckets WHERE id='branding';`
+  - `DELETE FROM email_templates WHERE is_system=true;` (nur falls Spalte noch existiert)
+  - Seed-INSERTs sind via Title-Prefix `System: ...` identifizierbar — falls Spalte `is_system` schon dropped, alternativ via Title-Filter.
