@@ -327,3 +327,16 @@
 - Area: Push Notifications / ENV
 - Summary: VAPID_SUBJECT in Coolify stand auf `mailto:admin@strategaizetransition.com` — diese Adresse existierte nicht. Geaendert auf `mailto:immo@bellaerts.de` am 2026-04-18 vor V4.1 Redeploy.
 - Next Action: Erledigt.
+
+### ISSUE-042 — OpenAI-API-Key in untrackter Datei am Repo-Root
+- Status: open
+- Severity: High
+- Area: Security / Credentials
+- Summary: Datei `open AI Business system.txt` im Repo-Root enthaelt einen produktiven OpenAI-API-Key (`sk-proj-...`). Untracked (NIE in git history), nur lokal im Working-Tree seit ca. 2026-04-06. Risiko: versehentliches Commit via `git add .`, Filesystem-Zugriff durch Dritte, Credential-Leak ueber Backup/Cloud-Sync.
+- Impact: OpenAI-Key ist fuer aktuellen V5.2-Whisper-Provider (`TRANSCRIPTION_PROVIDER=openai`) potenziell der Production-Key. Bei Leak: unautorisierte API-Nutzung auf Kosten des OpenAI-Account, unkontrollierte Kosten, Audio-Daten-Exposition durch Dritt-Calls.
+- Workaround: Im V5.2 Final-Check (RPT-217) am 2026-04-26 wurde `.gitignore` defensiv um Credential-Patterns (`*api*key*.txt`, `open AI*.txt` u.a.) erweitert. Datei ist nun von Git unsichtbar — kann nicht mehr versehentlich committed werden.
+- Next Action:
+  1. Key bei OpenAI rotieren (platform.openai.com → API Keys → revoke + create new)
+  2. Neuen Key in Coolify-ENV `OPENAI_API_KEY` setzen
+  3. Lokale Datei loeschen oder nach `~/credentials/` ausserhalb des Repos verschieben
+  4. (Pre-Go-Live Pflicht) Switch auf Azure OpenAI EU per `TRANSCRIPTION_PROVIDER=azure` macht den OpenAI-US-Key irrelevant — diese Massnahme reduziert Blast-Radius dauerhaft.

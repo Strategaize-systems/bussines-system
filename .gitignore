@@ -9,6 +9,13 @@ cockpit/.env.local
 cockpit/.env
 env vars_business.txt
 
+# Credentials / Secrets — defense in depth (V5.2 final-check, ISSUE-042)
+*api*key*.txt
+*secret*.txt
+*.credentials
+open AI*.txt
+openai*.txt
+
 # Next.js
 cockpit/.next/
 cockpit/out/
