@@ -1621,6 +1621,26 @@
       "version": null,
       "description": "User-Feedback nach SLC-533 Browser-Smoke 2026-04-27: das aktuelle Look&Feel der /emails/compose-Page wirkt 'zu normal, zu altbacken'. Komplette Page muss auf Style-Guide-V2-Niveau gehoben werden (gleicher Premium-Polish wie Mein Tag / Focus / Performance). Umfasst: TemplatesPanel-Cards (Hover-States, Action-Icon-Discoverability F-3 — Icons aktuell opacity-0 bis hover, fuer neue User unauffindbar), Filter-Tabs-Visual, Default-Filter eventuell auf 'System' statt 'Alle' (F-4), ComposeForm-Spacing+Typografie, KI-Improve-Button-Bar Premium-Look, NewTemplateDialog-Tabs Premium, Live-Preview-Slot-Frame. Nach SLC-534 + SLC-535 als V5.3-Polish oder eigener Mini-Slice. Findings F-3+F-4 aus RPT-229 sind hier subsumiert.",
       "createdAt": "2026-04-27"
+    },
+    {
+      "id": "BL-404",
+      "title": "E-Mail Anhaenge-Upload im Composing-Studio (PC-Upload + Angebot-Anhang)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": null,
+      "description": "User-Anforderung 2026-04-27 nach SLC-533 Browser-Smoke: Composing-Studio (/emails/compose) muss Anhaenge an ausgehende E-Mails unterstuetzen. ZWEI Versionen: (1) Direkt-Upload vom User-PC — Drag&Drop oder File-Picker, MIME/Size-Whitelist, Storage-Bucket auf self-hosted Supabase (analog Branding-Logo-Bucket), MIME-Validierung App-Level. Vergleichsweise einfacher Slice — kann auch in V5.3 oder direkt nach SLC-535 als eigener Mini-Slice. (2) Angebot-Anhang aus dem System — User waehlt aus seinen erstellten Angeboten (siehe BL-405) ein PDF-Generated-Angebot zum Anhang. Setzt BL-405 (Angebot-Erstellung) voraus — kann erst NACH BL-405 implementiert werden. Implementations-Notizen: send.ts/sendEmailWithTracking muss um attachments-Parameter erweitert werden (aktuell nur HTML/Text). UI in Compose-Form unterhalb der Body-Textarea. Anhang-Liste mit Icons + Dateinamen + Groesse + Loeschen-Button. Live-Preview muss Anhang-Indikator zeigen (nicht-gerendert, aber sichtbar). Cadence-Engine + Tracking sollten unbeeintraechtigt bleiben — Regression-Check. Empfehlung: nach SLC-534 (Send-Integration) als FEAT-535 oder V5.4-Erstes-Feature, Teil 1 PC-Upload zuerst (unabhaengig), Teil 2 Angebot-Anhang sobald BL-405 done.",
+      "createdAt": "2026-04-27"
+    },
+    {
+      "id": "BL-405",
+      "title": "Angebot-Erstellung-Feature (Produkt-Auswahl + Firmen-Bezug + PDF-Generierung)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": null,
+      "description": "User-Anforderung 2026-04-27: das System muss Angebote erstellen koennen — basierend auf den vorhandenen Produkten (siehe /settings/products), zugeordnet zu Firmen (companies-Tabelle) und Deals. Wahrscheinlich eigenes vollstaendiges Feature mit allem Drum-Herum (eigene Routes, Server Actions, DB-Schema-Erweiterung, PDF-Renderer, ggf. Versions-Management). Bestehende Stubs zum Anknuepfen: proposals-Tabelle (in 04_v2_migration.sql Z.85+ angelegt mit deal_id/company_id/contact_id/title/version/status/scope_notes/price_range/objections/negotiation_notes/won_lost_reason), /settings/products fuer Produkt-Stammdaten. Heutige Realitaet: proposals-Tabelle ist als Skeleton da, aber kein UI fuer 'Angebot erstellen' existiert — Workspace zeigt nur Tabellen-View ohne CRUD. Scope-Hinweise (vorlaeufig): (a) Position-Items pro Angebot (Produkt + Menge + Preis + Anpassung), (b) Brutto/Netto/Steuer-Berechnung, (c) Standard-Konditionen (Zahlungsfristen, Gueltigkeitszeitraum), (d) PDF-Renderer (analog Branding-Mail-Renderer aus FEAT-531 — koennte denselben Renderer-Pattern wiederverwenden), (e) Status-Lifecycle (draft -> sent -> accepted/rejected/expired), (f) Versionierung (Angebot V1, V2, V3 fuer dasselbe Deal), (g) Anbindung an Deal (Lifecycle-Schritt 'Angebot erstellt' triggert Stage-Wechsel?). Setzt voraus: stabile Produkt-Stammdaten, Deal-Pflicht-Felder. Liefert voraus an: BL-404 Teil 2 (Angebot-Anhang an E-Mail). Empfehlung: vor V5.3-Abschluss /requirements + /architecture-Workshop fuer dieses Feature, dann eigenes V-Bucket (z.B. V5.4 oder V6.x). Wahrscheinlich 8-15 Slices.",
+      "createdAt": "2026-04-27"
     }
   ]
 }
