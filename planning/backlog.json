@@ -1587,7 +1587,7 @@
       "title": "V5.3 SLC-533 Composing-Studio Layout + KI-Vorausfuellung",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.3",
       "description": "FEAT-532 Teil 1 von 2: Vollbild-Seite /emails/compose mit 3-Panel-Layout (Vorlagen / Erfassen / Live-Preview-Placeholder) Skelett. Server-Loader laedt Branding+Templates+Deal-Kontext parallel. Mobile-Tabs in derselben Route (DEC-093). Templates-Panel mit Filter (System/Eigene/Alle), Klick-Anwendung mit Variablen-Replace, Als-Vorlage-duplizieren. Compose-Form mit bestehenden KI-Improve-Buttons + Voice-Anhaengen + KI-Vorschlag-Button (deterministisch via recipient-suggest.ts, KEIN LLM-Call). NewTemplateDialog Modal mit Manuell + KI-Diktat-Modus. Inline-Edit-Diktat-Button als Placeholder (aktiviert in SLC-535). KEIN Live-Preview-Render, KEIN Send (das ist SLC-534). 7 Micro-Tasks, ~1.5 Tage.",
       "createdAt": "2026-04-26"

@@ -22,27 +22,41 @@ export type RecipientSuggestion = {
   source: "inbound-mail" | "primary-contact" | "none";
 };
 
-const STAGE_TO_SUBJECT: Record<string, string> = {
-  // Slugs / interne Stage-IDs
-  discovery: "Erstansprache zu deinem Anliegen",
-  qualification: "Folge-up zu unserem Erstgespraech",
-  proposal: "Folge-up zu unserem Angebot",
-  negotiation: "Naechster Schritt zu unserem Angebot",
-  closed_won: "Vielen Dank fuer dein Vertrauen",
-  closed_lost: "Kurzes Update von uns",
-  // Lockere DE-Labels (Pipeline-Stages haben oft sprechende Namen)
-  erstkontakt: "Erstansprache zu deinem Anliegen",
-  qualifiziert: "Folge-up zu unserem Erstgespraech",
-  angebot: "Folge-up zu unserem Angebot",
-  verhandlung: "Naechster Schritt zu unserem Angebot",
-  gewonnen: "Vielen Dank fuer dein Vertrauen",
-  verloren: "Kurzes Update von uns",
+// Stage-Heuristik per Substring (kein exact match), weil Live-Pipeline-Stages
+// in DE frei formuliert sind ("Erstkontakt erfolgt", "Verhandlung / Einwaende",
+// "Strategischer Multiplikator", ...) und sich vom Slug-Set unterscheiden.
+// Reihenfolge ist wichtig: spaetere Stages werden zuerst geprueft, damit
+// "Vertiefung / Bedarfsschaerfung" nicht von "erst..." gefangen wird.
+type StageRule = {
+  match: RegExp;
+  subject: string;
 };
+
+const STAGE_RULES: StageRule[] = [
+  // Closing / Outcomes (zuerst pruefen — eindeutige Endstates)
+  { match: /\b(gewonnen|won|closed_won)\b/i, subject: "Vielen Dank fuer dein Vertrauen" },
+  { match: /\b(verloren|lost|closed_lost|disqualifiziert)\b/i, subject: "Kurzes Update von uns" },
+  { match: /\b(inaktiv|geparkt)\b/i, subject: "Kurzes Update von uns" },
+  { match: /\b(strategischer\s*multiplikator|empfehlung)\b/i, subject: "Naechster Schritt zu unserer Zusammenarbeit" },
+  // Verhandlung / Angebot
+  { match: /\b(verhandlung|einw[aä]nd|negotiation)\b/i, subject: "Naechster Schritt zu unserem Angebot" },
+  { match: /\b(angebot|proposal|vertiefung|bedarfssch[aä]rfung)\b/i, subject: "Folge-up zu unserem Angebot" },
+  { match: /\b(fit\s*wahrscheinlich|potenzial)\b/i, subject: "Folge-up zu unserem Gespraech" },
+  // Mitte: Gespraeche / Qualifikation
+  { match: /\b(erstgespr|gespr[aä]ch\s*gef|qualifikation|qualifiziert)\b/i, subject: "Folge-up zu unserem Erstgespraech" },
+  { match: /\b(beziehungspflege)\b/i, subject: "Kurzes Folge-up von mir" },
+  // Top of funnel
+  { match: /\b(erstkontakt|erstansprache|discovery)\b/i, subject: "Erstansprache zu deinem Anliegen" },
+  { match: /\b(erste\s*einordnung|recherchiert|identifiziert|signal)\b/i, subject: "Erstansprache zu deinem Anliegen" },
+];
 
 function subjectForStage(stage: string | null): string | null {
   if (!stage) return null;
-  const key = stage.toLowerCase().replace(/\s+/g, "_");
-  return STAGE_TO_SUBJECT[key] ?? null;
+  const haystack = stage.toLowerCase();
+  for (const rule of STAGE_RULES) {
+    if (rule.match.test(haystack)) return rule.subject;
+  }
+  return null;
 }
 
 function fullName(

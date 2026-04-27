@@ -10,24 +10,25 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5.3 SLC-533 **/frontend done** 2026-04-27. Composing-Studio Layout + KI-Vorausfuellung implementiert: 7 MTs durch (Server-Page, 3-Panel-Layout + Mobile-Tabs, Templates-Panel mit Filter+Duplicate, Compose-Form mit KI-Improve+Voice+KI-Vorschlag, NewTemplateDialog mit Manuell+KI-Diktat-Tabs, deterministische recipient-suggest Server Action). Build 60/60 Routes gruen, /emails/compose als dynamische Route registriert, tsc 0 Fehler, Vitest 32/32. Live-Preview-Slot rendert Platzhalter (kommt SLC-534). **Naechster Schritt: /qa SLC-533** — Browser-Smoke der 11 ACs in der Live-Coolify-Instanz.
-- Current Phase: V5.3 Implementation — Slice 3/5 implementiert (SLC-531 Backend+QA done, SLC-532 Backend+QA done, SLC-533 /frontend done, /qa offen). V5.2 Post-Launch confirmed stable (RPT-219). Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
+- Current Focus: V5.3 SLC-533 **/qa PASS** 2026-04-27 (RPT-229). 11 ACs code-seitig verifiziert, Stub-Scan clean, Wiring-Chain vollstaendig, tsc 0 Fehler, Vitest 32/32. Live-Hetzner: HTTP 307 → /login (Auth-Middleware greift). DB-AC: 8 System-Templates DE/EN/NL + 22 Live-Pipeline-Stages. F-1 Stage-Mapping-Drift gegen Live-Stage-Namen (Substring-Match statt exact-match) waehrend QA per Rule 1 gefixt. F-2 Mobile-Tab-State-Reset Spec-konform-akzeptiert. SLC-533 vollstaendig abgenommen. **Naechster Schritt: User-Re-Deploy F-1 Fix + Browser-Smoke der UI-States**, danach `/frontend SLC-534` (Live-Preview + Send-Integration, FEAT-532 Teil 2).
+- Current Phase: V5.3 Implementation — Slice 3/5 done (SLC-531 done, SLC-532 done, SLC-533 done; SLC-534 + SLC-535 offen). V5.2 Post-Launch confirmed stable (RPT-219). Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
 
 ## Immediate Next Steps
-1. /qa SLC-533 — Browser-Smoke der 11 ACs in der Live-Coolify-Instanz (Desktop 3-Panel, Mobile-Tabs, Filter, Duplicate, Variablen-Replace, KI-Vorschlag, KI-Improve, Voice, NewTemplateDialog Manuell + KI-Diktat)
-2. SLC-531 Outlook-Smoke (offen, nicht Blocker): Test-Mail an Outlook-Postfach senden + Logo/Farbe/Schrift visuell pruefen. Wenn Drift gegen Gmail: Folge-Polish
-3. /frontend SLC-534 (Live-Preview + Send-Integration + Einstiegspunkte) — FEAT-532 Teil 2 (8 MTs, ~1.5 Tage)
-4. /qa SLC-534
-5. /frontend SLC-535 (Inline-Edit-Diktat) — Voice + Diff-Modal (6 MTs, ~1 Tag)
-6. /qa SLC-535
-7. Gesamt-/qa V5.3 nach SLC-535 + /final-check V5.3 + /go-live V5.3 + /deploy V5.3 + /post-launch V5.3
-8. ISSUE-043 Color-Picker AC9-Drift in V5.3-Polish: Color-Input durch Hex-Text-Input mit null-Semantik oder "Branding zuruecksetzen"-Button
-9. ISSUE-042 (V5.2-Pre-Pflicht, parallel laufbar): OpenAI-Key bei platform.openai.com rotieren + neuen Key in Coolify ENV OPENAI_API_KEY + lokale "open AI Business system.txt" beseitigen
-10. /post-launch V5.2 — 24-48h Cron-Log-Beobachtung (morgen 04:00 UTC erste Auto-Cron-Iteration)
-11. Anwaltliche Pruefung der COMPLIANCE.md + 3 Compliance-Templates (Pre-Anwalts-Pruefung kein produktiver Recording-Einsatz mit Kunden)
-12. Pre-Go-Live (vor erstem externen Recording): Azure OpenAI EU Account + DPA, AZURE_OPENAI_*-ENVs in Coolify setzen, TRANSCRIPTION_PROVIDER auf azure umstellen
-13. SIP-Trunk-Provider auswaehlen + DPA (vor produktivem Anruf-Volumen)
-14. SMAO-DPA bei Aktivierung (SMAO_ENABLED=true)
+1. User-Re-Deploy F-1 Fix (recipient-suggest.ts Substring-Match) via Coolify
+2. User-Browser-Smoke der 12-Punkt-Checkliste aus RPT-229
+3. SLC-531 Outlook-Smoke (offen, nicht Blocker): Test-Mail an Outlook-Postfach senden + Logo/Farbe/Schrift visuell pruefen. Wenn Drift gegen Gmail: Folge-Polish
+4. /frontend SLC-534 (Live-Preview + Send-Integration + Einstiegspunkte) — FEAT-532 Teil 2 (8 MTs, ~1.5 Tage)
+5. /qa SLC-534
+6. /frontend SLC-535 (Inline-Edit-Diktat) — Voice + Diff-Modal (6 MTs, ~1 Tag)
+7. /qa SLC-535
+8. Gesamt-/qa V5.3 nach SLC-535 + /final-check V5.3 + /go-live V5.3 + /deploy V5.3 + /post-launch V5.3
+9. ISSUE-043 Color-Picker AC9-Drift in V5.3-Polish: Color-Input durch Hex-Text-Input mit null-Semantik oder "Branding zuruecksetzen"-Button
+10. ISSUE-042 (V5.2-Pre-Pflicht, parallel laufbar): OpenAI-Key bei platform.openai.com rotieren + neuen Key in Coolify ENV OPENAI_API_KEY + lokale "open AI Business system.txt" beseitigen
+11. /post-launch V5.2 — 24-48h Cron-Log-Beobachtung (morgen 04:00 UTC erste Auto-Cron-Iteration)
+12. Anwaltliche Pruefung der COMPLIANCE.md + 3 Compliance-Templates (Pre-Anwalts-Pruefung kein produktiver Recording-Einsatz mit Kunden)
+13. Pre-Go-Live (vor erstem externen Recording): Azure OpenAI EU Account + DPA, AZURE_OPENAI_*-ENVs in Coolify setzen, TRANSCRIPTION_PROVIDER auf azure umstellen
+14. SIP-Trunk-Provider auswaehlen + DPA (vor produktivem Anruf-Volumen)
+15. SMAO-DPA bei Aktivierung (SMAO_ENABLED=true)
 
 ## Active Scope
 **V5.3 — E-Mail Composing Studio (Implementation in progress 2026-04-27):**
