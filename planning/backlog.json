@@ -1607,7 +1607,7 @@
       "title": "V5.3 SLC-535 Inline-Edit-Diktat",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "in_progress",
       "version": "V5.3",
       "description": "FEAT-534: Inline-Edit-Diktat im Composing-Studio. KI-Prompt email-inline-edit.ts mit harten Constraints (minimale Modifikation, keine Fakten-Erfindung, kein Sprachwechsel, pragmatisch raten DEC-094). Server Action applyInlineEdit ruft Bedrock + parsed JSON {newBody, summary}. Modal mit Voice-Recording (Whisper) + Loading + Diff-Vorschau-State (diff-Library, Hinzufuegungen gruen / Entfernungen rot) + Akzeptieren/Verwerfen-Buttons. Inline-Edit-Button-Placeholder aus SLC-533 ersetzt durch echten Modal-Trigger. Smoke-Test mit 3 dokumentierten Faellen (klar, mehrdeutig, problematisch). 6 Micro-Tasks, ~1 Tag.",
       "createdAt": "2026-04-26"

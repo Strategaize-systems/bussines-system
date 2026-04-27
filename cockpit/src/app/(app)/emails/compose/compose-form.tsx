@@ -1,14 +1,13 @@
 "use client";
 
 // =============================================================
-// ComposeForm — Erfassen-Spalte des Composing-Studios (SLC-533 MT-4)
+// ComposeForm — Erfassen-Spalte des Composing-Studios
 // =============================================================
 // Felder An, Betreff, Body, Follow-up
 // + KI-Vorschlag An/Betreff (deterministisch via recipientSuggest)
-// + KI-Improve-Buttons (Korrektur, Formaler, Kuerzen) — wiederverwendet aus
-//   email-compose.tsx
+// + KI-Improve-Buttons (Korrektur, Formaler, Kuerzen)
 // + Voice-Recording-Button (anhaengen) — bestehender VoiceRecordButton
-// + Inline-Edit-Diktat-Button als Placeholder (kommt in SLC-535)
+// + Inline-Edit-Diktat-Button (oeffnet InlineEditDialog mit Diff-Vorschau)
 
 import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -30,6 +29,7 @@ import { VoiceRecordButton } from "@/components/voice/voice-record-button";
 
 import { recipientSuggest } from "./recipient-suggest";
 import { sendComposedEmail } from "./send-action";
+import { InlineEditDialog } from "./inline-edit-dialog";
 
 type Lang = "de" | "en" | "nl";
 type ImproveMode = "correct" | "formal" | "summarize";
@@ -82,6 +82,8 @@ export function ComposeForm({
   const [sendPending, startSendTransition] = useTransition();
   const [sendError, setSendError] = useState<string | null>(null);
   const [sendWarning, setSendWarning] = useState<string | null>(null);
+
+  const [inlineEditOpen, setInlineEditOpen] = useState(false);
 
   const handleSend = useCallback(() => {
     setSendError(null);
@@ -274,12 +276,16 @@ export function ComposeForm({
           </Label>
           <div className="flex items-center gap-2">
             <VoiceRecordButton onTranscript={handleVoiceTranscript} />
-            {/* Inline-Edit-Diktat — Placeholder, kommt in SLC-535 */}
             <button
               type="button"
-              disabled
-              title="Inline-Diktat kommt in SLC-535"
-              className="flex items-center gap-1.5 rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-400"
+              onClick={() => setInlineEditOpen(true)}
+              disabled={!body.trim()}
+              title={
+                body.trim()
+                  ? "Inline-Diktat: Body gezielt aendern"
+                  : "Body fuellen, dann Inline-Diktat verfuegbar"
+              }
+              className="flex items-center gap-1.5 rounded-lg border-2 border-[#4454b8]/20 bg-white px-2.5 py-1.5 text-[11px] font-bold text-[#120774] transition-all hover:border-[#4454b8] hover:shadow-sm disabled:cursor-not-allowed disabled:border-dashed disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400"
             >
               <Mic2 className="h-3 w-3" strokeWidth={2.5} />
               Inline-Diktat
@@ -371,6 +377,14 @@ export function ComposeForm({
           <span>{sendWarning}</span>
         </div>
       )}
+
+      <InlineEditDialog
+        open={inlineEditOpen}
+        onOpenChange={setInlineEditOpen}
+        originalBody={body}
+        language={language}
+        onAccept={(newBody) => onChange({ body: newBody })}
+      />
 
       {/* Senden-Footer */}
       <div className="flex items-center justify-between gap-3 border-t-2 border-slate-100 pt-4">
