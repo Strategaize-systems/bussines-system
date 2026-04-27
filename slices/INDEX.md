@@ -198,7 +198,7 @@
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-531 | [Branding Foundation](SLC-531-branding-foundation.md) | FEAT-531 | done | Blocker | 2026-04-26 |
-| SLC-532 | [Email-Templates Schema + Systemvorlagen + KI-Generator](SLC-532-email-templates-system-ki-generator.md) | FEAT-533 | planned | High | 2026-04-26 |
+| SLC-532 | [Email-Templates Schema + Systemvorlagen + KI-Generator](SLC-532-email-templates-system-ki-generator.md) | FEAT-533 | done | High | 2026-04-26 |
 | SLC-533 | [Composing-Studio Layout + KI-Vorausfuellung](SLC-533-composing-studio-layout.md) | FEAT-532 | planned | High | 2026-04-26 |
 | SLC-534 | [Live-Preview + Send-Integration + Einstiegspunkte](SLC-534-live-preview-send-integration.md) | FEAT-532 | planned | High | 2026-04-26 |
 | SLC-535 | [Inline-Edit-Diktat](SLC-535-inline-edit-diktat.md) | FEAT-534 | planned | Medium | 2026-04-26 |

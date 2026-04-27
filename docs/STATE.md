@@ -10,14 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5.3 SLC-531 Branding Foundation **DONE** 2026-04-27. Backend + /qa + /doctor-Hotfix RPT-225 (ISSUE-044 resolved) + User-Smoke Gmail PASS. Logo-Upload klappt, Mail kommt branded in Gmail-Inbox an. Outlook-Smoke offen (User testet spaeter), nicht Blocker. ISSUE-043 (Color-Picker AC9-Drift, Medium) bleibt offen fuer Folge-Polish in SLC-532+. SLC-531/FEAT-531/BL-398 auf done. **Naechster Schritt: /backend SLC-532** (Email-Templates Schema + Systemvorlagen + KI-Generator, MIG-023 Teil 2).
-- Current Phase: V5.3 Implementation — SLC-531 Backend+QA done (automatisiert), User-Smoke pending. Slice 1/5. V5.2 Post-Launch confirmed stable (RPT-219). Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
+- Current Focus: V5.3 SLC-532 Email-Templates Schema + Systemvorlagen + KI-Generator **DONE** 2026-04-27 (Backend). MIG-023 Teil 2 auf Hetzner applied (idempotenter Re-Run verifiziert), 8 Systemvorlagen geseedet (6 DE + 1 EN + 1 NL, 331-455 Zeichen Body), 4 neue Spalten + 3 neue Indizes auf email_templates. template-actions.ts erweitert (Filter system/own/all + duplicateSystemTemplate + delete/update-Guard fuer Systemvorlagen). KI-Prompt email-template-generate.ts + Server Action generateEmailTemplate erstellt mit Auth + Rate-Limit + Audit-Log. tsc gruen, 9/9 Vitest-Tests gruen. SLC-532/BL-399 auf done, FEAT-533 in_progress (UI-Anbindung folgt in SLC-533). **Naechster Schritt: /qa SLC-532** (Smoke-Test 3 KI-Prompts gegen Bedrock + DB-AC-Verifikation).
+- Current Phase: V5.3 Implementation — Slice 2/5 done (Backend), /qa pending. V5.2 Post-Launch confirmed stable (RPT-219). Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
 
 ## Immediate Next Steps
-1. /backend SLC-532 (Email-Templates Schema + Systemvorlagen + KI-Generator) — MIG-023 Teil 2 + email-template-generate.ts (7 MTs, ~1 Tag)
+1. /qa SLC-532 — 3 Test-Prompts gegen `generateEmailTemplate` (Multiplikator-Erstansprache, Follow-up Angebot kalt, Danke nach Termin) + DB-AC-Verifikation + duplicateSystemTemplate-Smoke
 2. SLC-531 Outlook-Smoke (offen, nicht Blocker): Test-Mail an Outlook-Postfach senden + Logo/Farbe/Schrift visuell pruefen. Wenn Drift gegen Gmail: Folge-Polish
-4. /qa SLC-532
-5. /frontend SLC-533 (Composing-Studio Layout + KI-Vorausfuellung) — FEAT-532 Teil 1, 3-Panel + Mobile-Tabs (7 MTs, ~1.5 Tage)
+3. /frontend SLC-533 (Composing-Studio Layout + KI-Vorausfuellung) — FEAT-532 Teil 1, 3-Panel + Mobile-Tabs (7 MTs, ~1.5 Tage)
 6. /qa SLC-533
 7. /frontend SLC-534 (Live-Preview + Send-Integration + Einstiegspunkte) — FEAT-532 Teil 2 (8 MTs, ~1.5 Tage)
 8. /qa SLC-534
@@ -34,9 +33,9 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Active Scope
 **V5.3 — E-Mail Composing Studio (Implementation in progress 2026-04-27):**
-- FEAT-531 Branding-Settings + zentrale Mail-Layout-Engine (in_progress — SLC-531 Backend done, /qa pending)
+- FEAT-531 Branding-Settings + zentrale Mail-Layout-Engine (done — SLC-531 deployed)
 - FEAT-532 3-Panel-Composing-Studio `/emails/compose` (planned)
-- FEAT-533 Systemvorlagen + KI-Vorlagen-Generator (planned)
+- FEAT-533 Systemvorlagen + KI-Vorlagen-Generator (in_progress — SLC-532 Backend done; UI in SLC-533)
 - FEAT-534 Inline-Edit-Diktat ("ergaenze nach Satz X") (planned)
 
 **V5.2 — Compliance-Sprint (released 2026-04-26 als REL-017, Internal-Test-Mode):**

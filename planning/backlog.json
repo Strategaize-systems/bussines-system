@@ -1577,7 +1577,7 @@
       "title": "V5.3 SLC-532 Email-Templates Schema + Systemvorlagen + KI-Generator",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V5.3",
       "description": "FEAT-533: email_templates-Schema-Erweiterung (is_system, category, language, layout — alle nullable, Backwards Compatibility). MIG-023 Teil 2: ALTER + 2 Indizes + Seed-INSERT 6 DE-Systemvorlagen + 1-2 EN/NL (Erstansprache, Follow-up, Danke, Re-Aktivierung etc.). template-actions.ts erweitert: Filter (System/Eigene/Alle), duplicateSystemTemplate, delete-Guard fuer Systemvorlagen. KI-Prompt email-template-generate.ts mit JSON-Output {title, subject, body, suggestedCategory}. Server Action generateEmailTemplate(prompt, language) ruft Bedrock. Smoke-Test mit 3 Test-Prompts. 7 Micro-Tasks, ~1 Tag.",
       "createdAt": "2026-04-26"
