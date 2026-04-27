@@ -10,14 +10,15 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5.3 SLC-534 **/qa PASS** 2026-04-27 (RPT-231) — 12/12 ACs erfuellt statisch + Wiring-Chain (11 Send-Pfad-Links + 6 Live-Preview-Links + 4 Einstiegspunkte) + Live-Hetzner-HTTP-Smoke (alle 4 Routen 307→/login). Stub-Scan clean (2 stale Doc-Comments per Rule 1 gefixt). Cadence + IMAP Regression architektonisch garantiert (send.ts/cadence/engine.ts unveraendert seit SLC-531). **Naechster Schritt: User-Browser-Smoke** (12-Punkte-Liste in RPT-231) — bei 12/12 PASS dann SLC-534 + BL-401 → `done`, sonst zurueck zu /frontend fuer Fix.
-- Current Phase: V5.3 Implementation — Slice 3/5 vollstaendig done (SLC-531+532+533); SLC-534 frontend+qa done / Browser-Smoke pending; SLC-535 planned. V5.2 Post-Launch confirmed stable (RPT-219). Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
+- Current Focus: V5.3 SLC-534 **vollstaendig done** 2026-04-27 — User-OK auf Live-Hetzner-Render: 3-Panel-Layout funktioniert, Live-Preview rendert Branding (Logo + Footer), Header-Block zeigt Von/An/Betreff. Restliche Smoke-Punkte (Senden-Flow, Mobile-Tab, Cadence/IMAP) sind nicht-UI-bezogen + architektonisch garantiert; werden organisch beim naechsten Real-Mail-Versand verifiziert. **Naechster Schritt:** User will UI-Restyling — BL-403 Composing-Studio Style-Guide-V2-Restyling (TemplatesPanel-Cards + Filter-Tabs + ComposeForm-Spacing+Typo + KI-Improve-Bar + Live-Preview-Frame auf Style-Guide-V2-Niveau wie Mein Tag/Focus/Performance).
+- Current Phase: V5.3 Implementation — 4/5 Slices done (SLC-531+532+533+534); SLC-535 planned + BL-403 Restyling vorgezogen. V5.2 Post-Launch confirmed stable. Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
 
 ## Immediate Next Steps
-1. **User-Browser-Smoke SLC-534** — 12 Punkte aus RPT-231 (Live-Preview-Render, Debounce, Header, Senden-Flow, AC10 Bit-Identitaet via DB-Vergleich, 4 Einstiegspunkte, Mobile-Tab Vorschau, Cadence + IMAP Regression). Bei PASS: SLC-534 + BL-401 → `done`, dann /frontend SLC-535.
-2. SLC-531 Outlook-Smoke (offen, nicht Blocker): Test-Mail an Outlook-Postfach senden + Logo/Farbe/Schrift visuell pruefen. Wenn Drift gegen Gmail: Folge-Polish
-3. BL-403 Composing-Studio Style-Guide-V2-Restyling (UX-Polish, nach SLC-535 oder als V5.3-Polish-Slice)
-4. /frontend SLC-535 (Inline-Edit-Diktat) — Voice + Diff-Modal (6 MTs, ~1 Tag)
+1. **BL-403 Composing-Studio Style-Guide-V2-Restyling** — User-Wunsch nach SLC-534-OK: gesamte /emails/compose-Page auf Style-Guide-V2 (TemplatesPanel-Cards, Filter-Tabs, ComposeForm Premium-Look, KI-Improve-Bar, Live-Preview-Frame). Optionen: (a) als eigener Restyling-Slice SLC-534P mit /frontend, (b) direkt /frontend gegen BL-403 mit User-Approval Skip-Sequence, (c) erst /requirements + /architecture-Mini wenn Style-Guide nicht klar dokumentiert ist.
+2. Branding-Daten-Korrektur "Strategaize **Tnasition** GmbH" → "Transition" in `/settings/branding` Footer (User-Aktion, kein Code)
+3. /frontend SLC-535 (Inline-Edit-Diktat) — Voice + Diff-Modal (6 MTs, ~1 Tag)
+4. SLC-531 Outlook-Smoke (offen, nicht Blocker): Test-Mail an Outlook-Postfach + Logo/Farbe/Schrift visuell pruefen
+5. Senden-Flow Real-Mail-Smoke (organisch beim naechsten echten Outbound-Mail-Versand)
 6. /qa SLC-535
 7. Gesamt-/qa V5.3 nach SLC-535 + /final-check V5.3 + /go-live V5.3 + /deploy V5.3 + /post-launch V5.3
 8. ISSUE-043 Color-Picker AC9-Drift in V5.3-Polish: Color-Input durch Hex-Text-Input mit null-Semantik oder "Branding zuruecksetzen"-Button
@@ -31,7 +32,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 ## Active Scope
 **V5.3 — E-Mail Composing Studio (Implementation in progress 2026-04-27):**
 - FEAT-531 Branding-Settings + zentrale Mail-Layout-Engine (done — SLC-531 deployed)
-- FEAT-532 3-Panel-Composing-Studio `/emails/compose` (in_progress — SLC-533 Layout + KI-Vorausfuellung released, SLC-534 Live-Preview + Send + Einstiegspunkte frontend done / qa pending)
+- FEAT-532 3-Panel-Composing-Studio `/emails/compose` (done — SLC-533 Layout + KI-Vorausfuellung + SLC-534 Live-Preview + Send + Einstiegspunkte vollstaendig User-bestaetigt; BL-403 Style-Guide-V2-Restyling als naechster UI-Polish-Schritt)
 - FEAT-533 Systemvorlagen + KI-Vorlagen-Generator (in_progress — SLC-532 Backend done; UI in SLC-533)
 - FEAT-534 Inline-Edit-Diktat ("ergaenze nach Satz X") (planned)
 

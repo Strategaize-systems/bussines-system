@@ -1597,7 +1597,7 @@
       "title": "V5.3 SLC-534 Live-Preview + Send-Integration + Einstiegspunkte",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.3",
       "description": "FEAT-532 Teil 2 von 2: Live-Preview-Komponente mit Debounce 250ms + iframe-Render via renderBrandedHtml (DEC-095 Single-Source-of-Truth). Variablen-Resolver resolveVarsFromDeal Helper. Send-Action sendComposedEmail (Renderer → sendEmailWithTracking). Senden-Button im Compose-Form. Einstiegspunkte umstellen: Deal-Workspace, Mein Tag, Focus → /emails/compose?dealId=...&contactId=... Live-Preview rendert OHNE Tracking-Injection (User-Preview, Bit-Identitaet zur Final-Mail-Logik des Renderers). Tracking + IMAP + Cadences bleiben unbeeintraechtigt (Regression-Check). 8 Micro-Tasks, ~1.5 Tage.",
       "createdAt": "2026-04-26"
