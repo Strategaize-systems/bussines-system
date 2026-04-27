@@ -1611,6 +1611,16 @@
       "version": "V5.3",
       "description": "FEAT-534: Inline-Edit-Diktat im Composing-Studio. KI-Prompt email-inline-edit.ts mit harten Constraints (minimale Modifikation, keine Fakten-Erfindung, kein Sprachwechsel, pragmatisch raten DEC-094). Server Action applyInlineEdit ruft Bedrock + parsed JSON {newBody, summary}. Modal mit Voice-Recording (Whisper) + Loading + Diff-Vorschau-State (diff-Library, Hinzufuegungen gruen / Entfernungen rot) + Akzeptieren/Verwerfen-Buttons. Inline-Edit-Button-Placeholder aus SLC-533 ersetzt durch echten Modal-Trigger. Smoke-Test mit 3 dokumentierten Faellen (klar, mehrdeutig, problematisch). 6 Micro-Tasks, ~1 Tag.",
       "createdAt": "2026-04-26"
+    },
+    {
+      "id": "BL-403",
+      "title": "Composing-Studio Style-Guide-V2-Restyling (zu normal/altbacken)",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": null,
+      "description": "User-Feedback nach SLC-533 Browser-Smoke 2026-04-27: das aktuelle Look&Feel der /emails/compose-Page wirkt 'zu normal, zu altbacken'. Komplette Page muss auf Style-Guide-V2-Niveau gehoben werden (gleicher Premium-Polish wie Mein Tag / Focus / Performance). Umfasst: TemplatesPanel-Cards (Hover-States, Action-Icon-Discoverability F-3 — Icons aktuell opacity-0 bis hover, fuer neue User unauffindbar), Filter-Tabs-Visual, Default-Filter eventuell auf 'System' statt 'Alle' (F-4), ComposeForm-Spacing+Typografie, KI-Improve-Button-Bar Premium-Look, NewTemplateDialog-Tabs Premium, Live-Preview-Slot-Frame. Nach SLC-534 + SLC-535 als V5.3-Polish oder eigener Mini-Slice. Findings F-3+F-4 aus RPT-229 sind hier subsumiert.",
+      "createdAt": "2026-04-27"
     }
   ]
 }
