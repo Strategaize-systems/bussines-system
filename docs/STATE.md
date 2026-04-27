@@ -9,14 +9,13 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: qa
-- Current Focus: V5.3 SLC-531 Branding Foundation — Browser-Smoke 2026-04-27 enthuellte ISSUE-044 (Logo-Anzeige broken, drei Ursachen: getPublicUrl liefert Docker-interne URL, fehlende Storage-Public-Read-Policy, kein Reverse-Proxy `/supabase/...` zu Kong). Hotfix RPT-225: Strategie-Switch zu Next.js-API-Route `/api/branding/logo` (service_role Proxy), MIG-024 Storage-Policy + Logo-URL-Reset, Middleware-publicPaths erweitert. 23/23 Tests + Lint + tsc gruen, MIG-024 auf Hetzner applied. **User redeployt jetzt** und wiederholt Logo-Upload + Mail-Smoke. Nach User-OK werden SLC-531/FEAT-531/BL-398 auf done gesetzt. ISSUE-043 (Color-Picker AC9-Drift, Medium) bleibt offen fuer Folge-Polish.
+- High-Level State: implementing
+- Current Focus: V5.3 SLC-531 Branding Foundation **DONE** 2026-04-27. Backend + /qa + /doctor-Hotfix RPT-225 (ISSUE-044 resolved) + User-Smoke Gmail PASS. Logo-Upload klappt, Mail kommt branded in Gmail-Inbox an. Outlook-Smoke offen (User testet spaeter), nicht Blocker. ISSUE-043 (Color-Picker AC9-Drift, Medium) bleibt offen fuer Folge-Polish in SLC-532+. SLC-531/FEAT-531/BL-398 auf done. **Naechster Schritt: /backend SLC-532** (Email-Templates Schema + Systemvorlagen + KI-Generator, MIG-023 Teil 2).
 - Current Phase: V5.3 Implementation — SLC-531 Backend+QA done (automatisiert), User-Smoke pending. Slice 1/5. V5.2 Post-Launch confirmed stable (RPT-219). Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
 
 ## Immediate Next Steps
-1. **User-Smoke SLC-531** — Browser-Test /settings/branding (AC2/AC3) + echte Mail an Test-Gmail + Test-Outlook (AC8). RPT-224 listet die Schritte.
-2. Nach User-OK: SLC-531/FEAT-531/BL-398 auf done setzen
-3. /backend SLC-532 (Email-Templates Schema + Systemvorlagen + KI-Generator) — MIG-023 Teil 2 + email-template-generate.ts (7 MTs, ~1 Tag)
+1. /backend SLC-532 (Email-Templates Schema + Systemvorlagen + KI-Generator) — MIG-023 Teil 2 + email-template-generate.ts (7 MTs, ~1 Tag)
+2. SLC-531 Outlook-Smoke (offen, nicht Blocker): Test-Mail an Outlook-Postfach senden + Logo/Farbe/Schrift visuell pruefen. Wenn Drift gegen Gmail: Folge-Polish
 4. /qa SLC-532
 5. /frontend SLC-533 (Composing-Studio Layout + KI-Vorausfuellung) — FEAT-532 Teil 1, 3-Panel + Mobile-Tabs (7 MTs, ~1.5 Tage)
 6. /qa SLC-533
