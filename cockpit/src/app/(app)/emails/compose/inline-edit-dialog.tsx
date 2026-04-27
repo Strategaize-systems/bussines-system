@@ -88,7 +88,9 @@ export function InlineEditDialog({
     setError(null);
     const trimmed = transcript.trim();
     if (trimmed.length === 0) {
-      setError("Keine Anweisung — bitte zuerst diktieren oder eintippen.");
+      setError(
+        "Keine Sprache erkannt. Bitte erneut diktieren oder Anweisung eintippen."
+      );
       return;
     }
     setPhase("loading");

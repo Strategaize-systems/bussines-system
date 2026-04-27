@@ -118,7 +118,11 @@ export async function applyInlineEdit(
     `[ai-audit] applyInlineEdit provider=bedrock region=${region} model=${modelId} user=${user.id} lang=${lang} bodyLen=${originalBody.length} transcriptLen=${trimmedTranscript.length}`
   );
 
-  const llmResult = await queryLLM(prompt, systemPrompt);
+  // maxTokens hochsetzen: Output muss den VOLLEN newBody enthalten, nicht nur
+  // den geaenderten Teil. Default 2048 reicht nicht aus, wenn der Body zur
+  // Vollausschoepfung des 20k-Char-Limits geht (~5000 Tokens). 6000 Tokens
+  // decken 20k Chars + Reserve fuer summary-Feld ab.
+  const llmResult = await queryLLM(prompt, systemPrompt, { maxTokens: 6000 });
 
   if (!llmResult.success || !llmResult.data) {
     return {
