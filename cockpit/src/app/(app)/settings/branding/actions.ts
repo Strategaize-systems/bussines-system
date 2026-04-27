@@ -227,9 +227,15 @@ export async function uploadLogo(
     });
   if (uploadError) return { error: `Upload fehlgeschlagen: ${uploadError.message}` };
 
-  const { data: pub } = admin.storage.from(BUCKET).getPublicUrl(filename);
-  const logoUrl = pub?.publicUrl ?? null;
-  if (!logoUrl) return { error: "Public-URL konnte nicht erzeugt werden" };
+  // Logo wird via /api/branding/logo serverseitig durch Next.js geproxied.
+  // Storage-Public-URL via Kong ist im aktuellen Hosting-Setup extern nicht
+  // erreichbar (kein Reverse-Proxy zu Kong unter `/supabase/storage`).
+  // Cache-Buster `v` erzwingt Refresh nach jedem Upload.
+  const appBase = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/+$/, "");
+  if (!appBase) {
+    return { error: "NEXT_PUBLIC_APP_URL ENV nicht gesetzt" };
+  }
+  const logoUrl = `${appBase}/api/branding/logo?v=${Date.now()}`;
 
   // logo_url direkt persistieren (User muss nicht zusaetzlich speichern)
   const { user } = await requireUser();

@@ -30,7 +30,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const publicPaths = ["/login", "/auth/callback", "/auth/set-password", "/api/cron", "/api/webhooks", "/consent", "/api/track", "/api/export"];
+  const publicPaths = ["/login", "/auth/callback", "/auth/set-password", "/api/cron", "/api/webhooks", "/consent", "/api/track", "/api/export", "/api/branding"];
   const isPublic = publicPaths.some((p) => pathname.startsWith(p));
 
   // Not authenticated and trying to access protected route

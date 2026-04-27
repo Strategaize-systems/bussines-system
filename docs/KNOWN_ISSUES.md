@@ -328,6 +328,18 @@
 - Summary: VAPID_SUBJECT in Coolify stand auf `mailto:admin@strategaizetransition.com` — diese Adresse existierte nicht. Geaendert auf `mailto:immo@bellaerts.de` am 2026-04-18 vor V4.1 Redeploy.
 - Next Action: Erledigt.
 
+### ISSUE-044 — Branding-Logo broken-image im Browser (Public-Storage extern nicht erreichbar)
+- Status: resolved
+- Severity: High
+- Area: V5.3 / SLC-531 / Storage / Self-Hosted-Supabase
+- Summary: Beim ersten Browser-Smoke-Test SLC-531 (2026-04-27) zeigt `<img src=...>` ein broken-image obwohl Upload + DB-Persistenz erfolgreich. Zwei Ursachen: (a) `admin.storage.getPublicUrl()` baut die URL aus `SUPABASE_URL=http://supabase-kong:8000` (Docker-intern, browser-unerreichbar). (b) `storage.objects` hatte 0 SELECT-Policies fuer den `branding`-Bucket — `public=true` allein reicht bei Self-Hosted-Supabase nicht. Zusaetzlich: das Hosting-Setup hat keinen Reverse-Proxy von `https://business.strategaizetransition.com/supabase/storage/...` zu Kong, d.h. selbst mit korrekter External-URL kommt nichts an.
+- Impact: Logo-Anzeige in Form-Vorschau und in versendeten Mails kaputt. AC2/AC3 Browser-Smoke blockiert. AC8 Smoke (echte Mail) waere mit broken image bei Empfaengern angekommen.
+- Workaround: Keiner ohne Code-Fix.
+- Next Action: Erledigt 2026-04-27 via:
+  1. MIG-024 (`024_v53_branding_storage_policy_fix.sql`) — SELECT-Policy `branding_public_read` fuer anon+authenticated; UPDATE alter Logo-URLs auf NULL (User laedt nach Code-Fix neu hoch).
+  2. Strategie-Switch: Statt extern erreichbarer Kong-Public-URL liefern wir das Logo via Next.js-API-Route `/api/branding/logo` aus. Service_role-Client laedt das neueste File aus dem `branding`-Bucket und proxiet es mit korrektem Content-Type. Cache-Buster `?v=ts` erzwingt Refresh nach Upload. Middleware ergaenzt um `/api/branding` in publicPaths.
+  3. `actions.ts uploadLogo` speichert jetzt `${NEXT_PUBLIC_APP_URL}/api/branding/logo?v=${Date.now()}` statt der Storage-URL.
+
 ### ISSUE-043 — Branding-Form Color-Picker submitted immer einen Wert (AC9-Drift)
 - Status: open
 - Severity: Medium

@@ -176,6 +176,14 @@
 - Risk: Gering — rein additiv, eine neue Tabelle ohne FK-Beziehungen ausser nullable `updated_by`. Idempotent (IF NOT EXISTS, ON CONFLICT DO NOTHING).
 - Rollback Notes: `DROP TABLE compliance_templates CASCADE;`
 
+### MIG-024 — V5.3 SLC-531 Branding Storage Public-Read + Logo-URL-Reset (Hotfix)
+- Date: 2026-04-27 (applied auf Hetzner)
+- Scope: 1. SELECT-Policy `branding_public_read` auf `storage.objects` fuer anon+authenticated mit `bucket_id='branding'`. 2. UPDATE `branding_settings.logo_url=NULL WHERE logo_url LIKE 'http://supabase-kong:%'` — alte interne Docker-URLs unbrauchbar.
+- Reason: ISSUE-044 — Logo-Anzeige im Browser broken nach SLC-531 Upload. Hosting-Setup proxied `/supabase/...` nicht zu Kong; Strategie-Switch auf Next.js-API-Route `/api/branding/logo`. Storage-Policy bleibt drin als Defense-in-Depth fuer kuenftige Public-Buckets.
+- Affected Areas: storage.objects-Policies, branding_settings.logo_url-Werte
+- Risk: Niedrig — DROP POLICY IF EXISTS + CREATE POLICY ist idempotent; UPDATE betrifft nur defekte URLs.
+- Rollback Notes: `DROP POLICY IF EXISTS "branding_public_read" ON storage.objects;` (UPDATE ist nicht reversibel — User laedt Logo neu hoch)
+
 ### MIG-023 — V5.3 Branding + Email-Templates Schema + Systemvorlagen-Seed
 - Date: 2026-04-27 (Teil 1 SLC-531 applied auf Hetzner; Teil 2 SLC-532 planned)
 - Scope: 3 Aenderungen in einer Migration `023_v53_branding_email_templates.sql`:
