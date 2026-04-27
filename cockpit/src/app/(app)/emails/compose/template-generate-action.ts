@@ -90,9 +90,11 @@ export async function generateEmailTemplate(
   });
 
   // Audit-Log: Provider, Region, Model — analog Whisper-Adapter (data-residency.md)
+  // ENV-Key bewusst LLM_MODEL (gleiche Quelle wie bedrock-client.ts), damit
+  // Audit-Log und tatsaechlicher Bedrock-Call nicht auseinanderlaufen.
   const region = process.env.AWS_REGION || "eu-central-1";
   const modelId =
-    process.env.BEDROCK_MODEL_ID || "anthropic.claude-sonnet-4-20250514-v1:0";
+    process.env.LLM_MODEL || "eu.anthropic.claude-sonnet-4-6-20250514-v1:0";
   console.info(
     `[ai-audit] generateEmailTemplate provider=bedrock region=${region} model=${modelId} user=${user.id} lang=${lang}`
   );
