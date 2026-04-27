@@ -9,32 +9,31 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: V5.3 E-Mail Composing Studio Slice-Planning abgeschlossen 2026-04-26. 5 Slice-Specs SLC-531..SLC-535 mit Acceptance Criteria, Micro-Tasks (insgesamt 35 MTs), QA-Fokus, Cross-Slice-Dependencies. SLC-531 Branding Foundation (Blocker, 7 MTs), SLC-532 Email-Templates Schema+Systemvorlagen+KI-Generator (High, 7 MTs), SLC-533 Composing-Studio Layout (High, 7 MTs, FEAT-532 Teil 1), SLC-534 Live-Preview+Send+Einstiegspunkte (High, 8 MTs, FEAT-532 Teil 2), SLC-535 Inline-Edit-Diktat (Medium, 6 MTs). 5 BL-Items (BL-398..BL-402) angelegt. Reihenfolge linear: SLC-531 → 532 → 533 → 534 → 535. Schaetzung Gesamt: ~6-7 Tage. V5.2 bleibt Post-Launch stable. Pre-Pflichten zur V5.2 (ISSUE-042 OpenAI-Key-Rotation, Anwalts-Pruefung COMPLIANCE.md, Azure-EU-Whisper-Switch) bleiben offen — unabhaengig von V5.3-Arbeit. Naechster Schritt: /backend SLC-531.
-- Current Phase: V5.3 Slice-Planning done — bereit fuer Implementation. V5.2 Post-Launch confirmed stable (RPT-219, 4h Live-Beobachtung 2026-04-26). Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
+- High-Level State: implementing
+- Current Focus: V5.3 SLC-531 Branding Foundation — Backend done 2026-04-27. MIG-023 Teil 1 auf Hetzner applied (branding_settings + Storage Bucket "branding" Public-Read mit 2MB Limit + Empty-Row). Pure Function renderBrandedHtml mit Fallback auf textToHtml in cockpit/src/lib/email/render.ts. 8 Vitest-Snapshot-Tests gruen (3 Renderer-Snapshots + Bit-fuer-Bit-Identitaets-Test fuer leeres Branding + HTML-Escaping-Tests). Server Actions getBranding/updateBranding/uploadLogo + getBrandingForSend Helper fuer send.ts. Settings-Page /settings/branding mit Logo-Upload, Color-Picker, Schrift-Dropdown, Kontakt-Block, Footer-Markdown. send.ts Renderer-Hook eingebaut (DEC-095 Single-Source-of-Truth). Build gruen. /qa SLC-531 ist mandatory naechster Schritt (Snapshot-Tests, Browser-Test /settings/branding, Smoke-Test echte Mail an Gmail+Outlook). 4 Slices nach SLC-531 stehen aus (SLC-532..535).
+- Current Phase: V5.3 Implementation — SLC-531 Backend complete, Slice 1/5 (4 weitere stehen aus). V5.2 Post-Launch confirmed stable (RPT-219). Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
 
 ## Immediate Next Steps
-1. /backend SLC-531 (Branding Foundation) — MIG-023 Teil 1 + renderBrandedHtml + /settings/branding (7 MTs, ~1.5-2 Tage)
-2. /qa SLC-531 (Snapshot-Tests + Branding-Smoke-Test mit Gmail+Outlook)
-3. /backend SLC-532 (Email-Templates Schema + Systemvorlagen + KI-Generator) — MIG-023 Teil 2 + email-template-generate.ts (7 MTs, ~1 Tag)
-4. /qa SLC-532
-5. /frontend SLC-533 (Composing-Studio Layout + KI-Vorausfuellung) — FEAT-532 Teil 1, 3-Panel + Mobile-Tabs (7 MTs, ~1.5 Tage)
-6. /qa SLC-533
-7. /frontend SLC-534 (Live-Preview + Send-Integration + Einstiegspunkte) — FEAT-532 Teil 2 (8 MTs, ~1.5 Tage)
-8. /qa SLC-534
-9. /frontend SLC-535 (Inline-Edit-Diktat) — Voice + Diff-Modal (6 MTs, ~1 Tag)
-10. /qa SLC-535
-11. Gesamt-/qa V5.3 nach SLC-535 + /final-check V5.3 + /go-live V5.3 + /deploy V5.3 + /post-launch V5.3
-12. ISSUE-042 (V5.2-Pre-Pflicht, parallel laufbar): OpenAI-Key bei platform.openai.com rotieren + neuen Key in Coolify ENV OPENAI_API_KEY + lokale "open AI Business system.txt" beseitigen
-13. /post-launch V5.2 — 24-48h Cron-Log-Beobachtung (morgen 04:00 UTC erste Auto-Cron-Iteration)
-14. Anwaltliche Pruefung der COMPLIANCE.md + 3 Compliance-Templates (Pre-Anwalts-Pruefung kein produktiver Recording-Einsatz mit Kunden)
-15. Pre-Go-Live (vor erstem externen Recording): Azure OpenAI EU Account + DPA, AZURE_OPENAI_*-ENVs in Coolify setzen, TRANSCRIPTION_PROVIDER auf azure umstellen
-16. SIP-Trunk-Provider auswaehlen + DPA (vor produktivem Anruf-Volumen)
-17. SMAO-DPA bei Aktivierung (SMAO_ENABLED=true)
+1. /qa SLC-531 (Snapshot-Tests confirmed gruen + Browser-Test /settings/branding + Smoke-Test echte Mail an Gmail+Outlook) — MANDATORY naechster Schritt
+2. /backend SLC-532 (Email-Templates Schema + Systemvorlagen + KI-Generator) — MIG-023 Teil 2 + email-template-generate.ts (7 MTs, ~1 Tag)
+3. /qa SLC-532
+4. /frontend SLC-533 (Composing-Studio Layout + KI-Vorausfuellung) — FEAT-532 Teil 1, 3-Panel + Mobile-Tabs (7 MTs, ~1.5 Tage)
+5. /qa SLC-533
+6. /frontend SLC-534 (Live-Preview + Send-Integration + Einstiegspunkte) — FEAT-532 Teil 2 (8 MTs, ~1.5 Tage)
+7. /qa SLC-534
+8. /frontend SLC-535 (Inline-Edit-Diktat) — Voice + Diff-Modal (6 MTs, ~1 Tag)
+9. /qa SLC-535
+10. Gesamt-/qa V5.3 nach SLC-535 + /final-check V5.3 + /go-live V5.3 + /deploy V5.3 + /post-launch V5.3
+11. ISSUE-042 (V5.2-Pre-Pflicht, parallel laufbar): OpenAI-Key bei platform.openai.com rotieren + neuen Key in Coolify ENV OPENAI_API_KEY + lokale "open AI Business system.txt" beseitigen
+12. /post-launch V5.2 — 24-48h Cron-Log-Beobachtung (morgen 04:00 UTC erste Auto-Cron-Iteration)
+13. Anwaltliche Pruefung der COMPLIANCE.md + 3 Compliance-Templates (Pre-Anwalts-Pruefung kein produktiver Recording-Einsatz mit Kunden)
+14. Pre-Go-Live (vor erstem externen Recording): Azure OpenAI EU Account + DPA, AZURE_OPENAI_*-ENVs in Coolify setzen, TRANSCRIPTION_PROVIDER auf azure umstellen
+15. SIP-Trunk-Provider auswaehlen + DPA (vor produktivem Anruf-Volumen)
+16. SMAO-DPA bei Aktivierung (SMAO_ENABLED=true)
 
 ## Active Scope
-**V5.3 — E-Mail Composing Studio (Requirements done 2026-04-26):**
-- FEAT-531 Branding-Settings + zentrale Mail-Layout-Engine (planned)
+**V5.3 — E-Mail Composing Studio (Implementation in progress 2026-04-27):**
+- FEAT-531 Branding-Settings + zentrale Mail-Layout-Engine (in_progress — SLC-531 Backend done, /qa pending)
 - FEAT-532 3-Panel-Composing-Studio `/emails/compose` (planned)
 - FEAT-533 Systemvorlagen + KI-Vorlagen-Generator (planned)
 - FEAT-534 Inline-Edit-Diktat ("ergaenze nach Satz X") (planned)

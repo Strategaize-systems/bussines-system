@@ -177,7 +177,7 @@
 - Rollback Notes: `DROP TABLE compliance_templates CASCADE;`
 
 ### MIG-023 — V5.3 Branding + Email-Templates Schema + Systemvorlagen-Seed
-- Date: 2026-04-26 (planned — SLC-531 + SLC-532)
+- Date: 2026-04-27 (Teil 1 SLC-531 applied auf Hetzner; Teil 2 SLC-532 planned)
 - Scope: 3 Aenderungen in einer Migration `023_v53_branding_email_templates.sql`:
   1. Neue Tabelle `branding_settings` (single-row): `id UUID PK`, `logo_url TEXT NULL`, `primary_color TEXT NULL`, `secondary_color TEXT NULL`, `font_family TEXT NULL DEFAULT 'system'`, `footer_markdown TEXT NULL`, `contact_block JSONB NULL`, `updated_by UUID NULL REFERENCES profiles(id)`, `updated_at TIMESTAMPTZ DEFAULT now()`. RLS `authenticated_full_access`. Initiale Empty-Row via INSERT ON CONFLICT DO NOTHING (single-row enforcement an App-Level).
   2. Erweiterung `email_templates` um 4 nullable Spalten: `is_system BOOLEAN DEFAULT false`, `category TEXT NULL`, `language TEXT NULL DEFAULT 'de'`, `layout JSONB NULL`. 2 Indizes: `idx_email_templates_is_system`, `idx_email_templates_category`.

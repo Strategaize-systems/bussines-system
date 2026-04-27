@@ -5,7 +5,7 @@ import { getEmailTemplates } from "./template-actions";
 import { getImapSyncStatus } from "./imap-actions";
 import { ImapStatus } from "./imap-status";
 import { getCurrentUserRole } from "@/lib/audit";
-import { Shield, Bell, FileText } from "lucide-react";
+import { Shield, Bell, FileText, Palette } from "lucide-react";
 import Link from "next/link";
 import type { PipelineStage } from "../pipeline/actions";
 
@@ -61,6 +61,21 @@ export default async function SettingsPage() {
             <div>
               <p className="text-sm font-medium text-slate-900">Meeting-Einstellungen</p>
               <p className="text-sm text-slate-500">Erinnerungen, Kalender und KI-Agenda</p>
+            </div>
+          </div>
+        </div>
+      </Link>
+
+      {/* Branding link */}
+      <Link href="/settings/branding" className="block">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:bg-slate-50">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50">
+              <Palette className="h-4 w-4 text-violet-700" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-900">Branding</p>
+              <p className="text-sm text-slate-500">Logo, Farben, Schrift und Footer fuer ausgehende Mails</p>
             </div>
           </div>
         </div>

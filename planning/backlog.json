@@ -1567,7 +1567,7 @@
       "title": "V5.3 SLC-531 Branding Foundation",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V5.3",
       "description": "FEAT-531: Branding-Settings + zentrale Mail-Layout-Engine. MIG-023 Teil 1: Tabelle branding_settings (single-row) + Storage Bucket branding (Public-Read) + Empty-Row. Pure Function renderBrandedHtml(body, branding, vars) in cockpit/src/lib/email/render.ts mit Inline-CSS, Table-Layout, Email-Client-Kompatibilitaet. Snapshot-Tests fuer 3 Cases. Settings-Page /settings/branding mit Logo-Upload (max 2MB, MIME-Whitelist), Color-Picker, Schrift-Dropdown, Footer-Markdown. Renderer-Hook in send.ts mit Fallback auf textToHtml (Backwards Compatibility). Smoke-Test: echte Mail an Gmail+Outlook. AC9: Mail ohne Branding bit-fuer-bit identisch zu V5.2. 7 Micro-Tasks, ~1.5-2 Tage.",
       "createdAt": "2026-04-26"

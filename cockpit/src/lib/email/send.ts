@@ -7,7 +7,9 @@
 
 import nodemailer from "nodemailer";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { injectTracking, textToHtml } from "./tracking";
+import { injectTracking } from "./tracking";
+import { renderBrandedHtml, type RenderVars } from "./render";
+import { getBrandingForSend } from "@/app/(app)/settings/branding/actions";
 
 export type SendEmailParams = {
   to: string;
@@ -25,6 +27,13 @@ export type SendEmailParams = {
   templateUsed?: string | null;
   /** Tracking opt-out (default: true = tracking enabled) */
   trackingEnabled?: boolean;
+  /**
+   * Variablen fuer Branding-Renderer ({{vorname}} etc.).
+   * Variablen werden im Composing-Studio (SLC-534) bereits aufgeloest
+   * BEVOR send.ts aufgerufen wird — `vars` ist hier in V5.3 ueblicherweise leer
+   * und dient als Reserve-Pfad.
+   */
+  vars?: RenderVars;
 };
 
 export type SendEmailResult = {
@@ -60,8 +69,17 @@ export async function sendEmailWithTracking(params: SendEmailParams): Promise<Se
   // Generate tracking ID
   const trackingId = trackingEnabled ? crypto.randomUUID() : undefined;
 
-  // Build HTML content
-  let htmlContent = params.html || textToHtml(params.body);
+  // Build HTML content via Branding-Renderer (DEC-095, FEAT-531).
+  // Bei leerem Branding faellt renderBrandedHtml auf textToHtml zurueck —
+  // Bit-fuer-Bit identisch zum V5.2-Output (AC9).
+  // params.html ueberschreibt den Renderer (heute nirgendwo gesetzt, Backwards Compat).
+  let htmlContent: string;
+  if (params.html) {
+    htmlContent = params.html;
+  } else {
+    const branding = await getBrandingForSend();
+    htmlContent = renderBrandedHtml(params.body, branding, params.vars ?? {});
+  }
 
   // Inject tracking if enabled
   if (trackingEnabled && trackingId) {
