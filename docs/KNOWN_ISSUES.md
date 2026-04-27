@@ -328,6 +328,15 @@
 - Summary: VAPID_SUBJECT in Coolify stand auf `mailto:admin@strategaizetransition.com` — diese Adresse existierte nicht. Geaendert auf `mailto:immo@bellaerts.de` am 2026-04-18 vor V4.1 Redeploy.
 - Next Action: Erledigt.
 
+### ISSUE-043 — Branding-Form Color-Picker submitted immer einen Wert (AC9-Drift)
+- Status: open
+- Severity: Medium
+- Area: V5.3 / SLC-531 / /settings/branding / Renderer-Fallback
+- Summary: `<input type="color">` im Branding-Form submitted IMMER einen gueltigen Hex-Wert (Default `#4454b8`/`#94a3b8`), auch wenn der User die Picker nie bewusst angefasst hat. Sobald der User auf `/settings/branding` einmal "Speichern" klickt, wird `primary_color` (und ggf. `secondary_color`) als nicht-null in `branding_settings` persistiert — `isBrandingEmpty` returnt danach `false`, der Renderer verlaesst den `textToHtml`-Fallback und schaltet auf Branding-Output (Inline-CSS, Footer-Linie). Damit gilt AC9 (Bit-fuer-Bit-Identitaet zum V5.2-Output) nur noch im **Initial-State** (User hat /settings/branding nie besucht).
+- Impact: User-Erwartung "ich habe alles geleert, Mail sollte wieder plain rausgehen" wird nicht erfuellt, solange primary_color einen Wert hat. Kein Daten-Verlust und keine Sicherheitsluecke — nur ein latenter UX-Drift gegen die explizit dokumentierte AC9-Garantie. Keine V5.2-Regression im laufenden Production-System (DB-Empty-Row ist initial korrekt seeded).
+- Workaround: SQL-Reset auf der branding_settings-Row: `UPDATE branding_settings SET primary_color=NULL, secondary_color=NULL WHERE id IN (SELECT id FROM branding_settings LIMIT 1);`
+- Next Action: Im Folge-Slice (SLC-532 oder Polish-Pass) Color-Picker durch entweder (a) Text-Input mit Hex-Placeholder + `null`-Semantik oder (b) Checkbox-Toggle "Markenfarbe verwenden" vor dem Color-Input ersetzen. Alternativ "Branding zuruecksetzen"-Button auf der Settings-Page mit explizitem UPDATE auf alle-NULL.
+
 ### ISSUE-042 — OpenAI-API-Key in untrackter Datei am Repo-Root
 - Status: open
 - Severity: High
