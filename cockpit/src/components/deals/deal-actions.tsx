@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { moveDealToStage } from "@/app/(app)/pipeline/actions";
 import { TaskSheet } from "@/app/(app)/aufgaben/task-sheet";
 import { MeetingSheet } from "@/components/meetings/meeting-sheet";
-import { EmailSheet } from "@/app/(app)/emails/email-sheet";
 import { ActivityForm } from "@/components/activities/activity-form";
 import { Button } from "@/components/ui/button";
 import { ListTodo, Mail, Calendar, ChevronDown, Sparkles, Loader2 } from "lucide-react";
@@ -104,23 +104,21 @@ export function DealActions({
           }
         />
 
-        {/* + Email */}
-        <EmailSheet
-          defaultTo={deal.contacts?.email ?? ""}
-          defaultSubject={prefill.suggestedSubject}
-          defaultFollowUpDate={prefill.suggestedFollowUpDate}
-          contactId={deal.contact_id ?? undefined}
-          companyId={deal.company_id ?? undefined}
-          dealId={deal.id}
-          trigger={
-            <button className="flex items-center gap-2.5 h-10 px-4 rounded-lg border-2 border-slate-200 bg-white text-sm font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md transition-all cursor-pointer">
-              <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-sm">
-                <Mail className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
-              </span>
-              E-Mail
-            </button>
-          }
-        />
+        {/* + Email — SLC-534: Composing-Studio statt Sheet */}
+        <Link
+          href={(() => {
+            const params = new URLSearchParams({ dealId: deal.id });
+            if (deal.contact_id) params.set("contactId", deal.contact_id);
+            if (deal.company_id) params.set("companyId", deal.company_id);
+            return `/emails/compose?${params.toString()}`;
+          })()}
+          className="flex items-center gap-2.5 h-10 px-4 rounded-lg border-2 border-slate-200 bg-white text-sm font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md transition-all cursor-pointer"
+        >
+          <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-sm">
+            <Mail className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+          </span>
+          E-Mail
+        </Link>
 
         {/* + Meeting (planen) */}
         <MeetingSheet

@@ -125,6 +125,9 @@ export default async function ComposePage({ searchParams }: ComposePageProps) {
         initialContactId={params.contactId ?? null}
         initialCompanyId={params.companyId ?? null}
         initialTemplateId={params.templateId ?? null}
+        senderFromAddress={
+          process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || null
+        }
       />
     </div>
   );

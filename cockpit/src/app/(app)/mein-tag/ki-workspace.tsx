@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Sparkles,
   History,
@@ -24,7 +25,6 @@ import { AiLoadButton } from "@/components/ai/ai-load-button";
 import { AiResultPanel } from "@/components/ai/ai-result-panel";
 import { MeinTagSearchBar } from "@/components/mein-tag/mein-tag-search-bar";
 import { TaskSheet } from "../aufgaben/task-sheet";
-import { EmailSheet } from "../emails/email-sheet";
 import { MeetingSheet } from "@/components/meetings/meeting-sheet";
 import { FollowupSuggestions } from "./followup-suggestions";
 import { InsightSuggestions } from "./insight-suggestions";
@@ -531,17 +531,19 @@ function ClassifiedEventRow({ item, onDismiss, contacts, companies, deals }: {
                 ))}
               </select>
               {selectedAction === "email" && (
-                <EmailSheet
-                  contactId={item.contactId ?? undefined}
-                  companyId={item.companyId ?? undefined}
-                  dealId={item.dealId ?? undefined}
-                  defaultSubject={item.title}
-                  trigger={
-                    <button className="px-2 py-1 rounded text-[11px] font-bold bg-amber-600 text-white hover:bg-amber-700 transition-colors">
-                      Erstellen
-                    </button>
-                  }
-                />
+                <Link
+                  href={(() => {
+                    const params = new URLSearchParams();
+                    if (item.contactId) params.set("contactId", item.contactId);
+                    if (item.companyId) params.set("companyId", item.companyId);
+                    if (item.dealId) params.set("dealId", item.dealId);
+                    const qs = params.toString();
+                    return qs ? `/emails/compose?${qs}` : "/emails/compose";
+                  })()}
+                  className="px-2 py-1 rounded text-[11px] font-bold bg-amber-600 text-white hover:bg-amber-700 transition-colors"
+                >
+                  Erstellen
+                </Link>
               )}
               {selectedAction === "meeting" && (
                 <MeetingSheet

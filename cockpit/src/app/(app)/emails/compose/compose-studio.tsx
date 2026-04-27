@@ -15,10 +15,12 @@ import { useRouter } from "next/navigation";
 import { TemplatesPanel } from "./templates-panel";
 import { ComposeForm } from "./compose-form";
 import { NewTemplateDialog } from "./new-template-dialog";
+import { LivePreview } from "./live-preview";
 import type { EmailTemplate } from "@/app/(app)/settings/template-actions";
 import type { Branding } from "@/types/branding";
 import type { DealContext } from "./page";
 import type { PlaceholderValues } from "@/lib/email/placeholders";
+import { resolveVarsFromDeal } from "@/lib/email/variables";
 
 type Lang = "de" | "en" | "nl";
 
@@ -31,6 +33,7 @@ type ComposeStudioProps = {
   initialContactId: string | null;
   initialCompanyId: string | null;
   initialTemplateId: string | null;
+  senderFromAddress: string | null;
 };
 
 export function ComposeStudio({
@@ -40,6 +43,7 @@ export function ComposeStudio({
   initialContactId,
   initialCompanyId,
   initialTemplateId,
+  senderFromAddress,
 }: ComposeStudioProps) {
   const router = useRouter();
 
@@ -64,6 +68,26 @@ export function ComposeStudio({
       position: dealContext?.position ?? null,
       deal: dealContext?.dealTitle ?? null,
     }),
+    [dealContext],
+  );
+
+  // Live-Preview-Vars: empty-string-Defaults statt null, damit {{vorname}} im
+  // Renderer ersetzt wird (siehe resolveVarsFromDeal). PlaceholderValues fuer
+  // Templates bleibt nullable, weil Templates-Panel bei null-Werten den
+  // Placeholder sichtbar laesst.
+  const renderVars = useMemo(
+    () =>
+      resolveVarsFromDeal(
+        dealContext ? { title: dealContext.dealTitle, name: null } : null,
+        dealContext
+          ? {
+              first_name: dealContext.vorname,
+              last_name: dealContext.nachname,
+              position: dealContext.position,
+            }
+          : null,
+        dealContext ? { name: dealContext.firma } : null,
+      ),
     [dealContext],
   );
 
@@ -103,25 +127,15 @@ export function ComposeStudio({
     [],
   );
 
-  // Live-Preview-Slot: Platzhalter fuer SLC-534. Layout-Stabilitaet vermeidet
-  // Re-Layout zwischen Slices.
   const previewSlot = (
-    <div className="flex h-full flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4">
-      <h3 className="text-sm font-semibold text-slate-900">Live-Preview</h3>
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-md border border-dashed border-slate-200 p-6 text-center">
-        <span className="text-xs font-medium text-slate-500">
-          Live-Preview kommt in SLC-534
-        </span>
-        <span className="text-[11px] text-slate-400">
-          Branding-Renderer wird hier verdrahtet (Logo, Farben, Footer).
-        </span>
-        {branding && (
-          <span className="mt-2 text-[10px] text-slate-400">
-            Branding geladen: {branding.primaryColor ?? "Default-Farbe"}
-          </span>
-        )}
-      </div>
-    </div>
+    <LivePreview
+      body={body}
+      subject={subject}
+      to={to}
+      branding={branding}
+      vars={renderVars}
+      senderFromAddress={senderFromAddress}
+    />
   );
 
   const templatesPanel = (

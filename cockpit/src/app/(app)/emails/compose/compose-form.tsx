@@ -11,6 +11,7 @@
 // + Inline-Edit-Diktat-Button als Placeholder (kommt in SLC-535)
 
 import { useCallback, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Sparkles,
   Loader2,
@@ -18,14 +19,17 @@ import {
   Wand2,
   Mic2,
   AlertCircle,
+  Send,
 } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { VoiceRecordButton } from "@/components/voice/voice-record-button";
 
 import { recipientSuggest } from "./recipient-suggest";
+import { sendComposedEmail } from "./send-action";
 
 type Lang = "de" | "en" | "nl";
 type ImproveMode = "correct" | "formal" | "summarize";
@@ -66,12 +70,67 @@ export function ComposeForm({
   templateId,
   language,
 }: ComposeFormProps) {
+  const router = useRouter();
+
   const [improving, setImproving] = useState<ImproveMode | null>(null);
   const [improveResult, setImproveResult] = useState<string[] | null>(null);
   const [improveError, setImproveError] = useState<string | null>(null);
 
   const [suggestPending, startSuggestTransition] = useTransition();
   const [suggestNote, setSuggestNote] = useState<string | null>(null);
+
+  const [sendPending, startSendTransition] = useTransition();
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [sendWarning, setSendWarning] = useState<string | null>(null);
+
+  const handleSend = useCallback(() => {
+    setSendError(null);
+    setSendWarning(null);
+
+    if (!to.trim()) {
+      setSendError("Empfaenger fehlt.");
+      return;
+    }
+    if (!subject.trim()) {
+      setSendError("Betreff fehlt.");
+      return;
+    }
+
+    startSendTransition(async () => {
+      const result = await sendComposedEmail({
+        to,
+        subject,
+        body,
+        dealId,
+        contactId,
+        companyId,
+        templateId,
+        followUpDate: followUpDate || null,
+      });
+
+      if (!result.success) {
+        setSendError(result.error ?? "Unbekannter Fehler beim Senden.");
+        return;
+      }
+
+      if (result.warning) {
+        setSendWarning(result.warning);
+        return;
+      }
+
+      router.push("/emails");
+    });
+  }, [
+    to,
+    subject,
+    body,
+    dealId,
+    contactId,
+    companyId,
+    templateId,
+    followUpDate,
+    router,
+  ]);
 
   const handleVoiceTranscript = useCallback(
     (text: string) => {
@@ -278,23 +337,37 @@ export function ComposeForm({
         />
       </div>
 
-      <div className="rounded-md border border-dashed border-slate-200 p-3 text-center text-[11px] text-slate-500">
-        Senden-Button kommt in SLC-534 — Live-Preview + sendEmailWithTracking-Wiring.
-        {templateId && (
-          <span className="ml-1 text-slate-400">
-            (Vorlage angewendet: {templateId.slice(0, 8)}...)
-          </span>
-        )}
-        {contactId && (
-          <span className="ml-1 hidden text-slate-400">
-            contact={contactId.slice(0, 8)}
-          </span>
-        )}
-        {companyId && (
-          <span className="ml-1 hidden text-slate-400">
-            company={companyId.slice(0, 8)}
-          </span>
-        )}
+      {sendError && (
+        <div className="flex items-start gap-1.5 rounded-md bg-red-50 p-2 text-[12px] text-red-700">
+          <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>{sendError}</span>
+        </div>
+      )}
+
+      {sendWarning && (
+        <div className="flex items-start gap-1.5 rounded-md bg-amber-50 p-2 text-[12px] text-amber-700">
+          <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>{sendWarning}</span>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] text-slate-400">
+          {templateId ? `Vorlage angewendet (${templateId.slice(0, 8)}…)` : "Keine Vorlage"}
+        </span>
+        <Button
+          type="button"
+          onClick={handleSend}
+          disabled={sendPending}
+          className="bg-[#4454b8] text-white hover:bg-[#3a479e]"
+        >
+          {sendPending ? (
+            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+          ) : (
+            <Send className="mr-1.5 h-4 w-4" />
+          )}
+          {sendPending ? "Wird gesendet…" : "Senden"}
+        </Button>
       </div>
     </div>
   );

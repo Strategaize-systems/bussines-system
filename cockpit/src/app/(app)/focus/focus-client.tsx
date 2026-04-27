@@ -24,7 +24,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { TaskSheet } from "../aufgaben/task-sheet";
-import { EmailSheet } from "../emails/email-sheet";
 import { MeetingSheet } from "@/components/meetings/meeting-sheet";
 import {
   completeTaskFromFocus,
@@ -257,16 +256,19 @@ export function FocusClient({ initialItems, contacts, companies, deals, exceptio
 
                       <div className="flex items-center gap-2 mt-3">
                         <span className="text-[10px] font-bold text-slate-400 uppercase">Quick:</span>
-                        <EmailSheet
-                          contactId={current.contactId ?? undefined}
-                          companyId={current.companyId ?? undefined}
-                          dealId={current.dealId ?? undefined}
-                          trigger={
-                            <button className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors">
-                              <Mail size={12} /> E-Mail
-                            </button>
-                          }
-                        />
+                        <Link
+                          href={(() => {
+                            const params = new URLSearchParams();
+                            if (current.contactId) params.set("contactId", current.contactId);
+                            if (current.companyId) params.set("companyId", current.companyId);
+                            if (current.dealId) params.set("dealId", current.dealId);
+                            const qs = params.toString();
+                            return qs ? `/emails/compose?${qs}` : "/emails/compose";
+                          })()}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
+                        >
+                          <Mail size={12} /> E-Mail
+                        </Link>
                         <MeetingSheet
                           contacts={contacts}
                           companies={companies}

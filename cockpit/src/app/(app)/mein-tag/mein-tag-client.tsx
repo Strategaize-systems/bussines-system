@@ -29,7 +29,6 @@ import { completeTaskFromMeinTag, completeDealActionFromMeinTag } from "./action
 import type { TodayData, TodayItem, TodayItemType, CalendarSlot, ExceptionData, NextMeetingPrep, TopDeal, GatekeeperSummary } from "./actions";
 import type { Deal, PipelineStage } from "../pipeline/actions";
 import { TaskSheet } from "../aufgaben/task-sheet";
-import { EmailSheet } from "../emails/email-sheet";
 import { MeetingSheet } from "@/components/meetings/meeting-sheet";
 import { EventSheet } from "@/components/calendar/event-sheet";
 import { DealSheet } from "../pipeline/deal-sheet";
@@ -163,9 +162,9 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                       deals={deals}
                       trigger={<QuickActionButton icon={ListTodo} label="Aufgabe" color="from-[#120774] to-[#4454b8]" />}
                     />
-                    <EmailSheet
-                      trigger={<QuickActionButton icon={Mail} label="E-Mail" color="from-sky-500 to-sky-600" />}
-                    />
+                    <Link href="/emails/compose">
+                      <QuickActionButton icon={Mail} label="E-Mail" color="from-sky-500 to-sky-600" />
+                    </Link>
                     <MeetingSheet
                       contacts={contacts}
                       companies={companies}
