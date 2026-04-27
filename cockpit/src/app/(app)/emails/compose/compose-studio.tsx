@@ -167,15 +167,15 @@ export function ComposeStudio({
   return (
     <>
       {/* Desktop: 3-Panel-Grid (md+) */}
-      <div className="hidden md:grid md:grid-cols-[300px_minmax(0,1fr)_460px] md:gap-4">
-        <aside className="min-h-[640px]">{templatesPanel}</aside>
-        <main className="min-h-[640px]">{composeForm}</main>
-        <aside className="min-h-[640px]">{previewSlot}</aside>
+      <div className="hidden md:grid md:grid-cols-[320px_minmax(0,1fr)_480px] md:gap-6">
+        <aside className="min-h-[680px]">{templatesPanel}</aside>
+        <main className="min-h-[680px]">{composeForm}</main>
+        <aside className="min-h-[680px]">{previewSlot}</aside>
       </div>
 
       {/* Mobile: 3 Tabs in derselben Route */}
       <div className="md:hidden">
-        <div className="mb-3 flex gap-1 rounded-md bg-slate-100 p-0.5 text-[12px] font-medium">
+        <div className="mb-4 flex gap-1 rounded-lg border-2 border-slate-200 bg-slate-50 p-1 text-xs font-bold">
           {(
             [
               { key: "templates" as const, label: "Vorlagen" },
@@ -189,8 +189,8 @@ export function ComposeStudio({
               onClick={() => setMobileTab(opt.key)}
               className={
                 mobileTab === opt.key
-                  ? "flex-1 rounded bg-white px-2 py-1.5 text-slate-900 shadow-sm"
-                  : "flex-1 rounded px-2 py-1.5 text-slate-500 hover:text-slate-900"
+                  ? "flex-1 rounded-md bg-white px-3 py-2 text-[#120774] shadow-sm transition-all"
+                  : "flex-1 rounded-md px-3 py-2 text-slate-500 transition-all hover:text-slate-900"
               }
             >
               {opt.label}

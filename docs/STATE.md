@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5.3 SLC-534 **vollstaendig done** 2026-04-27 — User-OK auf Live-Hetzner-Render: 3-Panel-Layout funktioniert, Live-Preview rendert Branding (Logo + Footer), Header-Block zeigt Von/An/Betreff. Restliche Smoke-Punkte (Senden-Flow, Mobile-Tab, Cadence/IMAP) sind nicht-UI-bezogen + architektonisch garantiert; werden organisch beim naechsten Real-Mail-Versand verifiziert. **Naechster Schritt:** User will UI-Restyling — BL-403 Composing-Studio Style-Guide-V2-Restyling (TemplatesPanel-Cards + Filter-Tabs + ComposeForm-Spacing+Typo + KI-Improve-Bar + Live-Preview-Frame auf Style-Guide-V2-Niveau wie Mein Tag/Focus/Performance).
-- Current Phase: V5.3 Implementation — 4/5 Slices done (SLC-531+532+533+534); SLC-535 planned + BL-403 Restyling vorgezogen. V5.2 Post-Launch confirmed stable. Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
+- Current Focus: V5.3 BL-403 **Composing-Studio Style-Guide-V2-Restyling done** 2026-04-27 — 5 Files restyled auf Style-Guide-V2-Niveau (templates-panel.tsx, compose-form.tsx, live-preview.tsx, new-template-dialog.tsx, compose-studio.tsx). Konkrete Aenderungen: rounded-2xl + border-2 + shadow-lg auf allen Cards, gradient-Buttons (KI-Vorschlag + Senden + Speichern), Action-Icons immer sichtbar (F-3 Discoverability), Default-Filter "system" (F-4), KI-Improve-Bar als gerahmte Component, Modal-Header-Icon-Badge gradient, premium-Spacing (gap-6/p-6 6er-Grid), uppercase tracking-wide bold Labels. tsc 0, Vitest 35/35, Build 60/60. **Naechster Schritt:** User-Browser-Verify auf Live-Hetzner (nach Redeploy) — bei OK: /frontend SLC-535 (Inline-Edit-Diktat).
+- Current Phase: V5.3 Implementation — 4/5 Slices done + BL-403 Polish done (SLC-531+532+533+534 done; SLC-535 planned als letzter V5.3-Slice). V5.2 Post-Launch confirmed stable. Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
 
 ## Immediate Next Steps
-1. **BL-403 Composing-Studio Style-Guide-V2-Restyling** — User-Wunsch nach SLC-534-OK: gesamte /emails/compose-Page auf Style-Guide-V2 (TemplatesPanel-Cards, Filter-Tabs, ComposeForm Premium-Look, KI-Improve-Bar, Live-Preview-Frame). Optionen: (a) als eigener Restyling-Slice SLC-534P mit /frontend, (b) direkt /frontend gegen BL-403 mit User-Approval Skip-Sequence, (c) erst /requirements + /architecture-Mini wenn Style-Guide nicht klar dokumentiert ist.
-2. Branding-Daten-Korrektur "Strategaize **Tnasition** GmbH" → "Transition" in `/settings/branding` Footer (User-Aktion, kein Code)
-3. /frontend SLC-535 (Inline-Edit-Diktat) — Voice + Diff-Modal (6 MTs, ~1 Tag)
+1. **User-Browser-Verify BL-403** auf Live-Hetzner (nach Redeploy): rounded-2xl Cards, gradient-Buttons (KI-Vorschlag + Senden), Action-Icons sichtbar in Templates-Cards, Default-Filter "System", premium-Modal beim "Neu". Bei OK: weiter mit SLC-535.
+2. /frontend SLC-535 (Inline-Edit-Diktat) — Voice + Diff-Modal (6 MTs, ~1 Tag)
+3. Branding-Daten-Korrektur "Strategaize **Tnasition** GmbH" → "Transition" in `/settings/branding` Footer (User-Aktion, kein Code)
 4. SLC-531 Outlook-Smoke (offen, nicht Blocker): Test-Mail an Outlook-Postfach + Logo/Farbe/Schrift visuell pruefen
 5. Senden-Flow Real-Mail-Smoke (organisch beim naechsten echten Outbound-Mail-Versand)
 6. /qa SLC-535

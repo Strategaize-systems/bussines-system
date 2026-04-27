@@ -15,7 +15,7 @@ import {
   useTransition,
   type FormEvent,
 } from "react";
-import { Loader2, Sparkles, AlertCircle } from "lucide-react";
+import { Loader2, Sparkles, AlertCircle, FileText } from "lucide-react";
 
 import {
   Dialog,
@@ -157,15 +157,19 @@ export function NewTemplateDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Neue Vorlage</DialogTitle>
-          <DialogDescription>
-            Erstelle eine eigene Vorlage manuell oder lasse die KI einen
-            Entwurf generieren — du kannst danach alles editieren.
-          </DialogDescription>
+        <DialogHeader className="flex flex-row items-start gap-3 space-y-0">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#120774] to-[#4454b8] shadow-sm">
+            <FileText className="h-5 w-5 text-white" strokeWidth={2.5} />
+          </div>
+          <div className="flex-1 pt-0.5">
+            <DialogTitle className="text-lg font-bold text-slate-900">Neue Vorlage</DialogTitle>
+            <DialogDescription className="text-xs font-medium text-slate-500">
+              Erstelle eine eigene Vorlage manuell oder lasse die KI einen Entwurf generieren — du kannst danach alles editieren.
+            </DialogDescription>
+          </div>
         </DialogHeader>
 
-        <div className="flex gap-1 rounded-md bg-slate-100 p-0.5 text-xs font-medium">
+        <div className="flex gap-1 rounded-lg border-2 border-slate-200 bg-slate-50 p-1 text-xs font-bold">
           {(
             [
               { key: "manual" as const, label: "Manuell" },
@@ -178,8 +182,8 @@ export function NewTemplateDialog({
               onClick={() => setTab(opt.key)}
               className={
                 tab === opt.key
-                  ? "flex-1 rounded bg-white px-3 py-1.5 text-slate-900 shadow-sm"
-                  : "flex-1 rounded px-3 py-1.5 text-slate-500 hover:text-slate-900"
+                  ? "flex-1 rounded-md bg-white px-3 py-2 text-[#120774] shadow-sm transition-all"
+                  : "flex-1 rounded-md px-3 py-2 text-slate-500 transition-all hover:text-slate-900"
               }
             >
               {opt.label}
@@ -189,9 +193,9 @@ export function NewTemplateDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {tab === "ai" && !aiHasResult && (
-            <div className="space-y-3 rounded-md border border-[#4454b8]/20 bg-[#4454b8]/5 p-3">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="ai-prompt" className="text-xs">
+            <div className="space-y-3 rounded-xl border-2 border-[#4454b8]/30 bg-gradient-to-br from-[#4454b8]/5 to-white p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="ai-prompt" className="text-xs font-bold uppercase tracking-wide text-slate-600">
                   Was soll die Vorlage tun?
                 </Label>
                 <VoiceRecordButton onTranscript={handleAiVoice} />
@@ -202,12 +206,13 @@ export function NewTemplateDialog({
                 onChange={(e) => setAiPrompt(e.target.value)}
                 rows={3}
                 placeholder="z.B. Erstansprache fuer Steuerberater im Mittelstand mit Verweis auf Co-Innovation"
+                className="border-2 rounded-lg"
               />
               <div className="flex items-center justify-between gap-2">
                 <select
                   value={lang}
                   onChange={(e) => setLang(e.target.value as Lang)}
-                  className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs"
+                  className="rounded-lg border-2 border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-all focus:border-[#4454b8] focus:outline-none focus:ring-2 focus:ring-[#4454b8]/20"
                 >
                   <option value="de">Deutsch</option>
                   <option value="en">English</option>
@@ -217,19 +222,19 @@ export function NewTemplateDialog({
                   type="button"
                   onClick={handleGenerate}
                   disabled={aiPending || aiPrompt.trim().length < 5}
-                  className="gap-1.5"
+                  className="gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold shadow-sm hover:shadow-md transition-all"
                 >
                   {aiPending ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={2.5} />
                   ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
+                    <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
                   )}
                   Generieren
                 </Button>
               </div>
               {aiError && (
-                <div className="flex items-start gap-1.5 rounded bg-red-50 p-2 text-[11px] text-red-700">
-                  <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
+                <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
                   <span>{aiError}</span>
                 </div>
               )}
@@ -237,9 +242,9 @@ export function NewTemplateDialog({
           )}
 
           {(tab === "manual" || aiHasResult) && (
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               <div className="space-y-1.5">
-                <Label htmlFor="tpl-title" className="text-xs">
+                <Label htmlFor="tpl-title" className="text-xs font-bold uppercase tracking-wide text-slate-600">
                   Titel *
                 </Label>
                 <Input
@@ -247,19 +252,20 @@ export function NewTemplateDialog({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
+                  className="border-2"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="tpl-language" className="text-xs">
+                  <Label htmlFor="tpl-language" className="text-xs font-bold uppercase tracking-wide text-slate-600">
                     Sprache
                   </Label>
                   <select
                     id="tpl-language"
                     value={lang}
                     onChange={(e) => setLang(e.target.value as Lang)}
-                    className="w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-sm"
+                    className="h-10 w-full rounded-lg border-2 border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition-all focus:border-[#4454b8] focus:outline-none focus:ring-2 focus:ring-[#4454b8]/20"
                   >
                     <option value="de">Deutsch</option>
                     <option value="en">English</option>
@@ -267,14 +273,14 @@ export function NewTemplateDialog({
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="tpl-category" className="text-xs">
+                  <Label htmlFor="tpl-category" className="text-xs font-bold uppercase tracking-wide text-slate-600">
                     Kategorie
                   </Label>
                   <select
                     id="tpl-category"
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-sm"
+                    className="h-10 w-full rounded-lg border-2 border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition-all focus:border-[#4454b8] focus:outline-none focus:ring-2 focus:ring-[#4454b8]/20"
                   >
                     <option value="">— keine —</option>
                     {CATEGORIES.map((c) => (
@@ -287,7 +293,7 @@ export function NewTemplateDialog({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="tpl-subject" className="text-xs">
+                <Label htmlFor="tpl-subject" className="text-xs font-bold uppercase tracking-wide text-slate-600">
                   Betreff *
                 </Label>
                 <Input
@@ -295,11 +301,12 @@ export function NewTemplateDialog({
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   required
+                  className="border-2"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="tpl-body" className="text-xs">
+                <Label htmlFor="tpl-body" className="text-xs font-bold uppercase tracking-wide text-slate-600">
                   Body *
                 </Label>
                 <Textarea
@@ -308,13 +315,15 @@ export function NewTemplateDialog({
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
                   required
+                  className="border-2 rounded-lg"
                 />
-                <p className="text-[10px] text-slate-500">
-                  Variablen: <code>{"{{vorname}}"}</code>,{" "}
-                  <code>{"{{nachname}}"}</code>,{" "}
-                  <code>{"{{firma}}"}</code>,{" "}
-                  <code>{"{{position}}"}</code>,{" "}
-                  <code>{"{{deal}}"}</code>
+                <p className="text-[10px] font-semibold text-slate-500">
+                  Variablen:{" "}
+                  <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-[#120774]">{"{{vorname}}"}</code>{" "}
+                  <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-[#120774]">{"{{nachname}}"}</code>{" "}
+                  <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-[#120774]">{"{{firma}}"}</code>{" "}
+                  <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-[#120774]">{"{{position}}"}</code>{" "}
+                  <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-[#120774]">{"{{deal}}"}</code>
                 </p>
               </div>
 
@@ -327,7 +336,7 @@ export function NewTemplateDialog({
                     setSubject("");
                     setBody("");
                   }}
-                  className="text-[11px] text-slate-500 underline-offset-2 hover:text-slate-900 hover:underline"
+                  className="text-[11px] font-semibold text-slate-500 underline-offset-2 hover:text-[#120774] hover:underline"
                 >
                   ← KI-Prompt aendern und neu generieren
                 </button>
@@ -336,17 +345,18 @@ export function NewTemplateDialog({
           )}
 
           {saveError && (
-            <div className="flex items-start gap-1.5 rounded bg-red-50 p-2 text-[11px] text-red-700">
-              <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
+            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
               <span>{saveError}</span>
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="gap-2 border-t-2 border-slate-100 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              className="border-2"
             >
               Abbrechen
             </Button>
@@ -356,10 +366,11 @@ export function NewTemplateDialog({
                 savePending ||
                 (tab === "ai" && !aiHasResult)
               }
+              className="bg-gradient-to-r from-[#120774] to-[#4454b8] text-white font-bold shadow-sm hover:shadow-md transition-all"
             >
               {savePending ? (
                 <>
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" strokeWidth={2.5} />
                   Speichern...
                 </>
               ) : (
