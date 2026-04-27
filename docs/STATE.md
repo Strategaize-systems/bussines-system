@@ -10,11 +10,11 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5.3 SLC-534 **/frontend done** 2026-04-27 — 8 MTs implementiert (Variablen-Resolver `resolveVarsFromDeal` mit Vitest 3/3, Live-Preview-Komponente mit Debounce 250ms via `useDebouncedValue` Hook + iframe-Render via `renderBrandedHtml`, Server-Action `sendComposedEmail` mit Branding+Vars-Loader + sendEmailWithTracking, Senden-Button im Compose-Form, Einstiegspunkte umgestellt: Deal-Workspace + Mein Tag (mein-tag-client + ki-workspace) + Focus → `/emails/compose?dealId=...&contactId=...`). tsc 0 Fehler, Vitest 35/35, Next-Build 60/60 Routes gruen. **Naechster Schritt: `/qa SLC-534`** (12 ACs verifizieren — Live-Preview-Render, Debounce, Bit-Identitaet, Send-Pfad, Tracking-Pixel-Regression, Einstiegspunkt-Smoke, Mobile-Tab "Vorschau").
-- Current Phase: V5.3 Implementation — Slice 3/5 done (SLC-531 done, SLC-532 done, SLC-533 done; SLC-534 frontend done / qa pending; SLC-535 planned). V5.2 Post-Launch confirmed stable (RPT-219). Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
+- Current Focus: V5.3 SLC-534 **/qa PASS** 2026-04-27 (RPT-231) — 12/12 ACs erfuellt statisch + Wiring-Chain (11 Send-Pfad-Links + 6 Live-Preview-Links + 4 Einstiegspunkte) + Live-Hetzner-HTTP-Smoke (alle 4 Routen 307→/login). Stub-Scan clean (2 stale Doc-Comments per Rule 1 gefixt). Cadence + IMAP Regression architektonisch garantiert (send.ts/cadence/engine.ts unveraendert seit SLC-531). **Naechster Schritt: User-Browser-Smoke** (12-Punkte-Liste in RPT-231) — bei 12/12 PASS dann SLC-534 + BL-401 → `done`, sonst zurueck zu /frontend fuer Fix.
+- Current Phase: V5.3 Implementation — Slice 3/5 vollstaendig done (SLC-531+532+533); SLC-534 frontend+qa done / Browser-Smoke pending; SLC-535 planned. V5.2 Post-Launch confirmed stable (RPT-219). Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
 
 ## Immediate Next Steps
-1. /qa SLC-534 — 12 ACs verifizieren (Live-Preview-Render, Debounce, Bit-Identitaet zur Final-Mail, Send-Pfad inkl. DB-Row-Check, Tracking-Pixel + Link-Wrapping in versendeter Mail, Einstiegspunkt-Smoke aus Deal-Workspace + Mein Tag + Focus, Mobile-Tab "Vorschau", Cadence/IMAP-Regression-Check)
+1. **User-Browser-Smoke SLC-534** — 12 Punkte aus RPT-231 (Live-Preview-Render, Debounce, Header, Senden-Flow, AC10 Bit-Identitaet via DB-Vergleich, 4 Einstiegspunkte, Mobile-Tab Vorschau, Cadence + IMAP Regression). Bei PASS: SLC-534 + BL-401 → `done`, dann /frontend SLC-535.
 2. SLC-531 Outlook-Smoke (offen, nicht Blocker): Test-Mail an Outlook-Postfach senden + Logo/Farbe/Schrift visuell pruefen. Wenn Drift gegen Gmail: Folge-Polish
 3. BL-403 Composing-Studio Style-Guide-V2-Restyling (UX-Polish, nach SLC-535 oder als V5.3-Polish-Slice)
 4. /frontend SLC-535 (Inline-Edit-Diktat) — Voice + Diff-Modal (6 MTs, ~1 Tag)

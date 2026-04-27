@@ -1,14 +1,13 @@
 // =============================================================
-// /emails/compose — Composing-Studio (Server-Page, SLC-533 MT-1)
+// /emails/compose — Composing-Studio (Server-Page)
 // =============================================================
-// Vollbild-Seite mit 3-Panel-Layout (Vorlagen / Erfassen / Live-Preview-Slot).
-// Live-Preview-Render kommt in SLC-534 — dieser Slice rendert nur das Skelett.
-// Send-Action ebenfalls SLC-534.
+// Vollbild-Seite mit 3-Panel-Layout (Vorlagen / Erfassen / Live-Preview).
 //
 // Server-Loader:
-// - Branding (fuer SLC-534 Preview)
+// - Branding (fuer Live-Preview-Render via renderBrandedHtml)
 // - Templates (filter='all' — Filter-Tabs entscheiden client-seitig)
 // - Deal-Kontext (Deal+Contact+Company+Sprache) wenn ?dealId=X gesetzt
+// - SMTP_FROM_EMAIL als Server-only-ENV durchgereicht fuer Preview-Header
 
 import type { Metadata } from "next";
 

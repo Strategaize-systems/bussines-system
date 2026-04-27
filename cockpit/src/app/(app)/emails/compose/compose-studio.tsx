@@ -1,13 +1,13 @@
 "use client";
 
 // =============================================================
-// ComposeStudio — 3-Panel-Layout-Container (SLC-533 MT-2)
+// ComposeStudio — 3-Panel-Layout-Container
 // =============================================================
-// Desktop: 3 Spalten (Vorlagen / Erfassen / Live-Preview-Slot)
+// Desktop: 3 Spalten (Vorlagen / Erfassen / Live-Preview)
 // Mobile: 3 Tabs in derselben Route, State liegt im Container
 //
-// Live-Preview-Render: Platzhalter, kommt in SLC-534
-// Send-Action: kommt in SLC-534
+// Live-Preview rendert via LivePreview-Komponente (DEC-095 renderBrandedHtml).
+// Send-Action via sendComposedEmail (vom ComposeForm aus aufgerufen).
 
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
