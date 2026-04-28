@@ -9,20 +9,19 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: requirements
-- Current Focus: V5.4 Requirements done 2026-04-28 — Composing-Studio Polish + E-Mail-Anhaenge in 2 Features (FEAT-541 V5.4-Polish, FEAT-542 E-Mail-Anhaenge-Upload PC-Direkt). PRD V5.4-Section angelegt mit Problem/Goal/Vision/Scope/AC/OutOfScope/Constraints/Risks/Success-Criteria/OpenQuestions. 8 Open Questions zur Architecture-Entscheidung (Junction-Table-Schema, Storage-Path-Struktur, Compose-Session-Lebensdauer, Whitelist-Konstante-Sharing, Tracking-Pixel bei Multipart, Compose-Form-Integration, Polish-Slicing). V5.3 ist released (REL-018 2026-04-28), bleibt im Cockpit als deployed sichtbar. V5.4-Plan: 2 Slices nacheinander (SLC-541 Polish → /qa → SLC-542 Anhaenge → /qa → Gesamt-/qa → /final-check → /go-live → /deploy).
-- Current Phase: V5.4 Requirements done. Naechster Schritt /architecture V5.4. /post-launch V5.3 laeuft passiv 24-48h, formaler Abschluss separat.
+- High-Level State: architecture
+- Current Focus: V5.4 Architecture done 2026-04-28 — alle 8 PRD-Open-Questions in 8 DECs aufgeloest (DEC-097..104). MIG-025 geschnitten (Storage-Bucket `email-attachments` privat + Junction-Table `email_attachments` mit FK Cascade + Index + RLS). 2 Slices empfohlen: SLC-541 V5.4-Polish (5 MTs, ~3-4h, FEAT-541) und SLC-542 E-Mail-Anhaenge-Upload PC-Direkt (9 MTs, ~1-1.5 Tage, FEAT-542). Architekturleitplanken: Versand-Layer rueckwaertskompatibel, MIME-Whitelist als shared TS-Konstante, ZIP rein ohne Inhalt-Inspection, Color-Picker-Toggle als wiederverwendbare ConditionalColorPicker-Komponente, kein V5.4-Cleanup-Cron. /post-launch V5.3 laeuft passiv 24-48h.
+- Current Phase: V5.4 Architecture done. Naechster Schritt /slice-planning V5.4.
 
 ## Immediate Next Steps
-1. **/architecture V5.4** — 8 Open Questions klaeren (Junction-Table-Schema, Storage-Path, Compose-Session-Lebensdauer, Whitelist-Konstante, Tracking-Pixel-Multipart, UI-Integration, Polish-Slicing, MIG-025-Schnitt). DECs schreiben fuer Storage-Bucket-Pattern + Color-Picker-Toggle + ZIP-Inhalt-Inspection-Verzicht.
-2. **/slice-planning V5.4** — 2 Slices SLC-541 + SLC-542 mit Micro-Tasks zuschneiden.
-3. **/backend SLC-541 V5.4-Polish** — Color-Picker-Toggle + ESLint-Cleanup + COMPLIANCE.md V5.3-Section + Coolify-Cron-Cleanup-Doku.
-4. **/qa SLC-541** — Static + Live-Smoke + Tracking-Regression-Check.
-5. **/backend+frontend SLC-542 E-Mail-Anhaenge-Upload** — MIG-025 + Bucket + Junction-Table + Compose-Form-UI + Multipart-Send + Live-Preview-Indikator.
-6. **/qa SLC-542** — MIME-Whitelist-Test + Size-Limit-Test + Tracking-Regression mit Anhang + Multipart-Smoke an Gmail.
-7. **Gesamt-/qa V5.4** → **/final-check** → **/go-live** → **/deploy** (manuell durch User in Coolify) → **/post-launch**.
-8. **/post-launch V5.3 formaler Abschluss** — sobald 24-48h um sind und kein 500er aufgetreten. Kann parallel zu V5.4-Implementation laufen.
-9. **Carryover (nicht V5.4-Scope):** ISSUE-042 OpenAI-Key Pre-Pflicht, Anwalts-Pruefung COMPLIANCE.md, Azure OpenAI EU + DPA + Switch, BL-397 GitHub-App Org-Anbindung, A5 SLC-531 Outlook-Smoke (User testet sobald Outlook-Postfach verfuegbar).
+1. **/slice-planning V5.4** — 2 Slices SLC-541 + SLC-542 strukturiert ausdefinieren (Acceptance Criteria pro Slice, Micro-Tasks-Liste mit Reihenfolge, QA-Fokus, Cross-Slice-Dependencies, BL-Items + slices/INDEX.md aktualisieren).
+2. **/backend SLC-541 V5.4-Polish** — ConditionalColorPicker-Komponente + /settings/branding-Form-Update + ESLint-Cleanup + COMPLIANCE.md V5.3-Section + Coolify-Cron-Cleanup-Doku in REL-019-Notes.
+3. **/qa SLC-541** — Color-Picker-Toggle Live-Smoke + AC9-Verifikation + ESLint-Build-Output + Doku-Existenz-Check.
+4. **/backend+frontend SLC-542 E-Mail-Anhaenge-Upload** — MIG-025 anwenden + Whitelist-Konstante + Server Actions + AttachmentsSection-UI + Multipart-Send + Live-Preview-Indikator + Junction-Table-Insert nach Send.
+5. **/qa SLC-542** — MIME-Whitelist-Test (Browser+Server) + Size-Limit-Test + Drag&Drop + Multipart-Smoke an Gmail mit Tracking-Pixel-Event + Cadence-Engine-Regression-Check.
+6. **Gesamt-/qa V5.4** → **/final-check** → **/go-live** → **/deploy** (manuell durch User in Coolify) → **/post-launch**.
+7. **/post-launch V5.3 formaler Abschluss** — sobald 24-48h um sind und kein 500er aufgetreten. Kann parallel zu V5.4-Implementation laufen.
+8. **Carryover (nicht V5.4-Scope):** ISSUE-042 OpenAI-Key Pre-Pflicht, Anwalts-Pruefung COMPLIANCE.md, Azure OpenAI EU + DPA + Switch, BL-397 GitHub-App Org-Anbindung, A5 SLC-531 Outlook-Smoke (User testet sobald Outlook-Postfach verfuegbar).
 
 ## Active Scope
 **V5.4 — Composing-Studio Polish + E-Mail-Anhaenge (Requirements done 2026-04-28):**

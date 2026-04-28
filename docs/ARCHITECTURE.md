@@ -6064,3 +6064,273 @@ Empfohlene Reihenfolge: SLC-531 → SLC-532 → SLC-533 → SLC-534 → SLC-535.
 ### V5.3 Recommended Next Step
 
 `/slice-planning` V5.3 — die 5 Slices SLC-531..SLC-535 strukturiert ausdefinieren mit Acceptance Criteria, Micro-Tasks, QA-Fokus und Cross-Slice-Dependencies. Danach pro Slice `/backend` (SLC-531, SLC-532) und `/frontend` (SLC-533, SLC-534, SLC-535) mit `/qa` nach jedem Slice.
+
+## V5.4 — Composing-Studio Polish + E-Mail-Anhaenge Architecture
+
+### V5.4 Architecture Summary
+
+V5.4 ist eine Polish + Inkrement-Version. Ein Slice schliesst V5.3-Hygiene ab (Color-Picker AC9-Drift-Fix, ESLint-Cleanup, COMPLIANCE.md-Update, Coolify-Cron-Cleanup-Doku), der zweite Slice erweitert das Composing-Studio um PC-Direkt-Anhaenge mit eigenem Storage-Bucket, Junction-Table und Multipart-SMTP. Versand-Layer bleibt rueckwaertskompatibel — `sendEmailWithTracking` ohne `attachments`-Parameter ist bit-identisch zu V5.3 (Cadences, Auto-Reply unbeeintraechtigt).
+
+### V5.4 Main Components
+
+```
+/settings/branding (UPDATED)
+  <ConditionalColorPicker>
+    Toggle "Markenfarbe verwenden" + native <input type=color>
+    Toggle aus -> null persistiert; Toggle an -> Hex
+
+/emails/compose (UPDATED)
+  Compose-Form (Mitte)
+    <Body Textarea>
+    <AttachmentsSection>
+      Drag&Drop Zone + File-Picker
+      <AttachmentsList>
+        PDF | whitepaper.pdf | 2.4 MB | [x]
+        PNG | screenshot.png | 0.8 MB | [x]
+  Live-Preview (Rechts)
+    <BrandedHTML>...</BrandedHTML>
+    -- Anhaenge --
+    Icon whitepaper.pdf (2.4 MB)
+    Icon screenshot.png (0.8 MB)
+
+Storage / DB:
+- Bucket "email-attachments" (privat, service_role-only) -> files
+- Tabelle "email_attachments" (Junction): email_id <-> storage_path
+
+Send-Pipeline:
+sendComposedEmail(...) -> load attachments from Storage ->
+  sendEmailWithTracking({..., attachments: [...]}) ->
+  Nodemailer Multipart -> SMTP ->
+  on success: INSERT email_attachments rows
+```
+
+### V5.4 Data Model (MIG-025)
+
+**Neue Tabelle `email_attachments`:**
+```sql
+CREATE TABLE email_attachments (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email_id     UUID NOT NULL REFERENCES emails(id) ON DELETE CASCADE,
+  storage_path TEXT NOT NULL,
+  filename     TEXT NOT NULL,
+  mime_type    TEXT NOT NULL,
+  size_bytes   BIGINT NOT NULL,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_email_attachments_email_id ON email_attachments(email_id);
+ALTER TABLE email_attachments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated_full_access" ON email_attachments
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+```
+
+**Storage-Bucket `email-attachments`:**
+```sql
+INSERT INTO storage.buckets (id, name, public) VALUES
+  ('email-attachments', 'email-attachments', false)
+  ON CONFLICT DO NOTHING;
+```
+Storage-Policies: nur service_role darf insert/select. V5.4 tunnelt alles ueber Server Actions (kein direkter Browser-Read).
+
+**Path-Schema (DEC-098):** `{user_id}/{compose_session_id}/{filename}`. Keine Path-Migration nach Send — Junction-Table mappt `email_id` <-> `storage_path` direkt.
+
+**Branding-Settings — keine Schema-Aenderung:** Color-Picker-Toggle wirkt rein UI-seitig. `branding_settings.primary_color` und `secondary_color` sind bereits NULL-faehig (MIG-023). Toggle "aus" = UPDATE auf NULL. Bestehende Daten unveraendert (DEC-102 Defensive-Migration-Verzicht).
+
+### V5.4 Architecture Decisions (DEC-097..104)
+
+#### DEC-097 — Junction-Table `email_attachments` statt JSON-Spalte auf `emails`
+
+**PRD-Question:** Junction-Table-Schema final, oder JSON-Spalte auf `emails`?
+
+**Entscheidung:** Eigene Junction-Table.
+
+**Reason:** Aggregat-Queries moeglich (z.B. "alle PDFs der letzten 30 Tage"), Index-Performance, sauberes Schema, passt zu bestehenden Datenmodell-Patterns (Activities, Documents). JSON-Spalte waere kompakter, aber Queries und Cleanup operativ unangenehm.
+
+**Consequence:** MIG-025 legt die Tabelle an. Insert nach erfolgreichem SMTP-Send in `sendEmailWithTracking`. Cascade `ON DELETE CASCADE` von `emails.id`. Storage-Files NICHT cascade — Audit-Spur bleibt im Bucket.
+
+#### DEC-098 — Storage-Path mit `compose_session_id`, kein Post-Send-Move
+
+**PRD-Question:** Path-Struktur `compose_session_id` vs. `email_id`?
+
+**Entscheidung:** `compose_session_id` Pre-Send, Path bleibt nach Send unveraendert. Junction-Table mappt `email_id` <-> `storage_path`.
+
+**Reason:** Post-Send-Move waere zusaetzlicher Storage-Roundtrip pro Anhang fuer reine Path-Hygiene — kein operativer Gewinn. Junction-Table ist der Index, nicht der Path.
+
+**Consequence:** Server Action `uploadEmailAttachment(file, composeSessionId)` schreibt direkt in finalen Path. `sendComposedEmail` erstellt nach Send Junction-Rows mit exaktem Upload-Pfad. Keine Move-Operation.
+
+#### DEC-099 — MIME-Whitelist als shared Konstante, nicht Server-only
+
+**PRD-Question:** Wo wohnt die Whitelist-Konstante?
+
+**Entscheidung:** `cockpit/src/lib/email/attachments-whitelist.ts` — kein Server-only-Import. Browser- und Server-Code importieren dieselbe Konstante.
+
+**Reason:** Source-of-Truth einmal. Drift zwischen Browser-Filter und Server-Validierung ist klassische Bug-Quelle.
+
+**Consequence:** Datei exportiert `MIME_WHITELIST`, `EXTENSION_WHITELIST`, `MAX_FILE_SIZE_BYTES` (10 MB), `MAX_TOTAL_SIZE_BYTES` (25 MB). Browser nutzt Konstanten in `<input accept>` und onChange-Validation. Server Action ruft `validateAttachment(file)` mit derselben Konstante.
+
+#### DEC-100 — ZIP wird akzeptiert, Inhalt nicht inspiziert
+
+**PRD-Question:** ZIP-Inhalt server-seitig pruefen?
+
+**Entscheidung:** ZIP rein, kein Inhalt-Inspection.
+
+**Reason:** B2B-Vertriebs-Realitaet hat ZIPs (Multi-File-Pakete, Bilder-Sets, Angebote). User packt selbst, kennt den Inhalt — kein Forwarding-Use-Case. Empfaenger-Mailserver-Filter ist zweite Linie. Server-side Unzip waere zusaetzliche Library, Edge-Cases (verschluesselte ZIPs, geschachtelte ZIPs, Bombs) und V5.4-Overkill.
+
+**Consequence:** Whitelist enthaelt `application/zip` + Endung `.zip`. Keine Unzip-Logik. Akzeptiertes Restrisiko ist im PRD V5.4 dokumentiert.
+
+#### DEC-101 — Anhang-UI als Sektion unter Body, nicht Tab
+
+**PRD-Question:** Anhang-Bereich Sektion oder Tab?
+
+**Entscheidung:** Eigene Sektion direkt unter Body-Textarea.
+
+**Reason:** Flachere UX — User sieht Body und Anhaenge ohne Klick. Tab-Variante = 1 Klick mehr + Erinnerungs-Risiko "ich hatte einen Anhang dran". B2B-Mails haben oft 1-2 Anhaenge — Sektion bleibt visuell erfassbar.
+
+**Consequence:** Compose-Form-Layout vertikal verlaengert. Kein zusaetzlicher Tab-State. `<AttachmentsSection>` direkt unter `<BodyTextarea>` in `compose-form.tsx`.
+
+#### DEC-102 — Color-Picker via wiederverwendbare `<ConditionalColorPicker>`-Komponente
+
+**PRD-Question:** Toggle vs. Reset-Button?
+
+**Entscheidung:** Toggle-Variante, gekapselt in wiederverwendbarer Komponente `<ConditionalColorPicker>`.
+
+**Reason:** Toggle ist semantisch klar ("Markenfarbe verwenden: ja/nein") und lokal pro Color-Picker. Reset-Button waere global. Toggle als wiederverwendbare Komponente macht spaetere Branding-Erweiterungen (Hover-Color, Background) trivial.
+
+**Consequence:** Neue Komponente `cockpit/src/components/branding/conditional-color-picker.tsx` mit Props `{ label, value, onChange, defaultColor }`. State `enabled = value !== null`. Toggle-Click setzt entweder NULL oder `defaultColor`. Form-Submit-Mapping: NULL bei Toggle aus, Hex bei Toggle an.
+
+**Defensive-Migration-Verzicht:** Bestehende Branding-Eintraege werden NICHT in der Migration auf NULL gesetzt. User-Mental-Model: "wenn Wert da ist, ist es aktiv". Kein automatischer Reset.
+
+#### DEC-103 — V5.4-Polish in einen Slice (SLC-541), kein Code/Doku-Split
+
+**PRD-Question:** Polish ein Slice oder zwei?
+
+**Entscheidung:** Ein Slice (SLC-541).
+
+**Reason:** Die 4 Themen (Color-Picker, ESLint, COMPLIANCE.md, Coolify-Crons) sind zusammen ~3-4h Arbeit. Aufteilung waere Slicing-Overhead ohne Gewinn. Ein Slice = ein QA-Lauf = ein Commit-Bundle = ein Release-Eintrag.
+
+**Consequence:** SLC-541 hat 5 logische Micro-Tasks (MT-1..MT-5). QA fokussiert sich auf Color-Picker-Verhalten Live-Smoke, ESLint-Build-Output, COMPLIANCE.md-Existenz, REL-019-Notes-Existenz. Coolify-Cron-Cleanup wird als User-Aktion in REL-019-Notes geliefert; QA verifiziert nur die Anleitung.
+
+#### DEC-104 — Verwaiste-Anhaenge-Cleanup deferred (kein V5.4-Cron)
+
+**PRD-Question:** Compose-Session-Lebensdauer + Cleanup-Strategie fuer verwaiste Anhaenge.
+
+**Entscheidung:** Compose-Session-ID = UUID beim Page-Open, Lebensdauer = Tab-Session. Bei Page-Reload ohne Send bleiben Anhaenge im Storage als verwaiste Files. Kein V5.4-Cleanup-Cron.
+
+**Reason:** Cleanup-Cron ist zusaetzliche Komplexitaet (welche Sessions verwaist? Wartezeit? Junction-Row-Existenz-Check?). V5.4-Scope eng. Storage-Volumen-Druck nicht akut.
+
+**Consequence:** Tech-Debt im PRD V5.4 dokumentiert. Kein Code-Aufwand in V5.4. Monitoring-Punkt: bei `email-attachments`-Bucket >2 GB → Cleanup-Slice planen.
+
+### V5.4 MIG-025 — Storage-Bucket + Junction-Table
+
+**MIG-025 — V5.4 SLC-542 Email-Attachments Schema**
+- **Date:** TBD (bei /backend SLC-542 anwenden auf Hetzner)
+- **Scope:**
+  1. Storage-Bucket `email-attachments` (privat, `public=false`)
+  2. Tabelle `email_attachments` (Junction)
+  3. Index `idx_email_attachments_email_id`
+  4. RLS auf `email_attachments` mit `authenticated_full_access`-Policy
+  5. Storage-Policies — Service-Role-Access only
+- **Reason:** FEAT-542 braucht Persistenz fuer Anhaenge und Verknuepfung zur `emails`-Tabelle.
+- **Affected Areas:** Neuer Storage-Bucket, neue Tabelle, neue Server Actions `uploadEmailAttachment`/`deleteEmailAttachment` in `cockpit/src/app/(app)/emails/compose/attachment-actions.ts`, `sendEmailWithTracking` Erweiterung um `attachments`-Parameter.
+- **Risk:** Niedrig — additive Aenderungen. FK auf `emails(id)` mit `ON DELETE CASCADE`. Bucket-Anlage idempotent.
+- **Rollback Notes:**
+  - `DROP TABLE email_attachments CASCADE;`
+  - `DELETE FROM storage.objects WHERE bucket_id='email-attachments'; DELETE FROM storage.buckets WHERE id='email-attachments';`
+  - `send.ts`-Aenderung rein additiv (Default `attachments=[]`) — kein Code-Rollback noetig.
+
+### V5.4 Constraints & Tradeoffs
+
+**Constraint: V5.3-Send-Pfad bit-identisch.**
+- `sendEmailWithTracking({...rest})` ohne `attachments`-Property bleibt funktional gleich. Cadences, Auto-Reply, Mein-Tag-Compose unangetastet.
+- Tradeoff: Doppel-Pfad in `send.ts` (Anhaenge vorhanden = Multipart / leer = Bestehender HTML-Path). Akzeptiert — Pfad ist klein.
+
+**Constraint: Tracking-Pixel bei Multipart-Mail.**
+- Tracking-Pixel-Injection passiert im HTML-Body wie bisher. Multipart-Mail hat einen HTML-Body-Part und ein/mehrere `attachment`-Parts. Pixel bleibt im HTML-Body-Part eingebettet.
+- Tradeoff: Manche Mailclients koennten Multipart-Mails strenger filtern. Akzeptiert — Smoke-Test in QA verifiziert bei Gmail.
+
+**Constraint: Storage-Volumen waechst.**
+- File bleibt nach Versand im Bucket (Auditspur).
+- Tradeoff: ohne Cleanup-Cron waechst der Bucket monoton. Akzeptiert — Cleanup als separater Slice wenn Druck entsteht.
+
+**Tradeoff: Eigener Bucket statt Subfolder im `documents`-Bucket.**
+- Eigener Bucket: saubere Lifecycle-Trennung, eigene Policies, konsistent mit Branding-Bucket-Pattern.
+- Akzeptiert (User-Entscheidung in /requirements).
+
+### V5.4 Open Questions (alle aus PRD geklaert)
+
+| PRD-Question | Entscheidung | DEC |
+|---|---|---|
+| Junction-Table-Schema | Eigene Tabelle `email_attachments` mit FK + Cascade | DEC-097 |
+| Storage-Path-Struktur | `{user_id}/{compose_session_id}/{filename}`, kein Post-Send-Move | DEC-098 |
+| Compose-Session-Lebensdauer + Cleanup | UUID beim Page-Open, Tab-Session, kein V5.4-Cleanup-Cron | DEC-104 |
+| MIME-Whitelist-Konstante-Sharing | Plain TS-Datei in `cockpit/src/lib/email/attachments-whitelist.ts` | DEC-099 |
+| Tracking-Pixel-Behavior bei Multipart | Kein Spezial-Handling, Smoke-Test verifiziert | (Risk, kein DEC) |
+| Compose-Form-Integration | Sektion unter Body (nicht Tab) | DEC-101 |
+| Polish-Slicing | Ein Slice SLC-541 fuer alle 4 Polish-Themen | DEC-103 |
+| Color-Picker-Toggle vs. Reset-Button | Toggle-Variante als `<ConditionalColorPicker>` | DEC-102 |
+| ZIP-Inhalt-Inspection | ZIP rein, Inhalt nicht pruefen | DEC-100 |
+
+### V5.4 Empfohlene Slice-Struktur
+
+**2 Slices (DEC-103: Polish gebuendelt):**
+
+**SLC-541 — V5.4-Polish (FEAT-541)**
+- MT-1: `<ConditionalColorPicker>`-Komponente in `cockpit/src/components/branding/conditional-color-picker.tsx`. Toggle-Checkbox + native Color-Input.
+- MT-2: `/settings/branding`-Form auf `<ConditionalColorPicker>` umstellen (primary + secondary). Form-Submit-Mapping: NULL bei Toggle aus, Hex bei Toggle an. Acceptance: Live-Smoke mit Browser zeigt Toggle-Verhalten.
+- MT-3: ESLint Hook-Order-Cleanup in `cockpit/src/components/email/new-template-dialog.tsx` und `inline-edit-dialog.tsx`. Hooks unconditional am Top-Level. Acceptance: `npm run lint` produziert keine Hook-Warnings mehr in den 2 Dateien.
+- MT-4: `docs/COMPLIANCE.md` V5.3-Section ergaenzen — Composing-Studio-Datenfluesse, Inline-Edit-Whisper-Provider, Branding-Storage-Verhalten.
+- MT-5: `docs/RELEASES.md` REL-019-Notes mit Coolify-Cron-Cleanup-User-Anleitung (Klick-Anleitung, Schritt-fuer-Schritt).
+- Schaetzung: ~3-4h
+- QA-Fokus: Color-Picker Toggle-Verhalten Live-Smoke, AC9-Verifikation (Mail ohne aktivierte Branding-Farben = bit-identisch zu V5.2), ESLint-Build-Output, COMPLIANCE.md-Existenz, REL-019-Notes-Existenz.
+
+**SLC-542 — E-Mail-Anhaenge-Upload PC-Direkt (FEAT-542)**
+- MT-1: MIG-025 — Bucket + Junction-Table + Index + RLS + Storage-Policies. Auf Hetzner anwenden via SSH.
+- MT-2: `cockpit/src/lib/email/attachments-whitelist.ts` mit MIME_WHITELIST + EXTENSION_WHITELIST + Size-Konstanten. Validation-Helper `validateAttachment(file)`.
+- MT-3: Server Actions `uploadEmailAttachment(file, composeSessionId)` und `deleteEmailAttachment(storagePath)` in `cockpit/src/app/(app)/emails/compose/attachment-actions.ts`. Service-Role-Storage-Client.
+- MT-4: `<AttachmentsSection>`-Komponente in `cockpit/src/components/email/attachments-section.tsx`. Drag&Drop-Zone + File-Picker-Button + AttachmentsList mit Icon/Filename/Size/Loeschen. Browser-side Validation.
+- MT-5: Compose-Form-Integration — `<AttachmentsSection>` unter Body-Textarea in `compose-form.tsx`. Compose-Session-ID via `useState(() => crypto.randomUUID())`. State `attachments: AttachmentMeta[]` mit Storage-Path nach Upload.
+- MT-6: Live-Preview-Indikator — `<AttachmentsPreview>` in `live-preview.tsx` unterhalb Body-Render. Icon + Filename + Size pro Anhang.
+- MT-7: `sendEmailWithTracking` Erweiterung um `attachments?: { storagePath, filename, mimeType }[]`-Parameter. Storage-File-Download via service_role, Nodemailer `attachments`-Array, Multipart-Body. Default leer = bit-identisches V5.3-Verhalten.
+- MT-8: `sendComposedEmail` Server Action erweitert — laedt `attachments` aus Compose-Form-State, ruft `sendEmailWithTracking` mit Anhaengen, persistiert nach Erfolg `email_attachments`-Junction-Rows.
+- MT-9: Smoke-Test mit echter Mail an Gmail (PDF + PNG + ZIP, 3 verschiedene MIME-Types). Tracking-Pixel-Event muss feuern. Anhaenge muessen in Gmail downloadbar sein.
+- Schaetzung: ~1-1.5 Tage
+- QA-Fokus: MIME-Whitelist Browser-Block + Server-Block, Size-Limits (10/25 MB), Drag&Drop + File-Picker, Loeschen entfernt Storage-File, Multipart-Mail in Gmail mit Tracking-Pixel-Event, Cadence-Engine-Regression-Check.
+
+**Gesamtschaetzung: ~1.5-2 Tage** (ein Vormittag Polish + ein Tag Anhaenge inkl. QA + Smoke).
+
+Abhaengigkeiten:
+- SLC-541 unabhaengig von SLC-542 (kann separat deployt werden).
+- SLC-542 setzt SLC-541 nicht voraus.
+- User-Entscheidung in /requirements: nacheinander durchlaufen.
+
+Empfohlene Reihenfolge: SLC-541 → /qa → SLC-542 → /qa → Gesamt-/qa V5.4 → /final-check → /go-live → /deploy → /post-launch.
+
+### V5.4 Risks & Open Decisions
+
+**Risk: Tracking-Pixel bei Multipart-Mail wird ignoriert.**
+- Mitigation: Smoke-Test in SLC-542 QA. Test-Mail an Gmail mit Anhang + Tracking-Pixel. Open-Event muss in `email_tracking_events`-Tabelle sichtbar werden.
+
+**Risk: 25 MB Total-Limit ueberschreitet SMTP-Provider-Limit.**
+- Mitigation: aktueller Outbound-Provider erlaubt 25 MB Default. Falls Send fehlschlaegt: Server-Action liefert klare Fehlermeldung an UI.
+
+**Risk: Color-Picker-Toggle-State-Ableitung initial falsch.**
+- Mitigation: SLC-541 MT-2 Live-Smoke verifiziert: User mit `primary_color=NULL` sieht Toggle aus, mit `#abc123` sieht Toggle an.
+
+**Risk: Verwaiste Storage-Files akkumulieren bei Page-Reload-Abandonments.**
+- Mitigation: Monitoring-Punkt — bei Bucket >2 GB → Cleanup-Slice planen (siehe DEC-104).
+
+**Risk: ESLint-Cleanup deckt Render-Bugs auf.**
+- Mitigation: SLC-541 QA verifiziert visuell die zwei Dialoge nach Cleanup. Keine Funktional-Aenderung erwartet.
+
+**Risk: Coolify-Cron-Cleanup-Anleitung verwirrt User.**
+- Mitigation: Klick-fuer-Klick-Anleitung mit konkreten Cron-Namen. Pre-Snapshot-Empfehlung. Optional separater Schritt nach SLC-541-Deploy.
+
+**Risk: ZIP-Anhang mit Schadcode wird unbemerkt rausgesendet.**
+- Mitigation: User selbst legt Files aus, kein Forwarding-Use-Case. Empfaenger-Spam-Filter ist zweite Linie. Akzeptiertes B2B-Restrisiko (DEC-100).
+
+**Open Decision (deferred):** Anhang-Auswahl aus Document-Library — nicht V5.4-Anforderung.
+
+**Open Decision (deferred):** Cadences mit Anhaengen — keine V5.4-UI-Anforderung.
+
+### V5.4 Recommended Next Step
+
+`/slice-planning` V5.4 — die 2 Slices SLC-541 + SLC-542 strukturiert ausdefinieren mit Acceptance Criteria pro Slice, Micro-Tasks-Liste mit Reihenfolge, QA-Fokus pro Slice. Danach `/backend SLC-541` → `/qa` → `/backend+frontend SLC-542` → `/qa`.

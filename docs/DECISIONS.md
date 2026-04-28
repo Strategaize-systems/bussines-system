@@ -490,3 +490,43 @@
   - `cockpit/src/app/(app)/settings/template-actions.ts` blockt sowohl `deleteEmailTemplate` als auch `updateEmailTemplate` fuer `is_system=true` mit klarer Fehlermeldung. Code-Kommentar verweist auf "duplicateSystemTemplate als legitimer Pfad fuer User-Anpassung".
   - Inline-Edit-Diktat (SLC-535) wird denselben Server-Action-Pattern verwenden (Voice-Input → Server Action mit Bedrock-Direct-Call). Konsequenz wird in SLC-535-Implementation referenziert.
   - Defense-in-Depth via DB-Trigger oder RLS-Policy auf `is_system`-Toggle ist V7-Topic (Multi-User), nicht V5.3.
+
+## DEC-097 — Junction-Table `email_attachments` statt JSON-Spalte auf `emails` (V5.4)
+- Status: accepted
+- Reason: V5.4 FEAT-542 muss N Anhaenge pro Mail persistieren. Eine eigene `email_attachments`-Junction-Tabelle ermoeglicht Aggregat-Queries (z.B. "alle PDFs der letzten 30 Tage"), Index-Performance auf `email_id`, sauberes Schema mit FK + Cascade, und passt zu bestehenden Datenmodell-Patterns (Activities, Documents). JSON-Spalte auf `emails` waere kompakter, aber Queries und Cleanup operativ unangenehm und schwerer zu indexieren.
+- Consequence: MIG-025 legt `email_attachments` an mit `(id UUID PK, email_id UUID FK ON DELETE CASCADE, storage_path TEXT, filename TEXT, mime_type TEXT, size_bytes BIGINT, created_at TIMESTAMPTZ)`. Index auf `email_id`. RLS `authenticated_full_access`. Insert nach erfolgreichem SMTP-Send in `sendEmailWithTracking`. Storage-Files NICHT cascade — Audit-Spur bleibt im Bucket erhalten (zukuenftiger Cleanup-Cron).
+
+## DEC-098 — Storage-Path mit `compose_session_id`, kein Post-Send-Move (V5.4)
+- Status: accepted
+- Reason: Beim Anhang-Upload existiert `email_id` noch nicht (entsteht erst nach Send). Zwei Wege moeglich: (a) Path mit `compose_session_id`, nach Send Move zu `email_id`-Folder, oder (b) Path mit `compose_session_id` bleibt, Junction-Table mappt. Variante (a) waere zusaetzlicher Storage-Roundtrip pro Anhang fuer reine Path-Hygiene — kein operativer Gewinn. Junction-Table ist der Index, nicht der Path. Audit-Anfragen ueber `SELECT storage_path FROM email_attachments WHERE email_id = ?` funktionieren in beiden Varianten gleich.
+- Consequence: Server Action `uploadEmailAttachment(file, composeSessionId)` schreibt direkt in finalen Path `{user_id}/{compose_session_id}/{filename}`. `sendComposedEmail` erstellt nach Send Junction-Rows mit exaktem Upload-Pfad. Keine Move-Operation. Path-Schema-Drift (`compose_session_id` taucht ewig in Storage-Listings auf) ist akzeptiert — kein User-Sichtbarkeits-Issue weil privater Bucket.
+
+## DEC-099 — MIME-Whitelist als shared Konstante, nicht Server-only (V5.4)
+- Status: accepted
+- Reason: MIME-Validierung passiert auf zwei Ebenen: Browser-Filter (UX, verbotene Files gar nicht ladbar) und Server-Action (Sicherheit, Browser-Bypass). Wenn beide Ebenen ihre eigene Whitelist haetten, drift moeglich — klassische Bug-Quelle. Eine plain TypeScript-Datei ohne Server-Side-Effects ist trivial in beide Welten importierbar.
+- Consequence: `cockpit/src/lib/email/attachments-whitelist.ts` exportiert `MIME_WHITELIST` (Array von MIME-Types), `EXTENSION_WHITELIST` (abgeleitet), `MAX_FILE_SIZE_BYTES` (10 MB), `MAX_TOTAL_SIZE_BYTES` (25 MB). Browser nutzt Konstanten in `<input type="file" accept="...">` und in `onChange`-Validation. Server Action ruft `validateAttachment(file)` mit derselben Konstante. Kein Server-only-Marker, kein Node-only-Code in der Datei.
+
+## DEC-100 — ZIP rein, Inhalt nicht inspizieren (V5.4)
+- Status: accepted
+- Reason: ZIPs koennen verbotene Formate (EXE, JS, BAT) im Inneren tragen → unsere MIME-Whitelist gilt nur am Top-Level. Drei Optionen: (a) ZIP raus, Maximalsicherheit aber UX-Einschraenkung fuer B2B-Vertrieb (Multi-File-Pakete sind realistisch), (b) ZIP rein, kein Inhalt-Inspection, B2B-pragmatisch, (c) ZIP rein mit Server-side Unzip + Per-File-MIME-Check, hoher Implementierungs-Aufwand mit Edge-Cases (verschluesselte ZIPs, geschachtelte ZIPs, Bombs). User selbst legt Files aus, kein Forwarding-Use-Case → Restrisiko klein. Empfaenger-Mailserver-Filter ist die zweite Verteidigungslinie.
+- Consequence: Whitelist enthaelt `application/zip` und Endung `.zip`. Keine Unzip-Logik, keine Library. Akzeptiertes B2B-Restrisiko ist im PRD V5.4 Risks-Section dokumentiert. Wenn User-Bedarf entsteht (z.B. Compliance-Anforderung): separater Slice mit Server-side Unzip.
+
+## DEC-101 — Anhang-UI als Sektion unter Body (nicht Tab) (V5.4)
+- Status: accepted
+- Reason: Compose-Form-UX-Frage: Anhang-Bereich als eigene Sektion unter Body-Textarea oder als Tab. Sektion ist flacher (User sieht Body und Anhaenge ohne Klick), Tab waere 1 zusaetzlicher Klick + Erinnerungs-Risiko ("ich hatte einen Anhang dran, ist der noch da?"). B2B-Vertriebs-Mails haben oft 1-2 Anhaenge, nicht 10 — Sektion bleibt visuell erfassbar.
+- Consequence: `<AttachmentsSection>`-Komponente direkt unter `<BodyTextarea>` in `compose-form.tsx`. Vertikaler Layout-Verlauf: Empfaenger → Betreff → Body → Anhaenge → Send-Button. Kein zusaetzlicher Tab-State. Live-Preview-Indikator analog im rechten Panel unter Body-Render.
+
+## DEC-102 — Color-Picker via wiederverwendbare `<ConditionalColorPicker>`-Komponente (V5.4)
+- Status: accepted
+- Reason: ISSUE-043 zeigt: native `<input type="color">` submitted immer einen gueltigen Hex-Wert, auch wenn der User die Picker nie bewusst angefasst hat. AC9 aus FEAT-531 ("Mail ohne Branding bit-fuer-bit identisch zu V5.2") gilt nur noch im Initial-State. Drei Loesungen moeglich: (a) Toggle-Checkbox vor jedem Color-Picker, (b) globaler Reset-Button "Branding zuruecksetzen", (c) Text-Input mit Hex-Validation. Toggle ist semantisch klar ("Markenfarbe verwenden: ja/nein") und lokal pro Color-Picker — primary aktiv und secondary inaktiv ist moeglich. Reset-Button waere global und zu grob. Text-Input verliert die Color-Visualisierung. Toggle als wiederverwendbare Komponente macht spaetere Branding-Erweiterungen (Hover-Color, Background) trivial.
+- Consequence: Neue Komponente `cockpit/src/components/branding/conditional-color-picker.tsx` mit Props `{ label, value, onChange, defaultColor }`. State `enabled = value !== null`. Toggle-Click setzt entweder NULL oder `defaultColor`. Native `<input type="color">` bleibt erhalten, ist aber `disabled` wenn Toggle aus. Form-Submit-Mapping: NULL bei Toggle aus, Hex bei Toggle an. Bestehende Branding-Eintraege werden NICHT in der Migration auf NULL gesetzt — User-Mental-Model "wenn Wert da ist, ist es aktiv" bleibt konsistent.
+
+## DEC-103 — V5.4-Polish in einen Slice (SLC-541), kein Code/Doku-Split (V5.4)
+- Status: accepted
+- Reason: V5.4 FEAT-541 buendelt 4 Themen: Color-Picker-Toggle (Code), ESLint Hook-Order (Code), COMPLIANCE.md V5.3-Update (Doku), Coolify-Cron-Cleanup-Anleitung (Doku). Die 4 Themen sind zusammen ~3-4h Arbeit. Aufteilung in 2 Slices (Code vs. Doku) waere Slicing-Overhead ohne Gewinn — ein Slice = ein QA-Lauf = ein Commit-Bundle = ein Release-Eintrag. COMPLIANCE.md-Update und Coolify-Cron-Doku sind Dokumentations-Add-Ons, die im selben PR-Mental-Model wie die Code-Aenderung funktionieren.
+- Consequence: SLC-541 hat 5 logische Micro-Tasks (MT-1 ConditionalColorPicker-Komponente, MT-2 /settings/branding-Form-Update, MT-3 ESLint-Cleanup, MT-4 COMPLIANCE.md-V5.3-Section, MT-5 REL-019-Notes mit Coolify-Anleitung). QA fokussiert: Color-Picker-Toggle-Live-Smoke + AC9-Verifikation, ESLint-Build-Output-Pruefung, COMPLIANCE.md-Existenz-Check, REL-019-Notes-Existenz-Check. Coolify-Cron-Cleanup ist User-Aktion in REL-019-Notes; QA verifiziert nur die Anleitung, nicht den Coolify-Zustand.
+
+## DEC-104 — Verwaiste-Anhaenge-Cleanup deferred (kein V5.4-Cron) (V5.4)
+- Status: accepted
+- Reason: Compose-Session-ID = UUID beim Page-Open (`useState(() => crypto.randomUUID())`), Lebensdauer = Tab-Session. Bei Page-Reload ohne Send bleiben hochgeladene Anhaenge im Storage als verwaiste Files. Cleanup-Cron ist zusaetzliche Komplexitaet: welche Compose-Sessions sind verwaist? Wie lange Wartezeit? Welche `email_attachments`-Junction-Rows existieren noch nicht und sind damit definitiv verwaist? Vs. welche sind noch in einer offenen Tab-Session? V5.4-Scope ist eng. Storage-Volumen-Druck ist nicht akut — Branding-Bucket hat heute <10 MB Logos, `email-attachments`-Bucket wird in den ersten Wochen <100 MB sein.
+- Consequence: Tech-Debt im PRD V5.4 dokumentiert (Out-of-Scope-Section: "Verwaiste-Anhaenge-Cleanup-Cron"). Kein Code-Aufwand in V5.4. Monitoring-Punkt: bei `email-attachments`-Bucket >2 GB → Cleanup-Slice mit klarer Strategie planen (z.B. >7d Storage-Files ohne `email_attachments`-Junction-Row → Delete).

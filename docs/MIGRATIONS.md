@@ -176,6 +176,34 @@
 - Risk: Gering — rein additiv, eine neue Tabelle ohne FK-Beziehungen ausser nullable `updated_by`. Idempotent (IF NOT EXISTS, ON CONFLICT DO NOTHING).
 - Rollback Notes: `DROP TABLE compliance_templates CASCADE;`
 
+### MIG-025 — V5.4 SLC-542 Email-Attachments Schema (planned)
+- Date: TBD (bei /backend SLC-542 anwenden auf Hetzner)
+- Scope: 4 Aenderungen in einer Migration `025_v54_email_attachments.sql`:
+  1. Storage Bucket `email-attachments` (privat, `public=false`) via `INSERT INTO storage.buckets (id, name, public) VALUES ('email-attachments', 'email-attachments', false) ON CONFLICT DO NOTHING;`
+  2. Neue Tabelle `email_attachments` als Junction zwischen `emails` und Storage:
+     - `id UUID PK DEFAULT gen_random_uuid()`
+     - `email_id UUID NOT NULL REFERENCES emails(id) ON DELETE CASCADE`
+     - `storage_path TEXT NOT NULL`
+     - `filename TEXT NOT NULL`
+     - `mime_type TEXT NOT NULL`
+     - `size_bytes BIGINT NOT NULL`
+     - `created_at TIMESTAMPTZ NOT NULL DEFAULT now()`
+  3. Index `idx_email_attachments_email_id` auf `email_attachments(email_id)`.
+  4. RLS auf `email_attachments` enable + Policy `authenticated_full_access` (FOR ALL TO authenticated USING (true) WITH CHECK (true)). Service-Role hat BYPASSRLS.
+- Reason: V5.4 FEAT-542 (E-Mail-Anhaenge-Upload PC-Direkt) braucht Persistenz fuer hochgeladene Anhaenge und Verknuepfung zur `emails`-Tabelle. DEC-097 (Junction-Table statt JSON-Spalte), DEC-098 (compose_session_id-Path, kein Post-Send-Move) haben die Strategie festgelegt.
+- Affected Areas:
+  - Neuer Storage-Bucket `email-attachments` auf Self-Hosted Supabase
+  - Neue Tabelle `email_attachments` mit Index + RLS
+  - Server Actions `uploadEmailAttachment`, `deleteEmailAttachment` (neu in `cockpit/src/app/(app)/emails/compose/attachment-actions.ts`)
+  - `cockpit/src/lib/email/send.ts` Erweiterung um optionalen `attachments`-Parameter (additiv, Default leer)
+  - `cockpit/src/lib/email/attachments-whitelist.ts` (neu, MIME-Whitelist + Size-Limits)
+  - KEINE Aenderung an `emails`, `branding_settings`, `email_templates`.
+- Risk: Niedrig — rein additive Aenderungen. FK auf `emails(id)` mit `ON DELETE CASCADE` wirkt erst, wenn Mail-Loeschung implementiert wird (heute nicht der Fall). Storage-Bucket-Anlage ist idempotent. Backwards Compatibility: `sendEmailWithTracking` ohne `attachments`-Parameter (Default leer) ist bit-identisch zu V5.3 (Cadences, Auto-Reply unbeeintraechtigt).
+- Rollback Notes:
+  - `DROP TABLE email_attachments CASCADE;`
+  - `DELETE FROM storage.objects WHERE bucket_id='email-attachments'; DELETE FROM storage.buckets WHERE id='email-attachments';`
+  - `send.ts`-Aenderung ist rein additiv (Default `attachments=[]`) — kein Code-Rollback noetig wenn Tabelle weg ist.
+
 ### MIG-024 — V5.3 SLC-531 Branding Storage Public-Read + Logo-URL-Reset (Hotfix)
 - Date: 2026-04-27 (applied auf Hetzner)
 - Scope: 1. SELECT-Policy `branding_public_read` auf `storage.objects` fuer anon+authenticated mit `bucket_id='branding'`. 2. UPDATE `branding_settings.logo_url=NULL WHERE logo_url LIKE 'http://supabase-kong:%'` — alte interne Docker-URLs unbrauchbar.
