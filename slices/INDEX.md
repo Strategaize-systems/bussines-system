@@ -202,3 +202,10 @@
 | SLC-533 | [Composing-Studio Layout + KI-Vorausfuellung](SLC-533-composing-studio-layout.md) | FEAT-532 | done | High | 2026-04-26 |
 | SLC-534 | [Live-Preview + Send-Integration + Einstiegspunkte](SLC-534-live-preview-send-integration.md) | FEAT-532 | done | High | 2026-04-26 |
 | SLC-535 | [Inline-Edit-Diktat](SLC-535-inline-edit-diktat.md) | FEAT-534 | done | Medium | 2026-04-26 |
+
+## V5.4 Slices (Composing-Studio Polish + E-Mail-Anhaenge)
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-541 | [V5.4-Polish (Composing-Studio + Hygiene)](SLC-541-v54-polish.md) | FEAT-541 | planned | High | 2026-04-28 |
+| SLC-542 | [E-Mail-Anhaenge-Upload (PC-Direkt)](SLC-542-email-attachments-pc.md) | FEAT-542 | planned | High | 2026-04-28 |
