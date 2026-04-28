@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5.3 **5/5 Slices done** 2026-04-28 — SLC-535 Live-Smoke auf Hetzner PASS (UI-States ✅, Smoke 1 klare Anweisung ✅, Smoke 2 mehrdeutige Anweisung ✅, Smoke 3 problematische Anweisung ✅ KI blieb generisch + verwarf nichts erfunden, Verwerfen-Pfad ✅). FEAT-534 + BL-402 done. V5.3 ist damit Code+QA-komplett (SLC-531+532+533+534+535 alle done). **Naechster Schritt:** Gesamt-/qa V5.3 (Cross-Slice-Verify aller 5 Slices) → /final-check V5.3 → /go-live V5.3 → /deploy V5.3 → /post-launch V5.3.
-- Current Phase: V5.3 Implementation komplett — alle 5 Slices done, ready fuer Gesamt-QA + Release-Sequenz. V5.2 Post-Launch confirmed stable. Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
+- Current Focus: V5.3 **Gesamt-/qa PASS** 2026-04-28 — RPT-236: alle 5 Slices SLC-531..535 statisch verifiziert (tsc 0, Vitest 35/35, Next-Build 60/60), Cross-Slice-Wiring End-to-End geprueft, Stub-Detection ueber 36 Files clean. 2 Records-Auto-Fixes: FEAT-532 + FEAT-533 + BL-386 von in_progress auf done nachgezogen. 2 nicht-blockierende Open-Issues als Release-Risiken dokumentiert (ISSUE-042 OpenAI-Key Rotation, ISSUE-043 Color-Picker AC9-Drift). End-to-End-Workflow-Code-Pfad verifiziert. **Naechster Schritt:** User-E2E-Workflow-Smoke (Plan in RPT-236, ~5-10 Min) auf Live-Hetzner. Bei vollem PASS: /final-check V5.3.
+- Current Phase: V5.3 Gesamt-QA komplett — ready fuer User-E2E-Live-Smoke + /final-check + /go-live + /deploy + /post-launch. V5.2 Post-Launch confirmed stable. Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
 
 ## Immediate Next Steps
-1. **Gesamt-/qa V5.3** — Cross-Slice-Verify aller 5 Slices (SLC-531..535) im Zusammenhang: Branding → Templates+KI-Generator → Composing-Studio Layout → Live-Preview+Send → Inline-Edit-Diktat. Pflicht-Pruefung: End-to-End-Workflow vom Erstellen einer Vorlage bis zum Senden einer Mail mit Inline-Edit.
+1. **User-E2E-Workflow-Smoke V5.3** — 8-Schritt-Plan in RPT-236 (Branding-Setup → Vorlage anlegen → Composing-Studio mit Deal-Kontext → Variablen befuellen → Live-Preview pruefen → KI-Improve testen → Inline-Edit-Diktat → Senden + Follow-up + Cross-System-Konsistenz). ~5-10 Min auf Live-Hetzner.
 2. /final-check V5.3 (Hygiene, Dependencies, Security)
-3. /go-live V5.3 + User-Coolify-Manual-Deploy + /post-launch V5.3 (24-48h)
+3. /go-live V5.3 + User-Coolify-Manual-Deploy als REL-018 + /post-launch V5.3 (24-48h)
 4. Branding-Daten-Korrektur "Strategaize **Tnasition** GmbH" → "Transition" in `/settings/branding` Footer (User-Aktion, kein Code)
 3. SLC-531 Outlook-Smoke (offen, nicht Blocker): Test-Mail an Outlook-Postfach + Logo/Farbe/Schrift visuell pruefen
 4. Senden-Flow Real-Mail-Smoke (organisch beim naechsten echten Outbound-Mail-Versand)
