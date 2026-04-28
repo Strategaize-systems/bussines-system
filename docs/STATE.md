@@ -9,25 +9,25 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: deploying
-- Current Focus: V5.3 **/go-live GO** 2026-04-28 — RPT-238 Go-Decision: GO. RELEASES.md REL-018 als Pre-Deploy-Eintrag erstellt (additiv, Stand 8d8e098, Rollback-Notes dokumentiert). Keine Blocker, keine Required-Fixes. Internal-Test-Mode bleibt aktiv (Carryover aus V5.2). **Naechster Schritt:** User-Coolify-Manual-Deploy auf [https://business.strategaizetransition.com](https://business.strategaizetransition.com) — Branch `main` Stand `<HEAD-after-go-live-commit>`, ~3-5 Min Deploy-Dauer (Standard Next.js Build + Container-Restart), keine ENV-Aenderungen, keine Migrations-Restschulden. Nach Deploy: User-Login + 1 Quick-Smoke (Composing-Studio oeffnen → Live-Preview funktioniert) → /post-launch V5.3.
-- Current Phase: V5.3 Go-Live GO — User-Manual-Deploy bevorstehend. V5.2 Post-Launch confirmed stable. Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
+- High-Level State: post-launch
+- Current Focus: V5.3 **deployed als REL-018** 2026-04-28 — User-Coolify-Manual-Deploy durch, Quick-Smoke OK gemeldet (Login + /emails/compose laedt + 3-Panel sichtbar + Inline-Diktat-Button da). Session-Handoff durchgefuehrt: 3 IMPs (IMP-183 Bedrock-maxTokens-Default, IMP-184 Records-Drift-Parent-Status, IMP-185 STATE.md-Immediate-Next-Steps-Verrottung), 2 Memory-Eintraege (project_business_system_v53_released, session_handoff_2026_04_28_v53_deployed), Records komplett synchron. **/post-launch V5.3** laeuft passiv 24-48h — formaler Abschluss in naechster oder uebernaechster Session, kein aktiver Handlungsbedarf jetzt. **Naechste Session: Backlog-Review** (User-Wunsch — gemeinsam entscheiden, was als naechstes gebaut wird).
+- Current Phase: V5.3 deployed, /post-launch passiv 24-48h. V5.2 Post-Launch confirmed stable. Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
 
 ## Immediate Next Steps
-1. **User-Coolify-Manual-Deploy V5.3 als REL-018** auf [https://business.strategaizetransition.com](https://business.strategaizetransition.com): Coolify-UI → Project → Redeploy auf Branch `main` Stand `<HEAD-after-go-live-commit>`. Erwartete Dauer ~3-5 Min. Keine ENV-Aenderungen, keine Migrations-Restschulden.
-2. **Nach Deploy:** 1 Quick-Smoke (Login + /emails/compose oeffnen + Live-Preview rendert + Inline-Diktat-Button sichtbar).
-3. **/post-launch V5.3** — 24-48h Beobachtung (Bedrock-Audit-Logs, send-action-Logs, keine 500er auf /emails/compose).
-4. **Naechste Session-Aufgabe:** Backlog-Review zusammen mit User — Welche BL-Items bauen wir als naechstes? (V5.4-Polish vs. V6.x neue Features vs. Bugfixes).
-5. Branding-Daten-Korrektur "Strategaize **Tnasition** GmbH" → "Transition" in `/settings/branding` Footer (User-Aktion, kein Code).
-6. SLC-531 Outlook-Smoke (offen, nicht Blocker): Test-Mail an Outlook-Postfach.
-7. Senden-Flow Real-Mail-Smoke (organisch beim naechsten echten Outbound).
-8. Carryover ISSUE-043 Color-Picker AC9-Drift (V5.4-Polish).
-9. Carryover ISSUE-042 (V4.1+V5.1-Pre-Pflicht, NICHT V5.3-blockierend): OpenAI-Key rotieren + Coolify ENV setzen.
-10. Anwaltliche Pruefung der COMPLIANCE.md + 3 Compliance-Templates (V5.2-Carryover, Pre-Pflicht vor produktivem Kunden-Recording).
-11. Pre-Recording-Go-Live (vor erstem externen Recording): Azure OpenAI EU Account + DPA, AZURE_OPENAI_*-ENVs in Coolify setzen, TRANSCRIPTION_PROVIDER auf azure umstellen.
-12. SIP-Trunk-Provider auswaehlen + DPA (vor produktivem Anruf-Volumen).
-13. SMAO-DPA bei Aktivierung (SMAO_ENABLED=true).
-14. **End-of-Build-Phase:** durchgaengiger E2E-Workflow-Sweep mit Testkunden (per feedback_e2e_smoke_at_buildup_end.md verschoben).
+1. **Backlog-Review-Session** (naechste Session, User-Wunsch) — alle BL-Items in planning/backlog.json gemeinsam mit User durchgehen, entscheiden was als naechstes gebaut wird (V5.4-Polish vs. neue Feature-Versionen vs. Bugfixes).
+2. **/post-launch V5.3 formaler Abschluss** — in naechster oder uebernaechster Session, wenn 24-48h um sind und keine 500er aufgetreten. Pruefe Bedrock-Audit-Logs, send-action-Logs, /emails/compose-Errors. Bei stable: STATE.md auf `released`, RELEASES.md REL-018 unveraendert.
+3. **V5.4-Polish-Carryover** (nach Backlog-Review zu priorisieren):
+   - ISSUE-043 Color-Picker AC9-Drift in Branding-Form
+   - ESLint 10 Strict-Mode-Hinweise (React-19-Hook-Order in new-template-dialog + inline-edit-dialog)
+   - COMPLIANCE.md V5.3-Update (Composing-Studio + Inline-Edit + Branding erwaehnen)
+   - Branding-Daten-Korrektur "Strategaize **Tnasition** GmbH" → "Transition" in /settings/branding Footer (User-Aktion ohne Code)
+4. **SLC-531 Outlook-Smoke** (offen, nicht Blocker): Test-Mail an Outlook-Postfach beim naechsten echten Outbound.
+5. **Carryover ISSUE-042** (V4.1+V5.1-Pre-Pflicht, NICHT V5.3-blockierend): OpenAI-Key rotieren + Coolify ENV setzen vor erstem produktivem Kunden-Recording.
+6. **Anwaltliche Pruefung** der COMPLIANCE.md + 3 Compliance-Templates (V5.2-Carryover, Pre-Pflicht vor produktivem Recording).
+7. **Pre-Recording-Go-Live** (vor erstem externen Recording): Azure OpenAI EU Account + DPA, AZURE_OPENAI_*-ENVs in Coolify, TRANSCRIPTION_PROVIDER auf azure.
+8. **SIP-Trunk-Provider** auswaehlen + DPA (vor produktivem Anruf-Volumen).
+9. **SMAO-DPA** bei Aktivierung (SMAO_ENABLED=true).
+10. **End-of-Build-Phase:** durchgaengiger E2E-Workflow-Sweep mit Testkunden (per feedback_e2e_smoke_at_buildup_end.md verschoben).
 
 ## Active Scope
 **V5.3 — E-Mail Composing Studio (Implementation in progress 2026-04-27):**
