@@ -176,8 +176,8 @@
 - Risk: Gering — rein additiv, eine neue Tabelle ohne FK-Beziehungen ausser nullable `updated_by`. Idempotent (IF NOT EXISTS, ON CONFLICT DO NOTHING).
 - Rollback Notes: `DROP TABLE compliance_templates CASCADE;`
 
-### MIG-025 — V5.4 SLC-542 Email-Attachments Schema (planned)
-- Date: TBD (bei /backend SLC-542 anwenden auf Hetzner)
+### MIG-025 — V5.4 SLC-542 Email-Attachments Schema
+- Date: 2026-04-28 (applied auf Hetzner via SSH/base64-Pattern, SLC-542 MT-1)
 - Scope: 4 Aenderungen in einer Migration `025_v54_email_attachments.sql`:
   1. Storage Bucket `email-attachments` (privat, `public=false`) via `INSERT INTO storage.buckets (id, name, public) VALUES ('email-attachments', 'email-attachments', false) ON CONFLICT DO NOTHING;`
   2. Neue Tabelle `email_attachments` als Junction zwischen `emails` und Storage:

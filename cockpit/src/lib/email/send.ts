@@ -11,6 +11,12 @@ import { injectTracking } from "./tracking";
 import { renderBrandedHtml, type RenderVars } from "./render";
 import { getBrandingForSend } from "@/app/(app)/settings/branding/actions";
 
+export type SendEmailAttachment = {
+  storagePath: string;
+  filename: string;
+  mimeType: string;
+};
+
 export type SendEmailParams = {
   to: string;
   subject: string;
@@ -34,6 +40,13 @@ export type SendEmailParams = {
    * und dient als Reserve-Pfad.
    */
   vars?: RenderVars;
+  /**
+   * Optional: E-Mail-Anhaenge (SLC-542 MT-7).
+   * Default undefined → keine Multipart-Aenderung, V5.3-bit-identisches Verhalten.
+   * Files werden via service_role aus Bucket "email-attachments" geladen
+   * und an Nodemailer als Buffer-Attachments uebergeben.
+   */
+  attachments?: SendEmailAttachment[];
 };
 
 export type SendEmailResult = {
@@ -114,6 +127,39 @@ export async function sendEmailWithTracking(params: SendEmailParams): Promise<Se
     };
   }
 
+  // Anhaenge aus Storage laden (SLC-542 MT-7).
+  // Default leer = bit-identisches V5.3-Verhalten ohne Multipart-Veraenderung.
+  let mailAttachments:
+    | { filename: string; content: Buffer; contentType: string }[]
+    | undefined;
+  if (params.attachments && params.attachments.length > 0) {
+    try {
+      mailAttachments = await Promise.all(
+        params.attachments.map(async (att) => {
+          const { data, error } = await supabase.storage
+            .from("email-attachments")
+            .download(att.storagePath);
+          if (error || !data) {
+            throw new Error(
+              `Storage-Download fehlgeschlagen fuer ${att.filename}: ${error?.message ?? "kein Daten-Blob"}`,
+            );
+          }
+          const arrayBuffer = await data.arrayBuffer();
+          return {
+            filename: att.filename,
+            content: Buffer.from(arrayBuffer),
+            contentType: att.mimeType,
+          };
+        }),
+      );
+    } catch (err) {
+      return {
+        success: false,
+        error: `Anhang-Vorbereitung fehlgeschlagen: ${err instanceof Error ? err.message : "Unbekannter Fehler"}`,
+      };
+    }
+  }
+
   // Send via SMTP
   try {
     const transporter = nodemailer.createTransport({
@@ -129,6 +175,7 @@ export async function sendEmailWithTracking(params: SendEmailParams): Promise<Se
       subject: params.subject,
       text: params.body,
       html: htmlContent,
+      ...(mailAttachments ? { attachments: mailAttachments } : {}),
     });
   } catch (err) {
     return {

@@ -16,6 +16,8 @@ import { Eye, Shield } from "lucide-react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { renderBrandedHtml, type RenderVars } from "@/lib/email/render";
 import type { Branding } from "@/types/branding";
+import { AttachmentsPreview } from "@/components/email/attachments-preview";
+import type { AttachmentMeta } from "@/lib/email/attachments-whitelist";
 
 type LivePreviewProps = {
   body: string;
@@ -25,6 +27,8 @@ type LivePreviewProps = {
   vars: RenderVars;
   /** Vom Server-Loader durchgereichter Absender (SMTP_FROM_EMAIL). */
   senderFromAddress: string | null;
+  /** Anhang-Liste fuer Read-only-Anzeige unterhalb der Body-Preview. */
+  attachments?: AttachmentMeta[];
 };
 
 export function LivePreview({
@@ -34,6 +38,7 @@ export function LivePreview({
   branding,
   vars,
   senderFromAddress,
+  attachments = [],
 }: LivePreviewProps) {
   const debouncedBody = useDebouncedValue(body, 250);
 
@@ -90,6 +95,9 @@ export function LivePreview({
           className="h-full min-h-[480px] w-full border-0 bg-white"
         />
       </div>
+
+      {/* Anhang-Indikator (SLC-542 MT-6) */}
+      <AttachmentsPreview attachments={attachments} />
 
       {/* Tracking-Hinweis */}
       <div className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">

@@ -30,6 +30,8 @@ import { VoiceRecordButton } from "@/components/voice/voice-record-button";
 import { recipientSuggest } from "./recipient-suggest";
 import { sendComposedEmail } from "./send-action";
 import { InlineEditDialog } from "./inline-edit-dialog";
+import { AttachmentsSection } from "@/components/email/attachments-section";
+import type { AttachmentMeta } from "@/lib/email/attachments-whitelist";
 
 type Lang = "de" | "en" | "nl";
 type ImproveMode = "correct" | "formal" | "summarize";
@@ -50,6 +52,11 @@ type ComposeFormProps = {
   companyId: string | null;
   templateId: string | null;
   language: Lang;
+  composeSessionId: string;
+  attachments: AttachmentMeta[];
+  onAddAttachment: (att: AttachmentMeta) => void;
+  onRemoveAttachment: (storagePath: string) => void;
+  onClearAttachments: () => void;
 };
 
 const IMPROVE_LABEL: Record<ImproveMode, string> = {
@@ -69,6 +76,11 @@ export function ComposeForm({
   companyId,
   templateId,
   language,
+  composeSessionId,
+  attachments,
+  onAddAttachment,
+  onRemoveAttachment,
+  onClearAttachments,
 }: ComposeFormProps) {
   const router = useRouter();
 
@@ -108,6 +120,7 @@ export function ComposeForm({
         companyId,
         templateId,
         followUpDate: followUpDate || null,
+        attachments,
       });
 
       if (!result.success) {
@@ -120,6 +133,9 @@ export function ComposeForm({
         return;
       }
 
+      // Erfolgreicher Send → Anhang-State im Eltern-Container leeren,
+      // damit ein erneuter Page-Use ohne Reload mit sauberem Zustand startet.
+      onClearAttachments();
       router.push("/emails");
     });
   }, [
@@ -131,6 +147,8 @@ export function ComposeForm({
     companyId,
     templateId,
     followUpDate,
+    attachments,
+    onClearAttachments,
     router,
   ]);
 
@@ -305,6 +323,14 @@ export function ComposeForm({
               : "Ihre Nachricht..."
           }
           className="flex-1 border-2 rounded-lg focus:ring-2 focus:ring-[#4454b8]/20"
+        />
+
+        {/* Anhaenge (DEC-101) */}
+        <AttachmentsSection
+          composeSessionId={composeSessionId}
+          attachments={attachments}
+          onAdd={onAddAttachment}
+          onRemove={onRemoveAttachment}
         />
 
         {/* KI-Improve-Bar */}

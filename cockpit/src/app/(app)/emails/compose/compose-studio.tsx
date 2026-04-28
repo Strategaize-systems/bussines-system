@@ -21,6 +21,7 @@ import type { Branding } from "@/types/branding";
 import type { DealContext } from "./page";
 import type { PlaceholderValues } from "@/lib/email/placeholders";
 import { resolveVarsFromDeal } from "@/lib/email/variables";
+import type { AttachmentMeta } from "@/lib/email/attachments-whitelist";
 
 type Lang = "de" | "en" | "nl";
 
@@ -59,6 +60,28 @@ export function ComposeStudio({
 
   const [newTemplateOpen, setNewTemplateOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>("compose");
+
+  // SLC-542 (DEC-104): compose_session_id ist stabil pro Page-Load (Tab-Session).
+  // Reload generiert eine neue ID — bewusste Tech-Debt-Akzeptanz, da Cleanup-Cron
+  // fuer verwaiste Storage-Files spaeter kommt.
+  const [composeSessionId] = useState(() =>
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  );
+  const [attachments, setAttachments] = useState<AttachmentMeta[]>([]);
+
+  const handleAddAttachment = useCallback((att: AttachmentMeta) => {
+    setAttachments((prev) => [...prev, att]);
+  }, []);
+
+  const handleRemoveAttachment = useCallback((storagePath: string) => {
+    setAttachments((prev) => prev.filter((a) => a.storagePath !== storagePath));
+  }, []);
+
+  const handleClearAttachments = useCallback(() => {
+    setAttachments([]);
+  }, []);
 
   const placeholderValues: PlaceholderValues = useMemo(
     () => ({
@@ -135,6 +158,7 @@ export function ComposeStudio({
       branding={branding}
       vars={renderVars}
       senderFromAddress={senderFromAddress}
+      attachments={attachments}
     />
   );
 
@@ -161,6 +185,11 @@ export function ComposeStudio({
       companyId={initialCompanyId ?? null}
       templateId={templateId}
       language={language}
+      composeSessionId={composeSessionId}
+      attachments={attachments}
+      onAddAttachment={handleAddAttachment}
+      onRemoveAttachment={handleRemoveAttachment}
+      onClearAttachments={handleClearAttachments}
     />
   );
 

@@ -17,11 +17,16 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getBrandingForSend } from "@/app/(app)/settings/branding/actions";
 import { renderBrandedHtml } from "@/lib/email/render";
 import { sendEmailWithTracking } from "@/lib/email/send";
 import { resolveVarsFromDeal } from "@/lib/email/variables";
 import { createFollowUpTask } from "@/app/(app)/aufgaben/actions";
+import {
+  validateAttachment,
+  type AttachmentMeta,
+} from "@/lib/email/attachments-whitelist";
 
 export type SendComposedEmailInput = {
   to: string;
@@ -32,6 +37,8 @@ export type SendComposedEmailInput = {
   companyId?: string | null;
   templateId?: string | null;
   followUpDate?: string | null;
+  /** SLC-542: Anhang-Liste aus Compose-Form. Default leer = V5.3-Verhalten. */
+  attachments?: AttachmentMeta[];
 };
 
 export type SendComposedEmailResult = {
@@ -86,6 +93,32 @@ export async function sendComposedEmail(
   const vars = input.dealId ? (await loadVarsForDeal(input.dealId)) ?? {} : {};
   const html = renderBrandedHtml(body, branding, vars);
 
+  // SLC-542: Anhang-Liste defensiv re-validieren (Server-Trust nicht 100% Client).
+  const safeAttachments: AttachmentMeta[] = [];
+  let runningTotal = 0;
+  if (Array.isArray(input.attachments)) {
+    for (const att of input.attachments) {
+      if (
+        !att ||
+        typeof att.storagePath !== "string" ||
+        typeof att.filename !== "string" ||
+        typeof att.mimeType !== "string" ||
+        typeof att.sizeBytes !== "number"
+      ) {
+        return { success: false, error: "Anhang-Metadaten ungueltig." };
+      }
+      const v = validateAttachment(
+        { type: att.mimeType, size: att.sizeBytes, name: att.filename },
+        runningTotal,
+      );
+      if (!v.ok) {
+        return { success: false, error: v.error };
+      }
+      runningTotal += att.sizeBytes;
+      safeAttachments.push(att);
+    }
+  }
+
   const result = await sendEmailWithTracking({
     to,
     subject,
@@ -97,10 +130,40 @@ export async function sendComposedEmail(
     followUpDate: input.followUpDate ?? null,
     templateUsed: input.templateId ?? null,
     trackingEnabled: true,
+    attachments: safeAttachments.length > 0
+      ? safeAttachments.map((a) => ({
+          storagePath: a.storagePath,
+          filename: a.filename,
+          mimeType: a.mimeType,
+        }))
+      : undefined,
   });
 
   if (!result.success) {
     return { success: false, error: result.error ?? "Unbekannter Fehler beim Senden." };
+  }
+
+  // SLC-542: Junction-Rows fuer den erfolgreichen Send anlegen (DEC-097).
+  // Bei Insert-Fehler: Mail ist schon raus, deshalb nur Warning loggen,
+  // nicht den Send-Erfolg invalidieren.
+  if (safeAttachments.length > 0 && result.emailId) {
+    try {
+      const admin = createAdminClient();
+      const rows = safeAttachments.map((a) => ({
+        email_id: result.emailId,
+        storage_path: a.storagePath,
+        filename: a.filename,
+        mime_type: a.mimeType,
+        size_bytes: a.sizeBytes,
+      }));
+      const { error } = await admin.from("email_attachments").insert(rows);
+      if (error) {
+        // Warning, kein Hard-Fail — die Mail ist schon erfolgreich raus.
+        console.error("[sendComposedEmail] Junction-Insert fehlgeschlagen:", error.message);
+      }
+    } catch (err) {
+      console.error("[sendComposedEmail] Junction-Insert exception:", err);
+    }
   }
 
   if (input.followUpDate) {
