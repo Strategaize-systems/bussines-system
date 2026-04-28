@@ -208,4 +208,4 @@
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-541 | [V5.4-Polish (Composing-Studio + Hygiene)](SLC-541-v54-polish.md) | FEAT-541 | done | High | 2026-04-28 |
-| SLC-542 | [E-Mail-Anhaenge-Upload (PC-Direkt)](SLC-542-email-attachments-pc.md) | FEAT-542 | in_progress | High | 2026-04-28 |
+| SLC-542 | [E-Mail-Anhaenge-Upload (PC-Direkt)](SLC-542-email-attachments-pc.md) | FEAT-542 | done | High | 2026-04-28 |

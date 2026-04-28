@@ -1629,7 +1629,7 @@
       "priority": "high",
       "status": "in_progress",
       "version": "V5.4",
-      "description": "Teil 1 (PC-Upload) ist Scope von V5.4 als FEAT-542 (geplant 2026-04-28, Requirements done). Teil 2 (Angebot-Anhang aus System) bleibt offen und wartet auf BL-405. URSPRUENGLICHE BESCHREIBUNG: User-Anforderung 2026-04-27 nach SLC-533 Browser-Smoke: Composing-Studio (/emails/compose) muss Anhaenge an ausgehende E-Mails unterstuetzen. ZWEI Versionen: (1) Direkt-Upload vom User-PC — Drag&Drop oder File-Picker, MIME/Size-Whitelist, Storage-Bucket auf self-hosted Supabase, MIME-Validierung App-Level. (2) Angebot-Anhang aus dem System — User waehlt aus seinen erstellten Angeboten (siehe BL-405) ein PDF-Generated-Angebot zum Anhang. Setzt BL-405 (Angebot-Erstellung) voraus.",
+      "description": "Teil 1 (PC-Upload) DONE 2026-04-28 als FEAT-542 / SLC-542 (V5.4-Backend implementiert + QA PASS RPT-245, MIG-025 live, 13/15 ACs Code, 2 ACs User-Live-Smoke pending). Teil 2 (Angebot-Anhang aus System) bleibt offen und wartet auf BL-405 — eigenes V-Bucket nach V5.4-Deploy. URSPRUENGLICHE BESCHREIBUNG: User-Anforderung 2026-04-27 nach SLC-533 Browser-Smoke: Composing-Studio (/emails/compose) muss Anhaenge an ausgehende E-Mails unterstuetzen. ZWEI Versionen: (1) Direkt-Upload vom User-PC — Drag&Drop oder File-Picker, MIME/Size-Whitelist, Storage-Bucket auf self-hosted Supabase, MIME-Validierung App-Level. (2) Angebot-Anhang aus dem System — User waehlt aus seinen erstellten Angeboten (siehe BL-405) ein PDF-Generated-Angebot zum Anhang. Setzt BL-405 (Angebot-Erstellung) voraus.",
       "createdAt": "2026-04-27"
     },
     {

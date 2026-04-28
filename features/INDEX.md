@@ -154,7 +154,7 @@
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
 | FEAT-541 | V5.4-Polish (Color-Picker + ESLint + COMPLIANCE.md + Coolify-Cron) | done | [Spec](FEAT-541-v54-polish.md) | 2026-04-28 |
-| FEAT-542 | E-Mail-Anhaenge-Upload (PC-Direkt) | planned | [Spec](FEAT-542-email-attachments.md) | 2026-04-28 |
+| FEAT-542 | E-Mail-Anhaenge-Upload (PC-Direkt) | done | [Spec](FEAT-542-email-attachments.md) | 2026-04-28 |
 
 ## V7 Features (Multi-User + Erweiterung — planned)
 

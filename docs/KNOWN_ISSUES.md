@@ -328,6 +328,18 @@
 - Summary: VAPID_SUBJECT in Coolify stand auf `mailto:admin@strategaizetransition.com` — diese Adresse existierte nicht. Geaendert auf `mailto:immo@bellaerts.de` am 2026-04-18 vor V4.1 Redeploy.
 - Next Action: Erledigt.
 
+### ISSUE-045 — Server-side Total-Size-Limit fuer E-Mail-Anhaenge ist Client-Convenience
+- Status: open
+- Severity: Low
+- Area: V5.4 / SLC-542 / E-Mail-Anhaenge / Storage
+- Summary: `uploadEmailAttachment` ruft `validateAttachment(file, totalSizeSoFar=0)` — der Server hat keinen Cross-Call-State und kennt nicht die kumulierte Anhang-Groesse der Compose-Session. Pro-File-Limit (10 MB) ist 3-fach hart enforced (Browser + Upload + Send), aber das Total-Limit (25 MB) ist nur Browser-Convenience. Ein Client-Bypass koennte beliebig viele 10-MB-Files in derselben Session hochladen, bis SMTP-Provider beim Versand den Multipart wegen Groesse ablehnt.
+- Impact: Niedrig fuer internal-tool single-user delivery-mode. Storage-Volumen-Verbrauch ohne Cleanup-Cron (DEC-104 deferred). Kein direkter Sicherheits-Impact, kein Daten-Verlust.
+- Workaround: SMTP-Provider-Reject ist die zweite Linie (25 MB Default-Limit beim aktuellen Outbound-Provider). Compose-Form-State-Tracking ist die Single-Source-of-Truth fuer den User-Workflow.
+- Next Action: V5.5+ Operations-Topic. Optionen:
+  1. Pro-User Storage-Quota auf Bucket-Ebene (Supabase nicht out-of-the-box, braucht Cron mit `SELECT sum(size) FROM storage.objects WHERE name LIKE '${user_id}/%'`)
+  2. Cross-Call Total-Tracking via Storage-Listing pro composeSessionId in `uploadEmailAttachment`
+  3. Bucket `file_size_limit` ergaenzen (deckt Pro-File ab, hilft bei Total nicht direkt)
+
 ### ISSUE-044 — Branding-Logo broken-image im Browser (Public-Storage extern nicht erreichbar)
 - Status: resolved
 - Severity: High
