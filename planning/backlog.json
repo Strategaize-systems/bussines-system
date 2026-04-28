@@ -1547,7 +1547,7 @@
       "title": "Coolify Cron-Cleanup (Duplikate + kaputter embedding-sync + Klartext-CRON_SECRETs)",
       "type": "improvement",
       "priority": "low",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.4",
       "description": "Pre-existing Tech-Debt entdeckt waehrend /post-launch V5.2 (RPT-219). 4 Coolify-Cron-Befunde, alle nicht V5.2-eingefuehrt: (1) Cron-Duplikate konsolidieren — 'Classify' vs 'classify-emails' (beide 10min), 'embedding-sync' x2 (5min + 15min), 'Recording Retention' (V5.2-neu) vs 'retention' (V4.1-alt, anderer Endpoint /api/cron/retention). (2) Kaputter Cron 'embedding-sync' mit literalem Placeholder 'CRON_SECRET_VALUE' als x-cron-secret-Wert → 401 Unauthorized auf jedem Run. Loeschen oder reparieren. (3) 3 Coolify-Crons mit Klartext-CRON_SECRET in Command (imap-sync, retention, embedding-sync mit altem Schedule) statt process.env.CRON_SECRET-Pattern. Bei naechster CRON_SECRET-Rotation umstellen. (4) Optional: alten 'retention' Cron (V4.1-Whisper-Retention auf /api/cron/retention) pruefen ob noch benoetigt — V5.2 nutzt /api/cron/recording-retention. Falls nicht mehr genutzt: Cron + Endpoint deprecaten. Aufwand ~30 Min, kein User-Impact, aber sauberer Coolify-Stand.",
       "createdAt": "2026-04-26"
@@ -1647,7 +1647,7 @@
       "title": "V5.4 FEAT-541 V5.4-Polish (Color-Picker AC9-Drift + ESLint Hook-Order + COMPLIANCE.md V5.3-Update + Coolify Cron-Cleanup)",
       "type": "improvement",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.4",
       "description": "FEAT-541 V5.4-Polish — vier zusammenhaengende Hygiene-Themen nach V5.3-Release. (1) ISSUE-043 Color-Picker AC9-Drift Fix: Toggle-Checkbox 'Markenfarbe verwenden' vor jedem Color-Picker auf /settings/branding. Toggle aus → Color-Picker disabled, persistierter Wert NULL. Toggle an → Color-Picker aktiv, persistierter Wert = Hex. AC9 aus FEAT-531 wieder zuverlaessig erfuellt. (2) ESLint Hook-Order Cleanup in cockpit/src/components/email/new-template-dialog.tsx und inline-edit-dialog.tsx — Hooks unconditional am Top-Level. (3) docs/COMPLIANCE.md V5.3-Section: Composing-Studio + Inline-Edit + Branding mit Datenfluessen dokumentieren. (4) Coolify-Cron-Cleanup als User-Aktion mit Klick-Anleitung in REL-019-Notes — Duplikate konsolidieren (Classify, embedding-sync, retention), kaputten embedding-sync-Cron mit Placeholder reparieren oder loeschen, Klartext-CRON_SECRETs auf process.env-Pattern umstellen. Subsumiert BL-396.",
       "createdAt": "2026-04-28"
