@@ -1547,8 +1547,8 @@
       "title": "Coolify Cron-Cleanup (Duplikate + kaputter embedding-sync + Klartext-CRON_SECRETs)",
       "type": "improvement",
       "priority": "low",
-      "status": "open",
-      "version": null,
+      "status": "in_progress",
+      "version": "V5.4",
       "description": "Pre-existing Tech-Debt entdeckt waehrend /post-launch V5.2 (RPT-219). 4 Coolify-Cron-Befunde, alle nicht V5.2-eingefuehrt: (1) Cron-Duplikate konsolidieren — 'Classify' vs 'classify-emails' (beide 10min), 'embedding-sync' x2 (5min + 15min), 'Recording Retention' (V5.2-neu) vs 'retention' (V4.1-alt, anderer Endpoint /api/cron/retention). (2) Kaputter Cron 'embedding-sync' mit literalem Placeholder 'CRON_SECRET_VALUE' als x-cron-secret-Wert → 401 Unauthorized auf jedem Run. Loeschen oder reparieren. (3) 3 Coolify-Crons mit Klartext-CRON_SECRET in Command (imap-sync, retention, embedding-sync mit altem Schedule) statt process.env.CRON_SECRET-Pattern. Bei naechster CRON_SECRET-Rotation umstellen. (4) Optional: alten 'retention' Cron (V4.1-Whisper-Retention auf /api/cron/retention) pruefen ob noch benoetigt — V5.2 nutzt /api/cron/recording-retention. Falls nicht mehr genutzt: Cron + Endpoint deprecaten. Aufwand ~30 Min, kein User-Impact, aber sauberer Coolify-Stand.",
       "createdAt": "2026-04-26"
     },
@@ -1627,9 +1627,9 @@
       "title": "E-Mail Anhaenge-Upload im Composing-Studio (PC-Upload + Angebot-Anhang)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
-      "version": null,
-      "description": "User-Anforderung 2026-04-27 nach SLC-533 Browser-Smoke: Composing-Studio (/emails/compose) muss Anhaenge an ausgehende E-Mails unterstuetzen. ZWEI Versionen: (1) Direkt-Upload vom User-PC — Drag&Drop oder File-Picker, MIME/Size-Whitelist, Storage-Bucket auf self-hosted Supabase (analog Branding-Logo-Bucket), MIME-Validierung App-Level. Vergleichsweise einfacher Slice — kann auch in V5.3 oder direkt nach SLC-535 als eigener Mini-Slice. (2) Angebot-Anhang aus dem System — User waehlt aus seinen erstellten Angeboten (siehe BL-405) ein PDF-Generated-Angebot zum Anhang. Setzt BL-405 (Angebot-Erstellung) voraus — kann erst NACH BL-405 implementiert werden. Implementations-Notizen: send.ts/sendEmailWithTracking muss um attachments-Parameter erweitert werden (aktuell nur HTML/Text). UI in Compose-Form unterhalb der Body-Textarea. Anhang-Liste mit Icons + Dateinamen + Groesse + Loeschen-Button. Live-Preview muss Anhang-Indikator zeigen (nicht-gerendert, aber sichtbar). Cadence-Engine + Tracking sollten unbeeintraechtigt bleiben — Regression-Check. Empfehlung: nach SLC-534 (Send-Integration) als FEAT-535 oder V5.4-Erstes-Feature, Teil 1 PC-Upload zuerst (unabhaengig), Teil 2 Angebot-Anhang sobald BL-405 done.",
+      "status": "in_progress",
+      "version": "V5.4",
+      "description": "Teil 1 (PC-Upload) ist Scope von V5.4 als FEAT-542 (geplant 2026-04-28, Requirements done). Teil 2 (Angebot-Anhang aus System) bleibt offen und wartet auf BL-405. URSPRUENGLICHE BESCHREIBUNG: User-Anforderung 2026-04-27 nach SLC-533 Browser-Smoke: Composing-Studio (/emails/compose) muss Anhaenge an ausgehende E-Mails unterstuetzen. ZWEI Versionen: (1) Direkt-Upload vom User-PC — Drag&Drop oder File-Picker, MIME/Size-Whitelist, Storage-Bucket auf self-hosted Supabase, MIME-Validierung App-Level. (2) Angebot-Anhang aus dem System — User waehlt aus seinen erstellten Angeboten (siehe BL-405) ein PDF-Generated-Angebot zum Anhang. Setzt BL-405 (Angebot-Erstellung) voraus.",
       "createdAt": "2026-04-27"
     },
     {
@@ -1639,8 +1639,18 @@
       "priority": "high",
       "status": "open",
       "version": null,
-      "description": "User-Anforderung 2026-04-27: das System muss Angebote erstellen koennen — basierend auf den vorhandenen Produkten (siehe /settings/products), zugeordnet zu Firmen (companies-Tabelle) und Deals. Wahrscheinlich eigenes vollstaendiges Feature mit allem Drum-Herum (eigene Routes, Server Actions, DB-Schema-Erweiterung, PDF-Renderer, ggf. Versions-Management). Bestehende Stubs zum Anknuepfen: proposals-Tabelle (in 04_v2_migration.sql Z.85+ angelegt mit deal_id/company_id/contact_id/title/version/status/scope_notes/price_range/objections/negotiation_notes/won_lost_reason), /settings/products fuer Produkt-Stammdaten. Heutige Realitaet: proposals-Tabelle ist als Skeleton da, aber kein UI fuer 'Angebot erstellen' existiert — Workspace zeigt nur Tabellen-View ohne CRUD. Scope-Hinweise (vorlaeufig): (a) Position-Items pro Angebot (Produkt + Menge + Preis + Anpassung), (b) Brutto/Netto/Steuer-Berechnung, (c) Standard-Konditionen (Zahlungsfristen, Gueltigkeitszeitraum), (d) PDF-Renderer (analog Branding-Mail-Renderer aus FEAT-531 — koennte denselben Renderer-Pattern wiederverwenden), (e) Status-Lifecycle (draft -> sent -> accepted/rejected/expired), (f) Versionierung (Angebot V1, V2, V3 fuer dasselbe Deal), (g) Anbindung an Deal (Lifecycle-Schritt 'Angebot erstellt' triggert Stage-Wechsel?). Setzt voraus: stabile Produkt-Stammdaten, Deal-Pflicht-Felder. Liefert voraus an: BL-404 Teil 2 (Angebot-Anhang an E-Mail). Empfehlung: vor V5.3-Abschluss /requirements + /architecture-Workshop fuer dieses Feature, dann eigenes V-Bucket (z.B. V5.4 oder V6.x). Wahrscheinlich 8-15 Slices.",
+      "description": "User-Anforderung 2026-04-27: das System muss Angebote erstellen koennen — basierend auf den vorhandenen Produkten (siehe /settings/products), zugeordnet zu Firmen (companies-Tabelle) und Deals. Wahrscheinlich eigenes vollstaendiges Feature mit allem Drum-Herum (eigene Routes, Server Actions, DB-Schema-Erweiterung, PDF-Renderer, ggf. Versions-Management). Bestehende Stubs zum Anknuepfen: proposals-Tabelle (in 04_v2_migration.sql Z.85+ angelegt mit deal_id/company_id/contact_id/title/version/status/scope_notes/price_range/objections/negotiation_notes/won_lost_reason), /settings/products fuer Produkt-Stammdaten. Heutige Realitaet: proposals-Tabelle ist als Skeleton da, aber kein UI fuer 'Angebot erstellen' existiert — Workspace zeigt nur Tabellen-View ohne CRUD. Scope-Hinweise (vorlaeufig): (a) Position-Items pro Angebot (Produkt + Menge + Preis + Anpassung), (b) Brutto/Netto/Steuer-Berechnung, (c) Standard-Konditionen (Zahlungsfristen, Gueltigkeitszeitraum), (d) PDF-Renderer (analog Branding-Mail-Renderer aus FEAT-531 — koennte denselben Renderer-Pattern wiederverwenden), (e) Status-Lifecycle (draft -> sent -> accepted/rejected/expired), (f) Versionierung (Angebot V1, V2, V3 fuer dasselbe Deal), (g) Anbindung an Deal (Lifecycle-Schritt 'Angebot erstellt' triggert Stage-Wechsel?). Setzt voraus: stabile Produkt-Stammdaten, Deal-Pflicht-Felder. Liefert voraus an: BL-404 Teil 2 (Angebot-Anhang an E-Mail). Empfehlung: nach V5.4-Abschluss /requirements + /architecture-Workshop fuer dieses Feature, dann eigenes V-Bucket (V5.5 oder V6.x). Wahrscheinlich 8-15 Slices.",
       "createdAt": "2026-04-27"
+    },
+    {
+      "id": "BL-406",
+      "title": "V5.4 FEAT-541 V5.4-Polish (Color-Picker AC9-Drift + ESLint Hook-Order + COMPLIANCE.md V5.3-Update + Coolify Cron-Cleanup)",
+      "type": "improvement",
+      "priority": "high",
+      "status": "in_progress",
+      "version": "V5.4",
+      "description": "FEAT-541 V5.4-Polish — vier zusammenhaengende Hygiene-Themen nach V5.3-Release. (1) ISSUE-043 Color-Picker AC9-Drift Fix: Toggle-Checkbox 'Markenfarbe verwenden' vor jedem Color-Picker auf /settings/branding. Toggle aus → Color-Picker disabled, persistierter Wert NULL. Toggle an → Color-Picker aktiv, persistierter Wert = Hex. AC9 aus FEAT-531 wieder zuverlaessig erfuellt. (2) ESLint Hook-Order Cleanup in cockpit/src/components/email/new-template-dialog.tsx und inline-edit-dialog.tsx — Hooks unconditional am Top-Level. (3) docs/COMPLIANCE.md V5.3-Section: Composing-Studio + Inline-Edit + Branding mit Datenfluessen dokumentieren. (4) Coolify-Cron-Cleanup als User-Aktion mit Klick-Anleitung in REL-019-Notes — Duplikate konsolidieren (Classify, embedding-sync, retention), kaputten embedding-sync-Cron mit Placeholder reparieren oder loeschen, Klartext-CRON_SECRETs auf process.env-Pattern umstellen. Subsumiert BL-396.",
+      "createdAt": "2026-04-28"
     }
   ]
 }

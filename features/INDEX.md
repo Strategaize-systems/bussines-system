@@ -140,14 +140,21 @@
 | FEAT-524 | MeetingTimelineItem analog CallTimelineItem (UI-Parity) | deployed | — | 2026-04-25 |
 | FEAT-525 | DSGVO-Compliance-Doku (via /compliance Skill) | deployed | — | 2026-04-25 |
 
-## V5.3 Features (E-Mail Composing Studio — planned)
+## V5.3 Features (E-Mail Composing Studio — released REL-018)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-531 | Branding-Settings + zentrale Mail-Layout-Engine | done | [Spec](FEAT-531-branding-mail-render.md) | 2026-04-26 |
-| FEAT-532 | 3-Panel-Composing-Studio (`/emails/compose`) | done | [Spec](FEAT-532-composing-studio.md) | 2026-04-26 |
-| FEAT-533 | Systemvorlagen + KI-Vorlagen-Generator | done | [Spec](FEAT-533-system-templates-ki-generator.md) | 2026-04-26 |
-| FEAT-534 | Inline-Edit-Diktat ("ergaenze nach Satz X") | done | [Spec](FEAT-534-inline-edit-diktat.md) | 2026-04-26 |
+| FEAT-531 | Branding-Settings + zentrale Mail-Layout-Engine | deployed | [Spec](FEAT-531-branding-mail-render.md) | 2026-04-26 |
+| FEAT-532 | 3-Panel-Composing-Studio (`/emails/compose`) | deployed | [Spec](FEAT-532-composing-studio.md) | 2026-04-26 |
+| FEAT-533 | Systemvorlagen + KI-Vorlagen-Generator | deployed | [Spec](FEAT-533-system-templates-ki-generator.md) | 2026-04-26 |
+| FEAT-534 | Inline-Edit-Diktat ("ergaenze nach Satz X") | deployed | [Spec](FEAT-534-inline-edit-diktat.md) | 2026-04-26 |
+
+## V5.4 Features (Composing-Studio Polish + E-Mail-Anhaenge — planned)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-541 | V5.4-Polish (Color-Picker + ESLint + COMPLIANCE.md + Coolify-Cron) | planned | [Spec](FEAT-541-v54-polish.md) | 2026-04-28 |
+| FEAT-542 | E-Mail-Anhaenge-Upload (PC-Direkt) | planned | [Spec](FEAT-542-email-attachments.md) | 2026-04-28 |
 
 ## V7 Features (Multi-User + Erweiterung — planned)
 

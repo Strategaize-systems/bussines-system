@@ -2494,3 +2494,185 @@ V5.3 ist erfolgreich wenn:
 - **Mobile-Routing:** Soll `/emails/compose` auf Mobile zur Tabs-Variante werden, oder wird der bestehende `email-sheet.tsx` als Mobile-Default beibehalten? Empfehlung: Tabs in der neuen Seite — kein Sheet-Routing-Split.
 - **Inline-Edit-Diktat-Konfidenz:** Soll die KI bei Mehrdeutigkeit ("nach Satz 3" — welcher Satz ist Satz 3?) explizit nachfragen oder pragmatisch raten? Empfehlung: pragmatisch raten, Diff-Vorschau ist der Sicherheits-Net.
 - **Slice-Schnitt:** Strikt 4 Slices (1 pro Feature) oder 5-6 Slices (zerlegen FEAT-532)? Empfehlung: 5 Slices, FEAT-532 (Composing-Studio) wird in "Layout + KI-Vorausfuellung" und "Live-Preview + Send-Integration" geteilt — beides nicht-trivial.
+
+## V5.4 — Composing-Studio Polish + E-Mail-Anhaenge
+
+### V5.4 Problem Statement
+
+V5.3 hat das E-Mail Composing Studio live gebracht und produktiv etabliert. Zwei Themen sind dabei sichtbar geworden, die V5.4 sauber abschliesst:
+
+1. **Composing-Studio-Polish:** Im V5.3-Final-Check ist ISSUE-043 (Color-Picker AC9-Drift) aufgefallen — das HTML-Color-Input submitted immer einen gueltigen Hex-Wert, auch wenn der User nie bewusst eine Markenfarbe gewaehlt hat. Sobald der User auf `/settings/branding` einmal "Speichern" klickt, kickt der Branding-Renderer ein, und die explizit dokumentierte AC9-Garantie ("Mail ohne Branding ist bit-fuer-bit identisch zu V5.2") gilt nur noch im Initial-State. Dazu kommen ESLint-Strict-Mode-Hinweise zur React-19-Hook-Order in zwei Dialogen, ein ueberfaelliges COMPLIANCE.md-Update fuer V5.3-Features und ein Coolify-Cron-Cleanup-Job, der seit V5.2-Post-Launch im Backlog liegt (BL-396).
+2. **E-Mail-Anhaenge fehlen.** Der Composing-Studio-Workflow ist ohne Anhang-Funktion nicht vollstaendig fuer den realen Vertriebs-Alltag. Der User muss heute — wenn er ein PDF, ein Bilder-Paket oder eine Praesentation an einen Lead schicken will — den Mail-Versand komplett ausserhalb des Systems durchfuehren (Outlook/Gmail-Web). Damit faellt fuer diese Mails das gesamte Tracking, IMAP-Auto-Zuordnung und Deal-Activity-Logging weg. Das ist ein konkreter Daten-Verlust gegenueber der Vision "alle Mails laufen ueber das System".
+
+V5.4 erledigt damit zwei eng verwandte Themen: V5.3-Hygiene + die Anhang-Faehigkeit als naechster konsequenter Schritt im Composing-Studio. Das System-zentrale "Angebote als System-Anhang" (BL-404 Teil 2) bleibt ausserhalb V5.4 und wartet auf BL-405 Angebot-Erstellung.
+
+### V5.4 Goal
+
+V5.3 ist sauber poliert (kein latenter Drift, keine Lint-Warnings, COMPLIANCE.md auf V5.3-Stand, Coolify aufgeraeumt) **und** der User kann aus dem Composing-Studio heraus Dateien von seinem PC per Drag&Drop oder File-Picker an seine ausgehenden Mails dranhaengen — mit MIME/Size-Whitelist, persistenter Storage-Spur und unbeeintraechtigtem Tracking.
+
+### V5.4 Primary User
+
+Eigentuemer im Tagesgeschaeft — schickt eine Mail mit PDF (Praesentation, Whitepaper, Vertrag, Bilder) aus dem Deal-Workspace heraus, will dass der Anhang im Live-Preview sichtbar ist und beim Empfaenger sauber ankommt, und dass Tracking + Deal-Activity-Logging unveraendert weiterlaufen.
+
+### V5.4 Vision — Die ideale Sequenz
+
+1. User klickt im Deal-Workspace auf "E-Mail schreiben".
+2. `/emails/compose?dealId=...` oeffnet sich — Empfaenger + Betreff vorausgefuellt (V5.3-Funktion).
+3. User zieht ein PDF aus seinem File-Explorer in den Compose-Form-Anhang-Bereich (oder klickt File-Picker).
+4. Anhang erscheint mit Icon + Filename + Groesse unter dem Body.
+5. Live-Preview rechts zeigt nicht nur Branding + Body, sondern auch eine Anhang-Indikator-Zeile.
+6. Klick auf "Senden" — Mail geht raus mit Multipart-Body inkl. Anhang, Tracking-Pixel weiterhin aktiv.
+7. Anhang bleibt im Storage-Bucket (Auditspur) und ist mit der `emails`-Row verknuepft.
+
+Setup-Sequenz fuer V5.4-Polish (transparenz fuer den User):
+- ISSUE-043 — Toggle "Markenfarbe verwenden" erscheint vor jedem Color-Picker auf `/settings/branding`. User-erkennbar, dass Branding-Aktivierung explizit ist.
+- Coolify-Cron-Cleanup wird beim V5.4-Deploy als 5-Minuten-User-Aktion mit klarer Klick-Anleitung erledigt.
+
+### V5.4 Scope-Prinzip
+
+V5.4 ist eine **Polish + Inkrement-Slice** — keine neuen Datenmodelle ausser einem Storage-Bucket + einer Junction-Table fuer Mail-Anhang-Verknuepfung. Versand-Layer bleibt rueckwaertskompatibel, KI-Layer unveraendert. Tracking + IMAP + Cadences bleiben bit-identisch funktionierend (Regression-Pflicht-Check in /qa).
+
+### V5.4 Features (2 Features)
+
+#### FEAT-541 — V5.4-Polish (Composing-Studio + Hygiene)
+
+**Zweck:** Den V5.3-Composing-Studio-Stack auf "polished + hygienisch" heben — kein latenter UI-Drift, kein Lint-Noise, COMPLIANCE.md auf V5.3-Stand, Coolify-Crons sauber.
+
+**Scope:**
+- **Color-Picker AC9-Drift Fix (ISSUE-043):** Auf `/settings/branding` vor jedem Color-Picker (Primaerfarbe + Sekundaerfarbe) eine Toggle-Checkbox "Markenfarbe verwenden". Toggle aus → Color-Picker disabled, persistierter Wert NULL. Toggle an → Color-Picker aktiv, persistierter Wert = Hex. Initialer Toggle-State leitet sich aus DB-Wert ab (NULL = aus, Hex = an).
+- **ESLint Hook-Order Hinweise:** React-19-Strict-Mode-Hinweise in `cockpit/src/components/email/new-template-dialog.tsx` und `cockpit/src/components/email/inline-edit-dialog.tsx` aufloesen. Hook-Reihenfolge so umstellen, dass alle Hooks am Komponent-Top-Level vor jedem `if`/`return` stehen.
+- **COMPLIANCE.md V5.3-Update:** Sektion in `/docs/COMPLIANCE.md` ergaenzen, die Composing-Studio + Inline-Edit + Branding kurz beschreibt (welche personenbezogenen Daten an Bedrock gehen, welche Daten in Storage gespeichert werden, Retention-Verhalten von Branding-Settings).
+- **Coolify Cron-Cleanup (BL-396):** User-Aktion via Klick-Anleitung in `/docs/RELEASES.md`-Notes von REL-019. Anleitung beschreibt: (a) Duplikat-Crons konsolidieren (`Classify` vs `classify-emails`, `embedding-sync` x2, `retention` vs `recording-retention`), (b) Cron mit literalem Placeholder `CRON_SECRET_VALUE` reparieren oder loeschen, (c) Klartext-CRON_SECRETs auf `process.env.CRON_SECRET`-Pattern umstellen.
+
+**Acceptance Criteria:**
+- AC1: Auf `/settings/branding` ist vor jedem Color-Picker ein Toggle "Markenfarbe verwenden" sichtbar.
+- AC2: Toggle aus → Color-Picker visuell disabled, beim Speichern wird `primary_color`/`secondary_color` als NULL persistiert.
+- AC3: Toggle an → Color-Picker aktiv, beim Speichern wird der gewaehlte Hex-Wert persistiert.
+- AC4: Initial-Render leitet Toggle-State korrekt aus DB-Wert ab (NULL = aus, Hex = an).
+- AC5: Bestehende Branding-Eintraege ohne explizites Speichern bleiben unveraendert (kein automatisches NULL-Setzen bei Migration).
+- AC6: AC9 aus FEAT-531 ist wieder zuverlaessig erfuellt: Mail ohne aktivierte Branding-Farben geht bit-fuer-bit wie V5.2 raus, unabhaengig davon ob der User die Settings-Page besucht hat.
+- AC7: ESLint-Build-Output zeigt keine React-Hook-Order-Warnings mehr in den 2 Ziel-Dateien (`npm run lint` clean, oder die zwei Hinweise sind nachweislich verschwunden).
+- AC8: `docs/COMPLIANCE.md` enthaelt einen V5.3-Abschnitt mit den 3 Features (Branding, Composing-Studio, Inline-Edit) und nennt die jeweiligen Datenfluesse.
+- AC9: REL-019-Eintrag in `/docs/RELEASES.md` enthaelt die Coolify-Cron-Cleanup-User-Anleitung als Sektion.
+
+#### FEAT-542 — E-Mail-Anhaenge-Upload (PC-Direkt)
+
+**Zweck:** User kann im Composing-Studio Dateien von seinem PC per Drag&Drop oder File-Picker an seine ausgehende Mail anhaengen. Anhang wird in einem dedizierten Storage-Bucket persistiert, mit der `emails`-Row verknuepft, und beim SMTP-Versand als Multipart-Anhang mitgesendet.
+
+**Scope:**
+- **Storage-Bucket `email-attachments`:** Neuer privater Bucket auf Self-Hosted Supabase (analog Branding-Bucket-Pattern aus DEC-085). Public-Read = nein. service_role-Access only fuer Insert/Read; SELECT-Policy fuer authenticated mit Path-Owner-Check.
+- **Junction-Table `email_attachments`:** Neue Tabelle mit Spalten `id` (UUID), `email_id` (FK zu `emails`), `storage_path` (TEXT), `filename` (TEXT), `mime_type` (TEXT), `size_bytes` (BIGINT), `created_at` (TIMESTAMPTZ). N:1-Beziehung zu `emails`.
+- **MIG-025:** Bucket-Anlage + Policies + Junction-Table + Index auf `email_id`.
+- **Compose-Form-UI:** Anhang-Bereich unterhalb der Body-Textarea. Drag&Drop-Zone + File-Picker-Button "Datei anhaengen". Liste der ausgewaehlten Anhaenge mit Icon (basierend auf MIME), Filename, Groesse und Loeschen-Button. Mehrere Anhaenge moeglich.
+- **MIME-Whitelist (App-Level-Validierung):** Erlaubt: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, PNG, JPG, JPEG, GIF, TXT, CSV, ZIP. Verboten: EXE, BAT, SH, JS, andere Scripting-Formate. Validierung im Browser (UX) und im Server-Action (Sicherheit).
+- **Size-Limits:** 10 MB pro File, 25 MB Total pro Mail. Validierung wieder Client + Server.
+- **Upload-Flow:** Bei File-Auswahl → Upload via Server Action zu `email-attachments`-Bucket unter Path `{user_id}/{compose_session_id}/{filename}`. Bei Loeschen → Storage-File entfernen. Compose-Session-ID wird beim Oeffnen des Composing-Studios vergeben.
+- **`send.ts`-Erweiterung:** `sendEmailWithTracking` bekommt optionalen `attachments`-Parameter (Default: leeres Array). Bei Send: Storage-Files herunterladen, an Nodemailer als `attachments`-Array uebergeben, Multipart-Mail erzeugen. Nach erfolgreichem Versand: `email_attachments`-Junction-Rows persistieren mit FK zu `emails.id`.
+- **Lifecycle:** File bleibt nach Versand im Storage-Bucket (Auditspur, Re-Send moeglich). Cron-Cleanup ist nicht V5.4 — nur dann vorgesehen wenn Storage-Volumen problematisch wird.
+- **Live-Preview-Indikator:** Im rechten Panel unterhalb der Body-Preview eine Sektion "Anhaenge" mit Icon + Filename + Size-Liste. Kein Inhalts-Render der Anhaenge — nur Indikator wie der Empfaenger es sieht.
+- **Tracking + Cadence-Regression-Pflicht:** Smoke-Test mit Anhang-Mail an Gmail muss Tracking-Pixel-Event ausloesen. Cadence-Engine ist nicht im V5.4-Scope (Cadences haben keine Anhang-UI), aber bestehender Cadence-Code-Pfad darf nicht brechen.
+
+**Acceptance Criteria:**
+- AC1: Im Composing-Studio ist unterhalb der Body-Textarea ein Anhang-Bereich mit Drag&Drop-Zone und File-Picker-Button sichtbar.
+- AC2: Drag&Drop einer Datei oder Klick auf File-Picker fuegt die Datei zur Anhang-Liste hinzu.
+- AC3: Anhang-Liste zeigt pro File: Icon (MIME-basiert), Filename, Size, Loeschen-Button.
+- AC4: MIME-Whitelist greift auf Browser-Ebene (verbotene Files koennen gar nicht erst hinzugefuegt werden) UND auf Server-Ebene (Server-Action lehnt ab mit klarer Fehlermeldung).
+- AC5: Size-Limit 10 MB pro File und 25 MB Total wird Browser- und Server-seitig validiert.
+- AC6: Loeschen eines Anhangs entfernt die Storage-Datei und nimmt sie aus der Anhang-Liste raus.
+- AC7: Live-Preview rechts zeigt eine Anhang-Indikator-Sektion mit Icon + Filename + Size pro Anhang.
+- AC8: "Senden" produziert eine Mail mit Multipart-Body, die in Gmail/Outlook mit den Anhaengen ankommt.
+- AC9: Nach Versand existieren `email_attachments`-Junction-Rows mit FK zu `emails.id`. Storage-Files bleiben im Bucket.
+- AC10: Tracking-Pixel-Event feuert bei Anhang-Mail mit Tracking-Pixel (Smoke-Test mit Gmail).
+- AC11: `sendEmailWithTracking` ohne `attachments`-Parameter (Default leer) verhaelt sich bit-identisch zu V5.3 (Backwards Compatibility — Cadence-Engine + bestehende Send-Pfade unbeeintraechtigt).
+- AC12: ZIP-Dateien werden akzeptiert ohne Inhalt-Inspection.
+
+### V5.4 Architekturleitplanken
+
+1. **Versand-Layer-Erweiterung minimal-invasiv.** `sendEmailWithTracking` bekommt einen optionalen `attachments`-Parameter, alles bestehende bleibt funktional gleich. Cadence-Engine ruft `sendEmailWithTracking` ohne `attachments` auf — bit-identisches V5.3-Verhalten.
+2. **Storage-Bucket-Pattern wiederverwendet.** Eigener Bucket `email-attachments` analog Branding-Bucket aus DEC-085 — saubere Trennung von der Document-Library, eigene Policies, eigener Lifecycle.
+3. **Junction-Table statt JSON-Spalte.** `email_attachments` als eigene Tabelle mit FK zu `emails` — saubere Aggregat-Queries, einfaches Cleanup, klares Schema.
+4. **MIME-Whitelist auf zwei Ebenen.** Browser-Validierung fuer UX (verbotene Files gar nicht ladbar), Server-Validierung als Sicherheits-Net. Whitelist ist Source-of-Truth in einer einzigen Konstante in `cockpit/src/lib/email/attachments-whitelist.ts`.
+5. **ZIP-Inhalte nicht inspecten.** Pragmatisches B2B-Defaultverhalten — User kennt die Pakete, die er versendet. Empfaenger-Spam-Filter ist die zweite Verteidigungslinie.
+6. **Lifecycle: keep-on-storage.** Anhaenge bleiben nach Versand im Bucket (Auditspur). Cleanup-Cron erst wenn Volumen-Druck entsteht.
+7. **Color-Picker-Toggle-Pattern wiederverwendbar.** Toggle-Komponente "ConditionalColorPicker" wird so gebaut, dass sie auch in zukuenftigen Branding-Erweiterungen (z.B. Hover-Color, Background) eingesetzt werden kann.
+
+### V5.4 In Scope
+
+- Color-Picker-Toggle "Markenfarbe verwenden" auf `/settings/branding`
+- ESLint Hook-Order-Cleanup in 2 Compose-Dialogen
+- COMPLIANCE.md V5.3-Section
+- Coolify Cron-Cleanup als User-Aktion mit Doku-Anleitung
+- Storage-Bucket `email-attachments` (privat, MIG-025)
+- Junction-Table `email_attachments` (MIG-025)
+- Compose-Form Drag&Drop + File-Picker + Anhang-Liste-UI
+- MIME-Whitelist + Size-Limits Browser- und Server-Validierung
+- `send.ts` Multipart-Anhang-Support via Nodemailer
+- Live-Preview Anhang-Indikator
+- Tracking-Regression-Smoke-Test mit Anhang
+- ZIP akzeptiert ohne Inhalt-Inspection
+
+### V5.4 Out of Scope
+
+- Anhang-Auswahl aus dem System (Angebot anhaengen) — wartet auf BL-405 Angebot-Erstellung
+- Anhang-Auswahl aus der bestehenden Document-Library (`documents`-Bucket) — keine V5.4-Anforderung
+- Inhalt-Inspection von ZIP-Dateien (Server-side Unzip + MIME-Check pro File)
+- Cron-Cleanup fuer Storage-Volume in `email-attachments`-Bucket (zukuenftiger Slice wenn Volumen problematisch)
+- Anhang-Re-Send aus Audit-Spur (technisch moeglich, aber keine UI in V5.4)
+- Drag&Drop-Reorder der Anhaenge (keine Vertriebs-Anforderung)
+- Inline-Bilder im Body (Cid-References) — V5.4 nur Anhaenge
+- Anhang-Versand in Cadences/Sequences (keine Cadence-UI fuer Anhaenge in V5.4)
+- Outlook-Smoke aus SLC-531 (User hat aktuell kein Outlook-Postfach zum Testen)
+- Inbound-Anhaenge (Download von Anhaengen aus eingehenden IMAP-Mails) — anderes Thema, FEAT-405 IMAP-Integration
+- Polish-Outsourcing der bestehenden V5.3-UI an einen UI-Polish-Agenten (BL-403 ist bereits done)
+
+### V5.4 Constraints
+
+- **Bestehender V5.3-Send-Pfad darf nicht brechen.** `sendEmailWithTracking` ohne `attachments`-Parameter muss bit-identisch zu V5.3 funktionieren — Cadence-Engine, Auto-Reply-Send, alle existierenden Send-Pfade.
+- **Tracking-Pipeline darf nicht brechen.** Tracking-Pixel-Injection passiert wie heute in `sendEmailWithTracking` — Anhaenge sind Multipart-Beilage, nicht Body-Modifikation.
+- **MIME-Whitelist Source-of-Truth zentral.** Eine einzige Konstante, die Browser und Server beide nutzen — kein Drift moeglich.
+- **Color-Picker-Toggle: kein Datenverlust.** Bestehende Branding-Eintraege werden NICHT automatisch auf NULL gesetzt — nur explizites User-"Speichern" mit Toggle-Aus persistiert NULL.
+- **Storage-Limits:** Self-Hosted Supabase ist auf Hetzner — Bucket-Volume-Druck ist real (Cleanup-Cron-Slice steht an, sobald >5 GB email-attachments-Bucket).
+- **Bedrock Cost Control (DEC-052).** Keine KI-Calls in V5.4 — der Polish und Anhang-Upload involvieren keine LLM.
+- **Datenresidenz (data-residency.md).** Kein Theme — keine externen API-Calls in V5.4.
+
+### V5.4 Risks & Assumptions
+
+- **Risk:** Multipart-Mails mit Anhaengen werden von Empfaenger-Spam-Filtern strenger bewertet, Tracking-Pixel-Events fallen aus.
+  Mitigation: Smoke-Test mit Gmail/Outlook, ggf. Tracking-Header-Anpassung dokumentieren.
+- **Risk:** ZIP-Anhaenge mit Schadcode-Inhalt werden vom System unbemerkt rausgesendet.
+  Mitigation: User selbst legt Files aus, kein Forwarding-Use-Case. Empfaenger-Mailserver-Filter ist zweite Linie. Akzeptiertes B2B-Restrisiko (siehe Architekturleitplanke 5).
+- **Risk:** Storage-Volumen waechst unkontrolliert, weil keine V5.4-Cleanup-Cron existiert.
+  Mitigation: Monitoring-Punkt — bei >5 GB Bucket-Volumen Cleanup-Cron als naechster Mini-Slice.
+- **Risk:** Color-Picker-Toggle-Migration: User mit existierender Branding-Color, der V5.4 deployt, sieht Toggle als "an" mit Wert. Erwartung-Drift moeglich.
+  Mitigation: Keine Datenmigration — Toggle leitet sich vom DB-Wert ab. User-Mental-Model: "wenn Wert da ist, ist es aktiv". Ist konsistent.
+- **Risk:** Coolify-Cron-Cleanup-User-Anleitung ist unvollstaendig oder verwirrend, User produziert Cron-Lucke.
+  Mitigation: Klick-fuer-Klick-Anleitung mit konkreten Cron-Namen und was zu loeschen/aendern ist. Pre-Deploy-Snapshot empfohlen.
+- **Risk:** ESLint-Cleanup deckt latente Hook-Order-Bugs auf, die unter Strict-Mode anders rendern.
+  Mitigation: Visuelle Smoke-Tests der zwei Dialoge nach Cleanup. Keine Funktional-Aenderung erwartet.
+- **Assumption:** Self-Hosted Supabase-Storage haelt 10 MB-Files problemlos (existing Branding-Bucket macht 1-2 MB Logos, getestet).
+- **Assumption:** Nodemailer's `attachments`-Array funktioniert mit Storage-Bucket-Streams oder Buffer-Buffer-Konversion.
+- **Assumption:** SMTP-Server (aktueller Outbound-Provider) erlaubt 25 MB-Mails (Standard ist 25 MB Default; falls strenger, Size-Limit anpassen).
+
+### V5.4 Success Criteria
+
+V5.4 ist erfolgreich wenn:
+1. ISSUE-043 ist resolved — auf `/settings/branding` ist Toggle "Markenfarbe verwenden" sichtbar und funktioniert. AC9 aus FEAT-531 ist wieder zuverlaessig erfuellt.
+2. ESLint-Build ist clean fuer die zwei Compose-Dialoge — keine React-Hook-Order-Warnings mehr.
+3. `docs/COMPLIANCE.md` hat einen V5.3-Section mit Composing-Studio + Inline-Edit + Branding.
+4. Coolify-Cron-Cleanup ist abgeschlossen (User-Aktion via Doku) — keine Cron-Duplikate, kein kaputter `embedding-sync`.
+5. User kann im Composing-Studio per Drag&Drop oder File-Picker Anhaenge hinzufuegen.
+6. Anhang-Mail kommt in Gmail an mit korrekt geoffnetem PDF/PNG/etc.
+7. Live-Preview zeigt Anhang-Indikator mit Icon + Filename + Size.
+8. Tracking-Pixel-Event feuert auch bei Anhang-Mail.
+9. Bestehender V5.3-Send-Pfad (Cadences, Auto-Reply, Mein-Tag-Compose) ist regression-frei.
+10. ZIP-Anhang ist akzeptiert ohne Inhalt-Inspection.
+
+### V5.4 Open Questions (fuer /architecture)
+
+- **Junction-Table-Schema:** `email_attachments`-Spalten ausreichend, oder noch `is_inline BOOLEAN` (fuer spaetere Cid-Referenzen) vorbereiten? Empfehlung: nur die V5.4-noetigen Spalten — keine Future-Proof-Spekulation.
+- **Storage-Path-Struktur:** `{user_id}/{compose_session_id}/{filename}` oder `{user_id}/{email_id}/{filename}`? Problem: `email_id` existiert erst NACH Send, beim Upload aber noch nicht. Empfehlung: `compose_session_id` fuer Pre-Send, beim Send-Action Move zu `email_id`-Folder, oder einfach behalten und in Junction-Table mappen. Bei /architecture entscheiden.
+- **Compose-Session-ID-Lebensdauer:** UUID beim Oeffnen des Composing-Studios, gilt bis Send oder Page-Reload. Wenn User `/emails/compose` schliesst ohne zu senden, bleiben "verwaiste" Anhaenge im Storage. Cleanup-Strategie: Cron-Cleanup spaeter, oder Session-Timeout-basierter Cleanup beim naechsten Compose-Open? Empfehlung: bei /architecture entscheiden — vorerst kein Cleanup, bewusster Tech-Debt mit dokumentiertem Folge-Slice.
+- **Validation-Whitelist-Konstante-Sharing:** Browser und Server teilen sich die MIME-Liste — wo wohnt die Konstante? Empfehlung: `cockpit/src/lib/email/attachments-whitelist.ts` (kann in beiden Pfaden importiert werden, kein Server-only-Import).
+- **Tracking-Pixel-Behavior bei Anhang:** Manche Mailclients ignorieren Tracking-Pixel im Multipart, oder zeigen sie als zusaetzlichen Anhang. Empfehlung: kein V5.4-Polish-Versuch — Smoke-Test verifizieren, dokumentieren wenn auffaellig.
+- **Compose-Form-Integration:** Anhang-Bereich als eigene Komponente unter Body-Textarea oder als Tab im Compose-Form? Empfehlung: eigene Sektion direkt unter Body — flachere UX, weniger Klicks.
+- **Polish-Slicing:** Color-Picker + ESLint + COMPLIANCE.md + Coolify alles in EINEN Polish-Slice (SLC-541), oder zwei Slices (Code-Polish vs. Doku-Polish)? Empfehlung: ein Slice — Bundle ist klein genug (~3-4h), klarer Release.

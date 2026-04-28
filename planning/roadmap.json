@@ -101,30 +101,37 @@
     {
       "id": "v5-3",
       "name": "V5.3",
-      "status": "active",
-      "summary": "E-Mail Composing Studio: 4 Features (FEAT-531..534) — Branding-Settings + Mail-Layout-Engine, 3-Panel-Vollbild-Composing-Studio, Systemvorlagen + KI-Vorlagen-Generator, Inline-Edit-Diktat. Requirements geschnitten 2026-04-26. Urspruenglich als V5.2 geplant, durch DEC-081 Compliance-Sprint nachgelagert.",
+      "status": "released",
+      "summary": "E-Mail Composing Studio: 4 Features (FEAT-531..534) — Branding-Settings + Mail-Layout-Engine, 3-Panel-Vollbild-Composing-Studio, Systemvorlagen + KI-Vorlagen-Generator, Inline-Edit-Diktat. Released 2026-04-28 als REL-018, Internal-Test-Mode aktiv.",
       "order": 15
+    },
+    {
+      "id": "v5-4",
+      "name": "V5.4",
+      "status": "active",
+      "summary": "Composing-Studio Polish + E-Mail-Anhaenge: 2 Features (FEAT-541..542) — V5.4-Polish (Color-Picker AC9-Drift Fix, ESLint Hook-Order, COMPLIANCE.md V5.3-Update, Coolify-Cron-Cleanup), E-Mail-Anhaenge-Upload PC-Direkt (Drag&Drop, Storage-Bucket, MIME/Size-Whitelist, Multipart-SMTP). Requirements geschnitten 2026-04-28.",
+      "order": 16
     },
     {
       "id": "v6",
       "name": "V6",
       "status": "released",
       "summary": "Zielsetzung + Performance-Tracking: Produkt-Stammdaten, Ziel-Objekt-Modell (Umsatz/Deal-Count/Abschlussquote), Persoenliches Performance-Cockpit (Soll-Ist + Prognose + KI-Empfehlung), KPI-Snapshots, CSV-Import, Tages-Check mit Activity-KPIs",
-      "order": 16
+      "order": 17
     },
     {
       "id": "v6-1",
       "name": "V6.1",
       "status": "released",
       "summary": "Performance Premium UI: Style Guide V2 auf /performance, 4-Kachel-Layout (Goal-Cards + Prognose), Label Abschlussquote, Wochen-Check mit Tagesaufloesung",
-      "order": 17
+      "order": 18
     },
     {
       "id": "v7",
       "name": "V7",
       "status": "planned",
       "summary": "Multi-User + Erweiterung: Routing/Territories, Teamlead-Rolle mit Teamsicht, Workflow-Automation, Kampagnen-Attribution",
-      "order": 18
+      "order": 19
     }
   ]
 }
