@@ -13,11 +13,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, Upload } from "lucide-react";
+import { ConditionalColorPicker } from "@/components/branding/conditional-color-picker";
 import {
   BRANDING_FONT_FAMILIES,
   type Branding,
   type BrandingFontFamily,
 } from "@/types/branding";
+
+const PRIMARY_DEFAULT = "#4454b8";
+const SECONDARY_DEFAULT = "#94a3b8";
 
 const FONT_LABELS: Record<BrandingFontFamily, string> = {
   system: "System (Standard)",
@@ -38,6 +42,12 @@ export function BrandingForm({ initial, onSave, onUploadLogo }: Props) {
   const [logoUrl, setLogoUrl] = useState<string | null>(initial?.logoUrl ?? null);
   const [fontFamily, setFontFamily] = useState<BrandingFontFamily>(
     initial?.fontFamily ?? "system",
+  );
+  const [primaryColor, setPrimaryColor] = useState<string | null>(
+    initial?.primaryColor ?? null,
+  );
+  const [secondaryColor, setSecondaryColor] = useState<string | null>(
+    initial?.secondaryColor ?? null,
   );
   const [savePending, startSave] = useTransition();
   const [uploadPending, startUpload] = useTransition();
@@ -69,6 +79,10 @@ export function BrandingForm({ initial, onSave, onUploadLogo }: Props) {
     setInfo("");
     formData.set("logo_url", logoUrl ?? "");
     formData.set("font_family", fontFamily);
+    // Conditional Color-Picker: NULL bei Toggle aus, Hex bei Toggle an.
+    // sanitizeColor (actions.ts) mappt empty-string → NULL.
+    formData.set("primary_color", primaryColor ?? "");
+    formData.set("secondary_color", secondaryColor ?? "");
     startSave(async () => {
       const result = await onSave(formData);
       if (result.error) setError(result.error);
@@ -137,27 +151,21 @@ export function BrandingForm({ initial, onSave, onUploadLogo }: Props) {
       </div>
 
       {/* Farben */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="primary_color">Primaerfarbe</Label>
-          <Input
-            id="primary_color"
-            name="primary_color"
-            type="color"
-            defaultValue={initial?.primaryColor ?? "#4454b8"}
-            className="h-10 w-full"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="secondary_color">Sekundaerfarbe (optional)</Label>
-          <Input
-            id="secondary_color"
-            name="secondary_color"
-            type="color"
-            defaultValue={initial?.secondaryColor ?? "#94a3b8"}
-            className="h-10 w-full"
-          />
-        </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <ConditionalColorPicker
+          id="primary_color"
+          label="Primaerfarbe"
+          value={primaryColor}
+          onChange={setPrimaryColor}
+          defaultColor={PRIMARY_DEFAULT}
+        />
+        <ConditionalColorPicker
+          id="secondary_color"
+          label="Sekundaerfarbe (optional)"
+          value={secondaryColor}
+          onChange={setSecondaryColor}
+          defaultColor={SECONDARY_DEFAULT}
+        />
       </div>
 
       {/* Schrift */}

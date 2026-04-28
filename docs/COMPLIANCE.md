@@ -378,6 +378,76 @@ Keine KI-Pipeline laeuft auf Daten-Lade-Wegen automatisch durch — KI-Analysen 
 
 ---
 
+## V5.3 — E-Mail Composing Studio
+
+V5.3 (REL-018, deployed 2026-04-28) ergaenzt das System um ein Composing-Studio fuer ausgehende E-Mails. Es fuehrt **keine neue personenbezogene Datenkategorie** ein — alle verarbeiteten Daten sind bereits in den Sektionen 1.4 (Kommunikationsdaten), 1.5 (Audio/Transkripte) und 1.6 (KI-Daten) abgedeckt. Diese Sektion beschreibt drei zusaetzliche Datenfluesse, die mit V5.3 entstehen.
+
+### Branding-Settings (FEAT-531)
+
+**Daten:** Logo (Bild-Datei), Primaer-/Sekundaerfarbe (Hex), Schriftfamilie (System/Inter/Sans/Serif), Footer-Text (Markdown), Kontakt-Block (Name, Firma, Telefon, Web).
+
+**Speicherung:**
+- Logo-Datei: Supabase Storage Bucket `branding` (Postgres-Volume Hetzner DE), max 2 MB, MIME-Whitelist (PNG/JPEG/SVG/WebP)
+- Farben, Schrift, Footer, Kontakt-Block: PostgreSQL-Tabelle `branding_settings` (Single-Row-Pattern, eine Zeile pro Installation)
+
+**Auslieferung des Logos:** Server-Side-Proxy via `/api/branding/logo` Route — Storage-Public-URL ist nicht direkt extern erreichbar, der Browser laedt das Logo immer ueber den Next.js-Server (DEC-091). Cache-Buster `v=<timestamp>` wird bei jedem Upload neu gesetzt.
+
+**Datenfluss:** User-Upload → App-Server (Validierung MIME + Size) → Storage. Mail-Renderer (`renderBrandedHtml`) liest die `branding_settings`-Row beim Versand und bettet Logo + Farben in den HTML-Body ein.
+
+**Conditional Branding (DEC-102, V5.4-Polish):** Pro Farb-Feld kann der User per Toggle-Checkbox entscheiden, ob die Farbe gesetzt ist (NULL = nicht aktiv, Hex = aktiv). NULL-Werte fuehren zum `textToHtml`-Fallback ohne Branding — bit-identisch zu V5.2.
+
+**Retention:** Branding-Settings persistiert bis User loescht oder Installation gewipt wird. Logo-Files werden beim Upload eines neuen Logos best-effort entfernt (alte Versionen bleiben sonst im Bucket).
+
+**Drittanbieter:** keine — die gesamte Branding-Pipeline laeuft auf Hetzner DE (Coolify + Supabase self-hosted).
+
+### Composing-Studio (FEAT-532, FEAT-533)
+
+**Daten:** E-Mail-Betreff, E-Mail-Body (Plain-Text mit Variablen-Substitution), Empfaenger-/Sprache-/Kategorie-Felder als Vorausfuell-Vars an Bedrock; Deal-/Kontakt-Kontext-Snippet (Name, Firma, Position, Sprache, letzter Kontakt).
+
+**Datenfluss KI-Vorlagen-Generator:**
+1. User tippt oder diktiert (Whisper) eine kurze Anweisung ("Erstansprache fuer Steuerberater im Mittelstand")
+2. App-Server schickt User-Prompt + System-Prompt an **AWS Bedrock Claude Sonnet (Region eu-central-1, Frankfurt)**
+3. Bedrock liefert strukturiertes JSON (Title + Subject + Body + Sprache + Kategorie) zurueck
+4. User editiert in der UI, speichert in `email_templates`-Tabelle (PostgreSQL, Hetzner DE)
+
+**Datenfluss Live-Preview:**
+- Body wird im Browser gerendert (250ms-Debounce, iframe-Sandbox).
+- Beim Senden ruft Server-Action `sendComposedEmail` den Mail-Renderer auf, der die `branding_settings`-Row liest und SMTP-Versand startet.
+
+**Was an Bedrock gesendet wird:** Body-Text + Empfaenger-Vorausfuell-Vars (Vorname, Firma, Position) + System-Prompt. Es wird **kein Audit-Log-Inhalt, kein historischer Mail-Body und keine Empfaenger-E-Mail-Adresse** an Bedrock gesendet.
+
+**Audit-Log auf Server:** Geloggt werden Provider, Model, User-ID, Sprache, Body-Length (in Zeichen). Der **Mail-Body selbst wird NICHT in den Logs gespeichert** (siehe Sektion 8.8).
+
+**Drittanbieter:**
+- AWS Bedrock — eu-central-1 (Frankfurt), DPA via Strategaize-AWS-Account, BYO-Region
+- Whisper (via openai-Default-Adapter, V5.2): wird im Composing-Studio fuer User-Self-Diktat verwendet (kein Kunden-Audio) — vor erstem produktiven Recording-Flow Pflicht-Switch auf Azure-OpenAI-EU (DEC-079, ISSUE-042)
+
+**Retention:** Vorlagen persistiert bis User loescht. Ausgehende E-Mails werden in `email_message`-Tabelle persistiert (Sektion 1.4). KI-Audit-Eintraege folgen `audit_log`-Retention (Sektion 4).
+
+### Inline-Edit-Diktat (FEAT-534)
+
+**Daten:** Aktueller Mail-Body (User hat ihn bereits geschrieben oder aus Vorlage geladen) + Voice-Anweisung des Users ("Nach Satz 3 folgendes einbauen: …" oder "Schluss durch X ersetzen").
+
+**Datenfluss:**
+1. User klickt "Inline-Edit-Diktat" im Composing-Studio
+2. Browser nimmt Audio auf (MediaRecorder), streamt Audio an App-Server
+3. App-Server schickt Audio an **Whisper-Adapter (V5.2: openai-default; Azure-EU Code-Ready ab V5.2 — Pre-Pflicht-Switch vor erstem produktivem Recording)** → Transkript zurueck
+4. Transkript + aktueller Body wird an **AWS Bedrock Claude Sonnet (eu-central-1)** gesendet mit harten System-Prompt-Constraints gegen Halluzination
+5. Bedrock liefert neuen Body + Summary zurueck
+6. UI zeigt Diff (`diffWords` aus `diff@9`), User akzeptiert oder verwirft
+7. Bei Akzeptieren wird der Body im Composing-Studio aktualisiert
+
+**Was wird persistiert:**
+- Audio-Stream wird **NICHT** persistiert (live-stream ohne Disk-Schreibvorgang) — bleibt nur fuer die Dauer des Whisper-Calls im Server-RAM
+- Transkript wird **NICHT** persistiert (nur weitergereicht an Bedrock)
+- Neuer Body wird Teil der ausgehenden Mail (`email_message`, falls gesendet)
+
+**Audit-Log:** Provider, Model, User-ID, Length-vorher, Length-nachher. Body-Inhalt wird NICHT geloggt.
+
+**Drittanbieter:** Whisper-Provider (V5.2: openai-default, US-Endpoint — daher V5.3 Internal-Test-Mode); Bedrock (eu-central-1 Frankfurt). Pflicht-Switch auf Azure-OpenAI-EU vor erstem produktivem Recording-Flow.
+
+---
+
 ## Disclaimer
 
 Diese Dokumentation beschreibt den **technischen** Datenschutz-Stand des Systems zum Zeitpunkt **2026-04-25 (V5.2-Release)**. Sie ist eine **pragmatische Standardvorlage** und stellt **keine Rechtsberatung** dar. Insbesondere ersetzt sie nicht:
@@ -391,5 +461,5 @@ Vor produktivem Einsatz mit echten Kunden- oder Interessentendaten sind diese Pu
 
 ---
 
-**Letzte Aktualisierung:** 2026-04-25
-**Naechste empfohlene Pruefung:** Vor erstem Go-Live mit echten Kundendaten (Pre-Go-Live-Schritt nach SLC-525)
+**Letzte Aktualisierung:** 2026-04-28 (V5.3 + V5.4-Polish-Sektion ergaenzt — Composing-Studio + Conditional-Branding)
+**Naechste empfohlene Pruefung:** Vor erstem Go-Live mit echten Kundendaten (Pre-Go-Live-Schritt nach SLC-525) — und vor dem Switch auf Azure-OpenAI-EU bei Aufnahme produktiver Recording-Flows

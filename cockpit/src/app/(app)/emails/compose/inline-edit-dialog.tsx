@@ -13,7 +13,7 @@
 // nichts geaendert. In allen Faellen bleibt der Modal offen, der User kann
 // erneut diktieren.
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { diffWords, type Change } from "diff";
 import {
   AlertCircle,
@@ -66,17 +66,24 @@ export function InlineEditDialog({
 
   const [pending, startTransition] = useTransition();
 
-  // Beim Schliessen kompletten State resetten, damit das naechste Oeffnen
-  // sauber bei Recording startet.
-  useEffect(() => {
-    if (!open) {
-      setPhase("recording");
-      setTranscript("");
-      setError(null);
-      setNewBody(null);
-      setSummary(null);
-    }
-  }, [open]);
+  // Reset-Helfer wird im onOpenChange-Wrapper aufgerufen, statt im useEffect.
+  // Vermeidet `react-hooks/set-state-in-effect`. Reset passiert genau einmal
+  // beim Schliessen, nicht reaktiv vom open-Prop.
+  const resetState = useCallback(() => {
+    setPhase("recording");
+    setTranscript("");
+    setError(null);
+    setNewBody(null);
+    setSummary(null);
+  }, []);
+
+  const handleOpenChange = useCallback(
+    (next: boolean) => {
+      if (!next) resetState();
+      onOpenChange(next);
+    },
+    [onOpenChange, resetState],
+  );
 
   const handleVoiceTranscript = useCallback((text: string) => {
     // Voice-Input wird an den bestehenden Transkript-Text angehaengt — der
@@ -110,8 +117,8 @@ export function InlineEditDialog({
   const handleAccept = useCallback(() => {
     if (newBody === null) return;
     onAccept(newBody);
-    onOpenChange(false);
-  }, [newBody, onAccept, onOpenChange]);
+    handleOpenChange(false);
+  }, [newBody, onAccept, handleOpenChange]);
 
   const handleRetry = useCallback(() => {
     setPhase("recording");
@@ -128,7 +135,7 @@ export function InlineEditDialog({
   }, [originalBody, newBody]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader className="flex flex-row items-start gap-3 space-y-0">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#120774] to-[#4454b8] shadow-sm">
@@ -186,7 +193,7 @@ export function InlineEditDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => handleOpenChange(false)}
                 className="border-2"
               >
                 Abbrechen
@@ -256,7 +263,7 @@ export function InlineEditDialog({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => onOpenChange(false)}
+                  onClick={() => handleOpenChange(false)}
                   className="border-2 border-slate-300 text-slate-700"
                 >
                   <X className="mr-1.5 h-3.5 w-3.5" strokeWidth={2.5} />

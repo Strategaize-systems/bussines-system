@@ -10,7 +10,6 @@
 
 import {
   useCallback,
-  useEffect,
   useState,
   useTransition,
   type FormEvent,
@@ -60,24 +59,8 @@ export function NewTemplateDialog({
   defaultLanguage,
   onCreated,
 }: NewTemplateDialogProps) {
+  // Tab-State
   const [tab, setTab] = useState<ModeTab>("manual");
-
-  // Beim Schliessen: State resetten, sonst behaelt der Dialog alte Werte
-  // beim erneuten Oeffnen.
-  useEffect(() => {
-    if (!open) {
-      setTab("manual");
-      setTitle("");
-      setSubject("");
-      setBody("");
-      setCategory("");
-      setLang(defaultLanguage);
-      setAiPrompt("");
-      setAiError(null);
-      setAiHasResult(false);
-      setSaveError(null);
-    }
-  }, [open, defaultLanguage]);
 
   // Form-State (geteilt zwischen beiden Tabs — KI-Tab kippt nach generate
   // dieselben Felder, dann editiert der User dort weiter und speichert.)
@@ -96,6 +79,30 @@ export function NewTemplateDialog({
   // Save
   const [savePending, startSaveTransition] = useTransition();
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Reset-Helfer wird im onOpenChange-Wrapper aufgerufen, statt im useEffect.
+  // Vermeidet `react-hooks/set-state-in-effect` und ist nicht reaktiv vom
+  // open-Prop abhaengig (Reset passiert genau einmal beim Schliessen).
+  const resetState = useCallback(() => {
+    setTab("manual");
+    setTitle("");
+    setSubject("");
+    setBody("");
+    setCategory("");
+    setLang(defaultLanguage);
+    setAiPrompt("");
+    setAiError(null);
+    setAiHasResult(false);
+    setSaveError(null);
+  }, [defaultLanguage]);
+
+  const handleOpenChange = useCallback(
+    (next: boolean) => {
+      if (!next) resetState();
+      onOpenChange(next);
+    },
+    [onOpenChange, resetState],
+  );
 
   const handleAiVoice = useCallback((text: string) => {
     setAiPrompt((p) => (p ? `${p} ${text}`.trim() : text));
@@ -148,14 +155,14 @@ export function NewTemplateDialog({
           return;
         }
         onCreated();
-        onOpenChange(false);
+        handleOpenChange(false);
       });
     },
-    [title, subject, body, category, lang, onCreated, onOpenChange],
+    [title, subject, body, category, lang, onCreated, handleOpenChange],
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader className="flex flex-row items-start gap-3 space-y-0">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#120774] to-[#4454b8] shadow-sm">
@@ -355,7 +362,7 @@ export function NewTemplateDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => handleOpenChange(false)}
               className="border-2"
             >
               Abbrechen
