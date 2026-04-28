@@ -10,12 +10,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: V5.3 SLC-535 **/qa Static-PASS** 2026-04-27 — Inline-Edit-Diktat statisch verifiziert (12/12 ACs Code-Pfad + Stub-Detection PASS + Wiring-Chain End-to-End PASS + tsc 0 + Vitest 35/35 + Next-Build 60/60). 2 Auto-Fixes waehrend QA: (1) `maxTokens: 6000` statt Default 2048 in applyInlineEdit damit lange newBody-Outputs nicht abgeschnitten werden, (2) Dialog-Wording auf "Keine Sprache erkannt" angepasst (AC10-Drift). 3 Pflicht-Smoke-Test-Faelle (MT-5: klare/mehrdeutige/problematische Anweisung) sind als User-Live-Smoke-Plan in RPT-234 dokumentiert — laufen nach Coolify-Redeploy mit echten Bedrock-Outputs. **Naechster Schritt:** User-Coolify-Redeploy + 3 Smoke-Test-Faelle auf Hetzner ausfuehren. Bei Smoke-PASS: SLC-535 → done, dann V5.3-Release-Sequenz.
-- Current Phase: V5.3 Implementation — 4/5 Slices done + SLC-535 Static-QA PASS, Live-Smoke pending. V5.2 Post-Launch confirmed stable. Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
+- Current Focus: V5.3 **5/5 Slices done** 2026-04-28 — SLC-535 Live-Smoke auf Hetzner PASS (UI-States ✅, Smoke 1 klare Anweisung ✅, Smoke 2 mehrdeutige Anweisung ✅, Smoke 3 problematische Anweisung ✅ KI blieb generisch + verwarf nichts erfunden, Verwerfen-Pfad ✅). FEAT-534 + BL-402 done. V5.3 ist damit Code+QA-komplett (SLC-531+532+533+534+535 alle done). **Naechster Schritt:** Gesamt-/qa V5.3 (Cross-Slice-Verify aller 5 Slices) → /final-check V5.3 → /go-live V5.3 → /deploy V5.3 → /post-launch V5.3.
+- Current Phase: V5.3 Implementation komplett — alle 5 Slices done, ready fuer Gesamt-QA + Release-Sequenz. V5.2 Post-Launch confirmed stable. Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Azure-EU-Switch.
 
 ## Immediate Next Steps
-1. **User-Coolify-Redeploy SLC-535** auf Hetzner (commit nach RPT-234) + 3 Pflicht-Smoke-Test-Faelle (klar/mehrdeutig/problematisch, Plan in RPT-234) + UI-States-Smoke. Bei Smoke-PASS: SLC-535 → done, BL-402 → done, FEAT-534 → done.
-2. Branding-Daten-Korrektur "Strategaize **Tnasition** GmbH" → "Transition" in `/settings/branding` Footer (User-Aktion, kein Code)
+1. **Gesamt-/qa V5.3** — Cross-Slice-Verify aller 5 Slices (SLC-531..535) im Zusammenhang: Branding → Templates+KI-Generator → Composing-Studio Layout → Live-Preview+Send → Inline-Edit-Diktat. Pflicht-Pruefung: End-to-End-Workflow vom Erstellen einer Vorlage bis zum Senden einer Mail mit Inline-Edit.
+2. /final-check V5.3 (Hygiene, Dependencies, Security)
+3. /go-live V5.3 + User-Coolify-Manual-Deploy + /post-launch V5.3 (24-48h)
+4. Branding-Daten-Korrektur "Strategaize **Tnasition** GmbH" → "Transition" in `/settings/branding` Footer (User-Aktion, kein Code)
 3. SLC-531 Outlook-Smoke (offen, nicht Blocker): Test-Mail an Outlook-Postfach + Logo/Farbe/Schrift visuell pruefen
 4. Senden-Flow Real-Mail-Smoke (organisch beim naechsten echten Outbound-Mail-Versand)
 5. Gesamt-/qa V5.3 nach SLC-535 + /final-check V5.3 + /go-live V5.3 + /deploy V5.3 + /post-launch V5.3
@@ -31,8 +33,8 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 **V5.3 — E-Mail Composing Studio (Implementation in progress 2026-04-27):**
 - FEAT-531 Branding-Settings + zentrale Mail-Layout-Engine (done — SLC-531 deployed)
 - FEAT-532 3-Panel-Composing-Studio `/emails/compose` (done — SLC-533 Layout + KI-Vorausfuellung + SLC-534 Live-Preview + Send + Einstiegspunkte vollstaendig User-bestaetigt; BL-403 Style-Guide-V2-Restyling als naechster UI-Polish-Schritt)
-- FEAT-533 Systemvorlagen + KI-Vorlagen-Generator (in_progress — SLC-532 Backend done; UI in SLC-533)
-- FEAT-534 Inline-Edit-Diktat ("ergaenze nach Satz X") (in_progress — SLC-535 Frontend done, /qa offen)
+- FEAT-533 Systemvorlagen + KI-Vorlagen-Generator (done — SLC-532 Backend done + UI in SLC-533)
+- FEAT-534 Inline-Edit-Diktat ("ergaenze nach Satz X") (done — SLC-535 Live-Smoke PASS 2026-04-28)
 
 **V5.2 — Compliance-Sprint (released 2026-04-26 als REL-017, Internal-Test-Mode):**
 - FEAT-521 Recording-Retention 7d Hardening (deployed)
