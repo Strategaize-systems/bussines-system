@@ -1657,7 +1657,7 @@
       "title": "V5.5 SLC-551 Angebot-Schema-Foundation (MIG-026 + Bucket + RLS + createProposal)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V5.5",
       "description": "FEAT-551 SLC-551: V2-Stub-proposals wird operativ via MIG-026 (11 nullable Spalten + neue Tabelle proposal_items mit Snapshot-Feldern DEC-107 + email_attachments-Erweiterung mit source_type+proposal_id+CHECK-Constraint + Storage-Bucket proposal-pdfs privat mit User-Scope-RLS DEC-111). Pfad-Helper getProposalPdfPath als Single-Source-of-Truth (DEC-113 Test-Mode-Suffix). Server Actions createProposal({deal_id, contact_id, company_id, title?}) und getProposalForEdit(id). Backwards-Compat: bestehende V2-Stubs unveraendert lesbar, /proposals-Listing-View darf nicht brechen. Apply MIG-026 auf Hetzner via SSH (sql-migration-hetzner.md Pattern). 7 Micro-Tasks, ~3-4h.",
       "createdAt": "2026-04-29"

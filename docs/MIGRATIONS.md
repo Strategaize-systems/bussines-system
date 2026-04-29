@@ -235,8 +235,8 @@
   - `DELETE FROM email_templates WHERE is_system=true;` (nur falls Spalte noch existiert)
   - Seed-INSERTs sind via Title-Prefix `System: ...` identifizierbar — falls Spalte `is_system` schon dropped, alternativ via Title-Filter.
 
-### MIG-026 — V5.5 Angebot-Erstellung Schema (planned)
-- Date: planned (Apply nach SLC-551-Backend-Implementation)
+### MIG-026 — V5.5 Angebot-Erstellung Schema
+- Date: 2026-04-29 — applied auf Hetzner Business-System (Container `supabase-db-k9f5pn5upfq7etoefb5ukbcg-075438771312`) als Teil von SLC-551 (`/backend`). Erstapply + Idempotenz-Smoke (zweiter Run) sauber durchgelaufen.
 - Scope: 4 Aenderungen in einer Migration `026_v55_proposal_creation.sql`:
   1. Erweiterung `proposals` um 11 nullable Spalten:
      - `subtotal_net NUMERIC(12,2)` — berechnete Netto-Summe
