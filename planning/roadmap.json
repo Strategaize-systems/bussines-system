@@ -108,8 +108,8 @@
     {
       "id": "v5-4",
       "name": "V5.4",
-      "status": "active",
-      "summary": "Composing-Studio Polish + E-Mail-Anhaenge: 2 Features (FEAT-541..542) — V5.4-Polish (Color-Picker AC9-Drift Fix, ESLint Hook-Order, COMPLIANCE.md V5.3-Update, Coolify-Cron-Cleanup), E-Mail-Anhaenge-Upload PC-Direkt (Drag&Drop, Storage-Bucket, MIME/Size-Whitelist, Multipart-SMTP). Requirements geschnitten 2026-04-28.",
+      "status": "released",
+      "summary": "Composing-Studio Polish + E-Mail-Anhaenge: 2 Features (FEAT-541..542) — V5.4-Polish (Color-Picker AC9-Drift Fix per ConditionalColorPicker, ESLint Hook-Order Cleanup via resetState-onOpenChange-Pattern, COMPLIANCE.md V5.3+V5.4-Section, Coolify-Cron-Cleanup), E-Mail-Anhaenge-Upload PC-Direkt (Drag&Drop, Storage-Bucket privat, MIG-025 Junction-Table, ASCII-strict Filename-Sanitization, Multipart-SMTP via API-Route). Released 2026-04-29 als REL-019 auf Hetzner via Coolify-Redeploy Commit c8637c6.",
       "order": 16
     },
     {

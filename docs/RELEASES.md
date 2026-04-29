@@ -1,48 +1,34 @@
 # Releases
 
-### REL-019 — V5.4 Composing-Studio Polish + E-Mail-Anhaenge (PLANNED)
-- Date: TBD (V5.4-Deploy nach Final-Check + Go-Live)
-- Scope: 2 Slices (SLC-541 V5.4-Polish + SLC-542 E-Mail-Anhaenge-Upload), 2 Features (FEAT-541 + FEAT-542), 8 DECs (DEC-097..104), MIG-025 (`email_attachments`-Junction-Table). SLC-541 schliesst V5.3-Hygiene-Themen ab: Color-Picker AC9-Drift Fix per Conditional-Color-Picker (DEC-102), ESLint Hook-Order Cleanup in NewTemplateDialog + InlineEditDialog, COMPLIANCE.md V5.3-Section, Coolify-Cron-Cleanup-User-Anleitung.
-- Summary: TBD
-- Risks: TBD
-- Rollback Notes: Rein additiv. SLC-541 modifiziert nur UI-Komponenten + Doku — Rollback per Coolify-Redeploy auf V5.3-Stand (Commit 8d8e098 oder neuerer V5.3-Tag), kein Schema-Rollback. SLC-542 fuegt MIG-025 hinzu (additive Junction-Table), bleibt bei Rollback live (neue Tabelle wird von V5.3-Code ignoriert).
+### REL-019 — V5.4 Composing-Studio Polish + E-Mail-Anhaenge
+- Date: 2026-04-29
+- Scope: 2 Slices (SLC-541 V5.4-Polish + SLC-542 E-Mail-Anhaenge-Upload), 2 Features (FEAT-541 + FEAT-542), 8 DECs (DEC-097..104), MIG-025 (`email_attachments`-Junction-Table + privater Storage-Bucket). SLC-541 schliesst V5.3-Hygiene-Themen ab: Color-Picker AC9-Drift Fix per ConditionalColorPicker (DEC-102), ESLint Hook-Order Cleanup in NewTemplateDialog + InlineEditDialog (resetState-via-onOpenChange-Wrapper-Pattern, eliminiert react-hooks/set-state-in-effect-Errors), COMPLIANCE.md V5.3-Section + V5.4-Section (Anhang-Pipeline beschrieben), Coolify-Cron-Cleanup-User-Anleitung. SLC-542 fuegt Drag&Drop + File-Picker + MIME/Size-Whitelist + Multipart-SMTP via API-Route hinzu (Refactor von Server-Action analog Onboarding-Plattform-Pattern wegen 1 MB Body-Size-Limit + Filename-Encoding-Probleme).
+- Summary: Deployment als Coolify-Redeploy auf Commit `c8637c6` (Refactor Anhang-Upload Server-Action → API-Route) durch User durchgefuehrt 2026-04-29. Pre-Deploy User-Live-Smoke gegen Hetzner durchgespielt: AC4+5 Drag&Drop (5.5 + 6.4 MB Word-Files), AC6+7 Pro-File-Limit (21.6 MB PDF korrekt rejected), AC10+11+12 Multipart-Mail PDF+PNG+ZIP an Gmail erfolgreich + 3 Junction-Rows in `email_attachments` + Tracking-Pixel-`open`-Event 38s nach Send. MIG-025 bereits seit 2026-04-28 live auf Hetzner-DB (per ssh-Migration-Pattern). **Keine neuen ENV-Variablen.** **Keine neuen Dependencies.** Coolify-Cron-Cleanup als User-Aktion mit Deploy via SQL durchgefuehrt: 5 Operationen, 17 → 15 Crons, alle 15 verbleibenden auf process.env.CRON_SECRET-Pattern, kein Klartext-Secret mehr, kein kaputter Literal-Placeholder mehr. Final-Check READY (RPT-246, 0 Blocker, 0 High, 0 Medium, 1 Low ISSUE-045 akzeptiert). Go-Live GO (RPT-247). tsc 0, Vitest 35/35, Next-Build green. 6 critical Container healthy.
+- Risks: ISSUE-045 (Low) Server-side Total-Size-Limit ist Client-Convenience — Pro-File-Limit (10 MB) ist 3-fach hart enforced (Browser+Upload+Send), Total-Limit (25 MB) nur Browser-side. internal-tool single-user, V5.5+ Operations-Topic. ISSUE-042 (High) OpenAI-API-Key in untrackter Datei bleibt offen — **NICHT V5.4-blockierend** (V5.4-Whisper ist User-Self-Diktat, kein Kunden-Audio). Pre-Pflicht-Marker fuer V4.1 Meeting + V5.1 Call-Recording-Flows. DEC-104 Verwaiste-Storage-Files-Cleanup-Cron deferred — Compose-Tab-Schliessen ohne Send laesst Files im Bucket (V5.5+ Operations). 2 reviewed-and-accepted `console.error` in send-action.ts (Best-Effort Junction-Insert-Logging, kein User-Inhalt). Outlook-Compatibility-Smoke fuer Multipart organisch beim ersten echten Outbound-Send. SLC-541 M1 (ConditionalColorPicker derived-state Refactor) + SLC-542 L1 (Filename-Kollision-Suffix bei upsert) als V5.4.x-Patch-Carryover.
+- Rollback Notes: Rein additiv. SLC-541 modifiziert nur UI-Komponenten + Doku — Rollback per Coolify-Redeploy auf V5.3-Stand (Commit `8d8e098` oder neuerer V5.3-Tag), kein Schema-Rollback. SLC-542 fuegt MIG-025 hinzu (additive Junction-Table + privater Bucket), bleibt bei Rollback live (neue Tabelle wird von V5.3-Code ignoriert). API-Route `/api/emails/attachments` verschwindet aus dem Build, AttachmentsSection-Komponente und `attachments-whitelist.ts` werden tot — kein Daten-Verlust. Coolify-Cron-Cleanup ist auch reversibel: Snapshot in `/tmp/coolify-cron-snapshot-20260429-100851.sql` auf Hetzner-Server, restore via `TRUNCATE scheduled_tasks; psql < snapshot.sql`. next.config.ts `bodySizeLimit: "4mb"` Aenderung ist add-only, kein Rollback noetig.
 
-#### Coolify-Cron-Cleanup (User-Aktion mit V5.4-Deploy)
+#### Coolify-Cron-Cleanup (DURCHGEFUEHRT 2026-04-29 via SQL)
 
-**Hintergrund:** Im Coolify-UI haben sich nach mehreren V4.x/V5.x-Deploys redundante und teilweise kaputte Cron-Jobs angesammelt. Vor dem V5.4-Deploy oder spaetestens als Wartungsschritt direkt danach **vom User auszufuehren** — keine automatische Code-Aktion. Operations-Hygiene, kein Code-Risiko bei Auslassen, aber unnoetige Bedrock/IMAP-Calls und Lint-Noise im Cron-Log.
+**Status:** Erfolgreich durchgefuehrt 2026-04-29 vor V5.4-Deploy via direkter SQL auf der Coolify-Postgres-DB (`docker exec coolify-db psql ...`). 5 Operationen in einer Transaktion: 17 → 15 Crons, alle 15 verbleibenden auf `process.env.CRON_SECRET`-Pattern. Snapshot vorab gesichert in `/tmp/coolify-cron-snapshot-20260429-100851.sql`. Verifikations-Output siehe RPT-247.
 
-**Pre-Snapshot-Empfehlung (Pflicht):** Vor jeder Aenderung Coolify → Project → Resources → Cron-Liste **als Screenshot festhalten** oder per Browser-Print exportieren. So gibt es einen Wiederherstellungspfad falls ein Cron versehentlich geloescht wird.
+**Aktionen-Tabelle:**
+
+| # | Operation | Cron-ID | Aktion |
+|---|-----------|---------|--------|
+| 1 | DELETE | 18 | `Classify` (Container leer, Duplikat von ID 3) entfernt |
+| 2 | DELETE | 13 | `embedding-sync` 15min mit `CRON_SECRET_VALUE`-Literal entfernt (war 401-Loop seit Anlage) |
+| 3 | UPDATE | 14 | `embedding-sync` von 5min Schedule auf `*/15 * * * *` umgestellt (5x weniger Bedrock-Calls) |
+| 4 | UPDATE | 1 | `imap-sync` Klartext-Secret durch `process.env.CRON_SECRET` ersetzt |
+| 5 | UPDATE | 2 | `retention` Klartext-Secret durch `process.env.CRON_SECRET` ersetzt |
+
+**Korrekturen zur urspruenglichen Spec (in SLC-541 dokumentiert):**
+- (b) Embedding-Konsolidierung umgekehrt — der KAPUTTE 15min-Cron geloescht, der 5min funktionale auf 15min umgestellt (statt umgekehrt).
+- (c) Retention NICHT geloescht — beide Endpoints sind aktiv mit unterschiedlicher Funktion (`/api/cron/retention` IMAP-Mail-Retention, `/api/cron/recording-retention` Audio-Files). retention bleibt, wurde nur in (e) auf process.env umgestellt.
+- (e) Nur 2 Klartext-Crons (nicht 3 wie geplant): `imap-sync` + `retention`.
+
+**Rollback (falls noetig):** `ssh root@91.98.20.191 "docker exec -i coolify-db psql -U coolify -d coolify -c 'TRUNCATE scheduled_tasks RESTART IDENTITY CASCADE;' && cat /tmp/coolify-cron-snapshot-20260429-100851.sql | docker exec -i coolify-db psql -U coolify -d coolify"`.
 
 **Verifikations-Schritt nach jeder Aenderung:** Cron-Logs im Coolify-UI 5–15min nach Aenderung pruefen — der erwartet aktive Cron sollte einen Erfolgs-Output haben, der geloeschte Cron erscheint nicht mehr in der Trigger-Liste.
-
-**(a) Klassifizierungs-Cron-Konsolidierung**
-- Aktuell: zwei Crons mit fast gleicher Funktion — `Classify` (alt) und `classify-emails` (neu, V5.x-Pattern).
-- **Aktion:** `Classify` loeschen, `classify-emails` behalten.
-- **Begruendung:** `classify-emails` nutzt das aktuelle `process.env.CRON_SECRET`-Pattern und ist im aktuellen Code referenziert. `Classify` ist Altlast aus V4.
-
-**(b) Embedding-Sync-Konsolidierung**
-- Aktuell: zwei `embedding-sync`-Crons — einer im 5-Minuten-Takt, einer im 15-Minuten-Takt.
-- **Aktion:** den 5-Minuten-Cron loeschen, den 15-Minuten-Cron behalten.
-- **Begruendung:** RAG-Embeddings brauchen kein 5-Minuten-Refresh — 15min ist ausreichend (siehe `rag-embedding-pattern.md`-Regel). 5-Minuten-Frequenz produziert nur unnoetige Bedrock-Embedding-Calls und Kosten.
-
-**(c) Retention-Cron-Pruefung**
-- Aktuell: zwei moeglicherweise konkurrierende Retention-Crons — `retention` (V4.1 Whisper-Recording-Retention) und `recording-retention` (V5.2 Call-Recording-Retention).
-- **Pre-Aktion:** Im Coolify-Cron-Log fuer `retention` pruefen, ob der zugehoerige API-Endpoint noch antwortet. Wenn der Cron seit ≥7 Tagen 404 oder 500 liefert: Endpoint ist tot.
-- **Aktion (wenn Endpoint tot):** `retention` loeschen, nur `recording-retention` behalten.
-- **Aktion (wenn Endpoint noch lebt):** beide behalten — sie loeschen unterschiedliche Recording-Typen.
-
-**(d) Kaputter Cron mit literalem `CRON_SECRET_VALUE`**
-- Aktuell: ein Cron sendet `x-cron-secret: CRON_SECRET_VALUE` (literaler Platzhalter-String, nicht `process.env.CRON_SECRET`).
-- **Pre-Aktion:** Cron-Log pruefen — wenn Logs 401/403-Fehler zeigen, ist der Cron seit Anlage nie erfolgreich gelaufen.
-- **Aktion (wenn nie erfolgreich):** Cron loeschen.
-- **Aktion (wenn Reparatur gewuenscht):** Cron-Command-Definition oeffnen, `CRON_SECRET_VALUE` durch `${CRON_SECRET}` (Coolify-ENV-Variable-Pattern) ersetzen, einmal manuell triggern und Erfolgs-Log verifizieren.
-
-**(e) Klartext-CRON_SECRET-Migration**
-- Aktuell: drei Crons haben den CRON_SECRET im Klartext im Command — `imap-sync`, `retention` (alter V4.1-Cron, falls in (c) nicht geloescht) und ein dritter `embedding-sync`-alt-Eintrag.
-- **Aktion pro Cron:** Cron-Command-Definition oeffnen, den Klartext-String durch `${CRON_SECRET}` ersetzen. Coolify substituiert die ENV-Variable zur Laufzeit.
-- **Begruendung:** Klartext-Secrets im Cron-Command sind in Coolify-Logs sichtbar und damit ein Compliance-Risiko (Sektion 8.6 COMPLIANCE.md, "Geheime Schluessel im Klartext nur im Coolify-ENV-Store").
-
-**Reihenfolge-Empfehlung:** (a) → (b) → (c) → (d) → (e). Schritte (a)–(c) sind Reduzierungen und produzieren bei Fehler nur "Cron faehrt nicht mehr" — leicht reversibel via Re-Anlage aus Pre-Snapshot. Schritte (d)–(e) sind Modifikationen am laufenden Cron — hier ist der Pre-Snapshot besonders wichtig.
 
 ### REL-018 — V5.3 E-Mail Composing Studio
 - Date: 2026-04-28

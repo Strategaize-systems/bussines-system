@@ -149,12 +149,12 @@
 | FEAT-533 | Systemvorlagen + KI-Vorlagen-Generator | deployed | [Spec](FEAT-533-system-templates-ki-generator.md) | 2026-04-26 |
 | FEAT-534 | Inline-Edit-Diktat ("ergaenze nach Satz X") | deployed | [Spec](FEAT-534-inline-edit-diktat.md) | 2026-04-26 |
 
-## V5.4 Features (Composing-Studio Polish + E-Mail-Anhaenge — planned)
+## V5.4 Features (Composing-Studio Polish + E-Mail-Anhaenge — deployed 2026-04-29)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-541 | V5.4-Polish (Color-Picker + ESLint + COMPLIANCE.md + Coolify-Cron) | done | [Spec](FEAT-541-v54-polish.md) | 2026-04-28 |
-| FEAT-542 | E-Mail-Anhaenge-Upload (PC-Direkt) | done | [Spec](FEAT-542-email-attachments.md) | 2026-04-28 |
+| FEAT-541 | V5.4-Polish (Color-Picker + ESLint + COMPLIANCE.md + Coolify-Cron) | deployed | [Spec](FEAT-541-v54-polish.md) | 2026-04-28 |
+| FEAT-542 | E-Mail-Anhaenge-Upload (PC-Direkt) | deployed | [Spec](FEAT-542-email-attachments.md) | 2026-04-28 |
 
 ## V7 Features (Multi-User + Erweiterung — planned)
 
