@@ -448,6 +448,48 @@ V5.3 (REL-018, deployed 2026-04-28) ergaenzt das System um ein Composing-Studio 
 
 ---
 
+## V5.4 — E-Mail-Anhaenge-Upload (PC-Direkt)
+
+V5.4 (REL-019, deployed 2026-04-29) ergaenzt das Composing-Studio um Direkt-Upload von Anhaengen vom User-PC. Es fuehrt **keine neue personenbezogene Datenkategorie** ein — E-Mail-Anhaenge sind bereits in Sektion 1.4 (Kommunikationsdaten) abgedeckt. Diese Sektion beschreibt die zusaetzliche Pipeline.
+
+### Anhang-Upload (FEAT-542)
+
+**Daten:** Vom User per Drag&Drop oder File-Picker hochgeladene Dateien. Whitelist (DEC-099): PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX, PNG, JPG, GIF, TXT, CSV, ZIP. Max 10 MB pro Datei, 25 MB Total pro Mail. Inhalt der Anhaenge unterliegt User-Verantwortung — keine Server-side Inhalt-Inspection (DEC-100, B2B-Kontext, User legt eigene Files aus).
+
+**Speicherung:**
+- Datei: Supabase Storage Bucket `email-attachments` (privat, `public=false`, kein Public-Read), Hetzner DE
+- Storage-Path-Pattern (DEC-098): `{user_id}/{compose_session_id}/{sanitized_filename}` — Filename wird ASCII-strict sanitized (`[^a-zA-Z0-9._-]/g → "_"`)
+- Junction-Eintrag: PostgreSQL-Tabelle `email_attachments` mit FK zu `emails.id` `ON DELETE CASCADE` und Spalten `storage_path, filename, mime_type, size_bytes, created_at`
+
+**Datenfluss:**
+1. User dropt/picked Datei im Composing-Studio
+2. Browser-side Whitelist-Validation (MIME + Extension + Pro-File + Total-Size)
+3. POST `/api/emails/attachments` (Multipart) — Auth-Check + UUID-Path-Traversal-Schutz + Server-Re-Validation + Filename-Sanitization
+4. Service-Role-Storage-Upload in Bucket `email-attachments`
+5. Beim Mail-Versand: Service-Role-Storage-Download → Buffer → Nodemailer Multipart-Anhang
+6. Nach erfolgreichem SMTP-Send: Junction-Insert in `email_attachments` (Best-Effort, kein Send-Fail bei Junction-Fehler)
+
+**Auslieferung:** Anhaenge werden ausschliesslich beim Mail-Versand vom Server gelesen — KEINE oeffentliche URL-Auslieferung, KEIN Browser-Direkt-Read. Bucket ist privat. Service-Role-Zugriff nur server-side.
+
+**Path-Owner-Check:** DELETE `/api/emails/attachments?path=...` prueft, dass `path` mit `{user.id}/` beginnt — User kann nur eigene Files loeschen.
+
+**Was an Drittanbieter geht:** Anhaenge werden direkt per SMTP an den Mail-Empfaenger geschickt. **KEINE** KI-Verarbeitung, **KEINE** Bedrock-Calls, **KEINE** Whisper-Calls auf Anhang-Inhalten in V5.4. Mail-Body und Anhang-Metadaten gehen den uebliche V5.3-Pfad (KI-Improve, Inline-Edit) ohne Anhang-Inhalt.
+
+**Audit-Log:** `audit_log` erweitert um `attachmentsCount` (Zahl, kein Inhalt). Filename und Storage-Path werden in `email_attachments`-Junction persistiert. Mail-Body wird NICHT in den Logs gespeichert (Sektion 8.8).
+
+**Retention:**
+- Junction-Rows in `email_attachments` haben `ON DELETE CASCADE` zu `emails`-Rows — Loeschung der Mail entfernt auch die Junction-Eintraege
+- Storage-Files bleiben aktuell ohne Auto-Cleanup-Cron (DEC-104 deferred Tech-Debt) — verwaiste Files bei Compose-Session-Abandon (User schliesst Tab ohne Send) werden in V5.5+ Operations-Topic adressiert
+- Bei Mail-Loeschung wird die Junction-Row geloescht, das Storage-File bleibt aber im Bucket (separater Cleanup-Cron erforderlich, V5.5+)
+
+**Drittanbieter:** Keine — Bucket auf Hetzner DE, Storage und Anhang-Pipeline laufen vollstaendig auf eigener Self-Hosted-Supabase-Infrastruktur. SMTP-Provider erhaelt Anhaenge wie bei jeder normalen Mail mit Multipart-Body.
+
+**Bekannte offene Punkte (ISSUE-045, V5.5+ Operations):**
+- Server-side Total-Size-Limit ist Client-Convenience — Pro-File-Limit hart enforced (3-fach), Total-Limit nur Browser. Storage-Volumen-Quota oder Cross-Call-Tracking spaeter.
+- Verwaiste-Files-Cleanup-Cron deferred (DEC-104).
+
+---
+
 ## Disclaimer
 
 Diese Dokumentation beschreibt den **technischen** Datenschutz-Stand des Systems zum Zeitpunkt **2026-04-25 (V5.2-Release)**. Sie ist eine **pragmatische Standardvorlage** und stellt **keine Rechtsberatung** dar. Insbesondere ersetzt sie nicht:
@@ -461,5 +503,5 @@ Vor produktivem Einsatz mit echten Kunden- oder Interessentendaten sind diese Pu
 
 ---
 
-**Letzte Aktualisierung:** 2026-04-28 (V5.3 + V5.4-Polish-Sektion ergaenzt — Composing-Studio + Conditional-Branding)
+**Letzte Aktualisierung:** 2026-04-29 (V5.4-Section ergaenzt — E-Mail-Anhaenge-Upload PC-Direkt, neue Storage-Pipeline beschrieben)
 **Naechste empfohlene Pruefung:** Vor erstem Go-Live mit echten Kundendaten (Pre-Go-Live-Schritt nach SLC-525) — und vor dem Switch auf Azure-OpenAI-EU bei Aufnahme produktiver Recording-Flows
