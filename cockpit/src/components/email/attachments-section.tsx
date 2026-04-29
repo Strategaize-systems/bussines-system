@@ -1,11 +1,12 @@
 "use client";
 
 // =============================================================
-// AttachmentsSection (SLC-542 MT-4, DEC-101)
+// AttachmentsSection (SLC-542 MT-4 + Refactor 2026-04-29)
 // =============================================================
 // Drag&Drop-Zone + File-Picker-Button + Anhang-Liste mit Loeschen.
 // Browser-side Validation via validateAttachment, dann Upload via
-// uploadEmailAttachment Server Action.
+// `POST /api/emails/attachments` (statt Server Action — kein Body-Size-Limit-
+// Problem fuer >1 MB Files). Pattern aus strategaize-onboarding-plattform.
 //
 // Optimistic UI: temporary Pending-Item mit Spinner, ersetzt durch echtes
 // Item nach Server-Response. Bei Server-Fehler wird das Pending-Item entfernt
@@ -21,10 +22,51 @@ import {
   validateAttachment,
   type AttachmentMeta,
 } from "@/lib/email/attachments-whitelist";
-import {
-  deleteEmailAttachment,
-  uploadEmailAttachment,
-} from "@/app/(app)/emails/compose/attachment-actions";
+
+const API_URL = "/api/emails/attachments";
+
+type ApiErrorBody = { error?: { code?: string; message?: string } };
+
+async function uploadViaApi(
+  file: File,
+  composeSessionId: string,
+): Promise<{ ok: true; attachment: AttachmentMeta } | { ok: false; error: string }> {
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("composeSessionId", composeSessionId);
+  const res = await fetch(API_URL, { method: "POST", body: fd });
+  if (!res.ok) {
+    let msg = `Upload fehlgeschlagen (HTTP ${res.status})`;
+    try {
+      const body = (await res.json()) as ApiErrorBody;
+      if (body.error?.message) msg = body.error.message;
+    } catch {
+      // Body kein JSON — Default-msg behalten
+    }
+    return { ok: false, error: msg };
+  }
+  const body = (await res.json()) as { attachment: AttachmentMeta };
+  return { ok: true, attachment: body.attachment };
+}
+
+async function deleteViaApi(
+  storagePath: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const res = await fetch(`${API_URL}?path=${encodeURIComponent(storagePath)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    let msg = `Loeschen fehlgeschlagen (HTTP ${res.status})`;
+    try {
+      const body = (await res.json()) as ApiErrorBody;
+      if (body.error?.message) msg = body.error.message;
+    } catch {
+      // Body kein JSON — Default-msg behalten
+    }
+    return { ok: false, error: msg };
+  }
+  return { ok: true };
+}
 
 type Props = {
   composeSessionId: string;
@@ -94,16 +136,13 @@ export function AttachmentsSection({
       }));
       setPending((prev) => [...prev, ...newPending]);
 
-      // Sequentiell uploaden — verhindert Server-Action-Stampede
+      // Sequentiell uploaden — verhindert Stampede + saubere Error-Reihenfolge
       startUpload(async () => {
         for (let i = 0; i < accepted.length; i++) {
           const file = accepted[i];
           const localId = newPending[i].localId;
-          const fd = new FormData();
-          fd.append("file", file);
-          fd.append("composeSessionId", composeSessionId);
 
-          const res = await uploadEmailAttachment(fd);
+          const res = await uploadViaApi(file, composeSessionId);
           // Pending-Item entfernen unabhaengig vom Ergebnis
           setPending((prev) => prev.filter((p) => p.localId !== localId));
 
@@ -165,7 +204,7 @@ export function AttachmentsSection({
     async (storagePath: string) => {
       setError(null);
       setRemovingPath(storagePath);
-      const res = await deleteEmailAttachment(storagePath);
+      const res = await deleteViaApi(storagePath);
       setRemovingPath(null);
       if (!res.ok) {
         setError(res.error);
