@@ -2676,3 +2676,187 @@ V5.4 ist erfolgreich wenn:
 - **Tracking-Pixel-Behavior bei Anhang:** Manche Mailclients ignorieren Tracking-Pixel im Multipart, oder zeigen sie als zusaetzlichen Anhang. Empfehlung: kein V5.4-Polish-Versuch — Smoke-Test verifizieren, dokumentieren wenn auffaellig.
 - **Compose-Form-Integration:** Anhang-Bereich als eigene Komponente unter Body-Textarea oder als Tab im Compose-Form? Empfehlung: eigene Sektion direkt unter Body — flachere UX, weniger Klicks.
 - **Polish-Slicing:** Color-Picker + ESLint + COMPLIANCE.md + Coolify alles in EINEN Polish-Slice (SLC-541), oder zwei Slices (Code-Polish vs. Doku-Polish)? Empfehlung: ein Slice — Bundle ist klein genug (~3-4h), klarer Release.
+
+---
+
+## V5.5 — Angebot-Erstellung
+
+### V5.5 Purpose
+
+V5.5 macht das Business System tatsaechlich angebotsfaehig. Bisher (V2..V5.4) ist die `proposals`-Tabelle ein reines Skeleton zur **Doku** eines Angebot-Status (Titel, Status, Win/Loss-Reason). Es gibt **kein** echtes "Angebot erstellen" — keine Position-Items, keine Brutto/Netto-Berechnung, keine PDF, keine Versionierung, keine Anbindung an die Produkt-Stammdaten aus V6.
+
+V5.5 schliesst diese Luecke. Der User soll innerhalb des Business Systems aus seinen V6-Produkten ein Angebot zusammenstellen, mit Mengen/Preisen/Konditionen, ein PDF im V5.3-Branding rendern, und es als Anhang aus dem V5.4-Composing-Studio direkt versenden koennen (BL-404 Teil 2 wird hier eingeloest).
+
+### V5.5 Problem Statement
+
+- **Kein operativer Angebot-Workflow.** Heute existiert nur die "Angebots-Doku-Tabelle". User muss extern (Word, manuell-PDF) Angebote bauen und nur den Status im System pflegen.
+- **Produkt-Stammdaten aus V6 sind isoliert.** Produkte stehen in `/settings/products`, sind ueber `deal_products` an Deals geheftet — aber nirgendwo als Position-Items in einem Angebot zusammengefuehrt.
+- **Composing-Studio kann nichts aus dem System anhaengen.** V5.4 loest nur PC-Direkt-Upload. Der zweite Teil von BL-404 (Angebot aus dem System anhaengen) wartet auf V5.5.
+- **Kein Versionierungs-Workflow fuer Verhandlungen.** Wenn ein Angebot zurueckkommt mit Aenderungswuenschen, existiert kein "Angebot V2" als Datenobjekt — nur Free-Text in `negotiation_notes`.
+
+### V5.5 Goal / Intended Outcome
+
+Nach V5.5:
+1. Aus dem Deal-Workspace und dem Pipeline-View kann ein Angebot erstellt werden — neue Workspace-Route `/proposals/[id]/edit` (analog Composing-Studio).
+2. Position-Items werden aus V6 `products` ausgewaehlt, mit Menge/Preis/Anpassung. Brutto/Netto/Steuer wird automatisch berechnet.
+3. Standard-Konditionen (Zahlungsfrist, Gueltigkeitszeitraum) sind pro Angebot setzbar mit Defaults aus den Branding-/Settings-Werten.
+4. PDF wird im V5.3-Branding (Logo, Markenfarbe, Footer) gerendert und in einem privaten Storage-Bucket abgelegt.
+5. Status-Lifecycle `draft -> sent -> accepted/rejected/expired` ist im System abgebildet, einschliesslich `expires_at`-Cron fuer Auto-Expire.
+6. Versionierung (V1, V2, V3 desselben Angebots fuers gleiche Deal) als eigene Datenobjekte mit Parent-Referenz.
+7. BL-404 Teil 2 erfuellt: Im Composing-Studio oeffnet ein Picker die Angebote des aktuellen Deals und haengt das gewaehlte PDF als Multipart-Anhang an.
+
+### V5.5 Primary Users
+
+- Solo-Berater (User selbst) — Hauptnutzer, erstellt operativ Angebote in beratungsintensiven B2B-Verkaufszyklen.
+- Internal-Test-Mode aktiv — kein externer Empfaenger-Use-Case in V5.5 (Compliance-Gate kommt nach V5.5).
+
+### V5.5 Architekturleitplanken
+
+1. **Wiederverwendung statt Neubau.** Mail-Render-Pattern aus FEAT-531 (Branding-Renderer) wird fuer PDF-Renderer-Pattern adaptiert. Storage-Bucket-Pattern aus FEAT-542 (privater Bucket + Junction-Table) wird analog fuer `proposal-pdfs` aufgesetzt. 3-Panel-UI aus FEAT-532 (Composing-Studio) ist Vorbild fuer Angebot-Workspace.
+2. **Bestehende `proposals`-Tabelle erweitern, nicht ersetzen.** Schema-Erweiterung (neue Spalten) + neue Tabelle `proposal_items` (Position-Items). Bestehende Stub-Daten und die Liste-Ansicht bleiben funktionsfaehig.
+3. **`deal_products` bleibt das Deal-Level-Stammdatenmodell.** `proposal_items` ist Snapshot-Modell (Preis/Menge zum Zeitpunkt der Angebotserstellung). Beide Tabellen koexistieren, kein Datenkonflikt.
+4. **Internal-Test-Mode bleibt aktiv.** Keine externen Versand-Use-Cases in V5.5. PDF-Generierung ist lokal (Bedrock/KI nicht zwingend). Kein Bedrock-Call ohne expliziten User-Trigger (DEC-052).
+5. **Datenresidenz (data-residency.md).** PDF-Generierung laeuft serverseitig in Next.js — keine externen API-Calls zu OCR/PDF-Services. Falls eine Library noetig: PDFKit oder pdfmake (Node-only, keine externen Calls).
+6. **KI-Unterstuetzung optional, on-click (DEC-082).** Wenn LLM-Hilfe (z.B. "Generiere Begleittext zum Angebot"), dann nur per User-Klick analog FEAT-533 KI-Generator.
+
+### V5.5 Features (5 Features)
+
+#### FEAT-551 — Angebot-Schema-Erweiterung + Position-Items
+
+**Was:** SQL-Migration MIG-026 erweitert `proposals` um angebotsoperative Spalten (Brutto/Netto/Steuersatz, Gueltigkeitszeitraum, Zahlungsfrist, parent_proposal_id fuer Versionierung, accepted_at/rejected_at/expired_at, pdf_storage_path) und legt neue Tabelle `proposal_items` an (Position-Items mit `proposal_id`, `product_id`, `quantity`, `unit_price_net`, `discount_pct`, `position_order`, snapshot_name, snapshot_description).
+
+**Warum:** Ohne strukturierte Items kein Angebot. Heutige Felder `scope_notes`/`price_range` sind Free-Text-Doku, kein Berechnungsmodell.
+
+**Architektur-Hooks:** Snapshot-Felder (snapshot_name/description) sind essenziell — Produkte koennen nach Angebotserstellung umbenannt werden, das gesendete Angebot muss aber unveraendert bleiben.
+
+**Out-of-Scope:** Mehrwaehrungs-Support (nur EUR in V5.5), Multi-Tax-Rate per Position (eine Steuer pro Angebot), Discount-Stacking (nur Position-Discount in %).
+
+#### FEAT-552 — Angebot-Workspace UI (3-Panel)
+
+**Was:** Neue Route `/proposals/[id]/edit` mit 3-Panel-Layout analog Composing-Studio:
+- Links: Position-Liste (Drag-and-Drop-Sortierung, Add-Product-Button oeffnet Picker aus V6 `products`)
+- Mitte: Angebot-Editor (Titel, Kontakt/Firma, Konditionen, Steuersatz)
+- Rechts: Live-PDF-Preview (rendert bei jeder Aenderung neu, debounced)
+
+Zusaetzlich: Einstiegspunkte aus Deal-Workspace ("Angebot erstellen") und Pipeline-Card-Quickaction.
+
+**Warum:** Operative Schreibumgebung — der User braucht eine Vollbild-Studio-Erfahrung, nicht ein Modal-Dialog.
+
+**Out-of-Scope:** Mobile-Responsive (Desktop-only in V5.5), Collaborative-Editing (nur Single-User).
+
+#### FEAT-553 — PDF-Renderer + Branding
+
+**Was:** Server-side PDF-Renderer im V5.3-Branding (Logo aus `branding_settings`, Markenfarbe, Standard-Footer). Layout: Briefkopf, Empfaenger-Block, Angebot-Header, Position-Tabelle, Brutto/Netto/Steuer-Summary, Konditionen, Footer.
+
+**Warum:** PDF ist das Lieferformat — der Empfaenger erhaelt keine HTML-E-Mail mit Angebot, sondern eine PDF-Anhang.
+
+**Architektur-Hooks:** Library-Wahl (PDFKit vs. pdfmake vs. puppeteer mit HTML->PDF) ist `/architecture`-Entscheid. Empfehlung im PRD: pdfmake (deklarativ, Node-only, kein Headless-Browser).
+
+**Out-of-Scope:** WYSIWYG-PDF-Editor (Layout ist fix templated), Custom-Templates pro Deal (eine Template-Variante in V5.5).
+
+#### FEAT-554 — Status-Lifecycle + Versionierung
+
+**Was:**
+- Status-Uebergaenge `draft -> sent -> accepted | rejected | expired` mit Server-Action-Guards (kein direkter DB-Update vom Client).
+- "Sent" wird durch Anhaengen im Composing-Studio (FEAT-555) **oder** manuelles "Als gesendet markieren" gesetzt.
+- Versionierung: "Neue Version erstellen" dupliziert das Angebot mit `parent_proposal_id`, version=parent.version+1, status=draft.
+- Cron `expire-proposals` setzt Status auf `expired` fuer `sent`-Angebote, deren `expires_at` durch ist.
+- Audit-Trail in `audit_log`-Tabelle (V3 FEAT-307 Governance-Basis nutzt bereits diese Tabelle).
+
+**Warum:** Status- und Versionsmanagement ist der operative Verhandlungs-Workflow — ohne ihn ist die Tabelle wieder nur Doku-Spielzeug.
+
+**Out-of-Scope:** Auto-Stage-Wechsel im Deal bei Angebot-Acceptance (vorerst manueller Hop, V6.x-Kandidat), Notifications/E-Mail-Reminders bei Expire-Naehe.
+
+#### FEAT-555 — Angebot-Anhang im Composing-Studio (BL-404 Teil 2)
+
+**Was:** Im V5.4 Composing-Studio neuer "Angebot anhaengen"-Button neben dem PC-Direkt-Upload. Picker zeigt Angebote des aktuellen Deals (deal_id wird aus Compose-Kontext gezogen) mit Status `sent` oder `draft`. Auswahl haengt das PDF als Multipart-Anhang ueber die bestehende V5.4-Pipeline an.
+
+**Warum:** BL-404 wurde in V5.4 nur halb geloest (Teil 1 PC-Upload). Teil 2 (System-Angebot) ist seit der Backlog-Anlage offen und der eigentliche Mehrwert: Angebot generieren + im selben Schritt versenden.
+
+**Architektur-Hooks:** Wiederverwendung der V5.4 `email_attachments`-Junction-Table — Anhang-Eintrag verweist auf `proposal-pdfs`-Bucket-Pfad statt User-Upload-Pfad. Filename-Pattern: `Angebot-{deal-title}-V{version}.pdf`.
+
+**Out-of-Scope:** Auto-Send-mit-Default-Begleittext (User schreibt Begleittext immer manuell), Mehrere Angebote in einer Mail (vorerst max ein Angebot-Anhang).
+
+### V5.5 Scope — Zusammenfassung
+
+**In Scope (V5.5):**
+- 5 Features (FEAT-551..555)
+- Schema-Erweiterung `proposals` + neue `proposal_items`-Tabelle (MIG-026)
+- Storage-Bucket `proposal-pdfs` (privat)
+- Angebot-Workspace `/proposals/[id]/edit` (3-Panel)
+- PDF-Renderer (Library-Entscheid in `/architecture`)
+- Status-Lifecycle inkl. Cron fuer Auto-Expire
+- Versionierung (parent_proposal_id)
+- BL-404 Teil 2 Hookup im Composing-Studio
+- Internal-Test-Mode bleibt aktiv
+
+**Out of Scope (V5.5):**
+- Multi-Currency (nur EUR)
+- Multi-Tax-Rate per Position (eine Steuer pro Angebot)
+- Mobile-Layout (Desktop-only)
+- Collaborative-Editing
+- Auto-Stage-Wechsel im Deal bei Acceptance
+- E-Mail-Notifications bei Expire-Naehe
+- Custom-PDF-Templates pro Deal/Branche
+- Empfaenger-seitige Online-Zustimmung (Click-to-Accept-Link)
+- KI-generierter Angebotstext (kein Bedrock-Call in V5.5; KI-Hilfe ist V5.5+ Folge-Slice)
+- Discount-Stacking (Position + Total)
+
+**Not part of this project (V6+ / V7+):**
+- Empfaenger-Portal mit Online-Akzeptanz
+- E-Signatur-Integration
+- Automatische Rechnungsgenerierung nach Acceptance
+- Multi-User-Approvals (Angebot muss von Manager freigegeben werden)
+
+### V5.5 Constraints
+
+- **Bestehende `proposals`-Stub-Daten duerfen nicht brechen.** Alle V2-Felder bleiben, neue Spalten sind nullable mit Defaults.
+- **V6 `products` ist Source-of-Truth.** Kein Inline-Erstellen neuer Produkte aus dem Angebot-Workspace (User legt Produkte vorab in `/settings/products` an).
+- **Internal-Test-Mode.** PDF wird zwar generiert, aber V5.5 ist nicht produktionsfertig fuer externe Empfaenger — Compliance-Gate ist explizit nach V5.5 (V5.6 oder V6) terminiert.
+- **Bedrock Cost Control (DEC-052).** Keine impliziten LLM-Calls in V5.5. KI-Hilfe ist on-click und in V5.5 explizit out-of-scope.
+- **Datenresidenz (data-residency.md).** PDF-Generierung Server-seitig (Node), keine externen Cloud-PDF-Services.
+- **Storage-Volumen-Druck.** PDF-Bucket bekommt mit V5.5 sein eigenes Cleanup-Beduerfnis. Cron-Cleanup-Slice wird in `/architecture` als Followup erwogen.
+
+### V5.5 Risks & Assumptions
+
+- **Risk:** PDF-Library generiert nicht-konsistente Layouts zwischen Browser-Preview und Server-PDF.
+  Mitigation: Server-PDF ist die Wahrheit — Browser-Preview ist HTML-Approximation, klar als "Preview" markiert. `/architecture` entscheidet ob Server-Render auch fuer Preview (lang) oder HTML-Approximation (schnell) vorrang hat.
+- **Risk:** Storage-Volumen-Wachstum durch verworfene Draft-PDFs.
+  Mitigation: PDF wird erst bei "PDF generieren"-Klick (oder bei Send) geschrieben, nicht bei jedem Tasten-Druecken in der Preview. Cleanup-Cron-Strategie wird in `/architecture` mit-spezifiziert.
+- **Risk:** Versionierung erzeugt Schema-Komplexitaet (parent_proposal_id, Tree-Strukturen).
+  Mitigation: Strikt linear — Version N+1 referenziert Version N. Keine Branches. Tree-Visualisierung ist out-of-scope.
+- **Risk:** Composing-Studio-Hookup (FEAT-555) bricht V5.4-PC-Upload-Pfad.
+  Mitigation: Beide Pfade nutzen dieselbe `email_attachments`-Junction-Table mit unterschiedlichen Bucket-Pfaden. Regression-Smoke explizit in `/qa` SLC-555.
+- **Risk:** PDF-Empfaenger sieht das PDF in Outlook/Gmail anders als in der Preview (Schriftart-Substitution).
+  Mitigation: Standard-PDF-Schriften (Helvetica/Arial-Subset) — keine custom fonts in V5.5. Smoke-Test mit Gmail/Outlook explizit in `/qa`.
+- **Risk:** Steuersatz-Aenderung mid-Verhandlung (Steuerreform o.ae.) — alte sent Angebote zeigen alten Satz.
+  Mitigation: Steuersatz wird beim Sent-Snapshot fixiert. Akzeptiertes Risiko (User passt Versionsnummer an).
+- **Assumption:** pdfmake (oder vergleichbar) ist in der Next.js-Coolify-Runtime ohne extra Image-Build betriebbar.
+- **Assumption:** V5.4 `email_attachments`-Junction-Table ist erweiterbar um `source_type`-Diskriminator (`upload` vs. `proposal`) ohne Datenmigration.
+
+### V5.5 Success Criteria
+
+V5.5 ist erfolgreich wenn:
+1. User kann aus dem Deal-Workspace heraus ein neues Angebot anlegen — Klick fuehrt direkt in den 3-Panel-Workspace.
+2. Position-Items werden aus V6 `products` ausgewaehlt, Mengen/Preise/Discounts sind editierbar, Brutto/Netto/Steuer wird automatisch berechnet.
+3. PDF wird mit V5.3-Branding gerendert und in `proposal-pdfs`-Bucket gespeichert.
+4. Status-Uebergaenge sind im UI klickbar (`Sent markieren`, `Accepted`, `Rejected`) und in `audit_log` getrackt.
+5. Versionierung: "Neue Version erstellen" dupliziert sauber inkl. Position-Items, parent_proposal_id ist gesetzt.
+6. Cron `expire-proposals` laeuft taeglich und setzt ueberfaellige Angebote auf `expired`.
+7. Im Composing-Studio kann ein Angebot des aktuellen Deals als Anhang gewaehlt werden, kommt als Multipart-PDF an.
+8. Bestehende V5.4 PC-Direkt-Upload-Pipeline ist regression-frei.
+9. V2 Stub-Proposals sind weiterhin sichtbar (keine Datenmigration noetig).
+10. Internal-Test-Mode wird im PDF-Footer als Wasserzeichen sichtbar gemacht (Mitigation: kein versehentlicher Versand an externe Kunden).
+
+### V5.5 Open Questions (fuer /architecture)
+
+- **PDF-Library:** pdfmake vs. PDFKit vs. puppeteer (HTML->PDF) — welche passt am besten zum bestehenden Branding-Renderer-Pattern und zur Coolify-Container-Runtime? Empfehlung im PRD: pdfmake (deklarativ, Node-only). Endentscheid in `/architecture`.
+- **Live-Preview-Strategie:** HTML-Approximation im Browser (schnell, evtl. visuell abweichend) oder Server-Render auf Knopfdruck (langsam, bit-genau)? Empfehlung: HTML-Approximation fuer Live, Server-PDF on-demand und beim Send.
+- **`proposal_items`-Snapshot-Tiefe:** Reichen `snapshot_name` + `snapshot_description`, oder auch `snapshot_unit_price_at_creation` (fuer Audit "Was war Standardpreis als Angebot erstellt wurde")? Empfehlung: ja, snapshot_unit_price_at_creation mitnehmen.
+- **Status-Sent-Trigger:** Wird `status=sent` automatisch durch FEAT-555-Send gesetzt, oder bleibt es manueller "Sent markieren"-Klick? Empfehlung: beides — automatisch beim Send, optional manueller Klick wenn ausserhalb des Composing-Studios versendet.
+- **Versionierung-Lifecycle:** Wenn V2 erstellt wird, was passiert mit V1? Bleibt `sent`, geht auf `superseded`, wird automatisch `rejected`? Empfehlung: V1 bleibt im urspruenglichen Status — Audit-Wahrheit wichtiger als Aufraeumen.
+- **Expire-Cron-Lauf-Zeit:** Taeglich um welche Uhrzeit? Empfehlung: 02:00 Berlin Time, analog anderer Daily-Crons.
+- **Storage-Bucket-Pfad-Schema:** `{user_id}/{proposal_id}/v{version}.pdf`? Oder `{user_id}/{deal_id}/{proposal_id}.pdf`? Empfehlung: ersteres — Versionierung per Path.
+- **Anhang-Picker-Filter:** Im Composing-Studio nur Angebote mit Status `sent`/`draft` zeigen? Was mit `accepted`/`rejected`/`expired`? Empfehlung: alle Status zeigen, aber `expired`/`rejected` warnen ("Achtung: dieses Angebot ist nicht mehr gueltig"). User-Entscheid.
+- **Watermark "Internal-Test-Mode" im PDF:** Wie genau? Header-Text, Diagonal-Wasserzeichen, Footer-Hinweis? Empfehlung: Footer-Zeile "Internal-Test-Mode — nicht fuer externe Empfaenger" + Hauptdatei-Suffix `.testmode.pdf`. `/architecture` finalisiert.
+- **Slicing-Schnitt:** 5 Features = 5 Slices direkt? Oder Schema (FEAT-551) als eigener Backend-Slice und Workspace-UI (FEAT-552) splitten? Empfehlung im PRD: 5 Slices SLC-551..555 1:1 zu Features. `/slice-planning` finalisiert.

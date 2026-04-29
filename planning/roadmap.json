@@ -127,11 +127,18 @@
       "order": 18
     },
     {
+      "id": "v5-5",
+      "name": "V5.5",
+      "status": "active",
+      "summary": "Angebot-Erstellung: 5 Features (FEAT-551..555) — Schema-Erweiterung + Position-Items (MIG-026), Angebot-Workspace 3-Panel (/proposals/[id]/edit), PDF-Renderer im V5.3-Branding, Status-Lifecycle (draft/sent/accepted/rejected/expired) + Versionierung (parent_proposal_id), Composing-Studio-Hookup (BL-404 Teil 2). Internal-Test-Mode aktiv.",
+      "order": 19
+    },
+    {
       "id": "v7",
       "name": "V7",
       "status": "planned",
       "summary": "Multi-User + Erweiterung: Routing/Territories, Teamlead-Rolle mit Teamsicht, Workflow-Automation, Kampagnen-Attribution",
-      "order": 19
+      "order": 20
     }
   ]
 }
