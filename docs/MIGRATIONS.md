@@ -234,3 +234,59 @@
   - `DELETE FROM storage.objects WHERE bucket_id='branding'; DELETE FROM storage.buckets WHERE id='branding';`
   - `DELETE FROM email_templates WHERE is_system=true;` (nur falls Spalte noch existiert)
   - Seed-INSERTs sind via Title-Prefix `System: ...` identifizierbar — falls Spalte `is_system` schon dropped, alternativ via Title-Filter.
+
+### MIG-026 — V5.5 Angebot-Erstellung Schema (planned)
+- Date: planned (Apply nach SLC-551-Backend-Implementation)
+- Scope: 4 Aenderungen in einer Migration `026_v55_proposal_creation.sql`:
+  1. Erweiterung `proposals` um 11 nullable Spalten:
+     - `subtotal_net NUMERIC(12,2)` — berechnete Netto-Summe
+     - `tax_rate NUMERIC(5,2) NOT NULL DEFAULT 19.00` — Steuersatz Snapshot
+     - `tax_amount NUMERIC(12,2)` — berechnete Steuersumme
+     - `total_gross NUMERIC(12,2)` — berechnete Brutto-Summe
+     - `valid_until DATE` — Gueltigkeitszeitraum
+     - `payment_terms TEXT` — Zahlungsfrist (Free-Text)
+     - `parent_proposal_id UUID REFERENCES proposals(id) ON DELETE SET NULL` — Versionierung (DEC-109)
+     - `accepted_at TIMESTAMPTZ`
+     - `rejected_at TIMESTAMPTZ`
+     - `expired_at TIMESTAMPTZ`
+     - `pdf_storage_path TEXT` — Pfad in `proposal-pdfs`-Bucket (DEC-111)
+     - 3 Indizes: `idx_proposals_parent`, `idx_proposals_valid_until`, `idx_proposals_status_active` (partial: WHERE status IN ('draft','sent'))
+  2. Neue Tabelle `proposal_items` (DEC-107):
+     - `id UUID PK DEFAULT gen_random_uuid()`
+     - `proposal_id UUID NOT NULL REFERENCES proposals(id) ON DELETE CASCADE`
+     - `product_id UUID REFERENCES products(id) ON DELETE SET NULL` — Snapshot bleibt auch wenn Produkt geloescht
+     - `position_order INT NOT NULL` — fuer Drag-and-Drop-Sortierung
+     - `quantity NUMERIC(10,2) NOT NULL DEFAULT 1`
+     - `unit_price_net NUMERIC(12,2) NOT NULL` — effektiver Angebotspreis
+     - `discount_pct NUMERIC(5,2) NOT NULL DEFAULT 0`
+     - `snapshot_name TEXT NOT NULL` — Produkt-Name beim Angebot
+     - `snapshot_description TEXT`
+     - `snapshot_unit_price_at_creation NUMERIC(12,2)` — Audit-Snapshot Listenpreis (DEC-107)
+     - `created_at TIMESTAMPTZ DEFAULT now()`
+     - 2 Indizes: `idx_proposal_items_proposal`, `idx_proposal_items_product` (partial: WHERE product_id IS NOT NULL)
+     - RLS `authenticated_full_access` analog `deal_products`
+  3. Erweiterung `email_attachments` um 2 Spalten (FEAT-555 / DEC-108):
+     - `source_type TEXT NOT NULL DEFAULT 'upload'` — Werte: `upload`, `proposal`
+     - `proposal_id UUID REFERENCES proposals(id) ON DELETE SET NULL`
+     - 1 Partial-Index: `idx_email_attachments_proposal` WHERE `proposal_id IS NOT NULL`
+     - CHECK-Constraint: `(source_type='upload' AND proposal_id IS NULL) OR (source_type='proposal' AND proposal_id IS NOT NULL)` — Daten-Konsistenz
+  4. Storage-Bucket `proposal-pdfs` (DEC-111):
+     - `INSERT INTO storage.buckets (id, name, public) VALUES ('proposal-pdfs', 'proposal-pdfs', false) ON CONFLICT DO NOTHING;`
+     - RLS-Policies auf `storage.objects`:
+       - SELECT/INSERT/UPDATE/DELETE fuer authenticated mit Pfad-Scope `(auth.uid())::text = (storage.foldername(name))[1]`
+- Reason: V5.5 FEAT-551 (Schema-Erweiterung), FEAT-554 (Versionierung), FEAT-555 (Composing-Studio-Hookup) brauchen alle in einer Migration definiertes Schema. DEC-105..114 haben die Strategie festgelegt. Bestehende V2-Stub-Daten bleiben unveraendert lesbar (alle neuen Spalten nullable mit Defaults). FK auf `products` mit `ON DELETE SET NULL` schuetzt Snapshot-Wahrheit (DEC-107). FK auf `parent_proposal_id` mit `ON DELETE SET NULL` schuetzt Versions-Audit (DEC-109).
+- Affected Areas:
+  - `cockpit/src/app/(app)/proposals/actions.ts` (massive Erweiterung — neue Server Actions: `addProposalItem`, `updateProposalItem`, `removeProposalItem`, `reorderProposalItems`, `transitionProposalStatus`, `createProposalVersion`, `generateProposalPdf`, `getProposalsForDeal` etc.)
+  - Neue Komponenten unter `cockpit/src/app/(app)/proposals/[id]/edit/*` (FEAT-552 Workspace)
+  - Neuer Adapter `cockpit/src/lib/pdf/proposal-renderer.ts` (FEAT-553)
+  - Neuer Cron-Endpoint `cockpit/src/app/api/cron/expire-proposals/route.ts` (FEAT-554, DEC-110)
+  - `cockpit/src/lib/email/send.ts` Erweiterung um Source-Type=Proposal-Pfad (FEAT-555)
+  - `cockpit/src/components/email/attachments-section.tsx` Erweiterung um Proposal-Picker (FEAT-555)
+  - KEINE Aenderung an `products`, `deal_products`, `companies`, `contacts`, `deals`, `audit_log` (existing Schema reicht), `branding_settings` (existing Renderer reicht)
+- Risk: Niedrig — rein additive Aenderungen. `proposals`-Erweiterung: alle Spalten nullable mit Defaults, bestehende Stub-Rows haben `subtotal_net=NULL`, `total_gross=NULL` (legitim, V2-Stubs hatten nie Berechnung). `proposal_items` ist neue Tabelle ohne Konflikte. `email_attachments`-Erweiterung: `source_type DEFAULT 'upload'` fuer alle existing V5.4-Rows — automatisch konsistent, CHECK-Constraint passt da `proposal_id` per Default NULL ist. Storage-Bucket ist additiv. Tax-Rate Default 19% (DE-Standard) ist Geschaeftsregel — bei Internationalisierung in V6+ pro-Tenant-Default.
+- Rollback Notes:
+  - `DROP TABLE proposal_items CASCADE;`
+  - `ALTER TABLE proposals DROP COLUMN IF EXISTS subtotal_net, DROP COLUMN IF EXISTS tax_rate, DROP COLUMN IF EXISTS tax_amount, DROP COLUMN IF EXISTS total_gross, DROP COLUMN IF EXISTS valid_until, DROP COLUMN IF EXISTS payment_terms, DROP COLUMN IF EXISTS parent_proposal_id, DROP COLUMN IF EXISTS accepted_at, DROP COLUMN IF EXISTS rejected_at, DROP COLUMN IF EXISTS expired_at, DROP COLUMN IF EXISTS pdf_storage_path;`
+  - `ALTER TABLE email_attachments DROP CONSTRAINT IF EXISTS email_attachments_source_type_check, DROP COLUMN IF EXISTS source_type, DROP COLUMN IF EXISTS proposal_id;`
+  - `DELETE FROM storage.objects WHERE bucket_id='proposal-pdfs'; DELETE FROM storage.buckets WHERE id='proposal-pdfs';`
+  - V2-Stub-Proposals bleiben nach Rollback unveraendert lesbar — bestehende `/proposals`-Tabelle funktioniert wieder im V5.4-Zustand.

@@ -6334,3 +6334,301 @@ Empfohlene Reihenfolge: SLC-541 → /qa → SLC-542 → /qa → Gesamt-/qa V5.4 
 ### V5.4 Recommended Next Step
 
 `/slice-planning` V5.4 — die 2 Slices SLC-541 + SLC-542 strukturiert ausdefinieren mit Acceptance Criteria pro Slice, Micro-Tasks-Liste mit Reihenfolge, QA-Fokus pro Slice. Danach `/backend SLC-541` → `/qa` → `/backend+frontend SLC-542` → `/qa`.
+
+## V5.5 — Angebot-Erstellung Architecture
+
+### V5.5 Architecture Summary
+
+V5.5 baut die operative Angebot-Schreibumgebung auf den Foundations von V2 (`proposals`-Stub), V3 (`audit_log`), V5.3 (Branding-Renderer) und V5.4 (`email_attachments`-Junction + Storage-Pattern). Drei zentrale Pipelines: (1) Schreibumgebung `/proposals/[id]/edit` mit 3-Panel-UI (Position-Liste links, Editor mitte, Live-Preview rechts), (2) Server-side PDF-Generierung via pdfmake mit Branding-Header und Internal-Test-Mode-Watermark, (3) Composing-Studio-Hookup als zweiter Anhang-Pfad neben PC-Direkt-Upload (DEC-097/098 erweitert um source_type-Diskriminator).
+
+Alle Komponenten sind additiv. Bestehende V2-Stub-Daten in `proposals` bleiben funktional. Bestehender V5.4 PC-Upload-Pfad bleibt regression-frei. KEIN externer API-Call (kein PDF-as-a-Service, kein OCR) — alles serverseitig in der Coolify-Container-Runtime.
+
+### V5.5 Components
+
+#### 1. Datenmodell (FEAT-551, MIG-026)
+
+Drei Tabellen-Aenderungen + ein Storage-Bucket:
+
+| Tabelle | Aenderung | Warum |
+|---|---|---|
+| `proposals` | +11 nullable Spalten (Brutto/Netto-Berechnung, Versionierung, Lifecycle-Timestamps, PDF-Pfad) | Stub aus V2 wird operativ |
+| `proposal_items` | NEU — Position-Items mit Snapshot-Feldern (DEC-107) | Strukturierte Berechnungs-Basis |
+| `email_attachments` | +`source_type` (`upload`/`proposal`) + `proposal_id` FK + CHECK-Constraint | FEAT-555 Composing-Studio-Hookup |
+| `proposal-pdfs` Storage-Bucket | NEU privat, RLS auf Path-Folder=user_id | DEC-111 Pfad-Schema |
+
+Snapshot-Pattern: `proposal_items.snapshot_name`, `snapshot_description`, `snapshot_unit_price_at_creation` werden beim INSERT aus `products` mit-kopiert. Aenderungen an `products` brechen alte Angebote nicht. FK `ON DELETE SET NULL` auf `products` schuetzt Audit-Wahrheit.
+
+#### 2. Angebot-Workspace (FEAT-552)
+
+Route: `/proposals/[id]/edit`
+
+Architektur-Schichten:
+
+- **Server Component**: Initial-Page laedt `proposal` + `proposal_items` + Branding + Deal-Kontext via `getProposalForEdit(id)` Server Action (Promise.all)
+- **Client Component `<ProposalWorkspace>`**: Form-State via React-Hook-Form, Validierung Zod, Auto-Save debounced (500ms) per Server Action `updateProposal`
+- **Panel links `<PositionList>`**: Drag-and-Drop via `@dnd-kit/sortable`, Add-Button oeffnet `<ProductPicker>` Dialog (filtert nach `products.status='active'`)
+- **Panel mitte `<ProposalEditor>`**: Empfaenger-Combobox aus Deal-Kontext, Tax-Rate Dropdown (0/7/19), Date-Picker fuer `valid_until` (Default +30d aus Branding-Settings), Textarea fuer `payment_terms` (Default aus Branding)
+- **Panel rechts `<ProposalPreviewPanel>`**: HTML-Approximation des PDF-Layouts (DEC-106), debounced Re-Render bei Form-Change. "PDF generieren"-Button triggert Server Action `generateProposalPdf` und zeigt Result in `<iframe>`. "Neue Version erstellen"-Button triggert `createProposalVersion`.
+
+Einstiegspunkte:
+- `cockpit/src/app/(app)/deals/[id]/page.tsx` Quickaction-Bar: "Angebot erstellen" -> `createProposal({deal_id, contact_id, company_id})` -> Redirect zu `/proposals/{newId}/edit`
+- `cockpit/src/app/(app)/pipeline/*` Card-Kontextmenue: "Angebot erstellen"
+- `cockpit/src/app/(app)/proposals/page.tsx` Tabellen-Zeile: "Bearbeiten"-Link auf `draft`-Angeboten
+
+#### 3. PDF-Pipeline (FEAT-553, DEC-105)
+
+Renderer-Pipeline:
+
+```
+[ProposalEditor "PDF generieren"]
+        |
+        v
+[Server Action generateProposalPdf]
+        |
+        v
+[lib/pdf/proposal-renderer.ts]
+        | renderProposalPdf(proposal, items, branding) -> Buffer
+        v
+[pdfmake DocumentDefinition]
+        | Header (Logo + Markenfarbe-Linie)
+        | Empfaenger-Block
+        | Angebot-Header (Titel, V{n}, Datum, Gueltig bis)
+        | Position-Tabelle (Pos|Produkt|Menge|Preis|Discount|Summe)
+        | Summary (Subtotal, Steuer, Brutto)
+        | Konditionen (payment_terms)
+        | Footer (Branding-Footer + Test-Mode-Zeile DEC-113)
+        v
+[Storage-Bucket proposal-pdfs]
+        | path = {user_id}/{proposal_id}/v{version}.pdf
+        | Filename Suffix .testmode.pdf wenn DEC-113 aktiv
+        v
+[proposals.pdf_storage_path persist]
+```
+
+Adapter-Interface:
+
+```typescript
+// lib/pdf/proposal-renderer.ts
+export interface ProposalRenderer {
+  renderProposalPdf(input: {
+    proposal: Proposal;
+    items: ProposalItem[];
+    branding: BrandingSettings;
+    deal: Deal;
+    company: Company;
+    contact: Contact;
+    testMode: boolean;
+  }): Promise<{ buffer: Buffer; filename: string }>;
+}
+```
+
+Standard-Schriften via pdfmake's `Roboto` (built-in, kein Custom-Font-Loading). Layout-Tabelle nutzt pdfmake's `table.layout='lightHorizontalLines'` als Standard. Branding-Markenfarbe wird als `fillColor` der Header-Zeile genutzt.
+
+#### 4. Status-Lifecycle + Versionierung (FEAT-554)
+
+Zustands-Diagramm:
+
+```
+[draft] --send/markSent--> [sent] --accept--> [accepted]
+                              |--reject--> [rejected]
+                              |--cron-expire--> [expired]
+
+[any] --createVersion--> [new draft, parent_proposal_id=any.id, version=any.version+1]
+```
+
+Server Actions (alle in `cockpit/src/app/(app)/proposals/actions.ts`):
+
+- `transitionProposalStatus(proposalId: string, newStatus: 'sent'|'accepted'|'rejected'|'expired'): Promise<void>`
+  - Whitelist-Pruefung: nur `draft->sent`, `sent->accepted`, `sent->rejected`, `sent->expired` erlaubt
+  - Setzt entsprechenden Timestamp (`accepted_at`, `rejected_at`, `expired_at`)
+  - Idempotent (DEC-108): aktuelles Status==newStatus -> No-op, kein Audit-Eintrag
+  - Audit-Eintrag in `audit_log`: `action='status_change'`, `entity_type='proposal'`, `entity_id=proposalId`, `changes={before:oldStatus, after:newStatus}`
+- `createProposalVersion(parentProposalId: string): Promise<{newProposalId: string}>`
+  - Liest parent + alle parent_items
+  - INSERT neue `proposals`-Row mit `parent_proposal_id=parentId`, `version=parent.version+1`, `status='draft'`, alle anderen Felder kopiert ausser `pdf_storage_path` (NULL)
+  - INSERT alle `proposal_items` neu mit neuer `proposal_id`, alle Snapshot-Felder kopiert
+  - Audit-Eintrag mit `action='create'`, `context='Version V{n+1} of proposal V{n}'`
+  - DEC-109: parent_proposal bleibt unangetastet
+- `expireOverdueProposals()` (Cron-only, kein UI-Trigger)
+  - SELECT alle `proposals` mit `status='sent'` AND `valid_until < CURRENT_DATE`
+  - UPDATE Batch
+  - Audit-Eintrag pro Row mit `actor_id=NULL`, `context='Auto-expire by cron'`
+
+Cron-Endpoint: `cockpit/src/app/api/cron/expire-proposals/route.ts` (DEC-110, Pattern aus `recording-retention/route.ts`):
+
+```typescript
+// route.ts
+import { verifyCronSecret } from "../verify-cron-secret";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
+
+export async function POST(request: Request) {
+  if (!verifyCronSecret(request)) return new Response("unauthorized", { status: 401 });
+  const supabase = createServiceRoleClient();
+  // ... batch update + audit insert
+  return Response.json({ ok: true, expiredCount });
+}
+```
+
+Coolify-Cron: `expire-proposals` mit `0 2 * * *` (02:00 Berlin), `process.env.CRON_SECRET` als Auth-Header.
+
+#### 5. Composing-Studio-Hookup (FEAT-555)
+
+Bestehender V5.4-Pfad:
+```
+[<AttachmentsSection> in compose-form] -> uploadEmailAttachment() -> Storage email-attachments + Junction-Insert (source_type='upload')
+```
+
+Neuer V5.5-Pfad:
+```
+[<AttachmentsSection> "Angebot anhaengen"-Button]
+  -> oeffnet <ProposalAttachmentPicker>-Dialog
+  -> Liste aus getProposalsForDeal(currentDealId) (alle Status, DEC-112)
+  -> Auswahl ruft attachProposalToCompose(proposalId)
+  -> Server Action liest pdf_storage_path aus proposals
+  -> Junction-Insert in email_attachments mit source_type='proposal', proposal_id=...
+  -> Beim Send: lib/email/send.ts liest Junction-Rows, unterscheidet via source_type, holt Buffer aus proposal-pdfs-Bucket statt email-attachments-Bucket
+  -> nach Send: transitionProposalStatus(proposalId, 'sent') (DEC-108, idempotent)
+```
+
+Filename-Pattern beim Send: `Angebot-{slug(deal.title)}-V{version}.pdf` (oder `.testmode.pdf` wenn DEC-113 aktiv).
+
+`<AttachmentsSection>` zeigt beide Anhang-Typen einheitlich, aber mit Icon-Differenzierung: PC-Upload = Generic-File-Icon, Proposal = Branding-Document-Icon. Loeschen-Button entfernt Junction-Row (keine Storage-Loeschung — DEC-097 Cascade-Verhalten).
+
+### V5.5 Data Model Direction
+
+```
+   [products]                   [deals]                [contacts]
+       |                            |                       |
+       v                            v                       v
+[deal_products]              [proposals]<-----[parent_proposal_id]
+                                   ^                       |
+                                   |                       |  (Versionsreferenz, DEC-109)
+                            [proposal_items]               |
+                                   |
+                            [snapshot_*  Audit, DEC-107]
+                                   |
+                                   v
+                            [proposal-pdfs Storage Bucket]
+                                  ^
+                                  |
+                            [proposals.pdf_storage_path]
+
+
+   [emails]
+      |
+      v
+[email_attachments] -- source_type=upload --> [email-attachments Bucket]
+                   -- source_type=proposal --> [proposal-pdfs Bucket]
+                                                       ^
+                                                       |
+                                              (gleiche Files, neue Read-Path)
+```
+
+### V5.5 Request Flow — "PDF generieren" Beispiel
+
+```
+1. User klickt "PDF generieren" im Workspace
+2. Browser ruft Server Action generateProposalPdf(proposalId)
+3. Server Action:
+   a. SELECT proposals + proposal_items + branding_settings + deal + company + contact (Promise.all)
+   b. Pruefung Status: nur draft|sent erlaubt PDF-Generierung
+   c. Berechnung: subtotal_net = SUM(quantity * unit_price_net * (1 - discount_pct/100))
+                  tax_amount = subtotal_net * tax_rate / 100
+                  total_gross = subtotal_net + tax_amount
+   d. UPDATE proposals SET subtotal_net, tax_amount, total_gross
+   e. Aufruf renderProposalPdf(...) -> Buffer
+   f. Upload in Storage: bucket=proposal-pdfs, path=`{user_id}/{proposalId}/v{version}.pdf`
+   g. UPDATE proposals SET pdf_storage_path
+   h. Audit-Eintrag: action='update', context='PDF generated'
+   i. Return {pdfUrl: signed-url-fuer-iframe}
+4. Browser zeigt PDF in <iframe> per signed URL
+```
+
+### V5.5 External Dependencies
+
+- **pdfmake** — neues npm-Package, ~700 KB. Add via `npm install pdfmake @types/pdfmake`.
+- **@dnd-kit/sortable** — bereits vorhanden? Pruefung: falls nicht, neu hinzufuegen fuer Position-Liste.
+- KEINE externen API-Calls. Kein Bedrock-Call in V5.5 (DEC-052 Cost Control).
+- KEINE neuen Coolify-Container. PDF-Generierung im bestehenden Next.js-Container.
+
+### V5.5 Security / Privacy
+
+- **RLS**: Alle 3 Tabellen-Erweiterungen + neue Tabelle haben `authenticated_full_access`-Policy (Single-User-Modus, V7-Multi-User-Erweiterung folgt). Storage-Bucket `proposal-pdfs` hat Path-Scope-Policy auf erstes Folder-Segment = `user_id`.
+- **Audit-Trail**: Alle Status-Aenderungen + PDF-Generierung + Versions-Erstellung schreiben in `audit_log`. System-Aktionen (Cron) haben `actor_id=NULL`.
+- **Datenresidenz** (`data-residency.md`): pdfmake laeuft serverseitig in Coolify-Container (Hetzner Frankfurt). Kein externer PDF-Service. Kein Logo-Upload zu CDN. Branding-Logo bleibt in Self-hosted Storage.
+- **Internal-Test-Mode**: DEC-113 Watermark + Filename-Suffix machen Risiko sichtbar fuer Demo-Calls vor V5.6 Compliance-Gate.
+- **Bedrock Cost Control** (DEC-052): Keine LLM-Calls in V5.5. KI-Generierter Angebotstext ist explizit out-of-scope (PRD).
+
+### V5.5 Constraints & Tradeoffs
+
+**Constraint 1: pdfmake-Layout-Limitierung.** pdfmake's Layout-Engine ist nicht so flexibel wie HTML/CSS. Multi-Spalten-Layouts mit Float-around-Image, komplexe Tabellen mit Merged-Cells sind muehsam. Tradeoff: Standard-Angebot-Layout (Briefkopf + Position-Tabelle + Summary) ist gut machbar — Marketing-Brochure-Layouts fuer V6+ erfordern dann Puppeteer-Migration als bewusste Architektur-Entscheidung.
+
+**Constraint 2: Live-Preview-Drift.** HTML-Approximation und pdfmake-Server-Render unterscheiden sich in Schrift-Metriken, Tabellen-Spaltenbreiten, Zeilen-Umbruechen. Tradeoff: Live-Editing-UX bevorzugt vor Bit-Genauigkeit. User-Hinweis "Vorschau (HTML) — finales PDF kann minimal abweichen" macht das transparent.
+
+**Constraint 3: Snapshot-Pflicht.** `proposal_items` koennen nicht ohne Snapshot-Felder existieren (DEC-107). Mehraufwand beim Insert (3 zusaetzliche Spalten lesen aus `products`). Tradeoff: Audit-Wahrheit > Insert-Speed (mikroskopisch).
+
+**Constraint 4: Versions-Datenmenge.** Jede Version dupliziert alle Position-Items (DEC-109). Bei 5 Versionen mit je 10 Items = 50 `proposal_items`-Rows. Tradeoff: Datenintegritaet > Speicher-Effizienz. Bei 1000 Angeboten mit Avg 2 Versionen + 8 Items = 16.000 Rows — vernachlaessigbar.
+
+**Constraint 5: Internal-Test-Mode-Sichtbarkeit.** Footer-Zeile + `.testmode.pdf`-Suffix ist subtil — empfaengerseitig verbergbar wenn User Filename umbenennt nach Download. Tradeoff: subtle-but-deterring vs. invasive-and-ugly. Bei tatsaechlichem Production-Use-Case (V5.6+) wird Watermark-Logik per ENV-Flag deaktiviert (DEC-113).
+
+### V5.5 Technische Risiken
+
+**Risk: pdfmake Memory-Druck bei vielen Position-Items.**
+- Mitigation: PDF-Generierung ist on-demand, kein Auto-Render bei jedem Edit. Standard-Angebot hat 5-10 Items. Bei >50 Items: nicht V5.5-Use-Case (Out-of-Scope).
+
+**Risk: Storage-Volumen-Wachstum durch verworfene Draft-PDFs.**
+- Mitigation: PDF wird nur bei explizitem "PDF generieren"-Klick oder Send geschrieben (DEC-106). Cleanup-Cron-Strategie ist V5.6+ Folge-Slice. Monitoring-Punkt: bei `proposal-pdfs`-Bucket >2 GB.
+
+**Risk: Versions-Erstellung dupliziert grosse Item-Mengen.**
+- Mitigation: Items als Snapshot kopiert (DEC-107). Bei 50 Items: ~50 INSERTs in einer Transaction, <100ms.
+
+**Risk: Composing-Studio-Hookup bricht V5.4 PC-Upload-Pfad.**
+- Mitigation: Source-Type-Diskriminator in `email_attachments`. CHECK-Constraint stellt Konsistenz sicher. SLC-555 QA explizit Regression-Smoke.
+
+**Risk: PDF-Format-Probleme bei alternativen Mailclients.**
+- Mitigation: Standard-PDF-Spec, Roboto/Helvetica-Subset (keine Custom-Fonts). Smoke-Test in SLC-553 mit Adobe Reader, Chrome-PDF, Outlook, Gmail.
+
+**Risk: Cron-Auto-Expire feuert bei Stundengrenze (Sommerzeit-Wechsel).**
+- Mitigation: `valid_until DATE` ist Tagesgranularitaet — Stunde irrelevant. Cron-Lauf 02:00 Berlin gibt 2h-Puffer.
+
+**Risk: Tax-Rate-Snapshot bei Steuerreform mid-Verhandlung.**
+- Mitigation: `proposals.tax_rate` ist Snapshot beim Sent. Bei Aenderung: User erstellt neue Version mit aktuellem Satz (DEC-109).
+
+### V5.5 Dependencies (package.json delta)
+
+```json
+{
+  "dependencies": {
+    "pdfmake": "^0.2.10",
+    "@dnd-kit/sortable": "^8.0.0"
+  },
+  "devDependencies": {
+    "@types/pdfmake": "^0.2.9"
+  }
+}
+```
+
+(Versionen final in SLC-553 Backend-Implementation pruefen — neueste stable.)
+
+### V5.5 Empfohlene Slice-Reihenfolge (DEC-114)
+
+| Slice | Feature | Scope | Schaetzung | QA-Fokus |
+|---|---|---|---|---|
+| SLC-551 | FEAT-551 | MIG-026 + RLS + Bucket | 3-4h | Migration idempotent, V2-Stub-Daten unveraendert lesbar, Bucket-Policy korrekt |
+| SLC-552 | FEAT-552 | Workspace UI (3-Panel, Position-Liste, Editor, HTML-Preview) | 6-8h | Drag-Sortierung, Brutto/Netto-Live-Berechnung, Auto-Save, Einstiegspunkte |
+| SLC-553 | FEAT-553 | pdfmake-Adapter + Branding-Layout + Storage-Write + Watermark | 5-7h | PDF in Adobe/Chrome/Outlook/Gmail oeffnet, Test-Mode-Footer sichtbar, Storage-Pfad korrekt |
+| SLC-554 | FEAT-554 | Status-Lifecycle Server Actions + Versionierung + Cron-Endpoint | 4-6h | Whitelist greift, Audit-Eintraege da, Versions-Duplikat sauber, Cron-UPDATE-Query korrekt |
+| SLC-555 | FEAT-555 | Composing-Studio Proposal-Picker + Send-Pfad-Erweiterung | 3-4h | PC-Upload-Regression, Multipart-Mail mit Proposal-PDF in Gmail, Auto-Sent-Status, Tracking-Pixel feuert |
+
+Gesamt: ~21-29h. Reihenfolge zwingend (jeder Slice baut auf Vorgaenger). Pro Slice: `/backend|/frontend` -> `/qa` -> Coolify-Redeploy. Final-Check + Go-Live + Deploy als REL-020 nach SLC-555.
+
+### V5.5 Open Points (fuer /slice-planning)
+
+- **Worker-Erstellungs-Pfad in SLC-552 vs. SLC-551:** "Angebot erstellen aus Deal-Workspace" braucht Server Action `createProposal`, die SLC-551 fertig haben muss bevor SLC-552 die Einstiegspunkte verlinkt. Empfehlung: `createProposal` in SLC-551 mit-implementieren als Teil des Schema-Slices (Backend-Setup), `<ProposalWorkspace>`-Render in SLC-552. Final in `/slice-planning` entscheiden.
+- **PDF-Preview-Cache-Strategie:** "PDF generieren" ueberschreibt vorheriges PDF in Storage. Preview-iFrame zeigt latest. Wenn User mehrfach generiert: alte PDFs werden ueberschrieben (kein Versionschronik im Storage, nur in `audit_log`). Tradeoff im Architecture beschlossen — Slice-Planning kann nicht weiter splitten.
+- **Auto-Save-Granularitaet:** debounced 500ms beim Form-Edit, oder Click-to-Save explicit? Empfehlung: 500ms-debounced fuer Workspace-Felder, Add/Remove/Reorder-Item-Operationen sind sofort persistent (analog Composing-Studio). Final in SLC-552 SLC-Planning.
+- **Cron-Setup-Anleitung in REL-020-Notes:** Coolify-Cron `expire-proposals` muss vom User manuell angelegt werden (Pattern wie SLC-541). Anleitung in REL-020-Notes mit konkreter Cron-Expression.
+
+### V5.5 Recommended Next Step
+
+`/slice-planning V5.5` — die 5 Slices SLC-551..555 strukturiert ausdefinieren mit Acceptance Criteria pro Slice, Micro-Tasks-Liste mit Reihenfolge, QA-Fokus pro Slice. Danach pro Slice `/backend|/frontend` -> `/qa` -> Coolify-Redeploy in fester Reihenfolge.
