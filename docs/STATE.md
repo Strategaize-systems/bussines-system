@@ -9,19 +9,28 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: architecture
-- Current Focus: **V5.5 ARCHITECTURE DONE 2026-04-29** — 10 Open Questions aus PRD vollstaendig finalisiert (DEC-105..114). Architecture-Section in `docs/ARCHITECTURE.md` mit 5 Components, Data Flow, Request-Flow-Beispiel, External Dependencies, Security/Privacy, 5 Constraints, 7 Technische Risiken, package.json-Delta, Slice-Reihenfolge-Tabelle, 4 Open Points fuer /slice-planning. MIG-026 ausgeplant in `docs/MIGRATIONS.md` (4 Aenderungen: proposals-Erweiterung +11 Spalten, neue proposal_items-Tabelle, email_attachments-Erweiterung +2 Spalten, neuer proposal-pdfs Bucket). Stack-Entscheid: pdfmake fuer PDF, HTML-Approximation fuer Live-Preview, Storage-Pfad `{user_id}/{proposal_id}/v{version}.pdf`, Internal-Test-Mode-Watermark als Footer-Zeile + .testmode.pdf-Suffix. Naechster Schritt: /slice-planning V5.5 (5 Slices SLC-551..555). V5.4 (REL-019) Post-Launch passiv parallel.
-- Current Phase: V5.5 Architecture done. Naechster Schritt /slice-planning V5.5.
+- High-Level State: slice-planning
+- Current Focus: **V5.5 SLICE-PLANNING DONE 2026-04-29** — 5 Slices SLC-551..555 strukturiert ausdefiniert (1:1 zu Features, DEC-114). SLC-551 (Schema-Foundation, ~3-4h, 7 MTs, MIG-026 + Bucket + RLS + Pfad-Helper + createProposal/getProposalForEdit). SLC-552 (Workspace-UI 3-Panel, ~6-8h, 11 MTs, @dnd-kit + React-Hook-Form + Auto-Save + 3 Einstiegspunkte + HTML-Live-Preview). SLC-553 (PDF-Renderer pdfmake, ~5-7h, 8 MTs, Layout + Watermark DEC-113 + Storage-Write). SLC-554 (Status-Lifecycle + Versionierung, ~4-6h, 9 MTs, Whitelist + Idempotenz + Auto-Expire-Cron 02:00 Berlin). SLC-555 (Composing-Hookup, ~3-4h, 10 MTs, ProposalPicker + send.ts source_type-Diskriminator + auto-sent + V5.4-Regression). Gesamt ~21-29h. 5 BL-Tracking-Items (BL-407..411) angelegt. Naechster Schritt: /backend SLC-551 (MIG-026 + Schema-Foundation). V5.4 (REL-019) Post-Launch passiv parallel.
+- Current Phase: V5.5 Slice-Planning done. Naechster Schritt /backend SLC-551.
 
 ## Immediate Next Steps
-1. **/slice-planning V5.5** — 5 Slices SLC-551..555 (1:1 zu Features) strukturiert ausdefinieren mit ACs, Micro-Tasks, QA-Fokus pro Slice. Schaetzung Gesamt ~21-29h.
-2. **/backend SLC-551** — Schema-Migration MIG-026, Storage-Bucket `proposal-pdfs`, RLS, `createProposal` Server Action.
-4. **V5.4 Post-Launch (passiv)** — Stable-Window 24-48h, /post-launch V5.4 nach. /post-launch V5.3 ueberfaellig (passiv).
-5. **V5.4.x Patch-Carryover (optional, nicht release-blockierend):**
-   - SLC-541 M1: ConditionalColorPicker Refactor zu derived-state
-   - SLC-542 M1/ISSUE-045: Server-side Total-Size Limit
-   - SLC-542 L1: Filename-Kollision-Suffix-Pattern bei upsert
-6. **Carryover (nicht V5.5-Scope):** ISSUE-042 OpenAI-Key Pre-Pflicht, Anwalts-Pruefung COMPLIANCE.md, Azure OpenAI EU + DPA + Switch (Pre-Production-Gate nach V5.5), BL-397 GitHub-App Org-Anbindung, A5 SLC-531 Outlook-Smoke.
+1. **/backend SLC-551** — Schema-Foundation: MIG-026 SQL schreiben + auf Hetzner anwenden, `proposal-pdfs`-Bucket + RLS-Policies, Pfad-Helper `getProposalPdfPath`, Server Actions `createProposal` + `getProposalForEdit`, V2-Bestand-Smoke (~3-4h, 7 MTs).
+2. **/qa SLC-551** — MIG-026-Apply-Verifikation, Idempotenz-Smoke, V2-Stub-Backwards-Compat, Storage-RLS Cross-User-Block, CHECK-Constraint-Smoke, Pfad-Helper Unit-Tests, Server-Action-Smokes.
+3. **/backend + /frontend SLC-552** — Workspace-UI 3-Panel mit Position-Liste (Drag&Drop), Editor (Auto-Save 500ms), HTML-Live-Preview (250ms debounced), 3 Einstiegspunkte, Calculator-Helper, Server Actions Item-CRUD (~6-8h, 11 MTs).
+4. **/qa SLC-552** — Drei-Einstiegspunkt-Test, Cent-genaue Berechnung, Drag-Reorder, Auto-Save-Smoke, Mobile-Tabs.
+5. **/backend SLC-553** — pdfmake-Adapter + DocDefinition + Image-Helper + Filename-Helper + generateProposalPdf-Action + PreviewPanel-Hookup + Watermark + Multi-Client-Smokes (~5-7h, 8 MTs).
+6. **/qa SLC-553** — UI-vs-PDF-Cent-Genauigkeit, 4 Mailclient-Smokes (Adobe/Chrome/Outlook/Gmail), Watermark-Toggle, Edge-Cases.
+7. **/backend SLC-554** — Whitelist-Transition + Versionierung + Auto-Expire-Cron + Status-Buttons + StatusBadge + VersionsList + Read-only-Mode + REL-020-Cron-Notes (~4-6h, 9 MTs).
+8. **/qa SLC-554** — Status-Whitelist + Idempotenz + Versionierung + Cron-Smoke + UI-Smokes.
+9. **/backend + /frontend SLC-555** — ProposalAttachmentPicker + AttachmentsSection-Erweiterung + send.ts source_type-Diskriminator + sendComposedEmail-Update + Cross-Cut-Smokes (~3-4h, 10 MTs).
+10. **/qa SLC-555** — 3 Smoke-Faelle (Proposal/PC-Upload/Mix) + V5.4-Cadence-Regression + Status-Auto-Sent + Idempotenz.
+11. **/qa V5.5 Gesamt + /final-check + /go-live + /deploy** — REL-020 als Final-Release nach SLC-555.
+12. **V5.4 Post-Launch (passiv)** — Stable-Window 24-48h, /post-launch V5.4 nach. /post-launch V5.3 ueberfaellig (passiv).
+13. **V5.4.x Patch-Carryover (optional, nicht release-blockierend):**
+    - SLC-541 M1: ConditionalColorPicker Refactor zu derived-state
+    - SLC-542 M1/ISSUE-045: Server-side Total-Size Limit
+    - SLC-542 L1: Filename-Kollision-Suffix-Pattern bei upsert
+14. **Carryover (nicht V5.5-Scope):** ISSUE-042 OpenAI-Key Pre-Pflicht, Anwalts-Pruefung COMPLIANCE.md, Azure OpenAI EU + DPA + Switch (Pre-Production-Gate nach V5.5), BL-397 GitHub-App Org-Anbindung, A5 SLC-531 Outlook-Smoke.
 
 ## Active Scope
 **V5.5 — Angebot-Erstellung (ARCHITECTURE DONE 2026-04-29):**

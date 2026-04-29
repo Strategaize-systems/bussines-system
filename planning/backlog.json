@@ -1651,6 +1651,56 @@
       "version": "V5.4",
       "description": "FEAT-541 V5.4-Polish — vier zusammenhaengende Hygiene-Themen nach V5.3-Release. (1) ISSUE-043 Color-Picker AC9-Drift Fix: Toggle-Checkbox 'Markenfarbe verwenden' vor jedem Color-Picker auf /settings/branding. Toggle aus → Color-Picker disabled, persistierter Wert NULL. Toggle an → Color-Picker aktiv, persistierter Wert = Hex. AC9 aus FEAT-531 wieder zuverlaessig erfuellt. (2) ESLint Hook-Order Cleanup in cockpit/src/components/email/new-template-dialog.tsx und inline-edit-dialog.tsx — Hooks unconditional am Top-Level. (3) docs/COMPLIANCE.md V5.3-Section: Composing-Studio + Inline-Edit + Branding mit Datenfluessen dokumentieren. (4) Coolify-Cron-Cleanup als User-Aktion mit Klick-Anleitung in REL-019-Notes — Duplikate konsolidieren (Classify, embedding-sync, retention), kaputten embedding-sync-Cron mit Placeholder reparieren oder loeschen, Klartext-CRON_SECRETs auf process.env-Pattern umstellen. Subsumiert BL-396.",
       "createdAt": "2026-04-28"
+    },
+    {
+      "id": "BL-407",
+      "title": "V5.5 SLC-551 Angebot-Schema-Foundation (MIG-026 + Bucket + RLS + createProposal)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V5.5",
+      "description": "FEAT-551 SLC-551: V2-Stub-proposals wird operativ via MIG-026 (11 nullable Spalten + neue Tabelle proposal_items mit Snapshot-Feldern DEC-107 + email_attachments-Erweiterung mit source_type+proposal_id+CHECK-Constraint + Storage-Bucket proposal-pdfs privat mit User-Scope-RLS DEC-111). Pfad-Helper getProposalPdfPath als Single-Source-of-Truth (DEC-113 Test-Mode-Suffix). Server Actions createProposal({deal_id, contact_id, company_id, title?}) und getProposalForEdit(id). Backwards-Compat: bestehende V2-Stubs unveraendert lesbar, /proposals-Listing-View darf nicht brechen. Apply MIG-026 auf Hetzner via SSH (sql-migration-hetzner.md Pattern). 7 Micro-Tasks, ~3-4h.",
+      "createdAt": "2026-04-29"
+    },
+    {
+      "id": "BL-408",
+      "title": "V5.5 SLC-552 Angebot-Workspace UI (3-Panel + Position-Liste + Editor + HTML-Live-Preview)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V5.5",
+      "description": "FEAT-552 SLC-552: Vollbild-Schreibumgebung /proposals/[id]/edit mit 3-Panel-Layout (Position-Liste links via @dnd-kit/sortable, Editor mitte mit React-Hook-Form + Zod + Auto-Save 500ms debounced, HTML-Live-Preview rechts debounced 250ms - DEC-106). Server Actions addProposalItem/updateProposalItem/removeProposalItem/reorderProposalItems/updateProposal mit Audit-Log. Pure-Function Calculator calculateTotals (Cent-genau, Single-Source-of-Truth fuer SLC-553). Drei Einstiegspunkte: Deal-Workspace-Quickaction, Pipeline-Card-Kontextmenue, /proposals-Liste Bearbeiten-Button auf Drafts. PDF-Generieren-Button + Neue-Version-Button als disabled Placeholder (aktiviert in SLC-553 + SLC-554). 11 Micro-Tasks, ~6-8h.",
+      "createdAt": "2026-04-29"
+    },
+    {
+      "id": "BL-409",
+      "title": "V5.5 SLC-553 PDF-Renderer (pdfmake) + Branding-Layout + Storage-Write + Watermark",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V5.5",
+      "description": "FEAT-553 SLC-553: pdfmake-Library (DEC-105) als Adapter-pattern in lib/pdf/proposal-renderer.ts. Layout im V5.3-Branding (Logo + Markenfarbe + Position-Tabelle + Summary + Konditionen + Footer). Internal-Test-Mode-Watermark als Footer-Zeile + .testmode.pdf-Filename-Suffix (DEC-113), Feature-Flag via INTERNAL_TEST_MODE_ACTIVE ENV. Image-Helper getLogoDataUrl + Filename-Helper sanitizeProposalFilename. Server Action generateProposalPdf schreibt PDF in proposal-pdfs-Bucket via getProposalPdfPath aus SLC-551, persistiert Pfad in proposals.pdf_storage_path, returnt 5min-Signed-URL fuer iframe. SLC-552 PDF-generieren-Button wird funktional. Multi-Client-Smokes (Adobe Reader, Chrome, Outlook, Gmail). Cent-genaue UI-vs-PDF-Konsistenz. 8 Micro-Tasks, ~5-7h.",
+      "createdAt": "2026-04-29"
+    },
+    {
+      "id": "BL-410",
+      "title": "V5.5 SLC-554 Status-Lifecycle Server Actions + Versionierung + Auto-Expire-Cron",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V5.5",
+      "description": "FEAT-554 SLC-554: Whitelist-gekapselter transitionProposalStatus (draft->sent->accepted|rejected|expired, idempotent DEC-108) + createProposalVersion mit V1-Status-unangetastet (DEC-109) + Item-Snapshot-Kopie + expireOverdueProposals Cron-Action (DEC-110, 02:00 Berlin Time, Pattern aus recording-retention/route.ts). UI-Erweiterungen in SLC-552 Workspace: Sent-/Accepted-/Rejected-Buttons mit Confirm-Modals, StatusBadge mit Color-Mapping, Versions-Liste expandable (parent_proposal_id-Kette). /proposals-Listing Status-Badge + Anzeigen-Button (Read-only-Mode ?readonly=1). Coolify-Cron-Anleitung in REL-020-Notes (User legt manuell an). Server-Side-Block in Item-CRUD-Actions wenn Status != draft. 9 Micro-Tasks, ~4-6h.",
+      "createdAt": "2026-04-29"
+    },
+    {
+      "id": "BL-411",
+      "title": "V5.5 SLC-555 Composing-Studio Proposal-Picker + Send-Pfad-Erweiterung (BL-404 Teil 2)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V5.5",
+      "description": "FEAT-555 SLC-555: Loest BL-404 Teil 2 ein. ProposalAttachmentPicker im Composing-Studio mit Status-Badges (DEC-112: alle Status sichtbar, Confirm-Modal bei expired/rejected). Server Action attachProposalToCompose validiert pdf_storage_path != NULL. AttachmentMeta-Type erweitert um source_type:'upload'|'proposal' und proposalId. send.ts unterscheidet beim Buffer-Read zwischen email-attachments-Bucket (V5.4 PC-Upload) und proposal-pdfs-Bucket. Junction-Insert mit source_type + proposal_id (CHECK-Constraint aus SLC-551 greift). Nach Send: idempotentes transitionProposalStatus(id, 'sent') (DEC-108). V5.4 PC-Upload-Pfad regression-frei. 3 Smoke-Test-Faelle (Proposal/PC-Upload/Mix) + V5.4-Cadence-Regression. REL-020-Notes vorbereiten. 10 Micro-Tasks, ~3-4h.",
+      "createdAt": "2026-04-29"
     }
   ]
 }
