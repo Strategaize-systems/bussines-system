@@ -10,11 +10,11 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.5 SLC-551 QA PASS 2026-04-29** — RPT-253 dokumentiert 11/11 AC PASS nach Coolify-Redeploy: Schema-Matrix 8/8 (proposals 28 Spalten, proposal_items mit RLS, email_attachments CHECK, Bucket privat, 4 Policies, 5 Indizes); E2E-DB-Sim createProposal+getProposalForEdit korrekt (insert mit defaults, audit_log-Eintrag); Pfad-Helper 18/18 Tests + 53/53 Vitest + npm run build gruen; CHECK 3/3 Cases; Storage Cross-User-Write blocked. 2 Low-Findings (REST-API-RLS-Test + Browser-Visual-Listing) deferred — werden in SLC-552 implizit mit-verifiziert. SLC-551 1/5 V5.5 vollstaendig (backend + qa). V5.4 (REL-019) Post-Launch passiv parallel.
-- Current Phase: V5.5 Implementation. SLC-551 done (backend + qa), naechster Schritt /backend+/frontend SLC-552.
+- Current Focus: **V5.5 SLC-552 Backend-Anteil done 2026-04-29** — RPT-254 dokumentiert MT-1 (Zod-Schemas), MT-2 (Calculator + 14 Unit-Tests AC8 Cent-genau), MT-3 (5 Server Actions: updateProposal/addProposalItem/updateProposalItem/removeProposalItem/reorderProposalItems mit Audit-Log + Zod-Validation); V2-Stub `updateProposal` zu `updateProposalLegacy` umbenannt (mirror createProposalLegacy). 67/67 Tests gruen, npm run build gruen, Lint-clean fuer neue Files (221 pre-existing Repo-Errors unangefasst). Frontend-Anteil (MT-4..MT-11) offen — Pre-Decision RHF vs. native vor /frontend.
+- Current Phase: V5.5 Implementation. SLC-551 done, SLC-552 Backend done, Frontend offen. Naechster Schritt: /frontend SLC-552.
 
 ## Immediate Next Steps
-1. **/backend + /frontend SLC-552** — Workspace-UI 3-Panel mit Position-Liste (Drag&Drop), Editor (Auto-Save 500ms), HTML-Live-Preview (250ms debounced), 3 Einstiegspunkte, Calculator-Helper, Server Actions Item-CRUD (~6-8h, 11 MTs).
+1. **/frontend SLC-552** — MT-4 (PositionList + ProductPicker via @dnd-kit/sortable), MT-5 (Editor + Auto-Save 500ms), MT-6 (HtmlPreview + PreviewPanel debounced 250ms), MT-7 (Workspace + Page-Wrapper), MT-8/9/10 (3 Einstiegspunkte), MT-11 (Browser-Smoke). Pre-Decision: react-hook-form+lodash installieren ODER native React-Form-State + Custom-Debounce-Helper. ~5h Implementation + ~1h Smoke.
 2. **/qa SLC-552** — Drei-Einstiegspunkt-Test, Cent-genaue Berechnung, Drag-Reorder, Auto-Save-Smoke, Mobile-Tabs.
 3. **/backend SLC-553** — pdfmake-Adapter + DocDefinition + Image-Helper + Filename-Helper + generateProposalPdf-Action + PreviewPanel-Hookup + Watermark + Multi-Client-Smokes (~5-7h, 8 MTs).
 4. **/qa SLC-553** — UI-vs-PDF-Cent-Genauigkeit, 4 Mailclient-Smokes (Adobe/Chrome/Outlook/Gmail), Watermark-Toggle, Edge-Cases.

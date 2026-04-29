@@ -2,6 +2,12 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { logAudit } from "@/lib/audit";
+import {
+  proposalEditSchema,
+  proposalItemUpdateSchema,
+  type ProposalItemUpdateInput,
+} from "@/lib/proposal/zod-schemas";
 
 export type Proposal = {
   id: string;
@@ -276,7 +282,10 @@ export async function getProposalForEdit(
   };
 }
 
-export async function updateProposal(id: string, formData: FormData) {
+// V2-Stub: FormData-basierter Edit-Trigger fuer das alte ProposalSheet (Edit
+// im /proposals-Listing). V5.5 SLC-552 fuehrt updateProposal(id, patch) als
+// Workspace-Action ein — daher hier "Legacy"-Suffix analog createProposalLegacy.
+export async function updateProposalLegacy(id: string, formData: FormData) {
   const supabase = await createClient();
 
   const status = formData.get("status") as string;
@@ -313,4 +322,281 @@ export async function deleteProposal(id: string) {
 
   revalidatePath("/proposals");
   return { error: "" };
+}
+
+// =====================================================================
+// V5.5 SLC-552 — Workspace Server Actions
+// =====================================================================
+// Patch-basierte Updates fuer den /proposals/[id]/edit Workspace.
+// Auto-Save (debounced 500ms im Frontend) ruft updateProposal mit nur
+// den geaenderten Feldern. Audit-Eintrag nur bei nicht-trivialen
+// Aenderungen (title/tax_rate/valid_until/payment_terms) — Notes-Edits
+// schreiben keinen Audit-Eintrag (zu viel Noise bei Auto-Save).
+
+export type MutationResult = { ok: true } | { ok: false; error: string };
+
+export type ItemMutationResult =
+  | { ok: true; itemId: string }
+  | { ok: false; error: string };
+
+const AUDIT_RELEVANT_FIELDS = [
+  "title",
+  "tax_rate",
+  "valid_until",
+  "payment_terms",
+] as const;
+
+type ProposalUpdatePatch = {
+  title?: string;
+  tax_rate?: 0 | 7 | 19;
+  valid_until?: string | null;
+  payment_terms?: string | null;
+  notes?: string | null;
+  contact_id?: string | null;
+  company_id?: string | null;
+};
+
+export async function updateProposal(
+  proposalId: string,
+  patch: ProposalUpdatePatch,
+): Promise<MutationResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Nicht angemeldet." };
+
+  const parsed = proposalEditSchema.partial().safeParse(patch);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Validierung fehlgeschlagen." };
+  }
+
+  const { data: before } = await supabase
+    .from("proposals")
+    .select("title, tax_rate, valid_until, payment_terms")
+    .eq("id", proposalId)
+    .maybeSingle();
+
+  if (!before) return { ok: false, error: "Angebot nicht gefunden." };
+
+  const update: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+    ...parsed.data,
+  };
+
+  const { error } = await supabase
+    .from("proposals")
+    .update(update)
+    .eq("id", proposalId);
+
+  if (error) return { ok: false, error: error.message };
+
+  const auditChanges: Record<string, { before: unknown; after: unknown }> = {};
+  for (const field of AUDIT_RELEVANT_FIELDS) {
+    if (
+      field in parsed.data &&
+      (before as Record<string, unknown>)[field] !==
+        (parsed.data as Record<string, unknown>)[field]
+    ) {
+      auditChanges[field] = {
+        before: (before as Record<string, unknown>)[field],
+        after: (parsed.data as Record<string, unknown>)[field],
+      };
+    }
+  }
+  if (Object.keys(auditChanges).length > 0) {
+    void logAudit({
+      action: "update",
+      entityType: "proposal",
+      entityId: proposalId,
+      changes: { before: auditChanges, after: auditChanges },
+      context: "Workspace Auto-Save",
+    });
+  }
+
+  revalidatePath(`/proposals/${proposalId}/edit`);
+  revalidatePath("/proposals");
+  return { ok: true };
+}
+
+export async function addProposalItem(
+  proposalId: string,
+  productId: string,
+  quantity: number = 1,
+): Promise<ItemMutationResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Nicht angemeldet." };
+
+  if (quantity <= 0) return { ok: false, error: "Menge muss > 0 sein." };
+
+  const { data: product, error: pErr } = await supabase
+    .from("products")
+    .select("id, name, description, standard_price, status")
+    .eq("id", productId)
+    .maybeSingle();
+
+  if (pErr || !product) return { ok: false, error: "Produkt nicht gefunden." };
+  if (product.status !== "active") {
+    return { ok: false, error: "Produkt ist nicht aktiv." };
+  }
+
+  const { data: maxRow } = await supabase
+    .from("proposal_items")
+    .select("position_order")
+    .eq("proposal_id", proposalId)
+    .order("position_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const nextOrder = (maxRow?.position_order ?? 0) + 1;
+  const standardPrice = (product.standard_price as number | null) ?? 0;
+
+  const { data: inserted, error: insErr } = await supabase
+    .from("proposal_items")
+    .insert({
+      proposal_id: proposalId,
+      product_id: product.id,
+      position_order: nextOrder,
+      quantity,
+      unit_price_net: standardPrice,
+      discount_pct: 0,
+      snapshot_name: product.name as string,
+      snapshot_description: (product.description as string | null) ?? null,
+      snapshot_unit_price_at_creation: standardPrice,
+    })
+    .select("id")
+    .single();
+
+  if (insErr || !inserted) {
+    return { ok: false, error: insErr?.message ?? "INSERT proposal_item fehlgeschlagen." };
+  }
+
+  void logAudit({
+    action: "create",
+    entityType: "proposal",
+    entityId: proposalId,
+    context: `Item hinzugefuegt: ${product.name}`,
+  });
+
+  revalidatePath(`/proposals/${proposalId}/edit`);
+  return { ok: true, itemId: inserted.id as string };
+}
+
+export async function updateProposalItem(
+  itemId: string,
+  patch: ProposalItemUpdateInput,
+): Promise<MutationResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Nicht angemeldet." };
+
+  const parsed = proposalItemUpdateSchema.safeParse(patch);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Validierung fehlgeschlagen." };
+  }
+
+  const { data: before } = await supabase
+    .from("proposal_items")
+    .select("proposal_id")
+    .eq("id", itemId)
+    .maybeSingle();
+
+  if (!before) return { ok: false, error: "Position nicht gefunden." };
+
+  const { error } = await supabase
+    .from("proposal_items")
+    .update(parsed.data)
+    .eq("id", itemId);
+
+  if (error) return { ok: false, error: error.message };
+
+  void logAudit({
+    action: "update",
+    entityType: "proposal",
+    entityId: before.proposal_id as string,
+    context: "Position aktualisiert",
+  });
+
+  revalidatePath(`/proposals/${before.proposal_id}/edit`);
+  return { ok: true };
+}
+
+export async function removeProposalItem(itemId: string): Promise<MutationResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Nicht angemeldet." };
+
+  const { data: before } = await supabase
+    .from("proposal_items")
+    .select("proposal_id, snapshot_name")
+    .eq("id", itemId)
+    .maybeSingle();
+
+  if (!before) return { ok: false, error: "Position nicht gefunden." };
+
+  const { error } = await supabase
+    .from("proposal_items")
+    .delete()
+    .eq("id", itemId);
+
+  if (error) return { ok: false, error: error.message };
+
+  void logAudit({
+    action: "delete",
+    entityType: "proposal",
+    entityId: before.proposal_id as string,
+    context: `Position entfernt: ${before.snapshot_name}`,
+  });
+
+  revalidatePath(`/proposals/${before.proposal_id}/edit`);
+  return { ok: true };
+}
+
+// Reorder per Drag&Drop. Supabase JS hat keine native Tx-API, also schreiben
+// wir sequenziell — bei Fehler in der Mitte bleibt der Zwischenstand inkonsistent
+// (akzeptierter Tradeoff fuer V5.5: UI sperrt waehrend des Calls und reload-t
+// bei Error). Idempotent: erneute Aufrufe mit gleichem orderedItemIds setzen
+// position_order auf identische Werte.
+export async function reorderProposalItems(
+  proposalId: string,
+  orderedItemIds: string[],
+): Promise<MutationResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Nicht angemeldet." };
+
+  if (!Array.isArray(orderedItemIds) || orderedItemIds.length === 0) {
+    return { ok: false, error: "Keine Items zum Sortieren." };
+  }
+
+  for (let i = 0; i < orderedItemIds.length; i++) {
+    const { error } = await supabase
+      .from("proposal_items")
+      .update({ position_order: i + 1 })
+      .eq("id", orderedItemIds[i])
+      .eq("proposal_id", proposalId);
+
+    if (error) {
+      return { ok: false, error: `Reorder fehlgeschlagen bei Position ${i + 1}: ${error.message}` };
+    }
+  }
+
+  void logAudit({
+    action: "update",
+    entityType: "proposal",
+    entityId: proposalId,
+    context: "Positionen neu sortiert (Drag&Drop)",
+  });
+
+  revalidatePath(`/proposals/${proposalId}/edit`);
+  return { ok: true };
 }

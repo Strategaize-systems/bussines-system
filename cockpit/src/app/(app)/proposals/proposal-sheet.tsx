@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { ProposalForm } from "./proposal-form";
-import { createProposalLegacy, updateProposal, type Proposal } from "./actions";
+import { createProposalLegacy, updateProposalLegacy, type Proposal } from "./actions";
 import { useState, useTransition } from "react";
 
 interface ProposalSheetProps {
@@ -34,7 +34,7 @@ export function ProposalSheet({ deals, contacts, companies, proposal, trigger, d
     setError("");
     startTransition(async () => {
       const result = proposal
-        ? await updateProposal(proposal.id, formData)
+        ? await updateProposalLegacy(proposal.id, formData)
         : await createProposalLegacy(formData);
       if (result.error) {
         setError(result.error);
