@@ -1677,7 +1677,7 @@
       "title": "V5.5 SLC-553 PDF-Renderer (pdfmake) + Branding-Layout + Storage-Write + Watermark",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V5.5",
       "description": "FEAT-553 SLC-553: pdfmake-Library (DEC-105) als Adapter-pattern in lib/pdf/proposal-renderer.ts. Layout im V5.3-Branding (Logo + Markenfarbe + Position-Tabelle + Summary + Konditionen + Footer). Internal-Test-Mode-Watermark als Footer-Zeile + .testmode.pdf-Filename-Suffix (DEC-113), Feature-Flag via INTERNAL_TEST_MODE_ACTIVE ENV. Image-Helper getLogoDataUrl + Filename-Helper sanitizeProposalFilename. Server Action generateProposalPdf schreibt PDF in proposal-pdfs-Bucket via getProposalPdfPath aus SLC-551, persistiert Pfad in proposals.pdf_storage_path, returnt 5min-Signed-URL fuer iframe. SLC-552 PDF-generieren-Button wird funktional. Multi-Client-Smokes (Adobe Reader, Chrome, Outlook, Gmail). Cent-genaue UI-vs-PDF-Konsistenz. 8 Micro-Tasks, ~5-7h.",
       "createdAt": "2026-04-29"

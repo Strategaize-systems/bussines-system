@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
 import {
@@ -8,6 +9,13 @@ import {
   proposalItemUpdateSchema,
   type ProposalItemUpdateInput,
 } from "@/lib/proposal/zod-schemas";
+import { calculateTotals } from "@/lib/proposal/calc";
+import {
+  getProposalPdfPath,
+  PROPOSAL_PDF_BUCKET,
+} from "@/lib/pdf/proposal-pdf-path";
+import { pdfmakeRenderer } from "@/lib/pdf/proposal-renderer";
+import { getLogoDataUrl } from "@/lib/pdf/image-helper";
 
 export type Proposal = {
   id: string;
@@ -602,4 +610,213 @@ export async function reorderProposalItems(
 
   revalidatePath(`/proposals/${proposalId}/edit`);
   return { ok: true };
+}
+
+// =====================================================================
+// V5.5 SLC-553 — PDF-Generierung
+// =====================================================================
+// Server-side PDF-Renderer (pdfmake, DEC-105). Schreibt PDF in den
+// proposal-pdfs-Storage-Bucket unter `{user_id}/{proposal_id}/v{version}[.testmode].pdf`,
+// persistiert Pfad in `proposals.pdf_storage_path`, returnt Signed-URL fuer
+// iframe-Anzeige. Nur Status `draft` oder `sent` darf rendern. Berechnung
+// (subtotal/tax/total) wird beim Generate persistiert. Audit-Eintrag pro Run.
+
+export type GenerateProposalPdfResult =
+  | { ok: true; pdfUrl: string; filename: string }
+  | { ok: false; error: string };
+
+const PDF_SIGNED_URL_TTL_SECONDS = 300; // 5 Minuten
+
+export async function generateProposalPdf(
+  proposalId: string,
+): Promise<GenerateProposalPdfResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userErr,
+  } = await supabase.auth.getUser();
+  if (userErr || !user) {
+    return { ok: false, error: "Nicht angemeldet." };
+  }
+  const userId = user.id;
+
+  if (!proposalId) {
+    return { ok: false, error: "proposalId ist Pflicht." };
+  }
+
+  const { data: proposal, error: pErr } = await supabase
+    .from("proposals")
+    .select("*")
+    .eq("id", proposalId)
+    .maybeSingle();
+
+  if (pErr || !proposal) {
+    return { ok: false, error: "Angebot nicht gefunden." };
+  }
+
+  if (proposal.status !== "draft" && proposal.status !== "sent") {
+    return {
+      ok: false,
+      error: `PDF-Generierung ist im Status "${proposal.status}" nicht erlaubt.`,
+    };
+  }
+
+  const [itemsRes, brandingRes, dealRes, companyRes, contactRes] =
+    await Promise.all([
+      supabase
+        .from("proposal_items")
+        .select("*")
+        .eq("proposal_id", proposalId)
+        .order("position_order", { ascending: true }),
+      supabase
+        .from("branding_settings")
+        .select(
+          "logo_url, primary_color, secondary_color, font_family, footer_markdown, contact_block",
+        )
+        .limit(1)
+        .maybeSingle(),
+      proposal.deal_id
+        ? supabase
+            .from("deals")
+            .select("id, title")
+            .eq("id", proposal.deal_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+      proposal.company_id
+        ? supabase
+            .from("companies")
+            .select("id, name")
+            .eq("id", proposal.company_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+      proposal.contact_id
+        ? supabase
+            .from("contacts")
+            .select("id, first_name, last_name")
+            .eq("id", proposal.contact_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+
+  const items = (itemsRes.data ?? []) as ProposalItem[];
+  const branding = (brandingRes.data ?? null) as ProposalEditPayload["branding"];
+  const deal = (dealRes.data ?? null) as ProposalEditPayload["deal"];
+  const company = (companyRes.data ?? null) as ProposalEditPayload["company"];
+  const contact = (contactRes.data ?? null) as ProposalEditPayload["contact"];
+
+  const taxRate = proposal.tax_rate ?? 19;
+  const totals = calculateTotals(items, taxRate);
+
+  const { error: updErr } = await supabase
+    .from("proposals")
+    .update({
+      subtotal_net: totals.subtotal,
+      tax_amount: totals.tax,
+      total_gross: totals.total,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", proposalId);
+
+  if (updErr) {
+    return {
+      ok: false,
+      error: `Berechnungs-Persistierung fehlgeschlagen: ${updErr.message}`,
+    };
+  }
+
+  // Test-Mode default true bis V5.6 Production-Gate explizit ausschaltet.
+  const testMode = process.env.INTERNAL_TEST_MODE_ACTIVE !== "false";
+
+  const admin = createAdminClient();
+
+  let logoDataUrl: string | null = null;
+  if (branding?.logo_url) {
+    logoDataUrl = await getLogoDataUrl(admin);
+  }
+
+  const t0 = Date.now();
+  let renderResult: Awaited<
+    ReturnType<typeof pdfmakeRenderer.renderProposalPdf>
+  >;
+  try {
+    renderResult = await pdfmakeRenderer.renderProposalPdf({
+      proposal: proposal as Proposal,
+      items,
+      branding,
+      deal,
+      company,
+      contact,
+      logoDataUrl,
+      testMode,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Unbekannter Renderer-Fehler.";
+    return { ok: false, error: `PDF-Rendering fehlgeschlagen: ${msg}` };
+  }
+  const renderMs = Date.now() - t0;
+  console.log(
+    `[generateProposalPdf] proposal=${proposalId} version=${proposal.version} items=${items.length} render_ms=${renderMs}`,
+  );
+
+  const path = getProposalPdfPath(
+    userId,
+    proposalId,
+    proposal.version,
+    testMode,
+  );
+
+  const { error: upErr } = await admin.storage
+    .from(PROPOSAL_PDF_BUCKET)
+    .upload(path, renderResult.buffer, {
+      contentType: "application/pdf",
+      upsert: true,
+    });
+
+  if (upErr) {
+    return {
+      ok: false,
+      error: `Storage-Upload fehlgeschlagen: ${upErr.message}`,
+    };
+  }
+
+  const { error: pathErr } = await supabase
+    .from("proposals")
+    .update({ pdf_storage_path: path })
+    .eq("id", proposalId);
+
+  if (pathErr) {
+    console.warn(
+      `[generateProposalPdf] pdf_storage_path-UPDATE fehlgeschlagen: ${pathErr.message}`,
+    );
+  }
+
+  // Audit-Eintrag direkt (nicht via logAudit-Helper) — wir kennen userId und
+  // wollen keine zusaetzliche Auth-Roundtrip-Latenz im Hot-Path.
+  await supabase.from("audit_log").insert({
+    actor_id: userId,
+    action: "update",
+    entity_type: "proposal",
+    entity_id: proposalId,
+    context: `PDF generated v${proposal.version}`,
+  });
+
+  const { data: signed, error: signErr } = await admin.storage
+    .from(PROPOSAL_PDF_BUCKET)
+    .createSignedUrl(path, PDF_SIGNED_URL_TTL_SECONDS);
+
+  if (signErr || !signed?.signedUrl) {
+    return {
+      ok: false,
+      error: `Signed-URL-Erzeugung fehlgeschlagen: ${signErr?.message ?? "unbekannt"}`,
+    };
+  }
+
+  revalidatePath(`/proposals/${proposalId}/edit`);
+
+  return {
+    ok: true,
+    pdfUrl: signed.signedUrl,
+    filename: renderResult.filename,
+  };
 }

@@ -10,13 +10,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.5 SLC-552 PASS LIVE 2026-04-30** — Mobile-Smoke (390x844) + Desktop (1440x900) + Pipeline-Dropdown via chrome-devtools MCP gegen Live-Site PASS. NumberInput-Bug-Fix Live verifiziert (Einzelpreis 15000 ohne fuehrende 0, Cent-genau 7%-Steuer). Style-V2 (rounded-2xl, shadow-lg, Gradient-Buttons) sichtbar bestaetigt. Console-Errors: clean. 3. Bug in Live-Smoke gefunden + gefixt: "Auto-Save aktiv" doppelt im Editor-Header (Style-V2-Pass-Side-Effect) — Untertitel-Branch entfernt, SaveIndicator alleine bleibt. Insgesamt 3 Bugs im QA-/Smoke-Pass gefixt: notes-Schema-Drift + NumberInput-Loescht + Auto-Save-Doppelung. Tests 67/67, Build + TS + Lint clean.
-- Current Phase: V5.5 Implementation. SLC-551 + SLC-552 done (incl. Live-Smoke PASS). Naechster Schritt: Handoff (Context hoch) → naechste Session /backend SLC-553.
+- Current Focus: **V5.5 SLC-553 /backend done 2026-04-30** — pdfmake 0.2.23 installiert (DEC-105), Adapter-Pattern in `lib/pdf/proposal-renderer.ts` mit `pdfmakeRenderer` Default-Impl, Filename-Helper (`sanitizeProposalFilename`) + 9 Unit-Tests gruen, Image-Helper (`getLogoDataUrl`) magic-number-MIME-detect (PNG/JPEG nur), DocDefinition mit Logo + Markenfarbe-Linie + Empfaenger + Position-Tabelle (6 Spalten) + Summary + Konditionen + Footer (Branding-MD-stripped + ggf. Test-Mode-Zeile + Page-Counter). Server Action `generateProposalPdf(proposalId)` validiert Status (draft|sent), persistiert subtotal/tax/total, rendert via Service-Role-Storage in `proposal-pdfs/{user_id}/{proposal_id}/v{version}[.testmode].pdf`, schreibt `pdf_storage_path` zurueck, `audit_log` Eintrag mit context "PDF generated v{n}", 5min-Signed-URL Return. PreviewPanel: "PDF generieren"-Button funktional, Loading-State, Dialog-Modal mit iframe + Download-Link. Internal-Test-Mode default aktiv (`INTERNAL_TEST_MODE_ACTIVE !== 'false'`). next.config.ts: `serverExternalPackages` um `pdfmake` + `@foliojs-fork/fontkit` erweitert (sonst `data.trie`-ENOENT in Turbopack-Build). Tests 76/76, TypeScript + Build clean.
+- Current Phase: V5.5 Implementation. SLC-551 + SLC-552 LIVE done. SLC-553 /backend code done — Live-Smokes (Adobe/Chrome/Outlook/Gmail) + Watermark-Toggle + Cent-Genauigkeit + Edge-Cases gehen in /qa SLC-553. Naechster Schritt: User-Coolify-Deploy → /qa SLC-553.
 
 ## Immediate Next Steps
-1. **User-Coolify-Deploy** der Auto-Save-Doppelung-Fix-Branch (commit nach `63561fe`).
-2. **/backend SLC-553** — pdfmake-Adapter + DocDefinition + Image-Helper + Filename-Helper + generateProposalPdf-Action + PreviewPanel-Hookup + Watermark + Multi-Client-Smokes (~5-7h, 8 MTs). Vor Start: Session-Handoff empfohlen wegen Context-Druck.
-3. **/qa SLC-553** — UI-vs-PDF-Cent-Genauigkeit, 4 Mailclient-Smokes (Adobe/Chrome/Outlook/Gmail), Watermark-Toggle, Edge-Cases.
+1. **User-Coolify-Deploy** des SLC-553-Backend-Stacks (Commit `<hash>` nach `92be1a4`).
+2. **/qa SLC-553** — UI-vs-PDF-Cent-Genauigkeit (Faelle A/B/C), 4 Mailclient-Smokes (Adobe/Chrome/Outlook/Gmail), Watermark-Toggle (`INTERNAL_TEST_MODE_ACTIVE` true→false), Edge-Cases (kein Logo, langer Title, Sonderzeichen, 0 Items, 50 Items), Storage-Pfad-Smoke, Audit-Smoke, Performance < 2s/<5s.
 4. **/backend SLC-554** — Whitelist-Transition + Versionierung + Auto-Expire-Cron + Status-Buttons + StatusBadge + VersionsList + Read-only-Mode + REL-020-Cron-Notes (~4-6h, 9 MTs).
 5. **/qa SLC-554** — Status-Whitelist + Idempotenz + Versionierung + Cron-Smoke + UI-Smokes.
 6. **/backend + /frontend SLC-555** — ProposalAttachmentPicker + AttachmentsSection-Erweiterung + send.ts source_type-Diskriminator + sendComposedEmail-Update + Cross-Cut-Smokes (~3-4h, 10 MTs).
@@ -33,7 +32,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 **V5.5 — Angebot-Erstellung (IMPLEMENTING — SLC-551 done 2026-04-29):**
 - FEAT-551 Angebot-Schema-Erweiterung + Position-Items (in_progress, MIG-026 applied auf Hetzner, Server Actions + Pfad-Helper live)
 - FEAT-552 Angebot-Workspace UI 3-Panel (done 2026-04-30, /proposals/[id]/edit live, native React-State + Custom-Debounce statt RHF/lodash, @dnd-kit/sortable)
-- FEAT-553 PDF-Renderer + Branding (planned, **pdfmake** als Library DEC-105, Adapter-Pattern)
+- FEAT-553 PDF-Renderer + Branding (in_progress, **pdfmake** als Library DEC-105, Adapter-Pattern, /backend done 2026-04-30, /qa offen)
 - FEAT-554 Status-Lifecycle + Versionierung (planned, V1-Status bleibt unangetastet DEC-109, Auto-Expire-Cron 02:00 Berlin DEC-110)
 - FEAT-555 Angebot-Anhang im Composing-Studio (planned, source_type-Diskriminator in email_attachments DEC-108)
 

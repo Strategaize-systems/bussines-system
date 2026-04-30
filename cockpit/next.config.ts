@@ -2,7 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  serverExternalPackages: ["pdf-parse"],
+  // pdfmake + fontkit nutzen Native-Asset-Files (z.B. data.trie) und
+  // mailparser haben dynamische Requires, die Turbopack nicht sauber bundlet.
+  // Als externe Pakete behandelt, damit Node.js sie zur Laufzeit aufloest.
+  serverExternalPackages: ["pdf-parse", "pdfmake", "@foliojs-fork/fontkit"],
   experimental: {
     // SLC-542 Refactor 2026-04-29: E-Mail-Anhang-Upload laeuft jetzt ueber
     // API-Route (`/api/emails/attachments`) — kein Server-Action-Body-Limit
