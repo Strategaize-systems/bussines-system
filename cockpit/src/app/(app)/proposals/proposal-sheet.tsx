@@ -18,7 +18,7 @@ interface ProposalSheetProps {
   contacts: { id: string; first_name: string; last_name: string }[];
   companies: { id: string; name: string }[];
   proposal?: Proposal;
-  trigger?: React.ReactNode;
+  trigger?: React.ReactElement;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
@@ -47,14 +47,16 @@ export function ProposalSheet({ deals, contacts, companies, proposal, trigger, d
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       {trigger !== undefined && (
-        <SheetTrigger>
-          {trigger ?? (
-            <Button size="sm">
-              <Plus className="mr-2 h-4 w-4" />
-              Angebot erstellen
-            </Button>
-          )}
-        </SheetTrigger>
+        <SheetTrigger
+          render={
+            trigger ?? (
+              <Button size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Angebot erstellen
+              </Button>
+            )
+          }
+        />
       )}
       <SheetContent>
         <SheetHeader>
