@@ -625,8 +625,6 @@ export type GenerateProposalPdfResult =
   | { ok: true; pdfUrl: string; filename: string }
   | { ok: false; error: string };
 
-const PDF_SIGNED_URL_TTL_SECONDS = 300; // 5 Minuten
-
 export async function generateProposalPdf(
   proposalId: string,
 ): Promise<GenerateProposalPdfResult> {
@@ -801,22 +799,20 @@ export async function generateProposalPdf(
     context: `PDF generated v${proposal.version}`,
   });
 
-  const { data: signed, error: signErr } = await admin.storage
-    .from(PROPOSAL_PDF_BUCKET)
-    .createSignedUrl(path, PDF_SIGNED_URL_TTL_SECONDS);
-
-  if (signErr || !signed?.signedUrl) {
-    return {
-      ok: false,
-      error: `Signed-URL-Erzeugung fehlgeschlagen: ${signErr?.message ?? "unbekannt"}`,
-    };
-  }
+  // Server-Proxy-Route nutzen statt createSignedUrl (Hotfix 2026-04-30):
+  // Self-Hosted-Supabase ist via Kong extern nicht erreichbar — Signed-URLs
+  // zeigen auf den internen Container-Hostname und brechen im Browser. Die
+  // Proxy-Route streamt das PDF inline mit Auth-Check + sauberem Filename.
+  // Cache-Buster `v={version}-{timestamp}` damit der iframe nach erneuter
+  // Generierung nicht aus dem Browser-Cache laedt.
+  const cacheBuster = `${proposal.version}-${Date.now()}`;
+  const pdfUrl = `/api/proposals/${proposalId}/pdf?v=${cacheBuster}`;
 
   revalidatePath(`/proposals/${proposalId}/edit`);
 
   return {
     ok: true,
-    pdfUrl: signed.signedUrl,
+    pdfUrl,
     filename: renderResult.filename,
   };
 }
