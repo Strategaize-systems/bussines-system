@@ -94,8 +94,18 @@ function ProposalRow({ proposal, deals, contacts, companies }: { proposal: Propo
       </div>
       {proposal.contacts && <Link href={`/contacts/${proposal.contacts.id}`} className="text-xs font-medium text-slate-600 shrink-0" onClick={(e) => e.stopPropagation()}>{proposal.contacts.first_name} {proposal.contacts.last_name}</Link>}
       <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        {proposal.status === "draft" && (
+          <Link
+            href={`/proposals/${proposal.id}/edit`}
+            className="px-2.5 py-1 rounded-md bg-[#120774] text-white text-[11px] font-bold hover:bg-[#0d055c] transition-colors flex items-center gap-1.5"
+            title="Angebot im Workspace bearbeiten"
+          >
+            <Pencil size={12} />
+            Bearbeiten
+          </Link>
+        )}
         <ProposalSheet deals={deals} contacts={contacts} companies={companies} proposal={proposal} trigger={
-          <button className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"><Pencil size={14} /></button>
+          <button className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors" title="Schnell-Edit (Legacy)"><Pencil size={14} /></button>
         } />
         <button onClick={() => startTransition(async () => { await deleteProposal(proposal.id); })} disabled={isPending} className="p-1.5 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><Trash2 size={14} /></button>
       </div>

@@ -1,8 +1,26 @@
 "use client";
 
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Building2, User, Calendar, AlertTriangle, Clock, MoreVertical } from "lucide-react";
+import {
+  Building2,
+  User,
+  Calendar,
+  AlertTriangle,
+  Clock,
+  MoreVertical,
+  FileText,
+  Loader2,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { createProposal } from "@/app/(app)/proposals/actions";
 import type { Deal } from "@/app/(app)/pipeline/actions";
 
 const fmtCompact = new Intl.NumberFormat("de-DE", {
@@ -34,6 +52,9 @@ function getDaysInStage(updatedAt: string): number {
 }
 
 export function KanbanCard({ deal, stageColor, stageProbability = 0, onClick }: KanbanCardProps) {
+  const router = useRouter();
+  const [isCreating, startCreating] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   const {
     attributes,
     listeners,
@@ -83,10 +104,54 @@ export function KanbanCard({ deal, stageColor, stageProbability = 0, onClick }: 
         {/* Title + Menu */}
         <div className="flex items-start justify-between gap-1">
           <div className="font-bold text-sm leading-tight text-slate-900">{deal.title}</div>
-          <button className="p-0.5 rounded text-slate-300 hover:text-slate-500 shrink-0 -mr-1">
-            <MoreVertical size={14} />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="p-0.5 rounded text-slate-300 hover:text-slate-500 shrink-0 -mr-1 outline-none focus:text-slate-700"
+              aria-label="Aktionen"
+            >
+              {isCreating ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <MoreVertical size={14} />
+              )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <DropdownMenuItem
+                disabled={isCreating}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setError(null);
+                  startCreating(async () => {
+                    const res = await createProposal({
+                      deal_id: deal.id,
+                      contact_id: deal.contact_id ?? null,
+                      company_id: deal.company_id ?? null,
+                    });
+                    if (res.ok) {
+                      router.push(`/proposals/${res.proposalId}/edit`);
+                    } else {
+                      setError(res.error);
+                    }
+                  });
+                }}
+                className="gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                Angebot erstellen
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
+        {error && (
+          <div className="text-[10px] font-bold text-red-600 bg-red-50 rounded px-2 py-1">
+            {error}
+          </div>
+        )}
 
         {/* Company + Contact */}
         {(deal.companies || deal.contacts) && (

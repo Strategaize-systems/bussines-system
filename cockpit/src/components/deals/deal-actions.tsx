@@ -4,11 +4,12 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { moveDealToStage } from "@/app/(app)/pipeline/actions";
+import { createProposal } from "@/app/(app)/proposals/actions";
 import { TaskSheet } from "@/app/(app)/aufgaben/task-sheet";
 import { MeetingSheet } from "@/components/meetings/meeting-sheet";
 import { ActivityForm } from "@/components/activities/activity-form";
 import { Button } from "@/components/ui/button";
-import { ListTodo, Mail, Calendar, ChevronDown, Sparkles, Loader2 } from "lucide-react";
+import { ListTodo, Mail, Calendar, ChevronDown, Sparkles, Loader2, FileText } from "lucide-react";
 import type { PipelineStage } from "@/app/(app)/pipeline/actions";
 import { getContextPrefill } from "@/lib/context-prefill";
 import { StartMeetingButton } from "@/components/meetings/start-meeting-button";
@@ -33,6 +34,8 @@ export function DealActions({
   const [isPending, startTransition] = useTransition();
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractResult, setExtractResult] = useState<string | null>(null);
+  const [isCreatingProposal, setIsCreatingProposal] = useState(false);
+  const [proposalError, setProposalError] = useState<string | null>(null);
   const router = useRouter();
 
   const prefill = getContextPrefill({
@@ -167,6 +170,49 @@ export function DealActions({
           contactId={deal.contact_id ?? undefined}
           companyId={deal.company_id ?? undefined}
         />
+
+        {/* + Angebot (V5.5 SLC-552) */}
+        <button
+          type="button"
+          disabled={isCreatingProposal}
+          onClick={async () => {
+            setProposalError(null);
+            setIsCreatingProposal(true);
+            try {
+              const res = await createProposal({
+                deal_id: deal.id,
+                contact_id: deal.contact_id ?? null,
+                company_id: deal.company_id ?? null,
+              });
+              if (res.ok) {
+                router.push(`/proposals/${res.proposalId}/edit`);
+              } else {
+                setProposalError(res.error);
+                setTimeout(() => setProposalError(null), 4000);
+              }
+            } catch (e) {
+              setProposalError(e instanceof Error ? e.message : "Fehler");
+              setTimeout(() => setProposalError(null), 4000);
+            } finally {
+              setIsCreatingProposal(false);
+            }
+          }}
+          className="relative flex items-center gap-2.5 h-10 px-4 rounded-lg border-2 border-slate-200 bg-white text-sm font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md transition-all cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+        >
+          <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-400 flex items-center justify-center shadow-sm">
+            {isCreatingProposal ? (
+              <Loader2 className="h-3.5 w-3.5 text-white animate-spin" strokeWidth={2.5} />
+            ) : (
+              <FileText className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+            )}
+          </span>
+          Angebot
+          {proposalError && (
+            <span className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-red-600 px-2.5 py-1 text-xs font-medium text-white shadow-lg">
+              {proposalError}
+            </span>
+          )}
+        </button>
 
         {/* Cadence einbuchen (SLC-505) */}
         <EnrollButton dealId={deal.id} />

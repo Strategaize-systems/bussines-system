@@ -1667,7 +1667,7 @@
       "title": "V5.5 SLC-552 Angebot-Workspace UI (3-Panel + Position-Liste + Editor + HTML-Live-Preview)",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.5",
       "description": "FEAT-552 SLC-552: Vollbild-Schreibumgebung /proposals/[id]/edit mit 3-Panel-Layout (Position-Liste links via @dnd-kit/sortable, Editor mitte mit React-Hook-Form + Zod + Auto-Save 500ms debounced, HTML-Live-Preview rechts debounced 250ms - DEC-106). Server Actions addProposalItem/updateProposalItem/removeProposalItem/reorderProposalItems/updateProposal mit Audit-Log. Pure-Function Calculator calculateTotals (Cent-genau, Single-Source-of-Truth fuer SLC-553). Drei Einstiegspunkte: Deal-Workspace-Quickaction, Pipeline-Card-Kontextmenue, /proposals-Liste Bearbeiten-Button auf Drafts. PDF-Generieren-Button + Neue-Version-Button als disabled Placeholder (aktiviert in SLC-553 + SLC-554). 11 Micro-Tasks, ~6-8h.",
       "createdAt": "2026-04-29"

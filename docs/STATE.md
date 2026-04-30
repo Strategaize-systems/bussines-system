@@ -10,30 +10,29 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.5 SLC-552 Backend-Anteil done 2026-04-29** — RPT-254 dokumentiert MT-1 (Zod-Schemas), MT-2 (Calculator + 14 Unit-Tests AC8 Cent-genau), MT-3 (5 Server Actions: updateProposal/addProposalItem/updateProposalItem/removeProposalItem/reorderProposalItems mit Audit-Log + Zod-Validation); V2-Stub `updateProposal` zu `updateProposalLegacy` umbenannt (mirror createProposalLegacy). 67/67 Tests gruen, npm run build gruen, Lint-clean fuer neue Files (221 pre-existing Repo-Errors unangefasst). Frontend-Anteil (MT-4..MT-11) offen — Pre-Decision RHF vs. native vor /frontend.
-- Current Phase: V5.5 Implementation. SLC-551 done, SLC-552 Backend done, Frontend offen. Naechster Schritt: /frontend SLC-552.
+- Current Focus: **V5.5 SLC-552 done 2026-04-30** — RPT-255 dokumentiert MT-4..MT-10: native React-State Workspace (Option B durch User entschieden, KEIN react-hook-form/lodash), Custom-Debounce-Hook in lib/utils/use-debounce.ts (wiederverwendbar fuer SLC-553/554/555), 3-Panel-Layout `/proposals/[id]/edit` (PositionList mit @dnd-kit/sortable, Editor mit Auto-Save 500ms debounced, HtmlPreview debounced 250ms), 3 Einstiegspunkte (Deal-Quickaction + Pipeline-Card-Kontextmenue + /proposals-Bearbeiten-Button). addProposalItem returnt jetzt full `ProposalItem` statt nur itemId (optimistic-update-Support). Verifikation: npm run build gruen (61 Pages incl. /proposals/[id]/edit), 67/67 Tests gruen, Lint-clean fuer alle neuen Files. MT-11 Browser-Smoke verschoben in /qa SLC-552 nach Coolify-Deploy.
+- Current Phase: V5.5 Implementation. SLC-551 + SLC-552 done. Naechster Schritt: /qa SLC-552.
 
 ## Immediate Next Steps
-1. **/frontend SLC-552** — MT-4 (PositionList + ProductPicker via @dnd-kit/sortable), MT-5 (Editor + Auto-Save 500ms), MT-6 (HtmlPreview + PreviewPanel debounced 250ms), MT-7 (Workspace + Page-Wrapper), MT-8/9/10 (3 Einstiegspunkte), MT-11 (Browser-Smoke). Pre-Decision: react-hook-form+lodash installieren ODER native React-Form-State + Custom-Debounce-Helper. ~5h Implementation + ~1h Smoke.
-2. **/qa SLC-552** — Drei-Einstiegspunkt-Test, Cent-genaue Berechnung, Drag-Reorder, Auto-Save-Smoke, Mobile-Tabs.
-3. **/backend SLC-553** — pdfmake-Adapter + DocDefinition + Image-Helper + Filename-Helper + generateProposalPdf-Action + PreviewPanel-Hookup + Watermark + Multi-Client-Smokes (~5-7h, 8 MTs).
-4. **/qa SLC-553** — UI-vs-PDF-Cent-Genauigkeit, 4 Mailclient-Smokes (Adobe/Chrome/Outlook/Gmail), Watermark-Toggle, Edge-Cases.
-5. **/backend SLC-554** — Whitelist-Transition + Versionierung + Auto-Expire-Cron + Status-Buttons + StatusBadge + VersionsList + Read-only-Mode + REL-020-Cron-Notes (~4-6h, 9 MTs).
-6. **/qa SLC-554** — Status-Whitelist + Idempotenz + Versionierung + Cron-Smoke + UI-Smokes.
-7. **/backend + /frontend SLC-555** — ProposalAttachmentPicker + AttachmentsSection-Erweiterung + send.ts source_type-Diskriminator + sendComposedEmail-Update + Cross-Cut-Smokes (~3-4h, 10 MTs).
-8. **/qa SLC-555** — 3 Smoke-Faelle (Proposal/PC-Upload/Mix) + V5.4-Cadence-Regression + Status-Auto-Sent + Idempotenz.
-9. **/qa V5.5 Gesamt + /final-check + /go-live + /deploy** — REL-020 als Final-Release nach SLC-555.
-10. **V5.4 Post-Launch (passiv)** — Stable-Window 24-48h, /post-launch V5.4 nach. /post-launch V5.3 ueberfaellig (passiv).
-11. **V5.4.x Patch-Carryover (optional, nicht release-blockierend):**
+1. **/qa SLC-552** — Drei-Einstiegspunkt-Test, Cent-genaue Berechnung, Drag-Reorder, Auto-Save-Smoke, Mobile-Tabs. Browser-Smoke nach Coolify-Deploy.
+2. **/backend SLC-553** — pdfmake-Adapter + DocDefinition + Image-Helper + Filename-Helper + generateProposalPdf-Action + PreviewPanel-Hookup + Watermark + Multi-Client-Smokes (~5-7h, 8 MTs).
+3. **/qa SLC-553** — UI-vs-PDF-Cent-Genauigkeit, 4 Mailclient-Smokes (Adobe/Chrome/Outlook/Gmail), Watermark-Toggle, Edge-Cases.
+4. **/backend SLC-554** — Whitelist-Transition + Versionierung + Auto-Expire-Cron + Status-Buttons + StatusBadge + VersionsList + Read-only-Mode + REL-020-Cron-Notes (~4-6h, 9 MTs).
+5. **/qa SLC-554** — Status-Whitelist + Idempotenz + Versionierung + Cron-Smoke + UI-Smokes.
+6. **/backend + /frontend SLC-555** — ProposalAttachmentPicker + AttachmentsSection-Erweiterung + send.ts source_type-Diskriminator + sendComposedEmail-Update + Cross-Cut-Smokes (~3-4h, 10 MTs).
+7. **/qa SLC-555** — 3 Smoke-Faelle (Proposal/PC-Upload/Mix) + V5.4-Cadence-Regression + Status-Auto-Sent + Idempotenz.
+8. **/qa V5.5 Gesamt + /final-check + /go-live + /deploy** — REL-020 als Final-Release nach SLC-555.
+9. **V5.4 Post-Launch (passiv)** — Stable-Window 24-48h, /post-launch V5.4 nach. /post-launch V5.3 ueberfaellig (passiv).
+10. **V5.4.x Patch-Carryover (optional, nicht release-blockierend):**
     - SLC-541 M1: ConditionalColorPicker Refactor zu derived-state
     - SLC-542 M1/ISSUE-045: Server-side Total-Size Limit
     - SLC-542 L1: Filename-Kollision-Suffix-Pattern bei upsert
-12. **Carryover (nicht V5.5-Scope):** ISSUE-042 OpenAI-Key Pre-Pflicht, Anwalts-Pruefung COMPLIANCE.md, Azure OpenAI EU + DPA + Switch (Pre-Production-Gate nach V5.5), BL-397 GitHub-App Org-Anbindung, A5 SLC-531 Outlook-Smoke.
+11. **Carryover (nicht V5.5-Scope):** ISSUE-042 OpenAI-Key Pre-Pflicht, Anwalts-Pruefung COMPLIANCE.md, Azure OpenAI EU + DPA + Switch (Pre-Production-Gate nach V5.5), BL-397 GitHub-App Org-Anbindung, A5 SLC-531 Outlook-Smoke.
 
 ## Active Scope
 **V5.5 — Angebot-Erstellung (IMPLEMENTING — SLC-551 done 2026-04-29):**
 - FEAT-551 Angebot-Schema-Erweiterung + Position-Items (in_progress, MIG-026 applied auf Hetzner, Server Actions + Pfad-Helper live)
-- FEAT-552 Angebot-Workspace UI 3-Panel (planned, /proposals/[id]/edit, dnd-kit + React-Hook-Form)
+- FEAT-552 Angebot-Workspace UI 3-Panel (done 2026-04-30, /proposals/[id]/edit live, native React-State + Custom-Debounce statt RHF/lodash, @dnd-kit/sortable)
 - FEAT-553 PDF-Renderer + Branding (planned, **pdfmake** als Library DEC-105, Adapter-Pattern)
 - FEAT-554 Status-Lifecycle + Versionierung (planned, V1-Status bleibt unangetastet DEC-109, Auto-Expire-Cron 02:00 Berlin DEC-110)
 - FEAT-555 Angebot-Anhang im Composing-Studio (planned, source_type-Diskriminator in email_attachments DEC-108)

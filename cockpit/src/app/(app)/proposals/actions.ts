@@ -339,6 +339,10 @@ export type ItemMutationResult =
   | { ok: true; itemId: string }
   | { ok: false; error: string };
 
+export type AddItemResult =
+  | { ok: true; item: ProposalItem }
+  | { ok: false; error: string };
+
 const AUDIT_RELEVANT_FIELDS = [
   "title",
   "tax_rate",
@@ -423,7 +427,7 @@ export async function addProposalItem(
   proposalId: string,
   productId: string,
   quantity: number = 1,
-): Promise<ItemMutationResult> {
+): Promise<AddItemResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -467,7 +471,7 @@ export async function addProposalItem(
       snapshot_description: (product.description as string | null) ?? null,
       snapshot_unit_price_at_creation: standardPrice,
     })
-    .select("id")
+    .select("*")
     .single();
 
   if (insErr || !inserted) {
@@ -482,7 +486,7 @@ export async function addProposalItem(
   });
 
   revalidatePath(`/proposals/${proposalId}/edit`);
-  return { ok: true, itemId: inserted.id as string };
+  return { ok: true, item: inserted as ProposalItem };
 }
 
 export async function updateProposalItem(
