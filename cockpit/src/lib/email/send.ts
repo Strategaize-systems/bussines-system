@@ -15,6 +15,10 @@ export type SendEmailAttachment = {
   storagePath: string;
   filename: string;
   mimeType: string;
+  // SLC-555 DEC-108: source_type entscheidet, aus welchem Storage-Bucket
+  // der Buffer geladen wird. Default 'upload' (V5.4-Pfad: email-attachments).
+  // 'proposal' = proposal-pdfs-Bucket (Angebot-PDF aus dem Workspace).
+  source_type?: "upload" | "proposal";
 };
 
 export type SendEmailParams = {
@@ -127,21 +131,30 @@ export async function sendEmailWithTracking(params: SendEmailParams): Promise<Se
     };
   }
 
-  // Anhaenge aus Storage laden (SLC-542 MT-7).
-  // Default leer = bit-identisches V5.3-Verhalten ohne Multipart-Veraenderung.
+  // Anhaenge aus Storage laden (SLC-542 MT-7 + SLC-555 source_type-
+  // Diskriminator). Default leer = bit-identisches V5.3-Verhalten ohne
+  // Multipart-Veraenderung. Buffer kommt aus zwei moeglichen Buckets:
+  //   - 'upload' (oder unset)  → email-attachments (V5.4-Pfad)
+  //   - 'proposal'             → proposal-pdfs (SLC-555-Pfad)
   let mailAttachments:
     | { filename: string; content: Buffer; contentType: string }[]
     | undefined;
   if (params.attachments && params.attachments.length > 0) {
+    let uploadCount = 0;
+    let proposalCount = 0;
     try {
       mailAttachments = await Promise.all(
         params.attachments.map(async (att) => {
+          const bucket =
+            att.source_type === "proposal" ? "proposal-pdfs" : "email-attachments";
+          if (att.source_type === "proposal") proposalCount++;
+          else uploadCount++;
           const { data, error } = await supabase.storage
-            .from("email-attachments")
+            .from(bucket)
             .download(att.storagePath);
           if (error || !data) {
             throw new Error(
-              `Storage-Download fehlgeschlagen fuer ${att.filename}: ${error?.message ?? "kein Daten-Blob"}`,
+              `Storage-Download fehlgeschlagen fuer ${att.filename} (bucket=${bucket}): ${error?.message ?? "kein Daten-Blob"}`,
             );
           }
           const arrayBuffer = await data.arrayBuffer();
@@ -151,6 +164,9 @@ export async function sendEmailWithTracking(params: SendEmailParams): Promise<Se
             contentType: att.mimeType,
           };
         }),
+      );
+      console.log(
+        `[sendEmailWithTracking] attachments=${params.attachments.length} (upload=${uploadCount}, proposal=${proposalCount})`,
       );
     } catch (err) {
       return {

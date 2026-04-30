@@ -1697,7 +1697,7 @@
       "title": "V5.5 SLC-555 Composing-Studio Proposal-Picker + Send-Pfad-Erweiterung (BL-404 Teil 2)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V5.5",
       "description": "FEAT-555 SLC-555: Loest BL-404 Teil 2 ein. ProposalAttachmentPicker im Composing-Studio mit Status-Badges (DEC-112: alle Status sichtbar, Confirm-Modal bei expired/rejected). Server Action attachProposalToCompose validiert pdf_storage_path != NULL. AttachmentMeta-Type erweitert um source_type:'upload'|'proposal' und proposalId. send.ts unterscheidet beim Buffer-Read zwischen email-attachments-Bucket (V5.4 PC-Upload) und proposal-pdfs-Bucket. Junction-Insert mit source_type + proposal_id (CHECK-Constraint aus SLC-551 greift). Nach Send: idempotentes transitionProposalStatus(id, 'sent') (DEC-108). V5.4 PC-Upload-Pfad regression-frei. 3 Smoke-Test-Faelle (Proposal/PC-Upload/Mix) + V5.4-Cadence-Regression. REL-020-Notes vorbereiten. 10 Micro-Tasks, ~3-4h.",
       "createdAt": "2026-04-29"

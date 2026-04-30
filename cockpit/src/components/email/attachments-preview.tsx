@@ -7,7 +7,7 @@
 // Kein Inhalts-Render — nur Filename + Size + Mime-Icon.
 // Zeigt was beim Empfaenger als Anhang ankommen wird.
 
-import { Paperclip } from "lucide-react";
+import { FileText, Paperclip } from "lucide-react";
 
 import {
   formatSize,
@@ -46,22 +46,39 @@ export function AttachmentsPreview({ attachments }: Props) {
         </span>
       </div>
       <ul className="space-y-1">
-        {attachments.map((att) => (
-          <li
-            key={att.storagePath}
-            className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs"
-          >
-            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-700">
-              {iconForMime(att.mimeType)}
-            </span>
-            <span className="flex-1 truncate font-semibold text-slate-700">
-              {att.filename}
-            </span>
-            <span className="text-[10px] font-medium text-slate-400">
-              {formatSize(att.sizeBytes)}
-            </span>
-          </li>
-        ))}
+        {attachments.map((att) => {
+          const isProposal = att.source_type === "proposal";
+          return (
+            <li
+              key={att.storagePath}
+              className={
+                "flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs " +
+                (isProposal
+                  ? "border-[#4454b8]/30 bg-[#4454b8]/5"
+                  : "border-slate-200 bg-white")
+              }
+            >
+              {isProposal ? (
+                <span className="flex items-center gap-1 rounded bg-[#120774] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                  <FileText className="h-2.5 w-2.5" strokeWidth={2.5} />
+                  Angebot
+                </span>
+              ) : (
+                <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-700">
+                  {iconForMime(att.mimeType)}
+                </span>
+              )}
+              <span className="flex-1 truncate font-semibold text-slate-700">
+                {att.filename}
+              </span>
+              {att.sizeBytes > 0 && (
+                <span className="text-[10px] font-medium text-slate-400">
+                  {formatSize(att.sizeBytes)}
+                </span>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

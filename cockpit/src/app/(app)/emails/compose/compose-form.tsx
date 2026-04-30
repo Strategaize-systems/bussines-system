@@ -325,12 +325,13 @@ export function ComposeForm({
           className="flex-1 border-2 rounded-lg focus:ring-2 focus:ring-[#4454b8]/20"
         />
 
-        {/* Anhaenge (DEC-101) */}
+        {/* Anhaenge (DEC-101 + SLC-555 dealId fuer Proposal-Picker) */}
         <AttachmentsSection
           composeSessionId={composeSessionId}
           attachments={attachments}
           onAdd={onAddAttachment}
           onRemove={onRemoveAttachment}
+          dealId={dealId}
         />
 
         {/* KI-Improve-Bar */}

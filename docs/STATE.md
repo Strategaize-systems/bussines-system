@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.5 SLC-554 /qa PASS 2026-04-30 (RPT-260).** Vitest 97/97 + TSC PASS, Cron-Endpoint-Live (200/401/401) + DB-Audit-Smoke (status=expired + actor_id=NULL + Idempotenz) + Browser-Live-Smokes (Sent-Transition + Confirm + Versions-Liste + Neue-Version-V2-Erstellung + Items-Snapshot + V1-unangetastet + Read-only-Mode + Listing-Status-Badge + Anzeigen-Link `?readonly=1`) + Server-Side-Guard via Code-Inspektion. 4/5 V5.5-Slices done (SLC-551+552+553 LIVE, SLC-554 /qa PASS deployed Commit 03e0d26 + Cron `expire-proposals` aktiv). 1 Medium-Finding F1 (React Hydration #418 auf /proposals — UI funktioniert, kein Blocker, Investigation als IMP-Kandidat). Naechster Slice: SLC-555 (letzter V5.5-Slice).
-- Current Phase: V5.5 Implementation. SLC-551 + SLC-552 + SLC-553 + SLC-554 LIVE done. SLC-555 offen.
+- Current Focus: **V5.5 SLC-555 /backend code-complete 2026-04-30** (10/10 MTs implementiert, TSC + ESLint + Vitest 97/97 + `npm run build` gruen). Neue Files: `cockpit/src/app/(app)/emails/compose/attachment-actions.ts` (Server Action `attachProposalToCompose`), `cockpit/src/components/email/proposal-attachment-picker.tsx` (shadcn-Dialog mit Liste + Confirm-Modal). Erweitert: `attachments-whitelist.ts` (AttachmentMeta um `source_type`+`proposalId`), `proposals/actions.ts` (`getProposalsForDeal`), `attachments-section.tsx` (Angebot-Button + Picker-Mount + Icon-Diff + Storage-Skip-fuer-Proposal), `attachments-preview.tsx` (Icon-Diff), `compose-form.tsx` (dealId-Prop), `send.ts` (Bucket-Diskriminator), `send-action.ts` (proposal-validation + Junction `source_type`/`proposal_id` + idempotenter `transitionProposalStatus(id,'sent')` post-send). REL-020-Notes erweitert um SLC-555-Scope. /qa offen — End-to-End Smoke (Gmail-Send 3 Faelle + Junction-Inspect + Auto-Sent-Verify) ist /qa-Scope. 4/5 V5.5-Slices LIVE done (SLC-551..554), SLC-555 in_progress (Code-Complete, /qa pending). 1 Medium-Finding F1 (React Hydration #418 auf /proposals) bleibt Carryover.
+- Current Phase: V5.5 Implementation. SLC-551 + SLC-552 + SLC-553 + SLC-554 LIVE done. SLC-555 /backend done — /qa offen.
 
 ## Immediate Next Steps
-1. **/backend + /frontend SLC-555** — ProposalAttachmentPicker + AttachmentsSection-Erweiterung + send.ts source_type-Diskriminator + sendComposedEmail-Update + Cross-Cut-Smokes (~3-4h, 10 MTs).
-2. **/qa SLC-555** — 3 Smoke-Faelle (Proposal/PC-Upload/Mix) + V5.4-Cadence-Regression + Status-Auto-Sent + Idempotenz.
-3. **/qa V5.5 Gesamt + /final-check + /go-live + /deploy V5.5** — REL-020 als Final-Release nach SLC-555.
+1. **User-Coolify-Deploy SLC-555** — vor /qa: Build-Commit deployen, damit /qa gegen die Live-Umgebung Browser-Smokes laufen kann.
+2. **/qa SLC-555** — 3 Smoke-Faelle (Proposal/PC-Upload/Mix) + V5.4-Cadence-Regression + Status-Auto-Sent + Idempotenz + V5.4-PC-Upload-Regression. Junction-Row-Inspect via SQL: `source_type` + `proposal_id` + CHECK-Constraint Negativ-Test.
+3. **/qa V5.5 Gesamt + /final-check + /go-live + /deploy V5.5** — REL-020 als Final-Release nach SLC-555 /qa PASS.
 4. **F1 Hydration-Investigation** auf `/proposals` — als V5.5.x-Patch ODER vor V5.5 Final-Release. Wahrscheinlich Datums-Format-Drift im Listing-Card-Layout.
 5. **Coolify-Cron Erstlauf 02:00 Berlin (User-Verifikation am Folgetag)** — Audit-SQL laut REL-020-Notes.
 5. **/qa SLC-555** — 3 Smoke-Faelle (Proposal/PC-Upload/Mix) + V5.4-Cadence-Regression + Status-Auto-Sent + Idempotenz.
@@ -34,7 +34,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - FEAT-552 Angebot-Workspace UI 3-Panel (done 2026-04-30, /proposals/[id]/edit live, native React-State + Custom-Debounce statt RHF/lodash, @dnd-kit/sortable)
 - FEAT-553 PDF-Renderer + Branding (done 2026-04-30, **pdfmake** als Library DEC-105, Adapter-Pattern, /qa PASS via RPT-258, Mixed-Content-Hotfix Commit `91020b2` Server-Proxy /api/proposals/[id]/pdf live)
 - FEAT-554 Status-Lifecycle + Versionierung (done 2026-04-30, /backend + /qa PASS RPT-260: Whitelist transitions.ts + 21 Vitest-Tests, transitionProposalStatus mit Idempotenz DEC-108, createProposalVersion mit V1-unangetastet DEC-109 Live-verifiziert, Auto-Expire-Cron-Endpoint /api/cron/expire-proposals DEC-110 Live + DB-Audit-Smoke PASS + Idempotenz-Check, Workspace Status-Buttons + Confirm-Dialog Live, Read-only-Mode mit Server-Side-Guard `assertProposalEditable` in 5 Mutate-Actions, /proposals-Listing Status-Badge + Anzeigen-Button mit ?readonly=1, REL-020-Notes Coolify-Cron-Anleitung, Coolify-Cron `expire-proposals` aktiv)
-- FEAT-555 Angebot-Anhang im Composing-Studio (planned, source_type-Diskriminator in email_attachments DEC-108)
+- FEAT-555 Angebot-Anhang im Composing-Studio (in_progress 2026-04-30, /backend code-complete: ProposalAttachmentPicker + attachProposalToCompose + send.ts Bucket-Diskriminator + Junction `source_type`/`proposal_id` + idempotenter transitionProposalStatus post-send. /qa offen.)
 
 **Architektur-Entscheidungen V5.5:** DEC-105 pdfmake, DEC-106 HTML-Live-Preview, DEC-107 Snapshot inkl. price_at_creation, DEC-108 Status-Sent automatisch+manuell, DEC-109 V1-Status unangetastet, DEC-110 Cron 02:00 Berlin, DEC-111 Pfad-Schema, DEC-112 alle Status zeigen+Warning, DEC-113 Footer+Suffix-Watermark, DEC-114 5 Slices 1:1 zu Features.
 

@@ -123,6 +123,39 @@ export async function getProposalsForCompany(companyId: string) {
   return data as Proposal[];
 }
 
+// V5.5 SLC-555: Picker-Loader fuer ProposalAttachmentPicker im Composing-
+// Studio. DEC-112: alle Status werden gezeigt (kein Filter), damit der User
+// sehen kann was angeboten wurde. Sortierung nach Version DESC, dann
+// Created DESC fuer stabiles Verhalten bei mehreren Versionen am selben Tag.
+// Item enthaelt nur Picker-relevante Felder — kein full-Proposal-Payload.
+export type ProposalForPicker = {
+  id: string;
+  title: string;
+  version: number;
+  status: string;
+  created_at: string;
+  pdf_storage_path: string | null;
+};
+
+export async function getProposalsForDeal(
+  dealId: string,
+): Promise<ProposalForPicker[]> {
+  if (!dealId) return [];
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("proposals")
+    .select("id, title, version, status, created_at, pdf_storage_path")
+    .eq("deal_id", dealId)
+    .order("version", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[getProposalsForDeal] SELECT failed:", error.message);
+    return [];
+  }
+  return (data ?? []) as ProposalForPicker[];
+}
+
 // V2-Stub: FormData-basierter Trigger fuer das alte ProposalSheet ("Neues Angebot"-
 // Modal in /proposals). Bleibt bis SLC-552 die neue Workspace-Route ausrollt.
 // V5.5 (MIG-026) hat nur additive Spalten dazugepackt; die V2-Logik (auto-increment

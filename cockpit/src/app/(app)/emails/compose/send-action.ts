@@ -27,6 +27,7 @@ import {
   validateAttachment,
   type AttachmentMeta,
 } from "@/lib/email/attachments-whitelist";
+import { transitionProposalStatus } from "@/app/(app)/proposals/actions";
 
 export type SendComposedEmailInput = {
   to: string;
@@ -93,7 +94,12 @@ export async function sendComposedEmail(
   const vars = input.dealId ? (await loadVarsForDeal(input.dealId)) ?? {} : {};
   const html = renderBrandedHtml(body, branding, vars);
 
-  // SLC-542: Anhang-Liste defensiv re-validieren (Server-Trust nicht 100% Client).
+  // SLC-542 + SLC-555: Anhang-Liste defensiv re-validieren (Server-Trust
+  // nicht 100% Client). Diskriminator-Pattern (DEC-108):
+  //   - source_type='upload' (Default) → MIME/Ext/Size-Whitelist re-checken
+  //   - source_type='proposal' → MIME muss application/pdf sein, proposalId
+  //     ist Pflicht, kein Re-Whitelist-Check (PDFs sind ohnehin whitelisted,
+  //     sizeBytes ist 0/unbekannt)
   const safeAttachments: AttachmentMeta[] = [];
   let runningTotal = 0;
   if (Array.isArray(input.attachments)) {
@@ -106,6 +112,26 @@ export async function sendComposedEmail(
         typeof att.sizeBytes !== "number"
       ) {
         return { success: false, error: "Anhang-Metadaten ungueltig." };
+      }
+      const sourceType = att.source_type ?? "upload";
+      if (sourceType === "proposal") {
+        if (typeof att.proposalId !== "string" || !att.proposalId) {
+          return {
+            success: false,
+            error: "Proposal-Anhang ohne proposalId — Datenintegritaet verletzt.",
+          };
+        }
+        if (att.mimeType !== "application/pdf") {
+          return {
+            success: false,
+            error: "Proposal-Anhang muss MIME-Type application/pdf haben.",
+          };
+        }
+        // Total-Size mitlaufen lassen, falls Send-Pipeline spaeter Limits
+        // einfuehrt — bei sizeBytes=0 (unbekannt) hat das keinen Effekt.
+        runningTotal += att.sizeBytes;
+        safeAttachments.push(att);
+        continue;
       }
       const v = validateAttachment(
         { type: att.mimeType, size: att.sizeBytes, name: att.filename },
@@ -135,6 +161,7 @@ export async function sendComposedEmail(
           storagePath: a.storagePath,
           filename: a.filename,
           mimeType: a.mimeType,
+          source_type: a.source_type ?? "upload",
         }))
       : undefined,
   });
@@ -143,19 +170,27 @@ export async function sendComposedEmail(
     return { success: false, error: result.error ?? "Unbekannter Fehler beim Senden." };
   }
 
-  // SLC-542: Junction-Rows fuer den erfolgreichen Send anlegen (DEC-097).
+  // SLC-542 + SLC-555: Junction-Rows fuer den erfolgreichen Send anlegen
+  // (DEC-097, DEC-108). source_type + proposal_id werden jetzt aus den
+  // Anhang-Metadaten geschrieben — der CHECK-Constraint aus MIG-026
+  // verhindert invalid Kombinationen (upload+proposal_id oder proposal+NULL).
   // Bei Insert-Fehler: Mail ist schon raus, deshalb nur Warning loggen,
   // nicht den Send-Erfolg invalidieren.
   if (safeAttachments.length > 0 && result.emailId) {
     try {
       const admin = createAdminClient();
-      const rows = safeAttachments.map((a) => ({
-        email_id: result.emailId,
-        storage_path: a.storagePath,
-        filename: a.filename,
-        mime_type: a.mimeType,
-        size_bytes: a.sizeBytes,
-      }));
+      const rows = safeAttachments.map((a) => {
+        const sourceType = a.source_type ?? "upload";
+        return {
+          email_id: result.emailId,
+          storage_path: a.storagePath,
+          filename: a.filename,
+          mime_type: a.mimeType,
+          size_bytes: a.sizeBytes,
+          source_type: sourceType,
+          proposal_id: sourceType === "proposal" ? a.proposalId ?? null : null,
+        };
+      });
       const { error } = await admin.from("email_attachments").insert(rows);
       if (error) {
         // Warning, kein Hard-Fail — die Mail ist schon erfolgreich raus.
@@ -163,6 +198,35 @@ export async function sendComposedEmail(
       }
     } catch (err) {
       console.error("[sendComposedEmail] Junction-Insert exception:", err);
+    }
+
+    // SLC-555: Status-Auto-Sent fuer alle Proposal-Anhaenge (DEC-108
+    // idempotent — wenn Status schon `sent`/`accepted`, kein zusaetzlicher
+    // Audit-Eintrag, kein Throw). Reihenfolge: erst Mail erfolgreich (oben
+    // verifiziert), dann Status-Transition. Bei Transition-Error: nur Log,
+    // Mail-Erfolg bleibt — User kann Status manuell setzen.
+    const proposalAtts = safeAttachments.filter(
+      (a) => a.source_type === "proposal" && typeof a.proposalId === "string",
+    );
+    if (proposalAtts.length > 1) {
+      console.warn(
+        `[sendComposedEmail] Mehrfach-Proposal-Anhang (count=${proposalAtts.length}) — alle erhalten Status-Sent.`,
+      );
+    }
+    for (const att of proposalAtts) {
+      try {
+        const tr = await transitionProposalStatus(att.proposalId as string, "sent");
+        if (!tr.ok) {
+          console.warn(
+            `[sendComposedEmail] transitionProposalStatus(${att.proposalId},'sent') failed: ${tr.error}`,
+          );
+        }
+      } catch (e) {
+        console.error(
+          `[sendComposedEmail] transitionProposalStatus(${att.proposalId},'sent') exception:`,
+          e,
+        );
+      }
     }
   }
 

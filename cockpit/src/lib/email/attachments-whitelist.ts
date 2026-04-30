@@ -54,11 +54,21 @@ export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 // 25 MB Total ueber alle Anhaenge einer Mail
 export const MAX_TOTAL_SIZE_BYTES = 25 * 1024 * 1024;
 
+export type AttachmentSourceType = "upload" | "proposal";
+
 export type AttachmentMeta = {
   storagePath: string;
   filename: string;
   mimeType: string;
   sizeBytes: number;
+  // SLC-555 DEC-108: 'upload' = PC-Direkt-Upload (V5.4-Default,
+  // Bucket "email-attachments"), 'proposal' = Angebot-PDF-Anhang
+  // (Bucket "proposal-pdfs"). Optional + Default 'upload' fuer V5.4-
+  // Backwards-Compat — bestehende Konsumenten muessen nicht angepasst werden.
+  source_type?: AttachmentSourceType;
+  // SLC-555 DEC-108 CHECK-Constraint: Pflicht wenn source_type='proposal',
+  // sonst nicht gesetzt.
+  proposalId?: string;
 };
 
 type FileLike = {

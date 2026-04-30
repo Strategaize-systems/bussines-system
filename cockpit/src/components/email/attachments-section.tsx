@@ -13,7 +13,7 @@
 // und der Fehler in der UI angezeigt.
 
 import { useCallback, useRef, useState, useTransition } from "react";
-import { Loader2, Paperclip, Plus, Upload, X } from "lucide-react";
+import { FileText, Loader2, Paperclip, Plus, Upload, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +22,7 @@ import {
   validateAttachment,
   type AttachmentMeta,
 } from "@/lib/email/attachments-whitelist";
+import { ProposalAttachmentPicker } from "@/components/email/proposal-attachment-picker";
 
 const API_URL = "/api/emails/attachments";
 
@@ -73,6 +74,10 @@ type Props = {
   attachments: AttachmentMeta[];
   onAdd: (attachment: AttachmentMeta) => void;
   onRemove: (storagePath: string) => void;
+  // SLC-555 MT-4: dealId-Prop steuert Sichtbarkeit des "Angebot anhaengen"-
+  // Buttons. Bei null bleibt der Button verborgen — Composing-ohne-Deal-
+  // Bezug erlaubt nur PC-Direkt-Upload.
+  dealId?: string | null;
 };
 
 type PendingItem = {
@@ -99,6 +104,7 @@ export function AttachmentsSection({
   attachments,
   onAdd,
   onRemove,
+  dealId,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -106,6 +112,7 @@ export function AttachmentsSection({
   const [error, setError] = useState<string | null>(null);
   const [uploadPending, startUpload] = useTransition();
   const [removingPath, setRemovingPath] = useState<string | null>(null);
+  const [proposalPickerOpen, setProposalPickerOpen] = useState(false);
 
   const totalSize = attachments.reduce((sum, a) => sum + a.sizeBytes, 0);
   const pendingTotalSize = pending.reduce((sum, p) => sum + p.sizeBytes, 0);
@@ -201,18 +208,34 @@ export function AttachmentsSection({
   );
 
   const handleRemove = useCallback(
-    async (storagePath: string) => {
+    async (att: AttachmentMeta) => {
       setError(null);
-      setRemovingPath(storagePath);
-      const res = await deleteViaApi(storagePath);
+      // SLC-555: Proposal-Anhaenge werden nur aus dem State entfernt — die
+      // PDF im `proposal-pdfs`-Bucket bleibt liegen (Audit-Wahrheit, kein
+      // Cascade-Delete). PC-Uploads werden weiterhin via API-Route in
+      // `email-attachments` geloescht.
+      if (att.source_type === "proposal") {
+        onRemove(att.storagePath);
+        return;
+      }
+      setRemovingPath(att.storagePath);
+      const res = await deleteViaApi(att.storagePath);
       setRemovingPath(null);
       if (!res.ok) {
         setError(res.error);
         return;
       }
-      onRemove(storagePath);
+      onRemove(att.storagePath);
     },
     [onRemove],
+  );
+
+  const handleProposalSelect = useCallback(
+    (att: AttachmentMeta) => {
+      setError(null);
+      onAdd(att);
+    },
+    [onAdd],
   );
 
   return (
@@ -256,56 +279,101 @@ export function AttachmentsSection({
           className="hidden"
           onChange={handleFileInputChange}
         />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={uploadPending}
-          onClick={() => fileInputRef.current?.click()}
-          className="border-2"
-        >
-          {uploadPending ? (
-            <Loader2 className="mr-1.5 h-3 w-3 animate-spin" strokeWidth={2.5} />
-          ) : (
-            <Plus className="mr-1.5 h-3 w-3" strokeWidth={2.5} />
+        <div className="flex items-center gap-1.5">
+          {dealId && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={uploadPending}
+              onClick={() => setProposalPickerOpen(true)}
+              className="border-2 border-[#4454b8]/30 text-[#120774] hover:border-[#4454b8] hover:bg-[#4454b8]/5"
+              title="Angebot aus diesem Deal anhaengen"
+            >
+              <FileText className="mr-1.5 h-3 w-3" strokeWidth={2.5} />
+              Angebot anhaengen
+            </Button>
           )}
-          Datei anhaengen
-        </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={uploadPending}
+            onClick={() => fileInputRef.current?.click()}
+            className="border-2"
+          >
+            {uploadPending ? (
+              <Loader2 className="mr-1.5 h-3 w-3 animate-spin" strokeWidth={2.5} />
+            ) : (
+              <Plus className="mr-1.5 h-3 w-3" strokeWidth={2.5} />
+            )}
+            Datei anhaengen
+          </Button>
+        </div>
       </div>
+
+      {/* SLC-555: Proposal-Picker — nur gemountet bei dealId vorhanden,
+          damit kein Loader-Roundtrip ohne sichtbaren Trigger laeuft. */}
+      {dealId && (
+        <ProposalAttachmentPicker
+          composeSessionId={composeSessionId}
+          dealId={dealId}
+          open={proposalPickerOpen}
+          onOpenChange={setProposalPickerOpen}
+          onSelect={handleProposalSelect}
+        />
+      )}
 
       {/* Anhang-Liste */}
       {(attachments.length > 0 || pending.length > 0) && (
         <ul className="space-y-1.5">
-          {attachments.map((att) => (
-            <li
-              key={att.storagePath}
-              className="flex items-center gap-2 rounded-lg border-2 border-slate-200 bg-white px-2.5 py-1.5 text-xs"
-            >
-              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-700">
-                {iconForMime(att.mimeType)}
-              </span>
-              <span className="flex-1 truncate font-semibold text-slate-700">
-                {att.filename}
-              </span>
-              <span className="text-[10px] font-medium text-slate-400">
-                {formatSize(att.sizeBytes)}
-              </span>
-              <button
-                type="button"
-                onClick={() => handleRemove(att.storagePath)}
-                disabled={removingPath === att.storagePath}
-                className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
-                title="Anhang entfernen"
-                aria-label={`Anhang ${att.filename} entfernen`}
+          {attachments.map((att) => {
+            const isProposal = att.source_type === "proposal";
+            return (
+              <li
+                key={att.storagePath}
+                className={
+                  "flex items-center gap-2 rounded-lg border-2 px-2.5 py-1.5 text-xs " +
+                  (isProposal
+                    ? "border-[#4454b8]/30 bg-[#4454b8]/5"
+                    : "border-slate-200 bg-white")
+                }
               >
-                {removingPath === att.storagePath ? (
-                  <Loader2 className="h-3 w-3 animate-spin" strokeWidth={2.5} />
+                {isProposal ? (
+                  <span className="flex items-center gap-1 rounded bg-[#120774] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                    <FileText className="h-2.5 w-2.5" strokeWidth={2.5} />
+                    Angebot
+                  </span>
                 ) : (
-                  <X className="h-3 w-3" strokeWidth={2.5} />
+                  <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-700">
+                    {iconForMime(att.mimeType)}
+                  </span>
                 )}
-              </button>
-            </li>
-          ))}
+                <span className="flex-1 truncate font-semibold text-slate-700">
+                  {att.filename}
+                </span>
+                {att.sizeBytes > 0 && (
+                  <span className="text-[10px] font-medium text-slate-400">
+                    {formatSize(att.sizeBytes)}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleRemove(att)}
+                  disabled={removingPath === att.storagePath}
+                  className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                  title="Anhang entfernen"
+                  aria-label={`Anhang ${att.filename} entfernen`}
+                >
+                  {removingPath === att.storagePath ? (
+                    <Loader2 className="h-3 w-3 animate-spin" strokeWidth={2.5} />
+                  ) : (
+                    <X className="h-3 w-3" strokeWidth={2.5} />
+                  )}
+                </button>
+              </li>
+            );
+          })}
           {pending.map((p) => (
             <li
               key={p.localId}
