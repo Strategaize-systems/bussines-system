@@ -19,7 +19,6 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { ProposalProductPicker } from "@/components/proposal/proposal-product-picker";
 import {
   reorderProposalItems,
@@ -114,23 +113,22 @@ export function ProposalPositionList({
   );
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl border-2 border-slate-200 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b-2 border-slate-200 bg-slate-50">
+    <div className="flex flex-col h-full bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
+      <div className="flex items-center justify-between gap-2 px-5 py-4 border-b-2 border-slate-200">
         <div>
-          <div className="text-sm font-bold text-slate-900">Positionen</div>
-          <div className="text-[11px] text-slate-500">
+          <h3 className="text-base font-bold text-slate-900">Positionen</h3>
+          <p className="text-[11px] font-medium text-slate-500">
             {items.length} {items.length === 1 ? "Position" : "Positionen"}
-          </div>
+          </p>
         </div>
-        <Button
+        <button
           type="button"
-          size="sm"
           onClick={() => setPickerOpen(true)}
-          className="gap-1.5"
+          className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#120774] to-[#4454b8] px-3 py-2 text-xs font-bold text-white shadow-sm transition-all hover:shadow-md"
         >
-          <Plus className="h-4 w-4" />
-          Produkt hinzufuegen
-        </Button>
+          <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+          Produkt
+        </button>
       </div>
 
       {error && (
@@ -174,10 +172,10 @@ export function ProposalPositionList({
         )}
       </div>
 
-      <div className="px-4 py-3 border-t-2 border-slate-200 bg-slate-50 space-y-1.5">
+      <div className="px-5 py-4 border-t-2 border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100 space-y-1.5">
         <Row label="Subtotal Netto" value={eur.format(totals.subtotal)} />
         <Row label={`Steuer (${taxRate}%)`} value={eur.format(totals.tax)} />
-        <div className="h-px bg-slate-200 my-1" />
+        <div className="h-px bg-slate-200 my-1.5" />
         <Row label="Total Brutto" value={eur.format(totals.total)} bold />
       </div>
 
@@ -280,43 +278,33 @@ function PositionRow({
         </div>
         <div className="grid grid-cols-3 gap-2">
           <Field label="Menge">
-            <Input
-              type="number"
+            <NumberInput
+              value={item.quantity}
               min={1}
               step={1}
-              value={item.quantity}
-              onChange={(e) => {
-                const v = Number(e.target.value);
-                if (Number.isFinite(v) && v > 0) patchAndSave({ quantity: v });
-              }}
+              validate={(v) => Number.isFinite(v) && v > 0}
+              onCommit={(v) => patchAndSave({ quantity: v })}
               className="h-8 text-xs"
             />
           </Field>
           <Field label="Einzelpreis">
-            <Input
-              type="number"
+            <NumberInput
+              value={item.unit_price_net}
               min={0}
               step={0.01}
-              value={item.unit_price_net}
-              onChange={(e) => {
-                const v = Number(e.target.value);
-                if (Number.isFinite(v) && v >= 0) patchAndSave({ unit_price_net: v });
-              }}
+              validate={(v) => Number.isFinite(v) && v >= 0}
+              onCommit={(v) => patchAndSave({ unit_price_net: v })}
               className="h-8 text-xs tabular-nums"
             />
           </Field>
           <Field label="Discount %">
-            <Input
-              type="number"
+            <NumberInput
+              value={item.discount_pct}
               min={0}
               max={100}
               step={1}
-              value={item.discount_pct}
-              onChange={(e) => {
-                const v = Number(e.target.value);
-                if (Number.isFinite(v) && v >= 0 && v <= 100)
-                  patchAndSave({ discount_pct: v });
-              }}
+              validate={(v) => Number.isFinite(v) && v >= 0 && v <= 100}
+              onCommit={(v) => patchAndSave({ discount_pct: v })}
               className="h-8 text-xs tabular-nums"
             />
           </Field>
@@ -350,5 +338,68 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       </span>
       {children}
     </label>
+  );
+}
+
+// Lokaler String-State pro Number-Input, damit der User das Feld leeren und
+// frei tippen kann ohne dass `Number("") === 0` den Wert blockiert oder eine
+// fuehrende "0" stehen bleibt. Persist nur bei valid value; bei Blur wird der
+// lokale State auf den canonical Item-State zurueckgesetzt, falls der User
+// einen ungueltigen Wert getippt hat.
+function NumberInput({
+  value,
+  min,
+  max,
+  step,
+  validate,
+  onCommit,
+  className,
+}: {
+  value: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  validate: (v: number) => boolean;
+  onCommit: (v: number) => void;
+  className?: string;
+}) {
+  // committedValue trackt den zuletzt von extern gesehenen Wert. Aendert sich
+  // value von aussen (Drag-Reorder, Server-Rollback bei Validation-Error),
+  // wird der lokale Text-State neu initialisiert. React-19-Pattern: setState
+  // direkt im Render-Body ist erlaubt zur Schleifen-Terminierung.
+  const [text, setText] = useState(String(value));
+  const [committedValue, setCommittedValue] = useState(value);
+
+  if (committedValue !== value) {
+    setCommittedValue(value);
+    setText(String(value));
+  }
+
+  return (
+    <Input
+      type="number"
+      inputMode="decimal"
+      min={min}
+      max={max}
+      step={step}
+      value={text}
+      onChange={(e) => {
+        const next = e.target.value;
+        setText(next);
+        if (next === "") return;
+        const v = Number(next);
+        if (validate(v)) {
+          setCommittedValue(v);
+          onCommit(v);
+        }
+      }}
+      onBlur={() => {
+        const v = Number(text);
+        if (text === "" || !validate(v)) {
+          setText(String(value));
+        }
+      }}
+      className={className}
+    />
   );
 }

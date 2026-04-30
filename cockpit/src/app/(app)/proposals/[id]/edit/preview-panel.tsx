@@ -44,16 +44,16 @@ export function ProposalPreviewPanel({
   }, [proposal, items, debouncedSync]);
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl border-2 border-slate-200 overflow-hidden">
-      <div className="px-4 py-3 border-b-2 border-slate-200 bg-slate-50">
-        <div className="text-sm font-bold text-slate-900">Vorschau</div>
-        <div className="text-[10px] text-slate-500 mt-0.5 flex items-center gap-1.5">
+    <div className="flex flex-col h-full bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
+      <div className="px-5 py-4 border-b-2 border-slate-200">
+        <h3 className="text-base font-bold text-slate-900">Vorschau</h3>
+        <p className="text-[11px] font-medium text-slate-500 mt-0.5 flex items-center gap-1.5">
           <Info className="h-3 w-3" />
           HTML-Annaeherung — finales PDF kann minimal abweichen
-        </div>
+        </p>
       </div>
 
-      <div className="flex-1 overflow-y-auto bg-slate-100 p-4">
+      <div className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-100 to-slate-200 p-5">
         <ProposalHtmlPreview
           proposal={snapshot.proposal}
           items={snapshot.items}
@@ -63,14 +63,14 @@ export function ProposalPreviewPanel({
         />
       </div>
 
-      <div className="px-4 py-3 border-t-2 border-slate-200 bg-slate-50 flex items-center gap-2">
+      <div className="px-5 py-4 border-t-2 border-slate-200 flex items-center gap-2">
         <Button
           type="button"
           size="sm"
           variant="outline"
           disabled
           title="Verfuegbar in V5.5 SLC-553"
-          className="gap-1.5"
+          className="gap-1.5 font-bold"
         >
           <FileText className="h-4 w-4" />
           PDF generieren
@@ -81,7 +81,7 @@ export function ProposalPreviewPanel({
           variant="outline"
           disabled
           title="Verfuegbar in V5.5 SLC-554"
-          className="gap-1.5"
+          className="gap-1.5 font-bold"
         >
           <GitBranch className="h-4 w-4" />
           Neue Version

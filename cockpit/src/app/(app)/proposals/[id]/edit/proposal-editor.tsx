@@ -70,37 +70,41 @@ export function ProposalEditor({
   const taxRate = (proposal.tax_rate as 0 | 7 | 19) ?? 19;
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl border-2 border-slate-200 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b-2 border-slate-200 bg-slate-50">
+    <div className="flex flex-col h-full bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
+      <div className="flex items-center justify-between gap-2 px-5 py-4 border-b-2 border-slate-200">
         <div className="flex items-center gap-3">
           <Link
             href="/proposals"
-            className="p-1.5 rounded-md hover:bg-slate-100 text-slate-500"
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
             aria-label="Zur Angebotsliste"
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-slate-900">Editor</span>
-              <span className="text-[10px] font-bold text-slate-400 bg-slate-100 rounded px-1.5 py-0.5">
+              <h3 className="text-base font-bold text-slate-900">Editor</h3>
+              <span className="inline-flex items-center rounded-md bg-gradient-to-r from-[#120774] to-[#4454b8] px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
                 V{proposal.version}
               </span>
             </div>
-            {proposal.parent_proposal_id && (
+            {proposal.parent_proposal_id ? (
               <Link
                 href={`/proposals/${proposal.parent_proposal_id}/edit`}
-                className="text-[11px] text-blue-600 hover:underline"
+                className="text-[11px] font-medium text-[#4454b8] hover:underline"
               >
                 Vorgaenger ansehen
               </Link>
+            ) : (
+              <p className="text-[11px] font-medium text-slate-500">
+                Auto-Save aktiv
+              </p>
             )}
           </div>
         </div>
         <SaveIndicator status={saveStatus} message={errorMessage} />
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-5 space-y-5">
         <RecipientBlock deal={deal} company={company} contact={contact} />
 
         <Field label="Titel" htmlFor="proposal-title">

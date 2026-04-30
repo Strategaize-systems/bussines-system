@@ -10,8 +10,8 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.5 SLC-552 + /qa done 2026-04-30** — RPT-255 (Frontend-Completion) + RPT-256 (QA-Review) zeigen: 14/14 Code-ACs erfuellt, AC15 Browser-Smoke pending nach Coolify-Deploy. QA-Lauf hat latenten Schema-Bug `notes`-Feld in proposalEditSchema gefixt (DB hat keine notes-Spalte, nur scope_notes — Deviation-Rule 1 angewendet). Wiring-Chain Component → Server-Action → DB komplett verifiziert. Stub-Scan: clean. Tests 67/67, Build gruen, TypeScript clean. Bereit fuer Coolify-Deploy + Browser-Smoke.
-- Current Phase: V5.5 Implementation. SLC-551 + SLC-552 (incl. /qa) done. Naechster Schritt: User-Coolify-Deploy + Browser-Smoke, dann /backend SLC-553.
+- Current Focus: **V5.5 SLC-552 + /qa + 1. User-Smoke + Patch-Pass 2026-04-30** — Browser-Smoke 1/10 durch User (Tests 1-10) PASS. Zwei Bugs aus Smoke gefunden + gefixt: (1) NumberInput konnte nicht geleert werden (Number("") === 0 hat User-Edits blockiert). (2) Einzelpreis behielt fuehrende "0" nach Loeschen. Fix: `NumberInput`-Subkomponente mit lokalem String-State + React-19 set-during-render-Pattern fuer External-Sync. Style-Guide-V2-Pass aufgenommen: Workspace-Panels jetzt rounded-2xl + shadow-lg + p-5 (BL-403-Pattern), V-Badge mit Gradient, Header-Pattern angeglichen, Footer-Block mit Gradient-Accent. BL-412 angelegt fuer Zahlungsbedingungen-Vorauswahl + Split-Plan (V5.6-Scope). Tests 67/67, Build + TS + Lint clean. Mobile-Smoke (Test 11) verschoben auf nach naechstem Coolify-Deploy.
+- Current Phase: V5.5 Implementation. SLC-551 + SLC-552 done (incl. Patch-Pass). Naechster Schritt: User-Coolify-Deploy → Mobile-Smoke via chrome-devtools MCP → /backend SLC-553.
 
 ## Immediate Next Steps
 1. **User-Coolify-Deploy + Browser-Smoke (AC15 SLC-552)** — Drei-Einstiegspunkt-Test, Cent-genaue Berechnung, Drag-Reorder, Auto-Save-Smoke, Mobile-Tabs am Live-Server.
