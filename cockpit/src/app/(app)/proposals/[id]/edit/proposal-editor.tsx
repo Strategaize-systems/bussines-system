@@ -87,17 +87,13 @@ export function ProposalEditor({
                 V{proposal.version}
               </span>
             </div>
-            {proposal.parent_proposal_id ? (
+            {proposal.parent_proposal_id && (
               <Link
                 href={`/proposals/${proposal.parent_proposal_id}/edit`}
                 className="text-[11px] font-medium text-[#4454b8] hover:underline"
               >
                 Vorgaenger ansehen
               </Link>
-            ) : (
-              <p className="text-[11px] font-medium text-slate-500">
-                Auto-Save aktiv
-              </p>
             )}
           </div>
         </div>

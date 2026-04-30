@@ -10,12 +10,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.5 SLC-552 + /qa + 1. User-Smoke + Patch-Pass 2026-04-30** — Browser-Smoke 1/10 durch User (Tests 1-10) PASS. Zwei Bugs aus Smoke gefunden + gefixt: (1) NumberInput konnte nicht geleert werden (Number("") === 0 hat User-Edits blockiert). (2) Einzelpreis behielt fuehrende "0" nach Loeschen. Fix: `NumberInput`-Subkomponente mit lokalem String-State + React-19 set-during-render-Pattern fuer External-Sync. Style-Guide-V2-Pass aufgenommen: Workspace-Panels jetzt rounded-2xl + shadow-lg + p-5 (BL-403-Pattern), V-Badge mit Gradient, Header-Pattern angeglichen, Footer-Block mit Gradient-Accent. BL-412 angelegt fuer Zahlungsbedingungen-Vorauswahl + Split-Plan (V5.6-Scope). Tests 67/67, Build + TS + Lint clean. Mobile-Smoke (Test 11) verschoben auf nach naechstem Coolify-Deploy.
-- Current Phase: V5.5 Implementation. SLC-551 + SLC-552 done (incl. Patch-Pass). Naechster Schritt: User-Coolify-Deploy → Mobile-Smoke via chrome-devtools MCP → /backend SLC-553.
+- Current Focus: **V5.5 SLC-552 PASS LIVE 2026-04-30** — Mobile-Smoke (390x844) + Desktop (1440x900) + Pipeline-Dropdown via chrome-devtools MCP gegen Live-Site PASS. NumberInput-Bug-Fix Live verifiziert (Einzelpreis 15000 ohne fuehrende 0, Cent-genau 7%-Steuer). Style-V2 (rounded-2xl, shadow-lg, Gradient-Buttons) sichtbar bestaetigt. Console-Errors: clean. 3. Bug in Live-Smoke gefunden + gefixt: "Auto-Save aktiv" doppelt im Editor-Header (Style-V2-Pass-Side-Effect) — Untertitel-Branch entfernt, SaveIndicator alleine bleibt. Insgesamt 3 Bugs im QA-/Smoke-Pass gefixt: notes-Schema-Drift + NumberInput-Loescht + Auto-Save-Doppelung. Tests 67/67, Build + TS + Lint clean.
+- Current Phase: V5.5 Implementation. SLC-551 + SLC-552 done (incl. Live-Smoke PASS). Naechster Schritt: Handoff (Context hoch) → naechste Session /backend SLC-553.
 
 ## Immediate Next Steps
-1. **User-Coolify-Deploy + Browser-Smoke (AC15 SLC-552)** — Drei-Einstiegspunkt-Test, Cent-genaue Berechnung, Drag-Reorder, Auto-Save-Smoke, Mobile-Tabs am Live-Server.
-2. **/backend SLC-553** — pdfmake-Adapter + DocDefinition + Image-Helper + Filename-Helper + generateProposalPdf-Action + PreviewPanel-Hookup + Watermark + Multi-Client-Smokes (~5-7h, 8 MTs).
+1. **User-Coolify-Deploy** der Auto-Save-Doppelung-Fix-Branch (commit nach `63561fe`).
+2. **/backend SLC-553** — pdfmake-Adapter + DocDefinition + Image-Helper + Filename-Helper + generateProposalPdf-Action + PreviewPanel-Hookup + Watermark + Multi-Client-Smokes (~5-7h, 8 MTs). Vor Start: Session-Handoff empfohlen wegen Context-Druck.
 3. **/qa SLC-553** — UI-vs-PDF-Cent-Genauigkeit, 4 Mailclient-Smokes (Adobe/Chrome/Outlook/Gmail), Watermark-Toggle, Edge-Cases.
 4. **/backend SLC-554** — Whitelist-Transition + Versionierung + Auto-Expire-Cron + Status-Buttons + StatusBadge + VersionsList + Read-only-Mode + REL-020-Cron-Notes (~4-6h, 9 MTs).
 5. **/qa SLC-554** — Status-Whitelist + Idempotenz + Versionierung + Cron-Smoke + UI-Smokes.
