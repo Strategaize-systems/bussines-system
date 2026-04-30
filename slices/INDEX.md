@@ -217,5 +217,5 @@
 | SLC-551 | [Angebot-Schema-Foundation (MIG-026 + Bucket + RLS + createProposal)](SLC-551-proposal-schema-foundation.md) | FEAT-551 | done | Blocker | 2026-04-29 |
 | SLC-552 | [Angebot-Workspace UI (3-Panel + Position-Liste + Editor + HTML-Live-Preview)](SLC-552-proposal-workspace-ui.md) | FEAT-552 | done | High | 2026-04-29 |
 | SLC-553 | [PDF-Renderer (pdfmake) + Branding-Layout + Storage-Write + Watermark](SLC-553-pdf-renderer-pdfmake.md) | FEAT-553 | done | High | 2026-04-29 |
-| SLC-554 | [Status-Lifecycle Server Actions + Versionierung + Auto-Expire-Cron](SLC-554-status-lifecycle-versioning.md) | FEAT-554 | planned | High | 2026-04-29 |
+| SLC-554 | [Status-Lifecycle Server Actions + Versionierung + Auto-Expire-Cron](SLC-554-status-lifecycle-versioning.md) | FEAT-554 | in_progress | High | 2026-04-29 |
 | SLC-555 | [Composing-Studio Proposal-Picker + Send-Pfad-Erweiterung (BL-404 Teil 2)](SLC-555-compose-proposal-attachment.md) | FEAT-555 | planned | High | 2026-04-29 |

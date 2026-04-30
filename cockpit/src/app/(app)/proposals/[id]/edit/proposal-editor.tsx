@@ -30,6 +30,7 @@ type ProposalEditorProps = {
   company: ProposalEditPayload["company"];
   contact: ProposalEditPayload["contact"];
   onProposalChange: (patch: EditorPatch) => void;
+  readonly?: boolean;
 };
 
 export function ProposalEditor({
@@ -38,6 +39,7 @@ export function ProposalEditor({
   company,
   contact,
   onProposalChange,
+  readonly = false,
 }: ProposalEditorProps) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -97,7 +99,13 @@ export function ProposalEditor({
             )}
           </div>
         </div>
-        <SaveIndicator status={saveStatus} message={errorMessage} />
+        {readonly ? (
+          <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+            Nur Anzeige
+          </span>
+        ) : (
+          <SaveIndicator status={saveStatus} message={errorMessage} />
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-5 space-y-5">
@@ -110,6 +118,7 @@ export function ProposalEditor({
             onChange={(e) => patchAndSave({ title: e.target.value })}
             maxLength={255}
             placeholder="z.B. Coaching-Programm 2026"
+            disabled={readonly}
           />
         </Field>
 
@@ -122,7 +131,8 @@ export function ProposalEditor({
                 const v = Number(e.target.value) as 0 | 7 | 19;
                 patchAndSave({ tax_rate: v });
               }}
-              className="h-10 w-full rounded-lg border-2 border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus:outline-none focus:border-[#4454b8] focus:ring-2 focus:ring-[#4454b8]/20 transition-all"
+              disabled={readonly}
+              className="h-10 w-full rounded-lg border-2 border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus:outline-none focus:border-[#4454b8] focus:ring-2 focus:ring-[#4454b8]/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <option value={19}>19%</option>
               <option value={7}>7%</option>
@@ -137,6 +147,7 @@ export function ProposalEditor({
               onChange={(e) =>
                 patchAndSave({ valid_until: e.target.value || null })
               }
+              disabled={readonly}
             />
           </Field>
         </div>
@@ -151,6 +162,7 @@ export function ProposalEditor({
             placeholder="z.B. 30 Tage netto"
             rows={3}
             maxLength={2000}
+            disabled={readonly}
           />
         </Field>
       </div>

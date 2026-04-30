@@ -1,18 +1,22 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Info, FileText, GitBranch, Loader2, Download } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Info, FileText, GitBranch, Loader2, Download, Eye } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ProposalHtmlPreview } from "@/components/proposal/proposal-html-preview";
 import {
   generateProposalPdf,
+  createProposalVersion,
   type Proposal,
   type ProposalItem,
   type ProposalEditPayload,
@@ -34,6 +38,7 @@ export function ProposalPreviewPanel({
   company,
   contact,
 }: ProposalPreviewPanelProps) {
+  const router = useRouter();
   // Debounce-Pattern: live-state ist sofort aktuell, snapshot-state lagged 250ms
   // hinterher und ist die tatsaechliche Render-Quelle. Das vermeidet schweren
   // Re-Render bei jedem Tastendruck waehrend Auto-Save.
@@ -50,14 +55,26 @@ export function ProposalPreviewPanel({
     debouncedSync({ proposal, items });
   }, [proposal, items, debouncedSync]);
 
-  const [isPending, startTransition] = useTransition();
+  const [isPdfPending, startPdfTransition] = useTransition();
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfFilename, setPdfFilename] = useState<string | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
 
+  // V5.5 SLC-554: Neue-Version-Confirm + Server-Action.
+  const [versionConfirmOpen, setVersionConfirmOpen] = useState(false);
+  const [versionError, setVersionError] = useState<string | null>(null);
+  const [isVersionPending, startVersionTransition] = useTransition();
+
+  // Read-only-Modus: status != draft → Editor disabled, vorhandenes PDF wird
+  // direkt im iframe statt "neu generieren" angezeigt. PDF-URL wird aus
+  // pdf_storage_path beim ersten "Anzeigen"-Klick via Server-Proxy geladen.
+  const isReadOnly = proposal.status !== "draft";
+  const hasGeneratedPdf = Boolean(proposal.pdf_storage_path);
+  const nextVersionNumber = (proposal.version ?? 1) + 1;
+
   function handleGeneratePdf() {
     setPdfError(null);
-    startTransition(async () => {
+    startPdfTransition(async () => {
       const res = await generateProposalPdf(proposal.id);
       if (res.ok) {
         setPdfUrl(res.pdfUrl);
@@ -68,9 +85,30 @@ export function ProposalPreviewPanel({
     });
   }
 
+  // Read-only-Variante: zeige bestehende PDF via Server-Proxy ohne Re-Render.
+  function handleShowExistingPdf() {
+    setPdfError(null);
+    const cacheBuster = `${proposal.version}-${Date.now()}`;
+    setPdfUrl(`/api/proposals/${proposal.id}/pdf?v=${cacheBuster}`);
+    setPdfFilename(`Angebot V${proposal.version}.pdf`);
+  }
+
   function handleClosePdf() {
     setPdfUrl(null);
     setPdfFilename(null);
+  }
+
+  function handleConfirmNewVersion() {
+    setVersionError(null);
+    startVersionTransition(async () => {
+      const res = await createProposalVersion(proposal.id);
+      if (res.ok) {
+        setVersionConfirmOpen(false);
+        router.push(`/proposals/${res.newProposalId}/edit`);
+      } else {
+        setVersionError(res.error);
+      }
+    });
   }
 
   return (
@@ -94,31 +132,54 @@ export function ProposalPreviewPanel({
       </div>
 
       <div className="px-5 py-4 border-t-2 border-slate-200 flex flex-col gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {isReadOnly && hasGeneratedPdf ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleShowExistingPdf}
+              className="gap-1.5 font-bold"
+            >
+              <Eye className="h-4 w-4" />
+              PDF anzeigen
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={isPdfPending || isReadOnly}
+              onClick={handleGeneratePdf}
+              className="gap-1.5 font-bold"
+              title={
+                isReadOnly
+                  ? "PDF-Generierung nur im Status 'Entwurf' moeglich"
+                  : undefined
+              }
+            >
+              {isPdfPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FileText className="h-4 w-4" />
+              )}
+              {isPdfPending ? "Generiere PDF..." : "PDF generieren"}
+            </Button>
+          )}
           <Button
             type="button"
             size="sm"
             variant="outline"
-            disabled={isPending}
-            onClick={handleGeneratePdf}
+            disabled={isVersionPending}
+            onClick={() => setVersionConfirmOpen(true)}
             className="gap-1.5 font-bold"
+            title={`Neue Version V${nextVersionNumber} erstellen`}
           >
-            {isPending ? (
+            {isVersionPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <FileText className="h-4 w-4" />
+              <GitBranch className="h-4 w-4" />
             )}
-            {isPending ? "Generiere PDF..." : "PDF generieren"}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled
-            title="Verfuegbar in V5.5 SLC-554"
-            className="gap-1.5 font-bold"
-          >
-            <GitBranch className="h-4 w-4" />
             Neue Version
           </Button>
         </div>
@@ -128,6 +189,14 @@ export function ProposalPreviewPanel({
             className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] font-medium text-rose-700"
           >
             {pdfError}
+          </div>
+        )}
+        {versionError && (
+          <div
+            role="alert"
+            className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] font-medium text-rose-700"
+          >
+            {versionError}
           </div>
         )}
       </div>
@@ -166,6 +235,49 @@ export function ProposalPreviewPanel({
               className="flex-1 w-full rounded-md border border-slate-200 bg-white"
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={versionConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setVersionConfirmOpen(false);
+            setVersionError(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Neue Version V{nextVersionNumber} erstellen?</DialogTitle>
+            <DialogDescription>
+              Eine neue Version (V{nextVersionNumber}) wird als Entwurf angelegt — alle
+              aktuellen Positionen werden uebernommen. Diese Version (V
+              {proposal.version}) bleibt unveraendert.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setVersionConfirmOpen(false)}
+              disabled={isVersionPending}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmNewVersion}
+              disabled={isVersionPending}
+              className="bg-[#120774] text-white hover:bg-[#0d055c]"
+            >
+              {isVersionPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Version erstellen"
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

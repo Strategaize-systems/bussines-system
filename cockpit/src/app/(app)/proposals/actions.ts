@@ -11,6 +11,10 @@ import {
 } from "@/lib/proposal/zod-schemas";
 import { calculateTotals } from "@/lib/proposal/calc";
 import {
+  isValidTransition,
+  type ProposalStatus,
+} from "@/lib/proposal/transitions";
+import {
   getProposalPdfPath,
   PROPOSAL_PDF_BUCKET,
 } from "@/lib/pdf/proposal-pdf-path";
@@ -367,6 +371,30 @@ type ProposalUpdatePatch = {
   company_id?: string | null;
 };
 
+// V5.5 SLC-554 — Read-only-Mode Server-Side-Guard.
+// `?readonly=1` im Workspace-URL ist nur UX. Der echte Schutz: nicht-Draft
+// Proposals duerfen ihre Felder/Items nicht mehr aendern. Wird in jeder
+// Mutate-Action vor der DB-Write-Operation gerufen.
+async function assertProposalEditable(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  proposalId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { data, error } = await supabase
+    .from("proposals")
+    .select("status")
+    .eq("id", proposalId)
+    .maybeSingle();
+  if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: "Angebot nicht gefunden." };
+  if (data.status !== "draft") {
+    return {
+      ok: false,
+      error: "Angebot ist eingefroren — nur Drafts sind editierbar.",
+    };
+  }
+  return { ok: true };
+}
+
 export async function updateProposal(
   proposalId: string,
   patch: ProposalUpdatePatch,
@@ -384,11 +412,14 @@ export async function updateProposal(
 
   const { data: before } = await supabase
     .from("proposals")
-    .select("title, tax_rate, valid_until, payment_terms")
+    .select("status, title, tax_rate, valid_until, payment_terms")
     .eq("id", proposalId)
     .maybeSingle();
 
   if (!before) return { ok: false, error: "Angebot nicht gefunden." };
+  if (before.status !== "draft") {
+    return { ok: false, error: "Angebot ist eingefroren — nur Drafts sind editierbar." };
+  }
 
   const update: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
@@ -440,6 +471,9 @@ export async function addProposalItem(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Nicht angemeldet." };
+
+  const guard = await assertProposalEditable(supabase, proposalId);
+  if (!guard.ok) return guard;
 
   if (quantity <= 0) return { ok: false, error: "Menge muss > 0 sein." };
 
@@ -519,6 +553,9 @@ export async function updateProposalItem(
 
   if (!before) return { ok: false, error: "Position nicht gefunden." };
 
+  const guard = await assertProposalEditable(supabase, before.proposal_id as string);
+  if (!guard.ok) return guard;
+
   const { error } = await supabase
     .from("proposal_items")
     .update(parsed.data)
@@ -551,6 +588,9 @@ export async function removeProposalItem(itemId: string): Promise<MutationResult
     .maybeSingle();
 
   if (!before) return { ok: false, error: "Position nicht gefunden." };
+
+  const guard = await assertProposalEditable(supabase, before.proposal_id as string);
+  if (!guard.ok) return guard;
 
   const { error } = await supabase
     .from("proposal_items")
@@ -588,6 +628,9 @@ export async function reorderProposalItems(
   if (!Array.isArray(orderedItemIds) || orderedItemIds.length === 0) {
     return { ok: false, error: "Keine Items zum Sortieren." };
   }
+
+  const guard = await assertProposalEditable(supabase, proposalId);
+  if (!guard.ok) return guard;
 
   for (let i = 0; i < orderedItemIds.length; i++) {
     const { error } = await supabase
@@ -815,4 +858,335 @@ export async function generateProposalPdf(
     pdfUrl,
     filename: renderResult.filename,
   };
+}
+
+// =====================================================================
+// V5.5 SLC-554 — Status-Lifecycle + Versionierung + Auto-Expire
+// =====================================================================
+// Whitelist-gekapselte Status-Transitions (DEC-108 idempotent), Versions-
+// Erstellung mit Item-Snapshot-Kopie (DEC-109 V1-Status unangetastet),
+// Auto-Expire-Cron (DEC-110 02:00 Berlin). Alle Aktionen schreiben einen
+// Audit-Eintrag mit `actor_id=auth.uid()` (manuell) oder `actor_id=NULL`
+// (Cron). Whitelist liegt in `lib/proposal/transitions.ts`.
+
+export type TransitionResult = { ok: true } | { ok: false; error: string };
+
+export type CreateVersionResult =
+  | { ok: true; newProposalId: string }
+  | { ok: false; error: string };
+
+export type ProposalVersionEntry = {
+  id: string;
+  version: number;
+  status: string;
+  parent_proposal_id: string | null;
+  created_at: string;
+  sent_at: string | null;
+  accepted_at: string | null;
+  rejected_at: string | null;
+  expired_at: string | null;
+};
+
+const TRANSITION_TIMESTAMP_FIELD: Record<
+  Exclude<ProposalStatus, "draft">,
+  "sent_at" | "accepted_at" | "rejected_at" | "expired_at"
+> = {
+  sent: "sent_at",
+  accepted: "accepted_at",
+  rejected: "rejected_at",
+  expired: "expired_at",
+};
+
+export async function transitionProposalStatus(
+  proposalId: string,
+  newStatus: Exclude<ProposalStatus, "draft">,
+): Promise<TransitionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Nicht angemeldet." };
+
+  if (!proposalId) return { ok: false, error: "proposalId ist Pflicht." };
+
+  const { data: current, error: selErr } = await supabase
+    .from("proposals")
+    .select("id, status, version")
+    .eq("id", proposalId)
+    .maybeSingle();
+
+  if (selErr || !current) {
+    return { ok: false, error: "Angebot nicht gefunden." };
+  }
+
+  // DEC-108 Idempotenz: aktueller Status == newStatus → No-op, kein Audit.
+  if (current.status === newStatus) {
+    return { ok: true };
+  }
+
+  if (!isValidTransition(current.status, newStatus)) {
+    return {
+      ok: false,
+      error: `Status-Wechsel von "${current.status}" zu "${newStatus}" ist nicht erlaubt.`,
+    };
+  }
+
+  const timestampField = TRANSITION_TIMESTAMP_FIELD[newStatus];
+  const update: Record<string, unknown> = {
+    status: newStatus,
+    [timestampField]: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error: updErr } = await supabase
+    .from("proposals")
+    .update(update)
+    .eq("id", proposalId);
+
+  if (updErr) return { ok: false, error: updErr.message };
+
+  await supabase.from("audit_log").insert({
+    actor_id: user.id,
+    action: "status_change",
+    entity_type: "proposal",
+    entity_id: proposalId,
+    changes: { before: { status: current.status }, after: { status: newStatus } },
+    context: "User-triggered",
+  });
+
+  revalidatePath(`/proposals/${proposalId}/edit`);
+  revalidatePath("/proposals");
+  return { ok: true };
+}
+
+export async function createProposalVersion(
+  parentProposalId: string,
+): Promise<CreateVersionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Nicht angemeldet." };
+
+  if (!parentProposalId) {
+    return { ok: false, error: "parentProposalId ist Pflicht." };
+  }
+
+  const { data: parent, error: pErr } = await supabase
+    .from("proposals")
+    .select("*")
+    .eq("id", parentProposalId)
+    .maybeSingle();
+
+  if (pErr || !parent) {
+    return { ok: false, error: "Vorgaenger-Angebot nicht gefunden." };
+  }
+
+  const { data: parentItems, error: itemsErr } = await supabase
+    .from("proposal_items")
+    .select("*")
+    .eq("proposal_id", parentProposalId)
+    .order("position_order", { ascending: true });
+
+  if (itemsErr) {
+    return { ok: false, error: itemsErr.message };
+  }
+
+  const newVersion = (parent.version ?? 1) + 1;
+
+  const { data: inserted, error: insErr } = await supabase
+    .from("proposals")
+    .insert({
+      deal_id: parent.deal_id,
+      contact_id: parent.contact_id,
+      company_id: parent.company_id,
+      title: parent.title,
+      version: newVersion,
+      status: "draft",
+      parent_proposal_id: parentProposalId,
+      tax_rate: parent.tax_rate ?? 19,
+      valid_until: parent.valid_until,
+      payment_terms: parent.payment_terms,
+      scope_notes: parent.scope_notes,
+      price_range: parent.price_range,
+      objections: parent.objections,
+      negotiation_notes: parent.negotiation_notes,
+      created_by: user.id,
+      // DEC-109: V1-Status bleibt unberuehrt. Lifecycle-Timestamps NULL,
+      // Calc-Felder NULL (werden erst bei "PDF generieren" berechnet),
+      // pdf_storage_path NULL (frisch zu generieren).
+      sent_at: null,
+      accepted_at: null,
+      rejected_at: null,
+      expired_at: null,
+      subtotal_net: null,
+      tax_amount: null,
+      total_gross: null,
+      pdf_storage_path: null,
+    })
+    .select("id")
+    .single();
+
+  if (insErr || !inserted) {
+    return {
+      ok: false,
+      error: insErr?.message ?? "INSERT proposals fehlgeschlagen.",
+    };
+  }
+  const newProposalId = inserted.id;
+
+  // Items kopieren mit Snapshot-Feldern. Bei Insert-Error wird der Stub-
+  // Proposal wieder geloescht (Cleanup-Pattern, kein echter Tx-Wrap noetig
+  // weil Supabase JS keine Tx exponiert).
+  if (parentItems && parentItems.length > 0) {
+    const itemRows = parentItems.map((it) => ({
+      proposal_id: newProposalId,
+      product_id: it.product_id,
+      position_order: it.position_order,
+      quantity: it.quantity,
+      unit_price_net: it.unit_price_net,
+      discount_pct: it.discount_pct,
+      snapshot_name: it.snapshot_name,
+      snapshot_description: it.snapshot_description,
+      snapshot_unit_price_at_creation: it.snapshot_unit_price_at_creation,
+    }));
+
+    const { error: itemInsErr } = await supabase
+      .from("proposal_items")
+      .insert(itemRows);
+
+    if (itemInsErr) {
+      // Cleanup: Stub-Proposal entfernen, kein halber Datensatz.
+      await supabase.from("proposals").delete().eq("id", newProposalId);
+      return {
+        ok: false,
+        error: `Item-Kopie fehlgeschlagen: ${itemInsErr.message}`,
+      };
+    }
+  }
+
+  await supabase.from("audit_log").insert({
+    actor_id: user.id,
+    action: "create",
+    entity_type: "proposal",
+    entity_id: newProposalId,
+    context: `Version V${newVersion} of proposal V${parent.version}`,
+  });
+
+  revalidatePath("/proposals");
+  if (parent.deal_id) revalidatePath(`/deals/${parent.deal_id}`);
+
+  return { ok: true, newProposalId };
+}
+
+export async function getProposalVersionsChain(
+  proposalId: string,
+): Promise<ProposalVersionEntry[]> {
+  const supabase = await createClient();
+
+  // Walk up zur Root via parent_proposal_id-Kette. V5.5 erlaubt max 5
+  // Versionen, daher harter Loop-Cap fuer Schutz vor zyklischen Daten.
+  let rootId: string | null = proposalId;
+  const upVisited = new Set<string>();
+  for (let i = 0; i < 10; i++) {
+    if (!rootId || upVisited.has(rootId)) break;
+    upVisited.add(rootId);
+    const lookup: {
+      data: { id: string; parent_proposal_id: string | null } | null;
+    } = await supabase
+      .from("proposals")
+      .select("id, parent_proposal_id")
+      .eq("id", rootId)
+      .maybeSingle();
+    if (!lookup.data) break;
+    if (!lookup.data.parent_proposal_id) {
+      rootId = lookup.data.id;
+      break;
+    }
+    rootId = lookup.data.parent_proposal_id;
+  }
+
+  if (!rootId) return [];
+
+  // BFS von Root abwaerts. Bei max 5 Versionen ist O(n) Queries OK.
+  const collected = new Map<string, ProposalVersionEntry>();
+  const queue: string[] = [rootId];
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    if (collected.has(id)) continue;
+    const { data: row } = await supabase
+      .from("proposals")
+      .select(
+        "id, version, status, parent_proposal_id, created_at, sent_at, accepted_at, rejected_at, expired_at",
+      )
+      .eq("id", id)
+      .maybeSingle();
+    if (!row) continue;
+    collected.set(row.id, row as ProposalVersionEntry);
+    const { data: children } = await supabase
+      .from("proposals")
+      .select("id")
+      .eq("parent_proposal_id", row.id);
+    for (const c of children ?? []) {
+      queue.push(c.id as string);
+    }
+  }
+
+  return [...collected.values()].sort((a, b) => b.version - a.version);
+}
+
+// Cron-only-Action. Wird vom POST /api/cron/expire-proposals mit Service-
+// Role-Client gerufen — kein Auth-Check, dafuer Whitelist-strikt: nur
+// `status='sent' AND valid_until < CURRENT_DATE` werden expirt.
+export type ExpireOverdueResult = {
+  expiredCount: number;
+  expiredIds: string[];
+};
+
+export async function expireOverdueProposals(): Promise<ExpireOverdueResult> {
+  const admin = createAdminClient();
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data: candidates, error: selErr } = await admin
+    .from("proposals")
+    .select("id, status, valid_until")
+    .eq("status", "sent")
+    .lt("valid_until", today);
+
+  if (selErr) {
+    throw new Error(`expireOverdueProposals SELECT failed: ${selErr.message}`);
+  }
+
+  const ids = (candidates ?? []).map((r) => r.id as string);
+  if (ids.length === 0) {
+    return { expiredCount: 0, expiredIds: [] };
+  }
+
+  const nowIso = new Date().toISOString();
+  const { error: updErr } = await admin
+    .from("proposals")
+    .update({ status: "expired", expired_at: nowIso, updated_at: nowIso })
+    .in("id", ids);
+
+  if (updErr) {
+    throw new Error(`expireOverdueProposals UPDATE failed: ${updErr.message}`);
+  }
+
+  const auditRows = ids.map((id) => ({
+    actor_id: null,
+    action: "status_change",
+    entity_type: "proposal",
+    entity_id: id,
+    changes: { before: { status: "sent" }, after: { status: "expired" } },
+    context: "Auto-expire by cron — valid_until passed",
+  }));
+  const { error: auditErr } = await admin.from("audit_log").insert(auditRows);
+  if (auditErr) {
+    console.warn(
+      `[expireOverdueProposals] Audit-Insert fehlgeschlagen: ${auditErr.message}`,
+    );
+  }
+
+  revalidatePath("/proposals");
+  return { expiredCount: ids.length, expiredIds: ids };
 }

@@ -1,22 +1,14 @@
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
-import { FileText, Pencil, Trash2, Trophy, XCircle, Clock, Plus } from "lucide-react";
+import { FileText, Pencil, Trash2, Trophy, XCircle, Clock, Plus, Eye } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
 import { ProposalSheet } from "./proposal-sheet";
+import { ProposalStatusBadge } from "@/components/proposal/proposal-status-badge";
 import { deleteProposal, type Proposal } from "./actions";
 import Link from "next/link";
-
-const statusConfig: Record<string, { label: string; variant: string }> = {
-  draft: { label: "Entwurf", variant: "bg-slate-100 text-slate-600 border-slate-200" },
-  sent: { label: "Versendet", variant: "bg-blue-100 text-blue-700 border-blue-200" },
-  open: { label: "Offen", variant: "bg-amber-100 text-amber-700 border-amber-200" },
-  negotiation: { label: "Verhandlung", variant: "bg-purple-100 text-purple-700 border-purple-200" },
-  won: { label: "Gewonnen", variant: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-  lost: { label: "Verloren", variant: "bg-red-100 text-red-700 border-red-200" },
-};
 
 interface ProposalsClientProps {
   proposals: Proposal[];
@@ -37,6 +29,17 @@ export function ProposalsClient({ proposals, deals, contacts, companies }: Propo
     return result;
   }, [proposals, searchQuery, statusFilter]);
 
+  // V5.5 SLC-554 KPI-Mapping: aktiv = draft|sent, won = accepted|won (legacy),
+  // lost = rejected|expired|lost (legacy). Legacy-Status (won/lost) bleiben
+  // sichtbar bis V2-Records archiviert sind.
+  const kpiActive = proposals.filter(
+    (p) => p.status === "draft" || p.status === "sent" || p.status === "open" || p.status === "negotiation",
+  ).length;
+  const kpiWon = proposals.filter((p) => p.status === "accepted" || p.status === "won").length;
+  const kpiLost = proposals.filter(
+    (p) => p.status === "rejected" || p.status === "expired" || p.status === "lost",
+  ).length;
+
   return (
     <div className="min-h-screen">
       <PageHeader title="Angebote" subtitle={`${proposals.length} Angebote gesamt`}>
@@ -47,14 +50,18 @@ export function ProposalsClient({ proposals, deals, contacts, companies }: Propo
       <main className="px-8 py-8">
         <div className="max-w-[1800px] mx-auto space-y-6">
           <KPIGrid columns={3}>
-            <KPICard label="Aktiv" value={proposals.filter((p) => !["won", "lost"].includes(p.status)).length} icon={Clock} gradient="blue" />
-            <KPICard label="Gewonnen" value={proposals.filter((p) => p.status === "won").length} icon={Trophy} gradient="green" />
-            <KPICard label="Verloren" value={proposals.filter((p) => p.status === "lost").length} icon={XCircle} gradient="red" />
+            <KPICard label="Aktiv" value={kpiActive} icon={Clock} gradient="blue" />
+            <KPICard label="Gewonnen" value={kpiWon} icon={Trophy} gradient="green" />
+            <KPICard label="Verloren" value={kpiLost} icon={XCircle} gradient="red" />
           </KPIGrid>
           <FilterBar searchPlaceholder="Angebot suchen..." searchValue={searchQuery} onSearchChange={setSearchQuery}>
             <FilterSelect value={statusFilter} onChange={setStatusFilter} options={[
-              { value: "", label: "Alle Status" }, { value: "draft", label: "Entwurf" }, { value: "sent", label: "Versendet" },
-              { value: "open", label: "Offen" }, { value: "won", label: "Gewonnen" }, { value: "lost", label: "Verloren" },
+              { value: "", label: "Alle Status" },
+              { value: "draft", label: "Entwurf" },
+              { value: "sent", label: "Versendet" },
+              { value: "accepted", label: "Angenommen" },
+              { value: "rejected", label: "Abgelehnt" },
+              { value: "expired", label: "Abgelaufen" },
             ]} />
           </FilterBar>
           <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
@@ -78,7 +85,7 @@ export function ProposalsClient({ proposals, deals, contacts, companies }: Propo
 
 function ProposalRow({ proposal, deals, contacts, companies }: { proposal: Proposal; deals: any[]; contacts: any[]; companies: any[] }) {
   const [isPending, startTransition] = useTransition();
-  const st = statusConfig[proposal.status] ?? statusConfig.draft;
+  const isDraft = proposal.status === "draft";
   return (
     <div className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors group">
       <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center shrink-0"><FileText size={18} strokeWidth={2} /></div>
@@ -88,13 +95,13 @@ function ProposalRow({ proposal, deals, contacts, companies }: { proposal: Propo
           <span className="text-[10px] font-bold text-slate-400 bg-slate-100 rounded px-1.5 py-0.5">V{proposal.version}</span>
         </div>
         <div className="flex items-center gap-2 mt-1">
-          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${st.variant}`}>{st.label}</span>
+          <ProposalStatusBadge status={proposal.status} />
           {proposal.price_range && <span className="text-[11px] font-semibold text-slate-600">{proposal.price_range}</span>}
         </div>
       </div>
       {proposal.contacts && <Link href={`/contacts/${proposal.contacts.id}`} className="text-xs font-medium text-slate-600 shrink-0" onClick={(e) => e.stopPropagation()}>{proposal.contacts.first_name} {proposal.contacts.last_name}</Link>}
       <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        {proposal.status === "draft" && (
+        {isDraft ? (
           <Link
             href={`/proposals/${proposal.id}/edit`}
             className="px-2.5 py-1 rounded-md bg-[#120774] text-white text-[11px] font-bold hover:bg-[#0d055c] transition-colors flex items-center gap-1.5"
@@ -102,6 +109,15 @@ function ProposalRow({ proposal, deals, contacts, companies }: { proposal: Propo
           >
             <Pencil size={12} />
             Bearbeiten
+          </Link>
+        ) : (
+          <Link
+            href={`/proposals/${proposal.id}/edit?readonly=1`}
+            className="px-2.5 py-1 rounded-md border border-slate-300 bg-white text-slate-700 text-[11px] font-bold hover:bg-slate-50 transition-colors flex items-center gap-1.5"
+            title="Angebot anzeigen (eingefroren)"
+          >
+            <Eye size={12} />
+            Anzeigen
           </Link>
         )}
         <ProposalSheet deals={deals} contacts={contacts} companies={companies} proposal={proposal} trigger={

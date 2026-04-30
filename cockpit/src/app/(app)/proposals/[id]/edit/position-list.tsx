@@ -44,6 +44,7 @@ type ProposalPositionListProps = {
   taxRate: number;
   products: Product[];
   onItemsChange: (items: ProposalItem[]) => void;
+  readonly?: boolean;
 };
 
 export function ProposalPositionList({
@@ -52,6 +53,7 @@ export function ProposalPositionList({
   taxRate,
   products,
   onItemsChange,
+  readonly = false,
 }: ProposalPositionListProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [reordering, startReorderTransition] = useTransition();
@@ -68,6 +70,7 @@ export function ProposalPositionList({
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
+      if (readonly) return;
       const { active, over } = event;
       if (!over || active.id === over.id) return;
       const oldIndex = items.findIndex((i) => i.id === active.id);
@@ -88,11 +91,12 @@ export function ProposalPositionList({
         }
       });
     },
-    [items, proposalId, onItemsChange],
+    [items, proposalId, onItemsChange, readonly],
   );
 
   const handleRemove = useCallback(
     (itemId: string) => {
+      if (readonly) return;
       onItemsChange(items.filter((i) => i.id !== itemId));
       void removeProposalItem(itemId).then((res) => {
         if (!res.ok) {
@@ -100,7 +104,7 @@ export function ProposalPositionList({
         }
       });
     },
-    [items, onItemsChange],
+    [items, onItemsChange, readonly],
   );
 
   const handlePatchItem = useCallback(
@@ -124,7 +128,8 @@ export function ProposalPositionList({
         <button
           type="button"
           onClick={() => setPickerOpen(true)}
-          className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#120774] to-[#4454b8] px-3 py-2 text-xs font-bold text-white shadow-sm transition-all hover:shadow-md"
+          disabled={readonly}
+          className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#120774] to-[#4454b8] px-3 py-2 text-xs font-bold text-white shadow-sm transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm"
         >
           <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
           Produkt
@@ -164,6 +169,7 @@ export function ProposalPositionList({
                     item={item}
                     onRemove={() => handleRemove(item.id)}
                     onPatch={(patch) => handlePatchItem(item.id, patch)}
+                    readonly={readonly}
                   />
                 ))}
               </ul>
@@ -215,10 +221,12 @@ function PositionRow({
   item,
   onRemove,
   onPatch,
+  readonly = false,
 }: {
   item: ProposalItem;
   onRemove: () => void;
   onPatch: (patch: Partial<ProposalItem>) => void;
+  readonly?: boolean;
 }) {
   const {
     attributes,
@@ -227,7 +235,7 @@ function PositionRow({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: item.id });
+  } = useSortable({ id: item.id, disabled: readonly });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -249,6 +257,7 @@ function PositionRow({
   );
 
   function patchAndSave(patch: Partial<ProposalItem>) {
+    if (readonly) return;
     onPatch(patch);
     const filtered: { quantity?: number; unit_price_net?: number; discount_pct?: number } = {};
     if ("quantity" in patch && typeof patch.quantity === "number") filtered.quantity = patch.quantity;
@@ -267,7 +276,8 @@ function PositionRow({
         type="button"
         {...attributes}
         {...listeners}
-        className="mt-2 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing"
+        disabled={readonly}
+        className="mt-2 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40"
         aria-label="Position verschieben"
       >
         <GripVertical className="h-4 w-4" />
@@ -285,6 +295,7 @@ function PositionRow({
               validate={(v) => Number.isFinite(v) && v > 0}
               onCommit={(v) => patchAndSave({ quantity: v })}
               className="h-8 text-xs"
+              disabled={readonly}
             />
           </Field>
           <Field label="Einzelpreis">
@@ -295,6 +306,7 @@ function PositionRow({
               validate={(v) => Number.isFinite(v) && v >= 0}
               onCommit={(v) => patchAndSave({ unit_price_net: v })}
               className="h-8 text-xs tabular-nums"
+              disabled={readonly}
             />
           </Field>
           <Field label="Discount %">
@@ -306,6 +318,7 @@ function PositionRow({
               validate={(v) => Number.isFinite(v) && v >= 0 && v <= 100}
               onCommit={(v) => patchAndSave({ discount_pct: v })}
               className="h-8 text-xs tabular-nums"
+              disabled={readonly}
             />
           </Field>
         </div>
@@ -321,7 +334,8 @@ function PositionRow({
         onClick={() => {
           if (confirm(`Position "${item.snapshot_name}" entfernen?`)) onRemove();
         }}
-        className="mt-2 text-slate-300 hover:text-red-600 transition-colors"
+        disabled={readonly}
+        className="mt-2 text-slate-300 hover:text-red-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-slate-300"
         aria-label="Position entfernen"
       >
         <Trash2 className="h-4 w-4" />
@@ -354,6 +368,7 @@ function NumberInput({
   validate,
   onCommit,
   className,
+  disabled = false,
 }: {
   value: number;
   min?: number;
@@ -362,6 +377,7 @@ function NumberInput({
   validate: (v: number) => boolean;
   onCommit: (v: number) => void;
   className?: string;
+  disabled?: boolean;
 }) {
   // committedValue trackt den zuletzt von extern gesehenen Wert. Aendert sich
   // value von aussen (Drag-Reorder, Server-Rollback bei Validation-Error),
@@ -383,6 +399,7 @@ function NumberInput({
       max={max}
       step={step}
       value={text}
+      disabled={disabled}
       onChange={(e) => {
         const next = e.target.value;
         setText(next);

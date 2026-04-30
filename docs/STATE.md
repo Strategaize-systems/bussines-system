@@ -10,15 +10,16 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.5 SLC-553 done + LIVE 2026-04-30 (Commit `91020b2`).** /qa SLC-553 PASS (RPT-258) — Mixed-Content-Bug entdeckt + Hotfix inline (Server-Proxy `/api/proposals/[id]/pdf` analog SLC-531 Logo-Pattern, statt `createSignedUrl`). Cent-Faelle A (301.50/57.29/358.79), B (180.00/12.60/192.60), C (0/0/0) Cent-genau verifiziert. Watermark-Toggle ON+OFF beidseitig live verifiziert. Performance 136-231ms. 8 audit_log-Eintraege. Chrome-PDF-Viewer Layout PASS; Adobe/Outlook/Gmail = User-Hands-On out-of-MCP-Scope.
-- Current Phase: V5.5 Implementation. SLC-551 + SLC-552 + SLC-553 LIVE done (3/5 Slices). Naechster Schritt: /backend SLC-554 (Status-Lifecycle + Versionierung + Auto-Expire-Cron, ~4-6h, 9 MTs).
+- Current Focus: **V5.5 SLC-554 /backend code-complete 2026-04-30.** Whitelist-Transition (`lib/proposal/transitions.ts` + 21 Vitest-Tests) + transitionProposalStatus + createProposalVersion + expireOverdueProposals + Cron-Endpoint `/api/cron/expire-proposals` (x-cron-secret-Pattern aus recording-retention) + ProposalStatusBadge + ProposalVersionsList + Workspace Status-Action-Buttons mit Confirm-Dialog + Read-only-Mode + Server-Side-Guard `assertProposalEditable` in allen Item-CRUD-Actions + /proposals-Listing Status-Badge + Anzeigen-Button + REL-020-Notes mit Coolify-Cron-Anleitung. 4/5 V5.5-Slices Code-fertig (SLC-551+552+553 LIVE, SLC-554 backend done). Build PASS (Next 16.2.3 Turbopack), Vitest 97/97 PASS. /qa SLC-554 + Coolify-Deploy + Cron-Anlage offen.
+- Current Phase: V5.5 Implementation. SLC-551 + SLC-552 + SLC-553 LIVE done. SLC-554 /backend done (9/9 MTs). Naechste Schritte: /qa SLC-554, dann /backend + /frontend SLC-555 (letzter V5.5-Slice).
 
 ## Immediate Next Steps
-1. **/backend SLC-554** — Whitelist-Transition + Versionierung + Auto-Expire-Cron + Status-Buttons + StatusBadge + VersionsList + Read-only-Mode + REL-020-Cron-Notes (~4-6h, 9 MTs).
-5. **/qa SLC-554** — Status-Whitelist + Idempotenz + Versionierung + Cron-Smoke + UI-Smokes.
-6. **/backend + /frontend SLC-555** — ProposalAttachmentPicker + AttachmentsSection-Erweiterung + send.ts source_type-Diskriminator + sendComposedEmail-Update + Cross-Cut-Smokes (~3-4h, 10 MTs).
-7. **/qa SLC-555** — 3 Smoke-Faelle (Proposal/PC-Upload/Mix) + V5.4-Cadence-Regression + Status-Auto-Sent + Idempotenz.
-8. **/qa V5.5 Gesamt + /final-check + /go-live + /deploy** — REL-020 als Final-Release nach SLC-555.
+1. **/qa SLC-554** — Whitelist-Tests, Idempotenz, Versionierung, Cron-Smoke (cURL gegen Hetzner mit `x-cron-secret`), UI-Smokes (Status-Buttons + Confirm-Modals + Versions-Liste + Read-only-Mode + Anzeigen-Button), Server-Side-Guard-Test (direkter Item-CRUD-Call auf Non-Draft → frozen-Error).
+2. **User-Coolify-Deploy SLC-554** — V5.5 SLC-554 Commit deployen (User-Wunsch manuell), nach Deploy Cron-Endpoint-Smoke gegen Hetzner.
+3. **User-Coolify-Cron-Anlage** `expire-proposals` (Schedule `0 2 * * *`, Container `app`, x-cron-secret-Header laut REL-020-Notes).
+4. **/backend + /frontend SLC-555** — ProposalAttachmentPicker + AttachmentsSection-Erweiterung + send.ts source_type-Diskriminator + sendComposedEmail-Update + Cross-Cut-Smokes (~3-4h, 10 MTs).
+5. **/qa SLC-555** — 3 Smoke-Faelle (Proposal/PC-Upload/Mix) + V5.4-Cadence-Regression + Status-Auto-Sent + Idempotenz.
+6. **/qa V5.5 Gesamt + /final-check + /go-live + /deploy** — REL-020 als Final-Release nach SLC-555.
 9. **V5.4 Post-Launch (passiv)** — Stable-Window 24-48h, /post-launch V5.4 nach. /post-launch V5.3 ueberfaellig (passiv).
 10. **V5.4.x Patch-Carryover (optional, nicht release-blockierend):**
     - SLC-541 M1: ConditionalColorPicker Refactor zu derived-state
@@ -31,7 +32,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - FEAT-551 Angebot-Schema-Erweiterung + Position-Items (in_progress, MIG-026 applied auf Hetzner, Server Actions + Pfad-Helper live)
 - FEAT-552 Angebot-Workspace UI 3-Panel (done 2026-04-30, /proposals/[id]/edit live, native React-State + Custom-Debounce statt RHF/lodash, @dnd-kit/sortable)
 - FEAT-553 PDF-Renderer + Branding (done 2026-04-30, **pdfmake** als Library DEC-105, Adapter-Pattern, /qa PASS via RPT-258, Mixed-Content-Hotfix Commit `91020b2` Server-Proxy /api/proposals/[id]/pdf live)
-- FEAT-554 Status-Lifecycle + Versionierung (planned, V1-Status bleibt unangetastet DEC-109, Auto-Expire-Cron 02:00 Berlin DEC-110)
+- FEAT-554 Status-Lifecycle + Versionierung (in_progress, /backend done 2026-04-30: Whitelist transitions.ts, transitionProposalStatus mit Idempotenz DEC-108, createProposalVersion mit V1-unangetastet DEC-109, Auto-Expire-Cron-Endpoint /api/cron/expire-proposals DEC-110, Workspace Status-Buttons + Confirm-Dialog, Read-only-Mode mit Server-Side-Guard, /proposals-Listing Status-Badge + Anzeigen-Button, REL-020-Notes Coolify-Cron-Anleitung)
 - FEAT-555 Angebot-Anhang im Composing-Studio (planned, source_type-Diskriminator in email_attachments DEC-108)
 
 **Architektur-Entscheidungen V5.5:** DEC-105 pdfmake, DEC-106 HTML-Live-Preview, DEC-107 Snapshot inkl. price_at_creation, DEC-108 Status-Sent automatisch+manuell, DEC-109 V1-Status unangetastet, DEC-110 Cron 02:00 Berlin, DEC-111 Pfad-Schema, DEC-112 alle Status zeigen+Warning, DEC-113 Footer+Suffix-Watermark, DEC-114 5 Slices 1:1 zu Features.

@@ -1,5 +1,63 @@
 # Releases
 
+### REL-020 — V5.5 Angebot-Erstellung (in Vorbereitung)
+- Date: 2026-04-30 (planned)
+- Scope: V5.5 Final-Release nach Abschluss aller 5 Slices (SLC-551 Schema, SLC-552 Workspace, SLC-553 PDF-Renderer + Branding, SLC-554 Status-Lifecycle + Versionierung + Auto-Expire-Cron, SLC-555 Composing-Studio-Anbindung). MIG-026 Schema-Erweiterung. DEC-105..114. **NEUE INFRASTRUKTUR-AKTION (SLC-554):** Coolify-Cron `expire-proposals` muss vor erstem produktivem Sent-Status angelegt werden (Auto-Expire faellt sonst aus). Anleitung unten.
+- Summary: REL-020 wird beim Final-Deploy nach Abschluss von SLC-555 finalisiert. Sub-Slices SLC-551..553 sind bereits live im Cockpit (siehe STATE.md V5.5 Implementation, Hotfix `91020b2` PDF-Server-Proxy). SLC-554 bringt Status-Lifecycle (`draft → sent → accepted | rejected | expired`) per Whitelist-gekapselter Server Action, lineare Versionierung mit Item-Snapshot-Kopie, Read-only-Mode fuer Non-Draft-Workspace und Auto-Expire-Cron mit Tagesgranularitaet. SLC-555 schliesst die Composing-Studio-Anbindung (PDF-Anhang + Auto-Sent-Trigger) an.
+- Risks: SLC-554 deployt ohne den Coolify-Cron `expire-proposals` ist sicherheitsneutral (manuelle Status-Transitions funktionieren), aber Auto-Expire faellt aus → User muss Cron als Operations-Schritt anlegen, Pre-Deploy-Checkliste unten. Read-only-Mode ist Server-Side enforced (Item-CRUD-Actions checken `status === 'draft'`), URL-Param `?readonly=1` ist nur UX-Hint. ISSUE-042 OpenAI-Key Pre-Pflicht bleibt offen (gilt nicht direkt fuer V5.5, aber fuer V4.1+V5.1-Whisper-Flows).
+- Rollback Notes: Rein additiv. SLC-554 fuegt nur Server-Actions + UI-Komponenten + Cron-Endpoint hinzu — Rollback per Coolify-Redeploy auf V5.5-pre-SLC-554-Commit, kein Schema-Rollback (MIG-026 ist Teil von SLC-551, bleibt). Coolify-Cron `expire-proposals` separat deaktivieren ueber Coolify-UI. Bestehende V5.5-Daten bleiben unberuehrt.
+
+#### Coolify-Cron `expire-proposals` Setup (User-Aktion vor Final-Deploy)
+
+**Wann:** Nach Coolify-Redeploy von V5.5 final (oder fruehestens nach Deploy von SLC-554).
+
+**Voraussetzung:** ENV-Variable `CRON_SECRET` ist im Coolify-App-Container bereits gesetzt (existiert seit V5.1 retention-Cron, kein zusaetzliches Setup).
+
+**Schritt 1 — Cron-Job in Coolify-UI anlegen:**
+
+| Feld | Wert |
+|------|------|
+| Name | `expire-proposals` |
+| Schedule | `0 2 * * *` (taeglich 02:00 Berlin Time) |
+| Container | `app` |
+| Command | `node -e 'fetch("https://business.strategaizetransition.com/api/cron/expire-proposals", { method: "POST", headers: { "x-cron-secret": process.env.CRON_SECRET } }).then(r => r.text()).then(console.log)'` |
+
+**Sicherheits-Hinweise:**
+- `CRON_SECRET` IMMER ueber `process.env.CRON_SECRET` referenzieren — niemals als Klartext in Command (siehe REL-019 Coolify-Cron-Cleanup).
+- Nur EIN Cron-Job mit diesem Namen anlegen — Duplikate erzeugen Doppel-Audit-Eintraege bei Doppellaufen.
+- Auth-Header ist `x-cron-secret`, NICHT `Authorization: Bearer` (Pattern aus `verify-cron-secret.ts`).
+
+**Schritt 2 — Smoke-Test direkt nach Anlage (vor erstem 02:00-Lauf):**
+
+```bash
+# Manueller cURL-Test gegen die Public-Domain — gleiche Auth wie Cron-Trigger
+ssh root@91.98.20.191
+curl -sX POST -H "x-cron-secret: $CRON_SECRET" \
+  https://business.strategaizetransition.com/api/cron/expire-proposals
+# Erwartet: {"success":true,"expiredCount":0,"expiredIds":[]}
+# Bei expirten Rows: korrekte Counts in der Response
+
+# Mit falschem Header → 401
+curl -sX POST -H "x-cron-secret: wrong" \
+  https://business.strategaizetransition.com/api/cron/expire-proposals
+# Erwartet: {"error":"Unauthorized"} mit HTTP 401
+```
+
+**Schritt 3 — Verifikation des ersten 02:00-Laufs:**
+
+Am Tag nach Anlage zwischen 02:00 und 02:05 Berlin Time im Coolify-Cron-Log nach Eintrag `[Cron/ExpireProposals] expired=N ids=...` schauen. Bei `expired=0` ist das normal (kein expirter Datensatz vorhanden). Audit-Eintraege koennen mit folgender SQL gepueft werden:
+
+```sql
+SELECT created_at, action, entity_id, context
+FROM audit_log
+WHERE entity_type = 'proposal'
+  AND context = 'Auto-expire by cron — valid_until passed'
+ORDER BY created_at DESC
+LIMIT 10;
+```
+
+**Idempotenz-Garantie:** Mehrfachlaufe des Crons (z.B. wegen Coolify-Restart) erzeugen keine Doppel-Audit-Eintraege — `expireOverdueProposals()` filtert auf `status='sent' AND valid_until < CURRENT_DATE`, expirte Rows werden beim zweiten Lauf nicht mehr getroffen.
+
 ### REL-019 — V5.4 Composing-Studio Polish + E-Mail-Anhaenge
 - Date: 2026-04-29
 - Scope: 2 Slices (SLC-541 V5.4-Polish + SLC-542 E-Mail-Anhaenge-Upload), 2 Features (FEAT-541 + FEAT-542), 8 DECs (DEC-097..104), MIG-025 (`email_attachments`-Junction-Table + privater Storage-Bucket). SLC-541 schliesst V5.3-Hygiene-Themen ab: Color-Picker AC9-Drift Fix per ConditionalColorPicker (DEC-102), ESLint Hook-Order Cleanup in NewTemplateDialog + InlineEditDialog (resetState-via-onOpenChange-Wrapper-Pattern, eliminiert react-hooks/set-state-in-effect-Errors), COMPLIANCE.md V5.3-Section + V5.4-Section (Anhang-Pipeline beschrieben), Coolify-Cron-Cleanup-User-Anleitung. SLC-542 fuegt Drag&Drop + File-Picker + MIME/Size-Whitelist + Multipart-SMTP via API-Route hinzu (Refactor von Server-Action analog Onboarding-Plattform-Pattern wegen 1 MB Body-Size-Limit + Filename-Encoding-Probleme).
