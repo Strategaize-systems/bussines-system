@@ -1687,7 +1687,7 @@
       "title": "V5.5 SLC-554 Status-Lifecycle Server Actions + Versionierung + Auto-Expire-Cron",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.5",
       "description": "FEAT-554 SLC-554: Whitelist-gekapselter transitionProposalStatus (draft->sent->accepted|rejected|expired, idempotent DEC-108) + createProposalVersion mit V1-Status-unangetastet (DEC-109) + Item-Snapshot-Kopie + expireOverdueProposals Cron-Action (DEC-110, 02:00 Berlin Time, Pattern aus recording-retention/route.ts). UI-Erweiterungen in SLC-552 Workspace: Sent-/Accepted-/Rejected-Buttons mit Confirm-Modals, StatusBadge mit Color-Mapping, Versions-Liste expandable (parent_proposal_id-Kette). /proposals-Listing Status-Badge + Anzeigen-Button (Read-only-Mode ?readonly=1). Coolify-Cron-Anleitung in REL-020-Notes (User legt manuell an). Server-Side-Block in Item-CRUD-Actions wenn Status != draft. 9 Micro-Tasks, ~4-6h.",
       "createdAt": "2026-04-29"
