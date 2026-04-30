@@ -355,7 +355,6 @@ type ProposalUpdatePatch = {
   tax_rate?: 0 | 7 | 19;
   valid_until?: string | null;
   payment_terms?: string | null;
-  notes?: string | null;
   contact_id?: string | null;
   company_id?: string | null;
 };

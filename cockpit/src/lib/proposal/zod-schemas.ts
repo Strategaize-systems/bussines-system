@@ -21,11 +21,10 @@ export const proposalEditSchema = z.object({
     .max(2000, "Konditionen max 2000 Zeichen")
     .nullable()
     .optional(),
-  notes: z
-    .string()
-    .max(5000, "Notizen max 5000 Zeichen")
-    .nullable()
-    .optional(),
+  // V5.5 SLC-552 QA-Fix: 'notes' aus Schema entfernt — DB-Spalte heisst
+  // scope_notes (Legacy V2-Bestand). UPDATE mit notes-Key wuerde Postgres-
+  // Fehler "column does not exist" werfen. Workspace-Editor hat das Feld
+  // ohnehin nicht; Schema-Cleanup verhindert latenten Bug.
   contact_id: z.string().uuid("Ungueltige Contact-ID").nullable().optional(),
   company_id: z.string().uuid("Ungueltige Company-ID").nullable().optional(),
 });

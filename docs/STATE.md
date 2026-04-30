@@ -10,11 +10,11 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.5 SLC-552 done 2026-04-30** — RPT-255 dokumentiert MT-4..MT-10: native React-State Workspace (Option B durch User entschieden, KEIN react-hook-form/lodash), Custom-Debounce-Hook in lib/utils/use-debounce.ts (wiederverwendbar fuer SLC-553/554/555), 3-Panel-Layout `/proposals/[id]/edit` (PositionList mit @dnd-kit/sortable, Editor mit Auto-Save 500ms debounced, HtmlPreview debounced 250ms), 3 Einstiegspunkte (Deal-Quickaction + Pipeline-Card-Kontextmenue + /proposals-Bearbeiten-Button). addProposalItem returnt jetzt full `ProposalItem` statt nur itemId (optimistic-update-Support). Verifikation: npm run build gruen (61 Pages incl. /proposals/[id]/edit), 67/67 Tests gruen, Lint-clean fuer alle neuen Files. MT-11 Browser-Smoke verschoben in /qa SLC-552 nach Coolify-Deploy.
-- Current Phase: V5.5 Implementation. SLC-551 + SLC-552 done. Naechster Schritt: /qa SLC-552.
+- Current Focus: **V5.5 SLC-552 + /qa done 2026-04-30** — RPT-255 (Frontend-Completion) + RPT-256 (QA-Review) zeigen: 14/14 Code-ACs erfuellt, AC15 Browser-Smoke pending nach Coolify-Deploy. QA-Lauf hat latenten Schema-Bug `notes`-Feld in proposalEditSchema gefixt (DB hat keine notes-Spalte, nur scope_notes — Deviation-Rule 1 angewendet). Wiring-Chain Component → Server-Action → DB komplett verifiziert. Stub-Scan: clean. Tests 67/67, Build gruen, TypeScript clean. Bereit fuer Coolify-Deploy + Browser-Smoke.
+- Current Phase: V5.5 Implementation. SLC-551 + SLC-552 (incl. /qa) done. Naechster Schritt: User-Coolify-Deploy + Browser-Smoke, dann /backend SLC-553.
 
 ## Immediate Next Steps
-1. **/qa SLC-552** — Drei-Einstiegspunkt-Test, Cent-genaue Berechnung, Drag-Reorder, Auto-Save-Smoke, Mobile-Tabs. Browser-Smoke nach Coolify-Deploy.
+1. **User-Coolify-Deploy + Browser-Smoke (AC15 SLC-552)** — Drei-Einstiegspunkt-Test, Cent-genaue Berechnung, Drag-Reorder, Auto-Save-Smoke, Mobile-Tabs am Live-Server.
 2. **/backend SLC-553** — pdfmake-Adapter + DocDefinition + Image-Helper + Filename-Helper + generateProposalPdf-Action + PreviewPanel-Hookup + Watermark + Multi-Client-Smokes (~5-7h, 8 MTs).
 3. **/qa SLC-553** — UI-vs-PDF-Cent-Genauigkeit, 4 Mailclient-Smokes (Adobe/Chrome/Outlook/Gmail), Watermark-Toggle, Edge-Cases.
 4. **/backend SLC-554** — Whitelist-Transition + Versionierung + Auto-Expire-Cron + Status-Buttons + StatusBadge + VersionsList + Read-only-Mode + REL-020-Cron-Notes (~4-6h, 9 MTs).
