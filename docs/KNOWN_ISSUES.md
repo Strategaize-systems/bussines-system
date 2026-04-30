@@ -328,6 +328,20 @@
 - Summary: VAPID_SUBJECT in Coolify stand auf `mailto:admin@strategaizetransition.com` — diese Adresse existierte nicht. Geaendert auf `mailto:immo@bellaerts.de` am 2026-04-18 vor V4.1 Redeploy.
 - Next Action: Erledigt.
 
+### ISSUE-046 — Proposal-PDF Signed-URL nutzte internen Kong-Hostname (Mixed-Content)
+- Status: resolved
+- Severity: Blocker
+- Area: V5.5 / SLC-553 / Storage / Self-Hosted-Supabase
+- Summary: `admin.storage.from('proposal-pdfs').createSignedUrl(path, 300)` returnte URLs mit dem internen Container-Hostname `http://supabase-kong:8000`. Coolify-Reverse-Proxy hat KEIN Routing zu Kong (`https://business.strategaizetransition.com/supabase` liefert 404). Browser blockierte die HTTP-iframe-URL zusaetzlich mit Mixed-Content auf der HTTPS-Seite. Pattern identisch mit ISSUE-044 (V5.3 Logo) — die Signed-URL-Variante umgeht NICHT die Public-URL-Probleme.
+- Impact: PDF-Generierung war serverseitig vollstaendig erfolgreich (Storage + DB-Persistenz + audit_log + Renderer-Performance), aber iframe-Anzeige + Download im Modal komplett broken. AC10 + AC11 verletzt. Nur durch echten externen Browser-Zugriff reproduzierbar.
+- Workaround: Keiner ohne Code-Fix.
+- Next Action: Erledigt 2026-04-30 via Hotfix Commit `91020b2`:
+  1. Neue Route `cockpit/src/app/api/proposals/[id]/pdf/route.ts` (Pattern analog SLC-531 `/api/branding/logo`) — service_role-Download mit Auth-Check, Content-Type `application/pdf`, Content-Disposition inline mit Filename.
+  2. `generateProposalPdf` returnt relative URL `/api/proposals/{id}/pdf?v={version}-{timestamp}` statt Signed-URL.
+  3. `createSignedUrl` + `PDF_SIGNED_URL_TTL_SECONDS` entfernt.
+  4. Cache-Buster verhindert iframe-Re-Use bei erneuter Generierung.
+  5. Build + 76/76 Tests gruen, Re-Smoke nach Coolify-Redeploy PASS.
+
 ### ISSUE-045 — Server-side Total-Size-Limit fuer E-Mail-Anhaenge ist Client-Convenience
 - Status: open
 - Severity: Low
