@@ -9,13 +9,13 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: final-check
-- Current Focus: **V5.5 /final-check PASS — CONDITIONALLY READY 2026-05-01 (RPT-265).** Alle 7 Audit-Dimensionen durch: Code-Quality, Security/Privacy, Compliance (V5.5-Section in COMPLIANCE.md ergaenzt), Testing-depth (proportional fuer Internal-Tool), CI/CD (Container-Health + Cron-Auth verifiziert), Observability (60 V5.5 Audit-Eintraege + structured logging), Post-go-live (REL-020-Notes komplett, Rollback-Pfad rein additiv). Pre-Release-Luecke (COMPLIANCE.md V5.5-Section fehlte) im Final-Check selbst gefixt. Bedingungen fuer Go-Live: Internal-Test-Mode bleibt aktiv (Pre-Production-Compliance-Gate vor V5.6), ISSUE-047 F1 Hydration #418 als nicht-blockierender Carryover, DB-Test-Artefakte aus QA bleiben oder optionales Cleanup vor Deploy.
-- Current Phase: V5.5 /final-check **PASS (CONDITIONALLY READY)**. Naechste: /go-live V5.5 → /deploy als REL-020 Final-Release.
+- High-Level State: go-live
+- Current Focus: **V5.5 /go-live GO (CONDITIONAL) 2026-05-01 (RPT-266).** Decision-Doc komplett: 0 Blocker, 0 Required Fixes vor Deploy, 6 Accepted Risks dokumentiert (R1 ISSUE-047 F1 Hydration als Carryover, R2 Internal-Test-Mode-Strategie, R3 supabase-studio unhealthy, R4 Storage-Volumen, R5 DB-Test-Artefakte, R6 Pre-Production-Compliance-Gate). Drei harte Conditions for Go-Live: (1) Internal-Test-Mode bleibt aktiv, (2) ISSUE-047 als V5.5.x-Patch nach Final-Release, (3) Coolify-Cron `expire-proposals` im Rahmen des Deploys anlegen. Operational Minimums alle verifiziert (Container-Health, HTTPS-Endpoint, ENV-Vars, Storage-Buckets-private, Audit-Log, Cron-Auth, Rollback-Pfad rein additiv). Geplanter Deploy-Image-Tag: Commit `9b63d1f`.
+- Current Phase: V5.5 /go-live **GO (CONDITIONAL)**. Naechste: /deploy V5.5 als REL-020 Final-Release durch User-Coolify-Aktion.
 
 ## Immediate Next Steps
-1. **/go-live V5.5** — Release-Risk explizit machen + Go/No-Go-Decision dokumentieren.
-2. **/deploy V5.5 als REL-020 Final-Release** — REL-020-Notes finalisieren mit echtem Datum.
+1. **/deploy V5.5 als REL-020 Final-Release** — User-Coolify-Redeploy auf Commit `9b63d1f` + Cron `expire-proposals` anlegen laut REL-020-Notes Schritt 1-3 + Records-Sync nach Deploy (roadmap V5.5→released, FEAT-551..555→deployed, RELEASES.md REL-020 Date, STATE.md Last Stable Version).
+2. **(optional pre-Deploy)** F1 Hydration #418 (ISSUE-047) Investigation — User-Entscheid: jetzt fixen ODER post-Final-Release als V5.5.1-Patch.
 3. **(optional)** F1 Hydration #418 Investigation (ISSUE-047) als V5.5.x-Patch — User-Entscheid pre/post-Deploy.
 4. **(optional)** DB-Cleanup der QA-Smoke-Artefakte — kosmetisch.
 5. **Roadmap-Update** nach Deploy: V5.5 → `released`, alle FEAT-551..555 → `deployed`.
