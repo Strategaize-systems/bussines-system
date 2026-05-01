@@ -2886,10 +2886,10 @@ Eigentuemer (Single-User Internal-Tool). Beide Features adressieren Tagesgeschae
 
 ### V5.6 V1 Scope
 
-**FEAT-561 — Zahlungsbedingungen: Vorauswahl + Split-Plan (BL-412)**
+**FEAT-561 — Zahlungsbedingungen: Vorauswahl + Split-Plan + Skonto (BL-412)**
 
 Sub-Theme A: Vorauswahl-Liste typischer Bedingungen.
-- Neue Tabelle `payment_terms_templates` (id, label, body, is_default, created_at, updated_at) — anlegbar/editierbar/loeschbar unter `/settings/payment-terms` (eigene Settings-Sektion analog `/settings/branding`).
+- Neue Tabelle `payment_terms_templates` (id, label, body, is_default, created_at, updated_at) — anlegbar/editierbar/loeschbar unter `/settings/payment-terms` (eigene Settings-Sektion).
 - Im Proposal-Workspace: Dropdown "Bedingung waehlen" greift auf Templates zu, fuellt Freitext-Feld vor. Manueller Override bleibt moeglich.
 - Default-Template ist konfigurierbar (Branding-Default "30 Tage netto" bleibt erhalten als Initial-Seed).
 
@@ -2897,13 +2897,20 @@ Sub-Theme B: Split-Plan (Teilzahlungen).
 - Neue Tabelle `proposal_payment_milestones` (id, proposal_id, sequence, percent, amount, due_trigger, due_offset_days, label, created_at).
 - `due_trigger` Enum: `on_signature` | `on_completion` | `days_after_signature` | `on_milestone`.
 - UI im Proposal-Editor als expandable Section ("Teilzahlungen aktivieren") mit Add/Remove/Reorder-Steuerung.
-- Sum-Validation: Summe muss exakt 100 % entsprechen, sonst Speichern blockiert.
+- **Sum-Validation: Summe muss EXAKT 100 % entsprechen. Keine Toleranz. Speichern blockiert wenn != 100%.** Frontend zeigt Live-Summen-Anzeige in Echtzeit waehrend User editiert + klares Error-State bei Abweichung.
 - PDF-Renderer (SLC-553-Erweiterung): wenn `proposal_payment_milestones` Eintraege hat, separater "Konditionen / Teilzahlungen"-Block; sonst Fallback auf bestehendes `payment_terms` Freitext.
 - Status-Lifecycle bleibt orthogonal (V5.5 bleibt unveraendert).
 
+Sub-Theme C: Skonto als separates optionales Feld.
+- Neue Spalten am `proposals`: `skonto_percent NUMERIC(4,2) NULL` (z.B. 2.00) + `skonto_days INTEGER NULL` (z.B. 7).
+- UI im Proposal-Editor als Toggle "Skonto anbieten?" (default off). Bei aktiv: zwei Felder fuer Prozent + Tage.
+- **Mutex-Logik:** wenn ein Milestone mit `due_trigger='on_signature'` 100% deckt (= Vorkasse), wird Skonto-Toggle automatisch disabled mit Hinweis "Bei Vorkasse nicht anwendbar". Datenmodell-seitig sind beide Felder unabhaengig — die Mutex ist nur UI-Convenience.
+- Internationaler Kontext: Skonto ist DE-spezifisch und in NL/anderen Markten unueblich. Daher opt-in pro Angebot, niemals impliziter Default. NL-Kunden bekommen ein Angebot ohne Skonto-Feld im PDF.
+- PDF-Renderer (SLC-553-Erweiterung): wenn `skonto_percent` gesetzt, Block "Skonto: X % bei Zahlung innerhalb Y Tagen" unter Konditionen. Wenn NULL: nicht gerendert.
+
 **FEAT-562 — Pre-Call Briefing Auto-Push (BL-385)**
 
-- Cron `meeting-briefing` laeuft alle 5 Min, sucht `meetings`/`calendar_events` mit `start_time` zwischen jetzt und +35 Min die noch kein Briefing haben.
+- Cron `meeting-briefing` laeuft alle 5 Min, sucht `meetings`/`calendar_events` mit `start_time` zwischen jetzt und +(N+5) Min die noch kein Briefing haben. **N ist user-konfigurierbar** (Default 30 Min, einstellbar als 15/30/45/60 in `/settings/briefing`).
 - Wiederverwendung des bestehenden `buildDealBriefingPrompt` + `validateDealBriefing` Stacks (aus FEAT-301 Deal-Workspace KI). Kein neuer LLM-Adapter.
 - Briefing-Inhalt: Account-Status, letzte 5 Interaktionen (E-Mails + Activities), offene Signale, Naechste Schritte aus letztem Gespraech, KI-generierte Gespraechspunkte mit Einwandbehandlung.
 - Delivery: Push-Notification (FEAT-409 Service Worker bestehend) **und** E-Mail (SMTP bestehend, kompakte HTML-Version). Beide aktiv per Default, jeweils per User-Setting toggle-bar.
@@ -2931,7 +2938,9 @@ Sub-Theme B: Split-Plan (Teilzahlungen).
 ### V5.6 Risks & Assumptions
 
 - **Risk:** Sum-Validation-Strict (=100%) blockt User wenn er Rundungsabweichungen hat (33+33+34=100, ok; 33.33+33.33+33.33=99.99, blockt).
-  Mitigation: in `/architecture` entscheiden — Empfehlung: Toleranz von 0.5% akzeptieren, Speichern erlauben aber UI-Warning anzeigen.
+  Mitigation: User-Direktive 2026-05-01 — strikt 0% Toleranz. Frontend zeigt Live-Summen-Anzeige + erzwingt sauberen Input. User uebernimmt Verantwortung fuer 100%-Summen, Pattern wie z.B. Lohnabrechnungs-Tools.
+- **Risk:** Skonto wird in NL/internationalen Angeboten versehentlich aktiviert.
+  Mitigation: Skonto ist opt-in mit default-off. UI-Mutex zu Vorkasse-Trigger. PDF rendert Skonto-Block nur bei aktivem Feld.
 - **Risk:** Briefing-Cron triggert mehrfach fuer dasselbe Meeting wenn Briefing-Status nicht idempotent gesetzt wird.
   Mitigation: Idempotenz-Marker `meetings.briefing_generated_at` IS NOT NULL → Skip. Pattern aus expire-proposals (V5.5).
 - **Risk:** Bedrock-Kosten skalieren mit Meeting-Anzahl (Single-User: vernachlaessigbar, aber dokumentieren).
@@ -2951,25 +2960,35 @@ V5.6 ist erfolgreich wenn:
 1. User kann Zahlungsbedingungen unter `/settings/payment-terms` anlegen, editieren, loeschen, default setzen.
 2. Im Proposal-Editor erscheint Dropdown mit den Templates; Auswahl fuellt Freitext-Feld vor; manueller Override bleibt moeglich.
 3. Split-Plan-Section laesst sich im Proposal-Editor aktivieren mit beliebig vielen Milestones (Add/Remove/Reorder).
-4. Sum-Validation greift mit 0.5%-Toleranz; ausserhalb wird Speichern blockiert mit klarer Fehlermeldung.
-5. PDF-Renderer zeigt Konditionen-Block mit Milestones strukturiert; ohne Milestones bleibt PDF identisch zu V5.5.
-6. Cron `meeting-briefing` laeuft im 5-Min-Takt und generiert Briefings fuer Meetings im naechsten 35-Min-Fenster.
-7. Briefing wird per Push-Notification + E-Mail an User geschickt, beide Kanaele toggle-bar in Settings.
-8. Briefing wird als Activity am Deal gespeichert.
-9. Meetings ohne Deal-Zuordnung werden ignoriert.
-10. V5.5-PDF-Smoke bleibt regression-frei (Proposals ohne Milestones rendern bit-identisch).
+4. **Sum-Validation strikt 0% Toleranz** — Speichern bei != 100% blockiert, Frontend zeigt Live-Summen-Anzeige.
+5. **Skonto-Toggle** im Proposal-Editor (default off) mit Prozent + Tage Feldern; bei aktivem Vorkasse-Milestone (`on_signature` 100%) wird Toggle automatisch disabled.
+6. PDF-Renderer zeigt Konditionen-Block mit Milestones strukturiert + optional Skonto-Block; ohne Milestones/Skonto bleibt PDF identisch zu V5.5.
+7. **`/settings/briefing` Page** mit Trigger-Zeit-Setting (15/30/45/60 Min, Default 30) + Push-Toggle + E-Mail-Toggle.
+8. Cron `meeting-briefing` laeuft im 5-Min-Takt und generiert Briefings fuer Meetings im konfigurierten Fenster.
+9. Briefing wird per Push-Notification + E-Mail an User geschickt, beide Kanaele in `/settings/briefing` toggle-bar.
+10. Briefing wird als Activity am Deal gespeichert.
+11. Meetings ohne Deal-Zuordnung werden ignoriert.
+12. V5.5-PDF-Smoke bleibt regression-frei (Proposals ohne Milestones/Skonto rendern bit-identisch).
 
-### V5.6 Open Questions (fuer /architecture)
+### V5.6 Open Questions — RESOLVED 2026-05-01
 
-- **F1 — Settings-Sektion fuer Templates:** eigene `/settings/payment-terms` oder unter `/settings/branding` als Sub-Section? Empfehlung: eigene Sektion (klare Trennung, Templates sind nicht Branding).
-- **F2 — Sum-Validation-Toleranz:** 0% (strict), 0.5% oder 1%? Empfehlung: 0.5% — deckt Rundungs-Probleme ohne Free-for-All.
-- **F3 — Pflicht/Optional Split-Plan:** Default ist "kein Split-Plan" (Freitext-payment_terms-Pfad)? Empfehlung: ja, Split-Plan ist opt-in via Toggle "Teilzahlungen aktivieren".
-- **F4 — Skonto-Behandlung:** als Teil der `payment_terms`-Bedingung (Freitext) oder als separates Feld am Proposal? Empfehlung: erstmal Teil der Bedingung (out-of-scope V5.6 fuer separate Skonto-Engine).
-- **F5 — `due_trigger` Enum-Vollstaendigkeit:** reichen die 4 Trigger (`on_signature`, `on_completion`, `days_after_signature`, `on_milestone`) fuer V5.6? Oder noch `on_invoice`/`on_payment`? Empfehlung: 4 reichen, `on_milestone` deckt freie Faelle ab.
-- **F6 — Briefing-Trigger-Zeitpunkt:** 30 Min vor Meeting fix oder 15/30/60 als User-Setting? Empfehlung: 30 Min fix in V5.6, User-Konfiguration V5.7+.
-- **F7 — Briefing-Delivery-Default:** beide Kanaele aktiv oder nur einer (Welcher)? Empfehlung: beide aktiv — User kann gezielt deaktivieren.
-- **F8 — Briefing-Persistierung:** als Activity (sichtbar im Timeline) oder eigene Tabelle `meeting_briefings`? Empfehlung: Activity (Pattern bleibt konsistent zu V3 Activities).
-- **F9 — Briefing fuer wiederkehrende Meetings:** wenn dasselbe Meeting taeglich wiederholt wird, jeden Tag neues Briefing oder einmalig? Empfehlung: pro Termin-Instance, also pro Tag neu (Cron sieht jede Instance separat).
-- **F10 — `proposal_payment_milestones` Audit-Log:** sollen Aenderungen an Milestones im `audit_log` getrackt werden? Empfehlung: ja, gleiches Pattern wie `proposal_items` (V5.5).
-- **F11 — Cron-Concurrency-Lock:** wenn Cron 2x parallel laeuft (Coolify-Restart), wer gewinnt? Empfehlung: Idempotenz-Marker via UPDATE WHERE briefing_generated_at IS NULL — winner-takes-all-Pattern.
-- **F12 — Slicing:** 2 Features = 2 Slices? Oder Sub-Themen splitten (Vorauswahl-Section + Split-Plan-Section + Briefing-Cron + Briefing-Delivery)? Empfehlung im PRD: 4 Slices SLC-561..564 fuer klarere Review-Boundaries. `/slice-planning` finalisiert.
+User-Sign-Off vom 2026-05-01. Empfehlungen wurden uebernommen, ausser F2 + F4 + F6 (User-Korrektur).
+
+- **F1 — Settings-Sektion fuer Templates:** ✅ Eigene `/settings/payment-terms` (Empfehlung uebernommen).
+- **F2 — Sum-Validation-Toleranz:** ❗ **0% strict — User-Korrektur.** Keine Toleranz, Summe muss exakt 100% sein. Frontend mit Live-Summen-Anzeige + klarem Error-State.
+- **F3 — Pflicht/Optional Split-Plan:** ✅ Opt-in via Toggle "Teilzahlungen aktivieren" (Empfehlung uebernommen).
+- **F4 — Skonto-Behandlung:** ❗ **Separates Feld — User-Korrektur.** Skonto ist DE-spezifisch und in NL nicht ueblich. User braucht Pro-Angebot-Kontrolle. Implementation: neue `proposals.skonto_percent` + `proposals.skonto_days` Spalten, UI-Toggle (default off), UI-Mutex zu Vorkasse-Trigger (`on_signature` 100% deckt).
+- **F5 — `due_trigger` Enum-Vollstaendigkeit:** ✅ 4 Trigger reichen (`on_signature`, `on_completion`, `days_after_signature`, `on_milestone`) — Empfehlung uebernommen.
+- **F6 — Briefing-Trigger-Zeitpunkt:** ❗ **User-konfigurierbar — User-Korrektur.** Setting in `/settings/briefing` mit Optionen 15 / 30 / 45 / 60 Min, Default 30 Min. Persistierung in `user_settings` (existiert seit V4.1).
+- **F7 — Briefing-Delivery-Default:** ✅ Beide Kanaele Push + E-Mail aktiv default — Empfehlung uebernommen.
+- **F8 — Briefing-Persistierung:** ✅ Als Activity (`type='briefing'`) — Empfehlung uebernommen.
+- **F9 — Briefing fuer wiederkehrende Meetings:** ✅ Pro Termin-Instance, pro Tag neu — Empfehlung uebernommen.
+- **F10 — `proposal_payment_milestones` Audit-Log:** ✅ Ja, gleiches Pattern wie `proposal_items` (V5.5) — Empfehlung uebernommen.
+- **F11 — Cron-Concurrency-Lock:** ✅ Idempotenz-Marker `briefing_generated_at` per UPDATE WHERE NULL (winner-takes-all) — Empfehlung uebernommen.
+- **F12 — Slicing:** ✅ 4 Slices SLC-561..564 — Empfehlung uebernommen. Splitting:
+  - SLC-561: Schema (MIG-027) + Vorauswahl-Backend (`payment_terms_templates` + `/settings/payment-terms` Page)
+  - SLC-562: Editor-Dropdown + Skonto-Felder (Sub-Themes A + C UI)
+  - SLC-563: Split-Plan-UI + PDF-Renderer-Erweiterung (Sub-Theme B + PDF)
+  - SLC-564: Pre-Call Briefing Cron + Push/E-Mail-Delivery + `/settings/briefing` Page
+
+**V5.6 Requirements ready for `/architecture`.**

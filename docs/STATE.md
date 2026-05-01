@@ -10,12 +10,11 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: requirements
-- Current Focus: **V5.6 Requirements done 2026-05-01 (RPT-269).** 2 Features definiert: FEAT-561 Zahlungsbedingungen Vorauswahl + Split-Plan (BL-412), FEAT-562 Pre-Call Briefing Auto-Push (BL-385). Open Questions F1-F12 dokumentiert fuer /architecture. V5.5.1 Polish-Patch live verifiziert (User-Browser-Smoke 2026-05-01: Hydration #418 weg, Filename-Suffix funktioniert, Total-Size-Limit funktioniert). Internal-Test-Mode bleibt aktiv.
-- Current Phase: V5.6 **REQUIREMENTS DONE — wartet auf User-Klaerung der 12 Open Questions, dann /architecture V5.6**.
+- Current Focus: **V5.6 Requirements + User-Sign-Off done 2026-05-01.** 2 Features mit Sub-Themen: FEAT-561 Vorauswahl + Split-Plan + Skonto (3 Sub-Themen, BL-412 erweitert), FEAT-562 Pre-Call Briefing Auto-Push (BL-385). Open Questions F1-F12 alle resolved (3 User-Korrekturen: F2 strict 0%, F4 Skonto separates Feld, F6 user-konfigurierbarer Briefing-Trigger). 4 Slices vorgesehen: SLC-561 Schema+Vorauswahl-Backend, SLC-562 Editor-Dropdown+Skonto-Felder, SLC-563 Split-Plan+PDF, SLC-564 Briefing-Cron+Delivery+/settings/briefing. V5.5.1 weiter live + verifiziert. Internal-Test-Mode aktiv.
+- Current Phase: V5.6 **REQUIREMENTS COMPLETE — ready fuer /architecture V5.6**.
 
 ## Immediate Next Steps
-1. **V5.6 Open Questions F1-F12 mit User klaeren** — siehe PRD V5.6 Open Questions. Empfehlungen sind dort dokumentiert; User-Sign-off oeffnet `/architecture V5.6`.
-2. **/architecture V5.6** — nach Klaerung der Open Questions. Definiert MIG-027 (`payment_terms_templates` + `proposal_payment_milestones` + `meetings.briefing_generated_at`) + Adapter-Pattern fuer Briefing-Cron + PDF-Renderer-Erweiterung.
+1. **/architecture V5.6** — naechste Aktion. Definiert MIG-027 (`payment_terms_templates` + `proposal_payment_milestones` + `proposals.skonto_percent`/`skonto_days` + `meetings.briefing_generated_at` + `user_settings`-Erweiterung fuer Briefing-Konfiguration) + Adapter-Pattern fuer Briefing-Cron + PDF-Renderer-Erweiterung.
 3. **Coolify-Cron `expire-proposals` Erst-Lauf am 2026-05-02 02:00 Berlin Time verifizieren** — Audit-SQL `SELECT created_at, action, entity_id, context FROM audit_log WHERE entity_type='proposal' AND context='Auto-expire by cron — valid_until passed' ORDER BY created_at DESC LIMIT 10;` (REL-020-Notes Schritt 3).
 4. **/post-launch V5.5** — nach 24-48h Stable-Window. Auch /post-launch V5.4 + V5.3 ueberfaellig (passiv).
 5. **(optional)** DB-Cleanup der QA-Smoke-Artefakte aus V5.5 — kosmetisch.
