@@ -1,20 +1,23 @@
 "use client";
 
 // =============================================================
-// ConditionalColorPicker (SLC-541 MT-1, DEC-102)
+// ConditionalColorPicker (SLC-541 MT-1, DEC-102, V5.4.1 Refactor)
 // =============================================================
 // Toggle-Checkbox "Markenfarbe verwenden" + native <input type="color">.
 //
-// - Toggle aus → Color-Picker disabled, Wert NULL
-// - Toggle an  → Color-Picker aktiv, Wert = Hex
+// V5.4.1 Refactor: useState/useEffect entfernt zugunsten reiner derived
+// state. `enabled` leitet sich direkt aus `value !== null` ab. Kein lokaler
+// State, keine Sync-Drift bei Eltern-Wechsel — controlled component pattern.
 //
-// Initial-State leitet sich aus value !== null ab (FEAT-531 AC9-Drift Fix:
+// - Toggle aus → onChange(null)        (value === null  → enabled=false)
+// - Toggle an  → onChange(defaultColor) (value !== null → enabled=true)
+//
+// Initial-State leitet sich aus value ab (FEAT-531 AC9-Drift Fix:
 // User mit primary_color = NULL sieht Toggle aus, Mail rendert weiter ueber
 // textToHtml-Fallback, NICHT ueber renderBrandedHtml).
 //
 // Keine Submit-Logik in der Komponente — Form-Submit bleibt Eltern-Pflicht.
 
-import { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 
 type Props = {
@@ -32,24 +35,12 @@ export function ConditionalColorPicker({
   defaultColor,
   id,
 }: Props) {
-  const [enabled, setEnabled] = useState<boolean>(value !== null);
-
-  // Wenn der Eltern-Wert von aussen (z.B. nach Reload mit neuem initial)
-  // wechselt, Toggle-State synchronisieren.
-  useEffect(() => {
-    setEnabled(value !== null);
-  }, [value]);
-
+  const enabled = value !== null;
   const inputId = id ?? `color-${label.replace(/\s+/g, "-").toLowerCase()}`;
   const toggleId = `${inputId}-toggle`;
 
   const handleToggle = (next: boolean) => {
-    setEnabled(next);
-    onChange(next ? value ?? defaultColor : null);
-  };
-
-  const handleColorChange = (next: string) => {
-    onChange(next);
+    onChange(next ? defaultColor : null);
   };
 
   return (
@@ -72,13 +63,13 @@ export function ConditionalColorPicker({
         <input
           id={inputId}
           type="color"
-          value={enabled ? value ?? defaultColor : defaultColor}
-          onChange={(e) => handleColorChange(e.target.value)}
+          value={enabled ? value : defaultColor}
+          onChange={(e) => onChange(e.target.value)}
           disabled={!enabled}
           className="h-10 w-20 rounded border border-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
         />
         <span className="text-xs font-mono text-slate-500">
-          {enabled ? value ?? defaultColor : "—"}
+          {enabled ? value : "—"}
         </span>
       </div>
     </div>

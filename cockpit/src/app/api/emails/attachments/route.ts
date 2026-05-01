@@ -89,10 +89,25 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // --- Whitelist + Size-Validation ---
+  // --- Storage-State der Compose-Session lesen ---
+  // V5.4.1 (ISSUE-045 + SLC-542 L1): Single list()-Call deckt zwei Aspekte:
+  //   (a) Server-side Total-Size-Limit (vorher Client-Convenience)
+  //   (b) Filename-Kollision-Suffix " (n)" statt blindem upsert
+  const admin = createAdminClient();
+  const { data: existingFiles } = await admin.storage
+    .from(BUCKET)
+    .list(`${user.id}/${composeSessionId}/`, { limit: 1000 });
+  const existing = existingFiles ?? [];
+
+  const totalSizeSoFar = existing.reduce(
+    (sum, f) => sum + (f.metadata?.size ?? 0),
+    0,
+  );
+
+  // --- Whitelist + Pro-File + Total-Size Validation ---
   const validation = validateAttachment(
     { type: file.type, size: file.size, name: file.name },
-    0,
+    totalSizeSoFar,
   );
   if (!validation.ok) {
     // 413 nur wenn Size das Problem ist, sonst 400.
@@ -103,18 +118,23 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // --- Storage-Upload ---
+  // --- Filename-Kollision: " (n)"-Suffix bei Duplikat ---
+  // V5.4.1 (SLC-542 L1): Re-Drag derselben Datei wuerde mit upsert:true die
+  // alte Version ueberschreiben — okay solange beide Kopien identisch sind,
+  // problematisch wenn der User echte zweite Datei mit gleichem Namen hat.
+  // Pragmatischer Fix: bei Duplikat suffix anhaengen, kein upsert mehr.
   const safeName = sanitizeFilename(file.name);
-  const storagePath = `${user.id}/${composeSessionId}/${safeName}`;
+  const existingNames = new Set(existing.map((f) => f.name));
+  const finalName = generateUniqueName(safeName, existingNames);
+  const storagePath = `${user.id}/${composeSessionId}/${finalName}`;
 
-  const admin = createAdminClient();
   const buffer = Buffer.from(await file.arrayBuffer());
 
   const { error: uploadError } = await admin.storage
     .from(BUCKET)
     .upload(storagePath, buffer, {
       contentType: file.type,
-      upsert: true, // gleicher Filename in derselben Session ueberschreibt (Idempotenz fuer Re-Drag)
+      upsert: false,
     });
 
   if (uploadError) {
@@ -131,12 +151,24 @@ export async function POST(request: NextRequest) {
 
   const attachment: AttachmentMeta = {
     storagePath,
-    filename: safeName,
+    filename: finalName,
     mimeType: file.type,
     sizeBytes: file.size,
   };
 
   return NextResponse.json({ attachment }, { status: 201 });
+}
+
+/** Generates a unique filename by appending " (n)" before the extension when
+ *  a name collision exists. Examples: "report.pdf" → "report (1).pdf" → ... */
+function generateUniqueName(name: string, taken: Set<string>): string {
+  if (!taken.has(name)) return name;
+  const dotIdx = name.lastIndexOf(".");
+  const base = dotIdx >= 0 ? name.substring(0, dotIdx) : name;
+  const ext = dotIdx >= 0 ? name.substring(dotIdx) : "";
+  let n = 1;
+  while (taken.has(`${base} (${n})${ext}`)) n++;
+  return `${base} (${n})${ext}`;
 }
 
 // =============================================================
