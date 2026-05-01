@@ -96,6 +96,13 @@ services:
         condition: service_started
     networks:
       - business-net
+    # Coolify haengt den Container zusaetzlich automatisch in das Coolify-Project-Network
+    # `k9f5pn5upfq7etoefb5ukbcg` (UUID dieser Resource). Ohne `traefik.docker.network`-Label
+    # waehlt Traefik zwischen den 2 IPs nicht-deterministisch — bei business-net-IP greift
+    # der Coolify-Proxy ins Leere (nicht im business-net) und produziert Gateway Timeout.
+    # Pattern dokumentiert in dev-system jitsi-jibri-deployment.md Punkt 3.
+    labels:
+      - "traefik.docker.network=k9f5pn5upfq7etoefb5ukbcg"
 
   # ============================================================
   # SUPABASE STACK
