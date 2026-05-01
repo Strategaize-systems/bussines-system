@@ -16,7 +16,8 @@ export type AuditEntityType =
   | "contact"
   | "company"
   | "proposal"
-  | "pipeline";
+  | "pipeline"
+  | "payment_terms_template";
 
 export interface AuditParams {
   action: AuditAction;

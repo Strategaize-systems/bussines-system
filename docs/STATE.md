@@ -9,15 +9,16 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: **V5.6 Slice-Planning done 2026-05-01.** 4 Slices vollstaendig ausdefiniert: SLC-561 (Schema + Templates-CRUD + /settings/payment-terms, ~3-4h, 8 MTs), SLC-562 (Bedingungs-Dropdown + Skonto-Toggle + UI-Mutex-Stub, ~3-4h, 8 MTs), SLC-563 (Split-Plan + Sum-Validation strict + PDF-Renderer-Erweiterung mit 4 Snapshot-Tests, ~5-7h, 9 MTs), SLC-564 (Pre-Call Briefing Cron + Push/Email + /settings/briefing + Sentinel-Strategy max 3 Re-Tries, ~4-6h, 9 MTs). Gesamt-Aufwand ~15-21h. Alle 6 Open-Points aus /architecture finalisiert: Sentinel-Mechanik (3 Re-Tries), Mail-Template (5 Sections), Push-Payload (4 Felder), Settings-Sub-Nav (gemeinsame Sidebar in SLC-561), Off-Verhalten (Skip wenn beide Toggles off), Cron-Setup-Anleitung (REL-022-Notes in SLC-564 MT-8). 4 neue Backlog-Items BL-413..416 fuer Slice-Tracking. Reihenfolge zwingend: 561 -> 562 -> 563 -> 564. Pro Slice: /backend|/frontend -> /qa -> Coolify-Redeploy. V5.5.1 weiter live + verifiziert. Internal-Test-Mode aktiv.
-- Current Phase: V5.6 **SLICE-PLANNING COMPLETE — ready fuer /backend SLC-561**.
+- High-Level State: implementing
+- Current Focus: **V5.6 SLC-561 /backend code-complete 2026-05-01.** MIG-027 auf Hetzner appliziert (5 Schema-Aenderungen verifiziert: payment_terms_templates+seed `30 Tage netto`, proposal_payment_milestones, proposals.skonto_percent/days mit 3 CHECK-Constraints, meetings.briefing_generated_at + Partial-Index, user_settings.briefing_trigger_minutes/push/email). Idempotenz-Smoke 3x bestaetigt. Spec-Korrektur: `meetings.scheduled_at` (nicht `start_time` wie in MIG-027-Spec). 5 Server Actions live mit Audit-Log + Default-Mutex via Sequenz-Update. /settings/payment-terms Page + Manager-Component mit Create/Edit/Delete-Dialogen + Default-Setter. Settings-Sidebar-Nav-Layout-Wrapper (Branding aktiv, Zahlungsbedingungen aktiv, Briefing disabled bis SLC-564). Build PASS, Lint clean fuer SLC-561-Files (221 Pre-Existing-Issues unbeeinflusst), Vitest 97/97 PASS. Audit-Type-Union erweitert um `payment_terms_template`. Naechste = /qa SLC-561 (Pflicht laut CLAUDE.md). V5.5.1 weiter live + verifiziert. Internal-Test-Mode aktiv.
+- Current Phase: V5.6 **SLC-561 /backend done — ready fuer /qa SLC-561**.
 
 ## Immediate Next Steps
-1. **/backend SLC-561** — naechste Aktion. MIG-027 SQL-File schreiben + auf Hetzner applieren (Base64-Pattern), 5 Server Actions (list/create/update/delete/setDefault), `/settings/payment-terms`-Page mit CRUD-UI, Settings-Sidebar-Nav-Layout-Wrapper. ~3-4h.
-2. **Coolify-Cron `expire-proposals` Erst-Lauf am 2026-05-02 02:00 Berlin Time verifizieren** — Audit-SQL `SELECT created_at, action, entity_id, context FROM audit_log WHERE entity_type='proposal' AND context='Auto-expire by cron — valid_until passed' ORDER BY created_at DESC LIMIT 10;` (REL-020-Notes Schritt 3). Nicht zeitkritisch, passiv erledigen.
-3. **/post-launch V5.5** — nach 24-48h Stable-Window. Auch /post-launch V5.4 + V5.3 ueberfaellig (passiv).
-4. **(optional)** DB-Cleanup der QA-Smoke-Artefakte aus V5.5 — kosmetisch.
+1. **/qa SLC-561** — Pflicht-QA. Browser-Smoke `/settings/payment-terms` (CRUD-Pfade + Default-Toggle + Default-Block), Sidebar-Active-State zwischen `/settings/branding` und `/settings/payment-terms`, V5.5-Regression `/proposals/[id]/edit` PDF-Generierung + Composing-Studio Anhang-Picker, Audit-Log-Smoke mit `entity_type='payment_terms_template'`.
+2. **Coolify-Redeploy nach /qa-PASS** — User-Aktion ueber Coolify-UI fuer SLC-561 Code-Stand.
+3. **/backend SLC-562** — Bedingungs-Dropdown im Editor + Skonto-Toggle. ~3-4h.
+4. **Coolify-Cron `expire-proposals` Erst-Lauf am 2026-05-02 02:00 Berlin Time verifizieren** — Audit-SQL aus REL-020-Notes Schritt 3. Nicht zeitkritisch, passiv erledigen.
+5. **/post-launch V5.5** — nach 24-48h Stable-Window. Auch /post-launch V5.4 + V5.3 ueberfaellig (passiv).
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"

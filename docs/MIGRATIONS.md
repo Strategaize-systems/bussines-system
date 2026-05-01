@@ -292,7 +292,7 @@
   - V2-Stub-Proposals bleiben nach Rollback unveraendert lesbar — bestehende `/proposals`-Tabelle funktioniert wieder im V5.4-Zustand.
 
 ### MIG-027 — V5.6 Zahlungsbedingungen + Pre-Call Briefing Schema
-- Date: planned (apply zu Beginn von SLC-561 `/backend` analog MIG-026 Pattern)
+- Date: 2026-05-01 (applied auf Hetzner Business System DB im Rahmen SLC-561 `/backend`. Hinweis: Spec hatte `meetings.start_time` referenziert — echte Spalte ist `scheduled_at`, im Migration-File korrigiert.)
 - Scope: 5 Aenderungen in einer Migration `027_v56_payment_terms_and_briefing.sql`:
   1. Neue Tabelle `payment_terms_templates` (DEC-115/DEC-121, Sub-Theme A):
      - `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`
