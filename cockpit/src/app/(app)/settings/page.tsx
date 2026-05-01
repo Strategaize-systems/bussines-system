@@ -5,7 +5,7 @@ import { getEmailTemplates } from "./template-actions";
 import { getImapSyncStatus } from "./imap-actions";
 import { ImapStatus } from "./imap-status";
 import { getCurrentUserRole } from "@/lib/audit";
-import { Shield, Bell, FileText, Palette } from "lucide-react";
+import { Shield, Bell, FileText, Palette, Receipt } from "lucide-react";
 import Link from "next/link";
 import type { PipelineStage } from "../pipeline/actions";
 
@@ -76,6 +76,21 @@ export default async function SettingsPage() {
             <div>
               <p className="text-sm font-medium text-slate-900">Branding</p>
               <p className="text-sm text-slate-500">Logo, Farben, Schrift und Footer fuer ausgehende Mails</p>
+            </div>
+          </div>
+        </div>
+      </Link>
+
+      {/* Payment-Terms link */}
+      <Link href="/settings/payment-terms" className="block">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:bg-slate-50">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50">
+              <Receipt className="h-4 w-4 text-emerald-700" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-900">Zahlungsbedingungen</p>
+              <p className="text-sm text-slate-500">Vorlagen fuer Angebote (Default + Custom-Templates)</p>
             </div>
           </div>
         </div>
