@@ -490,6 +490,58 @@ V5.4 (REL-019, deployed 2026-04-29) ergaenzt das Composing-Studio um Direkt-Uplo
 
 ---
 
+## V5.5 — Angebot-Erstellung + Anhang-Pipeline
+
+V5.5 (REL-020 in Vorbereitung) fuehrt die System-eigene Angebot-Erstellung mit PDF-Generierung, Status-Lifecycle und Composing-Studio-Integration ein. Die Daten sind bereits in den Sektionen 1.4 (Kommunikationsdaten) und 1.7 (Geschaeftsdaten) abgedeckt. Diese Sektion beschreibt die zusaetzlichen V5.5-Datenflows.
+
+### Neue Datenobjekte
+
+**`proposal_items`-Tabelle (FEAT-551, MIG-026):** Position-Liste pro Angebot mit `product_id` (FK auf `products`), `quantity`, `unit_price_cents`, `name_snapshot`, `description_snapshot`. Enthaelt **Geschaeftsdaten** (Preise, Mengen) — keine Person-Daten direkt.
+
+**`proposals`-Tabelle Erweiterung (FEAT-551, MIG-026):** Zusaetzliche Spalten `parent_proposal_id` (Versionierungs-Link), `valid_until`, `payment_terms`, `pdf_storage_path`, Lifecycle-Timestamps (`sent_at`, `accepted_at`, `rejected_at`, `expired_at`). Geschaeftsdaten ohne neue personenbezogene Kategorie.
+
+**`proposal-pdfs` Storage-Bucket (FEAT-551, FEAT-553):** Privater Bucket auf eigener Self-Hosted-Supabase-Infrastruktur (Hetzner DE). Enthaelt User-generierte PDFs mit Position-Items, Preisen, Konditionen, Branding (Logo, Adresse) und Kunde-Adresse aus dem verknuepften Deal. RLS-Policy beschraenkt SELECT/INSERT/UPDATE/DELETE auf `auth.uid()` im Pfad-Prefix.
+
+**`email_attachments`-Junction Erweiterung (FEAT-555, MIG-026):** `source_type` (`'upload'` | `'proposal'`) und `proposal_id` (NULL fuer Upload). CHECK-Constraint enforced Daten-Konsistenz. Keine neuen personenbezogenen Daten ueber den V5.4-Stand hinaus.
+
+### Datenflows
+
+**Angebot erstellen (FEAT-552 Workspace):** User oeffnet `/proposals/[id]/edit`, native React-State mit Custom-Debounce, explizites Save via Server Action. Position-Items werden mit `name_snapshot` + `unit_price_cents_snapshot` persistiert (DEC-107) — Snapshots sind absichtlich unveraenderlich, damit historische Angebote bei Produkt-Updates nicht ploetzlich andere Preise zeigen.
+
+**PDF-Generierung (FEAT-553):** `pdfmake` (~700 KB Dependency, lokal, kein API-Call) rendert das PDF server-side mit Branding (Logo, Farben, Adresse aus `branding_settings`). Persistiert in `proposal-pdfs/{user_id}/{proposal_id}/v{version}.pdf` (oder `.testmode.pdf` im Internal-Test-Mode, DEC-113). Audit-Eintrag mit `context='PDF generated v{N}'`.
+
+**Mixed-Content-Hotfix (Commit `91020b2`):** Server-Proxy `/api/proposals/[id]/pdf` ersetzt direkten Storage-Signed-URL — Authentifizierung via Server-Side Supabase-Session (RLS implicit), kein Token im URL.
+
+**Status-Lifecycle (FEAT-554):** `transitionProposalStatus(id, newStatus)` mit Whitelist-gekapseltem Server-Action (`transitions.ts`: `draft → sent → accepted | rejected | expired`). Idempotent (gleicher Status = No-op). Terminale States (`accepted`/`rejected`/`expired`) erlauben keine Folge-Transitionen. Audit-Log-Eintrag mit `action='status_change'`, `changes={before, after}`, `actor_id=user.id`. Auto-Expire-Cron `0 2 * * *` Berlin (DEC-110) markiert Proposals mit `valid_until < NOW()` AND `status='sent'` als `expired`.
+
+**Composing-Studio-Anhang (FEAT-555):** `<ProposalAttachmentPicker>` zeigt alle Proposals des aktuellen Deals (DEC-112). `attachProposalToCompose` validiert `pdf_storage_path != NULL`. Beim Send laedt `send.ts` den Buffer aus `proposal-pdfs` (statt `email-attachments`), Junction-Insert mit `source_type='proposal'`+`proposal_id` (CHECK-Constraint enforced), idempotenter `transitionProposalStatus(proposalId, 'sent')` nach erfolgreichem Send.
+
+### Audit-Log
+
+`audit_log` erweitert um:
+- `entity_type='proposal'`, `action='status_change'` — alle Lifecycle-Wechsel persistiert
+- `entity_type='proposal'`, `action='update'`, `context='PDF generated v{N}'`
+- Auto-Expire-Cron mit `context='Auto-expire by cron — valid_until passed'`
+
+### Retention
+
+- `proposals` + `proposal_items`: keine Auto-Cleanup. `ON DELETE CASCADE` von Items zu Proposal.
+- `proposal-pdfs` Storage-Files: bleiben bei Composing-Anhang-Loeschung erhalten (Audit-Wahrheit, AC9 SLC-555). Cleanup-Cron deferred bis V5.6+ (Storage-Volumen-Wachstum als Operations-Topic).
+- `email_attachments`-Junction: `ON DELETE CASCADE` zu `emails`. Storage-File bleibt unabhaengig.
+- `audit_log`: keine Auto-Loeschung.
+
+### Drittanbieter
+
+Keine neuen Drittanbieter in V5.5: pdfmake ist lokale Dependency, Storage auf Hetzner DE, Branding aus eigener Tabelle, SMTP-Provider erhaelt PDF-Anhaenge wie bei jeder Multipart-Mail.
+
+### Bekannte offene Punkte
+
+- Storage-Volumen-Wachstum (Cleanup-Cron in V5.6+).
+- Pre-Production-Compliance-Gate vor V5.6: Anwalts-Pruefung der V5.4 + V5.5-Sections, Switch auf Azure-OpenAI-EU-Whisper, ISSUE-042-Schliessung. Internal-Test-Mode bleibt aktiv bis dorthin.
+- ISSUE-047 (F1 Hydration #418): UI-funktional unauffaellig, kein Datenschutz-Risiko.
+
+---
+
 ## Disclaimer
 
 Diese Dokumentation beschreibt den **technischen** Datenschutz-Stand des Systems zum Zeitpunkt **2026-04-25 (V5.2-Release)**. Sie ist eine **pragmatische Standardvorlage** und stellt **keine Rechtsberatung** dar. Insbesondere ersetzt sie nicht:
@@ -503,5 +555,5 @@ Vor produktivem Einsatz mit echten Kunden- oder Interessentendaten sind diese Pu
 
 ---
 
-**Letzte Aktualisierung:** 2026-04-29 (V5.4-Section ergaenzt — E-Mail-Anhaenge-Upload PC-Direkt, neue Storage-Pipeline beschrieben)
-**Naechste empfohlene Pruefung:** Vor erstem Go-Live mit echten Kundendaten (Pre-Go-Live-Schritt nach SLC-525) — und vor dem Switch auf Azure-OpenAI-EU bei Aufnahme produktiver Recording-Flows
+**Letzte Aktualisierung:** 2026-05-01 (V5.5-Section ergaenzt — Angebot-Erstellung, PDF-Pipeline, Status-Lifecycle, Composing-Studio-Anhang)
+**Naechste empfohlene Pruefung:** Pre-Production-Compliance-Gate vor V5.6 — Anwalts-Pruefung der V5.4 + V5.5-Sections, Switch auf Azure-OpenAI-EU-Whisper, ISSUE-042-Schliessung

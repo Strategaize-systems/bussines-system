@@ -9,15 +9,15 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: qa
-- Current Focus: **V5.5 Gesamt-QA PASS 2026-05-01 (RPT-264).** Cross-Cut-Verifikation aller 5 Slices durch: Static-Layer (Build/Test/Lint gruen), Schema-Layer (MIG-026 live: 8 Spalten + proposal_items + 2 Buckets + CHECK-Constraint), Cron-Layer (expire-proposals 401/200), Records-Konsistenz (FEAT-551 von in_progress → done korrigiert; alle SLC/FEAT/BL done), Reports-Konsistenz (14 RPT-Eintraege), End-to-End-Cross-Cut (5 Proposals → 6 PDFs → 4 Composing-Junctions → 2 Audits in DB). Findings: Medium M2 nachgetragen als ISSUE-047 F1 Hydration #418, alle Low als V5.5-konform akzeptiert. **V5.5 ready fuer /final-check.**
-- Current Phase: V5.5 Gesamt-QA **PASS**. Naechste: /final-check → /go-live → /deploy als REL-020 Final-Release.
+- High-Level State: final-check
+- Current Focus: **V5.5 /final-check PASS — CONDITIONALLY READY 2026-05-01 (RPT-265).** Alle 7 Audit-Dimensionen durch: Code-Quality, Security/Privacy, Compliance (V5.5-Section in COMPLIANCE.md ergaenzt), Testing-depth (proportional fuer Internal-Tool), CI/CD (Container-Health + Cron-Auth verifiziert), Observability (60 V5.5 Audit-Eintraege + structured logging), Post-go-live (REL-020-Notes komplett, Rollback-Pfad rein additiv). Pre-Release-Luecke (COMPLIANCE.md V5.5-Section fehlte) im Final-Check selbst gefixt. Bedingungen fuer Go-Live: Internal-Test-Mode bleibt aktiv (Pre-Production-Compliance-Gate vor V5.6), ISSUE-047 F1 Hydration #418 als nicht-blockierender Carryover, DB-Test-Artefakte aus QA bleiben oder optionales Cleanup vor Deploy.
+- Current Phase: V5.5 /final-check **PASS (CONDITIONALLY READY)**. Naechste: /go-live V5.5 → /deploy als REL-020 Final-Release.
 
 ## Immediate Next Steps
-1. **/final-check V5.5** — Hygiene + Dependencies + Security + Operational Readiness fuer REL-020.
-2. **(optional)** F1 Hydration #418 Investigation (ISSUE-047) als V5.5.x-Patch — User-Entscheid pre/post-Deploy.
-3. **/go-live V5.5** — Release-Risk explizit machen.
-4. **/deploy V5.5 als REL-020 Final-Release** — REL-020-Notes finalisieren mit echtem Datum.
+1. **/go-live V5.5** — Release-Risk explizit machen + Go/No-Go-Decision dokumentieren.
+2. **/deploy V5.5 als REL-020 Final-Release** — REL-020-Notes finalisieren mit echtem Datum.
+3. **(optional)** F1 Hydration #418 Investigation (ISSUE-047) als V5.5.x-Patch — User-Entscheid pre/post-Deploy.
+4. **(optional)** DB-Cleanup der QA-Smoke-Artefakte — kosmetisch.
 5. **Roadmap-Update** nach Deploy: V5.5 → `released`, alle FEAT-551..555 → `deployed`.
 4. **F1 Hydration-Investigation** auf `/proposals` — als V5.5.x-Patch ODER vor V5.5 Final-Release. Wahrscheinlich Datums-Format-Drift im Listing-Card-Layout.
 5. **Coolify-Cron Erstlauf 02:00 Berlin (User-Verifikation am Folgetag)** — Audit-SQL laut REL-020-Notes.
