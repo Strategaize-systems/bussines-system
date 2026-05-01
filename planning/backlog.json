@@ -1717,7 +1717,7 @@
       "title": "V5.6 SLC-561 Payment-Terms Foundation (Schema + Templates-CRUD + /settings/payment-terms)",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.6",
       "description": "FEAT-561 SLC-561: MIG-027 Apply auf Hetzner (5 Schema-Aenderungen: payment_terms_templates + proposal_payment_milestones + proposals.skonto_* + meetings.briefing_generated_at + user_settings.briefing_*). 5 Server Actions (list/create/update/delete/setDefault) mit Audit-Log. /settings/payment-terms Page mit CRUD-UI + Default-Toggle (UNIQUE-Index WHERE is_default=true sichert Mutex). Settings-Sidebar-Nav-Layout-Wrapper als gemeinsame Schicht. Seed: '30 Tage netto' als Initial-Default. 8 Micro-Tasks, ~3-4h.",
       "createdAt": "2026-05-01"

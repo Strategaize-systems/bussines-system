@@ -10,15 +10,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.6 SLC-561 /qa PASS-with-deferrals 2026-05-01.** Code-Stand `57e32e3`. 11/19 ACs direkt verifiziert (Schema + DB-Constraints + Build/Test/Lint + Wiring + Stub-Free). 8/19 ACs deferred bis Coolify-Redeploy + Live-Browser-Smoke. Keine Blocker, 2 Low-Severity-UX-Nits dokumentiert (setDefault-Race-Error-Text, kein Success-Toast). DB-Constraint-Smokes verifiziert via SSH-Transactions: UNIQUE-Default-Mutex blockt 2. Default-INSERT, skonto_both_or_none CHECK greift, skonto_percent>9.99 CHECK greift, audit_log akzeptiert neuen entity_type. RPT-273 dokumentiert. Naechste = User-Coolify-Redeploy + Live-Browser-Smoke (CRUD + Sidebar + V5.5-Regression + Audit-SQL). V5.5.1 weiter live. Internal-Test-Mode aktiv.
-- Current Phase: V5.6 **SLC-561 /qa PASS-with-deferrals — ready fuer Coolify-Redeploy + Live-Smoke**.
+- Current Focus: **V5.6 SLC-561 done + deployed 2026-05-01.** Code-Stand `60a4c02` live (Coolify-Redeploy via traefik.docker.network-Permanent-Fix `70176fc`). Live-Browser-Smoke PASS 10/10: Page-Render + Sidebar-Active-State + CRUD (Create/Edit/Delete-OK/Default-Toggle) + Delete-Block (Inline-Hinweis) + Landing-Card sichtbar + V5.5-Regression `/proposals` PDF-Generierung intakt. Audit-Log zeigt 10 Eintraege (1 create, 1 update, 7 setDefault, 1 delete). Drei Bug-Fixes live: (1) MIG-027-Spec-Korrektur `meetings.scheduled_at` (nicht `start_time`), (2) traefik.docker.network-Label gegen Coolify-Multi-Network-Gateway-Timeout, (3) Delete-Block-Fehlermeldung wurde durch close() reset (UI-Bug), (4) Settings-Landing-Card fuer Discovery. SLC-561 + BL-413 done. Naechste = /backend SLC-562 (Bedingungs-Dropdown im Editor + Skonto-Toggle, ~3-4h, 8 MTs). V5.5.1 weiter live, V5.6 ist Sub-Slice-Mode (561 done, 562/563/564 offen). Internal-Test-Mode aktiv.
+- Current Phase: V5.6 **SLC-561 done + deployed — ready fuer /backend SLC-562**.
 
 ## Immediate Next Steps
-1. **User-Coolify-Redeploy** des Stands `57e32e3` ueber Coolify-UI. Bringt `/settings/payment-terms` Route + neuen Settings-Sidebar-Layout live.
-2. **Live-Browser-Smoke** nach Redeploy (Agent kann via playwright/chrome-devtools): `/settings/payment-terms` Page-Render, Sidebar-Active-State, alle CRUD-Pfade (Create/Edit/Delete/Default), Default-Block-Hinweis, V5.5-Regression `/proposals/[id]/edit` PDF-Generierung, Audit-SQL `entity_type='payment_terms_template'`. Nach PASS: SLC-561 + BL-413 Status `done`.
-3. **/backend SLC-562** — Bedingungs-Dropdown im Editor + Skonto-Toggle. ~3-4h.
-4. **Coolify-Cron `expire-proposals` Erst-Lauf am 2026-05-02 02:00 Berlin Time verifizieren** — Audit-SQL aus REL-020-Notes Schritt 3. Nicht zeitkritisch, passiv erledigen.
-5. **/post-launch V5.5** — nach 24-48h Stable-Window. Auch /post-launch V5.4 + V5.3 ueberfaellig (passiv).
+1. **/backend SLC-562** — Bedingungs-Dropdown im Editor + Skonto-Toggle (Sub-Themes A + C UI). ~3-4h, 8 MTs. Nutzt `listPaymentTermsTemplates` aus SLC-561.
+2. **DB-Cleanup nach SLC-561 Live-Smoke (optional)** — Test-Vorlage "14 Tage netto" `f57bd7b7-c711-...` ist live, aktuell Default. Kann bleiben (semantisch sinnvoller Eintrag) oder via SQL geloescht werden, wenn frischer Start gewuenscht.
+3. **Coolify-Cron `expire-proposals` Erst-Lauf am 2026-05-02 02:00 Berlin Time verifizieren** — Audit-SQL aus REL-020-Notes Schritt 3. Nicht zeitkritisch, passiv erledigen.
+4. **/post-launch V5.5** — nach 24-48h Stable-Window. Auch /post-launch V5.4 + V5.3 ueberfaellig (passiv).
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
