@@ -1,13 +1,12 @@
 # Known Issues
 
 ### ISSUE-047 — F1 React Hydration #418 auf /proposals (Listing-Card Datums-Drift)
-- Status: open
+- Status: resolved
 - Severity: Medium
 - Area: UI / Hydration
-- Summary: Auf `/proposals` (Listing-Seite) feuert React Hydration Error #418. Vermutete Ursache: Datums-Format-Drift zwischen Server-Render und Client-Re-Hydration in der Listing-Card (locale-abhaengige Date-Formatierung ohne stabile Server/Client-Konvergenz).
-- Impact: UI funktional unauffaellig (kein User-sichtbarer Bruch), aber Console-Warning + potenzielle Performance-Degradation bei Re-Render. Tracking-Carryover seit SLC-554 (RPT-260) bis V5.5 Final-Release.
-- Workaround: Keiner notwendig — Card rendert korrekt nach Re-Hydration.
-- Next Action: Investigation als V5.5.x-Patch ODER vor V5.5-Final-Deploy. Vermutung: `formatDate(created_at)` mit `toLocaleDateString` ohne festen Locale fuer SSR. Fix: server-stable Date-Format (z.B. ISO-Substring) oder `suppressHydrationWarning` mit Verifikation.
+- Summary: Auf `/proposals` (Listing-Seite) feuert React Hydration Error #418. Ursache war NICHT wie vermutet ein Datums-Format-Drift — Code-Audit (RPT-268) zeigte: Listing rendert kein Datum, kein `Math.random`/`Date.now`/`toLocale` im Render-Pfad. Wahrscheinliche Quelle: Browser-Extension am `<body>`-Element (Standard-Pattern).
+- Impact: UI funktional unauffaellig (kein User-sichtbarer Bruch), aber Console-Warning + potenzielle Performance-Degradation bei Re-Render.
+- Resolution: 2026-05-01 in V5.5.1 Polish-Patch (Commit `42495cc`). `suppressHydrationWarning` auf `<html>` + `<body>` im Root-Layout (`cockpit/src/app/layout.tsx`). Standard-Pattern fuer extension-induzierten Top-Level-Diff. Limitation: falls #418 weiterhin auftritt, ist die Quelle tiefer (Provider-Race, Auth-State-Drift) und braucht Live-Console-Inspection.
 
 ## Blocker
 
@@ -352,16 +351,12 @@
   5. Build + 76/76 Tests gruen, Re-Smoke nach Coolify-Redeploy PASS.
 
 ### ISSUE-045 — Server-side Total-Size-Limit fuer E-Mail-Anhaenge ist Client-Convenience
-- Status: open
+- Status: resolved
 - Severity: Low
 - Area: V5.4 / SLC-542 / E-Mail-Anhaenge / Storage
-- Summary: `uploadEmailAttachment` ruft `validateAttachment(file, totalSizeSoFar=0)` — der Server hat keinen Cross-Call-State und kennt nicht die kumulierte Anhang-Groesse der Compose-Session. Pro-File-Limit (10 MB) ist 3-fach hart enforced (Browser + Upload + Send), aber das Total-Limit (25 MB) ist nur Browser-Convenience. Ein Client-Bypass koennte beliebig viele 10-MB-Files in derselben Session hochladen, bis SMTP-Provider beim Versand den Multipart wegen Groesse ablehnt.
+- Summary: `uploadEmailAttachment` ruft `validateAttachment(file, totalSizeSoFar=0)` — der Server hatte keinen Cross-Call-State und kannte nicht die kumulierte Anhang-Groesse der Compose-Session. Pro-File-Limit (10 MB) war 3-fach hart enforced (Browser + Upload + Send), aber das Total-Limit (25 MB) war nur Browser-Convenience.
 - Impact: Niedrig fuer internal-tool single-user delivery-mode. Storage-Volumen-Verbrauch ohne Cleanup-Cron (DEC-104 deferred). Kein direkter Sicherheits-Impact, kein Daten-Verlust.
-- Workaround: SMTP-Provider-Reject ist die zweite Linie (25 MB Default-Limit beim aktuellen Outbound-Provider). Compose-Form-State-Tracking ist die Single-Source-of-Truth fuer den User-Workflow.
-- Next Action: V5.5+ Operations-Topic. Optionen:
-  1. Pro-User Storage-Quota auf Bucket-Ebene (Supabase nicht out-of-the-box, braucht Cron mit `SELECT sum(size) FROM storage.objects WHERE name LIKE '${user_id}/%'`)
-  2. Cross-Call Total-Tracking via Storage-Listing pro composeSessionId in `uploadEmailAttachment`
-  3. Bucket `file_size_limit` ergaenzen (deckt Pro-File ab, hilft bei Total nicht direkt)
+- Resolution: 2026-05-01 in V5.5.1 Polish-Patch (Commit `d996307`). `/api/emails/attachments` POST liest jetzt `admin.storage.from('email-attachments').list(${user.id}/${composeSessionId}/)` und summiert `f.metadata.size` als `totalSizeSoFar`. Validation greift, der Client-Bypass-Vektor ist geschlossen. Single list()-Call deckt zusaetzlich Filename-Kollisions-Suffix ab (gemeinsam mit SLC-542 L1).
 
 ### ISSUE-044 — Branding-Logo broken-image im Browser (Public-Storage extern nicht erreichbar)
 - Status: resolved

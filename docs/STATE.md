@@ -10,24 +10,24 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: stable
-- Current Focus: **V5.5 RELEASED 2026-05-01 als REL-020 (Final-Release).** Live-Image-Tag `417dc8a` (V5.5-Code-Stand seit 2026-04-30 17:04, alle Live-Smokes RPT-263 darauf gefahren). Records-Sync via Commit `cf0c98d` heute. Cron `expire-proposals` live + Smoke-Test PASS (`{"success":true,"expiredCount":0,"expiredIds":[]}`). 4 critical Container healthy (app, supabase-db, kong, meta), HTTPS-Endpoint reachable, MIG-026 live seit SLC-551. DB-Stand: 4 proposal-junctions + 5 upload-junctions (V5.4-Pfad regression-frei), 3 draft + 1 sent + 1 expired Proposals, 60 V5.5-Audit-Eintraege. Internal-Test-Mode aktiv bis Pre-Production-Compliance-Gate vor V5.6.
-- Current Phase: V5.5 **STABLE / DEPLOYED**. Naechste: /post-launch V5.5 nach Stable-Window 24-48h + Pre-V5.6-Gate-Vorbereitung (Anwalts-Pruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042-Schliessung).
+- Current Focus: **V5.5.1 Polish-Patch READY for Coolify-Redeploy 2026-05-01 (RPT-268).** Bundelt 4 kleine Fixes als REL-021: ISSUE-047 Hydration #418 Mitigation (suppressHydrationWarning auf body — Code-Audit ergab: keine Date-Format-Drift, wahrscheinlich Browser-Extension), SLC-541 M1 ConditionalColorPicker derived-state, ISSUE-045 Server-Total-Size, SLC-542 L1 Filename-Kollision-Suffix. 2 Commits gepusht: `42495cc` + `d996307`. TSC + Vitest 97/97 PASS. V5.5 Live-Image-Tag `417dc8a` weiterhin running, REL-020 stable. Internal-Test-Mode aktiv.
+- Current Phase: V5.5.1 **POLISH-PATCH GEPUSHT — wartet auf User-Coolify-Redeploy auf `d996307`**.
 
 ## Immediate Next Steps
-1. **Coolify-Cron `expire-proposals` Erst-Lauf am 2026-05-02 02:00 Berlin Time verifizieren** — Audit-SQL `SELECT created_at, action, entity_id, context FROM audit_log WHERE entity_type='proposal' AND context='Auto-expire by cron — valid_until passed' ORDER BY created_at DESC LIMIT 10;` (laut REL-020-Notes Schritt 3).
-2. **Coolify-Redeploy auf Commit `cf0c98d`** (kosmetisch) — Image-Tag-Hygiene, damit live-Tag = letzter Commit-SHA. Nicht release-blockierend, V5.5-App-Code ist seit `417dc8a` unveraendert (4 docs-only-Commits seitdem).
-3. **/post-launch V5.5** — nach 24-48h Stable-Window. Auch /post-launch V5.4 + V5.3 ueberfaellig (passiv).
-4. **F1 Hydration #418 (ISSUE-047)** als V5.5.1-Patch — Datums-Format-Drift in Listing-Card vermutet, fix per server-stable Date-Format oder `suppressHydrationWarning`.
-5. **(optional)** DB-Cleanup der QA-Smoke-Artefakte — kosmetisch, Audit-Trail bleibt sonst erhalten.
-6. **Pre-Production-Compliance-Gate vor V5.6 vorbereiten:**
-   - Anwalts-Pruefung COMPLIANCE.md (V5.3 + V5.4 + V5.5-Sections)
-   - Switch auf Azure-OpenAI-EU-Whisper (Code-Ready seit V5.2, ENV-Switch)
-   - ISSUE-042-Schliessung (OpenAI-Key Rotation + Lokal-Datei-Beseitigung)
-   - BL-397 GitHub-App Org-Anbindung
-7. **V5.4.x Patch-Carryover (optional, nicht release-blockierend):**
-    - SLC-541 M1: ConditionalColorPicker Refactor zu derived-state
-    - SLC-542 M1/ISSUE-045: Server-side Total-Size Limit
-    - SLC-542 L1: Filename-Kollision-Suffix-Pattern bei upsert
+1. **Coolify-Redeploy auf Commit `d996307`** — User-Aktion. V5.5.1 Polish-Patch live setzen. Nicht zeitkritisch (alle 4 Items sind Quality-Fixes, kein Blocker).
+2. **Coolify-Cron `expire-proposals` Erst-Lauf am 2026-05-02 02:00 Berlin Time verifizieren** — Audit-SQL `SELECT created_at, action, entity_id, context FROM audit_log WHERE entity_type='proposal' AND context='Auto-expire by cron — valid_until passed' ORDER BY created_at DESC LIMIT 10;` (REL-020-Notes Schritt 3).
+3. **Live-Verifikation V5.5.1 nach Redeploy:**
+   - `/proposals` Console-Check: ist Hydration #418 weg?
+   - Composing-Studio: 2x gleicher Filename hochladen → erscheint als " (1)"-Suffix?
+   - Composing-Studio: 2x 12-MB-Files in derselben Session → 2. wird mit "zu gross" rejected?
+4. **/post-launch V5.5** — nach 24-48h Stable-Window. Auch /post-launch V5.4 + V5.3 ueberfaellig (passiv).
+5. **(optional)** DB-Cleanup der QA-Smoke-Artefakte aus V5.5 — kosmetisch.
+6. **V5.6 vorbereiten:** Backlog-Review der offenen Items — BL-412 (Zahlungsbedingungen Vorauswahl + Split-Plan, kommt aus User-Smoke-Feedback) + BL-385 (Pre-Call Briefing Package) als V5.6-Kandidaten.
+
+## Spaeter (nicht jetzt)
+- Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
+- BL-397 GitHub-App Org-Anbindung (Infra-Hygiene)
+- BL-135 + BL-139 (V7 Multi-User + Workflow-Automation + Kampagnen-Attribution)
 
 ## Active Scope
 **V5.5 — Angebot-Erstellung (RELEASED 2026-05-01 als REL-020):**
@@ -50,6 +50,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - aktuell keine
 
 ## Last Stable Version
+- V5.5.1 — 2026-05-01 — Polish-Patch gepusht als REL-021 (Hydration-Mitigation + 3 V5.4-Carryover, Commits `42495cc` + `d996307`, TSC+Vitest 97/97 PASS, wartet auf User-Coolify-Redeploy)
 - V5.5 — 2026-05-01 — released auf Hetzner als REL-020 (Angebot-Erstellung: Schema+Workspace+PDF+Lifecycle+Composing-Hookup, Internal-Test-Mode, Live-Smoke PASS RPT-263 4 Mail-Sends + 6 Browser-Smokes + CHECK-Constraint-Tests, Cron expire-proposals live, MIG-026 live, V5.5-Code-Stand seit 2026-04-30 17:04 Image-Tag `417dc8a`)
 - V5.4 — 2026-04-29 — released auf Hetzner als REL-019 (Composing-Studio Polish + E-Mail-Anhaenge-Upload PC-Direkt, Internal-Test-Mode, Live-Smoke PASS Multipart-Mail PDF+PNG+ZIP an Gmail + Tracking-Pixel-Open + Junction-Insert verifiziert)
 - V5.3 — 2026-04-28 — released auf Hetzner als REL-018 (E-Mail Composing Studio, Internal-Test-Mode, Quick-Smoke OK)
