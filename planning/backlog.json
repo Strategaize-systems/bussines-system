@@ -1627,7 +1627,7 @@
       "title": "E-Mail Anhaenge-Upload im Composing-Studio (PC-Upload + Angebot-Anhang)",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.5",
       "description": "Teil 1 (PC-Upload) DONE 2026-04-28 als FEAT-542 / SLC-542 (V5.4 deployed REL-019). Teil 2 (Angebot-Anhang aus System) wird in V5.5 eingeloest als FEAT-555 (Angebot-Anhang im Composing-Studio). URSPRUENGLICHE BESCHREIBUNG: User-Anforderung 2026-04-27 nach SLC-533 Browser-Smoke: Composing-Studio (/emails/compose) muss Anhaenge an ausgehende E-Mails unterstuetzen. ZWEI Versionen: (1) Direkt-Upload vom User-PC — Drag&Drop oder File-Picker, MIME/Size-Whitelist, Storage-Bucket auf self-hosted Supabase, MIME-Validierung App-Level. (2) Angebot-Anhang aus dem System — User waehlt aus seinen erstellten Angeboten (siehe BL-405) ein PDF-Generated-Angebot zum Anhang. Setzt BL-405 (Angebot-Erstellung) voraus.",
       "createdAt": "2026-04-27"
@@ -1637,7 +1637,7 @@
       "title": "Angebot-Erstellung-Feature (Produkt-Auswahl + Firmen-Bezug + PDF-Generierung)",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.5",
       "description": "V5.5 Requirements done 2026-04-29 (RPT-249). Aufgegliedert in 5 Features: FEAT-551 Angebot-Schema-Erweiterung + Position-Items (MIG-026), FEAT-552 Angebot-Workspace UI (3-Panel), FEAT-553 PDF-Renderer + Branding, FEAT-554 Status-Lifecycle + Versionierung, FEAT-555 Angebot-Anhang im Composing-Studio (BL-404 Teil 2). URSPRUENGLICHE BESCHREIBUNG: User-Anforderung 2026-04-27: das System muss Angebote erstellen koennen — basierend auf den vorhandenen Produkten (siehe /settings/products), zugeordnet zu Firmen (companies-Tabelle) und Deals. Bestehende Stubs zum Anknuepfen: proposals-Tabelle (in 04_v2_migration.sql Z.85+ angelegt mit deal_id/company_id/contact_id/title/version/status/scope_notes/price_range/objections/negotiation_notes/won_lost_reason), /settings/products fuer Produkt-Stammdaten. Scope-Hinweise (vorlaeufig): (a) Position-Items pro Angebot (Produkt + Menge + Preis + Anpassung), (b) Brutto/Netto/Steuer-Berechnung, (c) Standard-Konditionen (Zahlungsfristen, Gueltigkeitszeitraum), (d) PDF-Renderer (analog Branding-Mail-Renderer aus FEAT-531), (e) Status-Lifecycle (draft -> sent -> accepted/rejected/expired), (f) Versionierung (Angebot V1, V2, V3 fuer dasselbe Deal), (g) Anbindung an Deal. Setzt voraus: stabile Produkt-Stammdaten, Deal-Pflicht-Felder. Liefert voraus an: BL-404 Teil 2 (Angebot-Anhang an E-Mail). Naechster Schritt: /architecture V5.5.",
       "createdAt": "2026-04-27"
@@ -1697,7 +1697,7 @@
       "title": "V5.5 SLC-555 Composing-Studio Proposal-Picker + Send-Pfad-Erweiterung (BL-404 Teil 2)",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.5",
       "description": "FEAT-555 SLC-555: Loest BL-404 Teil 2 ein. ProposalAttachmentPicker im Composing-Studio mit Status-Badges (DEC-112: alle Status sichtbar, Confirm-Modal bei expired/rejected). Server Action attachProposalToCompose validiert pdf_storage_path != NULL. AttachmentMeta-Type erweitert um source_type:'upload'|'proposal' und proposalId. send.ts unterscheidet beim Buffer-Read zwischen email-attachments-Bucket (V5.4 PC-Upload) und proposal-pdfs-Bucket. Junction-Insert mit source_type + proposal_id (CHECK-Constraint aus SLC-551 greift). Nach Send: idempotentes transitionProposalStatus(id, 'sent') (DEC-108). V5.4 PC-Upload-Pfad regression-frei. 3 Smoke-Test-Faelle (Proposal/PC-Upload/Mix) + V5.4-Cadence-Regression. REL-020-Notes vorbereiten. 10 Micro-Tasks, ~3-4h.",
       "createdAt": "2026-04-29"

@@ -10,13 +10,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.5 SLC-555 /qa Static-Layer PASS 2026-04-30 (RPT-262, MIXED).** Static-Coverage: Build gruen, Vitest 97/97, ESLint-on-File clean (Project-Wide 166 Carryover-Errors, keine SLC-555-Files), Stub-Scan clean, Wiring-Chain durchgeprueft (Picker → Action → Send → DB → Status), AC-Audit 14/14 statische ACs PASS, 4 Live-ACs (AC12, AC13, AC16, AC17) BLOCKED bis User-Coolify-Deploy. Findings: Medium M1 (Live-Smokes ausstehend, RPT-261 6 Browser-Smokes-Liste), Medium M2 (F1 Hydration #418 Carryover), Low L1 (Cross-Deal-Block RLS-getrieben akzeptiert), L2 (Multi-Proposal-Anhang nur Warning), L3 (Project-Wide-Lint Carryover), L4 (sizeBytes=0 fuer Proposal akzeptiert). Slice bleibt `in_progress` — Wechsel auf `done` erst nach Live-Smoke-PASS.
-- Current Phase: V5.5 Implementation. SLC-551 + SLC-552 + SLC-553 + SLC-554 LIVE done. SLC-555 /backend done + /qa Static PASS — Live-Smoke pending nach User-Coolify-Deploy.
+- Current Focus: **V5.5 SLC-555 /qa Live-Smoke-Phase PASS 2026-05-01 (RPT-263).** Slice-Status auf `done`. Alle 19 ACs durch: 14 statische (RPT-262) + 5 Live (AC10-AC17) verifiziert via 4 Live-Mail-Sends an immo@bellaerts.de + 4 CHECK-Constraint-Tests (2 Negativ + 2 Positiv) + 6 Playwright-Browser-Smokes. Idempotenz live bewiesen in 2 Edge-Cases (Mehrfach-Junction in Smoke 3 + expired-Whitelist-Reject in Smoke 6). DB-State Final: 4 QA-Mails (alle status=sent + tracking_id), 4 proposal-Junction-Rows (2 distinct), 5 upload-Junction-Rows, 2 status_change-Audit-Eintraege. AC12 + AC13 (Gmail-Empfang + Tracking-Pixel-Open) infra-side PASS — User-Empfangs-Verifikation in Gmail postlich nicht release-blockierend.
+- Current Phase: V5.5 Implementation **vollstaendig done** (5/5 Slices). Naechste: /qa V5.5 Gesamt → /final-check → /go-live → /deploy als REL-020 Final-Release.
 
 ## Immediate Next Steps
-1. **User-Coolify-Deploy SLC-555** (Commit `b805b24`) — Voraussetzung fuer Live-Smoke-Phase.
-2. **/qa SLC-555 Live-Smoke-Phase** — 6 Browser-Smokes aus RPT-261/RPT-262 M1 (Proposal-only, V5.4-PC-Upload-Regression, Mix, Compose-ohne-Deal, pdf=NULL, expired-Proposal mit terminalem Status) + DB-SQL-Smokes (Junction-Row-Inspect `source_type`+`proposal_id`, CHECK-Constraint Negativ-Test) + Idempotenz-Smoke + Cadence-Regression-Smoke. Bei PASS: SLC-555/FEAT-555/BL-411 → `done`.
-3. **/qa V5.5 Gesamt + /final-check + /go-live + /deploy V5.5** — REL-020 als Final-Release nach SLC-555 Live-Smoke-PASS.
+1. **/qa V5.5 Gesamt** — Cross-Cut-Verifikation aller 5 V5.5-Slices (SLC-551..555).
+2. **/final-check V5.5** — Hygiene + Dependencies + Security.
+3. **/go-live V5.5** — Release-Risk explizit machen.
+4. **/deploy V5.5 als REL-020 Final-Release** — REL-020-Notes finalisieren mit echtem Datum.
 4. **F1 Hydration-Investigation** auf `/proposals` — als V5.5.x-Patch ODER vor V5.5 Final-Release. Wahrscheinlich Datums-Format-Drift im Listing-Card-Layout.
 5. **Coolify-Cron Erstlauf 02:00 Berlin (User-Verifikation am Folgetag)** — Audit-SQL laut REL-020-Notes.
 5. **/qa SLC-555** — 3 Smoke-Faelle (Proposal/PC-Upload/Mix) + V5.4-Cadence-Regression + Status-Auto-Sent + Idempotenz.
@@ -34,7 +35,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - FEAT-552 Angebot-Workspace UI 3-Panel (done 2026-04-30, /proposals/[id]/edit live, native React-State + Custom-Debounce statt RHF/lodash, @dnd-kit/sortable)
 - FEAT-553 PDF-Renderer + Branding (done 2026-04-30, **pdfmake** als Library DEC-105, Adapter-Pattern, /qa PASS via RPT-258, Mixed-Content-Hotfix Commit `91020b2` Server-Proxy /api/proposals/[id]/pdf live)
 - FEAT-554 Status-Lifecycle + Versionierung (done 2026-04-30, /backend + /qa PASS RPT-260: Whitelist transitions.ts + 21 Vitest-Tests, transitionProposalStatus mit Idempotenz DEC-108, createProposalVersion mit V1-unangetastet DEC-109 Live-verifiziert, Auto-Expire-Cron-Endpoint /api/cron/expire-proposals DEC-110 Live + DB-Audit-Smoke PASS + Idempotenz-Check, Workspace Status-Buttons + Confirm-Dialog Live, Read-only-Mode mit Server-Side-Guard `assertProposalEditable` in 5 Mutate-Actions, /proposals-Listing Status-Badge + Anzeigen-Button mit ?readonly=1, REL-020-Notes Coolify-Cron-Anleitung, Coolify-Cron `expire-proposals` aktiv)
-- FEAT-555 Angebot-Anhang im Composing-Studio (in_progress 2026-04-30, /backend code-complete + /qa Static-Layer PASS RPT-262: ProposalAttachmentPicker + attachProposalToCompose + send.ts Bucket-Diskriminator + Junction `source_type`/`proposal_id` + idempotenter transitionProposalStatus post-send. Live-Smoke-Phase pending bis User-Coolify-Deploy.)
+- FEAT-555 Angebot-Anhang im Composing-Studio (done 2026-05-01, /qa Live-Smoke PASS RPT-263: 4 Live-Mail-Sends, CHECK-Constraint Tests, 6 Browser-Smokes, Idempotenz live bewiesen in 2 Edge-Cases. ProposalAttachmentPicker + attachProposalToCompose + send.ts Bucket-Diskriminator + Junction `source_type`/`proposal_id` + idempotenter transitionProposalStatus post-send.)
 
 **Architektur-Entscheidungen V5.5:** DEC-105 pdfmake, DEC-106 HTML-Live-Preview, DEC-107 Snapshot inkl. price_at_creation, DEC-108 Status-Sent automatisch+manuell, DEC-109 V1-Status unangetastet, DEC-110 Cron 02:00 Berlin, DEC-111 Pfad-Schema, DEC-112 alle Status zeigen+Warning, DEC-113 Footer+Suffix-Watermark, DEC-114 5 Slices 1:1 zu Features.
 
