@@ -1,5 +1,14 @@
 # Known Issues
 
+### ISSUE-047 — F1 React Hydration #418 auf /proposals (Listing-Card Datums-Drift)
+- Status: open
+- Severity: Medium
+- Area: UI / Hydration
+- Summary: Auf `/proposals` (Listing-Seite) feuert React Hydration Error #418. Vermutete Ursache: Datums-Format-Drift zwischen Server-Render und Client-Re-Hydration in der Listing-Card (locale-abhaengige Date-Formatierung ohne stabile Server/Client-Konvergenz).
+- Impact: UI funktional unauffaellig (kein User-sichtbarer Bruch), aber Console-Warning + potenzielle Performance-Degradation bei Re-Render. Tracking-Carryover seit SLC-554 (RPT-260) bis V5.5 Final-Release.
+- Workaround: Keiner notwendig — Card rendert korrekt nach Re-Hydration.
+- Next Action: Investigation als V5.5.x-Patch ODER vor V5.5-Final-Deploy. Vermutung: `formatDate(created_at)` mit `toLocaleDateString` ohne festen Locale fuer SSR. Fix: server-stable Date-Format (z.B. ISO-Substring) oder `suppressHydrationWarning` mit Verifikation.
+
 ## Blocker
 
 ### ISSUE-001 — Dockerfile für Cockpit fehlt

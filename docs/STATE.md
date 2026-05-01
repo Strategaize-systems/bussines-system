@@ -9,15 +9,16 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: **V5.5 SLC-555 /qa Live-Smoke-Phase PASS 2026-05-01 (RPT-263).** Slice-Status auf `done`. Alle 19 ACs durch: 14 statische (RPT-262) + 5 Live (AC10-AC17) verifiziert via 4 Live-Mail-Sends an immo@bellaerts.de + 4 CHECK-Constraint-Tests (2 Negativ + 2 Positiv) + 6 Playwright-Browser-Smokes. Idempotenz live bewiesen in 2 Edge-Cases (Mehrfach-Junction in Smoke 3 + expired-Whitelist-Reject in Smoke 6). DB-State Final: 4 QA-Mails (alle status=sent + tracking_id), 4 proposal-Junction-Rows (2 distinct), 5 upload-Junction-Rows, 2 status_change-Audit-Eintraege. AC12 + AC13 (Gmail-Empfang + Tracking-Pixel-Open) infra-side PASS — User-Empfangs-Verifikation in Gmail postlich nicht release-blockierend.
-- Current Phase: V5.5 Implementation **vollstaendig done** (5/5 Slices). Naechste: /qa V5.5 Gesamt → /final-check → /go-live → /deploy als REL-020 Final-Release.
+- High-Level State: qa
+- Current Focus: **V5.5 Gesamt-QA PASS 2026-05-01 (RPT-264).** Cross-Cut-Verifikation aller 5 Slices durch: Static-Layer (Build/Test/Lint gruen), Schema-Layer (MIG-026 live: 8 Spalten + proposal_items + 2 Buckets + CHECK-Constraint), Cron-Layer (expire-proposals 401/200), Records-Konsistenz (FEAT-551 von in_progress → done korrigiert; alle SLC/FEAT/BL done), Reports-Konsistenz (14 RPT-Eintraege), End-to-End-Cross-Cut (5 Proposals → 6 PDFs → 4 Composing-Junctions → 2 Audits in DB). Findings: Medium M2 nachgetragen als ISSUE-047 F1 Hydration #418, alle Low als V5.5-konform akzeptiert. **V5.5 ready fuer /final-check.**
+- Current Phase: V5.5 Gesamt-QA **PASS**. Naechste: /final-check → /go-live → /deploy als REL-020 Final-Release.
 
 ## Immediate Next Steps
-1. **/qa V5.5 Gesamt** — Cross-Cut-Verifikation aller 5 V5.5-Slices (SLC-551..555).
-2. **/final-check V5.5** — Hygiene + Dependencies + Security.
+1. **/final-check V5.5** — Hygiene + Dependencies + Security + Operational Readiness fuer REL-020.
+2. **(optional)** F1 Hydration #418 Investigation (ISSUE-047) als V5.5.x-Patch — User-Entscheid pre/post-Deploy.
 3. **/go-live V5.5** — Release-Risk explizit machen.
 4. **/deploy V5.5 als REL-020 Final-Release** — REL-020-Notes finalisieren mit echtem Datum.
+5. **Roadmap-Update** nach Deploy: V5.5 → `released`, alle FEAT-551..555 → `deployed`.
 4. **F1 Hydration-Investigation** auf `/proposals` — als V5.5.x-Patch ODER vor V5.5 Final-Release. Wahrscheinlich Datums-Format-Drift im Listing-Card-Layout.
 5. **Coolify-Cron Erstlauf 02:00 Berlin (User-Verifikation am Folgetag)** — Audit-SQL laut REL-020-Notes.
 5. **/qa SLC-555** — 3 Smoke-Faelle (Proposal/PC-Upload/Mix) + V5.4-Cadence-Regression + Status-Auto-Sent + Idempotenz.

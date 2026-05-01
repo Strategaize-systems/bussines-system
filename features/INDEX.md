@@ -160,7 +160,7 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-551 | Angebot-Schema-Erweiterung + Position-Items (MIG-026) | in_progress | [Spec](FEAT-551-proposal-schema.md) | 2026-04-29 |
+| FEAT-551 | Angebot-Schema-Erweiterung + Position-Items (MIG-026) | done | [Spec](FEAT-551-proposal-schema.md) | 2026-04-29 |
 | FEAT-552 | Angebot-Workspace UI (3-Panel) | done | [Spec](FEAT-552-proposal-workspace.md) | 2026-04-29 |
 | FEAT-553 | PDF-Renderer + Branding | done | [Spec](FEAT-553-pdf-renderer.md) | 2026-04-29 |
 | FEAT-554 | Status-Lifecycle + Versionierung | done | [Spec](FEAT-554-status-versioning.md) | 2026-04-29 |
