@@ -13,6 +13,9 @@ import {
   type ProposalEditPayload,
 } from "@/app/(app)/proposals/actions";
 import { useDebouncedCallback } from "@/lib/utils/use-debounce";
+import { PaymentTermsDropdown } from "./payment-terms-dropdown";
+import { SkontoSection } from "./skonto-section";
+import { useSkontoMutex } from "./use-skonto-mutex";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -21,6 +24,8 @@ type EditorPatch = {
   tax_rate?: 0 | 7 | 19;
   valid_until?: string | null;
   payment_terms?: string | null;
+  skonto_percent?: number | null;
+  skonto_days?: number | null;
   notes?: string | null;
 };
 
@@ -70,6 +75,9 @@ export function ProposalEditor({
   );
 
   const taxRate = (proposal.tax_rate as 0 | 7 | 19) ?? 19;
+  // V5.6 SLC-562 — Skonto-Mutex-Hook (Stub bis SLC-563). Aktuell immer false,
+  // weil keine Milestones existieren — Toggle bleibt nutzbar.
+  const skontoMutex = useSkontoMutex([]);
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
@@ -153,18 +161,35 @@ export function ProposalEditor({
         </div>
 
         <Field label="Zahlungsbedingungen" htmlFor="proposal-payment-terms">
-          <Textarea
-            id="proposal-payment-terms"
-            value={proposal.payment_terms ?? ""}
-            onChange={(e) =>
-              patchAndSave({ payment_terms: e.target.value || null })
-            }
-            placeholder="z.B. 30 Tage netto"
-            rows={3}
-            maxLength={2000}
-            disabled={readonly}
-          />
+          <div className="space-y-3">
+            <PaymentTermsDropdown
+              disabled={readonly}
+              onSelectTemplate={(body) =>
+                patchAndSave({ payment_terms: body })
+              }
+            />
+            <Textarea
+              id="proposal-payment-terms"
+              value={proposal.payment_terms ?? ""}
+              onChange={(e) =>
+                patchAndSave({ payment_terms: e.target.value || null })
+              }
+              placeholder="z.B. 30 Tage netto"
+              rows={3}
+              maxLength={2000}
+              disabled={readonly}
+            />
+          </div>
         </Field>
+
+        <SkontoSection
+          skonto_percent={proposal.skonto_percent}
+          skonto_days={proposal.skonto_days}
+          disabled={readonly || skontoMutex}
+          onChange={(percent, days) =>
+            patchAndSave({ skonto_percent: percent, skonto_days: days })
+          }
+        />
       </div>
     </div>
   );

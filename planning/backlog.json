@@ -1727,7 +1727,7 @@
       "title": "V5.6 SLC-562 Bedingungs-Dropdown im Editor + Skonto-Toggle (Sub-Themes A + C UI)",
       "type": "feature",
       "priority": "high",
-      "status": "planned",
+      "status": "in_progress",
       "version": "V5.6",
       "description": "FEAT-561 SLC-562: Proposal-Editor bekommt PaymentTermsDropdown ueber dem payment_terms-Textfeld + SkontoSection mit Toggle + Prozent + Tage Inputs. useSkontoMutex-Hook als Stub (returns false in SLC-562, SLC-563 erweitert auf echte Vorkasse-Pruefung). validateSkonto Pure Function mit Vitest-Tests. PDF-Renderer um Skonto-Block erweitert (DEC-120: ohne Skonto bit-identisch zu V5.5). Initial-Default-Pre-Fill bei createProposal nutzt Default-Template-Body. 8 Micro-Tasks, ~3-4h.",
       "createdAt": "2026-05-01"

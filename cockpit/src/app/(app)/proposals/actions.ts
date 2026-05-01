@@ -10,6 +10,7 @@ import {
   type ProposalItemUpdateInput,
 } from "@/lib/proposal/zod-schemas";
 import { calculateTotals } from "@/lib/proposal/calc";
+import { validateSkonto } from "@/lib/proposal/skonto-validation";
 import {
   isValidTransition,
   type ProposalStatus,
@@ -50,6 +51,10 @@ export type Proposal = {
   rejected_at: string | null;
   expired_at: string | null;
   pdf_storage_path: string | null;
+  // V5.6 MIG-027 additions (Sub-Theme C, DEC-116). Beide nullable, beide-oder-keiner
+  // ueber proposals_skonto_both_or_none CHECK-Constraint enforced.
+  skonto_percent: number | null;
+  skonto_days: number | null;
   deals?: { id: string; title: string } | null;
   contacts?: { id: string; first_name: string; last_name: string } | null;
   companies?: { id: string; name: string } | null;
@@ -224,9 +229,16 @@ export async function createProposal(
     return { ok: false, error: "deal_id ist Pflicht." };
   }
 
-  // Branding-Default fuer payment_terms (Spalte existiert in V5.3 noch nicht
-  // explizit als payment_terms_default — Fallback auf "30 Tage netto").
-  const paymentTerms = DEFAULT_PAYMENT_TERMS;
+  // V5.6 SLC-562 — Default-Pre-Fill aus payment_terms_templates (DEC-115).
+  // Template-Body ist Single-Source-of-Truth fuer Default-Bedingung. Fallback
+  // auf Hardcoded-String nur wenn keine Default-Template existiert (z.B.
+  // wenn alle Templates manuell geloescht wurden).
+  const { data: defaultTemplate } = await supabase
+    .from("payment_terms_templates")
+    .select("body")
+    .eq("is_default", true)
+    .maybeSingle();
+  const paymentTerms = defaultTemplate?.body ?? DEFAULT_PAYMENT_TERMS;
 
   // valid_until = today + 30 Tage als ISO-Date (yyyy-mm-dd).
   const validUntil = new Date(Date.now() + DEFAULT_VALID_UNTIL_DAYS * 86400000)
@@ -393,6 +405,8 @@ const AUDIT_RELEVANT_FIELDS = [
   "tax_rate",
   "valid_until",
   "payment_terms",
+  "skonto_percent",
+  "skonto_days",
 ] as const;
 
 type ProposalUpdatePatch = {
@@ -402,6 +416,10 @@ type ProposalUpdatePatch = {
   payment_terms?: string | null;
   contact_id?: string | null;
   company_id?: string | null;
+  // V5.6 SLC-562 — Skonto-Felder (DEC-116). Cross-field-CHECK via
+  // validateSkonto in updateProposal (beide-oder-keiner).
+  skonto_percent?: number | null;
+  skonto_days?: number | null;
 };
 
 // V5.5 SLC-554 — Read-only-Mode Server-Side-Guard.
@@ -443,9 +461,31 @@ export async function updateProposal(
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Validierung fehlgeschlagen." };
   }
 
+  // V5.6 SLC-562 — Cross-field-Check fuer Skonto (zod kann das nicht alleine).
+  // Wir gleichen patch-Werte mit dem aktuellen DB-Stand ab und werfen Skonto an
+  // die pure Function. Das mappen "halbleerer State" wird hier blockiert,
+  // bevor der DB-CHECK proposals_skonto_both_or_none zuschlaegt.
+  if ("skonto_percent" in parsed.data || "skonto_days" in parsed.data) {
+    const { data: skontoCurrent } = await supabase
+      .from("proposals")
+      .select("skonto_percent, skonto_days")
+      .eq("id", proposalId)
+      .maybeSingle();
+    const nextPercent =
+      "skonto_percent" in parsed.data
+        ? (parsed.data.skonto_percent ?? null)
+        : (skontoCurrent?.skonto_percent ?? null);
+    const nextDays =
+      "skonto_days" in parsed.data
+        ? (parsed.data.skonto_days ?? null)
+        : (skontoCurrent?.skonto_days ?? null);
+    const skontoCheck = validateSkonto(nextPercent, nextDays);
+    if (!skontoCheck.ok) return { ok: false, error: skontoCheck.error };
+  }
+
   const { data: before } = await supabase
     .from("proposals")
-    .select("status, title, tax_rate, valid_until, payment_terms")
+    .select("status, title, tax_rate, valid_until, payment_terms, skonto_percent, skonto_days")
     .eq("id", proposalId)
     .maybeSingle();
 

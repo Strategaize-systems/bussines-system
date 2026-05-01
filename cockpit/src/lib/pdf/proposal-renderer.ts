@@ -347,6 +347,17 @@ export function buildProposalDocDefinition(
     });
   }
 
+  // V5.6 SLC-562 — Skonto-Block. Strikt conditional: bei null kein Block, kein
+  // Whitespace, damit V5.5-PDFs bit-identisch zum V5.5-Snapshot bleiben.
+  if (proposal.skonto_percent !== null && proposal.skonto_days !== null) {
+    content.push({
+      text: `Skonto: ${proposal.skonto_percent.toFixed(2).replace(".", ",")}% bei Zahlung innerhalb ${proposal.skonto_days} Tagen`,
+      fontSize: 9,
+      color: "#475569",
+      margin: [0, 0, 0, 14],
+    });
+  }
+
   if (footerStripped) {
     content.push({
       canvas: [

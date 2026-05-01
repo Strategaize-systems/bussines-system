@@ -10,14 +10,15 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.6 SLC-561 done + deployed 2026-05-01.** Code-Stand `60a4c02` live (Coolify-Redeploy via traefik.docker.network-Permanent-Fix `70176fc`). Live-Browser-Smoke PASS 10/10: Page-Render + Sidebar-Active-State + CRUD (Create/Edit/Delete-OK/Default-Toggle) + Delete-Block (Inline-Hinweis) + Landing-Card sichtbar + V5.5-Regression `/proposals` PDF-Generierung intakt. Audit-Log zeigt 10 Eintraege (1 create, 1 update, 7 setDefault, 1 delete). Drei Bug-Fixes live: (1) MIG-027-Spec-Korrektur `meetings.scheduled_at` (nicht `start_time`), (2) traefik.docker.network-Label gegen Coolify-Multi-Network-Gateway-Timeout, (3) Delete-Block-Fehlermeldung wurde durch close() reset (UI-Bug), (4) Settings-Landing-Card fuer Discovery. SLC-561 + BL-413 done. Naechste = /backend SLC-562 (Bedingungs-Dropdown im Editor + Skonto-Toggle, ~3-4h, 8 MTs). V5.5.1 weiter live, V5.6 ist Sub-Slice-Mode (561 done, 562/563/564 offen). Internal-Test-Mode aktiv.
-- Current Phase: V5.6 **SLC-561 done + deployed — ready fuer /backend SLC-562**.
+- Current Focus: **V5.6 SLC-562 /backend code-complete 2026-05-01.** PaymentTermsDropdown + SkontoSection + useSkontoMutex (Stub) + validateSkonto Pure-Function (11 Vitest-Tests PASS) + ProposalEditor-Integration + Server Action Erweiterung (`updateProposal` mit Cross-Field-Skonto-Check via validateSkonto, `createProposal` mit Default-Template-Pre-Fill via DB-Lookup statt Hardcoded-String) + PDF-Renderer-Skonto-Block (5 Snapshot-Tests PASS, V5.5 bit-identisch ohne Skonto). zod-Schema um skonto-Felder erweitert. Build PASS, Vitest 113/113 PASS (97 → +16: 11 validateSkonto + 5 renderer), Lint clean fuer alle SLC-562-Files. Naechste = /qa SLC-562 (Pflicht laut CLAUDE.md), dann User-Coolify-Redeploy + Live-Smoke. V5.5.1 weiter live, SLC-561 deployed. Internal-Test-Mode aktiv.
+- Current Phase: V5.6 **SLC-562 /backend done — ready fuer /qa SLC-562**.
 
 ## Immediate Next Steps
-1. **/backend SLC-562** — Bedingungs-Dropdown im Editor + Skonto-Toggle (Sub-Themes A + C UI). ~3-4h, 8 MTs. Nutzt `listPaymentTermsTemplates` aus SLC-561.
-2. **DB-Cleanup nach SLC-561 Live-Smoke (optional)** — Test-Vorlage "14 Tage netto" `f57bd7b7-c711-...` ist live, aktuell Default. Kann bleiben (semantisch sinnvoller Eintrag) oder via SQL geloescht werden, wenn frischer Start gewuenscht.
-3. **Coolify-Cron `expire-proposals` Erst-Lauf am 2026-05-02 02:00 Berlin Time verifizieren** — Audit-SQL aus REL-020-Notes Schritt 3. Nicht zeitkritisch, passiv erledigen.
-4. **/post-launch V5.5** — nach 24-48h Stable-Window. Auch /post-launch V5.4 + V5.3 ueberfaellig (passiv).
+1. **/qa SLC-562** — Pflicht-QA. Code-Review + Wiring + Snapshot-Verifikation, dann User-Coolify-Redeploy + Live-Browser-Smoke (Editor-Dropdown, Skonto-Toggle, PDF-Generierung mit/ohne Skonto, Audit-Log, V5.5-Regression).
+2. **/backend SLC-563** — Split-Plan + Sum-Validation strict + PDF-Renderer-Erweiterung. ~5-7h, 9 MTs. Erweitert useSkontoMutex auf echte Vorkasse-Pruefung.
+3. **DB-Cleanup nach SLC-561 Live-Smoke (optional)** — Test-Vorlage "14 Tage netto" `f57bd7b7-c711-...` ist live, aktuell Default. Kann bleiben oder via SQL geloescht werden.
+4. **Coolify-Cron `expire-proposals` Erst-Lauf am 2026-05-02 02:00 Berlin Time verifizieren** — Audit-SQL aus REL-020-Notes Schritt 3. Nicht zeitkritisch, passiv erledigen.
+5. **/post-launch V5.5** — nach 24-48h Stable-Window. Auch /post-launch V5.4 + V5.3 ueberfaellig (passiv).
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"

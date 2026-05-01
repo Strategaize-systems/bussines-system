@@ -27,6 +27,22 @@ export const proposalEditSchema = z.object({
   // ohnehin nicht; Schema-Cleanup verhindert latenten Bug.
   contact_id: z.string().uuid("Ungueltige Contact-ID").nullable().optional(),
   company_id: z.string().uuid("Ungueltige Company-ID").nullable().optional(),
+  // V5.6 SLC-562 — Skonto-Felder (DEC-116). Beide nullable, beide-oder-keiner
+  // wird zusaetzlich in updateProposal via validateSkonto erzwungen, weil zod
+  // kein cross-field-CHECK out-of-the-box hat.
+  skonto_percent: z
+    .number()
+    .gt(0, "Skonto-Prozent muss > 0 sein")
+    .lt(10, "Skonto-Prozent muss < 10 sein")
+    .nullable()
+    .optional(),
+  skonto_days: z
+    .number()
+    .int("Skonto-Tage muss eine ganze Zahl sein")
+    .gt(0, "Skonto-Tage muss > 0 sein")
+    .lte(90, "Skonto-Tage muss <= 90 sein")
+    .nullable()
+    .optional(),
 });
 
 export type ProposalEditInput = z.infer<typeof proposalEditSchema>;

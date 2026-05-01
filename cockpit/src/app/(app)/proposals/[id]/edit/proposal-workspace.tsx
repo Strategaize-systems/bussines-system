@@ -44,6 +44,8 @@ type EditorPatch = {
   tax_rate?: 0 | 7 | 19;
   valid_until?: string | null;
   payment_terms?: string | null;
+  skonto_percent?: number | null;
+  skonto_days?: number | null;
 };
 
 type ProposalWorkspaceProps = {
