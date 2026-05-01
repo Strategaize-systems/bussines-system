@@ -9,15 +9,15 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: requirements
-- Current Focus: **V5.6 Requirements + User-Sign-Off done 2026-05-01.** 2 Features mit Sub-Themen: FEAT-561 Vorauswahl + Split-Plan + Skonto (3 Sub-Themen, BL-412 erweitert), FEAT-562 Pre-Call Briefing Auto-Push (BL-385). Open Questions F1-F12 alle resolved (3 User-Korrekturen: F2 strict 0%, F4 Skonto separates Feld, F6 user-konfigurierbarer Briefing-Trigger). 4 Slices vorgesehen: SLC-561 Schema+Vorauswahl-Backend, SLC-562 Editor-Dropdown+Skonto-Felder, SLC-563 Split-Plan+PDF, SLC-564 Briefing-Cron+Delivery+/settings/briefing. V5.5.1 weiter live + verifiziert. Internal-Test-Mode aktiv.
-- Current Phase: V5.6 **REQUIREMENTS COMPLETE — ready fuer /architecture V5.6**.
+- High-Level State: slice-planning
+- Current Focus: **V5.6 Slice-Planning done 2026-05-01.** 4 Slices vollstaendig ausdefiniert: SLC-561 (Schema + Templates-CRUD + /settings/payment-terms, ~3-4h, 8 MTs), SLC-562 (Bedingungs-Dropdown + Skonto-Toggle + UI-Mutex-Stub, ~3-4h, 8 MTs), SLC-563 (Split-Plan + Sum-Validation strict + PDF-Renderer-Erweiterung mit 4 Snapshot-Tests, ~5-7h, 9 MTs), SLC-564 (Pre-Call Briefing Cron + Push/Email + /settings/briefing + Sentinel-Strategy max 3 Re-Tries, ~4-6h, 9 MTs). Gesamt-Aufwand ~15-21h. Alle 6 Open-Points aus /architecture finalisiert: Sentinel-Mechanik (3 Re-Tries), Mail-Template (5 Sections), Push-Payload (4 Felder), Settings-Sub-Nav (gemeinsame Sidebar in SLC-561), Off-Verhalten (Skip wenn beide Toggles off), Cron-Setup-Anleitung (REL-022-Notes in SLC-564 MT-8). 4 neue Backlog-Items BL-413..416 fuer Slice-Tracking. Reihenfolge zwingend: 561 -> 562 -> 563 -> 564. Pro Slice: /backend|/frontend -> /qa -> Coolify-Redeploy. V5.5.1 weiter live + verifiziert. Internal-Test-Mode aktiv.
+- Current Phase: V5.6 **SLICE-PLANNING COMPLETE — ready fuer /backend SLC-561**.
 
 ## Immediate Next Steps
-1. **/architecture V5.6** — naechste Aktion. Definiert MIG-027 (`payment_terms_templates` + `proposal_payment_milestones` + `proposals.skonto_percent`/`skonto_days` + `meetings.briefing_generated_at` + `user_settings`-Erweiterung fuer Briefing-Konfiguration) + Adapter-Pattern fuer Briefing-Cron + PDF-Renderer-Erweiterung.
-3. **Coolify-Cron `expire-proposals` Erst-Lauf am 2026-05-02 02:00 Berlin Time verifizieren** — Audit-SQL `SELECT created_at, action, entity_id, context FROM audit_log WHERE entity_type='proposal' AND context='Auto-expire by cron — valid_until passed' ORDER BY created_at DESC LIMIT 10;` (REL-020-Notes Schritt 3).
-4. **/post-launch V5.5** — nach 24-48h Stable-Window. Auch /post-launch V5.4 + V5.3 ueberfaellig (passiv).
-5. **(optional)** DB-Cleanup der QA-Smoke-Artefakte aus V5.5 — kosmetisch.
+1. **/backend SLC-561** — naechste Aktion. MIG-027 SQL-File schreiben + auf Hetzner applieren (Base64-Pattern), 5 Server Actions (list/create/update/delete/setDefault), `/settings/payment-terms`-Page mit CRUD-UI, Settings-Sidebar-Nav-Layout-Wrapper. ~3-4h.
+2. **Coolify-Cron `expire-proposals` Erst-Lauf am 2026-05-02 02:00 Berlin Time verifizieren** — Audit-SQL `SELECT created_at, action, entity_id, context FROM audit_log WHERE entity_type='proposal' AND context='Auto-expire by cron — valid_until passed' ORDER BY created_at DESC LIMIT 10;` (REL-020-Notes Schritt 3). Nicht zeitkritisch, passiv erledigen.
+3. **/post-launch V5.5** — nach 24-48h Stable-Window. Auch /post-launch V5.4 + V5.3 ueberfaellig (passiv).
+4. **(optional)** DB-Cleanup der QA-Smoke-Artefakte aus V5.5 — kosmetisch.
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"

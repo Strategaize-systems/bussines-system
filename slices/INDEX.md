@@ -219,3 +219,12 @@
 | SLC-553 | [PDF-Renderer (pdfmake) + Branding-Layout + Storage-Write + Watermark](SLC-553-pdf-renderer-pdfmake.md) | FEAT-553 | done | High | 2026-04-29 |
 | SLC-554 | [Status-Lifecycle Server Actions + Versionierung + Auto-Expire-Cron](SLC-554-status-lifecycle-versioning.md) | FEAT-554 | done | High | 2026-04-29 |
 | SLC-555 | [Composing-Studio Proposal-Picker + Send-Pfad-Erweiterung (BL-404 Teil 2)](SLC-555-compose-proposal-attachment.md) | FEAT-555 | done | High | 2026-04-29 |
+
+## V5.6 Slices (Zahlungsbedingungen + Pre-Call Briefing)
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-561 | [Payment-Terms Foundation (Schema + Templates-CRUD + /settings/payment-terms)](SLC-561-payment-terms-foundation.md) | FEAT-561 | planned | Blocker | 2026-05-01 |
+| SLC-562 | [Bedingungs-Dropdown im Editor + Skonto-Toggle (Sub-Themes A + C UI)](SLC-562-bedingungs-dropdown-skonto.md) | FEAT-561 | planned | High | 2026-05-01 |
+| SLC-563 | [Split-Plan UI + PDF-Renderer-Erweiterung (Sub-Theme B + DEC-120)](SLC-563-split-plan-pdf.md) | FEAT-561 | planned | High | 2026-05-01 |
+| SLC-564 | [Pre-Call Briefing Cron + Push/Email-Delivery + /settings/briefing](SLC-564-pre-call-briefing.md) | FEAT-562 | planned | High | 2026-05-01 |

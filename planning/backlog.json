@@ -1709,8 +1709,48 @@
       "priority": "medium",
       "status": "in_progress",
       "version": "V5.6",
-      "description": "User-Feedback nach SLC-552 Browser-Smoke 2026-04-30: Zahlungsbedingungen sollen mehr Kontrolle bekommen. Zwei Sub-Themen: (1) VORAUSWAHL — typische Bedingungen als anlegbare Liste (z.B. 30 Tage netto, 60 Tage netto, Vorkasse, Skonto-Varianten), eventuell unter /settings/products oder eigener Settings-Sektion. Im Workspace per Dropdown waehlbar, mit Default aus Branding. Frei-text bleibt moeglich. (2) SPLIT-PLAN — Mehrere Zahlungstermine pro Angebot, z.B. '50 % bei Beauftragung / 50 % nach Fertigstellung' oder '30/30/40 nach Meilensteinen'. Datenmodell: neue Tabelle proposal_payment_milestones (proposal_id, sequence, percent_or_amount, due_trigger:'on_signature'|'on_completion'|'days_after_signature'|'on_milestone', label). UI im Editor-Panel als expandable Sektion mit Sum-Validation (muss 100% sein). Nicht V5.5-Scope (V5.5 fokussiert PDF + Status + Anhang). Vorschlag: V5.6 als FEAT-561 zusammen mit Skonto-Berechnung und Rechnungs-Vorbereitung. Affects: SLC-553 PDF-Renderer muss Split-Plan ausgeben (Konditionen-Block strukturiert), SLC-554 Status-Lifecycle bleibt orthogonal.",
+      "description": "User-Feedback nach SLC-552 Browser-Smoke 2026-04-30: Zahlungsbedingungen sollen mehr Kontrolle bekommen. Zwei Sub-Themen: (1) VORAUSWAHL — typische Bedingungen als anlegbare Liste (z.B. 30 Tage netto, 60 Tage netto, Vorkasse, Skonto-Varianten), eventuell unter /settings/products oder eigener Settings-Sektion. Im Workspace per Dropdown waehlbar, mit Default aus Branding. Frei-text bleibt moeglich. (2) SPLIT-PLAN — Mehrere Zahlungstermine pro Angebot, z.B. '50 % bei Beauftragung / 50 % nach Fertigstellung' oder '30/30/40 nach Meilensteinen'. Datenmodell: neue Tabelle proposal_payment_milestones (proposal_id, sequence, percent_or_amount, due_trigger:'on_signature'|'on_completion'|'days_after_signature'|'on_milestone', label). UI im Editor-Panel als expandable Sektion mit Sum-Validation (muss 100% sein). Nicht V5.5-Scope (V5.5 fokussiert PDF + Status + Anhang). Vorschlag: V5.6 als FEAT-561 zusammen mit Skonto-Berechnung und Rechnungs-Vorbereitung. Affects: SLC-553 PDF-Renderer muss Split-Plan ausgeben (Konditionen-Block strukturiert), SLC-554 Status-Lifecycle bleibt orthogonal. /requirements V5.6 erweitert um Sub-Theme C (Skonto separates Feld) und Sentinel-Strategy. /architecture V5.6 ausgeplant in 4 Slices SLC-561..564 mit DEC-115..121.",
       "createdAt": "2026-04-30"
+    },
+    {
+      "id": "BL-413",
+      "title": "V5.6 SLC-561 Payment-Terms Foundation (Schema + Templates-CRUD + /settings/payment-terms)",
+      "type": "feature",
+      "priority": "high",
+      "status": "planned",
+      "version": "V5.6",
+      "description": "FEAT-561 SLC-561: MIG-027 Apply auf Hetzner (5 Schema-Aenderungen: payment_terms_templates + proposal_payment_milestones + proposals.skonto_* + meetings.briefing_generated_at + user_settings.briefing_*). 5 Server Actions (list/create/update/delete/setDefault) mit Audit-Log. /settings/payment-terms Page mit CRUD-UI + Default-Toggle (UNIQUE-Index WHERE is_default=true sichert Mutex). Settings-Sidebar-Nav-Layout-Wrapper als gemeinsame Schicht. Seed: '30 Tage netto' als Initial-Default. 8 Micro-Tasks, ~3-4h.",
+      "createdAt": "2026-05-01"
+    },
+    {
+      "id": "BL-414",
+      "title": "V5.6 SLC-562 Bedingungs-Dropdown im Editor + Skonto-Toggle (Sub-Themes A + C UI)",
+      "type": "feature",
+      "priority": "high",
+      "status": "planned",
+      "version": "V5.6",
+      "description": "FEAT-561 SLC-562: Proposal-Editor bekommt PaymentTermsDropdown ueber dem payment_terms-Textfeld + SkontoSection mit Toggle + Prozent + Tage Inputs. useSkontoMutex-Hook als Stub (returns false in SLC-562, SLC-563 erweitert auf echte Vorkasse-Pruefung). validateSkonto Pure Function mit Vitest-Tests. PDF-Renderer um Skonto-Block erweitert (DEC-120: ohne Skonto bit-identisch zu V5.5). Initial-Default-Pre-Fill bei createProposal nutzt Default-Template-Body. 8 Micro-Tasks, ~3-4h.",
+      "createdAt": "2026-05-01"
+    },
+    {
+      "id": "BL-415",
+      "title": "V5.6 SLC-563 Split-Plan UI + PDF-Renderer-Erweiterung (Sub-Theme B + DEC-120)",
+      "type": "feature",
+      "priority": "high",
+      "status": "planned",
+      "version": "V5.6",
+      "description": "FEAT-561 SLC-563: SplitPlanSection mit Toggle + Liste + Add/Remove/Reorder via @dnd-kit/sortable + Live-Sum-Indikator (gruen 100/rot Diff). MilestoneRow mit 6-Spalten-Layout (Mobile 2-zeilig). saveProposalPaymentMilestones Server Action mit Sum-Validation strict 100% (DEC-115 — DB-CHECK nicht moeglich, App-Level only). useSkontoMutex-Hook erweitert auf echte Vorkasse-Pruefung (DEC-116 — bei on_signature 100% wird Skonto auto-clear mit Toast). PDF-Renderer Konditionen-Block (Tabelle Teilzahlung+Faelligkeit+Betrag) mit 4 Snapshot-Tests (CRITICAL: ohne beides bit-identisch zu V5.5). Trigger-Label-Helper fuer 4 Enums. 9 Micro-Tasks, ~5-7h.",
+      "createdAt": "2026-05-01"
+    },
+    {
+      "id": "BL-416",
+      "title": "V5.6 SLC-564 Pre-Call Briefing Cron + Push/Email-Delivery + /settings/briefing",
+      "type": "feature",
+      "priority": "high",
+      "status": "planned",
+      "version": "V5.6",
+      "description": "FEAT-562 SLC-564: Loest BL-385 ein. Cron-Endpoint /api/cron/meeting-briefing (5-Min-Takt) mit verifyCronSecret + UPDATE-WHERE-NULL Idempotenz-Pattern (DEC-118). Reuse: buildDealBriefingPrompt + validateDealBriefing aus FEAT-301 (KEIN neuer LLM-Adapter), Service Worker FEAT-409 fuer Push, V5.3 send.ts fuer SMTP. Activity-Insert mit type='briefing', source_type='meeting', source_id=meeting.id (V3-Pattern, DEC-119). Sentinel-Strategy: max 3 Re-Tries, dann Marker-Bleibe + final-failure-activity. /settings/briefing Page mit Trigger-Zeit (15/30/45/60) + Push-Toggle + Email-Toggle (DEC-117). ActivityBriefingCard im Deal-Workspace. Wenn beide Toggles off: Cron skippt komplett. REL-022-Notes mit Coolify-Cron-Setup-Anleitung. End-to-End-Smoke: Test-Meeting + Cron-Trigger -> Push + Email + Activity. 9 Micro-Tasks, ~4-6h.",
+      "createdAt": "2026-05-01"
     }
   ]
 }

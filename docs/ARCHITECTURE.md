@@ -6632,3 +6632,294 @@ Gesamt: ~21-29h. Reihenfolge zwingend (jeder Slice baut auf Vorgaenger). Pro Sli
 ### V5.5 Recommended Next Step
 
 `/slice-planning V5.5` — die 5 Slices SLC-551..555 strukturiert ausdefinieren mit Acceptance Criteria pro Slice, Micro-Tasks-Liste mit Reihenfolge, QA-Fokus pro Slice. Danach pro Slice `/backend|/frontend` -> `/qa` -> Coolify-Redeploy in fester Reihenfolge.
+
+## V5.6 — Zahlungsbedingungen + Pre-Call Briefing
+
+### V5.6 Architecture Summary
+
+V5.6 erweitert zwei orthogonale Bereiche der bestehenden Architektur:
+
+1. **Angebot-Konditionen (FEAT-561):** Strukturierte Zahlungsbedingungen statt Freitext-Drift. Drei Sub-Themen — wiederverwendbare Templates (`payment_terms_templates`), Teilzahlungen (`proposal_payment_milestones`), und optionales Skonto (`proposals.skonto_*`). Erweitert die V5.5-Proposal-Pipeline ohne Schema-Bruch (alle bestehenden Proposals rendern bit-identisch).
+2. **Pre-Call Briefing (FEAT-562):** Neuer Cron `meeting-briefing` (5-Min-Takt) der den existierenden Deal-Briefing-LLM-Stack (FEAT-301) wiederverwendet, das Output als Activity (`type='briefing'`) persistiert und ueber den existierenden Push-Service-Worker (FEAT-409) + SMTP-Stack delivert. KEIN neuer LLM-Adapter, KEINE neue Push-Infrastruktur.
+
+Die zwei Features teilen sich nur die gemeinsame Schema-Migration MIG-027 — sie sind operationell unabhaengig und in separaten Slices implementierbar.
+
+### V5.6 Main Components
+
+```
+                     V5.6 Erweiterungen (additiv zu V5.5)
+                     =====================================
+
+    [Settings UI]                    [Proposal Editor]                [Cron Pipeline]
+         |                                  |                                |
+         v                                  v                                v
+  /settings/payment-terms        Bedingungs-Dropdown          /api/cron/meeting-briefing
+  /settings/briefing             Skonto-Toggle                       (5-min)
+                                 Split-Plan-Section                       |
+         |                                  |                                v
+         v                                  v                       buildDealBriefingPrompt
+  payment_terms_templates       proposal_payment_milestones        (FEAT-301 Reuse)
+  user_settings (extended)      proposals.skonto_*                        |
+                                                                          v
+                                          |                       Bedrock Claude Sonnet
+                                          v                       (Frankfurt EU)
+                            [pdfmake-Renderer (DEC-120)]                  |
+                            Conditional-Block-Rendering                   v
+                            V5.5-Fallback bit-identisch              [activity insert]
+                                                                     type='briefing'
+                                                                     source_type='meeting'
+                                                                          |
+                                                                          v
+                                                                  [Push + Email Delivery]
+                                                                  Service Worker (FEAT-409)
+                                                                  SMTP (V5.4 send.ts)
+```
+
+### V5.6 Component Responsibilities
+
+| Component | Responsibility | New / Reuse |
+|---|---|---|
+| `payment_terms_templates` Tabelle | CRUD-Source fuer Bedingungs-Vorauswahl | New (MIG-027) |
+| `/settings/payment-terms` Page | Templates anlegen/editieren/loeschen, Default setzen | New (SLC-561) |
+| `proposal_payment_milestones` Tabelle | Teilzahlungen pro Proposal mit Sequence + Trigger | New (MIG-027) |
+| `proposals.skonto_*` Spalten | Optionales Skonto pro Proposal | New (MIG-027) |
+| Bedingungs-Dropdown im Editor | Template auswaehlen, Freitext vor-fuellen | New (SLC-562) |
+| Skonto-Toggle im Editor | Toggle + 2 Felder, UI-Mutex zu Vorkasse | New (SLC-562) |
+| Split-Plan-Section im Editor | Add/Remove/Reorder + Live-Sum-Indikator | New (SLC-563) |
+| pdfmake-Adapter | Conditional-Block fuer Konditionen + Skonto | Extend V5.5 (DEC-120, SLC-563) |
+| `meetings.briefing_generated_at` | Idempotenz-Marker | New (MIG-027) |
+| `/api/cron/meeting-briefing` Endpoint | 5-Min-Cron fuer Briefing-Generierung | New (SLC-564) |
+| `buildDealBriefingPrompt` + `validateDealBriefing` | LLM-Prompt + Validation | Reuse (FEAT-301) |
+| `cockpit/src/lib/ai/bedrock-client.ts` | Bedrock Claude Sonnet Call | Reuse (DEC-007) |
+| Activity (`type='briefing'`) | Persistierung am Deal | Reuse (V3 activities) |
+| Push Service Worker | Briefing-Push-Delivery | Reuse (FEAT-409) |
+| SMTP via `cockpit/src/lib/email/send.ts` | Briefing-E-Mail-Delivery | Reuse (V5.3 send.ts) |
+| `/settings/briefing` Page | Trigger-Zeit + Toggle Push/Email | New (SLC-564) |
+| `user_settings.briefing_*` Spalten | User-Konfiguration | Extend (MIG-027) |
+
+### V5.6 Data Model Direction
+
+```
+   [proposals]<-----[parent_proposal_id]
+      |                     |
+      | + skonto_percent    | (Versionsreferenz, V5.5 DEC-109)
+      | + skonto_days       |
+      |                     |
+      |                     |
+      v                     v
+ [proposal_payment_milestones]   [proposal_items]   <-- bestehend V5.5
+      |
+      | (proposal_id FK ON DELETE CASCADE)
+      | (UNIQUE (proposal_id, sequence))
+      | (CHECK percent > 0 AND <= 100)
+      | (App-Level Sum-Validation strict 100% — DEC-115)
+      v
+ [pdfmake-Renderer]
+      |
+      | (Conditional-Block — DEC-120)
+      v
+ [proposal-pdfs Bucket]   <-- bestehend V5.5
+
+
+
+   [payment_terms_templates]   <-- neu, single-User-Tabelle
+      |
+      | (UNIQUE WHERE is_default=true — max 1 Default)
+      | Seed: "30 Tage netto" als initial-default
+      v
+   [Editor-Dropdown]   --> proposals.payment_terms (Freitext-Override bleibt)
+
+
+
+   [meetings]
+      |
+      | + briefing_generated_at (Idempotenz-Marker — DEC-118)
+      | (Partial-Index: WHERE briefing_generated_at IS NULL AND deal_id IS NOT NULL)
+      |
+      v
+ [meeting-briefing Cron]
+      |
+      | (UPDATE WHERE NULL — winner-takes-all)
+      v
+ [buildDealBriefingPrompt(deal_context)]   <-- Reuse FEAT-301
+      |
+      v
+ [Bedrock Claude Sonnet Frankfurt]   <-- Reuse DEC-007
+      |
+      | (validateDealBriefing — Reuse FEAT-301)
+      v
+ [activities] INSERT type='briefing', source_type='meeting', source_id=meeting_id
+      |
+      |---> [Push Notification] (Reuse FEAT-409 Service Worker)
+      |---> [SMTP E-Mail]       (Reuse V5.3 send.ts compact-HTML-Variante)
+
+
+
+   [user_settings]
+      | + briefing_trigger_minutes INT (15/30/45/60, default 30)
+      | + briefing_push_enabled BOOLEAN default true
+      | + briefing_email_enabled BOOLEAN default true
+      |
+      v
+   [/settings/briefing Page]   <-- neu, single-Section-Page
+```
+
+### V5.6 Request Flow — Beispiel "Split-Plan + Skonto im Editor"
+
+```
+1. User oeffnet /proposals/{id}/edit
+2. Browser laedt: proposal + items + milestones + branding (parallel via Promise.all)
+3. Editor rendert:
+   - Bedingungs-Dropdown (Server Action: listPaymentTermsTemplates)
+   - Skonto-Toggle (off wenn skonto_percent IS NULL)
+   - Split-Plan-Section (collapsed wenn milestones.length === 0)
+4. User aktiviert Split-Plan:
+   - Add Milestone (Inline-State, noch nicht persisted)
+   - Add Milestone 2
+   - Live-Summen-Indikator: "75% — fehlt 25%"
+   - User correctd: Milestone 1 percent=50, Milestone 2 percent=50
+   - Live-Indikator: "100% — gueltig" (gruen)
+5. User aktiviert Skonto-Toggle:
+   - 2 Felder erscheinen: percent=2, days=7
+6. User klickt "Speichern":
+   - Server Action: saveProposalPaymentMilestones(proposalId, milestones[])
+     - Validation: SUM(percent) === 100.00 (strict, DEC-115)
+     - DELETE existing + INSERT new in Transaction
+     - Audit-Log Eintrag pro Milestone
+   - Server Action: updateProposalSkonto(proposalId, percent, days)
+     - UPDATE proposals SET skonto_percent=2, skonto_days=7
+     - Audit-Log Eintrag
+7. User klickt "PDF generieren":
+   - generateProposalPdf(proposalId) ruft renderProposalPdf(proposal+items+milestones+skonto+branding)
+   - Conditional-Block "Konditionen / Teilzahlungen" rendert (DEC-120)
+   - PDF wird in proposal-pdfs-Bucket geschrieben (V5.5-Pfad-Schema, DEC-111)
+   - User sieht PDF in iframe-Preview mit Konditionen-Block
+```
+
+### V5.6 Request Flow — Beispiel "Pre-Call Briefing Cron-Lauf"
+
+```
+0. Coolify-Cron triggert /api/cron/meeting-briefing alle 5 Min mit CRON_SECRET-Header
+1. Cron-Endpoint:
+   - verifyCronSecret(request) -> 401 wenn falsch
+   - createServiceRoleClient()
+2. SELECT user_settings (Single-User, Single-Row): briefing_trigger_minutes, briefing_push_enabled, briefing_email_enabled
+   - Wenn beide Toggles false: return {ok: true, skippedReason: 'all-channels-disabled'}
+3. SELECT meetings JOIN deals WHERE
+   meetings.briefing_generated_at IS NULL
+   AND meetings.deal_id IS NOT NULL
+   AND meetings.start_time BETWEEN now() AND now() + (briefing_trigger_minutes + 5) * INTERVAL '1 minute'
+   ORDER BY meetings.start_time
+4. Fuer jedes candidate-meeting:
+   a. UPDATE meetings SET briefing_generated_at = now() WHERE id = $1 AND briefing_generated_at IS NULL RETURNING id
+      - Wenn 0 rows: skip (concurrent run won, oder Marker bereits gesetzt)
+      - Wenn 1 row: continue
+   b. SELECT deal_context (deal + contacts + activities + proposals) -> DealBriefingContext
+   c. Bedrock-Call: queryLLM(buildDealBriefingPrompt(context), DEAL_BRIEFING_SYSTEM_PROMPT)
+   d. validateDealBriefing(json) -> on-fail: UPDATE meetings SET briefing_generated_at=NULL (re-arm fuer naechsten Lauf), audit-log briefing-fail, continue
+   e. INSERT activities (deal_id, type='briefing', title=..., description=JSON.stringify(briefing), source_type='meeting', source_id=meeting.id, ai_generated=true, created_by=NULL)
+   f. Wenn briefing_push_enabled: send Push via Service Worker (FEAT-409 Pattern)
+   g. Wenn briefing_email_enabled: send Mail via send.ts (kompakte HTML-Variante mit Briefing-Summary)
+   h. audit-log: action='create', entity_type='activity', context='Auto-briefing for meeting {id}'
+5. Return {ok: true, processedCount, skippedCount, failedCount}
+```
+
+### V5.6 External Dependencies
+
+- **KEINE neuen npm-Packages.** pdfmake bleibt (DEC-105). bedrock-client bleibt (DEC-007). web-push fuer Service Worker bleibt (FEAT-409).
+- **KEINE neuen Coolify-Container.** Cron `meeting-briefing` ist analog `expire-proposals`-Pattern: `node -e "fetch(...)"` Container `app` mit `CRON_SECRET` Header.
+- **Bedrock Claude Sonnet** (Frankfurt EU, DEC-007) — Reuse fuer Briefing-Calls. Cost-Estimate: 5 Meetings/Tag * ~5k input + 1k output Tokens * Sonnet-Preis = ~$0.25/Tag (PRD V5.6 Risks).
+- **Service Worker Push (FEAT-409)** — bestehender Pfad. `user_settings.push_subscription` ist die Anker-Spalte (V4.1).
+- **SMTP (V5.3 send.ts)** — bestehender Pfad. Briefing-E-Mail nutzt eine kompakte HTML-Variante (NEU: `cockpit/src/lib/email/templates/briefing-html.ts`), KEINE Branding-Render-Engine-Aenderung (PRD V5.6 Out-of-Scope).
+
+### V5.6 Security / Privacy
+
+- **RLS:** Alle neuen/erweiterten Tabellen erhalten `authenticated_full_access`-Policy (Single-User-Modus, V7-Multi-User-Erweiterung folgt). `payment_terms_templates` analog `compliance_templates` (V5.2). `proposal_payment_milestones` analog `proposal_items`.
+- **Audit-Trail:** Alle Operations schreiben in `audit_log`:
+  - Template-CRUD: action='create'/'update'/'delete', entity_type='payment_terms_template'
+  - Milestone-Save: action='update', entity_type='proposal', context='Milestones updated'
+  - Skonto-Update: action='update', entity_type='proposal', context='Skonto updated'
+  - Cron-Briefing: action='create', entity_type='activity', actor_id=NULL (System), context='Auto-briefing for meeting {id} generated at T-{minutes}min'
+- **Datenresidenz** (`data-residency.md`): Bedrock-Calls weiterhin Frankfurt (DEC-007). Briefing-Output enthaelt Deal-Daten + KI-Analyse — bleibt in EU-Region. Push-Notification enthaelt Briefing-Summary (KI-generierter Text) — verlaesst die Infra ueber Web-Push-Endpoint (Browser-spezifisch, nicht-zentralisiert). E-Mail enthaelt Briefing-HTML — geht ueber den eigenen SMTP-Server (V5.3 send.ts), nicht extern.
+- **Internal-Test-Mode** (DEC-113 V5.5): Watermark-Logik gilt weiterhin fuer V5.6-PDFs. Briefing-E-Mail bekommt KEINEN Test-Mode-Watermark — Empfaenger ist der User selbst (Single-User-Annahme), nicht externer Geschaeftspartner. Bei spaeter Multi-User-Erweiterung re-evaluieren.
+- **Bedrock Cost Control** (DEC-052): LLM-Calls sind Cron-getriggert, nicht user-getriggert. Max 1 Call pro Meeting pro Tag (Idempotenz-Marker). Bei Bedrock-503/Timeout: Marker-Reset, max 1 Re-Try im naechsten 5-Min-Tick. Nach 3 fehlgeschlagenen Versuchen (UPDATE briefing_generated_at='ERROR' Sentinel): kein weiterer Versuch, Audit-Log mit Failure-Activity. (Sentinel-Mechanik finalisieren in SLC-564 Implementation.)
+
+### V5.6 Constraints & Tradeoffs
+
+**Constraint 1: Sum-Validation strict 0% (DEC-115).** Pattern wie Lohnabrechnungs-Tools — User uebernimmt Verantwortung. Kein 0.5%-Rundungs-Puffer wie initial empfohlen. Tradeoff: Eingabe-Komfort vs. Daten-Integritaet. Frontend-Mitigation via Live-Summen-Indikator macht Anspruch klar bedienbar.
+
+**Constraint 2: Skonto-UI-Mutex ohne DB-Constraint (DEC-116).** UI verhindert das Setzen von Skonto bei `on_signature 100%` Vorkasse-Trigger. DB-seitig sind beide unabhaengig — User koennte via direkten DB-Access beides setzen. Tradeoff: Implementierungs-Aufwand vs. Edge-Case-Schutz. Single-User-Modus macht das vertretbar; bei V7-Multi-User re-evaluieren.
+
+**Constraint 3: Briefing-Trigger diskret 15/30/45/60 Min (DEC-117).** Nicht beliebiger Integer. Tradeoff: Flexibilitaet vs. Settings-UI-Komplexitaet. Diskrete Optionen schuetzen vor User-Edge-Cases (0, 9999) und vereinfachen Cron-Fenster-Berechnung.
+
+**Constraint 4: Cron-Idempotenz nach UPDATE-WHERE-NULL-Pattern (DEC-118).** Pattern aus V5.5 expire-proposals + V5.5 transitionProposalStatus uebernommen. Bei Bedrock-Fehler: Marker-Reset = Re-Try beim naechsten 5-Min-Tick. Bei dauerhaftem Fehler: nach N Retries Sentinel-Wert + Failure-Activity. Sentinel-Mechanik finalisieren in SLC-564 Implementation. Tradeoff: Implementierungs-Komplexitaet vs. dauerhaftes Retry-Loop.
+
+**Constraint 5: PDF-Renderer-Erweiterung mit V5.5-Fallback bit-identisch (DEC-120).** Snapshot-Test in SLC-563 muss bewiesen, dass Proposals ohne Milestones+Skonto bit-identisch zum V5.5-PDF rendern. Tradeoff: Implementierungs-Sorgfalt vs. spaeterer Drift bei Versionserstellung. Snapshot-Diff ist Regression-Schutz.
+
+**Constraint 6: Briefing-E-Mail kompakte HTML-Variante (PRD V5.6 Out-of-Scope).** Branding-Render-Engine (V5.3) wird NICHT angefasst. Briefing-Mail-Template ist eigenes File `cockpit/src/lib/email/templates/briefing-html.ts` — minimale HTML-Struktur ohne Branding-Logo/Farben. Tradeoff: Briefing-Mail sieht nicht "wie Marken-Mail" aus, dafuer keine Render-Engine-Komplexitaet. Single-User: User schickt sich Briefing selbst, Branding-Konsistenz weniger relevant.
+
+### V5.6 Technische Risiken
+
+**Risk: Bedrock-Latency macht Cron-Tick-Window knapp.**
+- Bedrock-Call dauert 3-15s pro Briefing. Bei 5 Meetings im Fenster und 5-Min-Tick-Toleranz: max ~150s pro Lauf — innerhalb Tick-Budget.
+- Mitigation: Sequenzieller Loop (kein Promise.all auf Bedrock-Calls) — Rate-Limit-freundlich. Bei mehr als 5 Meetings im Fenster: Warning im Audit-Log, naechster Tick holt Rest auf.
+
+**Risk: Briefing-Activity-Description groesser als bisherige Activities.**
+- Briefing-JSON ist ~2-5 KB Stringified. Bestehende `activities.description` ist `TEXT` — kein Limit.
+- Mitigation: TEXT-Spalte ist Postgres-TOAST-faehig, kein Performance-Problem.
+
+**Risk: Push-Notification-Payload-Limit.**
+- Web-Push erlaubt ~4 KB Payload. Briefing-Summary muss komprimiert werden.
+- Mitigation: Push-Payload enthaelt nur `{title, body: summary[0..200], deal_id, meeting_id}` + Click-Through-Link zum Workspace. Vollstaendige Briefing-Daten in Activity, Push ist nur Notification.
+
+**Risk: Sum-Validation-Edge-Case bei 33+33+33 (=99) als User-Versehen.**
+- DEC-115 Strict-Strategie blockt das. Frontend-Hinweis "fehlt 1%" zwingt User zur Korrektur.
+- Mitigation: Live-Summen-Indikator + Disabled-Save-Button. Pattern wie SLC-552 Brutto/Netto-Live-Berechnung.
+
+**Risk: Skonto-Mutex-Bypass bei Editor-Reload.**
+- User aktiviert erst Skonto, dann Vorkasse-Milestone. UI-Mutex sollte Skonto auto-disablen — was passiert mit bereits gesetztem `skonto_percent`?
+- Mitigation: Editor-Reaktion auf Milestone-Change clearts Skonto-Toggle UND ruft `updateProposalSkonto(id, NULL, NULL)`. Ist State-Management-Sache in SLC-562 + SLC-563.
+
+**Risk: payment_terms_templates Default-Toggle-Race.**
+- User klickt schnell "Default" auf Template A und gleichzeitig auf Template B. UNIQUE-Index `WHERE is_default=true` schuetzt — der zweite UPDATE schlaegt mit Constraint-Violation fehl.
+- Mitigation: `setDefaultPaymentTermsTemplate(id)` Server Action macht das Update in Transaction: erst `UPDATE payment_terms_templates SET is_default=false WHERE is_default=true`, dann `UPDATE payment_terms_templates SET is_default=true WHERE id=$1`. Race-Condition zwischen zwei parallelen Calls produziert sauberen Fehler "Default bereits gesetzt".
+
+**Risk: Briefing-Cron triggert fuer Meeting OHNE deal_id.**
+- PRD V5.6 schliesst aus: Meetings ohne Deal-Zuordnung werden nicht briefed.
+- Mitigation: Partial-Index `WHERE briefing_generated_at IS NULL AND deal_id IS NOT NULL` filtert beim DB-Lookup. Cron-Query hat zusaetzliches `AND deal_id IS NOT NULL`. Defense-in-Depth.
+
+**Risk: V5.5-PDF-Snapshot-Drift durch DEC-120.**
+- DEC-120 Conditional-Block-Logik koennte bei "Proposal ohne Milestones+Skonto" doch minimal andere Bytes produzieren (z.B. zusaetzliche Whitespace-Zeile in DocDef).
+- Mitigation: SLC-563 erweitert die V5.5-Snapshot-Tests aus SLC-553 um den expliziten "ohne Konditionen-Block"-Fall. Snapshot-Diff zu V5.5 = 0 Bytes Pflicht.
+
+**Risk: Bedrock-Cost-Drift bei Single-User mit vielen Meetings.**
+- 5 Meetings/Tag = $0.25/Tag akzeptabel. Bei 20 Meetings/Tag = $1.00/Tag — auch akzeptabel.
+- Mitigation: Audit-Log zaehlt Briefing-Calls. Bei Anomalie (>$3/Tag): manuelle Pruefung. Spaeter ggf. Briefing-Trigger nur fuer aktive Pipeline-Stages (V7+).
+
+### V5.6 Dependencies (package.json delta)
+
+KEIN delta. Alle V5.6-Funktionalitaet nutzt bestehende Dependencies.
+
+### V5.6 Empfohlene Slice-Reihenfolge (DEC-121)
+
+| Slice | Feature | Scope | Schaetzung | QA-Fokus |
+|---|---|---|---|---|
+| SLC-561 | FEAT-561 (Sub-Theme A) | MIG-027 Teil 1 + 2 + `/settings/payment-terms` Page + CRUD + Default-Toggle | 3-4h | Migration idempotent, V5.5-Proposals unveraendert lesbar, UNIQUE-Constraint default-Race greift, Settings-Page CRUD-Pfade korrekt |
+| SLC-562 | FEAT-561 (Sub-Themes A + C UI) | Bedingungs-Dropdown im Editor + Skonto-Toggle + Skonto-Felder + UI-Mutex zu Vorkasse | 3-4h | Dropdown-Auswahl fuellt Freitext, Skonto-Toggle setzt skonto_*, UI-Mutex disablt Skonto bei on_signature 100%, Save persistiert sauber |
+| SLC-563 | FEAT-561 (Sub-Theme B + PDF) | Split-Plan-Section + Live-Sum-Indikator + saveProposalPaymentMilestones strict 100% + pdfmake-Conditional-Block | 5-7h | Sum-Validation strict 100% greift app-side, PDF-Snapshot ohne Milestones bit-identisch zu V5.5, PDF mit Milestones rendert Konditionen-Block sauber, Audit-Eintraege da |
+| SLC-564 | FEAT-562 | `/api/cron/meeting-briefing` + buildDealBriefingPrompt-Reuse + Activity-Insert + Push + Email + `/settings/briefing` Page | 4-6h | Cron-Idempotenz greift (UPDATE WHERE NULL), Bedrock-Call sauber, Activity-Insert mit V3-source_type-Pattern, Push-Delivery in Browser, Mail-Delivery via SMTP, Settings-Page persistiert in user_settings, Meetings ohne Deal werden ignoriert |
+
+Gesamt: ~15-21h. Reihenfolge zwingend (561 -> 562 -> 563 -> 564). Pro Slice: `/backend|/frontend` -> `/qa` -> Coolify-Redeploy. Final-Check + Go-Live + Deploy als REL-022 nach SLC-564.
+
+### V5.6 Open Points (fuer /slice-planning)
+
+- **Cron-Setup-Anleitung in REL-022-Notes:** Coolify-Cron `meeting-briefing` muss vom User analog zu `expire-proposals` (V5.5 REL-020) angelegt werden. Anleitung mit Cron-Expression `*/5 * * * *` (alle 5 Min) und CRON_SECRET-Header.
+- **Briefing-Sentinel bei dauerhaftem Fehler (DEC-118-Erweiterung):** Wie viele Re-Tries bevor `briefing_generated_at='ERROR'` als Sentinel gesetzt wird? Empfehlung: 3 Re-Tries mit exponential-Backoff (5min, 10min, 20min). Final in SLC-564 SLC-Planning.
+- **Briefing-E-Mail-Template-Inhalt:** Welche Sections in der kompakten HTML? Empfehlung: Title (Meeting-Name + Zeit), Summary (Briefing-Summary 2-3 Saetze), Top-3-keyFacts, Top-3-suggestedNextSteps, Click-Through-Link zum Deal-Workspace. Final in SLC-564 SLC-Planning.
+- **Push-Payload-Inhalt:** Welche Felder in der ~4-KB-Push-Payload? Empfehlung: `{title: "Briefing fuer {meeting.title}", body: summary[0..150], data: {deal_id, meeting_id, briefing_activity_id}}`. Final in SLC-564 SLC-Planning.
+- **`/settings/branding` und `/settings/payment-terms` als gemeinsame Settings-Sub-Navigation?** Empfehlung: ja, beide unter Settings-Layout-Wrapper mit Sidebar-Nav. SLC-561 ergaenzt die Nav-Struktur entsprechend (kleiner Layout-Touch). Final in SLC-561 SLC-Planning.
+- **Wenn beide Briefing-Toggles (Push + E-Mail) off sind, soll der Cron das Meeting trotzdem als Activity persistieren?** Empfehlung: NEIN — wenn beide Channels off, Cron skippt komplett (kein Bedrock-Call, kein Activity-Insert). User-Mental-Model: "Briefing-Feature komplett deaktivieren". Wenn nur ein Channel off, Briefing wird trotzdem generiert + persistiert + nur ueber den aktiven Channel deliverd. Final in SLC-564 SLC-Planning.
+
+### V5.6 Recommended Next Step
+
+`/slice-planning V5.6` — die 4 Slices SLC-561..564 strukturiert ausdefinieren mit Acceptance Criteria pro Slice, Micro-Tasks-Liste mit Reihenfolge, QA-Fokus pro Slice. Danach pro Slice `/backend|/frontend` -> `/qa` -> Coolify-Redeploy in fester Reihenfolge.

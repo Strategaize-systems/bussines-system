@@ -137,7 +137,7 @@
       "id": "v5-6",
       "name": "V5.6",
       "status": "active",
-      "summary": "Zahlungsbedingungen + Pre-Call Briefing: 2 Features (FEAT-561..562) — Vorauswahl-Liste + Split-Plan-Milestones (BL-412), automatisches Meeting-Briefing 30 Min vor Termin via Cron + Push/E-Mail (BL-385). Internal-Test-Mode bleibt aktiv. Requirements done 2026-05-01.",
+      "summary": "Zahlungsbedingungen + Pre-Call Briefing: 2 Features (FEAT-561..562) — Vorauswahl-Liste + Split-Plan-Milestones + Skonto separates Feld (BL-412 erweitert), automatisches Meeting-Briefing user-konfigurierbar (15/30/45/60 Min) via Cron + Push/E-Mail (BL-385). 4 Slices SLC-561..564 (~15-21h). MIG-027 (5 Schema-Aenderungen), 7 DECs (DEC-115..121: Sum-Validation strict 0%, Skonto-UI-Mutex, Briefing-Trigger user-konfigurierbar, Cron-Idempotenz UPDATE-WHERE-NULL, Briefing als Activity V3-source-Pattern, PDF-Renderer V5.5-Fallback bit-identisch, 4-Slices-Schnitt). Reuse: buildDealBriefingPrompt aus FEAT-301, Service Worker FEAT-409, SMTP V5.3 send.ts. KEINE neuen npm-Packages, KEINE neuen Container. Internal-Test-Mode bleibt aktiv. Requirements + Architecture + Slice-Planning done 2026-05-01. Naechste Aktion: /backend SLC-561.",
       "order": 20
     },
     {

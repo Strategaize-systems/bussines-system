@@ -290,3 +290,60 @@
   - `ALTER TABLE email_attachments DROP CONSTRAINT IF EXISTS email_attachments_source_type_check, DROP COLUMN IF EXISTS source_type, DROP COLUMN IF EXISTS proposal_id;`
   - `DELETE FROM storage.objects WHERE bucket_id='proposal-pdfs'; DELETE FROM storage.buckets WHERE id='proposal-pdfs';`
   - V2-Stub-Proposals bleiben nach Rollback unveraendert lesbar — bestehende `/proposals`-Tabelle funktioniert wieder im V5.4-Zustand.
+
+### MIG-027 — V5.6 Zahlungsbedingungen + Pre-Call Briefing Schema
+- Date: planned (apply zu Beginn von SLC-561 `/backend` analog MIG-026 Pattern)
+- Scope: 5 Aenderungen in einer Migration `027_v56_payment_terms_and_briefing.sql`:
+  1. Neue Tabelle `payment_terms_templates` (DEC-115/DEC-121, Sub-Theme A):
+     - `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`
+     - `label TEXT NOT NULL` — z.B. "30 Tage netto", "Vorkasse"
+     - `body TEXT NOT NULL` — der vorgefuellte Freitext fuer `proposals.payment_terms`
+     - `is_default BOOLEAN NOT NULL DEFAULT false` — UNIQUE partial index sichert max 1 Default
+     - `created_at TIMESTAMPTZ DEFAULT now()`, `updated_at TIMESTAMPTZ DEFAULT now()`
+     - 1 Index: `CREATE UNIQUE INDEX idx_payment_terms_templates_default ON payment_terms_templates(is_default) WHERE is_default = true;`
+     - RLS `authenticated_full_access` (Single-User-Modus, V7-Multi-User-Erweiterung folgt)
+     - Seed: `INSERT INTO payment_terms_templates (label, body, is_default) VALUES ('30 Tage netto', 'Zahlbar innerhalb von 30 Tagen netto.', true) ON CONFLICT DO NOTHING;` — Branding-Default-Migration
+  2. Neue Tabelle `proposal_payment_milestones` (DEC-115, Sub-Theme B):
+     - `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`
+     - `proposal_id UUID NOT NULL REFERENCES proposals(id) ON DELETE CASCADE`
+     - `sequence INT NOT NULL` — fuer Reihenfolge-Sortierung im PDF
+     - `percent NUMERIC(5,2) NOT NULL CHECK (percent > 0 AND percent <= 100)` — einzelner Milestone-Anteil
+     - `amount NUMERIC(12,2)` — berechneter Betrag (= proposals.total_gross * percent/100), Snapshot beim Save
+     - `due_trigger TEXT NOT NULL CHECK (due_trigger IN ('on_signature', 'on_completion', 'days_after_signature', 'on_milestone'))`
+     - `due_offset_days INT` — nur fuer `due_trigger='days_after_signature'`, sonst NULL
+     - `label TEXT` — User-Freitext fuer Milestone-Beschreibung (z.B. "Anzahlung", "Nach Kickoff")
+     - `created_at TIMESTAMPTZ DEFAULT now()`
+     - 1 Index: `idx_proposal_payment_milestones_proposal` auf `proposal_id`
+     - 1 UNIQUE: `(proposal_id, sequence)` — verhindert Sequence-Duplikate
+     - RLS `authenticated_full_access` analog `proposal_items`
+     - **Sum-Validation strict 100%**: NICHT als DB-CHECK-Constraint (kann nicht ueber Aggregat definiert werden ohne Trigger), sondern App-Level in `saveProposalPaymentMilestones` Server Action (DEC-115)
+  3. Erweiterung `proposals` um 2 nullable Spalten (DEC-116, Sub-Theme C):
+     - `skonto_percent NUMERIC(4,2) NULL CHECK (skonto_percent IS NULL OR (skonto_percent > 0 AND skonto_percent < 10))` — typisch 1-3%
+     - `skonto_days INTEGER NULL CHECK (skonto_days IS NULL OR (skonto_days > 0 AND skonto_days <= 90))`
+     - 1 zusaetzlicher CHECK auf Beide-oder-keiner: `(skonto_percent IS NULL AND skonto_days IS NULL) OR (skonto_percent IS NOT NULL AND skonto_days IS NOT NULL)` — verhindert halben State
+  4. Erweiterung `meetings` um 1 nullable Spalte (DEC-118):
+     - `briefing_generated_at TIMESTAMPTZ NULL` — Idempotenz-Marker fuer Briefing-Cron
+     - 1 Partial-Index: `CREATE INDEX idx_meetings_briefing_pending ON meetings(start_time) WHERE briefing_generated_at IS NULL AND deal_id IS NOT NULL;` — Cron-Query-Performance
+  5. Erweiterung `user_settings` um 3 Spalten (DEC-117):
+     - `briefing_trigger_minutes INT NOT NULL DEFAULT 30 CHECK (briefing_trigger_minutes IN (15, 30, 45, 60))`
+     - `briefing_push_enabled BOOLEAN NOT NULL DEFAULT true`
+     - `briefing_email_enabled BOOLEAN NOT NULL DEFAULT true`
+     - Backfill fuer existierende Rows: `UPDATE user_settings SET briefing_trigger_minutes=30, briefing_push_enabled=true, briefing_email_enabled=true WHERE briefing_trigger_minutes IS NULL;` (idempotent dank DEFAULT — bestehende Rows haben bereits Default-Werte nach Schema-Apply, das Backfill ist Defense-in-Depth)
+- Reason: V5.6 FEAT-561 (Vorauswahl + Split-Plan + Skonto) und FEAT-562 (Pre-Call Briefing Cron) brauchen das gemeinsame Schema in einer Migration. DEC-115..121 haben die Strategie festgelegt. Bestehende V5.5-Proposal-Daten bleiben unveraendert lesbar (alle neuen Spalten nullable). Bestehende `meetings`-Rows bekommen `briefing_generated_at=NULL` als Default — Cron-Query findet sie nicht (Partial-Index filtert NULL). Bestehende `user_settings`-Rows bekommen Default-Werte fuer Briefing-Felder. KEIN Auto-Migration von V5.5-`proposals.payment_terms` Freitext-Werten in das neue Template-System (Constraint laut PRD V5.6 Constraints).
+- Affected Areas:
+  - Neue Settings-Page `/settings/payment-terms` (SLC-561) mit Server Actions `listPaymentTermsTemplates`, `createPaymentTermsTemplate`, `updatePaymentTermsTemplate`, `deletePaymentTermsTemplate`, `setDefaultPaymentTermsTemplate`
+  - Neue Settings-Page `/settings/briefing` (SLC-564) mit Server Actions `getBriefingSettings`, `updateBriefingSettings`
+  - `cockpit/src/app/(app)/proposals/[id]/edit/*` — Editor-Erweiterung um Bedingungs-Dropdown + Skonto-Toggle (SLC-562) und Split-Plan-Section (SLC-563)
+  - `cockpit/src/lib/pdf/proposal-renderer.ts` Adapter-Erweiterung (DEC-120, SLC-563)
+  - Neuer Cron-Endpoint `cockpit/src/app/api/cron/meeting-briefing/route.ts` (SLC-564, DEC-118 Pattern aus `expire-proposals/route.ts`)
+  - Neue Server Action `saveProposalPaymentMilestones(proposalId, milestones[])` mit Sum-Validation strict 100% (DEC-115, SLC-563)
+  - Wiederverwendung `cockpit/src/lib/ai/prompts/deal-briefing.ts` (existierende `buildDealBriefingPrompt` + `validateDealBriefing` aus FEAT-301) — keine LLM-Adapter-Aenderung
+  - KEINE Aenderung an `activities` (V3 `source_type`/`source_id`-Pattern reicht), `proposals.payment_terms` (Freitext bleibt), `email_attachments`, `proposal_items`, `audit_log`, `proposal-pdfs`-Bucket, `branding_settings`
+- Risk: Niedrig — rein additive Aenderungen. Alle neuen Spalten auf bestehenden Tabellen sind nullable mit Defaults oder NOT NULL DEFAULT (DB-Apply ohne Lock-Wait, Postgres-Standard fuer simple DEFAULT-Werte). `payment_terms_templates`-Seed ist idempotent (`ON CONFLICT DO NOTHING`). UNIQUE-Index auf `is_default` true sichert Daten-Integritaet (max 1 Default-Template). CHECK-Constraints auf `skonto_percent`/`skonto_days` sind konservativ und blockieren ungueltige Inputs am DB-Level. Cron-Partial-Index `idx_meetings_briefing_pending` filtert auf `deal_id IS NOT NULL` — Meetings ohne Deal werden ignoriert (PRD-Constraint). Backwards-Compatibility: bestehende `proposals` ohne Skonto/Milestones rendern bit-identisch zu V5.5-PDF-Output (DEC-120). bestehende `meetings` ohne `briefing_generated_at` werden vom Cron NICHT retroaktiv verarbeitet (Partial-Index + Time-Window-Filter beruecksichtigen nur Meetings im naechsten Trigger-Fenster).
+- Rollback Notes:
+  - `DROP TABLE proposal_payment_milestones CASCADE;`
+  - `DROP TABLE payment_terms_templates CASCADE;`
+  - `ALTER TABLE proposals DROP CONSTRAINT IF EXISTS proposals_skonto_check, DROP COLUMN IF EXISTS skonto_percent, DROP COLUMN IF EXISTS skonto_days;`
+  - `ALTER TABLE meetings DROP COLUMN IF EXISTS briefing_generated_at;` (Partial-Index droppt automatisch)
+  - `ALTER TABLE user_settings DROP COLUMN IF EXISTS briefing_trigger_minutes, DROP COLUMN IF EXISTS briefing_push_enabled, DROP COLUMN IF EXISTS briefing_email_enabled;`
+  - V5.5-Proposals bleiben nach Rollback unveraendert nutzbar — bestehende `/proposals`-Pipeline + PDF-Render funktioniert wieder im V5.5-Zustand. Briefing-Activities (Type `briefing`) bleiben in `activities`-Tabelle bestehen — User kann diese behalten oder mit `DELETE FROM activities WHERE type='briefing'` manuell entfernen (nicht zwingend, da Type-String unbeachtet von alten UIs).
