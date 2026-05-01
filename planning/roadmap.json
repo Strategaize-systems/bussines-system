@@ -134,11 +134,18 @@
       "order": 19
     },
     {
+      "id": "v5-6",
+      "name": "V5.6",
+      "status": "active",
+      "summary": "Zahlungsbedingungen + Pre-Call Briefing: 2 Features (FEAT-561..562) — Vorauswahl-Liste + Split-Plan-Milestones (BL-412), automatisches Meeting-Briefing 30 Min vor Termin via Cron + Push/E-Mail (BL-385). Internal-Test-Mode bleibt aktiv. Requirements done 2026-05-01.",
+      "order": 20
+    },
+    {
       "id": "v7",
       "name": "V7",
       "status": "planned",
       "summary": "Multi-User + Erweiterung: Routing/Territories, Teamlead-Rolle mit Teamsicht, Workflow-Automation, Kampagnen-Attribution",
-      "order": 20
+      "order": 21
     }
   ]
 }

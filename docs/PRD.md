@@ -2860,3 +2860,116 @@ V5.5 ist erfolgreich wenn:
 - **Anhang-Picker-Filter:** Im Composing-Studio nur Angebote mit Status `sent`/`draft` zeigen? Was mit `accepted`/`rejected`/`expired`? Empfehlung: alle Status zeigen, aber `expired`/`rejected` warnen ("Achtung: dieses Angebot ist nicht mehr gueltig"). User-Entscheid.
 - **Watermark "Internal-Test-Mode" im PDF:** Wie genau? Header-Text, Diagonal-Wasserzeichen, Footer-Hinweis? Empfehlung: Footer-Zeile "Internal-Test-Mode — nicht fuer externe Empfaenger" + Hauptdatei-Suffix `.testmode.pdf`. `/architecture` finalisiert.
 - **Slicing-Schnitt:** 5 Features = 5 Slices direkt? Oder Schema (FEAT-551) als eigener Backend-Slice und Workspace-UI (FEAT-552) splitten? Empfehlung im PRD: 5 Slices SLC-551..555 1:1 zu Features. `/slice-planning` finalisiert.
+
+## V5.6 — Zahlungsbedingungen + Pre-Call Briefing
+
+### V5.6 Problem Statement
+
+Zwei orthogonale User-Wuensche, die nach V5.5 explizit hochgekommen sind und gemeinsam in eine Patch-Range Sinn machen:
+
+1. **Zahlungsbedingungen sind unterspezifiziert.** Aktuell ist `proposals.payment_terms` ein Freitext-Feld mit Branding-Default "30 Tage netto". User-Feedback nach SLC-552 Smoke (BL-412): es gibt typische Bedingungen (30 netto, 60 netto, Vorkasse, Skonto-Varianten) die wiederverwendbar sein sollten + komplexe Angebote brauchen Teilzahlungen ("50/50 nach Meilenstein", "30/30/40").
+
+2. **Meeting-Vorbereitung ist manueller Aufwand.** Vor jedem Termin muss der User selbst Deal-Workspace aufmachen, letzte Aktivitaeten lesen, offene Signale durchgehen, Gespraechspunkte vorbereiten. Bei mehreren Terminen pro Tag wird das zur Reibung. Backlog BL-385: automatisches Briefing-Paket 30 Min vor jedem Meeting per Push/E-Mail.
+
+### V5.6 Goal / Intended Outcome
+
+Angebots-Qualitaet steigt durch strukturierte Zahlungsbedingungen ohne Freitext-Drift. Pre-Call-Briefing reduziert manuelle Vorbereitungszeit pro Meeting auf < 1 Min Lesezeit.
+
+### V5.6 Primary User
+
+Eigentuemer (Single-User Internal-Tool). Beide Features adressieren Tagesgeschaeft des aktuellen einzelnen Nutzers — keine Multi-User-Annahmen.
+
+### V5.6 Delivery Mode
+
+- internal-tool
+- Internal-Test-Mode bleibt aktiv (carryover aus V5.5)
+
+### V5.6 V1 Scope
+
+**FEAT-561 — Zahlungsbedingungen: Vorauswahl + Split-Plan (BL-412)**
+
+Sub-Theme A: Vorauswahl-Liste typischer Bedingungen.
+- Neue Tabelle `payment_terms_templates` (id, label, body, is_default, created_at, updated_at) — anlegbar/editierbar/loeschbar unter `/settings/payment-terms` (eigene Settings-Sektion analog `/settings/branding`).
+- Im Proposal-Workspace: Dropdown "Bedingung waehlen" greift auf Templates zu, fuellt Freitext-Feld vor. Manueller Override bleibt moeglich.
+- Default-Template ist konfigurierbar (Branding-Default "30 Tage netto" bleibt erhalten als Initial-Seed).
+
+Sub-Theme B: Split-Plan (Teilzahlungen).
+- Neue Tabelle `proposal_payment_milestones` (id, proposal_id, sequence, percent, amount, due_trigger, due_offset_days, label, created_at).
+- `due_trigger` Enum: `on_signature` | `on_completion` | `days_after_signature` | `on_milestone`.
+- UI im Proposal-Editor als expandable Section ("Teilzahlungen aktivieren") mit Add/Remove/Reorder-Steuerung.
+- Sum-Validation: Summe muss exakt 100 % entsprechen, sonst Speichern blockiert.
+- PDF-Renderer (SLC-553-Erweiterung): wenn `proposal_payment_milestones` Eintraege hat, separater "Konditionen / Teilzahlungen"-Block; sonst Fallback auf bestehendes `payment_terms` Freitext.
+- Status-Lifecycle bleibt orthogonal (V5.5 bleibt unveraendert).
+
+**FEAT-562 — Pre-Call Briefing Auto-Push (BL-385)**
+
+- Cron `meeting-briefing` laeuft alle 5 Min, sucht `meetings`/`calendar_events` mit `start_time` zwischen jetzt und +35 Min die noch kein Briefing haben.
+- Wiederverwendung des bestehenden `buildDealBriefingPrompt` + `validateDealBriefing` Stacks (aus FEAT-301 Deal-Workspace KI). Kein neuer LLM-Adapter.
+- Briefing-Inhalt: Account-Status, letzte 5 Interaktionen (E-Mails + Activities), offene Signale, Naechste Schritte aus letztem Gespraech, KI-generierte Gespraechspunkte mit Einwandbehandlung.
+- Delivery: Push-Notification (FEAT-409 Service Worker bestehend) **und** E-Mail (SMTP bestehend, kompakte HTML-Version). Beide aktiv per Default, jeweils per User-Setting toggle-bar.
+- Persistierung: Briefing wird als Activity (`type='briefing'`) am Deal gespeichert mit Verweis auf das Meeting — ist abrufbar nach dem Meeting (z.B. fuer Vergleich Soll/Ist).
+- Meetings ohne Deal-Zuordnung: Briefing wird **nicht** generiert (Briefing braucht Deal-Kontext fuer Sinn).
+
+### V5.6 Out of Scope
+
+- Skonto-Berechnung als automatischer Discount in `proposal_items` (FEAT-561 fokussiert reine Bedingungs-Kommunikation, keine Brutto/Netto-Aenderung)
+- Rechnungs-Generierung (separates Feature, V7+)
+- Briefing fuer interne Termine ohne Deal-Bezug
+- Briefing-Konfigurations-UI (welche Sections/welche Tiefe) — feste Sections in V5.6
+- Multi-User-Briefing-Routing (Single-User-Annahme)
+- Nachgelagerte Briefing-Updates wenn neue Daten zwischen Erstellung und Meeting reinkommen — Briefing ist Snapshot zum Trigger-Zeitpunkt
+- E-Mail-Briefing als HTML-Render-Engine (V5.3 Branding-Renderer wird nicht angefasst — kompakte Plain-HTML-Variante)
+
+### V5.6 Constraints
+
+- Bedrock Claude Sonnet als LLM (Frankfurt, EU). Keine neuen Provider.
+- Kein neues Schema fuer Push-Notifications (FEAT-409 Stack bleibt).
+- pdfmake-Renderer (DEC-105) wird erweitert, kein PDF-Library-Wechsel.
+- Kein Auto-Migration von bestehenden `proposals.payment_terms` Freitext-Werten in das neue Template-System — alte Werte bleiben gueltig, neue Templates sind opt-in.
+- Coolify-Cron-Setup-Pattern wie REL-019 (process.env.CRON_SECRET, Container `app`).
+
+### V5.6 Risks & Assumptions
+
+- **Risk:** Sum-Validation-Strict (=100%) blockt User wenn er Rundungsabweichungen hat (33+33+34=100, ok; 33.33+33.33+33.33=99.99, blockt).
+  Mitigation: in `/architecture` entscheiden — Empfehlung: Toleranz von 0.5% akzeptieren, Speichern erlauben aber UI-Warning anzeigen.
+- **Risk:** Briefing-Cron triggert mehrfach fuer dasselbe Meeting wenn Briefing-Status nicht idempotent gesetzt wird.
+  Mitigation: Idempotenz-Marker `meetings.briefing_generated_at` IS NOT NULL → Skip. Pattern aus expire-proposals (V5.5).
+- **Risk:** Bedrock-Kosten skalieren mit Meeting-Anzahl (Single-User: vernachlaessigbar, aber dokumentieren).
+  Mitigation: Max 1 LLM-Call pro Meeting pro Tag. Bei 5 Meetings/Tag = ~$0.25 Bedrock-Kosten/Tag. Akzeptabel.
+- **Risk:** Briefing zeigt veraltete Daten wenn IMAP-Sync zwischen Trigger und Meeting noch laueft.
+  Mitigation: akzeptiert. Briefing ist Best-Effort-Snapshot, nicht Real-Time.
+- **Risk:** Push-Notification-Delivery scheitert (Service Worker offline). E-Mail-Fallback waere wuenschenswert.
+  Mitigation: beide Kanaele aktiv default — wenn beide ausgeschaltet, kein Briefing.
+- **Risk:** Split-Plan-PDF-Render bricht V5.5 PDF-Smokes (bestehende sent Proposals haben kein `proposal_payment_milestones`).
+  Mitigation: Fallback-Pfad bleibt bit-identisch zu V5.5. `/qa` smoket beide Pfade.
+- **Assumption:** Bestehende `meetings`-Tabelle hat `deal_id`-FK fuer Deal-Zuordnung (verifiziert in `/architecture`).
+- **Assumption:** `buildDealBriefingPrompt` ist parameter-kompatibel fuer Cron-Aufruf (nicht nur Workspace-UI). `/architecture` verifiziert.
+
+### V5.6 Success Criteria
+
+V5.6 ist erfolgreich wenn:
+1. User kann Zahlungsbedingungen unter `/settings/payment-terms` anlegen, editieren, loeschen, default setzen.
+2. Im Proposal-Editor erscheint Dropdown mit den Templates; Auswahl fuellt Freitext-Feld vor; manueller Override bleibt moeglich.
+3. Split-Plan-Section laesst sich im Proposal-Editor aktivieren mit beliebig vielen Milestones (Add/Remove/Reorder).
+4. Sum-Validation greift mit 0.5%-Toleranz; ausserhalb wird Speichern blockiert mit klarer Fehlermeldung.
+5. PDF-Renderer zeigt Konditionen-Block mit Milestones strukturiert; ohne Milestones bleibt PDF identisch zu V5.5.
+6. Cron `meeting-briefing` laeuft im 5-Min-Takt und generiert Briefings fuer Meetings im naechsten 35-Min-Fenster.
+7. Briefing wird per Push-Notification + E-Mail an User geschickt, beide Kanaele toggle-bar in Settings.
+8. Briefing wird als Activity am Deal gespeichert.
+9. Meetings ohne Deal-Zuordnung werden ignoriert.
+10. V5.5-PDF-Smoke bleibt regression-frei (Proposals ohne Milestones rendern bit-identisch).
+
+### V5.6 Open Questions (fuer /architecture)
+
+- **F1 — Settings-Sektion fuer Templates:** eigene `/settings/payment-terms` oder unter `/settings/branding` als Sub-Section? Empfehlung: eigene Sektion (klare Trennung, Templates sind nicht Branding).
+- **F2 — Sum-Validation-Toleranz:** 0% (strict), 0.5% oder 1%? Empfehlung: 0.5% — deckt Rundungs-Probleme ohne Free-for-All.
+- **F3 — Pflicht/Optional Split-Plan:** Default ist "kein Split-Plan" (Freitext-payment_terms-Pfad)? Empfehlung: ja, Split-Plan ist opt-in via Toggle "Teilzahlungen aktivieren".
+- **F4 — Skonto-Behandlung:** als Teil der `payment_terms`-Bedingung (Freitext) oder als separates Feld am Proposal? Empfehlung: erstmal Teil der Bedingung (out-of-scope V5.6 fuer separate Skonto-Engine).
+- **F5 — `due_trigger` Enum-Vollstaendigkeit:** reichen die 4 Trigger (`on_signature`, `on_completion`, `days_after_signature`, `on_milestone`) fuer V5.6? Oder noch `on_invoice`/`on_payment`? Empfehlung: 4 reichen, `on_milestone` deckt freie Faelle ab.
+- **F6 — Briefing-Trigger-Zeitpunkt:** 30 Min vor Meeting fix oder 15/30/60 als User-Setting? Empfehlung: 30 Min fix in V5.6, User-Konfiguration V5.7+.
+- **F7 — Briefing-Delivery-Default:** beide Kanaele aktiv oder nur einer (Welcher)? Empfehlung: beide aktiv — User kann gezielt deaktivieren.
+- **F8 — Briefing-Persistierung:** als Activity (sichtbar im Timeline) oder eigene Tabelle `meeting_briefings`? Empfehlung: Activity (Pattern bleibt konsistent zu V3 Activities).
+- **F9 — Briefing fuer wiederkehrende Meetings:** wenn dasselbe Meeting taeglich wiederholt wird, jeden Tag neues Briefing oder einmalig? Empfehlung: pro Termin-Instance, also pro Tag neu (Cron sieht jede Instance separat).
+- **F10 — `proposal_payment_milestones` Audit-Log:** sollen Aenderungen an Milestones im `audit_log` getrackt werden? Empfehlung: ja, gleiches Pattern wie `proposal_items` (V5.5).
+- **F11 — Cron-Concurrency-Lock:** wenn Cron 2x parallel laeuft (Coolify-Restart), wer gewinnt? Empfehlung: Idempotenz-Marker via UPDATE WHERE briefing_generated_at IS NULL — winner-takes-all-Pattern.
+- **F12 — Slicing:** 2 Features = 2 Slices? Oder Sub-Themen splitten (Vorauswahl-Section + Split-Plan-Section + Briefing-Cron + Briefing-Delivery)? Empfehlung im PRD: 4 Slices SLC-561..564 fuer klarere Review-Boundaries. `/slice-planning` finalisiert.

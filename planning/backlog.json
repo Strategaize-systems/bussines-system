@@ -1437,8 +1437,8 @@
       "title": "Pre-Call Briefing Package (automatisches Meeting-Briefing)",
       "type": "idea",
       "priority": "medium",
-      "status": "open",
-      "version": null,
+      "status": "in_progress",
+      "version": "V5.6",
       "description": "Automatisches Briefing-Paket 30 Minuten vor jedem Meeting: Account-Enrichment + Deal-Kontext + letzte Interaktionen + offene Signale + KI-generierte Gespraechsvorbereitung mit Einwandbehandlung. Trigger: Meeting-Reminder-Cron erkennt anstehenden Termin, baut Briefing, liefert per Push-Notification oder E-Mail. Abhaengig von BL-384 (Enrichment Layer) fuer volle Wirkung, aber auch ohne Enrichment als KI-Summary ueber bestehende Daten nutzbar.",
       "createdAt": "2026-04-22"
     },
@@ -1707,8 +1707,8 @@
       "title": "Zahlungsbedingungen: Vorauswahl-Liste + Split-Plan (Teilzahlungen)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
-      "version": null,
+      "status": "in_progress",
+      "version": "V5.6",
       "description": "User-Feedback nach SLC-552 Browser-Smoke 2026-04-30: Zahlungsbedingungen sollen mehr Kontrolle bekommen. Zwei Sub-Themen: (1) VORAUSWAHL — typische Bedingungen als anlegbare Liste (z.B. 30 Tage netto, 60 Tage netto, Vorkasse, Skonto-Varianten), eventuell unter /settings/products oder eigener Settings-Sektion. Im Workspace per Dropdown waehlbar, mit Default aus Branding. Frei-text bleibt moeglich. (2) SPLIT-PLAN — Mehrere Zahlungstermine pro Angebot, z.B. '50 % bei Beauftragung / 50 % nach Fertigstellung' oder '30/30/40 nach Meilensteinen'. Datenmodell: neue Tabelle proposal_payment_milestones (proposal_id, sequence, percent_or_amount, due_trigger:'on_signature'|'on_completion'|'days_after_signature'|'on_milestone', label). UI im Editor-Panel als expandable Sektion mit Sum-Validation (muss 100% sein). Nicht V5.5-Scope (V5.5 fokussiert PDF + Status + Anhang). Vorschlag: V5.6 als FEAT-561 zusammen mit Skonto-Berechnung und Rechnungs-Vorbereitung. Affects: SLC-553 PDF-Renderer muss Split-Plan ausgeben (Konditionen-Block strukturiert), SLC-554 Status-Lifecycle bleibt orthogonal.",
       "createdAt": "2026-04-30"
     }

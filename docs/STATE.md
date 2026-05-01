@@ -9,19 +9,16 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: stable
-- Current Focus: **V5.5.1 Polish-Patch DEPLOYED 2026-05-01 als REL-021.** Live-Image-Tag `4415928` (Coolify-Deployment-ID 173, finished 07:50:22). app-Container Up 1+ Min (healthy), HTTPS-Endpoint `/login` HTTP 200. 4 Items live: ISSUE-047 Hydration-Mitigation, SLC-541 M1 ConditionalColorPicker derived-state, ISSUE-045 Server-Total-Size, SLC-542 L1 Filename-Kollision-Suffix. Internal-Test-Mode aktiv.
-- Current Phase: V5.5.1 **STABLE / DEPLOYED**. Naechste: Live-Browser-Verifikation der 3 Items + Cron-Erst-Lauf morgen frueh + V5.6-Backlog-Review.
+- High-Level State: requirements
+- Current Focus: **V5.6 Requirements done 2026-05-01 (RPT-269).** 2 Features definiert: FEAT-561 Zahlungsbedingungen Vorauswahl + Split-Plan (BL-412), FEAT-562 Pre-Call Briefing Auto-Push (BL-385). Open Questions F1-F12 dokumentiert fuer /architecture. V5.5.1 Polish-Patch live verifiziert (User-Browser-Smoke 2026-05-01: Hydration #418 weg, Filename-Suffix funktioniert, Total-Size-Limit funktioniert). Internal-Test-Mode bleibt aktiv.
+- Current Phase: V5.6 **REQUIREMENTS DONE — wartet auf User-Klaerung der 12 Open Questions, dann /architecture V5.6**.
 
 ## Immediate Next Steps
-1. **Live-Browser-Verifikation V5.5.1 (User):**
-   - `/proposals` Console-Check: ist Hydration #418 weg?
-   - Composing-Studio: 2x gleicher Filename hochladen → erscheint als " (1)"-Suffix?
-   - Composing-Studio: 2x 12-MB-Files in derselben Session → 2. wird mit "zu gross" rejected?
-2. **Coolify-Cron `expire-proposals` Erst-Lauf am 2026-05-02 02:00 Berlin Time verifizieren** — Audit-SQL `SELECT created_at, action, entity_id, context FROM audit_log WHERE entity_type='proposal' AND context='Auto-expire by cron — valid_until passed' ORDER BY created_at DESC LIMIT 10;` (REL-020-Notes Schritt 3).
-3. **/post-launch V5.5** — nach 24-48h Stable-Window. Auch /post-launch V5.4 + V5.3 ueberfaellig (passiv).
-4. **(optional)** DB-Cleanup der QA-Smoke-Artefakte aus V5.5 — kosmetisch.
-5. **V5.6 vorbereiten:** Backlog-Review der offenen Items — BL-412 (Zahlungsbedingungen Vorauswahl + Split-Plan, kommt aus User-Smoke-Feedback) + BL-385 (Pre-Call Briefing Package) als V5.6-Kandidaten.
+1. **V5.6 Open Questions F1-F12 mit User klaeren** — siehe PRD V5.6 Open Questions. Empfehlungen sind dort dokumentiert; User-Sign-off oeffnet `/architecture V5.6`.
+2. **/architecture V5.6** — nach Klaerung der Open Questions. Definiert MIG-027 (`payment_terms_templates` + `proposal_payment_milestones` + `meetings.briefing_generated_at`) + Adapter-Pattern fuer Briefing-Cron + PDF-Renderer-Erweiterung.
+3. **Coolify-Cron `expire-proposals` Erst-Lauf am 2026-05-02 02:00 Berlin Time verifizieren** — Audit-SQL `SELECT created_at, action, entity_id, context FROM audit_log WHERE entity_type='proposal' AND context='Auto-expire by cron — valid_until passed' ORDER BY created_at DESC LIMIT 10;` (REL-020-Notes Schritt 3).
+4. **/post-launch V5.5** — nach 24-48h Stable-Window. Auch /post-launch V5.4 + V5.3 ueberfaellig (passiv).
+5. **(optional)** DB-Cleanup der QA-Smoke-Artefakte aus V5.5 — kosmetisch.
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
@@ -39,11 +36,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 **Architektur-Entscheidungen V5.5:** DEC-105 pdfmake, DEC-106 HTML-Live-Preview, DEC-107 Snapshot inkl. price_at_creation, DEC-108 Status-Sent automatisch+manuell, DEC-109 V1-Status unangetastet, DEC-110 Cron 02:00 Berlin, DEC-111 Pfad-Schema, DEC-112 alle Status zeigen+Warning, DEC-113 Footer+Suffix-Watermark, DEC-114 5 Slices 1:1 zu Features.
 
 **Released (deployed):**
-- V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V5.5, V6, V6.1
+- V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V5.5, V5.5.1, V6, V6.1
+
+**Active:**
+- V5.6 — Zahlungsbedingungen + Pre-Call Briefing (Requirements done 2026-05-01)
 
 **Planned (Reihenfolge):**
-- Pre-Production-Compliance-Gate (zwischen V5.5 und V7) — Anwalts-Pruefung COMPLIANCE.md + Azure-OpenAI-EU-Whisper-Switch + ISSUE-042-Schliessung
 - V7 — Multi-User + Erweiterung
+- Pre-Production-Compliance-Gate (irgendwann vor V7) — Anwaltspruefung + Azure-EU-Whisper + ISSUE-042 — laut User 2026-05-01 NICHT prioritaer
 
 ## Blockers
 - aktuell keine
