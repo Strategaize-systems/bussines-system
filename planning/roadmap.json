@@ -129,8 +129,8 @@
     {
       "id": "v5-5",
       "name": "V5.5",
-      "status": "active",
-      "summary": "Angebot-Erstellung: 5 Features (FEAT-551..555) — Schema-Erweiterung + Position-Items (MIG-026), Angebot-Workspace 3-Panel (/proposals/[id]/edit), PDF-Renderer im V5.3-Branding, Status-Lifecycle (draft/sent/accepted/rejected/expired) + Versionierung (parent_proposal_id), Composing-Studio-Hookup (BL-404 Teil 2). Internal-Test-Mode aktiv.",
+      "status": "released",
+      "summary": "Angebot-Erstellung: 5 Features (FEAT-551..555) — Schema-Erweiterung + Position-Items (MIG-026), Angebot-Workspace 3-Panel (/proposals/[id]/edit), PDF-Renderer im V5.3-Branding (pdfmake DEC-105 + Server-Proxy `91020b2`), Status-Lifecycle (draft/sent/accepted/rejected/expired) + Versionierung + Auto-Expire-Cron, Composing-Studio-Hookup (BL-404 Teil 2). Released 2026-05-01 als REL-020 auf Hetzner via Coolify-Deploy Commit 417dc8a (V5.5-Code), Records-Sync via cf0c98d. Internal-Test-Mode aktiv bis Pre-Production-Compliance-Gate vor V5.6.",
       "order": 19
     },
     {

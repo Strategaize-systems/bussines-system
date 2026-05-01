@@ -9,29 +9,28 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: go-live
-- Current Focus: **V5.5 /go-live GO (CONDITIONAL) 2026-05-01 (RPT-266).** Decision-Doc komplett: 0 Blocker, 0 Required Fixes vor Deploy, 6 Accepted Risks dokumentiert (R1 ISSUE-047 F1 Hydration als Carryover, R2 Internal-Test-Mode-Strategie, R3 supabase-studio unhealthy, R4 Storage-Volumen, R5 DB-Test-Artefakte, R6 Pre-Production-Compliance-Gate). Drei harte Conditions for Go-Live: (1) Internal-Test-Mode bleibt aktiv, (2) ISSUE-047 als V5.5.x-Patch nach Final-Release, (3) Coolify-Cron `expire-proposals` im Rahmen des Deploys anlegen. Operational Minimums alle verifiziert (Container-Health, HTTPS-Endpoint, ENV-Vars, Storage-Buckets-private, Audit-Log, Cron-Auth, Rollback-Pfad rein additiv). Geplanter Deploy-Image-Tag: Commit `9b63d1f`.
-- Current Phase: V5.5 /go-live **GO (CONDITIONAL)**. Naechste: /deploy V5.5 als REL-020 Final-Release durch User-Coolify-Aktion.
+- High-Level State: stable
+- Current Focus: **V5.5 RELEASED 2026-05-01 als REL-020 (Final-Release).** Live-Image-Tag `417dc8a` (V5.5-Code-Stand seit 2026-04-30 17:04, alle Live-Smokes RPT-263 darauf gefahren). Records-Sync via Commit `cf0c98d` heute. Cron `expire-proposals` live + Smoke-Test PASS (`{"success":true,"expiredCount":0,"expiredIds":[]}`). 4 critical Container healthy (app, supabase-db, kong, meta), HTTPS-Endpoint reachable, MIG-026 live seit SLC-551. DB-Stand: 4 proposal-junctions + 5 upload-junctions (V5.4-Pfad regression-frei), 3 draft + 1 sent + 1 expired Proposals, 60 V5.5-Audit-Eintraege. Internal-Test-Mode aktiv bis Pre-Production-Compliance-Gate vor V5.6.
+- Current Phase: V5.5 **STABLE / DEPLOYED**. Naechste: /post-launch V5.5 nach Stable-Window 24-48h + Pre-V5.6-Gate-Vorbereitung (Anwalts-Pruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042-Schliessung).
 
 ## Immediate Next Steps
-1. **/deploy V5.5 als REL-020 Final-Release** — User-Coolify-Redeploy auf Commit `9b63d1f` + Cron `expire-proposals` anlegen laut REL-020-Notes Schritt 1-3 + Records-Sync nach Deploy (roadmap V5.5→released, FEAT-551..555→deployed, RELEASES.md REL-020 Date, STATE.md Last Stable Version).
-2. **(optional pre-Deploy)** F1 Hydration #418 (ISSUE-047) Investigation — User-Entscheid: jetzt fixen ODER post-Final-Release als V5.5.1-Patch.
-3. **(optional)** F1 Hydration #418 Investigation (ISSUE-047) als V5.5.x-Patch — User-Entscheid pre/post-Deploy.
-4. **(optional)** DB-Cleanup der QA-Smoke-Artefakte — kosmetisch.
-5. **Roadmap-Update** nach Deploy: V5.5 → `released`, alle FEAT-551..555 → `deployed`.
-4. **F1 Hydration-Investigation** auf `/proposals` — als V5.5.x-Patch ODER vor V5.5 Final-Release. Wahrscheinlich Datums-Format-Drift im Listing-Card-Layout.
-5. **Coolify-Cron Erstlauf 02:00 Berlin (User-Verifikation am Folgetag)** — Audit-SQL laut REL-020-Notes.
-5. **/qa SLC-555** — 3 Smoke-Faelle (Proposal/PC-Upload/Mix) + V5.4-Cadence-Regression + Status-Auto-Sent + Idempotenz.
-6. **/qa V5.5 Gesamt + /final-check + /go-live + /deploy** — REL-020 als Final-Release nach SLC-555.
-9. **V5.4 Post-Launch (passiv)** — Stable-Window 24-48h, /post-launch V5.4 nach. /post-launch V5.3 ueberfaellig (passiv).
-10. **V5.4.x Patch-Carryover (optional, nicht release-blockierend):**
+1. **Coolify-Cron `expire-proposals` Erst-Lauf am 2026-05-02 02:00 Berlin Time verifizieren** — Audit-SQL `SELECT created_at, action, entity_id, context FROM audit_log WHERE entity_type='proposal' AND context='Auto-expire by cron — valid_until passed' ORDER BY created_at DESC LIMIT 10;` (laut REL-020-Notes Schritt 3).
+2. **Coolify-Redeploy auf Commit `cf0c98d`** (kosmetisch) — Image-Tag-Hygiene, damit live-Tag = letzter Commit-SHA. Nicht release-blockierend, V5.5-App-Code ist seit `417dc8a` unveraendert (4 docs-only-Commits seitdem).
+3. **/post-launch V5.5** — nach 24-48h Stable-Window. Auch /post-launch V5.4 + V5.3 ueberfaellig (passiv).
+4. **F1 Hydration #418 (ISSUE-047)** als V5.5.1-Patch — Datums-Format-Drift in Listing-Card vermutet, fix per server-stable Date-Format oder `suppressHydrationWarning`.
+5. **(optional)** DB-Cleanup der QA-Smoke-Artefakte — kosmetisch, Audit-Trail bleibt sonst erhalten.
+6. **Pre-Production-Compliance-Gate vor V5.6 vorbereiten:**
+   - Anwalts-Pruefung COMPLIANCE.md (V5.3 + V5.4 + V5.5-Sections)
+   - Switch auf Azure-OpenAI-EU-Whisper (Code-Ready seit V5.2, ENV-Switch)
+   - ISSUE-042-Schliessung (OpenAI-Key Rotation + Lokal-Datei-Beseitigung)
+   - BL-397 GitHub-App Org-Anbindung
+7. **V5.4.x Patch-Carryover (optional, nicht release-blockierend):**
     - SLC-541 M1: ConditionalColorPicker Refactor zu derived-state
     - SLC-542 M1/ISSUE-045: Server-side Total-Size Limit
     - SLC-542 L1: Filename-Kollision-Suffix-Pattern bei upsert
-11. **Carryover (nicht V5.5-Scope):** ISSUE-042 OpenAI-Key Pre-Pflicht, Anwalts-Pruefung COMPLIANCE.md, Azure OpenAI EU + DPA + Switch (Pre-Production-Gate nach V5.5), BL-397 GitHub-App Org-Anbindung, A5 SLC-531 Outlook-Smoke.
 
 ## Active Scope
-**V5.5 — Angebot-Erstellung (IMPLEMENTING — SLC-551 done 2026-04-29):**
+**V5.5 — Angebot-Erstellung (RELEASED 2026-05-01 als REL-020):**
 - FEAT-551 Angebot-Schema-Erweiterung + Position-Items (in_progress, MIG-026 applied auf Hetzner, Server Actions + Pfad-Helper live)
 - FEAT-552 Angebot-Workspace UI 3-Panel (done 2026-04-30, /proposals/[id]/edit live, native React-State + Custom-Debounce statt RHF/lodash, @dnd-kit/sortable)
 - FEAT-553 PDF-Renderer + Branding (done 2026-04-30, **pdfmake** als Library DEC-105, Adapter-Pattern, /qa PASS via RPT-258, Mixed-Content-Hotfix Commit `91020b2` Server-Proxy /api/proposals/[id]/pdf live)
@@ -41,23 +40,22 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 **Architektur-Entscheidungen V5.5:** DEC-105 pdfmake, DEC-106 HTML-Live-Preview, DEC-107 Snapshot inkl. price_at_creation, DEC-108 Status-Sent automatisch+manuell, DEC-109 V1-Status unangetastet, DEC-110 Cron 02:00 Berlin, DEC-111 Pfad-Schema, DEC-112 alle Status zeigen+Warning, DEC-113 Footer+Suffix-Watermark, DEC-114 5 Slices 1:1 zu Features.
 
 **Released (deployed):**
-- V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V6, V6.1
+- V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V5.5, V6, V6.1
 
 **Planned (Reihenfolge):**
-- V5.5 — Angebot-Erstellung (active, Requirements done)
-- Pre-Production-Compliance-Gate (zwischen V5.5 und V7) — Anwalts-Pruefung + Azure-OpenAI-EU-Switch + ISSUE-042
+- Pre-Production-Compliance-Gate (zwischen V5.5 und V7) — Anwalts-Pruefung COMPLIANCE.md + Azure-OpenAI-EU-Whisper-Switch + ISSUE-042-Schliessung
 - V7 — Multi-User + Erweiterung
 
 ## Blockers
 - aktuell keine
 
 ## Last Stable Version
+- V5.5 — 2026-05-01 — released auf Hetzner als REL-020 (Angebot-Erstellung: Schema+Workspace+PDF+Lifecycle+Composing-Hookup, Internal-Test-Mode, Live-Smoke PASS RPT-263 4 Mail-Sends + 6 Browser-Smokes + CHECK-Constraint-Tests, Cron expire-proposals live, MIG-026 live, V5.5-Code-Stand seit 2026-04-30 17:04 Image-Tag `417dc8a`)
 - V5.4 — 2026-04-29 — released auf Hetzner als REL-019 (Composing-Studio Polish + E-Mail-Anhaenge-Upload PC-Direkt, Internal-Test-Mode, Live-Smoke PASS Multipart-Mail PDF+PNG+ZIP an Gmail + Tracking-Pixel-Open + Junction-Insert verifiziert)
 - V5.3 — 2026-04-28 — released auf Hetzner als REL-018 (E-Mail Composing Studio, Internal-Test-Mode, Quick-Smoke OK)
 - V5.2 — 2026-04-26 — released auf Hetzner als REL-017 (Compliance-Sprint, Smoke-Test PASS, Internal-Test-Mode)
 - V5.1 — 2026-04-24 — released auf Hetzner als REL-016 (Asterisk + Call-Pipeline + SMAO vorbereitet, Internal-Test-Mode)
 - V6.1 — 2026-04-21 — released auf Hetzner als REL-014 (Performance Premium UI)
-- V6 — 2026-04-21 — released auf Hetzner als REL-013 (Performance-Tracking)
 
 ## Notes
-18 Releases deployed (REL-001..REL-018). Technologie-Stack: Next.js + Supabase (self-hosted) + Bedrock Claude Sonnet (Frankfurt) + Jitsi/Jibri (shared Infra) + pgvector RAG + Asterisk PBX + Whisper-Adapter (openai-Default, Azure-EU Code-Ready ab V5.2) + E-Mail Composing Studio (V5.3). Hosting: Hetzner CPX32 via Coolify. V5.3 (E-Mail Composing Studio, REL-018) bringt Branding-Settings + 3-Panel-Compose + Systemvorlagen + KI-Generator + Inline-Edit-Diktat. V5.4 (in Planung) erweitert Composing-Studio um E-Mail-Anhaenge-Upload und schliesst V5.3-Hygiene-Themen (Color-Picker Toggle, ESLint, COMPLIANCE.md, Coolify-Crons) ab. Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung + Switch auf Azure-EU-Whisper. ISSUE-042 (OpenAI-Key in untrackter Datei, NIE committed) ist Pre-Pflicht vor erstem produktivem Whisper-Call.
+20 Releases deployed (REL-001..REL-020). Technologie-Stack: Next.js + Supabase (self-hosted) + Bedrock Claude Sonnet (Frankfurt) + Jitsi/Jibri (shared Infra) + pgvector RAG + Asterisk PBX + Whisper-Adapter (openai-Default, Azure-EU Code-Ready ab V5.2) + E-Mail Composing Studio (V5.3) + E-Mail-Anhaenge (V5.4) + Angebot-Erstellung mit pdfmake (V5.5). Hosting: Hetzner CPX32 via Coolify. V5.5 (REL-020) bringt /proposals/[id]/edit mit native React-State + dnd-kit, pdfmake-Renderer mit Branding-Adapter + Server-Proxy-Pattern, Status-Lifecycle (draft/sent/accepted/rejected/expired) + lineare Versionierung + Auto-Expire-Cron, Composing-Studio-Hookup mit ProposalAttachmentPicker + idempotentem Auto-Sent-Trigger. Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung COMPLIANCE.md + Switch auf Azure-EU-Whisper. ISSUE-042 (OpenAI-Key in untrackter Datei, NIE committed) ist Pre-Pflicht vor erstem produktivem Whisper-Call.
