@@ -177,8 +177,9 @@ export function PaymentTermsManager({
               id: mode.template.id,
             });
             if (!result.ok) {
+              // Dialog schliessen, Error sichtbar lassen (close() wuerde Error reset).
               setErrorMessage(result.error);
-              close();
+              setMode({ kind: "idle" });
               return;
             }
             close();
