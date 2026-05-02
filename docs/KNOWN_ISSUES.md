@@ -10,13 +10,12 @@
 - Next Action: Backlog BL-419 — optimistic-update-Reset oder explicit-revert-on-error im patchAndSave-Pfad pruefen.
 
 ### ISSUE-048 — SLC-562 PaymentTermsDropdown initial Display-Bug
-- Status: open
+- Status: resolved
 - Severity: Medium
 - Area: UI / Proposals-Editor
 - Summary: Bei initial render zeigt der Bedingungs-Dropdown den Raw-Value '__custom__' statt des Labels '(eigene Eingabe)'. base-ui SelectValue-Placeholder greift nicht weil useState<string>(CUSTOM_VALUE) gesetzt ist.
 - Impact: UX-Anomalie beim Erstmount des Editors. Nach erstem Klick + Auswahl funktioniert es korrekt. Cosmetic, nicht release-blockierend.
-- Workaround: Wenn User auf das Dropdown klickt, sieht er die korrekten Optionen — funktional intakt.
-- Next Action: Backlog BL-418 — useState<string>('') als Default oder render-callback im SelectValue.
+- Resolution: 2026-05-02 in BL-418 Hotfix. `useState<string>(CUSTOM_VALUE)` → `useState<string>("")` in `cockpit/src/app/(app)/proposals/[id]/edit/payment-terms-dropdown.tsx`. Empty-String matched kein SelectItem, daher greift der base-ui-Placeholder "(eigene Eingabe)" beim Initial-Mount korrekt. Nach User-Auswahl wird der echte Wert (Template-ID oder CUSTOM_VALUE) gesetzt und das passende SelectItem-Label angezeigt. TypeScript clean.
 
 ### ISSUE-047 — F1 React Hydration #418 auf /proposals (Listing-Card Datums-Drift)
 - Status: resolved

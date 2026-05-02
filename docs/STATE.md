@@ -10,12 +10,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.6 SLC-562 done 2026-05-02 (deployed via User-Coolify-Redeploy am 2026-05-01).** /qa Pre-Deploy PASS RPT-276 + /qa Live-Smoke PASS RPT-277. PaymentTermsDropdown + SkontoSection + useSkontoMutex-Stub + validateSkonto Pure-Function + Editor-Integration + Server Actions + PDF-Renderer-Skonto-Block live. 18/20 ACs PASS, 2 Findings als BL-418/BL-419 + ISSUE-048/049 dokumentiert (UX-cosmetic, nicht release-blockierend). DB-CHECK 4/4 PASS, Vitest 113/113 PASS, Audit-Log 5 Eintraege bewiesen. Live-PDFs verifiziert: mit Skonto = "Skonto: 2,00% bei Zahlung innerhalb 7 Tagen", ohne Skonto = V5.5 bit-identisch. Mobile-Smoke PASS. Naechste = /backend SLC-563 Split-Plan + PDF-Erweiterung. SLC-561 + SLC-562 done — V5.6 2/4 Slices.
+- Current Focus: **V5.6 SLC-562 done + BL-418 Hotfix 2026-05-02.** SLC-562 deployed via User-Coolify-Redeploy am 2026-05-01. /qa Pre-Deploy PASS RPT-276 + /qa Live-Smoke PASS RPT-277. PaymentTermsDropdown + SkontoSection + useSkontoMutex-Stub + validateSkonto Pure-Function + Editor-Integration + Server Actions + PDF-Renderer-Skonto-Block live. 18/20 ACs PASS, BL-419/ISSUE-049 (UI-State-Drift) noch offen. **BL-418 / ISSUE-048 (PaymentTermsDropdown __custom__-Display) resolved 2026-05-02** — `useState<string>("")` als Default, base-ui-Placeholder greift jetzt korrekt beim Initial-Mount. DB-CHECK 4/4 PASS, Vitest 113/113 PASS, Audit-Log 5 Eintraege bewiesen. Naechste = /backend SLC-563 Split-Plan + PDF-Erweiterung. SLC-561 + SLC-562 done — V5.6 2/4 Slices.
 - Current Phase: V5.6 **SLC-562 done — ready fuer /backend SLC-563**.
 
 ## Immediate Next Steps
 1. **/backend SLC-563** — Split-Plan + Sum-Validation strict 100% + PDF-Renderer-Konditionen-Block. ~5-7h, 9 MTs. Erweitert useSkontoMutex auf echte Vorkasse-Pruefung (DEC-116). Nach SLC-563: SLC-564 (Pre-Call Briefing) als letzter V5.6-Slice.
-2. **Optional Hotfixes vor SLC-563**: BL-418 (PaymentTermsDropdown initial-Display __custom__) ~10min — nice-to-have. BL-419 (UI-State-Drift nach Auto-Save-Error) — komplexer, eher V5.7+.
+2. **BL-418 done 2026-05-02** (PaymentTermsDropdown __custom__-Display gefixt). Verbleibend: **BL-419** (UI-State-Drift nach Auto-Save-Error im Skonto-Toggle) — komplexer, eher V5.7+.
 3. **BL-417 NL-VAT + Reverse-Charge** — Recherche + V6.0+ Slice. Strategaize Transition GmbH sitzt in NL — Steuerlogik muss NL-konform werden (21/9/0% statt 19/7/0, Reverse-Charge fuer EU-B2B, BTW-Nummer-Felder, "BTW verlegd" PDF-Block). Sprache deutsch fuer dt. Kunden bleibt OK.
 4. **Coolify-Cron `expire-proposals` Erst-Lauf 2026-05-02 02:00 Berlin verifizieren** — Audit-SQL aus REL-020-Notes Schritt 3. Passiv erledigen.
 5. **/post-launch V5.5 + V5.5.1** — nach 24-48h Stable-Window. Auch V5.4 + V5.3 passiv ueberfaellig.

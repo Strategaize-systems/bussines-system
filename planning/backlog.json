@@ -1767,9 +1767,9 @@
       "title": "SLC-562 UX-Hotfix: PaymentTermsDropdown zeigt initial __custom__ statt (eigene Eingabe)",
       "type": "bug",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V5.6",
-      "description": "Im PaymentTermsDropdown.tsx zeigt das base-ui Select-Trigger initial den Raw-Value '__custom__' statt des Labels '(eigene Eingabe)'. Ursache: SelectValue-Placeholder greift nur bei value=null, aber wir setzen useState<string>(CUSTOM_VALUE)='__custom__' als Default. Fix: entweder useState<string>('') als Default + onValueChange-Logic oder explicit-render-callback im SelectValue. Funktion intakt — sobald User klickt + auswaehlt, ist alles korrekt. Cosmetic-Bug, nicht release-blockierend, aber sichtbar im Live-Smoke (RPT-277). Aufwand: ~10min.",
+      "description": "Im PaymentTermsDropdown.tsx zeigt das base-ui Select-Trigger initial den Raw-Value '__custom__' statt des Labels '(eigene Eingabe)'. Ursache: SelectValue-Placeholder greift nur bei value=null, aber wir setzen useState<string>(CUSTOM_VALUE)='__custom__' als Default. Fix 2026-05-02: useState<string>('') als Default — Empty-String matched kein SelectItem, daher greift base-ui-Placeholder korrekt. ISSUE-048 resolved.",
       "createdAt": "2026-05-02"
     },
     {

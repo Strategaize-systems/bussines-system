@@ -27,7 +27,7 @@ export function PaymentTermsDropdown({ onSelectTemplate, disabled }: Props) {
   const [templates, setTemplates] = useState<PaymentTermsTemplate[] | null>(
     null,
   );
-  const [selectedId, setSelectedId] = useState<string>(CUSTOM_VALUE);
+  const [selectedId, setSelectedId] = useState<string>("");
 
   useEffect(() => {
     let cancelled = false;
