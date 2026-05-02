@@ -11,7 +11,7 @@
 // Read-only-Mode disabled Editor-Inputs + Item-CRUD; "Neue Version erstellen"
 // bleibt verfuegbar (PreviewPanel triggert die Server Action).
 
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { Send, ThumbsUp, ThumbsDown, Loader2 } from "lucide-react";
 
 import { ProposalPositionList } from "./position-list";
@@ -28,14 +28,25 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { transitionProposalStatus } from "@/app/(app)/proposals/actions";
+import {
+  saveProposalPaymentMilestones,
+  transitionProposalStatus,
+} from "@/app/(app)/proposals/actions";
 import type {
   Proposal,
   ProposalItem,
   ProposalEditPayload,
   ProposalVersionEntry,
 } from "@/app/(app)/proposals/actions";
+import { calculateTotals } from "@/lib/proposal/calc";
+import {
+  validateMilestoneTrigger,
+  validateMilestonesSum,
+  type MilestoneInput,
+} from "@/lib/proposal/milestones-validation";
+import { useDebouncedCallback } from "@/lib/utils/use-debounce";
 import type { Product } from "@/types/products";
+import type { PaymentMilestone } from "@/types/proposal-payment";
 
 type MobileTab = "positions" | "editor" | "preview";
 
@@ -86,10 +97,60 @@ export function ProposalWorkspace({
 }: ProposalWorkspaceProps) {
   const [proposal, setProposal] = useState<Proposal>(payload.proposal);
   const [items, setItems] = useState<ProposalItem[]>(payload.items);
+  // V5.6 SLC-563: Milestones-State + Auto-Save. Auto-Save fired nur bei
+  // gueltigem Plan (Sum=100% strict + alle Trigger valid). Bei invalidem
+  // Plan zeigt der SumIndicator den Diff, Server bleibt auf letztem
+  // gueltigen Stand.
+  const [milestones, setMilestones] = useState<PaymentMilestone[]>(payload.milestones);
+  const [milestonesError, setMilestonesError] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<MobileTab>("editor");
   const [pendingTransition, setPendingTransition] = useState<TransitionTarget | null>(null);
   const [actionMessage, setActionMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [isTransitioning, startTransition] = useTransition();
+
+  // Snapshot-Total fuer Milestone-Amounts (DEC-115/116). Berechnet aus dem
+  // aktuellen Editor-State, damit der zuletzt gesehene Brutto in DB landet.
+  const totals = useMemo(
+    () => calculateTotals(items, proposal.tax_rate ?? 19),
+    [items, proposal.tax_rate],
+  );
+
+  const persistMilestones = useCallback(
+    async (next: PaymentMilestone[], totalGross: number) => {
+      const inputs: MilestoneInput[] = next.map((m) => ({
+        sequence: m.sequence,
+        percent: m.percent,
+        due_trigger: m.due_trigger,
+        due_offset_days: m.due_offset_days,
+        label: m.label,
+      }));
+
+      // Pre-flight validation: nur bei gueltigem Plan persistieren.
+      // Empty-Plan ist explizit valid (length === 0 → DELETE all serverseitig).
+      if (inputs.length > 0) {
+        for (const m of inputs) {
+          const trig = validateMilestoneTrigger(m);
+          if (!trig.ok) return;
+        }
+        const sum = validateMilestonesSum(inputs);
+        if (!sum.ok) return;
+      }
+
+      const res = await saveProposalPaymentMilestones({
+        proposalId: proposal.id,
+        milestones: inputs,
+        totalGross,
+      });
+      if (res.ok) {
+        setMilestonesError(null);
+      } else {
+        setMilestonesError(res.error);
+      }
+    },
+    [proposal.id],
+  );
+
+  const debouncedPersistMilestones = useDebouncedCallback(persistMilestones, 500);
 
   const handleProposalChange = useCallback((patch: EditorPatch) => {
     setProposal((prev) => ({ ...prev, ...patch }));
@@ -98,6 +159,14 @@ export function ProposalWorkspace({
   const handleItemsChange = useCallback((next: ProposalItem[]) => {
     setItems(next);
   }, []);
+
+  const handleMilestonesChange = useCallback(
+    (next: PaymentMilestone[]) => {
+      setMilestones(next);
+      debouncedPersistMilestones(next, totals.total);
+    },
+    [debouncedPersistMilestones, totals.total],
+  );
 
   const confirmTransition = useCallback(() => {
     if (!pendingTransition) return;
@@ -144,7 +213,10 @@ export function ProposalWorkspace({
       deal={payload.deal}
       company={payload.company}
       contact={payload.contact}
+      milestones={milestones}
+      totalGross={totals.total}
       onProposalChange={handleProposalChange}
+      onMilestonesChange={handleMilestonesChange}
       readonly={readonly}
     />
   );
@@ -236,6 +308,15 @@ export function ProposalWorkspace({
           }
         >
           {actionMessage.text}
+        </div>
+      )}
+
+      {milestonesError && (
+        <div
+          role="alert"
+          className="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800"
+        >
+          Teilzahlungs-Plan konnte nicht gespeichert werden: {milestonesError}
         </div>
       )}
 

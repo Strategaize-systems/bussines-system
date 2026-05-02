@@ -83,6 +83,9 @@ export type ProposalItem = {
 export type ProposalEditPayload = {
   proposal: Proposal;
   items: ProposalItem[];
+  // V5.6 SLC-563: Milestones werden im Edit-Loader mitgeladen, damit der
+  // Workspace Split-Plan-State + Skonto-Mutex direkt initialisieren kann.
+  milestones: PaymentMilestone[];
   branding: {
     logo_url: string | null;
     primary_color: string | null;
@@ -309,12 +312,17 @@ export async function getProposalForEdit(
 
   if (pErr || !proposal) return null;
 
-  const [itemsRes, brandingRes, dealRes, companyRes, contactRes] = await Promise.all([
+  const [itemsRes, milestonesRes, brandingRes, dealRes, companyRes, contactRes] = await Promise.all([
     supabase
       .from("proposal_items")
       .select("*")
       .eq("proposal_id", proposalId)
       .order("position_order", { ascending: true }),
+    supabase
+      .from("proposal_payment_milestones")
+      .select("*")
+      .eq("proposal_id", proposalId)
+      .order("sequence", { ascending: true }),
     supabase
       .from("branding_settings")
       .select("logo_url, primary_color, secondary_color, font_family, footer_markdown, contact_block")
@@ -338,6 +346,7 @@ export async function getProposalForEdit(
   return {
     proposal: proposal as Proposal,
     items: (itemsRes.data ?? []) as ProposalItem[],
+    milestones: (milestonesRes.data ?? []) as PaymentMilestone[],
     branding: (brandingRes.data ?? null) as ProposalEditPayload["branding"],
     deal: (dealRes.data ?? null) as ProposalEditPayload["deal"],
     company: (companyRes.data ?? null) as ProposalEditPayload["company"],

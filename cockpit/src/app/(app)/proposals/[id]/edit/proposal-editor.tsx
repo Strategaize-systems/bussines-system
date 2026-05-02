@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Save, Check, AlertCircle, Loader2, ArrowLeft } from "lucide-react";
 
@@ -13,8 +13,10 @@ import {
   type ProposalEditPayload,
 } from "@/app/(app)/proposals/actions";
 import { useDebouncedCallback } from "@/lib/utils/use-debounce";
+import type { PaymentMilestone } from "@/types/proposal-payment";
 import { PaymentTermsDropdown } from "./payment-terms-dropdown";
 import { SkontoSection } from "./skonto-section";
+import { SplitPlanSection } from "./split-plan-section";
 import { useSkontoMutex } from "./use-skonto-mutex";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -34,7 +36,10 @@ type ProposalEditorProps = {
   deal: ProposalEditPayload["deal"];
   company: ProposalEditPayload["company"];
   contact: ProposalEditPayload["contact"];
+  milestones: PaymentMilestone[];
+  totalGross: number;
   onProposalChange: (patch: EditorPatch) => void;
+  onMilestonesChange: (next: PaymentMilestone[]) => void;
   readonly?: boolean;
 };
 
@@ -43,7 +48,10 @@ export function ProposalEditor({
   deal,
   company,
   contact,
+  milestones,
+  totalGross,
   onProposalChange,
+  onMilestonesChange,
   readonly = false,
 }: ProposalEditorProps) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -75,9 +83,24 @@ export function ProposalEditor({
   );
 
   const taxRate = (proposal.tax_rate as 0 | 7 | 19) ?? 19;
-  // V5.6 SLC-562 — Skonto-Mutex-Hook (Stub bis SLC-563). Aktuell immer false,
-  // weil keine Milestones existieren — Toggle bleibt nutzbar.
-  const skontoMutex = useSkontoMutex([]);
+  // V5.6 SLC-563 — Mutex aktiv sobald ein Vorkasse-Milestone (100% on_signature)
+  // existiert. Toggle-State + Werte werden auto-clearend, wenn der Mutex
+  // false → true wechselt (DEC-116).
+  const skontoMutex = useSkontoMutex(milestones);
+  const prevMutexRef = useRef(skontoMutex);
+
+  useEffect(() => {
+    const wasActive = prevMutexRef.current;
+    prevMutexRef.current = skontoMutex;
+    if (readonly) return;
+    if (!wasActive && skontoMutex) {
+      const hadValues =
+        proposal.skonto_percent !== null || proposal.skonto_days !== null;
+      if (hadValues) {
+        patchAndSave({ skonto_percent: null, skonto_days: null });
+      }
+    }
+  }, [skontoMutex, readonly, proposal.skonto_percent, proposal.skonto_days, patchAndSave]);
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden">
@@ -181,6 +204,19 @@ export function ProposalEditor({
             />
           </div>
         </Field>
+
+        <SplitPlanSection
+          milestones={milestones}
+          totalGross={totalGross}
+          onChange={onMilestonesChange}
+          disabled={readonly}
+        />
+
+        {skontoMutex && !readonly && (
+          <p className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+            Skonto deaktiviert — bei 100% Vorkasse ist Skonto nicht anwendbar.
+          </p>
+        )}
 
         <SkontoSection
           skonto_percent={proposal.skonto_percent}
