@@ -12,6 +12,12 @@ import {
 import { calculateTotals } from "@/lib/proposal/calc";
 import { validateSkonto } from "@/lib/proposal/skonto-validation";
 import {
+  validateMilestonesSum,
+  validateMilestoneTrigger,
+  type MilestoneInput,
+} from "@/lib/proposal/milestones-validation";
+import type { PaymentMilestone } from "@/types/proposal-payment";
+import {
   isValidTransition,
   type ProposalStatus,
 } from "@/lib/proposal/transitions";
@@ -729,6 +735,131 @@ export async function reorderProposalItems(
 }
 
 // =====================================================================
+// V5.6 SLC-563 — Payment-Milestones (Split-Plan, Sub-Theme B)
+// =====================================================================
+// Read- und Write-Pfad fuer proposal_payment_milestones. Sum-Validation
+// strict 100% (DEC-115) wird hier App-Level enforced, weil ein Aggregat-
+// CHECK in PostgreSQL ueber mehrere Rows nicht ausdrueckbar ist.
+//
+// `saveProposalPaymentMilestones` ist transactional: leerer Plan = DELETE
+// aller bestehenden Milestones. Nicht-leerer Plan = vollstaendige Replace-
+// Operation (DELETE + INSERT) damit Sequenzen luecken-frei und 1-based
+// bleiben. `amount` wird als Snapshot zum Save-Zeitpunkt persistiert
+// (totalGross * percent / 100), nicht spaeter re-computed.
+
+export async function getProposalMilestones(
+  proposalId: string,
+): Promise<PaymentMilestone[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("proposal_payment_milestones")
+    .select("*")
+    .eq("proposal_id", proposalId)
+    .order("sequence", { ascending: true });
+
+  if (error) {
+    console.warn(
+      `[getProposalMilestones] proposal=${proposalId} error=${error.message}`,
+    );
+    return [];
+  }
+  return (data ?? []) as PaymentMilestone[];
+}
+
+export type SaveMilestonesInput = {
+  proposalId: string;
+  milestones: MilestoneInput[];
+  totalGross: number;
+};
+
+export async function saveProposalPaymentMilestones(
+  input: SaveMilestonesInput,
+): Promise<MutationResult> {
+  const { proposalId, milestones, totalGross } = input;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Nicht angemeldet." };
+
+  const guard = await assertProposalEditable(supabase, proposalId);
+  if (!guard.ok) return guard;
+
+  if (milestones.length === 0) {
+    const { error: delErr } = await supabase
+      .from("proposal_payment_milestones")
+      .delete()
+      .eq("proposal_id", proposalId);
+    if (delErr) return { ok: false, error: delErr.message };
+
+    void logAudit({
+      action: "update",
+      entityType: "proposal",
+      entityId: proposalId,
+      context: "Milestones updated (n=0)",
+    });
+
+    revalidatePath(`/proposals/${proposalId}/edit`);
+    return { ok: true };
+  }
+
+  for (const m of milestones) {
+    const triggerCheck = validateMilestoneTrigger(m);
+    if (!triggerCheck.ok) {
+      return {
+        ok: false,
+        error: `Milestone ${m.sequence}: ${triggerCheck.error}`,
+      };
+    }
+  }
+  const sumCheck = validateMilestonesSum(milestones);
+  if (!sumCheck.ok) return { ok: false, error: sumCheck.error };
+
+  if (
+    typeof totalGross !== "number" ||
+    !Number.isFinite(totalGross) ||
+    totalGross < 0
+  ) {
+    return { ok: false, error: "totalGross muss eine Zahl >= 0 sein." };
+  }
+
+  const { error: delErr } = await supabase
+    .from("proposal_payment_milestones")
+    .delete()
+    .eq("proposal_id", proposalId);
+  if (delErr) return { ok: false, error: delErr.message };
+
+  // Sortiert einfuegen, damit Sequenzen die finalen 1..n widerspiegeln,
+  // selbst wenn der Caller die Liste in beliebiger Reihenfolge schickt.
+  const sorted = [...milestones].sort((a, b) => a.sequence - b.sequence);
+  const rows = sorted.map((m) => ({
+    proposal_id: proposalId,
+    sequence: m.sequence,
+    percent: m.percent,
+    amount: Number(((totalGross * m.percent) / 100).toFixed(2)),
+    due_trigger: m.due_trigger,
+    due_offset_days: m.due_offset_days,
+    label: m.label,
+  }));
+
+  const { error: insErr } = await supabase
+    .from("proposal_payment_milestones")
+    .insert(rows);
+  if (insErr) return { ok: false, error: insErr.message };
+
+  void logAudit({
+    action: "update",
+    entityType: "proposal",
+    entityId: proposalId,
+    context: `Milestones updated (n=${milestones.length})`,
+  });
+
+  revalidatePath(`/proposals/${proposalId}/edit`);
+  return { ok: true };
+}
+
+// =====================================================================
 // V5.5 SLC-553 — PDF-Generierung
 // =====================================================================
 // Server-side PDF-Renderer (pdfmake, DEC-105). Schreibt PDF in den
@@ -776,48 +907,62 @@ export async function generateProposalPdf(
     };
   }
 
-  const [itemsRes, brandingRes, dealRes, companyRes, contactRes] =
-    await Promise.all([
-      supabase
-        .from("proposal_items")
-        .select("*")
-        .eq("proposal_id", proposalId)
-        .order("position_order", { ascending: true }),
-      supabase
-        .from("branding_settings")
-        .select(
-          "logo_url, primary_color, secondary_color, font_family, footer_markdown, contact_block",
-        )
-        .limit(1)
-        .maybeSingle(),
-      proposal.deal_id
-        ? supabase
-            .from("deals")
-            .select("id, title")
-            .eq("id", proposal.deal_id)
-            .maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
-      proposal.company_id
-        ? supabase
-            .from("companies")
-            .select("id, name")
-            .eq("id", proposal.company_id)
-            .maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
-      proposal.contact_id
-        ? supabase
-            .from("contacts")
-            .select("id, first_name, last_name")
-            .eq("id", proposal.contact_id)
-            .maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
-    ]);
+  const [
+    itemsRes,
+    brandingRes,
+    dealRes,
+    companyRes,
+    contactRes,
+    milestonesRes,
+  ] = await Promise.all([
+    supabase
+      .from("proposal_items")
+      .select("*")
+      .eq("proposal_id", proposalId)
+      .order("position_order", { ascending: true }),
+    supabase
+      .from("branding_settings")
+      .select(
+        "logo_url, primary_color, secondary_color, font_family, footer_markdown, contact_block",
+      )
+      .limit(1)
+      .maybeSingle(),
+    proposal.deal_id
+      ? supabase
+          .from("deals")
+          .select("id, title")
+          .eq("id", proposal.deal_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    proposal.company_id
+      ? supabase
+          .from("companies")
+          .select("id, name")
+          .eq("id", proposal.company_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    proposal.contact_id
+      ? supabase
+          .from("contacts")
+          .select("id, first_name, last_name")
+          .eq("id", proposal.contact_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    // V5.6 SLC-563 — Split-Plan-Milestones parallel laden (DEC-120).
+    // Leere Liste = Renderer faellt auf V5.5/SLC-562-Output zurueck.
+    supabase
+      .from("proposal_payment_milestones")
+      .select("*")
+      .eq("proposal_id", proposalId)
+      .order("sequence", { ascending: true }),
+  ]);
 
   const items = (itemsRes.data ?? []) as ProposalItem[];
   const branding = (brandingRes.data ?? null) as ProposalEditPayload["branding"];
   const deal = (dealRes.data ?? null) as ProposalEditPayload["deal"];
   const company = (companyRes.data ?? null) as ProposalEditPayload["company"];
   const contact = (contactRes.data ?? null) as ProposalEditPayload["contact"];
+  const milestones = (milestonesRes.data ?? []) as PaymentMilestone[];
 
   const taxRate = proposal.tax_rate ?? 19;
   const totals = calculateTotals(items, taxRate);
@@ -863,6 +1008,7 @@ export async function generateProposalPdf(
       contact,
       logoDataUrl,
       testMode,
+      milestones,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unbekannter Renderer-Fehler.";

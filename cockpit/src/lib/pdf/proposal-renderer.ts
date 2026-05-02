@@ -18,6 +18,7 @@ import type {
   ProposalItem,
   ProposalEditPayload,
 } from "@/app/(app)/proposals/actions";
+import type { PaymentMilestone } from "@/types/proposal-payment";
 
 export type RenderProposalInput = {
   proposal: Proposal;
@@ -28,6 +29,10 @@ export type RenderProposalInput = {
   contact: ProposalEditPayload["contact"];
   logoDataUrl: string | null;
   testMode: boolean;
+  // V5.6 SLC-563 — Split-Plan Teilzahlungen (DEC-120). Optional, damit
+  // bestehende Aufrufer ohne Aenderung weiter funktionieren. Empty/undefined =
+  // kein Konditionen-Block, PDF bleibt bit-identisch zum V5.5/SLC-562 Output.
+  milestones?: PaymentMilestone[];
 };
 
 export type RenderProposalResult = {
@@ -107,6 +112,27 @@ function stripMarkdown(input: string): string {
     .trim();
 }
 
+// V5.6 SLC-563 — Trigger-Label-Helper (DEC-120). Wandelt das Enum aus
+// proposal_payment_milestones.due_trigger in den DE-String, der im PDF
+// rendered wird. Bei `on_milestone` wird das frei-Text Label genutzt,
+// falls vorhanden — sonst Fallback "Bei Meilenstein".
+export function formatMilestoneTriggerLabel(m: PaymentMilestone): string {
+  switch (m.due_trigger) {
+    case "on_signature":
+      return "Bei Vertragsabschluss";
+    case "on_completion":
+      return "Bei Fertigstellung";
+    case "days_after_signature":
+      return `${m.due_offset_days ?? 0} Tage nach Vertragsabschluss`;
+    case "on_milestone":
+      return m.label && m.label.trim().length > 0
+        ? `Bei Meilenstein: ${m.label.trim()}`
+        : "Bei Meilenstein";
+    default:
+      return "—";
+  }
+}
+
 function summaryRow(label: string, value: string, bold = false): Content {
   return {
     columns: [
@@ -125,11 +151,20 @@ function summaryRow(label: string, value: string, bold = false): Content {
 export function buildProposalDocDefinition(
   input: RenderProposalInput,
 ): TDocumentDefinitions {
-  const { proposal, items, branding, company, contact, logoDataUrl, testMode } =
-    input;
+  const {
+    proposal,
+    items,
+    branding,
+    company,
+    contact,
+    logoDataUrl,
+    testMode,
+    milestones,
+  } = input;
   const taxRate = proposal.tax_rate ?? 19;
   const totals = calculateTotals(items, taxRate);
   const primaryColor = branding?.primary_color ?? "#120774";
+  const milestonesList = milestones ?? [];
 
   const recipientLines: string[] = [];
   if (contact) {
@@ -345,6 +380,69 @@ export function buildProposalDocDefinition(
       text: proposal.payment_terms,
       margin: [0, 0, 0, 14],
     });
+  }
+
+  // V5.6 SLC-563 — Konditionen-Block (DEC-120). Strikt conditional: leerer
+  // Plan = kein Block, kein Whitespace, damit V5.5-PDFs bit-identisch zum
+  // V5.5/SLC-562-Snapshot bleiben. Reihenfolge: Tabelle erst, Skonto-Zeile
+  // danach (siehe naechster Block).
+  if (milestonesList.length > 0) {
+    const milestoneRows = milestonesList.map((m) => [
+      {
+        text:
+          m.label && m.label.trim().length > 0 && m.due_trigger !== "on_milestone"
+            ? m.label.trim()
+            : `Teilzahlung ${m.sequence}`,
+        style: "tableCell",
+      },
+      {
+        text: formatMilestoneTriggerLabel(m),
+        style: "tableCell",
+      },
+      {
+        text: `${m.percent.toFixed(2).replace(".", ",")}%`,
+        style: "tableCell",
+        alignment: "right",
+      },
+      {
+        text:
+          m.amount !== null && m.amount !== undefined
+            ? formatEur(m.amount)
+            : "—",
+        style: "tableCellBold",
+        alignment: "right",
+      },
+    ]);
+
+    content.push({
+      text: "Konditionen / Teilzahlungen",
+      style: "label",
+      margin: [0, 0, 0, 4],
+    });
+    content.push({
+      table: {
+        headerRows: 1,
+        widths: ["*", "auto", "auto", "auto"],
+        body: [
+          [
+            { text: "Teilzahlung", style: "tableHeader" },
+            { text: "Faelligkeit", style: "tableHeader" },
+            { text: "Anteil", style: "tableHeader", alignment: "right" },
+            { text: "Betrag", style: "tableHeader", alignment: "right" },
+          ],
+          ...milestoneRows,
+        ],
+      },
+      layout: {
+        hLineWidth: (i, node) =>
+          i === 0 || i === 1 || i === node.table.body.length ? 1 : 0.3,
+        vLineWidth: () => 0,
+        hLineColor: (i) => (i <= 1 ? primaryColor : "#e2e8f0"),
+        paddingTop: () => 5,
+        paddingBottom: () => 5,
+      },
+      margin: [0, 0, 0, 12],
+    } as Content);
   }
 
   // V5.6 SLC-562 — Skonto-Block. Strikt conditional: bei null kein Block, kein

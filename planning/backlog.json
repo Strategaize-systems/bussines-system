@@ -1737,7 +1737,7 @@
       "title": "V5.6 SLC-563 Split-Plan UI + PDF-Renderer-Erweiterung (Sub-Theme B + DEC-120)",
       "type": "feature",
       "priority": "high",
-      "status": "planned",
+      "status": "in_progress",
       "version": "V5.6",
       "description": "FEAT-561 SLC-563: SplitPlanSection mit Toggle + Liste + Add/Remove/Reorder via @dnd-kit/sortable + Live-Sum-Indikator (gruen 100/rot Diff). MilestoneRow mit 6-Spalten-Layout (Mobile 2-zeilig). saveProposalPaymentMilestones Server Action mit Sum-Validation strict 100% (DEC-115 — DB-CHECK nicht moeglich, App-Level only). useSkontoMutex-Hook erweitert auf echte Vorkasse-Pruefung (DEC-116 — bei on_signature 100% wird Skonto auto-clear mit Toast). PDF-Renderer Konditionen-Block (Tabelle Teilzahlung+Faelligkeit+Betrag) mit 4 Snapshot-Tests (CRITICAL: ohne beides bit-identisch zu V5.5). Trigger-Label-Helper fuer 4 Enums. 9 Micro-Tasks, ~5-7h.",
       "createdAt": "2026-05-01"
