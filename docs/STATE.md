@@ -10,15 +10,15 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.6 SLC-562 /backend code-complete 2026-05-01.** PaymentTermsDropdown + SkontoSection + useSkontoMutex (Stub) + validateSkonto Pure-Function (11 Vitest-Tests PASS) + ProposalEditor-Integration + Server Action Erweiterung (`updateProposal` mit Cross-Field-Skonto-Check via validateSkonto, `createProposal` mit Default-Template-Pre-Fill via DB-Lookup statt Hardcoded-String) + PDF-Renderer-Skonto-Block (5 Snapshot-Tests PASS, V5.5 bit-identisch ohne Skonto). zod-Schema um skonto-Felder erweitert. Build PASS, Vitest 113/113 PASS (97 → +16: 11 validateSkonto + 5 renderer), Lint clean fuer alle SLC-562-Files. Naechste = /qa SLC-562 (Pflicht laut CLAUDE.md), dann User-Coolify-Redeploy + Live-Smoke. V5.5.1 weiter live, SLC-561 deployed. Internal-Test-Mode aktiv.
-- Current Phase: V5.6 **SLC-562 /backend done — ready fuer /qa SLC-562**.
+- Current Focus: **V5.6 SLC-562 done 2026-05-02 (deployed via User-Coolify-Redeploy am 2026-05-01).** /qa Pre-Deploy PASS RPT-276 + /qa Live-Smoke PASS RPT-277. PaymentTermsDropdown + SkontoSection + useSkontoMutex-Stub + validateSkonto Pure-Function + Editor-Integration + Server Actions + PDF-Renderer-Skonto-Block live. 18/20 ACs PASS, 2 Findings als BL-418/BL-419 + ISSUE-048/049 dokumentiert (UX-cosmetic, nicht release-blockierend). DB-CHECK 4/4 PASS, Vitest 113/113 PASS, Audit-Log 5 Eintraege bewiesen. Live-PDFs verifiziert: mit Skonto = "Skonto: 2,00% bei Zahlung innerhalb 7 Tagen", ohne Skonto = V5.5 bit-identisch. Mobile-Smoke PASS. Naechste = /backend SLC-563 Split-Plan + PDF-Erweiterung. SLC-561 + SLC-562 done — V5.6 2/4 Slices.
+- Current Phase: V5.6 **SLC-562 done — ready fuer /backend SLC-563**.
 
 ## Immediate Next Steps
-1. **/qa SLC-562** — Pflicht-QA. Code-Review + Wiring + Snapshot-Verifikation, dann User-Coolify-Redeploy + Live-Browser-Smoke (Editor-Dropdown, Skonto-Toggle, PDF-Generierung mit/ohne Skonto, Audit-Log, V5.5-Regression).
-2. **/backend SLC-563** — Split-Plan + Sum-Validation strict + PDF-Renderer-Erweiterung. ~5-7h, 9 MTs. Erweitert useSkontoMutex auf echte Vorkasse-Pruefung.
-3. **DB-Cleanup nach SLC-561 Live-Smoke (optional)** — Test-Vorlage "14 Tage netto" `f57bd7b7-c711-...` ist live, aktuell Default. Kann bleiben oder via SQL geloescht werden.
-4. **Coolify-Cron `expire-proposals` Erst-Lauf am 2026-05-02 02:00 Berlin Time verifizieren** — Audit-SQL aus REL-020-Notes Schritt 3. Nicht zeitkritisch, passiv erledigen.
-5. **/post-launch V5.5** — nach 24-48h Stable-Window. Auch /post-launch V5.4 + V5.3 ueberfaellig (passiv).
+1. **/backend SLC-563** — Split-Plan + Sum-Validation strict 100% + PDF-Renderer-Konditionen-Block. ~5-7h, 9 MTs. Erweitert useSkontoMutex auf echte Vorkasse-Pruefung (DEC-116). Nach SLC-563: SLC-564 (Pre-Call Briefing) als letzter V5.6-Slice.
+2. **Optional Hotfixes vor SLC-563**: BL-418 (PaymentTermsDropdown initial-Display __custom__) ~10min — nice-to-have. BL-419 (UI-State-Drift nach Auto-Save-Error) — komplexer, eher V5.7+.
+3. **BL-417 NL-VAT + Reverse-Charge** — Recherche + V6.0+ Slice. Strategaize Transition GmbH sitzt in NL — Steuerlogik muss NL-konform werden (21/9/0% statt 19/7/0, Reverse-Charge fuer EU-B2B, BTW-Nummer-Felder, "BTW verlegd" PDF-Block). Sprache deutsch fuer dt. Kunden bleibt OK.
+4. **Coolify-Cron `expire-proposals` Erst-Lauf 2026-05-02 02:00 Berlin verifizieren** — Audit-SQL aus REL-020-Notes Schritt 3. Passiv erledigen.
+5. **/post-launch V5.5 + V5.5.1** — nach 24-48h Stable-Window. Auch V5.4 + V5.3 passiv ueberfaellig.
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"

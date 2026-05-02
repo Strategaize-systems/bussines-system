@@ -1727,7 +1727,7 @@
       "title": "V5.6 SLC-562 Bedingungs-Dropdown im Editor + Skonto-Toggle (Sub-Themes A + C UI)",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.6",
       "description": "FEAT-561 SLC-562: Proposal-Editor bekommt PaymentTermsDropdown ueber dem payment_terms-Textfeld + SkontoSection mit Toggle + Prozent + Tage Inputs. useSkontoMutex-Hook als Stub (returns false in SLC-562, SLC-563 erweitert auf echte Vorkasse-Pruefung). validateSkonto Pure Function mit Vitest-Tests. PDF-Renderer um Skonto-Block erweitert (DEC-120: ohne Skonto bit-identisch zu V5.5). Initial-Default-Pre-Fill bei createProposal nutzt Default-Template-Body. 8 Micro-Tasks, ~3-4h.",
       "createdAt": "2026-05-01"
@@ -1751,6 +1751,36 @@
       "version": "V5.6",
       "description": "FEAT-562 SLC-564: Loest BL-385 ein. Cron-Endpoint /api/cron/meeting-briefing (5-Min-Takt) mit verifyCronSecret + UPDATE-WHERE-NULL Idempotenz-Pattern (DEC-118). Reuse: buildDealBriefingPrompt + validateDealBriefing aus FEAT-301 (KEIN neuer LLM-Adapter), Service Worker FEAT-409 fuer Push, V5.3 send.ts fuer SMTP. Activity-Insert mit type='briefing', source_type='meeting', source_id=meeting.id (V3-Pattern, DEC-119). Sentinel-Strategy: max 3 Re-Tries, dann Marker-Bleibe + final-failure-activity. /settings/briefing Page mit Trigger-Zeit (15/30/45/60) + Push-Toggle + Email-Toggle (DEC-117). ActivityBriefingCard im Deal-Workspace. Wenn beide Toggles off: Cron skippt komplett. REL-022-Notes mit Coolify-Cron-Setup-Anleitung. End-to-End-Smoke: Test-Meeting + Cron-Trigger -> Push + Email + Activity. 9 Micro-Tasks, ~4-6h.",
       "createdAt": "2026-05-01"
+    },
+    {
+      "id": "BL-417",
+      "title": "NL-Mehrwertsteuer-Saetze + Reverse-Charge fuer Intracommunautaire Dienstleistungen",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": null,
+      "description": "Strategaize Transition GmbH sitzt in NL — Rechnungen muessen NL-Steuerlogik abbilden, nicht deutsche. Inhalt: (1) NL-VAT-Saetze: 21% Standard, 9% reduziert, 0% (statt 19/7/0). Steuersatz-Dropdown im Editor + DB-CHECK + Branding-Default umstellen. (2) Reverse-Charge / Intracommunautaire prestatie (B2B EU-Cross-Border, 'BTW verlegd'): bei B2B-Empfaengern in anderen EU-Laendern wird ohne MwSt fakturiert (0% mit Reverse-Charge-Hinweis), Empfaenger zahlt selbst. Voraussetzungen: USt-IdNr/BTW-Nummer beider Parteien, Hinweis auf Rechnung 'BTW verlegd / Reverse Charge — Article 196 VAT Directive 2006/112/EC', Zusammenfassende Meldung (Opgaaf ICP) in NL. (3) Felder fuer BTW-Nummer Strategaize (Settings) + BTW/USt-IdNr Empfaenger (Contact/Company). (4) PDF-Renderer-Block 'BTW verlegd' wenn Reverse-Charge aktiv + Steuer=0 + beide Nummern vorhanden. (5) Sprache deutsch fuer deutsche Kunden bleibt OK — nur Steuerlogik ist NL-konform. Recherche-Aufgabe: genaue Pflichtformulierung auf Rechnung pruefen + Formular-Pflicht ICP-Meldung. Voraussichtlich V6.0+ Slice (Steuer-Schema-Migration MIG-028 + Editor-Erweiterung + PDF-Block).",
+      "createdAt": "2026-05-02"
+    },
+    {
+      "id": "BL-418",
+      "title": "SLC-562 UX-Hotfix: PaymentTermsDropdown zeigt initial __custom__ statt (eigene Eingabe)",
+      "type": "bug",
+      "priority": "medium",
+      "status": "open",
+      "version": "V5.6",
+      "description": "Im PaymentTermsDropdown.tsx zeigt das base-ui Select-Trigger initial den Raw-Value '__custom__' statt des Labels '(eigene Eingabe)'. Ursache: SelectValue-Placeholder greift nur bei value=null, aber wir setzen useState<string>(CUSTOM_VALUE)='__custom__' als Default. Fix: entweder useState<string>('') als Default + onValueChange-Logic oder explicit-render-callback im SelectValue. Funktion intakt — sobald User klickt + auswaehlt, ist alles korrekt. Cosmetic-Bug, nicht release-blockierend, aber sichtbar im Live-Smoke (RPT-277). Aufwand: ~10min.",
+      "createdAt": "2026-05-02"
+    },
+    {
+      "id": "BL-419",
+      "title": "SLC-562 UI-State-Drift nach Auto-Save-Error im Skonto-Toggle",
+      "type": "bug",
+      "priority": "low",
+      "status": "open",
+      "version": null,
+      "description": "Wenn der User in der SkontoSection einen ungueltigen Wert eingibt (z.B. Prozent=10), lehnt der Server via validateSkonto ab. Save-Status zeigt 'Fehler' korrekt. Aber: nach mehreren Auto-Save-Errors flippt der Toggle visuell in OFF-Zustand obwohl die DB den vorherigen gueltigen State haelt. Selbstheilend nach Page-Reload. DB ist immer korrekt. Validation greift korrekt. Vermutung: setState-Race im handleProposalChange/debouncedPersist-Pfad in proposal-editor.tsx. Optional: optimistic-update-Reset bei Save-Error oder explicit-revert-on-error. Reproduzierbar im Browser-Smoke RPT-277. Low-Severity weil DB-State korrekt, nur UX-cosmetic. Aufwand: ~30min Investigation + Fix.",
+      "createdAt": "2026-05-02"
     }
   ]
 }

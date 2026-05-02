@@ -37,3 +37,6 @@ storage-data/
 
 # Misc
 *.log
+
+# QA-Artefakte (lokale Smoke-Screenshots, nicht committen)
+.qa-artifacts/

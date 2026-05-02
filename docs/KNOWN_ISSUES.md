@@ -1,5 +1,23 @@
 # Known Issues
 
+### ISSUE-049 — SLC-562 UI-State-Drift im SkontoSection nach Auto-Save-Error
+- Status: open
+- Severity: Low
+- Area: UI / Proposals-Editor
+- Summary: Nach mehreren Server-rejected Auto-Saves im SkontoSection (z.B. Prozent=10 ausserhalb Range) flippt der Toggle visuell in OFF-Zustand, obwohl die DB den vorherigen gueltigen State haelt.
+- Impact: Cosmetic-Drift zwischen UI und DB. Selbstheilend nach Page-Reload. DB-State immer korrekt. Validation greift korrekt mit Inline-Error.
+- Workaround: Page-Reload zeigt aktuellen DB-State.
+- Next Action: Backlog BL-419 — optimistic-update-Reset oder explicit-revert-on-error im patchAndSave-Pfad pruefen.
+
+### ISSUE-048 — SLC-562 PaymentTermsDropdown initial Display-Bug
+- Status: open
+- Severity: Medium
+- Area: UI / Proposals-Editor
+- Summary: Bei initial render zeigt der Bedingungs-Dropdown den Raw-Value '__custom__' statt des Labels '(eigene Eingabe)'. base-ui SelectValue-Placeholder greift nicht weil useState<string>(CUSTOM_VALUE) gesetzt ist.
+- Impact: UX-Anomalie beim Erstmount des Editors. Nach erstem Klick + Auswahl funktioniert es korrekt. Cosmetic, nicht release-blockierend.
+- Workaround: Wenn User auf das Dropdown klickt, sieht er die korrekten Optionen — funktional intakt.
+- Next Action: Backlog BL-418 — useState<string>('') als Default oder render-callback im SelectValue.
+
 ### ISSUE-047 — F1 React Hydration #418 auf /proposals (Listing-Card Datums-Drift)
 - Status: resolved
 - Severity: Medium
