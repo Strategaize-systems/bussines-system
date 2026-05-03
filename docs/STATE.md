@@ -9,23 +9,17 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: go-live-conditional
-- Current Focus: **V5.6 Go-Live CONDITIONAL GO 2026-05-03 (RPT-286).** Code-Side READY: Image `a7b787d` live auf Hetzner, alle Endpoints PASS (HTTPS 307 zu /login, meeting-briefing 401/200, expire-proposals V5.5 200 Regression-frei), Stack 14/15 Container healthy (supabase-studio Carryover-unhealthy, NICHT produktiv genutzt). **EINE ausstehende User-Aktion:** Coolify-Cron `meeting-briefing` Anlage in Coolify-UI (Schedule `*/5 * * * *`, Container `app`, Command `node -e fetch + process.env.CRON_SECRET`, NICHT Klartext, NICHT Authorization-Bearer). Ohne Cron: Endpoint funktional aber kein Auto-Trigger. Anleitung in REL-022 Schritt 1. Nach Cron-Anlage: GO. 10 Coolify-Crons total nach Go-Live.
-- Current Phase: V5.6 **CONDITIONAL GO — wartet auf User-Cron-Anlage → /deploy als REL-022.**
+- High-Level State: stable
+- Current Focus: **V5.6 RELEASED 2026-05-03 als REL-022.** Image-Tag `a7b787d` live seit 37+ Min auf `business.strategaizetransition.com`. Coolify-Cron `meeting-briefing` (Schedule `*/5 * * * *`) vom User in Coolify-UI angelegt — 10 Coolify-Crons total. FEAT-561 + FEAT-562 deployed, V5.6 4/4 Slices done. Internal-Test-Mode bleibt aktiv bis Pre-Production-Compliance-Gate vor V7. Naechster Auto-Trigger des Briefing-Cron innerhalb 5 Min — Verifikation passiv im /post-launch-Window.
+- Current Phase: V5.6 **STABLE — naechste = /post-launch nach 24-48h Stable-Window (V5.6 + V5.5 + V5.5.1 + V5.4 + V5.3 Sammelreview).**
 
 ## Immediate Next Steps
-1. **User-Aktion**: Coolify-Cron `meeting-briefing` in Coolify-UI anlegen — Tabelle in RELEASES.md REL-022 Schritt 1. Verifikation per Coolify-Cron-Log + app-Container-Log (`[Cron/MeetingBriefing] No candidates`).
-2. **User-Bestaetigung an Agent**: "Cron angelegt" + ggf. erste Log-Zeile.
-3. **/deploy V5.6 als REL-022** — Records-Update REL-022 von `planned` auf released-Status mit Cron-Liste-Update + finaler Verifikations-Smoke.
-4. **Optional vor /deploy** (nicht release-blockierend): User-Subscribe via `/settings/briefing` + Test-Daten-Cleanup auf Hetzner (DELETE-Statements RPT-283).
-5. **Nach 24-48h Stable-Window**: /post-launch V5.6.
-5. **BL-419** UI-State-Drift nach Auto-Save-Error im Skonto-Toggle — V5.7+ (komplexer).
-6. **BL-417 NL-VAT + Reverse-Charge** — Recherche + V6.0+ Slice (Strategaize Transition GmbH NL-Sitz).
-7. **/post-launch V5.5 + V5.5.1** — nach 24-48h Stable-Window passiv. Auch V5.4 + V5.3 ueberfaellig.
-2. **BL-418 done 2026-05-02** (PaymentTermsDropdown __custom__-Display gefixt). Verbleibend: **BL-419** (UI-State-Drift nach Auto-Save-Error im Skonto-Toggle) — komplexer, eher V5.7+.
-3. **BL-417 NL-VAT + Reverse-Charge** — Recherche + V6.0+ Slice. Strategaize Transition GmbH sitzt in NL — Steuerlogik muss NL-konform werden (21/9/0% statt 19/7/0, Reverse-Charge fuer EU-B2B, BTW-Nummer-Felder, "BTW verlegd" PDF-Block). Sprache deutsch fuer dt. Kunden bleibt OK.
-4. **Coolify-Cron `expire-proposals` Erst-Lauf 2026-05-02 02:00 Berlin verifizieren** — Audit-SQL aus REL-020-Notes Schritt 3. Passiv erledigen.
-5. **/post-launch V5.5 + V5.5.1** — nach 24-48h Stable-Window. Auch V5.4 + V5.3 passiv ueberfaellig.
+1. **(Optional, jetzt)** User-Subscribe via `/settings/briefing` "Browser-Push aktivieren" + Test-Daten-Cleanup auf Hetzner (DELETE-Statements RPT-283).
+2. **(Passiv)** Coolify-Cron `meeting-briefing` Erst-Lauf-Verifikation: app-Container-Log innerhalb naechster 5-10 Min sollte `[Cron/MeetingBriefing] No candidates` (oder `processed=N`) zeigen.
+3. **Nach 24-48h Stable-Window**: /post-launch V5.6 (kann V5.5/V5.5.1/V5.4/V5.3 mitnehmen — alle ueberfaellig).
+4. **BL-419** UI-State-Drift nach Auto-Save-Error im Skonto-Toggle — V5.7+ (komplexer).
+5. **BL-417 NL-VAT + Reverse-Charge** — Recherche + V6.0+ Slice. Strategaize Transition GmbH NL-Sitz, Steuerlogik muss NL-konform werden (21/9/0% statt 19/7/0, Reverse-Charge fuer EU-B2B, BTW-Nummer-Felder, "BTW verlegd" PDF-Block).
+6. **Coolify-Cron `expire-proposals` Erst-Lauf 2026-05-02 02:00 Berlin verifizieren** — Audit-SQL aus REL-020-Notes Schritt 3. Passiv erledigen.
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
@@ -56,6 +50,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - aktuell keine
 
 ## Last Stable Version
+- V5.6 — 2026-05-03 — released auf Hetzner als REL-022 (Zahlungsbedingungen + Pre-Call Briefing: payment_terms_templates + Skonto + Split-Plan-Milestones + Briefing-Cron + ActivityBriefingCard, Internal-Test-Mode, Image-Tag a7b787d, MIG-027 live, Coolify-Cron meeting-briefing aktiv. Final-Smoke alle Endpoints PASS, RPT-272..286.)
 - V5.5.1 — 2026-05-01 — released auf Hetzner als REL-021 (Polish-Patch: Hydration-Mitigation + 3 V5.4-Carryover. Live-Image-Tag `4415928` Coolify-Deployment-ID 173 finished 07:50:22. app-Container healthy, HTTPS-Endpoint HTTP 200. TSC + Vitest 97/97 PASS pre-Deploy.)
 - V5.5 — 2026-05-01 — released auf Hetzner als REL-020 (Angebot-Erstellung: Schema+Workspace+PDF+Lifecycle+Composing-Hookup, Internal-Test-Mode, Live-Smoke PASS RPT-263 4 Mail-Sends + 6 Browser-Smokes + CHECK-Constraint-Tests, Cron expire-proposals live, MIG-026 live, V5.5-Code-Stand seit 2026-04-30 17:04 Image-Tag `417dc8a`)
 - V5.4 — 2026-04-29 — released auf Hetzner als REL-019 (Composing-Studio Polish + E-Mail-Anhaenge-Upload PC-Direkt, Internal-Test-Mode, Live-Smoke PASS Multipart-Mail PDF+PNG+ZIP an Gmail + Tracking-Pixel-Open + Junction-Insert verifiziert)
