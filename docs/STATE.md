@@ -9,14 +9,16 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: final-check-pass
-- Current Focus: **V5.6 Final-Check PASS 2026-05-03 (RPT-285).** READY for /go-live. 0 Blocker, 0 High, 0 Medium. Alle 7 Audit-Dimensionen PASS: (1) Code-Quality V5.6-Files Lint exit 0 + Stub-Detection clean, (2) Security RLS+Policies live auf payment_terms_templates+proposal_payment_milestones + 0 Secret-Leaks in Container-Logs + Bedrock EU-region + Briefing-PII validiert, (3) Compliance Internal-Test-Mode aktiv + Pre-Production-Gate explizit V7+, (4) Testing Build+154/154 Vitest+RPT-272..284 alle PASS+User-Browser-Smokes bestaetigt, (5) CI/CD REL-022-Notes vollstaendig+MIG-027 idempotent+Image a7b787d deployed, (6) Observability 14/15 Container healthy (supabase-studio Carryover), (7) Post-Go-Live Cleanup-SQL+Rollback-Pfad+Cockpit-Records aktuell. Required Fixes vor /go-live: KEINE. Accepted Residual Risks: 9 dokumentiert (alle Carryover oder V5.7+).
-- Current Phase: V5.6 **Final-Check PASS — naechste = /go-live V5.6 (User-Aktion Coolify-Cron meeting-briefing) → /deploy als REL-022.**
+- High-Level State: go-live-conditional
+- Current Focus: **V5.6 Go-Live CONDITIONAL GO 2026-05-03 (RPT-286).** Code-Side READY: Image `a7b787d` live auf Hetzner, alle Endpoints PASS (HTTPS 307 zu /login, meeting-briefing 401/200, expire-proposals V5.5 200 Regression-frei), Stack 14/15 Container healthy (supabase-studio Carryover-unhealthy, NICHT produktiv genutzt). **EINE ausstehende User-Aktion:** Coolify-Cron `meeting-briefing` Anlage in Coolify-UI (Schedule `*/5 * * * *`, Container `app`, Command `node -e fetch + process.env.CRON_SECRET`, NICHT Klartext, NICHT Authorization-Bearer). Ohne Cron: Endpoint funktional aber kein Auto-Trigger. Anleitung in REL-022 Schritt 1. Nach Cron-Anlage: GO. 10 Coolify-Crons total nach Go-Live.
+- Current Phase: V5.6 **CONDITIONAL GO — wartet auf User-Cron-Anlage → /deploy als REL-022.**
 
 ## Immediate Next Steps
-1. **/go-live V5.6** — User-Aktion: Coolify-Cron `meeting-briefing` anlegen (Anleitung in REL-022 mit Tabelle + 3 Smoke-Schritten + Failure-SQL).
-2. **/deploy V5.6** — als REL-022.
-3. **(Optional vor /go-live, nicht release-blockierend):** User-Subscribe via `/settings/briefing` "Browser-Push aktivieren" + Test-Daten-Cleanup auf Hetzner (DELETE-Statements aus RPT-283).
+1. **User-Aktion**: Coolify-Cron `meeting-briefing` in Coolify-UI anlegen — Tabelle in RELEASES.md REL-022 Schritt 1. Verifikation per Coolify-Cron-Log + app-Container-Log (`[Cron/MeetingBriefing] No candidates`).
+2. **User-Bestaetigung an Agent**: "Cron angelegt" + ggf. erste Log-Zeile.
+3. **/deploy V5.6 als REL-022** — Records-Update REL-022 von `planned` auf released-Status mit Cron-Liste-Update + finaler Verifikations-Smoke.
+4. **Optional vor /deploy** (nicht release-blockierend): User-Subscribe via `/settings/briefing` + Test-Daten-Cleanup auf Hetzner (DELETE-Statements RPT-283).
+5. **Nach 24-48h Stable-Window**: /post-launch V5.6.
 5. **BL-419** UI-State-Drift nach Auto-Save-Error im Skonto-Toggle — V5.7+ (komplexer).
 6. **BL-417 NL-VAT + Reverse-Charge** — Recherche + V6.0+ Slice (Strategaize Transition GmbH NL-Sitz).
 7. **/post-launch V5.5 + V5.5.1** — nach 24-48h Stable-Window passiv. Auch V5.4 + V5.3 ueberfaellig.
