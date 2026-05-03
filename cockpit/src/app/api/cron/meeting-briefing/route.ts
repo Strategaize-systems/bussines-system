@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
         }
         const briefing = parsed.data;
 
-        // 3e. Persist activity
+        // 3e. Persist activity (DEC-119: V3 source_type/source_id pattern + ai_generated flag)
         const { data: activity, error: insErr } = await admin
           .from("activities")
           .insert({
@@ -205,6 +205,9 @@ export async function POST(request: NextRequest) {
               ...briefing,
             }),
             deal_id: meeting.deal_id,
+            source_type: "meeting",
+            source_id: meeting.id,
+            ai_generated: true,
             created_by: null,
           })
           .select("id")
@@ -298,13 +301,14 @@ export async function POST(request: NextRequest) {
           message
         );
 
-        // Count prior failures for this meeting
+        // Count prior failures for this meeting via source_type/source_id
+        // (V3-Pattern aus DEC-119, robuster als LIKE-on-JSON).
         const { count: priorFailures } = await admin
           .from("activities")
           .select("id", { count: "exact", head: true })
           .eq("type", "briefing_error")
-          .eq("deal_id", meeting.deal_id ?? "00000000-0000-0000-0000-000000000000")
-          .like("description", `%"meetingId":"${meeting.id}"%`);
+          .eq("source_type", "meeting")
+          .eq("source_id", meeting.id);
 
         const failureNum = (priorFailures ?? 0) + 1;
         const finalFailure = failureNum >= MAX_BRIEFING_RETRIES;
@@ -320,6 +324,9 @@ export async function POST(request: NextRequest) {
             finalFailure,
           }),
           deal_id: meeting.deal_id,
+          source_type: "meeting",
+          source_id: meeting.id,
+          ai_generated: true,
           created_by: null,
         });
 
