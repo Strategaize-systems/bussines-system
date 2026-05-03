@@ -9,15 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: qa-pass
-- Current Focus: **V5.6 Gesamt-QA PASS 2026-05-03 (RPT-284).** Nach User-Coolify-Redeploy auf `a7b787d` (VAPID-Fix) Cross-Cut alle 4 Slices SLC-561..564 verifiziert. 5/5 Foci PASS: (1) Skonto-Mutex+Auto-Clear Code+Live, (2) Briefing-Activity neben anderen Activity-Types in deal-timeline.tsx Switch-Case unbeintraechtigt + 1 Briefing-Activity in DB, (3) Settings-Sidebar 3 Items alle Auth-gated 307 (Branding+Zahlungsbedingungen+Briefing klickbar), (4) V5.5 Regression-Frei (5 Proposals unveraendert, expire-proposals Cron 200, /proposals 307), (5) AC18 VAPID Push-Subscribe-Hint Code+ENV+Image-Tag verifiziert (User-Browser-Smoke ~30s pruefbar). MIG-027 Schema komplett (3 CHECK-Constraints proposals.skonto_*: percent <10 + days <=90 + both_or_none). Build PASS, 154/154 Vitest in 920ms, 0 neue Lint-Errors. Stub-Detection clean ueber alle V5.6-Files. V5.6 bereit fuer /final-check.
-- Current Phase: V5.6 **Gesamt-QA PASS — naechste = /final-check V5.6 → /go-live → /deploy als REL-022.**
+- High-Level State: final-check-pass
+- Current Focus: **V5.6 Final-Check PASS 2026-05-03 (RPT-285).** READY for /go-live. 0 Blocker, 0 High, 0 Medium. Alle 7 Audit-Dimensionen PASS: (1) Code-Quality V5.6-Files Lint exit 0 + Stub-Detection clean, (2) Security RLS+Policies live auf payment_terms_templates+proposal_payment_milestones + 0 Secret-Leaks in Container-Logs + Bedrock EU-region + Briefing-PII validiert, (3) Compliance Internal-Test-Mode aktiv + Pre-Production-Gate explizit V7+, (4) Testing Build+154/154 Vitest+RPT-272..284 alle PASS+User-Browser-Smokes bestaetigt, (5) CI/CD REL-022-Notes vollstaendig+MIG-027 idempotent+Image a7b787d deployed, (6) Observability 14/15 Container healthy (supabase-studio Carryover), (7) Post-Go-Live Cleanup-SQL+Rollback-Pfad+Cockpit-Records aktuell. Required Fixes vor /go-live: KEINE. Accepted Residual Risks: 9 dokumentiert (alle Carryover oder V5.7+).
+- Current Phase: V5.6 **Final-Check PASS — naechste = /go-live V5.6 (User-Aktion Coolify-Cron meeting-briefing) → /deploy als REL-022.**
 
 ## Immediate Next Steps
-1. **(Optional 30s)** User-Browser-Smoke `/settings/briefing` → AC18 Subscribe-Hint visuell bestaetigen → optional Subscribe-Button klicken fuer push_subscription-Setup (ermoeglicht echten Push-Test in /go-live).
-2. **/final-check V5.6** — Hygiene + Dependencies + Security.
-3. **/go-live V5.6** — User-Aktion: Coolify-Cron `meeting-briefing` anlegen (Anleitung in REL-022).
-4. **/deploy V5.6** — als REL-022.
+1. **/go-live V5.6** — User-Aktion: Coolify-Cron `meeting-briefing` anlegen (Anleitung in REL-022 mit Tabelle + 3 Smoke-Schritten + Failure-SQL).
+2. **/deploy V5.6** — als REL-022.
+3. **(Optional vor /go-live, nicht release-blockierend):** User-Subscribe via `/settings/briefing` "Browser-Push aktivieren" + Test-Daten-Cleanup auf Hetzner (DELETE-Statements aus RPT-283).
 5. **BL-419** UI-State-Drift nach Auto-Save-Error im Skonto-Toggle — V5.7+ (komplexer).
 6. **BL-417 NL-VAT + Reverse-Charge** — Recherche + V6.0+ Slice (Strategaize Transition GmbH NL-Sitz).
 7. **/post-launch V5.5 + V5.5.1** — nach 24-48h Stable-Window passiv. Auch V5.4 + V5.3 ueberfaellig.
