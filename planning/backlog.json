@@ -1437,7 +1437,7 @@
       "title": "Pre-Call Briefing Package (automatisches Meeting-Briefing)",
       "type": "idea",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.6",
       "description": "Automatisches Briefing-Paket 30 Minuten vor jedem Meeting: Account-Enrichment + Deal-Kontext + letzte Interaktionen + offene Signale + KI-generierte Gespraechsvorbereitung mit Einwandbehandlung. Trigger: Meeting-Reminder-Cron erkennt anstehenden Termin, baut Briefing, liefert per Push-Notification oder E-Mail. Abhaengig von BL-384 (Enrichment Layer) fuer volle Wirkung, aber auch ohne Enrichment als KI-Summary ueber bestehende Daten nutzbar.",
       "createdAt": "2026-04-22"
@@ -1707,7 +1707,7 @@
       "title": "Zahlungsbedingungen: Vorauswahl-Liste + Split-Plan (Teilzahlungen)",
       "type": "feature",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.6",
       "description": "User-Feedback nach SLC-552 Browser-Smoke 2026-04-30: Zahlungsbedingungen sollen mehr Kontrolle bekommen. Zwei Sub-Themen: (1) VORAUSWAHL — typische Bedingungen als anlegbare Liste (z.B. 30 Tage netto, 60 Tage netto, Vorkasse, Skonto-Varianten), eventuell unter /settings/products oder eigener Settings-Sektion. Im Workspace per Dropdown waehlbar, mit Default aus Branding. Frei-text bleibt moeglich. (2) SPLIT-PLAN — Mehrere Zahlungstermine pro Angebot, z.B. '50 % bei Beauftragung / 50 % nach Fertigstellung' oder '30/30/40 nach Meilensteinen'. Datenmodell: neue Tabelle proposal_payment_milestones (proposal_id, sequence, percent_or_amount, due_trigger:'on_signature'|'on_completion'|'days_after_signature'|'on_milestone', label). UI im Editor-Panel als expandable Sektion mit Sum-Validation (muss 100% sein). Nicht V5.5-Scope (V5.5 fokussiert PDF + Status + Anhang). Vorschlag: V5.6 als FEAT-561 zusammen mit Skonto-Berechnung und Rechnungs-Vorbereitung. Affects: SLC-553 PDF-Renderer muss Split-Plan ausgeben (Konditionen-Block strukturiert), SLC-554 Status-Lifecycle bleibt orthogonal. /requirements V5.6 erweitert um Sub-Theme C (Skonto separates Feld) und Sentinel-Strategy. /architecture V5.6 ausgeplant in 4 Slices SLC-561..564 mit DEC-115..121.",
       "createdAt": "2026-04-30"
@@ -1747,7 +1747,7 @@
       "title": "V5.6 SLC-564 Pre-Call Briefing Cron + Push/Email-Delivery + /settings/briefing",
       "type": "feature",
       "priority": "high",
-      "status": "planned",
+      "status": "done",
       "version": "V5.6",
       "description": "FEAT-562 SLC-564: Loest BL-385 ein. Cron-Endpoint /api/cron/meeting-briefing (5-Min-Takt) mit verifyCronSecret + UPDATE-WHERE-NULL Idempotenz-Pattern (DEC-118). Reuse: buildDealBriefingPrompt + validateDealBriefing aus FEAT-301 (KEIN neuer LLM-Adapter), Service Worker FEAT-409 fuer Push, V5.3 send.ts fuer SMTP. Activity-Insert mit type='briefing', source_type='meeting', source_id=meeting.id (V3-Pattern, DEC-119). Sentinel-Strategy: max 3 Re-Tries, dann Marker-Bleibe + final-failure-activity. /settings/briefing Page mit Trigger-Zeit (15/30/45/60) + Push-Toggle + Email-Toggle (DEC-117). ActivityBriefingCard im Deal-Workspace. Wenn beide Toggles off: Cron skippt komplett. REL-022-Notes mit Coolify-Cron-Setup-Anleitung. End-to-End-Smoke: Test-Meeting + Cron-Trigger -> Push + Email + Activity. 9 Micro-Tasks, ~4-6h.",
       "createdAt": "2026-05-01"

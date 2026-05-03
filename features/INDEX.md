@@ -170,8 +170,8 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-561 | Zahlungsbedingungen Vorauswahl + Split-Plan (BL-412) | planned | — | 2026-05-01 |
-| FEAT-562 | Pre-Call Briefing Auto-Push (BL-385) | planned | — | 2026-05-01 |
+| FEAT-561 | Zahlungsbedingungen Vorauswahl + Split-Plan (BL-412) | done | — | 2026-05-01 |
+| FEAT-562 | Pre-Call Briefing Auto-Push (BL-385) | done | — | 2026-05-01 |
 
 ## V7 Features (Multi-User + Erweiterung — planned)
 

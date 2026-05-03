@@ -25,8 +25,6 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
     label: "Briefing",
     href: "/settings/briefing",
     icon: Bell,
-    disabled: true,
-    comingSoon: "ab V5.6 SLC-564",
   },
 ];
 

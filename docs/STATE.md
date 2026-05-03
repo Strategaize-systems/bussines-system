@@ -9,15 +9,18 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: **V5.6 SLC-563 done + Live-Smoke PASS 2026-05-02.** Vollstaendige V5.6-Sub-Theme-B-Pipeline live: SplitPlanSection mit Toggle + Add + Confirm-Dialog + dnd-kit, SumIndicator (gruen 100% / rosa Diff), MilestoneRow (6-Spalten Desktop / 2-zeilig Mobile, days_after_signature conditional 30-default), useSkontoMutex Auto-Clear (DEC-116 mit amber-Banner statt Toast), Workspace-State debounced Auto-Save 500ms validation-gated, Server Actions saveProposalPaymentMilestones + getProposalMilestones mit Audit-Trail. Live-Browser-Smoke gegen `business.strategaizetransition.com` mit Cent-Test-A (192.60€): Toggle on → 0% rosa, percent 100 → gruen, on_signature → Skonto-Mutex+Banner+disabled, 60/40 Split → DB persistiert mit korrekten amounts (115.56+77.04€), days_after_signature → DB days=30, Toggle-Off-Confirm Cancel + Loeschen → DB n=0 DELETE, /api/proposals/.../pdf 200/application/pdf. 4 Audit-Log-Eintraege Milestones updated (n=0,1,1,2,2) Sequenz-konsistent. **Frontend-Portion + Live-Smoke voll durch — SLC-563 done.**
-- Current Phase: V5.6 **SLC-563 done + deployed — naechste /backend SLC-564** (letzter V5.6-Slice: Pre-Call-Briefing Cron + /settings/briefing).
+- High-Level State: qa
+- Current Focus: **V5.6 SLC-564 /backend code-complete 2026-05-03.** Letzter V5.6-Slice durch: Cron-Endpoint `/api/cron/meeting-briefing` mit `verifyCronSecret` + UPDATE-WHERE-NULL Winner-Takes-All Idempotenz (DEC-118) + Sentinel-Strategy (max 3 Retries via `briefing_error`-Activities, danach Marker bleibt) + Audit-Trail (`ai_briefing_generated` / `ai_briefing_retry_armed` / `ai_briefing_failed_permanently`). Deal-Context-Loader (`loadDealBriefingContext`) mappt deals/contacts/activities/proposals → DealBriefingContext (FEAT-301 Reuse, KEIN neuer LLM-Adapter). Briefing-Email-Template (`renderBriefingEmail`) mit 5 Sections + Plain-Text-Fallback + Click-Through-Link, 6/6 Vitest-Snapshots gruen. Push-Helper-Reuse aus `lib/push/send.ts` (FEAT-409 sendPushNotification + Subscription-Cleanup). `/settings/briefing` Page mit Trigger-Radio (15/30/45/60) + 2 Toggle-Switches + Push-Subscribe-Hint + Bothel-Off-Banner. ActivityBriefingCard (Expandable Summary + Top-3 keyFacts/openRisks/suggestedNextSteps + Confidence-Badge + JSON-Parse-Fallback) + ActivityBriefingErrorCard im DealTimeline-Switch-Case. Settings-Sidebar-Nav `Briefing` aktiviert. REL-022-Notes mit Coolify-Cron-Setup-Anleitung (Container `app`, `*/5 * * * *`, x-cron-secret-Header) + 3 Smoke-Test-Pfade + Failure-SQL-Verifikation. Build + Vitest 154/154 + Lint (keine neuen Errors, 221 Carryover) gruen. **V5.6 4/4 Slices done — bereit fuer Gesamt-/qa V5.6.**
+- Current Phase: V5.6 **alle 4 Slices done — Gesamt-/qa V5.6 → /final-check → /go-live → /deploy als REL-022.**
 
 ## Immediate Next Steps
-1. **/backend SLC-564** — Pre-Call-Briefing Cron + Push/Email-Delivery + /settings/briefing. Letzter V5.6-Slice.
-2. **BL-419** UI-State-Drift nach Auto-Save-Error im Skonto-Toggle — V5.7+ (komplexer).
-3. **BL-417 NL-VAT + Reverse-Charge** — Recherche + V6.0+ Slice (Strategaize Transition GmbH NL-Sitz).
-4. **/post-launch V5.5 + V5.5.1** — nach 24-48h Stable-Window passiv. Auch V5.4 + V5.3 ueberfaellig.
+1. **Gesamt-/qa V5.6** — alle 4 Slices SLC-561..564 inklusive Cross-Cut-Smoke (Skonto-Mutex + Split-Plan + Briefing-Cron + Settings-Sidebar). Beim Cron-Endpoint: User-Coolify-Redeploy + Live-Smoke (curl mit valid + falsch + both-channels-off + End-to-End mit Test-Meeting).
+2. **/final-check V5.6** — Hygiene + Dependencies + Security.
+3. **/go-live V5.6** — Coolify-Cron `meeting-briefing` Anlage (Anleitung in REL-022).
+4. **/deploy V5.6** — als REL-022.
+5. **BL-419** UI-State-Drift nach Auto-Save-Error im Skonto-Toggle — V5.7+ (komplexer).
+6. **BL-417 NL-VAT + Reverse-Charge** — Recherche + V6.0+ Slice (Strategaize Transition GmbH NL-Sitz).
+7. **/post-launch V5.5 + V5.5.1** — nach 24-48h Stable-Window passiv. Auch V5.4 + V5.3 ueberfaellig.
 2. **BL-418 done 2026-05-02** (PaymentTermsDropdown __custom__-Display gefixt). Verbleibend: **BL-419** (UI-State-Drift nach Auto-Save-Error im Skonto-Toggle) — komplexer, eher V5.7+.
 3. **BL-417 NL-VAT + Reverse-Charge** — Recherche + V6.0+ Slice. Strategaize Transition GmbH sitzt in NL — Steuerlogik muss NL-konform werden (21/9/0% statt 19/7/0, Reverse-Charge fuer EU-B2B, BTW-Nummer-Felder, "BTW verlegd" PDF-Block). Sprache deutsch fuer dt. Kunden bleibt OK.
 4. **Coolify-Cron `expire-proposals` Erst-Lauf 2026-05-02 02:00 Berlin verifizieren** — Audit-SQL aus REL-020-Notes Schritt 3. Passiv erledigen.

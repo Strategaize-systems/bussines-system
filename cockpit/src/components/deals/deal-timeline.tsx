@@ -12,6 +12,10 @@ import {
 import { TrackingIndicator } from "@/components/email/tracking-badge";
 import { CallTimelineItem } from "@/components/calls/call-timeline-item";
 import { MeetingTimelineItem } from "@/components/meetings/meeting-timeline-item";
+import {
+  ActivityBriefingCard,
+  ActivityBriefingErrorCard,
+} from "@/components/deals/activity-briefing-card";
 import type { Meeting } from "@/app/(app)/meetings/actions";
 import type { TrackingSummary } from "@/types/email-tracking";
 import type { Call } from "@/app/(app)/calls/actions";
@@ -69,6 +73,12 @@ interface TimelineItem {
   emailId?: string;
   call?: Call;
   meeting?: Meeting;
+  briefingActivity?: {
+    id: string;
+    title?: string | null;
+    description?: string | null;
+    created_at?: string | null;
+  };
 }
 
 interface DealTimelineProps {
@@ -97,13 +107,24 @@ export function DealTimeline({
   );
 
   const items: TimelineItem[] = [
-    ...nonCallActivities.map((a: any) => ({
-      id: `act-${a.id}`,
-      type: a.type || "note",
-      title: a.title || a.type,
-      summary: a.summary || a.description,
-      date: a.created_at,
-    })),
+    ...nonCallActivities.map((a: any) => {
+      const isBriefing = a.type === "briefing" || a.type === "briefing_error";
+      return {
+        id: `act-${a.id}`,
+        type: a.type || "note",
+        title: a.title || a.type,
+        summary: isBriefing ? undefined : a.summary || a.description,
+        date: a.created_at,
+        briefingActivity: isBriefing
+          ? {
+              id: a.id,
+              title: a.title,
+              description: a.description,
+              created_at: a.created_at,
+            }
+          : undefined,
+      };
+    }),
     ...calls.map((c) => ({
       id: `call-${c.id}`,
       type: "call",
@@ -161,6 +182,22 @@ export function DealTimeline({
         }
         if (item.type === "meeting" && item.meeting) {
           return <MeetingTimelineItem key={item.id} meeting={item.meeting} />;
+        }
+        if (item.type === "briefing" && item.briefingActivity) {
+          return (
+            <ActivityBriefingCard
+              key={item.id}
+              activity={item.briefingActivity}
+            />
+          );
+        }
+        if (item.type === "briefing_error" && item.briefingActivity) {
+          return (
+            <ActivityBriefingErrorCard
+              key={item.id}
+              activity={item.briefingActivity}
+            />
+          );
         }
         const Icon = typeIcons[item.type] || MessageSquare;
         const config = typeConfig[item.type] || defaultConfig;

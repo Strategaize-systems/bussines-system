@@ -1,5 +1,79 @@
 # Releases
 
+### REL-022 — V5.6 Zahlungsbedingungen + Pre-Call Briefing (planned)
+- Date: planned
+- Scope: V5.6 Final-Release. 4 Slices: **SLC-561** Payment-Terms-Foundation (`payment_terms_templates`-Tabelle + Settings-Sidebar-Nav, Default `30 Tage netto`); **SLC-562** Bedingungs-Dropdown + Skonto im Proposal-Editor (`proposals.skonto_percent` + `skonto_days`, beide-oder-keiner CHECK, Skonto-Mutex); **SLC-563** Split-Plan + PDF-Renderer (`proposal_payment_milestones`-Tabelle, Sum-Validation 100% strict, dnd-kit-Reihenfolge, days_after_signature); **SLC-564** Pre-Call-Briefing-Cron + `/settings/briefing` + Push/Email-Delivery + ActivityBriefingCard (`meetings.briefing_generated_at` + Partial-Index, `user_settings.briefing_trigger_minutes` + 2 Toggles, Activity-Persistierung, Sentinel-Strategy max 3 Retries). MIG-027 Schema. DEC-115..121. **NEUE INFRASTRUKTUR-AKTION (SLC-564):** Coolify-Cron `meeting-briefing` muss vor erstem Live-Test angelegt werden (sonst keine automatischen Briefings). Anleitung unten. **Keine neuen Dependencies.** Reuse von FEAT-301 (Deal-Briefing-Prompt+Validator), FEAT-409 (Browser-Push), V5.3 (`send.ts`-SMTP-Pipeline).
+- Summary: SLC-561..563 sind bereits live im Cockpit (siehe STATE.md V5.6-Stand 2026-05-02). SLC-564 schliesst V5.6 ab: Vor jedem Meeting mit Deal-Zuordnung wird im konfigurierten Trigger-Fenster (Default 30 Min) ein KI-Briefing generiert und ueber Push (Service-Worker + VAPID) + E-Mail (kompakte HTML mit 5 Sections) zugestellt. Idempotenz via UPDATE-WHERE-NULL Winner-Takes-All. Sentinel-Strategy: max 3 Retries pro Meeting, danach permanent als `briefing_error` markiert. Briefings persistieren als `activities(type='briefing')` mit JSON-stringified Payload und werden in der Deal-Workspace-Timeline ueber neue `<ActivityBriefingCard>` (Expandable: Summary + Top-3 keyFacts/openRisks/suggestedNextSteps + Confidence-Badge) gerendert. Settings-Page `/settings/briefing` mit Trigger-Radio (15/30/45/60) + 2 Toggle-Switches + Push-Subscribe-Hint bei aktivem Push-Toggle ohne Subscription. Internal-Test-Mode bleibt aktiv bis Pre-Production-Compliance-Gate.
+- Risks: Bedrock-Latenz bei 5+ parallelen Meetings im Tick: sequentieller Loop, naechster Tick holt Rest auf (Idempotenz). Push-Subscription Expired (HTTP 410): web-push setzt `push_subscription = NULL`, kein Throw, Cron-Lauf unbeeintraechtigt. SMTP-Failure: try/catch, log-only, Activity bleibt persistiert. LLM-JSON-Drift: `validateDealBriefing` prueft Schema, Sentinel greift nach 3 Failures. **MIG-027** ist additive Schema-Erweiterung (5 ALTER TABLE / CREATE TABLE), idempotent via `IF NOT EXISTS`. **Neue Dependency:** keine. **CRON_SECRET** ist seit V5.1 retention-Cron im app-Container gesetzt — kein zusaetzliches Setup. **Briefing ohne Deal:** Cron filtert via Partial-Index (`deal_id IS NOT NULL`), keine Bedrock-Calls fuer interne Termine. **Beide-Channels-off:** Cron skippt komplett (`{ok: true, skipped: 'all-channels-off'}`), kein Bedrock-Call, kein Activity-Insert. **F1 Hydration #418** auf `/proposals` Carryover aus V5.5.1 (UI funktional, kein V5.6-Blocker).
+- Rollback Notes: Rein additiv. SLC-564 fuegt nur Cron-Endpoint `/api/cron/meeting-briefing`, Server-Helpers (`deal-context-loader`, `briefing-html`-Template), Settings-Page + Form, ActivityBriefingCard + Timeline-Switch-Case, Type-Definitionen + Konstante (MAX_BRIEFING_RETRIES=3) hinzu. Rollback per Coolify-Redeploy auf V5.6-pre-SLC-564-Commit (vor diesem Patch). Kein Schema-Rollback (MIG-027 ist Teil von SLC-561, bleibt). Coolify-Cron `meeting-briefing` separat deaktivieren ueber Coolify-UI falls noetig. Bestehende V5.6-Daten (Briefing-Activities, Settings-Eintraege, Marker-Werte in `meetings.briefing_generated_at`) bleiben unberuehrt.
+
+#### Coolify-Cron `meeting-briefing` Setup (User-Aktion vor Final-Deploy)
+
+**Wann:** Nach Coolify-Redeploy von V5.6 final (oder fruehestens nach Deploy von SLC-564).
+
+**Voraussetzung:** ENV-Variable `CRON_SECRET` ist im Coolify-App-Container bereits gesetzt (existiert seit V5.1 retention-Cron, kein zusaetzliches Setup).
+
+**Schritt 1 — Cron-Job in Coolify-UI anlegen:**
+
+| Feld | Wert |
+|------|------|
+| Name | `meeting-briefing` |
+| Schedule | `*/5 * * * *` (alle 5 Min) |
+| Container | `app` |
+| Command | `node -e 'fetch("https://business.strategaizetransition.com/api/cron/meeting-briefing", { method: "POST", headers: { "x-cron-secret": process.env.CRON_SECRET } }).then(r => r.text()).then(console.log)'` |
+
+**Sicherheits-Hinweise:**
+- `CRON_SECRET` IMMER ueber `process.env.CRON_SECRET` referenzieren — niemals als Klartext im Command (siehe REL-019 Coolify-Cron-Cleanup).
+- Nur EIN Cron-Job mit diesem Namen anlegen — Duplikate erzeugen Doppel-Audit-Eintraege bei Doppellaeufen (Idempotenz schuetzt nur vor Activity-Doubling, nicht vor Audit-Doubling).
+- Auth-Header ist `x-cron-secret`, NICHT `Authorization: Bearer` (Pattern aus `verify-cron-secret.ts`).
+
+**Schritt 2 — Smoke-Test direkt nach Anlage (vor erstem 5-Min-Tick):**
+
+```bash
+ssh root@91.98.20.191
+# Mit valid Secret + beide Toggles default on → entweder processedCount=0 (kein Meeting im Fenster) oder >=1 mit Audit-Eintraegen
+curl -sX POST -H "x-cron-secret: $CRON_SECRET" \
+  https://business.strategaizetransition.com/api/cron/meeting-briefing
+# Erwartet: {"success":true,"processedCount":0,"skippedCount":0,"failedCount":0,"retryCount":0}
+
+# Mit falschem Header → 401
+curl -sX POST -H "x-cron-secret: wrong" \
+  https://business.strategaizetransition.com/api/cron/meeting-briefing
+# Erwartet: {"error":"Unauthorized"} mit HTTP 401
+
+# Mit beiden Toggles off (UPDATE user_settings SET briefing_push_enabled=false, briefing_email_enabled=false) → skipped
+curl -sX POST -H "x-cron-secret: $CRON_SECRET" \
+  https://business.strategaizetransition.com/api/cron/meeting-briefing
+# Erwartet: {"success":true,"skipped":"all-channels-off"}
+```
+
+**Schritt 3 — End-to-End-Smoke (im Coolify-UI nach Anlage des Cron):**
+
+1. Test-Meeting in `triggerMinutes`+~3 Min anlegen (z.B. bei Default 30 Min: scheduled_at = now() + 32 Min) mit Deal-Zuordnung.
+2. `briefing_push_enabled=true` UND `push_subscription` muss gesetzt sein (Settings-Page `/settings/briefing` → "Browser-Push aktivieren").
+3. Innerhalb 5-10 Min sollten erscheinen:
+   - Push-Notification im Browser (Service Worker)
+   - E-Mail im Empfangs-Postfach (Sender-Domain mit SPF/DKIM, kein Spam-Folder)
+   - `activities`-Row mit `type='briefing'` und JSON-Payload
+   - `briefing_generated_at` auf dem Meeting gesetzt
+   - Audit-Eintrag mit `action='ai_briefing_generated'`
+4. Klick auf Push → `/deals/<dealId>` Workspace mit `<ActivityBriefingCard>` in Timeline.
+5. Klick auf Email-Button "Deal-Workspace oeffnen" → gleicher Pfad.
+
+**Idempotenz-Garantie:** Mehrfachlaufe innerhalb desselben 5-Min-Ticks erzeugen keine Doppel-Briefings. UPDATE-WHERE-NULL Pattern: erste Query setzt Marker, alle Folgequeries bekommen 0 rows (`processedCount=0, skippedCount=N`). Bei Bedrock-Failure: Marker wird auf NULL zurueckgesetzt, naechster Tick versucht erneut (max 3 Retries, danach permanent `briefing_error`).
+
+**Failure-Verifikation (optional, im Hetzner-Test):**
+
+```sql
+-- Nach manueller Bedrock-Disable (z.B. AWS-Credentials kurzzeitig falsch setzen) → mehrfache Cron-Runs:
+SELECT id, type, title, created_at FROM activities
+WHERE type = 'briefing_error' AND deal_id = '<test-deal-id>'
+ORDER BY created_at DESC;
+-- Erwartet: 3 Rows mit "(1/3)", "(2/3)", "(3/3)"
+SELECT briefing_generated_at FROM meetings WHERE id = '<test-meeting-id>';
+-- Erwartet: gesetzt (nicht NULL) — Sentinel hat ihn nach 3. Failure NICHT zurueckgesetzt
+```
+
 ### REL-021 — V5.5.1 Polish-Patch (Hydration + 3 V5.4-Carryover)
 - Date: 2026-05-01
 - Scope: 4 kleine Items in 2 Commits. (1) ISSUE-047 Hydration #418 Mitigation via `suppressHydrationWarning` auf `<html>`+`<body>` im Root-Layout (Code-Audit ergab: keine Date-Format-Drift im Render-Pfad, wahrscheinliche Quelle Browser-Extension). (2) SLC-541 M1 ConditionalColorPicker Refactor zu pure derived state (useState/useEffect entfernt). (3) ISSUE-045 Server-side Total-Size-Limit fuer E-Mail-Anhaenge (`/api/emails/attachments` POST listet Storage-State + summiert sizes). (4) SLC-542 L1 Filename-Kollision-Suffix " (n)" bei Duplikat-Upload (`upsert: true` → `upsert: false` mit `generateUniqueName`).
