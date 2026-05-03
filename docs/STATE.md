@@ -9,14 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: qa
-- Current Focus: **V5.6 SLC-564 /qa Live-Smoke PASS 2026-05-03 (RPT-283).** Nach User-Coolify-Redeploy auf `824734e` 4 Smoke-Bloecke gegen `business.strategaizetransition.com` durchgespielt: (1) cURL-Endpoint 3/3 PASS (401/401/200), (2) Both-off-skip + Reset PASS, (3) Browser `/settings/briefing` PASS — Trigger-Wechsel 30→60 + Both-Toggles-off + Banner sichtbar + DB-persistiert, (4) **End-to-End-CRITICAL PASS** — Test-Meeting `d1c0a843` + Cron-Trigger → `processedCount:1`, real Bedrock-Briefing-JSON (German, summary + 7 keyFacts + 6 openRisks + 5 suggestedNextSteps + confidence=18), Activity insertet mit allen V3-Spalten (type/source_type/source_id/ai_generated/deal_id/JSON-description), audit_log mit `ai_briefing_generated` + email_sent=true, Idempotenz-Re-Trigger `processedCount:0`, ActivityBriefingCard rendert komplett im Workspace mit allen 3 expandable Sections + Confidence-Badge + Timestamp. 26/28 ACs Live-PASS, AC7 partial (Push gated auf Browser-Subscription), AC18 pending nach 2. Redeploy. **1 Medium-Finding gefixt:** VAPID-ENV-Mismatch (`NEXT_PUBLIC_VAPID_PUBLIC_KEY` → `VAPID_PUBLIC_KEY`, Server-Component-Pattern wie `/settings/meetings/page.tsx`). Erfordert zweiten User-Coolify-Redeploy. SLC-564 done.
-- Current Phase: V5.6 **alle 4 Slices done — Gesamt-/qa V5.6 → /final-check → /go-live → /deploy als REL-022.**
+- High-Level State: qa-pass
+- Current Focus: **V5.6 Gesamt-QA PASS 2026-05-03 (RPT-284).** Nach User-Coolify-Redeploy auf `a7b787d` (VAPID-Fix) Cross-Cut alle 4 Slices SLC-561..564 verifiziert. 5/5 Foci PASS: (1) Skonto-Mutex+Auto-Clear Code+Live, (2) Briefing-Activity neben anderen Activity-Types in deal-timeline.tsx Switch-Case unbeintraechtigt + 1 Briefing-Activity in DB, (3) Settings-Sidebar 3 Items alle Auth-gated 307 (Branding+Zahlungsbedingungen+Briefing klickbar), (4) V5.5 Regression-Frei (5 Proposals unveraendert, expire-proposals Cron 200, /proposals 307), (5) AC18 VAPID Push-Subscribe-Hint Code+ENV+Image-Tag verifiziert (User-Browser-Smoke ~30s pruefbar). MIG-027 Schema komplett (3 CHECK-Constraints proposals.skonto_*: percent <10 + days <=90 + both_or_none). Build PASS, 154/154 Vitest in 920ms, 0 neue Lint-Errors. Stub-Detection clean ueber alle V5.6-Files. V5.6 bereit fuer /final-check.
+- Current Phase: V5.6 **Gesamt-QA PASS — naechste = /final-check V5.6 → /go-live → /deploy als REL-022.**
 
 ## Immediate Next Steps
-1. **Gesamt-/qa V5.6** — alle 4 Slices SLC-561..564 inklusive Cross-Cut-Smoke (Skonto-Mutex + Split-Plan + Briefing-Cron + Settings-Sidebar). Beim Cron-Endpoint: User-Coolify-Redeploy + Live-Smoke (curl mit valid + falsch + both-channels-off + End-to-End mit Test-Meeting).
+1. **(Optional 30s)** User-Browser-Smoke `/settings/briefing` → AC18 Subscribe-Hint visuell bestaetigen → optional Subscribe-Button klicken fuer push_subscription-Setup (ermoeglicht echten Push-Test in /go-live).
 2. **/final-check V5.6** — Hygiene + Dependencies + Security.
-3. **/go-live V5.6** — Coolify-Cron `meeting-briefing` Anlage (Anleitung in REL-022).
+3. **/go-live V5.6** — User-Aktion: Coolify-Cron `meeting-briefing` anlegen (Anleitung in REL-022).
 4. **/deploy V5.6** — als REL-022.
 5. **BL-419** UI-State-Drift nach Auto-Save-Error im Skonto-Toggle — V5.7+ (komplexer).
 6. **BL-417 NL-VAT + Reverse-Charge** — Recherche + V6.0+ Slice (Strategaize Transition GmbH NL-Sitz).
