@@ -386,7 +386,7 @@
       "type": "feature",
       "priority": "low",
       "status": "open",
-      "version": "V7",
+      "version": "V6.2",
       "description": "Regel-basierte Automation: z.B. 'Wenn Deal in Stage Angebot → E-Mail-Template senden + Aufgabe erstellen'. Visueller Rule Builder.",
       "createdAt": "2026-04-03"
     },
@@ -416,7 +416,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": "V7",
+      "version": "V6.2",
       "description": "Kampagnen als eigenes Objekt: Name, Typ (E-Mail, LinkedIn, Event, Ads), Start/Ende, Zielgruppe. Kontakte/Firmen bekommen Feld 'Kampagnen-Quelle' (welche Kampagne hat den Lead gebracht). UTM-Parameter oder Tracking-Links für digitale Kampagnen. Auswertung: Leads pro Kampagne, Conversion-Rate, Won-Deals pro Kampagne. Kampagnen-Erstellung bleibt in System 4, Attribution wird hier im Business System getrackt. Feedback-Loop zurück zu System 4 (was war erfolgreich).",
       "createdAt": "2026-04-03"
     },
@@ -1758,7 +1758,7 @@
       "type": "feature",
       "priority": "high",
       "status": "open",
-      "version": null,
+      "version": "V5.7",
       "description": "Strategaize Transition GmbH sitzt in NL — Rechnungen muessen NL-Steuerlogik abbilden, nicht deutsche. Inhalt: (1) NL-VAT-Saetze: 21% Standard, 9% reduziert, 0% (statt 19/7/0). Steuersatz-Dropdown im Editor + DB-CHECK + Branding-Default umstellen. (2) Reverse-Charge / Intracommunautaire prestatie (B2B EU-Cross-Border, 'BTW verlegd'): bei B2B-Empfaengern in anderen EU-Laendern wird ohne MwSt fakturiert (0% mit Reverse-Charge-Hinweis), Empfaenger zahlt selbst. Voraussetzungen: USt-IdNr/BTW-Nummer beider Parteien, Hinweis auf Rechnung 'BTW verlegd / Reverse Charge — Article 196 VAT Directive 2006/112/EC', Zusammenfassende Meldung (Opgaaf ICP) in NL. (3) Felder fuer BTW-Nummer Strategaize (Settings) + BTW/USt-IdNr Empfaenger (Contact/Company). (4) PDF-Renderer-Block 'BTW verlegd' wenn Reverse-Charge aktiv + Steuer=0 + beide Nummern vorhanden. (5) Sprache deutsch fuer deutsche Kunden bleibt OK — nur Steuerlogik ist NL-konform. Recherche-Aufgabe: genaue Pflichtformulierung auf Rechnung pruefen + Formular-Pflicht ICP-Meldung. Voraussichtlich V6.0+ Slice (Steuer-Schema-Migration MIG-028 + Editor-Erweiterung + PDF-Block).",
       "createdAt": "2026-05-02"
     },
@@ -1778,7 +1778,7 @@
       "type": "bug",
       "priority": "low",
       "status": "open",
-      "version": null,
+      "version": "V5.7",
       "description": "Wenn der User in der SkontoSection einen ungueltigen Wert eingibt (z.B. Prozent=10), lehnt der Server via validateSkonto ab. Save-Status zeigt 'Fehler' korrekt. Aber: nach mehreren Auto-Save-Errors flippt der Toggle visuell in OFF-Zustand obwohl die DB den vorherigen gueltigen State haelt. Selbstheilend nach Page-Reload. DB ist immer korrekt. Validation greift korrekt. Vermutung: setState-Race im handleProposalChange/debouncedPersist-Pfad in proposal-editor.tsx. Optional: optimistic-update-Reset bei Save-Error oder explicit-revert-on-error. Reproduzierbar im Browser-Smoke RPT-277. Low-Severity weil DB-State korrekt, nur UX-cosmetic. Aufwand: ~30min Investigation + Fix.",
       "createdAt": "2026-05-02"
     }

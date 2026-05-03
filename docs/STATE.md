@@ -9,24 +9,27 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: stable
-- Current Focus: **V5.6 RELEASED 2026-05-03 als REL-022.** Image-Tag `a7b787d` live seit 37+ Min auf `business.strategaizetransition.com`. Coolify-Cron `meeting-briefing` (Schedule `*/5 * * * *`) vom User in Coolify-UI angelegt — 10 Coolify-Crons total. FEAT-561 + FEAT-562 deployed, V5.6 4/4 Slices done. Internal-Test-Mode bleibt aktiv bis Pre-Production-Compliance-Gate vor V7. Naechster Auto-Trigger des Briefing-Cron innerhalb 5 Min — Verifikation passiv im /post-launch-Window.
-- Current Phase: V5.6 **STABLE — naechste = /post-launch nach 24-48h Stable-Window (V5.6 + V5.5 + V5.5.1 + V5.4 + V5.3 Sammelreview).**
+- High-Level State: requirements
+- Current Focus: **V5.7 Requirements done 2026-05-03.** 2 Features (FEAT-571 NL-VAT + Reverse-Charge, FEAT-572 Skonto-Toggle Bugfix), 8 Open Questions (Recherche-Fragen Pflicht-Phrase Reverse-Charge + ICP-Meldung-Pflicht + VIES-Validierung + Branding-Default + Sprache-PDF + Bestehende-Daten-Migration + Drittland-Faelle + Angebot-vs-Rechnung). Roadmap erweitert: V5.7 (NL-Compliance), V6.2 (Automation+Attribution mit BL-135/139 aus V7 ausgelagert), V7 reduziert auf reine Multi-User-Themen. Backlog: BL-417/419 → V5.7, BL-135/139 → V6.2, BL-397 weiterhin unassigned (deferred). V5.6 weiterhin stable in Production.
+- Current Phase: V5.7 — Requirements done, naechste = /architecture V5.7 (Open Questions klaeren, MIG-028 ausplanen, Snapshot-Prinzip-Anwendung, Editor-UI-Position fuer Steuersatz-Dropdown, Reverse-Charge-Toggle-Pfad)
 
 ## Immediate Next Steps
-1. **(Optional, jetzt)** User-Subscribe via `/settings/briefing` "Browser-Push aktivieren" + Test-Daten-Cleanup auf Hetzner (DELETE-Statements RPT-283).
-2. **(Passiv)** Coolify-Cron `meeting-briefing` Erst-Lauf-Verifikation: app-Container-Log innerhalb naechster 5-10 Min sollte `[Cron/MeetingBriefing] No candidates` (oder `processed=N`) zeigen.
-3. **Nach 24-48h Stable-Window**: /post-launch V5.6 (kann V5.5/V5.5.1/V5.4/V5.3 mitnehmen — alle ueberfaellig).
-4. **BL-419** UI-State-Drift nach Auto-Save-Error im Skonto-Toggle — V5.7+ (komplexer).
-5. **BL-417 NL-VAT + Reverse-Charge** — Recherche + V6.0+ Slice. Strategaize Transition GmbH NL-Sitz, Steuerlogik muss NL-konform werden (21/9/0% statt 19/7/0, Reverse-Charge fuer EU-B2B, BTW-Nummer-Felder, "BTW verlegd" PDF-Block).
-6. **Coolify-Cron `expire-proposals` Erst-Lauf 2026-05-02 02:00 Berlin verifizieren** — Audit-SQL aus REL-020-Notes Schritt 3. Passiv erledigen.
+1. **/architecture V5.7** — 8 Open Questions klaeren, MIG-028 (tax_rate-Default 21 + CHECK + branding.vat_id + companies.vat_id) ausplanen, Reverse-Charge-Toggle-Logik definieren, PDF-Block-Layout entscheiden, Pflicht-Recherche zu NL-Reverse-Charge-Phrase.
+2. **(Passiv)** Coolify-Cron `meeting-briefing` Erst-Lauf-Verifikation V5.6 — app-Container-Log innerhalb naechster Min sollte `[Cron/MeetingBriefing] No candidates` (oder `processed=N`) zeigen.
+3. **Nach 24-48h Stable-Window V5.6**: /post-launch V5.6 (kann V5.5/V5.5.1/V5.4/V5.3 mitnehmen — alle ueberfaellig). Kann auch nach V5.7-Release als Sammelreview erfolgen.
+4. **Coolify-Cron `expire-proposals` Erst-Lauf 2026-05-02 02:00 Berlin verifizieren** — Audit-SQL aus REL-020-Notes Schritt 3. Passiv erledigen.
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
 - BL-397 GitHub-App Org-Anbindung (Infra-Hygiene)
-- BL-135 + BL-139 (V7 Multi-User + Workflow-Automation + Kampagnen-Attribution)
+- V6.2 — Workflow-Automation (BL-135) + Kampagnen-Attribution (BL-139), aus V7 ausgelagert
+- V7 — reduziert auf Multi-User + Teamlead (FEAT-502/503)
 
 ## Active Scope
+**V5.7 — NL-Compliance + Polish (Requirements done 2026-05-03):**
+- FEAT-571 NL-VAT + Reverse-Charge (planned, BL-417 high-prio): NL-VAT-Saetze 21/9/0 + Reverse-Charge-Pfad fuer EU-B2B + BTW-Nummer-Felder Strategaize/Companies + PDF-Renderer-Block "BTW verlegd". MIG-028 erforderlich. 8 Open Questions in /architecture klaeren.
+- FEAT-572 Skonto-Toggle UI-State-Drift Bugfix (planned, BL-419 low/cosmetic): Race-Bug in proposal-editor.tsx `handleProposalChange`/`debouncedPersist`-Pfad, 3 Fix-Optionen (Optimistic-Revert / Server-Refetch / UI-Lock).
+
 **V5.5 — Angebot-Erstellung (RELEASED 2026-05-01 als REL-020):**
 - FEAT-551 Angebot-Schema-Erweiterung + Position-Items (in_progress, MIG-026 applied auf Hetzner, Server Actions + Pfad-Helper live)
 - FEAT-552 Angebot-Workspace UI 3-Panel (done 2026-04-30, /proposals/[id]/edit live, native React-State + Custom-Debounce statt RHF/lodash, @dnd-kit/sortable)
@@ -40,10 +43,11 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V5.5, V5.5.1, V6, V6.1
 
 **Active:**
-- V5.6 — Zahlungsbedingungen + Pre-Call Briefing (Requirements done 2026-05-01)
+- V5.7 — NL-Compliance + Polish (Requirements done 2026-05-03, naechste = /architecture)
 
 **Planned (Reihenfolge):**
-- V7 — Multi-User + Erweiterung
+- V6.2 — Automation + Attribution (Workflow-Rule-Builder + Kampagnen + UTM, aus V7 ausgelagert)
+- V7 — Multi-User + Teamlead (Routing/Territories + Teamlead-Rolle, reduzierter Scope)
 - Pre-Production-Compliance-Gate (irgendwann vor V7) — Anwaltspruefung + Azure-EU-Whisper + ISSUE-042 — laut User 2026-05-01 NICHT prioritaer
 
 ## Blockers

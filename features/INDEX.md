@@ -173,7 +173,21 @@
 | FEAT-561 | Zahlungsbedingungen Vorauswahl + Split-Plan (BL-412) | deployed | — | 2026-05-01 |
 | FEAT-562 | Pre-Call Briefing Auto-Push (BL-385) | deployed | — | 2026-05-01 |
 
-## V7 Features (Multi-User + Erweiterung — planned)
+## V5.7 Features (NL-Compliance + Polish — planned)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-571 | NL-VAT-Saetze + Reverse-Charge (BL-417) | planned | [Spec](FEAT-571-nl-vat-reverse-charge.md) | 2026-05-03 |
+| FEAT-572 | Skonto-Toggle UI-State-Drift Bugfix (BL-419) | planned | [Spec](FEAT-572-skonto-toggle-bugfix.md) | 2026-05-03 |
+
+## V6.2 Features (Automation + Attribution — planned)
+
+| ID | Feature | Status | Created |
+|----|---------|--------|---------|
+| FEAT-621 | Workflow-Automation Rule Builder (BL-135) | planned | 2026-05-03 |
+| FEAT-622 | Kampagnen-Attribution + UTM-Tracking (BL-139) | planned | 2026-05-03 |
+
+## V7 Features (Multi-User + Teamlead — planned)
 
 | ID | Feature | Status | Created |
 |----|---------|--------|---------|

@@ -141,11 +141,25 @@
       "order": 20
     },
     {
+      "id": "v5-7",
+      "name": "V5.7",
+      "status": "planned",
+      "summary": "NL-Compliance + Polish: 2 Features (FEAT-571..572) — NL-Mehrwertsteuer-Saetze 21/9/0 + Reverse-Charge fuer EU-B2B-Cross-Border (BL-417, high prio: Strategaize Transition GmbH NL-Sitz, Rechnungs-PDFs muessen NL-konform werden), BTW-Nummer-Felder fuer Strategaize-Settings + Company-Stammdaten, PDF-Renderer-Block fuer Reverse-Charge. Plus Skonto-Toggle UI-State-Drift Bugfix aus V5.6 SLC-562 (BL-419, low/cosmetic).",
+      "order": 21
+    },
+    {
+      "id": "v6-2",
+      "name": "V6.2",
+      "status": "planned",
+      "summary": "Automation + Attribution: 2 Features (FEAT-621..622) — Workflow-Automation Rule Builder (BL-135, 'Wenn X dann Y'-Regeln, visueller Builder) + Kampagnen-Attribution (BL-139, Kampagne als Objekt + UTM/Tracking-Links + Conversion-Auswertung pro Kampagne). Aus V7-Scope ausgelagert weil thematisch eigenstaendig.",
+      "order": 22
+    },
+    {
       "id": "v7",
       "name": "V7",
       "status": "planned",
-      "summary": "Multi-User + Erweiterung: Routing/Territories, Teamlead-Rolle mit Teamsicht, Workflow-Automation, Kampagnen-Attribution",
-      "order": 21
+      "summary": "Multi-User + Teamlead: Routing/Territories (FEAT-502), Teamlead-Rolle mit Teamsicht (FEAT-503). Reduziert auf Multi-User-Themen — Workflow-Automation und Kampagnen-Attribution nach V6.2 ausgelagert.",
+      "order": 23
     }
   ]
 }
