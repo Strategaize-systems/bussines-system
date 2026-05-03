@@ -6,7 +6,10 @@ export const dynamic = "force-dynamic";
 
 export default async function BriefingSettingsPage() {
   const settings = await getBriefingSettings();
-  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
+  // Server-rendered: VAPID_PUBLIC_KEY is enough (no NEXT_PUBLIC_ prefix needed
+  // because the value is read on the server and passed as prop to the client).
+  // Pattern matches /settings/meetings/page.tsx.
+  const vapidPublicKey = process.env.VAPID_PUBLIC_KEY ?? "";
 
   return (
     <main className="px-8 py-8 space-y-6">
