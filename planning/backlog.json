@@ -1801,6 +1801,16 @@
       "version": null,
       "description": "V5.7 (DEC-128) implementiert den Country-Switch DE/NL und filtert Editor-Steuersaetze (DE: 0/7/19, NL: 0/9/21), aber Reverse-Charge bleibt NL-spezifisch. DE-Variante (Steuerschuldnerschaft des Leistungsempfaengers, § 13b UStG, EU-B2B-Cross-Border) hat eigene Pflichtformulierung ('Steuerschuldnerschaft des Leistungsempfaengers' + Verweis auf § 13b UStG / Art. 196 VAT Directive 2006/112/EC) und eigene Reporting-Pflicht (Zusammenfassende Meldung, Aequivalent zur NL-ICP). Im DE-Mode ist der Reverse-Charge-Toggle in V5.7 disabled mit Tooltip-Hinweis. BL-421 liefert: (1) DE-Phrase-Constant + pdfmake-Block-Builder, (2) Editor-Toggle in DE-Mode aktivierbar mit gleicher 3-Voraussetzungen-Logik, (3) PDF-Block-Insert kontextabhaengig, (4) ggf. ICP-Equivalent-Hinweis als User-Reminder. Aufwand ~3-5h.",
       "createdAt": "2026-05-04"
+    },
+    {
+      "id": "BL-422",
+      "title": "Reverse-Charge-Toggle UI-State-Drift (analog ISSUE-049 fuer Skonto)",
+      "type": "bug",
+      "priority": "low",
+      "status": "open",
+      "version": null,
+      "description": "In Gesamt-/qa V5.7 (RPT-301) als Wiring-Trace-Observation entdeckt: Der Reverse-Charge-Toggle im Editor (proposal-editor.tsx handleReverseChargeToggle) hat strukturell den gleichen UI-State-Drift wie der frueher gefixte Skonto-Toggle (BL-419/ISSUE-049). Wenn der User RC ON toggled obwohl Voraussetzungen fehlen (z.B. branding.vat_id oder company.vat_id leer), lehnt der Server validateReverseCharge ab. Optimistic-State bleibt jedoch auf {reverse_charge: true, tax_rate: 0} bis Page-Reload. DB ist immer korrekt, validateRC greift mit klarer Fehlermeldung. SLC-572 hat den Skonto-Pfad mit useRef-last-known-good + revertPatchIfSkontoFailed gefixt; analoges Pattern (revertPatchIfReverseChargeFailed + lastKnownGoodReverseChargeRef) waere fuer RC moeglich. Low-Severity weil DB-State korrekt, nur UX-cosmetic, selbstheilend. Aufwand ~30-45min Pure-Function + Editor-Wiring.",
+      "createdAt": "2026-05-04"
     }
   ]
 }
