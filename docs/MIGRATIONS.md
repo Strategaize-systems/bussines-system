@@ -291,44 +291,40 @@
   - `DELETE FROM storage.objects WHERE bucket_id='proposal-pdfs'; DELETE FROM storage.buckets WHERE id='proposal-pdfs';`
   - V2-Stub-Proposals bleiben nach Rollback unveraendert lesbar — bestehende `/proposals`-Tabelle funktioniert wieder im V5.4-Zustand.
 
-### MIG-028 — V5.7 NL-VAT + Reverse-Charge Schema
-- Date: 2026-05-04 (planned, Apply im Rahmen SLC-571 `/backend` auf Hetzner)
-- Scope: 4 Aenderungen in einer Migration `028_v57_nl_vat_reverse_charge.sql`:
-  1. `proposals.tax_rate` Default 19.00 → 21.00 (DEC-122):
-     - `ALTER TABLE proposals ALTER COLUMN tax_rate SET DEFAULT 21.00;`
-     - Bestehende Rows bleiben unangetastet (Snapshot-Prinzip DEC-107).
-  2. `proposals.tax_rate` CHECK-Whitelist (DEC-122):
+### MIG-028 — V5.7 NL+DE-VAT + Reverse-Charge Schema
+- Date: 2026-05-04 (applied auf Hetzner Business System DB im Rahmen SLC-571 `/backend` MT-1, Container `supabase-db-k9f5pn5upfq7etoefb5ukbcg-074821936116`, base64-Pattern, idempotent re-applied verifiziert)
+- Scope: 5 additive Aenderungen in einer Migration `028_v57_nl_de_vat_reverse_charge.sql`:
+  1. `branding_settings.vat_id TEXT NULL` (DEC-124) — Strategaize-eigene Steuernummer (USt-IdNr. oder BTW-Nummer, Format kontextabhaengig validiert ueber `business_country`).
+  2. `branding_settings.business_country TEXT NOT NULL DEFAULT 'NL'` (DEC-128, supersedes DEC-122) — globaler Country-Switch der Installation. CHECK-Constraint `branding_settings_business_country_whitelist` prueft `IN ('DE', 'NL')`. Bestehende Branding-Row bekommt automatisch `'NL'` durch DEFAULT.
+  3. `companies.vat_id TEXT NULL` (DEC-124) — Empfaenger-VAT-ID (EU-General Format-Validation).
+  4. `proposals.tax_rate` CHECK-Whitelist erweitert auf `{0.00, 7.00, 9.00, 19.00, 21.00}` (DEC-128, supersedes DEC-122):
      - `ALTER TABLE proposals DROP CONSTRAINT IF EXISTS proposals_tax_rate_whitelist;`
-     - `ALTER TABLE proposals ADD CONSTRAINT proposals_tax_rate_whitelist CHECK (tax_rate IN (0.00, 9.00, 19.00, 21.00));`
-     - Akzeptiert 19% als Legacy fuer alte V5.5/V5.6-Rows. Editor-UI bietet nur 21/9/0 fuer neue Angebote.
-  3. `proposals.reverse_charge` BOOLEAN-Flag (DEC-123):
+     - `ALTER TABLE proposals ADD CONSTRAINT proposals_tax_rate_whitelist CHECK (tax_rate IN (0.00, 7.00, 9.00, 19.00, 21.00));`
+     - Whitelist deckt NL-Saetze {0, 9, 21} und DE-Saetze {0, 7, 19} ab. Pre-Apply-Audit zeigte Live-DB-Bestand aus `tax_rate IN {7, 19}` — beide Werte bleiben in der neuen Whitelist gueltig (Snapshot-Prinzip DEC-107). Default `proposals.tax_rate=19.00` bleibt unveraendert; App-Layer setzt initial den Country-spezifischen Default beim Anlegen neuer Angebote.
+  5. `proposals.reverse_charge BOOLEAN NOT NULL DEFAULT false` + Konsistenz-CHECK (DEC-123):
      - `ALTER TABLE proposals ADD COLUMN IF NOT EXISTS reverse_charge BOOLEAN NOT NULL DEFAULT false;`
-     - `ALTER TABLE proposals DROP CONSTRAINT IF EXISTS proposals_reverse_charge_implies_zero_tax;`
-     - `ALTER TABLE proposals ADD CONSTRAINT proposals_reverse_charge_implies_zero_tax CHECK (reverse_charge = false OR tax_rate = 0.00);`
-     - Konsistenzschutz: wenn Flag gesetzt, MUSS tax_rate=0.00 sein. Bei Flag=false ist tax_rate frei (innerhalb der Whitelist).
-  4. `branding_settings.vat_id` Strategaize-VAT (DEC-124):
-     - `ALTER TABLE branding_settings ADD COLUMN IF NOT EXISTS vat_id TEXT NULL;`
-     - Format-Validation app-side (NL-Format `^NL\d{9}B\d{2}$`).
-  5. `companies.vat_id` Empfaenger-VAT (DEC-124):
-     - `ALTER TABLE companies ADD COLUMN IF NOT EXISTS vat_id TEXT NULL;`
-     - Format-Validation app-side (EU-Format mit Country-Code-Whitelist 27 Mitgliedstaaten).
-- Reason: V5.7 FEAT-571 braucht NL-konforme Steuerlogik fuer den Angebot-Pfad. DEC-122..125 haben die Strategie festgelegt. Bestehende V5.5/V5.6-Test-Angebote bleiben unveraendert lesbar (Whitelist akzeptiert 19% als Legacy-Wert). Neue Angebote bekommen 21% NL-Standard als Default. Reverse-Charge-Pfad fuer EU-B2B-Cross-Border via BOOLEAN-Flag + DB-CHECK-Konsistenz tax_rate=0 wenn Flag gesetzt. KEIN VIES-Lookup, KEINE Daten-Migration der 19%-Rows.
+     - `ALTER TABLE proposals ADD CONSTRAINT proposals_reverse_charge_consistency CHECK (reverse_charge = false OR tax_rate = 0.00);`
+     - Konsistenzschutz: wenn Flag gesetzt, MUSS tax_rate=0.00 sein.
+- Reason: V5.7 FEAT-571 braucht NL+DE-konforme Steuerlogik fuer den Angebot-Pfad. Pre-Apply-Audit am 2026-05-04 zeigte zusaetzlich zu erwarteten `tax_rate=19.00`-Rows auch zwei `tax_rate=7.00`-Rows in der Live-DB (Test-Daten waehrend V5.5-QA). User-Klaerung 2026-05-04 erweiterte den Scope: globaler `business_country`-Switch in den Einstellungen ("Grund-Einstellung"), Whitelist deckt DE+NL Saetze ab. DEC-122 + DEC-124 wurden entsprechend supersedet/erweitert; DEC-128 dokumentiert die finale Strategie. KEIN VIES-Lookup, KEINE Daten-Migration der Legacy-Rows.
 - Affected Areas:
-  - `cockpit/src/lib/pdf/proposal-renderer.ts` Adapter-Erweiterung um Reverse-Charge-Block (DEC-125)
-  - `cockpit/src/app/(app)/proposals/[id]/edit/proposal-editor.tsx` Editor-Erweiterung um Steuersatz-Dropdown + Reverse-Charge-Toggle (DEC-122/123)
-  - `cockpit/src/app/(app)/settings/branding/branding-form.tsx` BTW-Eingabefeld (DEC-124)
-  - `cockpit/src/app/(app)/companies/[id]/...` Stammdaten-Edit-Form ergaenzt vat_id-Feld nach `address_country`
-  - Neue Datei `cockpit/src/lib/validation/vat-id.ts` mit `validateNlVatId(input)` und `validateEuVatId(input)` + EU-Country-Code-Whitelist
-  - Neue Datei `cockpit/src/lib/pdf/reverse-charge-block.ts` mit Phrase-Constant + pdfmake-Block-Builder (alternativ inline in `proposal-renderer.ts`)
+  - Neue Datei `cockpit/src/lib/validation/vat-id.ts` mit `validateNlVatId`, `validateDeVatId`, `validateEuVatId` + `EU_COUNTRY_CODES`-Constant
+  - Neue Datei `cockpit/src/lib/validation/vat-id.test.ts` mit 30 Vitest-Cases (alle gruen)
+  - `cockpit/src/types/branding.ts` ergaenzt `vatId`, `businessCountry`, `BUSINESS_COUNTRIES`-Constant
+  - `cockpit/src/app/(app)/settings/branding/actions.ts` getBranding/updateBranding um vat_id + business_country erweitert, kontextabhaengige vat_id-Validation
+  - `cockpit/src/app/(app)/settings/branding/branding-form.tsx` Country-Dropdown + vat_id-Feld mit inline-Validation
+  - `cockpit/src/app/(app)/companies/actions.ts` createCompany/updateCompany um vat_id + EU-Validation
+  - `cockpit/src/app/(app)/companies/company-form.tsx` vat_id-Feld nach `address_country` mit inline-Validation
+  - `cockpit/src/lib/email/render.test.ts` Mock-Branding-Objekte um neue Felder ergaenzt (TS-Build-Fix)
   - KEINE Aenderung an `proposal_items`, `proposal_payment_milestones`, `payment_terms_templates`, `email_attachments`, `audit_log`, `proposal-pdfs`-Bucket
-- Risk: Niedrig — rein additive Aenderungen. Default-Wechsel `tax_rate 19→21` betrifft nur neue INSERTs ohne explizite tax_rate-Angabe (Server-Action setzt aber explizit; Daten-Default-Wechsel ist Defense-in-Depth). CHECK-Whitelist akzeptiert den Legacy-19%-Wert — keine Daten-Migration. CHECK-Konsistenz `reverse_charge implies tax_rate=0` schuetzt vor App-Bug. branding_settings ist Single-Row (DEC-088), neue Spalte vat_id nullable. companies.vat_id nullable, Backfill nicht noetig (User pflegt selbst pro Empfaenger). KEIN Lock-Wait erwartet (alle ALTER-Statements sind kleine Metadata-Changes ohne Daten-Touch).
+  - Editor-UI (Dropdown-Filter) und PDF-Renderer-Erweiterung folgen in MT-5..MT-9 (gleicher Slice)
+- Risk: Niedrig — rein additive Aenderungen, alle ALTER-Statements sind Metadata-Changes ohne Daten-Touch. Idempotenz verifiziert via Re-Apply (alle Spalten/Constraints vorhanden, NOTICE statt ERROR). Pre-Apply-Audit + erweiterte Whitelist verhindern, dass Legacy 7%-Rows bei Apply abgewiesen werden.
 - Rollback Notes:
   - `ALTER TABLE companies DROP COLUMN IF EXISTS vat_id;`
   - `ALTER TABLE branding_settings DROP COLUMN IF EXISTS vat_id;`
-  - `ALTER TABLE proposals DROP CONSTRAINT IF EXISTS proposals_reverse_charge_implies_zero_tax, DROP CONSTRAINT IF EXISTS proposals_tax_rate_whitelist;`
-  - `ALTER TABLE proposals DROP COLUMN IF EXISTS reverse_charge;`
-  - `ALTER TABLE proposals ALTER COLUMN tax_rate SET DEFAULT 19.00;`
-  - V5.6-Code funktioniert nach Rollback unveraendert weiter — bestehende Angebote sind regression-frei (PDF-Render ohne Reverse-Charge-Block, Editor ohne Steuersatz-Dropdown, branding_settings + companies ohne vat_id-Feld). Bestehende V5.7-Angebote mit `reverse_charge=true` koennen nach Rollback nicht mehr korrekt gerendert werden — manueller Fix oder Re-Migration noetig.
+  - `ALTER TABLE branding_settings DROP CONSTRAINT IF EXISTS branding_settings_business_country_whitelist; ALTER TABLE branding_settings DROP COLUMN IF EXISTS business_country;`
+  - `ALTER TABLE proposals DROP CONSTRAINT IF EXISTS proposals_reverse_charge_consistency; ALTER TABLE proposals DROP COLUMN IF EXISTS reverse_charge;`
+  - `ALTER TABLE proposals DROP CONSTRAINT IF EXISTS proposals_tax_rate_whitelist;`
+  - V5.6-Code funktioniert nach Rollback unveraendert weiter — bestehende Angebote sind regression-frei. Bestehende V5.7-Angebote mit `reverse_charge=true` koennen nach Rollback nicht mehr korrekt gerendert werden — manueller Fix oder Re-Migration noetig.
 
 ### MIG-027 — V5.6 Zahlungsbedingungen + Pre-Call Briefing Schema
 - Date: 2026-05-01 (applied auf Hetzner Business System DB im Rahmen SLC-561 `/backend`. Hinweis: Spec hatte `meetings.start_time` referenziert — echte Spalte ist `scheduled_at`, im Migration-File korrigiert.)

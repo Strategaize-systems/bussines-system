@@ -5,10 +5,16 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   BRANDING_FONT_FAMILIES,
+  BUSINESS_COUNTRIES,
   type Branding,
   type BrandingContactBlock,
   type BrandingFontFamily,
+  type BusinessCountry,
 } from "@/types/branding";
+import {
+  validateDeVatId,
+  validateNlVatId,
+} from "@/lib/validation/vat-id";
 
 const BUCKET = "branding";
 const MAX_LOGO_BYTES = 2 * 1024 * 1024; // 2 MB
@@ -27,9 +33,14 @@ type BrandingRow = {
   font_family: string | null;
   footer_markdown: string | null;
   contact_block: BrandingContactBlock | null;
+  vat_id: string | null;
+  business_country: string | null;
   updated_by: string | null;
   updated_at: string;
 };
+
+const BRANDING_SELECT =
+  "id, logo_url, primary_color, secondary_color, font_family, footer_markdown, contact_block, vat_id, business_country, updated_by, updated_at";
 
 function rowToBranding(row: BrandingRow): Branding {
   const font = row.font_family;
@@ -37,6 +48,11 @@ function rowToBranding(row: BrandingRow): Branding {
     font && (BRANDING_FONT_FAMILIES as string[]).includes(font)
       ? (font as BrandingFontFamily)
       : null;
+  const country = row.business_country;
+  const businessCountry: BusinessCountry =
+    country && (BUSINESS_COUNTRIES as string[]).includes(country)
+      ? (country as BusinessCountry)
+      : "NL";
   return {
     id: row.id,
     logoUrl: row.logo_url,
@@ -45,6 +61,8 @@ function rowToBranding(row: BrandingRow): Branding {
     fontFamily,
     footerMarkdown: row.footer_markdown,
     contactBlock: row.contact_block,
+    vatId: row.vat_id,
+    businessCountry,
     updatedBy: row.updated_by,
     updatedAt: row.updated_at,
   };
@@ -67,9 +85,7 @@ export async function getBranding(): Promise<Branding | null> {
   const { supabase } = await requireUser();
   const { data, error } = await supabase
     .from("branding_settings")
-    .select(
-      "id, logo_url, primary_color, secondary_color, font_family, footer_markdown, contact_block, updated_by, updated_at",
-    )
+    .select(BRANDING_SELECT)
     .order("updated_at", { ascending: true })
     .limit(1)
     .maybeSingle();
@@ -87,9 +103,7 @@ export async function getBrandingForSend(): Promise<Branding | null> {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("branding_settings")
-    .select(
-      "id, logo_url, primary_color, secondary_color, font_family, footer_markdown, contact_block, updated_by, updated_at",
-    )
+    .select(BRANDING_SELECT)
     .order("updated_at", { ascending: true })
     .limit(1)
     .maybeSingle();
@@ -132,6 +146,36 @@ function sanitizeContactBlock(formData: FormData): BrandingContactBlock | null {
   return { name, company, phone, web };
 }
 
+function sanitizeBusinessCountry(value: FormDataEntryValue | null): BusinessCountry {
+  if (typeof value !== "string") return "NL";
+  return (BUSINESS_COUNTRIES as string[]).includes(value)
+    ? (value as BusinessCountry)
+    : "NL";
+}
+
+/**
+ * Validiert vat_id kontextabhaengig (DEC-128):
+ * - business_country=NL -> validateNlVatId
+ * - business_country=DE -> validateDeVatId
+ *
+ * Leerer Input ist erlaubt (NULL in DB) — nur bei nicht-leerem Input
+ * wird das Format gegen den Country gepruefft.
+ */
+function sanitizeVatId(
+  value: FormDataEntryValue | null,
+  businessCountry: BusinessCountry,
+): { value: string | null; error: string | null } {
+  if (typeof value !== "string") return { value: null, error: null };
+  const trimmed = value.trim();
+  if (!trimmed) return { value: null, error: null };
+  const result =
+    businessCountry === "DE" ? validateDeVatId(trimmed) : validateNlVatId(trimmed);
+  if (!result.valid) {
+    return { value: null, error: result.error };
+  }
+  return { value: result.value, error: null };
+}
+
 /**
  * UPSERT auf bestehende Row (single-row-Enforcement).
  * Wenn keine Row existiert, wird die erste angelegt — sollte nicht passieren,
@@ -144,6 +188,12 @@ export async function updateBranding(
 
   const existing = await getBranding();
 
+  const businessCountry = sanitizeBusinessCountry(formData.get("business_country"));
+  const vatIdResult = sanitizeVatId(formData.get("vat_id"), businessCountry);
+  if (vatIdResult.error) {
+    return { error: vatIdResult.error };
+  }
+
   const payload = {
     logo_url: sanitizeText(formData.get("logo_url")),
     primary_color: sanitizeColor(formData.get("primary_color")),
@@ -151,6 +201,8 @@ export async function updateBranding(
     font_family: sanitizeFontFamily(formData.get("font_family")),
     footer_markdown: sanitizeText(formData.get("footer_markdown")),
     contact_block: sanitizeContactBlock(formData),
+    vat_id: vatIdResult.value,
+    business_country: businessCountry,
     updated_by: user.id,
     updated_at: new Date().toISOString(),
   };

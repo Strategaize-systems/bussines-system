@@ -31,6 +31,8 @@ const FULL_BRANDING: Branding = {
     phone: "+49 30 1234567",
     web: "https://strategaize.de",
   },
+  vatId: null,
+  businessCountry: "NL",
   updatedBy: null,
   updatedAt: "2026-04-27T10:00:00.000Z",
 };
@@ -43,6 +45,8 @@ const LOGO_ONLY_BRANDING: Branding = {
   fontFamily: null,
   footerMarkdown: null,
   contactBlock: null,
+  vatId: null,
+  businessCountry: "NL",
   updatedBy: null,
   updatedAt: "2026-04-27T10:00:00.000Z",
 };
@@ -64,6 +68,8 @@ describe("renderBrandedHtml", () => {
       fontFamily: "system",
       footerMarkdown: null,
       contactBlock: null,
+      vatId: null,
+      businessCountry: "NL",
       updatedBy: null,
       updatedAt: "2026-04-27T10:00:00.000Z",
     };

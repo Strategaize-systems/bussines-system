@@ -9,8 +9,9 @@ import { Separator } from "@/components/ui/separator";
 import { DuplicateWarning, useDuplicateCheck } from "@/components/ui/duplicate-warning";
 import { PlzCityAutocomplete } from "@/components/ui/plz-city-autocomplete";
 import { checkCompanyDuplicate } from "@/lib/duplicate-check";
-import { useState, useCallback } from "react";
+import { useMemo, useState, useCallback } from "react";
 import type { Company } from "./actions";
+import { validateEuVatId } from "@/lib/validation/vat-id";
 
 const selectClass = "select-premium";
 
@@ -24,7 +25,15 @@ export function CompanyForm({ company, onSubmit, isPending }: CompanyFormProps) 
   const [tags, setTags] = useState<string[]>(company?.tags ?? []);
   const [plz, setPlz] = useState(company?.address_zip ?? "");
   const [city, setCity] = useState(company?.address_city ?? "");
+  const [vatId, setVatId] = useState(company?.vat_id ?? "");
   const dupCheck = useDuplicateCheck(useCallback((v: string) => checkCompanyDuplicate(v), []));
+
+  const vatIdInlineError = useMemo(() => {
+    const trimmed = vatId.trim();
+    if (!trimmed) return null;
+    const result = validateEuVatId(trimmed);
+    return result.valid ? null : result.error;
+  }, [vatId]);
 
   return (
     <form action={onSubmit} className="space-y-4">
@@ -104,6 +113,24 @@ export function CompanyForm({ company, onSubmit, isPending }: CompanyFormProps) 
           name="address_country"
           defaultValue={company?.address_country ?? "Deutschland"}
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="vat_id">USt-IdNr. / BTW-Nummer (optional)</Label>
+        <Input
+          id="vat_id"
+          name="vat_id"
+          value={vatId}
+          onChange={(e) => setVatId(e.target.value)}
+          placeholder="DE123456789, NL123456789B01, ATU12345678 ..."
+        />
+        {vatIdInlineError ? (
+          <p className="text-xs text-destructive">{vatIdInlineError}</p>
+        ) : (
+          <p className="text-xs text-slate-400">
+            EU-VAT-ID des Empfaengers. Voraussetzung fuer Reverse-Charge-Angebote.
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">

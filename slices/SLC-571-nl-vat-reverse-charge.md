@@ -1,14 +1,15 @@
-# SLC-571 — NL-VAT-Saetze + Reverse-Charge fuer EU-B2B-Cross-Border
+# SLC-571 — NL+DE-VAT-Saetze + Reverse-Charge fuer EU-B2B-Cross-Border
 
 ## Meta
 - Feature: FEAT-571
 - Priority: High
-- Status: planned
+- Status: in_progress
 - Created: 2026-05-04
+- Scope-Update 2026-05-04: User-Klaerung erweitert den Slice um globalen Country-Switch DE/NL (DEC-128, supersedes DEC-122).
 
 ## Goal
 
-Den V5.5/V5.6-Angebot-Pfad NL-konform machen. MIG-028 hebt das DB-Schema auf NL-VAT-Whitelist {0, 9, 19, 21} mit Default 21 (DEC-122), fuegt das `reverse_charge`-BOOLEAN-Flag mit Konsistenz-CHECK hinzu (DEC-123) und ergaenzt `branding_settings.vat_id` + `companies.vat_id` (DEC-124). UI: `/settings/branding` bekommt das BTW-Eingabefeld, Company-Stammdaten-Edit-Form bekommt das vat_id-Eingabefeld, Proposal-Editor bekommt einen Steuersatz-Dropdown 21/9/0 plus einen gegated Reverse-Charge-Toggle (3 Voraussetzungen: Strategaize-BTW + Empfaenger-BTW + Country in EU != NL). Server-Action `saveProposal` validiert die Konsistenz fruehzeitig. PDF-Renderer bekommt den bilingualen Reverse-Charge-Block "BTW verlegd / Reverse Charge — Article 196 VAT Directive 2006/112/EC" (DEC-125) plus Strategaize-vat_id im Footer.
+Den V5.5/V5.6-Angebot-Pfad NL+DE-konform machen. MIG-028 hebt das DB-Schema auf erweiterte Steuersatz-Whitelist `{0, 7, 9, 19, 21}` (DEC-128 supersedes DEC-122 — deckt NL `{0,9,21}` und DE `{0,7,19}` parallel ab), fuegt das `reverse_charge`-BOOLEAN-Flag mit Konsistenz-CHECK hinzu (DEC-123), ergaenzt `branding_settings.vat_id` + `business_country` (DEC-124 + DEC-128) sowie `companies.vat_id` (DEC-124). UI: `/settings/branding` bekommt einen Country-Dropdown (DE/NL) plus das Strategaize-vat_id-Feld (kontextabhaengig validiert NL-BTW vs. DE-USt-IdNr.). Company-Stammdaten-Edit-Form bekommt das vat_id-Eingabefeld (EU-General). Proposal-Editor bekommt einen Steuersatz-Dropdown gefiltert nach `business_country` (DE: 0/7/19, NL: 0/9/21, plus Legacy-Wert wenn persistiert) plus einen gegated Reverse-Charge-Toggle (NL-Mode only in V5.7; DE-Reverse-Charge § 13b UStG ausgelagert nach BL-421). Server-Action `saveProposal` validiert die Konsistenz fruehzeitig. PDF-Renderer bekommt den bilingualen Reverse-Charge-Block "BTW verlegd / Reverse Charge — Article 196 VAT Directive 2006/112/EC" (DEC-125, NL-Mode) plus Strategaize-vat_id im Footer (Bezeichner kontextabhaengig: "BTW-Nr." in NL-Mode, "USt-IdNr." in DE-Mode).
 
 ## Scope
 
@@ -201,32 +202,32 @@ Den V5.5/V5.6-Angebot-Pfad NL-konform machen. MIG-028 hebt das DB-Schema auf NL-
 
 ## Micro-Tasks
 
-### MT-1: MIG-028 SQL-File + Vitest-DB-Smoke
-- Goal: DB-Schema fuer NL-VAT + Reverse-Charge bereitstellen, Idempotenz + CHECK-Greifen verifizieren
-- Files: `sql/migrations/028_v57_nl_vat_reverse_charge.sql` (NEU), `cockpit/src/lib/validation/__tests__/migration-028-smoke.test.ts` (NEU, integration test gegen Coolify-DB)
-- Expected behavior: tax_rate-Default 21, Whitelist-CHECK greift, reverse_charge BOOLEAN + Konsistenz-CHECK, branding_settings.vat_id, companies.vat_id. Idempotent.
-- Verification: Apply auf Hetzner via base64-Pattern. `\d proposals/branding_settings/companies` zeigt neue Spalten/Constraints. Vitest-Tests fuer 5 INSERT/UPDATE-Fall (siehe DB-Integration-Smoke oben) gruen. Re-Apply scheitert nicht.
+### MT-1: MIG-028 SQL-File + Apply (DONE 2026-05-04)
+- Goal: DB-Schema fuer NL+DE-VAT + Reverse-Charge bereitstellen, Idempotenz + CHECK-Greifen verifizieren
+- Files: `sql/migrations/028_v57_nl_de_vat_reverse_charge.sql` (NEU)
+- Expected behavior: 5 additive Aenderungen (branding_settings.vat_id, branding_settings.business_country DEFAULT 'NL', companies.vat_id, proposals.tax_rate-Whitelist `{0,7,9,19,21}`, proposals.reverse_charge BOOLEAN + Konsistenz-CHECK). Idempotent.
+- Verification: Apply auf Hetzner via base64-Pattern (`/tmp/mig028.sql`, container `supabase-db-k9f5pn5upfq7etoefb5ukbcg-074821936116`). `\d proposals/branding_settings/companies` zeigt alle neuen Spalten/Constraints. Re-Apply emittet `NOTICE: column already exists, skipping` — keine Fehler. Default-NL auf branding_settings.business_country gesetzt. Pre-Apply-Audit zeigte 7+19 in Live-DB, beide bleiben gueltig nach Apply.
 - Dependencies: none
 
-### MT-2: vat-id.ts Validation-Layer + TDD-Vitest
-- Goal: Pure Functions fuer NL- und EU-VAT-ID-Format-Validation + Country-Code-Whitelist
-- Files: `cockpit/src/lib/validation/vat-id.ts` (NEU), `cockpit/src/lib/validation/__tests__/vat-id.test.ts` (NEU)
-- Expected behavior: `validateNlVatId(input)` und `validateEuVatId(input)` returnen typisiertes Result-Objekt. EU_COUNTRY_CODES-Constant ist exported.
-- Verification: Vitest fuer mindestens 8 Cases (gueltige NL, ungueltige NL, gueltige EU mit verschiedenen Country-Codes, ungueltige EU). RED-GREEN-REFACTOR-Zyklus.
-- Dependencies: none (kann parallel zu MT-1 laufen)
+### MT-2: vat-id.ts Validation-Layer + TDD-Vitest (DONE 2026-05-04)
+- Goal: Pure Functions fuer NL- + DE- + EU-VAT-ID-Format-Validation + Country-Code-Whitelist
+- Files: `cockpit/src/lib/validation/vat-id.ts` (NEU), `cockpit/src/lib/validation/vat-id.test.ts` (NEU — neben dem Code, nicht in `__tests__/` weil Repo-Konvention)
+- Expected behavior: `validateNlVatId(input)`, `validateDeVatId(input)`, `validateEuVatId(input)` returnen typisiertes Result-Objekt mit `valid`, `value`, optionalem `country`. `EU_COUNTRY_CODES`-Constant (27 Mitgliedstaaten Stand 2026, EL fuer Griechenland statt GR) ist exported.
+- Verification: 30 Vitest-Cases (alle gruen): NL-Format pass/fail, DE-Format pass/fail, EU-General Country-Code-Whitelist, Trim-Pflege, UK/GB explizit ausgeschlossen.
+- Dependencies: none (parallel zu MT-1)
 
-### MT-3: Branding-Settings vat_id-Eingabefeld
-- Goal: Strategaize-BTW im /settings/branding eingebbar + persistierbar
-- Files: `cockpit/src/types/branding.ts` (MODIFY), `cockpit/src/app/(app)/settings/branding/branding-form.tsx` (MODIFY), `cockpit/src/app/(app)/settings/branding/actions.ts` (MODIFY)
-- Expected behavior: Eingabefeld nach Footer-Markdown-Block. Inline-Format-Error via `validateNlVatId`. saveBranding persistiert in `branding_settings.vat_id`.
-- Verification: Browser-Smoke `/settings/branding`: gueltige NL-vat_id eingeben + save + reload zeigt Wert. Ungueltige verworfen mit Inline-Error.
+### MT-3: Branding-Settings business_country + vat_id (DONE 2026-05-04)
+- Goal: Country-Switch + Strategaize-vat_id im /settings/branding eingebbar + persistierbar
+- Files: `cockpit/src/types/branding.ts` (MODIFY: `BusinessCountry`-Type + `BUSINESS_COUNTRIES`-Constant + `vatId`/`businessCountry`-Felder am Branding-Type), `cockpit/src/app/(app)/settings/branding/actions.ts` (MODIFY: kontextabhaengiger Validator, getBranding/updateBranding um neue Spalten erweitert), `cockpit/src/app/(app)/settings/branding/branding-form.tsx` (MODIFY: Country-Select-Dropdown + vat_id-Input mit kontextabhaengigem Placeholder, Label und inline-Validation).
+- Expected behavior: "Steuer-Einstellungen"-Sektion nach Footer-Markdown-Block. Country-Dropdown DE/NL. vat_id-Eingabefeld validiert kontextabhaengig (validateDeVatId vs. validateNlVatId). Default `business_country='NL'` aus DB. saveBranding persistiert beide Felder.
+- Verification: Browser-Smoke `/settings/branding` (offen fuer User-Side-Smoke nach Coolify-Redeploy): gueltige NL-BTW (NL859123456B01) + Country=NL save OK; Country auf DE wechseln + DE123456789 eingeben + save OK; ungueltiges Format zeigt inline-Error + verhindert Submit.
 - Dependencies: MT-1 (Schema), MT-2 (Validation)
 
-### MT-4: Company-Stammdaten vat_id-Eingabefeld
-- Goal: Empfaenger-BTW in Company-Edit eingebbar + persistierbar
-- Files: Company-Edit-Komponente (MODIFY — Pfad in Investigation final), entsprechende actions.ts (MODIFY)
-- Expected behavior: Feld nach `address_country`. Inline-Format-Error via `validateEuVatId`. Persistierung in `companies.vat_id`.
-- Verification: Browser-Smoke Company-Edit: gueltige DE/AT/FR-vat_id eingeben + save + reload zeigt Wert. Ungueltige `XX...` rejected.
+### MT-4: Company-Stammdaten vat_id-Eingabefeld (DONE 2026-05-04)
+- Goal: Empfaenger-VAT-ID in Company-Edit eingebbar + persistierbar (EU-General)
+- Files: `cockpit/src/app/(app)/companies/actions.ts` (MODIFY: Company-Type um vat_id, sanitizeCompanyVatId-Helper mit validateEuVatId, createCompany/updateCompany erweitert), `cockpit/src/app/(app)/companies/company-form.tsx` (MODIFY: vat_id-Feld nach `address_country` mit useMemo-Inline-Validation).
+- Expected behavior: Feld nach `address_country`. Inline-Format-Error via `validateEuVatId`. Persistierung in `companies.vat_id`. Server-side sanitizer validiert nochmal und blockt bei Format-Fehler den Save.
+- Verification: Browser-Smoke (offen fuer User-Side-Smoke nach Coolify-Redeploy): Company-Edit + DE123456789 save OK; AT12345678/FR12345678901 OK; XX12345 zeigt inline-Error + Server-Action-Reject.
 - Dependencies: MT-1, MT-2
 
 ### MT-5: useReverseChargeEligibility-Hook + TDD-Vitest

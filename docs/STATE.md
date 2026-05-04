@@ -9,15 +9,17 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: **V5.7 Slice-Planning done 2026-05-04.** SLC-571 (FEAT-571 NL-VAT + Reverse-Charge, 9 MTs, ~5-7h) und SLC-572 (FEAT-572 Skonto-Bugfix, 4 MTs, ~30-60min) vollstaendig ausdefiniert mit ACs, MTs, Risks, Files-to-Touch und QA-Fokus. 5 Open Technical Questions aus Architecture entschieden (PDF-Footer-Position: in Adress-Block, Audit-Eintrag-Pflicht: ja, Editor-UI-Position: Summary-Bereich, Voraussetzungs-UX: disabled-Tooltip mit Quick-Links, Pattern-Erweiterung-Decision in SLC-572 MT-1). BL-420 VIES-Lookup-Integration als spaeteres Backlog-Item angelegt (medium prio, unassigned). Reihenfolge: SLC-571 zuerst (MIG-028 + 4 UI-Touchpoints + PDF-Block), SLC-572 als Polish-Slice danach.
-- Current Phase: V5.7 — Slice-Planning done, naechste = /backend SLC-571 (Schema-First-Pattern, MT-1 MIG-028 + MT-2 vat-id.ts Validation-Layer)
+- High-Level State: implementing
+- Current Focus: **V5.7 SLC-571 4/9 MTs done 2026-05-04.** Pre-Apply-Audit zeigte 7%-Legacy-Rows in Live-DB → User-Klaerung erweitert Scope um globalen `business_country`-Switch (DE/NL). DEC-122 supersedet, DEC-128 dokumentiert finale Strategie. MT-1 MIG-028 angewendet auf Hetzner (5 additive Aenderungen, idempotent verifiziert). MT-2 vat-id.ts Validation-Layer mit 30/30 Vitest-Cases gruen (validateNlVatId/validateDeVatId/validateEuVatId + EU_COUNTRY_CODES). MT-3 Branding-Settings hat Country-Dropdown + vat_id-Feld kontextabhaengig validiert. MT-4 Company-Stammdaten hat vat_id-Feld mit EU-General-Validation. TS-Build clean, 184/184 Tests gruen. Naechste = MT-5 useReverseChargeEligibility-Hook (NL-Mode-only in V5.7).
+- Current Phase: V5.7 — SLC-571 in_progress (4/9 MTs done), naechste = /backend SLC-571 MT-5+MT-6 (Eligibility-Hook + Editor-Country-Filter-Dropdown)
 
 ## Immediate Next Steps
-1. **/backend SLC-571** — start mit MT-1 (MIG-028 SQL-File + Apply auf Hetzner-DB via base64-Pattern + Vitest-DB-Smoke gegen Coolify-DB) und MT-2 (vat-id.ts Validation-Layer mit TDD-Vitest fuer NL-Format + EU-Format + Country-Code-Whitelist). Diese beiden MTs koennen parallel geplant werden — MT-2 hat keine Schema-Abhaengigkeit. Danach MT-3..MT-9 sequentiell.
-2. **(Passiv)** Coolify-Cron `meeting-briefing` Erst-Lauf-Verifikation V5.6 — app-Container-Log innerhalb naechster Min sollte `[Cron/MeetingBriefing] No candidates` (oder `processed=N`) zeigen.
-3. **Nach 24-48h Stable-Window V5.6**: /post-launch V5.6 (kann V5.5/V5.5.1/V5.4/V5.3 mitnehmen — alle ueberfaellig). Kann auch nach V5.7-Release als Sammelreview erfolgen.
-4. **Coolify-Cron `expire-proposals` Erst-Lauf 2026-05-02 02:00 Berlin verifizieren** — Audit-SQL aus REL-020-Notes Schritt 3. Passiv erledigen.
+1. **User: Coolify-Redeploy Business System** mit aktuellem Code-Stand (commit folgt) — Browser-Smoke MT-3 + MT-4 ist nach Deploy ausstehend (Settings-Page + Company-Edit).
+2. **/backend SLC-571 MT-5** — useReverseChargeEligibility-Hook implementieren mit Vitest. Logic: nur `business_country='NL'` ist V5.7-Scope; `business_country='DE'` -> Toggle disabled mit Tooltip "Reverse-Charge in DE-Mode (§ 13b UStG) nicht in V5.7-Scope, BL-421". 3 NL-Voraussetzungen: branding.vatId NOT NULL + companies.vat_id NOT NULL + companies.address_country in EU_COUNTRY_CODES != 'NL'.
+3. **/backend SLC-571 MT-6** — Editor-Steuersatz-Dropdown filtert nach business_country (DE: 0/7/19, NL: 0/9/21, plus Legacy-Wert wenn persistiert) + Reverse-Charge-Section.
+4. **Sequentiell danach** MT-7 (saveProposal-Validation), MT-8 (PDF-Block), MT-9 (COMPLIANCE.md + Cockpit-Records-Final).
+5. **(Passiv)** Coolify-Cron `meeting-briefing` Erst-Lauf-Verifikation V5.6.
+6. **Nach 24-48h Stable-Window V5.6**: /post-launch V5.6 (kann V5.5/V5.5.1/V5.4/V5.3 mitnehmen).
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
@@ -26,11 +28,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - V7 — reduziert auf Multi-User + Teamlead (FEAT-502/503)
 
 ## Active Scope
-**V5.7 — NL-Compliance + Polish (Slice-Planning done 2026-05-04):**
-- SLC-571 NL-VAT-Saetze + Reverse-Charge (planned, FEAT-571, ~5-7h, 9 MTs): MIG-028 + vat-id.ts Validation-Layer (TDD) + Settings-vat_id + Company-vat_id + Editor-Steuersatz-Dropdown + Reverse-Charge-Section (gated auf 3 Voraussetzungen) + saveProposal Server-Action-Validation (TDD) + Audit-Log + PDF-Renderer reverse-charge-block.ts mit 4 Snapshot-Cases + COMPLIANCE.md-Update.
+**V5.7 — NL+DE-Compliance + Polish (in_progress, Slice-Planning + 4/9 MTs done 2026-05-04):**
+- SLC-571 NL+DE-VAT-Saetze + Reverse-Charge (in_progress, FEAT-571, 9 MTs):
+  - DONE: MT-1 MIG-028 (5 additive Aenderungen, idempotent angewendet auf Hetzner), MT-2 vat-id.ts Validation-Layer (30/30 Vitest gruen), MT-3 Branding-Settings (Country-Dropdown + vat_id), MT-4 Company-Stammdaten vat_id-Feld.
+  - PENDING: MT-5 useReverseChargeEligibility-Hook, MT-6 Editor-Steuersatz-Dropdown gefiltert pro business_country + Reverse-Charge-Section, MT-7 saveProposal Server-Action-Validation + Audit-Log, MT-8 PDF-Renderer reverse-charge-block.ts + Footer-vat_id-Block, MT-9 COMPLIANCE.md + Cockpit-Records-Final.
+  - Scope-Erweiterung 2026-05-04: User-Klaerung nach Pre-Apply-Audit (7%-Legacy-Rows) → globaler `business_country`-Switch DE/NL. DEC-122 supersedet, DEC-128 finale Strategie. Whitelist `{0,7,9,19,21}`.
 - SLC-572 Skonto-Toggle UI-State-Drift Bugfix (planned, FEAT-572, ~30-60min, 4 MTs): MT-1 Investigation + Pattern-Erweiterung-Decision, MT-2 useRef-Revert-Logic, MT-3 Vitest fuer Save-Error-Pfad, MT-4 Cockpit-Records.
 - Reihenfolge: 571 zuerst (Schema + UI + PDF), 572 als Polish.
-- BL-420 VIES-Lookup-Integration als Backlog-Item angelegt (medium prio, unassigned, fuer spaeter).
+- BL-420 VIES-Lookup-Integration + BL-421 DE-Reverse-Charge § 13b UStG (beide Backlog, medium prio, unassigned, fuer spaeter).
 
 **V5.5 — Angebot-Erstellung (RELEASED 2026-05-01 als REL-020):**
 - FEAT-551 Angebot-Schema-Erweiterung + Position-Items (in_progress, MIG-026 applied auf Hetzner, Server Actions + Pfad-Helper live)

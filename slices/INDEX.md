@@ -233,5 +233,5 @@
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-571 | [NL-VAT-Saetze + Reverse-Charge fuer EU-B2B-Cross-Border](SLC-571-nl-vat-reverse-charge.md) | FEAT-571 | planned | High | 2026-05-04 |
+| SLC-571 | [NL+DE-VAT-Saetze + Reverse-Charge fuer EU-B2B-Cross-Border](SLC-571-nl-vat-reverse-charge.md) | FEAT-571 | in_progress | High | 2026-05-04 |
 | SLC-572 | [Skonto-Toggle UI-State-Drift Bugfix](SLC-572-skonto-toggle-bugfix.md) | FEAT-572 | planned | Low | 2026-05-04 |

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { validateEuVatId } from "@/lib/validation/vat-id";
 
 export type Company = {
   id: string;
@@ -14,6 +15,7 @@ export type Company = {
   address_city: string | null;
   address_zip: string | null;
   address_country: string | null;
+  vat_id: string | null;
   notes: string | null;
   tags: string[];
   exit_relevance: string | null;
@@ -77,6 +79,23 @@ export async function getCompanyContacts(companyId: string) {
   return data;
 }
 
+/**
+ * Validiert EU-vat_id-Eingabe (DEC-124). Leerer Input = NULL erlaubt.
+ * Nicht-leere Eingabe muss EU-Format-konform sein (validateEuVatId).
+ */
+function sanitizeCompanyVatId(
+  value: FormDataEntryValue | null,
+): { value: string | null; error: string | null } {
+  if (typeof value !== "string") return { value: null, error: null };
+  const trimmed = value.trim();
+  if (!trimmed) return { value: null, error: null };
+  const result = validateEuVatId(trimmed);
+  if (!result.valid) {
+    return { value: null, error: result.error };
+  }
+  return { value: result.value, error: null };
+}
+
 export async function createCompany(formData: FormData) {
   const supabase = await createClient();
 
@@ -84,6 +103,11 @@ export async function createCompany(formData: FormData) {
     ?.split(",")
     .map((t) => t.trim())
     .filter(Boolean) ?? [];
+
+  const vatIdResult = sanitizeCompanyVatId(formData.get("vat_id"));
+  if (vatIdResult.error) {
+    return { error: vatIdResult.error };
+  }
 
   const { error } = await supabase.from("companies").insert({
     name: formData.get("name") as string,
@@ -95,6 +119,7 @@ export async function createCompany(formData: FormData) {
     address_city: (formData.get("address_city") as string) || null,
     address_zip: (formData.get("address_zip") as string) || null,
     address_country: (formData.get("address_country") as string) || null,
+    vat_id: vatIdResult.value,
     tags,
     notes: (formData.get("notes") as string) || null,
     exit_relevance: (formData.get("exit_relevance") as string) || null,
@@ -127,6 +152,11 @@ export async function updateCompany(id: string, formData: FormData) {
     .map((t) => t.trim())
     .filter(Boolean) ?? [];
 
+  const vatIdResult = sanitizeCompanyVatId(formData.get("vat_id"));
+  if (vatIdResult.error) {
+    return { error: vatIdResult.error };
+  }
+
   const { error } = await supabase
     .from("companies")
     .update({
@@ -139,6 +169,7 @@ export async function updateCompany(id: string, formData: FormData) {
       address_city: (formData.get("address_city") as string) || null,
       address_zip: (formData.get("address_zip") as string) || null,
       address_country: (formData.get("address_country") as string) || null,
+      vat_id: vatIdResult.value,
       tags,
       notes: (formData.get("notes") as string) || null,
       exit_relevance: (formData.get("exit_relevance") as string) || null,
