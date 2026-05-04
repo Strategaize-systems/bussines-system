@@ -13,6 +13,7 @@ import vfsFonts from "pdfmake/build/vfs_fonts";
 
 import { calculateLineTotal, calculateTotals } from "@/lib/proposal/calc";
 import { sanitizeProposalFilename } from "@/lib/pdf/filename-helper";
+import { buildReverseChargeBlock } from "@/lib/pdf/reverse-charge-block";
 import type {
   Proposal,
   ProposalItem,
@@ -298,30 +299,47 @@ export function buildProposalDocDefinition(
     margin: [0, 0, 0, 14],
   } as Content;
 
+  // V5.7 SLC-571 MT-8 (DEC-125) — Reverse-Charge-Block direkt unter Tax-Row,
+  // strikt conditional. proposal.reverse_charge=false → Stack unveraendert,
+  // Snapshots aus V5.5/V5.6 bleiben bit-identisch.
+  const summaryStack: Content[] = [
+    summaryRow("Subtotal Netto", formatEur(totals.subtotal)),
+    summaryRow(`Steuer (${taxRate}%)`, formatEur(totals.tax)),
+  ];
+
+  if (proposal.reverse_charge) {
+    summaryStack.push(
+      buildReverseChargeBlock(
+        branding?.vat_id ?? null,
+        company?.vat_id ?? null,
+      ),
+    );
+  }
+
+  summaryStack.push(
+    {
+      canvas: [
+        {
+          type: "line",
+          x1: 0,
+          y1: 0,
+          x2: 220,
+          y2: 0,
+          lineWidth: 0.5,
+          lineColor: "#cbd5e1",
+        },
+      ],
+      margin: [0, 4, 0, 4],
+    },
+    summaryRow("Total Brutto", formatEur(totals.total), true),
+  );
+
   const summaryContent: Content = {
     columns: [
       { text: "" },
       {
         width: 220,
-        stack: [
-          summaryRow("Subtotal Netto", formatEur(totals.subtotal)),
-          summaryRow(`Steuer (${taxRate}%)`, formatEur(totals.tax)),
-          {
-            canvas: [
-              {
-                type: "line",
-                x1: 0,
-                y1: 0,
-                x2: 220,
-                y2: 0,
-                lineWidth: 0.5,
-                lineColor: "#cbd5e1",
-              },
-            ],
-            margin: [0, 4, 0, 4],
-          },
-          summaryRow("Total Brutto", formatEur(totals.total), true),
-        ],
+        stack: summaryStack,
       },
     ],
     margin: [0, 0, 0, 18],
@@ -456,7 +474,18 @@ export function buildProposalDocDefinition(
     });
   }
 
-  if (footerStripped) {
+  // V5.7 SLC-571 MT-8 (DEC-124) — Strategaize-vat_id im Footer-Block. Wird
+  // gerendert wenn branding.vat_id gesetzt ist, unabhaengig von Reverse-Charge.
+  // Bezeichner kontextabhaengig: NL → "BTW-Nr.", DE → "USt-IdNr." (Default
+  // "USt-IdNr." wenn business_country fehlt). Zeile sitzt zwischen Trennlinie
+  // und footer_markdown, damit sie in Kombination mit dem Markdown-Footer als
+  // formelles Adressblock-Detail erscheint. Wenn vat_id null und kein Footer-
+  // Markdown gesetzt: kein Block, V5.5/V5.6-Output bit-identisch.
+  const strategaizeVatId = branding?.vat_id?.trim() || null;
+  const businessCountry = branding?.business_country ?? null;
+  const vatLabel = businessCountry === "NL" ? "BTW-Nr." : "USt-IdNr.";
+
+  if (footerStripped || strategaizeVatId) {
     content.push({
       canvas: [
         {
@@ -471,11 +500,23 @@ export function buildProposalDocDefinition(
       ],
       margin: [0, 8, 0, 6],
     } as Content);
-    content.push({
-      text: footerStripped,
-      fontSize: 8,
-      color: "#64748b",
-    });
+
+    if (strategaizeVatId) {
+      content.push({
+        text: `${vatLabel} ${strategaizeVatId}`,
+        fontSize: 8,
+        color: "#64748b",
+        margin: [0, 0, 0, footerStripped ? 4 : 0],
+      });
+    }
+
+    if (footerStripped) {
+      content.push({
+        text: footerStripped,
+        fontSize: 8,
+        color: "#64748b",
+      });
+    }
   }
 
   return {

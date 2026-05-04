@@ -1046,7 +1046,11 @@ export async function generateProposalPdf(
     supabase
       .from("branding_settings")
       .select(
-        "logo_url, primary_color, secondary_color, font_family, footer_markdown, contact_block",
+        // V5.7 SLC-571 MT-8 — vat_id + business_country fuer PDF-Footer +
+        // Reverse-Charge-Block. ProposalEditPayload-Type erwartet diese Felder
+        // (siehe Zeile ~93). Vorher gefehlt → Renderer sah undefined zur
+        // Laufzeit, obwohl TypeScript es als string|null typisierte.
+        "logo_url, primary_color, secondary_color, font_family, footer_markdown, contact_block, vat_id, business_country",
       )
       .limit(1)
       .maybeSingle(),
@@ -1060,7 +1064,8 @@ export async function generateProposalPdf(
     proposal.company_id
       ? supabase
           .from("companies")
-          .select("id, name")
+          // V5.7 SLC-571 MT-8 — vat_id + address_country fuer Reverse-Charge-Block.
+          .select("id, name, vat_id, address_country")
           .eq("id", proposal.company_id)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),

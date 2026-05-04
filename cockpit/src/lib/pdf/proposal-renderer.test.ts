@@ -3,7 +3,12 @@ import {
   buildProposalDocDefinition,
   formatMilestoneTriggerLabel,
 } from "./proposal-renderer";
-import type { Proposal, ProposalItem } from "@/app/(app)/proposals/actions";
+import { REVERSE_CHARGE_HEADER } from "./reverse-charge-block";
+import type {
+  Proposal,
+  ProposalItem,
+  ProposalEditPayload,
+} from "@/app/(app)/proposals/actions";
 import type { PaymentMilestone } from "@/types/proposal-payment";
 
 // V5.6 SLC-562 — Snapshot-Tests fuer den PDF-Renderer.
@@ -80,13 +85,48 @@ const baseInput = {
 function getContentSnapshot(
   input: ReturnType<typeof makeProposal>,
   milestones?: PaymentMilestone[],
+  overrides: {
+    branding?: ProposalEditPayload["branding"];
+    company?: ProposalEditPayload["company"];
+  } = {},
 ) {
   const docDef = buildProposalDocDefinition({
     proposal: input,
     ...baseInput,
+    branding: overrides.branding ?? baseInput.branding,
+    company: overrides.company ?? baseInput.company,
     milestones,
   });
   return JSON.parse(JSON.stringify(docDef.content));
+}
+
+// V5.7 SLC-571 MT-8 — Test-Fixtures fuer Reverse-Charge + Strategaize-vat_id.
+function makeBranding(
+  overrides: Partial<NonNullable<ProposalEditPayload["branding"]>> = {},
+): NonNullable<ProposalEditPayload["branding"]> {
+  return {
+    logo_url: null,
+    primary_color: null,
+    secondary_color: null,
+    font_family: null,
+    footer_markdown: null,
+    contact_block: null,
+    vat_id: null,
+    business_country: "NL",
+    ...overrides,
+  };
+}
+
+function makeCompany(
+  overrides: Partial<NonNullable<ProposalEditPayload["company"]>> = {},
+): NonNullable<ProposalEditPayload["company"]> {
+  return {
+    id: "company-1",
+    name: "Acme GmbH",
+    vat_id: null,
+    address_country: null,
+    ...overrides,
+  };
 }
 
 function makeMilestone(
@@ -333,5 +373,175 @@ describe("formatMilestoneTriggerLabel", () => {
         ms({ due_trigger: "on_milestone", label: "   " }),
       ),
     ).toBe("Bei Meilenstein");
+  });
+});
+
+// V5.7 SLC-571 MT-8 — Reverse-Charge-Block + Strategaize-vat_id-Footer
+// (DEC-124 + DEC-125). Snapshot-Strategie:
+//  1) Ohne Reverse-Charge ohne branding.vat_id (branding=null) muss bit-
+//     identisch zum V5.6-Baseline-Snapshot sein (siehe Skonto-Block-Tests).
+//  2) Mit branding.vat_id (kein Reverse-Charge): Footer-Block enthaelt die
+//     vat_id-Zeile mit kontextabhaengigem Bezeichner (NL/DE).
+//  3) Mit Reverse-Charge: Bilingualer Block direkt unter Tax-Row + beide
+//     vat_ids gerendert.
+//  4) Edge-Case Reverse-Charge ohne Strategaize-vat_id: Renderer crasht nicht,
+//     Block rendert mit "—" Platzhalter (Server-Action soll diesen Fall
+//     blocken — Renderer ist defensiv).
+describe("buildProposalDocDefinition — Reverse-Charge + Strategaize-vat_id (DEC-124, DEC-125)", () => {
+  it("AC21: ohne Reverse-Charge ohne branding.vat_id ist bit-identisch zum V5.6-Baseline (regression-frei)", () => {
+    const proposal = makeProposal({
+      reverse_charge: false,
+      skonto_percent: null,
+      skonto_days: null,
+    });
+    const content = getContentSnapshot(proposal, []);
+    const stringified = JSON.stringify(content);
+    expect(stringified).not.toMatch(/BTW/);
+    expect(stringified).not.toMatch(/Reverse Charge/);
+    expect(stringified).not.toMatch(/USt-IdNr\./);
+    // Re-Use des V5.6 Baseline-Snapshots aus Konditionen-Block-Suite
+    // ("Snapshot ohne beides deterministisch (V5.5 Baseline strict)") —
+    // identische Eingaben muessen identische Ausgabe liefern.
+    expect(content).toMatchSnapshot();
+  });
+
+  it("AC20: branding.vat_id NL gesetzt rendert 'BTW-Nr.' im Footer-Block (kein Reverse-Charge)", () => {
+    const proposal = makeProposal({ reverse_charge: false });
+    const content = getContentSnapshot(proposal, [], {
+      branding: makeBranding({
+        vat_id: "NL859123456B01",
+        business_country: "NL",
+      }),
+    });
+    const stringified = JSON.stringify(content);
+    expect(stringified).toMatch(/BTW-Nr\. NL859123456B01/);
+    expect(stringified).not.toMatch(/USt-IdNr\./);
+    // Reverse-Charge-Header darf NICHT erscheinen
+    expect(stringified).not.toMatch(/Reverse Charge/);
+    expect(stringified).not.toMatch(/BTW verlegd/);
+  });
+
+  it("AC20: branding.vat_id DE gesetzt rendert 'USt-IdNr.' im Footer-Block (kein Reverse-Charge)", () => {
+    const proposal = makeProposal({ reverse_charge: false });
+    const content = getContentSnapshot(proposal, [], {
+      branding: makeBranding({
+        vat_id: "DE123456789",
+        business_country: "DE",
+      }),
+    });
+    const stringified = JSON.stringify(content);
+    expect(stringified).toMatch(/USt-IdNr\. DE123456789/);
+    expect(stringified).not.toMatch(/BTW-Nr\./);
+  });
+
+  it("AC18: Reverse-Charge=true rendert bilingualen Header + beide BTW-IDs direkt unter Tax-Row", () => {
+    const proposal = makeProposal({
+      reverse_charge: true,
+      tax_rate: 0,
+    });
+    const content = getContentSnapshot(proposal, [], {
+      branding: makeBranding({
+        vat_id: "NL859123456B01",
+        business_country: "NL",
+      }),
+      company: makeCompany({
+        vat_id: "DE123456789",
+        address_country: "DE",
+      }),
+    });
+    const stringified = JSON.stringify(content);
+    expect(stringified).toContain(REVERSE_CHARGE_HEADER);
+    expect(stringified).toMatch(/BTW verlegd \/ Reverse Charge — Article 196 VAT Directive 2006\/112\/EC/);
+    expect(stringified).toMatch(
+      /BTW-Nr\. NL859123456B01 — BTW-Nr\. DE123456789/,
+    );
+    // Strategaize-vat_id auch im Footer (AC20 + AC18 koexistieren).
+    expect(stringified).toMatch(/BTW-Nr\. NL859123456B01/);
+    // Tax-Rate 0% muss korrekt im Summary-Header stehen.
+    expect(stringified).toMatch(/Steuer \(0%\)/);
+  });
+
+  it("AC18: Reverse-Charge-Block sitzt direkt unter Tax-Row vor Total-Brutto-Linie", () => {
+    const proposal = makeProposal({
+      reverse_charge: true,
+      tax_rate: 0,
+    });
+    const content = getContentSnapshot(proposal, [], {
+      branding: makeBranding({
+        vat_id: "NL859123456B01",
+        business_country: "NL",
+      }),
+      company: makeCompany({
+        vat_id: "DE123456789",
+        address_country: "DE",
+      }),
+    });
+    const stringified = JSON.stringify(content);
+    const taxIdx = stringified.indexOf("Steuer (0%)");
+    const rcIdx = stringified.indexOf(REVERSE_CHARGE_HEADER);
+    const totalIdx = stringified.indexOf("Total Brutto");
+    expect(taxIdx).toBeGreaterThan(-1);
+    expect(rcIdx).toBeGreaterThan(taxIdx);
+    expect(totalIdx).toBeGreaterThan(rcIdx);
+  });
+
+  it("AC19: Reverse-Charge=false ohne branding rendert KEINEN Reverse-Charge-Block", () => {
+    const proposal = makeProposal({ reverse_charge: false });
+    const content = getContentSnapshot(proposal, []);
+    const stringified = JSON.stringify(content);
+    expect(stringified).not.toContain(REVERSE_CHARGE_HEADER);
+    expect(stringified).not.toMatch(/BTW verlegd/);
+    expect(stringified).not.toMatch(/Reverse Charge/);
+  });
+
+  it("AC22 Edge-Case: Reverse-Charge=true ohne Strategaize-vat_id rendert defensiv mit '—' Platzhalter", () => {
+    const proposal = makeProposal({
+      reverse_charge: true,
+      tax_rate: 0,
+    });
+    // branding=null UND company.vat_id fehlt — Renderer darf nicht crashen,
+    // aber der Block soll sichtbar gerendert werden mit Platzhalter "—".
+    const content = getContentSnapshot(proposal, [], {
+      branding: null,
+      company: makeCompany({ vat_id: null, address_country: "DE" }),
+    });
+    const stringified = JSON.stringify(content);
+    expect(stringified).toContain(REVERSE_CHARGE_HEADER);
+    expect(stringified).toMatch(/BTW-Nr\. — — BTW-Nr\. —/);
+  });
+
+  it("AC22 Snapshot: Reverse-Charge=true mit beiden vat_ids deterministisch", () => {
+    const proposal = makeProposal({
+      reverse_charge: true,
+      tax_rate: 0,
+      skonto_percent: null,
+      skonto_days: null,
+    });
+    const content = getContentSnapshot(proposal, [], {
+      branding: makeBranding({
+        vat_id: "NL859123456B01",
+        business_country: "NL",
+      }),
+      company: makeCompany({
+        vat_id: "DE123456789",
+        address_country: "DE",
+      }),
+    });
+    expect(content).toMatchSnapshot();
+  });
+
+  it("AC22 Snapshot: branding.vat_id nur Footer (kein Reverse-Charge) deterministisch", () => {
+    const proposal = makeProposal({
+      reverse_charge: false,
+      skonto_percent: null,
+      skonto_days: null,
+    });
+    const content = getContentSnapshot(proposal, [], {
+      branding: makeBranding({
+        vat_id: "NL859123456B01",
+        business_country: "NL",
+      }),
+    });
+    expect(content).toMatchSnapshot();
   });
 });
