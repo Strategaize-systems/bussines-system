@@ -10,13 +10,13 @@
 - Next Action: Audit-Log-Page-Renderer auf nested-vs-flat-changes-Heuristik anpassen — entweder die `before/after`-Wrapper bei `update`-Action auflösen, oder das `update`-Audit-Insert-Schema aendern (siehe `actions.ts` Workspace-Auto-Save-Audit). Vermutlich seit V5.6 vorhanden, von MT-7-QA aufgedeckt (RPT-296).
 
 ### ISSUE-049 — SLC-562 UI-State-Drift im SkontoSection nach Auto-Save-Error
-- Status: open
+- Status: resolved
 - Severity: Low
 - Area: UI / Proposals-Editor
 - Summary: Nach mehreren Server-rejected Auto-Saves im SkontoSection (z.B. Prozent=10 ausserhalb Range) flippt der Toggle visuell in OFF-Zustand, obwohl die DB den vorherigen gueltigen State haelt.
 - Impact: Cosmetic-Drift zwischen UI und DB. Selbstheilend nach Page-Reload. DB-State immer korrekt. Validation greift korrekt mit Inline-Error.
 - Workaround: Page-Reload zeigt aktuellen DB-State.
-- Next Action: Backlog BL-419 — optimistic-update-Reset oder explicit-revert-on-error im patchAndSave-Pfad pruefen.
+- Resolution: 2026-05-04 in SLC-572 (DEC-126 Option A). `lastKnownGoodSkontoRef` useRef in `proposal-editor.tsx` initialisiert mit DB-State, bei jedem erfolgreichen Skonto-Save aktualisiert. Auf Save-Error fuer einen Skonto-touching Patch ruft `persistPatch` `onProposalChange(revert)` mit den last-known-good Werten auf, sodass der Toggle/Input-State auf den letzten vom Server bestaetigten Stand zurueckrollt. Decision-Logic ist als pure Function in `cockpit/src/lib/proposal/skonto-revert.ts` extrahiert und mit 16 Vitest-Tests im Node-Env abgesichert (RPT-277-Repro inkl.). Keine Pattern-Erweiterung auf PaymentTermsDropdown/SplitPlanSection — beide nutzen andere Persist-Pfade ohne den gleichen Race (SplitPlanSection validiert pre-flight, sendet bei invalid plan nicht; PaymentTermsDropdown hat nur length-checks ohne realistisches Reject-Pattern).
 
 ### ISSUE-048 — SLC-562 PaymentTermsDropdown initial Display-Bug
 - Status: resolved

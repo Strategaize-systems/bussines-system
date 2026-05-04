@@ -13,6 +13,11 @@ import {
   type ProposalEditPayload,
 } from "@/app/(app)/proposals/actions";
 import { useDebouncedCallback } from "@/lib/utils/use-debounce";
+import {
+  nextSkontoRefAfterSave,
+  revertPatchIfSkontoFailed,
+  type SkontoState,
+} from "@/lib/proposal/skonto-revert";
 import type { PaymentMilestone } from "@/types/proposal-payment";
 import { PaymentTermsDropdown } from "./payment-terms-dropdown";
 import { SkontoSection } from "./skonto-section";
@@ -67,6 +72,16 @@ export function ProposalEditor({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // V5.7 SLC-572 (DEC-126 Option A) — Last-known-good Skonto-Werte vom Server.
+  // Wird bei jedem erfolgreichen Skonto-Save aktualisiert. Bei Save-Error fuer
+  // einen Skonto-touching Patch rollt der State auf diese Werte zurueck, damit
+  // der Toggle nicht in einem invaliden Zwischenzustand (z.B. percent=null +
+  // days=7) haengen bleibt.
+  const lastKnownGoodSkontoRef = useRef<SkontoState>({
+    skonto_percent: proposal.skonto_percent,
+    skonto_days: proposal.skonto_days,
+  });
+
   const persistPatch = useCallback(
     async (patch: EditorPatch) => {
       setSaveStatus("saving");
@@ -74,12 +89,21 @@ export function ProposalEditor({
       if (res.ok) {
         setSaveStatus("saved");
         setErrorMessage(null);
+        lastKnownGoodSkontoRef.current = nextSkontoRefAfterSave(
+          lastKnownGoodSkontoRef.current,
+          patch,
+        );
       } else {
         setSaveStatus("error");
         setErrorMessage(res.error);
+        const revert = revertPatchIfSkontoFailed(
+          patch,
+          lastKnownGoodSkontoRef.current,
+        );
+        if (revert) onProposalChange(revert);
       }
     },
-    [proposal.id],
+    [proposal.id, onProposalChange],
   );
 
   const debouncedPersist = useDebouncedCallback(persistPatch, 500);

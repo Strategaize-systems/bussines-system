@@ -10,17 +10,16 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.7 SLC-571 vollstaendig done (9/9 MTs) 2026-05-04.** MT-8 PDF-Renderer Code-complete (RPT-297) gegen cecfe9e + **/qa Live-PASS via RPT-298** mit 4 Live-PDF-Smokes: AC18 (bilingualer Reverse-Charge-Block direkt unter Tax-Row + beide BTW-IDs), AC19 (kein Block bei RC=false), AC20 (Strategaize-BTW-Footer mit kontextrichtigem NL-Bezeichner), AC21 indirekt via Storage-Cache + Snapshot-Tests. MT-9 abgeschlossen mit COMPLIANCE.md V5.7-Section + Cockpit-Records-Sync (SLC-571 done, FEAT-571 done, BL-417 done). Naechste = /backend SLC-572 (Skonto-Toggle UI-State-Drift Bugfix, ~30-60min) ODER direkt /qa Gesamt-V5.7 wenn SLC-572 als nicht-blockierender Polish behandelt wird.
-- Current Phase: V5.7 — SLC-571 done (9/9 MTs + Live-PASS), SLC-572 planned, naechste = /backend SLC-572 oder Gesamt-/qa V5.7
+- Current Focus: **V5.7 vollstaendig code-complete 2026-05-04 — beide Slices done (SLC-571 9/9 MTs + Live-PASS, SLC-572 4/4 MTs).** SLC-572 fixt den in RPT-277 dokumentierten Skonto-Toggle UI-State-Drift Bug (DEC-126 Option A): `lastKnownGoodSkontoRef` useRef in proposal-editor.tsx + revert-on-error via `onProposalChange`, Decision-Logic als Pure Function `cockpit/src/lib/proposal/skonto-revert.ts` mit 16 Vitest-Tests inkl. RPT-277-Repro. `npm run test` 247/247 PASS (231 vorher + 16 neu). `npm run build` clean. Pattern-Erweiterung auf PaymentTermsDropdown/SplitPlanSection out-of-scope (andere Persist-Pfade ohne den gleichen Race). ISSUE-049 resolved, BL-419 done. Naechste = Gesamt-/qa V5.7.
+- Current Phase: V5.7 — beide Slices done (SLC-571 + SLC-572), naechste = Gesamt-/qa V5.7
 
 ## Immediate Next Steps
-1. **/backend SLC-572** — Skonto-Toggle UI-State-Drift Bugfix (~30-60min, 4 MTs). Quick-Polish, dann V5.7 ready fuer Gesamt-/qa.
-2. **Gesamt-/qa V5.7** — alle 2 Slices zusammen (SLC-571 + SLC-572) inklusive Vitest 231+ + Browser-Smoke-Sweep.
-3. **/final-check** V5.7 — Hygiene/Dependencies/Security.
-4. **/go-live** + **/deploy** V5.7 als REL-023.
-5. **(Parallel)** Pre-existing Audit-Log-UI-Renderer-Bug ISSUE-050 als BL-Item erfassen (generic-update-Eintraege zeigen `[object Object]`).
-6. **(Passiv)** Coolify-Cron `meeting-briefing` Erst-Lauf-Verifikation V5.6.
-7. **Nach 24-48h Stable-Window V5.6**: /post-launch V5.6 (kann V5.5/V5.5.1/V5.4/V5.3 mitnehmen).
+1. **Gesamt-/qa V5.7** — alle 2 Slices zusammen (SLC-571 + SLC-572) inklusive Vitest 247/247 + Browser-Smoke-Sweep gegen aktuellen main + Browser-Repro RPT-277 (Toggle bleibt nach 5x Save-Error visuell auf ON, Werte bleiben sichtbar).
+2. **/final-check** V5.7 — Hygiene/Dependencies/Security.
+3. **/go-live** + **/deploy** V5.7 als REL-023.
+4. **(Parallel)** Pre-existing Audit-Log-UI-Renderer-Bug ISSUE-050 als BL-Item erfassen (generic-update-Eintraege zeigen `[object Object]`).
+5. **(Passiv)** Coolify-Cron `meeting-briefing` Erst-Lauf-Verifikation V5.6.
+6. **Nach 24-48h Stable-Window V5.6**: /post-launch V5.6 (kann V5.5/V5.5.1/V5.4/V5.3 mitnehmen).
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
@@ -41,7 +40,11 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
   - MT-8 PDF-Renderer reverse-charge-block.ts + proposal-renderer.ts MODIFY (bilingualer Block + Strategaize-vat_id-Footer, 8 neue Vitest-Cases inkl. 3 Snapshots, AC21 regression-frei, **TSC + 231/231 Vitest + Build + Lint clean, Live-Smoke 4/4 PDFs PASS via RPT-298** gegen cecfe9e: AC18+AC19+AC20+AC21 alle verifiziert, Type-Lie-Fix in actions.ts PDF-Path-Selects)
   - MT-9 COMPLIANCE.md V5.7-Section + Cockpit-Records-Sync 2026-05-04
   - Scope-Erweiterung: User-Klaerung nach Pre-Apply-Audit (7%-Legacy-Rows) → globaler business_country-Switch DE/NL. DEC-122 supersedet, DEC-128 finale Strategie. Whitelist {0,7,9,19,21}.
-- SLC-572 Skonto-Toggle UI-State-Drift Bugfix (planned, FEAT-572, ~30-60min, 4 MTs): MT-1 Investigation + Pattern-Erweiterung-Decision, MT-2 useRef-Revert-Logic, MT-3 Vitest fuer Save-Error-Pfad, MT-4 Cockpit-Records.
+- SLC-572 Skonto-Toggle UI-State-Drift Bugfix (**done 2026-05-04**, FEAT-572, 4/4 MTs):
+  - MT-1 Investigation: Race-Pfad identifiziert (User clear-input → SkontoSection.onChange(null, days) → patchAndSave → optimistic state {null, X} → server validateSkonto rejects both-or-neither → State bleibt invalid → Toggle visuell OFF). Pattern-Erweiterung-Decision: PaymentTermsDropdown + SplitPlanSection out-of-scope (andere Persist-Pfade, kein Race). DEC-126 Option A bestaetigt.
+  - MT-2 useRef + Revert-Logic: `lastKnownGoodSkontoRef` in proposal-editor.tsx initialisiert mit `proposal.skonto_*`, bei Save-Success aktualisiert via `nextSkontoRefAfterSave`, bei Save-Error revert via `onProposalChange(revertPatchIfSkontoFailed(...))`. AC2..AC6 erfuellt.
+  - MT-3 Vitest: Pure-Function-Extraction `cockpit/src/lib/proposal/skonto-revert.ts` (Vitest config ist node-only ohne RTL), 16 Tests inkl. RPT-277-5x-Repro + Toggle-OFF + non-skonto-isolation. AC7+AC12 erfuellt. Volle Suite 247/247 PASS (231 vorher + 16 neu).
+  - MT-4 Build/Lint/Test + Cockpit-Records: `npm run build` clean (kein neuer Type-Error in geaenderten Dateien), `npm run lint` keine neuen Findings (166 pre-existing unrelated), `npm run test` 247/247 PASS. Cockpit-Records: SLC-572 done, FEAT-572 done, BL-419 done, ISSUE-049 resolved.
 - BL-420 VIES-Lookup-Integration + BL-421 DE-Reverse-Charge § 13b UStG (beide Backlog, medium prio, unassigned, fuer spaeter).
 
 **V5.5 — Angebot-Erstellung (RELEASED 2026-05-01 als REL-020):**

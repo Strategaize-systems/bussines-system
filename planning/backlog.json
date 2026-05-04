@@ -1777,9 +1777,9 @@
       "title": "SLC-562 UI-State-Drift nach Auto-Save-Error im Skonto-Toggle",
       "type": "bug",
       "priority": "low",
-      "status": "open",
+      "status": "done",
       "version": "V5.7",
-      "description": "Wenn der User in der SkontoSection einen ungueltigen Wert eingibt (z.B. Prozent=10), lehnt der Server via validateSkonto ab. Save-Status zeigt 'Fehler' korrekt. Aber: nach mehreren Auto-Save-Errors flippt der Toggle visuell in OFF-Zustand obwohl die DB den vorherigen gueltigen State haelt. Selbstheilend nach Page-Reload. DB ist immer korrekt. Validation greift korrekt. Vermutung: setState-Race im handleProposalChange/debouncedPersist-Pfad in proposal-editor.tsx. Optional: optimistic-update-Reset bei Save-Error oder explicit-revert-on-error. Reproduzierbar im Browser-Smoke RPT-277. Low-Severity weil DB-State korrekt, nur UX-cosmetic. Aufwand: ~30min Investigation + Fix.",
+      "description": "Wenn der User in der SkontoSection einen ungueltigen Wert eingibt (z.B. Prozent=10), lehnt der Server via validateSkonto ab. Save-Status zeigt 'Fehler' korrekt. Aber: nach mehreren Auto-Save-Errors flippt der Toggle visuell in OFF-Zustand obwohl die DB den vorherigen gueltigen State haelt. Selbstheilend nach Page-Reload. DB ist immer korrekt. Validation greift korrekt. Vermutung: setState-Race im handleProposalChange/debouncedPersist-Pfad in proposal-editor.tsx. Optional: optimistic-update-Reset bei Save-Error oder explicit-revert-on-error. Reproduzierbar im Browser-Smoke RPT-277. Low-Severity weil DB-State korrekt, nur UX-cosmetic. Aufwand: ~30min Investigation + Fix. RESOLVED 2026-05-04 in SLC-572 via DEC-126 Option A: lastKnownGoodSkontoRef useRef + revert-on-error, pure-function-extracted nach skonto-revert.ts mit 16 Vitest-Tests.",
       "createdAt": "2026-05-02"
     },
     {
