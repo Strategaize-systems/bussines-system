@@ -220,14 +220,14 @@ Den V5.5/V5.6-Angebot-Pfad NL+DE-konform machen. MIG-028 hebt das DB-Schema auf 
 - Goal: Country-Switch + Strategaize-vat_id im /settings/branding eingebbar + persistierbar
 - Files: `cockpit/src/types/branding.ts` (MODIFY: `BusinessCountry`-Type + `BUSINESS_COUNTRIES`-Constant + `vatId`/`businessCountry`-Felder am Branding-Type), `cockpit/src/app/(app)/settings/branding/actions.ts` (MODIFY: kontextabhaengiger Validator, getBranding/updateBranding um neue Spalten erweitert), `cockpit/src/app/(app)/settings/branding/branding-form.tsx` (MODIFY: Country-Select-Dropdown + vat_id-Input mit kontextabhaengigem Placeholder, Label und inline-Validation).
 - Expected behavior: "Steuer-Einstellungen"-Sektion nach Footer-Markdown-Block. Country-Dropdown DE/NL. vat_id-Eingabefeld validiert kontextabhaengig (validateDeVatId vs. validateNlVatId). Default `business_country='NL'` aus DB. saveBranding persistiert beide Felder.
-- Verification: Browser-Smoke `/settings/branding` (offen fuer User-Side-Smoke nach Coolify-Redeploy): gueltige NL-BTW (NL859123456B01) + Country=NL save OK; Country auf DE wechseln + DE123456789 eingeben + save OK; ungueltiges Format zeigt inline-Error + verhindert Submit.
+- Verification: Browser-Smoke `/settings/branding` PASS Live (RPT-292, 2026-05-04 nach Coolify-Redeploy von 3545971): TC1 Initial-Render Default-NL ✓, TC2 Inline-Format-Error NL12345 ✓, TC3 Country-Switch NL→DE Label/Placeholder/Bezeichner ✓, TC4 Inline-Format-PASS DE123456789 ✓, TC5 Reset auf NL-Default ohne Save ✓.
 - Dependencies: MT-1 (Schema), MT-2 (Validation)
 
 ### MT-4: Company-Stammdaten vat_id-Eingabefeld (DONE 2026-05-04)
 - Goal: Empfaenger-VAT-ID in Company-Edit eingebbar + persistierbar (EU-General)
 - Files: `cockpit/src/app/(app)/companies/actions.ts` (MODIFY: Company-Type um vat_id, sanitizeCompanyVatId-Helper mit validateEuVatId, createCompany/updateCompany erweitert), `cockpit/src/app/(app)/companies/company-form.tsx` (MODIFY: vat_id-Feld nach `address_country` mit useMemo-Inline-Validation).
 - Expected behavior: Feld nach `address_country`. Inline-Format-Error via `validateEuVatId`. Persistierung in `companies.vat_id`. Server-side sanitizer validiert nochmal und blockt bei Format-Fehler den Save.
-- Verification: Browser-Smoke (offen fuer User-Side-Smoke nach Coolify-Redeploy): Company-Edit + DE123456789 save OK; AT12345678/FR12345678901 OK; XX12345 zeigt inline-Error + Server-Action-Reject.
+- Verification: Browser-Smoke `/companies` Neue-Firma-Sheet PASS Live (RPT-292, 2026-05-04): TC6 Form-Render mit vat_id-Feld + Label "USt-IdNr. / BTW-Nummer (optional)" ✓, TC7 Inline-Format-Error XX12345 ("Country-Code 'XX' ist kein EU-Mitglied") ✓, TC8 Inline-Format-PASS DE123456789 ✓, TC9 Inline-Format-PASS NL859123456B01 ✓, TC10 Sheet-Close ohne Save (Bestand unveraendert) ✓.
 - Dependencies: MT-1, MT-2
 
 ### MT-5: useReverseChargeEligibility-Hook + TDD-Vitest

@@ -10,7 +10,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.7 SLC-571 4/9 MTs done 2026-05-04.** Pre-Apply-Audit zeigte 7%-Legacy-Rows in Live-DB → User-Klaerung erweitert Scope um globalen `business_country`-Switch (DE/NL). DEC-122 supersedet, DEC-128 dokumentiert finale Strategie. MT-1 MIG-028 angewendet auf Hetzner (5 additive Aenderungen, idempotent verifiziert). MT-2 vat-id.ts Validation-Layer mit 30/30 Vitest-Cases gruen (validateNlVatId/validateDeVatId/validateEuVatId + EU_COUNTRY_CODES). MT-3 Branding-Settings hat Country-Dropdown + vat_id-Feld kontextabhaengig validiert. MT-4 Company-Stammdaten hat vat_id-Feld mit EU-General-Validation. TS-Build clean, 184/184 Tests gruen. Naechste = MT-5 useReverseChargeEligibility-Hook (NL-Mode-only in V5.7).
+- Current Focus: **V5.7 SLC-571 4/9 MTs done + Browser-Smoke Live-PASS 2026-05-04.** Pre-Apply-Audit zeigte 7%-Legacy-Rows in Live-DB → User-Klaerung erweitert Scope um globalen `business_country`-Switch (DE/NL). DEC-122 supersedet, DEC-128 dokumentiert finale Strategie. MT-1 MIG-028 angewendet auf Hetzner (5 additive Aenderungen, idempotent verifiziert). MT-2 vat-id.ts Validation-Layer mit 30/30 Vitest-Cases gruen. MT-3 Branding-Settings hat Country-Dropdown + vat_id-Feld kontextabhaengig validiert (Browser-Smoke 5/5 PASS). MT-4 Company-Stammdaten vat_id-Feld mit EU-General-Validation (Browser-Smoke 5/5 PASS via RPT-292). TS-Build clean, 184/184 Tests gruen. Naechste = MT-5 useReverseChargeEligibility-Hook (NL-Mode-only in V5.7).
 - Current Phase: V5.7 — SLC-571 in_progress (4/9 MTs done), naechste = /backend SLC-571 MT-5+MT-6 (Eligibility-Hook + Editor-Country-Filter-Dropdown)
 
 ## Immediate Next Steps
