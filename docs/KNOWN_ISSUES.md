@@ -1,5 +1,14 @@
 # Known Issues
 
+### ISSUE-050 — Audit-Log UI-Renderer zeigt generic-update-changes als "[object Object]"
+- Status: open
+- Severity: Medium
+- Area: UI / Audit-Log
+- Summary: Auf `/audit-log` rendert der Changes-Cell-Renderer fuer Eintraege mit `action='update'` und nested `changes={ before: {...}, after: {...} }` den Wert als JS-Default-Repr `[object Object] → [object Object]` statt formatierter Diff. `action='reverse_charge_toggled'`-Eintraege (V5.7 MT-7) und andere flat-changes-Actions rendern dagegen sauber (z.B. `tax_rate: 9 → 0`).
+- Impact: Audit-Trail ist fuer alle Workspace-Auto-Save-Eintraege (mehrere pro Tag) effektiv unleserlich. DSGVO-/Compliance-Reviewability eingeschraenkt. Daten in DB sind korrekt, nur Rendering ist defekt.
+- Workaround: Direkter SQL-Query auf `audit_log.changes` JSONB liefert die echten Werte. Cockpit-View nicht nutzbar.
+- Next Action: Audit-Log-Page-Renderer auf nested-vs-flat-changes-Heuristik anpassen — entweder die `before/after`-Wrapper bei `update`-Action auflösen, oder das `update`-Audit-Insert-Schema aendern (siehe `actions.ts` Workspace-Auto-Save-Audit). Vermutlich seit V5.6 vorhanden, von MT-7-QA aufgedeckt (RPT-296).
+
 ### ISSUE-049 — SLC-562 UI-State-Drift im SkontoSection nach Auto-Save-Error
 - Status: open
 - Severity: Low
