@@ -177,7 +177,7 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-571 | NL-VAT-Saetze + Reverse-Charge (BL-417) | planned | [Spec](FEAT-571-nl-vat-reverse-charge.md) | 2026-05-03 |
+| FEAT-571 | NL-VAT-Saetze + Reverse-Charge (BL-417) | done | [Spec](FEAT-571-nl-vat-reverse-charge.md) | 2026-05-03 |
 | FEAT-572 | Skonto-Toggle UI-State-Drift Bugfix (BL-419) | planned | [Spec](FEAT-572-skonto-toggle-bugfix.md) | 2026-05-03 |
 
 ## V6.2 Features (Automation + Attribution — planned)

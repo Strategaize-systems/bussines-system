@@ -542,18 +542,111 @@ Keine neuen Drittanbieter in V5.5: pdfmake ist lokale Dependency, Storage auf He
 
 ---
 
+## V5.7-Erweiterung: NL-VAT + Reverse-Charge fuer EU-B2B-Cross-Border (2026-05-04)
+
+> **Hinweis:** Diese Sektion beschreibt die **steuerrechtliche** Aenderung an den Angebot-PDFs in V5.7. Sie ist **keine Rechts- oder Steuerberatung** und ersetzt nicht die Pruefung durch eine Steuerberatung/einen Steuerberater oder Wirtschaftspruefer/in. Vor produktivem Versand muss insbesondere die ICP-Meldungspflicht (Opgaaf ICP) mit der NL-Steuerberatung geklaert sein.
+
+### Kontext
+
+Strategaize Transition GmbH sitzt in den Niederlanden (Swalmen, NL). Rechnungen und Angebote muessen NL-Steuerlogik abbilden, nicht deutsche. V5.7 macht das Angebot-PDF NL+DE-konform und ergaenzt die Reverse-Charge-Logik fuer B2B-Empfaenger im EU-Ausland.
+
+### Steuersaetze
+
+Die DB-Whitelist (`proposals.tax_rate` CHECK-Constraint, MIG-028) erlaubt nur die folgenden Werte:
+
+| Wert | Bedeutung | Land |
+|---|---|---|
+| 21.00 | Standard-Satz NL | NL (Default fuer neue Angebote bei `business_country='NL'`) |
+| 19.00 | Standard-Satz DE (Legacy) | DE (Default fuer neue Angebote bei `business_country='DE'`) |
+| 9.00 | Reduzierter Satz NL | NL |
+| 7.00 | Reduzierter Satz DE | DE |
+| 0.00 | Steuerfrei / Reverse-Charge / Innergemeinschaftliche B2B-Lieferung | NL + DE |
+
+Alte 19%-Angebote aus V5.5/V5.6 (vor Umstellung auf NL-Modus) bleiben unveraendert (Snapshot-Prinzip aus DEC-107). Der Editor zeigt den Legacy-Wert read-only mit Hinweis auf den NL-Mode-Wechsel.
+
+### Reverse-Charge / Intracommunautaire Prestatie ("BTW verlegd")
+
+Bei B2B-Empfaengern in einem anderen EU-Mitgliedsstaat als NL kann nach Artikel 196 EU-VAT-Directive 2006/112/EC die Steuerschuld auf den Empfaenger uebertragen werden ("Reverse-Charge", niederlaendisch "BTW verlegd"). Voraussetzungen — alle muessen erfuellt sein:
+
+1. **Sender-VAT-ID:** `branding_settings.vat_id` ist gesetzt und entspricht dem NL-Format `^NL\d{9}B\d{2}$` (z.B. `NL859123456B01`)
+2. **Empfaenger-VAT-ID:** `companies.vat_id` ist gesetzt und entspricht dem EU-Format `^[A-Z]{2}[A-Z0-9]{2,12}$` mit gueltigem Country-Code (z.B. `DE123456789`, `AT12345678`, `FR12345678901`)
+3. **Empfaenger-Country:** `companies.address_country` ist in der EU 27-Whitelist (Stand 2026) und ungleich `'NL'`. Drittlaender wie `UK` (Brexit), `CH`, `US` sind ausgeschlossen.
+
+Wenn alle drei Voraussetzungen erfuellt sind, kann der User im Angebot-Editor den Reverse-Charge-Toggle aktivieren. Beim Aktivieren werden zwei Felder simultan gesetzt: `reverse_charge=true` und `tax_rate=0.00`. Der Server-Action `saveProposal` validiert die Konsistenz mit einer Pure Function `validateReverseCharge` und liefert bei Verstoss eine deutsche Fehlermeldung (vier Reject-Pfade: tax_rate != 0, branding.vat_id missing, company.vat_id missing, country = NL or non-EU).
+
+Eine DB-CHECK-Constraint enforced die Konsistenz auch auf Schema-Ebene (Defense-in-Depth): `reverse_charge=true → tax_rate=0`.
+
+### Audit-Eintraege
+
+Bei tatsaechlicher Reverse-Charge-Status-Aenderung (Toggle ON oder OFF) wird ein `audit_log`-Eintrag erzeugt:
+
+- `actor_id` = aktueller User
+- `action` = `'reverse_charge_toggled'`
+- `entity_type` = `'proposal'`
+- `entity_id` = Proposal-UUID
+- `changes` = `{ before: { reverse_charge, tax_rate }, after: { reverse_charge, tax_rate } }`
+- `context` = `'Reverse-Charge aktiviert'` oder `'Reverse-Charge deaktiviert'`
+
+Save-Operationen ohne Toggle-Aenderung erzeugen KEINEN reverse_charge-Audit-Eintrag (Spam-Schutz).
+
+### PDF-Renderer (FEAT-553-Erweiterung)
+
+Der pdfmake-basierte PDF-Renderer wurde in V5.7 erweitert:
+
+- **Reverse-Charge-Block:** Wenn `proposal.reverse_charge=true`, rendert direkt unter der Tax-Row im Summary-Block der bilinguale Hinweis "BTW verlegd / Reverse Charge — Article 196 VAT Directive 2006/112/EC" gefolgt von einer Zeile mit beiden VAT-IDs (Format: `BTW-Nr. {strategaize.vat_id} — BTW-Nr. {company.vat_id}`).
+- **Strategaize-VAT-ID-Footer:** Wenn `branding_settings.vat_id` gesetzt ist, rendert die VAT-ID im Adress-Footer ueber dem Footer-Markdown. Bezeichner ist kontextabhaengig: bei `business_country='NL'` `BTW-Nr.`, sonst `USt-IdNr.`. Diese Zeile rendert auch ohne Reverse-Charge — die VAT-ID gehoert zur formellen Rechnungsadresse.
+
+Die Renderer-Aenderungen sind strikt conditional: ein V5.5/V5.6-Proposal ohne `branding.vat_id` und ohne `reverse_charge` rendert bit-identisch zum V5.6-Output. Der Storage-Bucket `proposal-pdfs` enthaelt weiterhin die unveraenderten V5.5/V5.6-PDFs (kein Re-Render), nur frische Renderings nutzen die V5.7-Logik.
+
+### Datenfluss
+
+| Schritt | Komponente | Daten |
+|---|---|---|
+| Eingabe Strategaize-VAT-ID | `/settings/branding` (Settings-Page) | NL-Format `NL\d{9}B\d{2}` validiert inline |
+| Eingabe Empfaenger-VAT-ID | `/companies/[id]/edit` (Company-Form) | EU-General-Format validiert inline mit Country-Code-Whitelist |
+| Reverse-Charge-Toggle | Editor `/proposals/[id]/edit` | Hook `useReverseChargeEligibility` prueft 3 Voraussetzungen vor Aktivierung |
+| Server-Action `saveProposal` | `app/(app)/proposals/actions.ts` | Pure Function `validateReverseCharge` blockt inkonsistente Saves |
+| DB-Persistenz | `proposals` (CHECK-Constraint) | Schema-Defense-in-Depth |
+| Audit-Eintrag | `audit_log` | Nur bei Status-Aenderung, mit Diff im `changes`-Feld |
+| PDF-Render | `lib/pdf/proposal-renderer.ts` + `lib/pdf/reverse-charge-block.ts` | Conditional Block + Footer-VAT-ID |
+
+### Datenschutzliche Einordnung
+
+- **VAT-IDs sind keine personenbezogenen Daten im engeren Sinne** (Art. 4 Nr. 1 DSGVO), wenn sie sich auf juristische Personen beziehen. Die `companies.vat_id` ist daher rechtlich unkritisch.
+- **Strategaize-VAT-ID** ist Eigen-Stammdatum, kein personenbezogenes Datum.
+- Die VAT-IDs werden ausschliesslich auf den Angebot-PDFs des Senders/Empfaengers angezeigt — kein externes Sharing, keine API-Weitergabe.
+
+### Offene Pflichten (NICHT in V5.7-Scope)
+
+- **VIES-Online-Lookup** der VAT-IDs (BL-420) — momentan nur Format-Validation, kein Online-Check gegen das EU-VIES-System.
+- **DE-Reverse-Charge § 13b UStG** (BL-421) — DE-Empfaenger mit Reverse-Charge ist andere Rechtsgrundlage und nicht in V5.7-Scope (nur EU-Cross-Border ausserhalb NL).
+- **ICP-Meldungspflicht** (Opgaaf ICP) — bei tatsaechlichem Versand von Reverse-Charge-Rechnungen ist eine quartalsweise Zusammenfassende Meldung in NL Pflicht. **User-Reporting-Pflicht** — kein automatischer Export im System.
+- **Drittland-Empfaenger** (UK, CH, US) — werden in V5.7 nicht unterstuetzt, Toggle bleibt disabled.
+- **Multi-Currency-Reverse-Charge** — V7+ Scope.
+
+### Architektur-Entscheidungen V5.7
+
+DEC-122 superseded durch DEC-128 (NL+DE-Country-Switch global), DEC-123 (Reverse-Charge BOOLEAN + DB-CHECK), DEC-124 (vat_id Format-only validation), DEC-125 (PDF-Block bilingual hardcoded), DEC-126 (Audit-Eintrag bei Status-Aenderung), DEC-127 (Editor-Hook fuer Eligibility), DEC-128 (Country-Switch finale Strategie). Siehe `docs/DECISIONS.md` fuer Details.
+
+### Migration
+
+MIG-028 — 5 additive Aenderungen, idempotent: `proposals.tax_rate` CHECK-Whitelist `{0,7,9,19,21}`, `proposals.reverse_charge BOOLEAN NOT NULL DEFAULT false` mit Konsistenz-CHECK, `branding_settings.vat_id TEXT NULL`, `branding_settings.business_country TEXT DEFAULT 'NL'`, `companies.vat_id TEXT NULL`. Kein Daten-Migrations-Schritt, alte Rows bleiben unveraendert.
+
+---
+
 ## Disclaimer
 
-Diese Dokumentation beschreibt den **technischen** Datenschutz-Stand des Systems zum Zeitpunkt **2026-04-25 (V5.2-Release)**. Sie ist eine **pragmatische Standardvorlage** und stellt **keine Rechtsberatung** dar. Insbesondere ersetzt sie nicht:
+Diese Dokumentation beschreibt den **technischen** Datenschutz-Stand des Systems zum Zeitpunkt **2026-05-04 (V5.7-Stand SLC-571 done)**. Sie ist eine **pragmatische Standardvorlage** und stellt **keine Rechtsberatung** dar. Insbesondere ersetzt sie nicht:
 
 - die **anwaltliche Pruefung** der Einwilligungstexte und der Privacy Policy
 - die formale **Einsetzung einer/eines Datenschutzbeauftragten** (sofern erforderlich)
 - die **DSFA (Datenschutz-Folgenabschaetzung)** fuer die Audio-Aufnahme- und KI-Auswertungs-Pipelines (Art. 35 DSGVO)
 - die **Auftragsverarbeitungsvertraege** mit allen aktiven Drittanbietern, insbesondere mit dem geplanten Azure-OpenAI-EU-Provider und dem SIP-Trunk-Provider vor Go-Live
+- die **steuerrechtliche Pruefung** der Reverse-Charge-Konformitaet (V5.7) durch eine NL-Steuerberatung, insbesondere fuer die Pflicht zur quartalsweisen ICP-Meldung (Opgaaf ICP)
 
 Vor produktivem Einsatz mit echten Kunden- oder Interessentendaten sind diese Punkte zu klaeren. Die Dokumentation ist **manuell zu aktualisieren** bei wesentlichen Schema-, Provider- oder Region-Aenderungen — kein Auto-Refresh-Mechanismus implementiert.
 
 ---
 
-**Letzte Aktualisierung:** 2026-05-01 (V5.5-Section ergaenzt — Angebot-Erstellung, PDF-Pipeline, Status-Lifecycle, Composing-Studio-Anhang)
-**Naechste empfohlene Pruefung:** Pre-Production-Compliance-Gate vor V5.6 — Anwalts-Pruefung der V5.4 + V5.5-Sections, Switch auf Azure-OpenAI-EU-Whisper, ISSUE-042-Schliessung
+**Letzte Aktualisierung:** 2026-05-04 (V5.7-Section ergaenzt — NL-VAT-Saetze, Reverse-Charge-Logik, Country-Switch, PDF-Block, Audit-Eintraege)
+**Naechste empfohlene Pruefung:** Pre-Production-Compliance-Gate vor V7 — Anwalts-Pruefung gesamte COMPLIANCE.md, NL-Steuerberatung-Pruefung der V5.7-Section, Switch auf Azure-OpenAI-EU-Whisper, ISSUE-042-Schliessung

@@ -10,19 +10,17 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.7 SLC-571 7/9 MTs done + MT-7 QA Live-PASS 2026-05-04.** MT-5+MT-6 QA Live-PASS (RPT-294). MT-7 Code-complete (RPT-295) + **/qa Live-PASS via RPT-296** gegen 581590f Live: Audit-Insert `reverse_charge_toggled` mit sauberem Diff-Render bei Toggle-ON+OFF gruen, Reject-Pfad 2 (branding.vat_id missing) liefert exakte deutsche Fehlermeldung im Save-Indicator-Tooltip, Reject-Pfad 4 (country=NL) liefert exakte deutsche Fehlermeldung, Defense-in-Depth bewiesen (rejected Saves landen NICHT in DB — Title-Restore verifiziert). Pfad 1 + Pfad 3 via 14/14 Pure-Function-Tests + Code-Pattern-Aequivalenz abgedeckt. Pre-existing audit-log-UI-Bug erfasst (generic-update-Eintraege rendern als `[object Object]`, NICHT durch MT-7 verursacht). TSC + 222/222 Vitest + Build + Lint clean. Naechste = /backend SLC-571 MT-8 (PDF-Renderer reverse-charge-block.ts) — letzter Code-Layer-MT vor MT-9 Compliance-Doku.
-- Current Phase: V5.7 — SLC-571 in_progress (7/9 MTs done + MT-7 QA-PASS), naechste = /backend MT-8 PDF-Renderer
+- Current Focus: **V5.7 SLC-571 vollstaendig done (9/9 MTs) 2026-05-04.** MT-8 PDF-Renderer Code-complete (RPT-297) gegen cecfe9e + **/qa Live-PASS via RPT-298** mit 4 Live-PDF-Smokes: AC18 (bilingualer Reverse-Charge-Block direkt unter Tax-Row + beide BTW-IDs), AC19 (kein Block bei RC=false), AC20 (Strategaize-BTW-Footer mit kontextrichtigem NL-Bezeichner), AC21 indirekt via Storage-Cache + Snapshot-Tests. MT-9 abgeschlossen mit COMPLIANCE.md V5.7-Section + Cockpit-Records-Sync (SLC-571 done, FEAT-571 done, BL-417 done). Naechste = /backend SLC-572 (Skonto-Toggle UI-State-Drift Bugfix, ~30-60min) ODER direkt /qa Gesamt-V5.7 wenn SLC-572 als nicht-blockierender Polish behandelt wird.
+- Current Phase: V5.7 — SLC-571 done (9/9 MTs + Live-PASS), SLC-572 planned, naechste = /backend SLC-572 oder Gesamt-/qa V5.7
 
 ## Immediate Next Steps
-1. **/backend SLC-571 MT-8** — PDF-Renderer reverse-charge-block.ts (NEU) + proposal-renderer.ts MODIFY (Block direkt unter Tax-Row + Footer-Strategaize-vat_id-Block) + 4 Snapshot-Test-Cases (regression-frei zu V5.6 + 3 RC-Varianten). Fuer NL-VAT rechtlich erforderlich vor /go-live.
-2. **/backend SLC-571 MT-9** — COMPLIANCE.md NL-VAT + Reverse-Charge-Sektion + Cockpit-Records-Final (slices/INDEX, features/INDEX, backlog.json, STATE.md aktualisieren auf SLC-571 done).
-3. **(Parallel)** Pre-existing Audit-Log-UI-Renderer-Bug als BL-Item erfassen (generic-update-Eintraege zeigen `[object Object]`).
-4. **(Passiv)** Coolify-Cron `meeting-briefing` Erst-Lauf-Verifikation V5.6.
-5. **Nach 24-48h Stable-Window V5.6**: /post-launch V5.6 (kann V5.5/V5.5.1/V5.4/V5.3 mitnehmen).
-4. **(Passiv)** Coolify-Cron `meeting-briefing` Erst-Lauf-Verifikation V5.6.
-5. **Nach 24-48h Stable-Window V5.6**: /post-launch V5.6 (kann V5.5/V5.5.1/V5.4/V5.3 mitnehmen).
-5. **(Passiv)** Coolify-Cron `meeting-briefing` Erst-Lauf-Verifikation V5.6.
-6. **Nach 24-48h Stable-Window V5.6**: /post-launch V5.6 (kann V5.5/V5.5.1/V5.4/V5.3 mitnehmen).
+1. **/backend SLC-572** — Skonto-Toggle UI-State-Drift Bugfix (~30-60min, 4 MTs). Quick-Polish, dann V5.7 ready fuer Gesamt-/qa.
+2. **Gesamt-/qa V5.7** — alle 2 Slices zusammen (SLC-571 + SLC-572) inklusive Vitest 231+ + Browser-Smoke-Sweep.
+3. **/final-check** V5.7 — Hygiene/Dependencies/Security.
+4. **/go-live** + **/deploy** V5.7 als REL-023.
+5. **(Parallel)** Pre-existing Audit-Log-UI-Renderer-Bug ISSUE-050 als BL-Item erfassen (generic-update-Eintraege zeigen `[object Object]`).
+6. **(Passiv)** Coolify-Cron `meeting-briefing` Erst-Lauf-Verifikation V5.6.
+7. **Nach 24-48h Stable-Window V5.6**: /post-launch V5.6 (kann V5.5/V5.5.1/V5.4/V5.3 mitnehmen).
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
@@ -31,13 +29,19 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - V7 — reduziert auf Multi-User + Teamlead (FEAT-502/503)
 
 ## Active Scope
-**V5.7 — NL+DE-Compliance + Polish (in_progress, Slice-Planning + 7/9 MTs done + MT-5/MT-6/MT-7 QA Live-PASS 2026-05-04):**
-- SLC-571 NL+DE-VAT-Saetze + Reverse-Charge (in_progress, FEAT-571, 9 MTs):
-  - DONE: MT-1 MIG-028 (5 additive Aenderungen, idempotent angewendet auf Hetzner), MT-2 vat-id.ts Validation-Layer (30/30 Vitest gruen), MT-3 Branding-Settings (Country-Dropdown + vat_id), MT-4 Company-Stammdaten vat_id-Feld, MT-5 useReverseChargeEligibility-Hook + countryNameToCode-Mapper (24/24 Vitest gruen + Live-PASS via RPT-294), MT-6 Editor-Steuersatz-Dropdown + Reverse-Charge-Section + createProposal-Default NL=21/DE=19 + zod-Whitelist {0,7,9,19,21} + reverse_charge-Patch + Audit-Field (TSC + 208/208 Vitest + Build + Lint clean Code-side, **Browser-Smoke 7/7 PASS via RPT-294**), MT-7 saveProposal Server-Action-Validation + Audit-Insert (Pure-Function `validateReverseCharge` mit 4 Reject-Pfaden, 14/14 Vitest gruen, AuditAction um `reverse_charge_toggled`, Resolved-State-Computation pre-UPDATE, **TSC + 222/222 Vitest + Build + Lint clean Code-side**, **Live-Smoke PASS via RPT-296**: Audit-Insert beide Toggle-Events sichtbar mit sauberem Diff, Reject-Pfad 2 (branding) + Pfad 4 (NL country) liefern exakte deutsche Fehlermeldungen, Defense-in-Depth bewiesen).
-  - PENDING: MT-8 PDF-Renderer reverse-charge-block.ts + Footer-vat_id-Block, MT-9 COMPLIANCE.md + Cockpit-Records-Final.
-  - Scope-Erweiterung 2026-05-04: User-Klaerung nach Pre-Apply-Audit (7%-Legacy-Rows) → globaler `business_country`-Switch DE/NL. DEC-122 supersedet, DEC-128 finale Strategie. Whitelist `{0,7,9,19,21}`.
+**V5.7 — NL+DE-Compliance + Polish (in_progress, SLC-571 done 2026-05-04, SLC-572 planned):**
+- SLC-571 NL+DE-VAT-Saetze + Reverse-Charge (**done 2026-05-04**, FEAT-571, 9/9 MTs):
+  - MT-1 MIG-028 (5 additive Aenderungen, idempotent angewendet auf Hetzner)
+  - MT-2 vat-id.ts Validation-Layer (30/30 Vitest gruen)
+  - MT-3 Branding-Settings (Country-Dropdown + vat_id)
+  - MT-4 Company-Stammdaten vat_id-Feld
+  - MT-5 useReverseChargeEligibility-Hook + countryNameToCode-Mapper (24/24 Vitest gruen + Live-PASS via RPT-294)
+  - MT-6 Editor-Steuersatz-Dropdown + Reverse-Charge-Section + createProposal-Default NL=21/DE=19 + zod-Whitelist {0,7,9,19,21} (TSC + 208/208 Vitest + Build + Lint clean, Browser-Smoke 7/7 PASS via RPT-294)
+  - MT-7 saveProposal Server-Action-Validation + Audit-Insert (Pure-Function validateReverseCharge mit 4 Reject-Pfaden, 14/14 Vitest gruen, Live-Smoke PASS via RPT-296)
+  - MT-8 PDF-Renderer reverse-charge-block.ts + proposal-renderer.ts MODIFY (bilingualer Block + Strategaize-vat_id-Footer, 8 neue Vitest-Cases inkl. 3 Snapshots, AC21 regression-frei, **TSC + 231/231 Vitest + Build + Lint clean, Live-Smoke 4/4 PDFs PASS via RPT-298** gegen cecfe9e: AC18+AC19+AC20+AC21 alle verifiziert, Type-Lie-Fix in actions.ts PDF-Path-Selects)
+  - MT-9 COMPLIANCE.md V5.7-Section + Cockpit-Records-Sync 2026-05-04
+  - Scope-Erweiterung: User-Klaerung nach Pre-Apply-Audit (7%-Legacy-Rows) → globaler business_country-Switch DE/NL. DEC-122 supersedet, DEC-128 finale Strategie. Whitelist {0,7,9,19,21}.
 - SLC-572 Skonto-Toggle UI-State-Drift Bugfix (planned, FEAT-572, ~30-60min, 4 MTs): MT-1 Investigation + Pattern-Erweiterung-Decision, MT-2 useRef-Revert-Logic, MT-3 Vitest fuer Save-Error-Pfad, MT-4 Cockpit-Records.
-- Reihenfolge: 571 zuerst (Schema + UI + PDF), 572 als Polish.
 - BL-420 VIES-Lookup-Integration + BL-421 DE-Reverse-Charge § 13b UStG (beide Backlog, medium prio, unassigned, fuer spaeter).
 
 **V5.5 — Angebot-Erstellung (RELEASED 2026-05-01 als REL-020):**

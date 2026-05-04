@@ -1757,7 +1757,7 @@
       "title": "NL+DE-Mehrwertsteuer-Saetze + Reverse-Charge + Country-Switch",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V5.7",
       "description": "Strategaize Transition GmbH sitzt in NL — Rechnungen muessen NL-Steuerlogik abbilden, nicht deutsche. Inhalt: (1) NL-VAT-Saetze: 21% Standard, 9% reduziert, 0% (statt 19/7/0). Steuersatz-Dropdown im Editor + DB-CHECK + Branding-Default umstellen. (2) Reverse-Charge / Intracommunautaire prestatie (B2B EU-Cross-Border, 'BTW verlegd'): bei B2B-Empfaengern in anderen EU-Laendern wird ohne MwSt fakturiert (0% mit Reverse-Charge-Hinweis), Empfaenger zahlt selbst. Voraussetzungen: USt-IdNr/BTW-Nummer beider Parteien, Hinweis auf Rechnung 'BTW verlegd / Reverse Charge — Article 196 VAT Directive 2006/112/EC', Zusammenfassende Meldung (Opgaaf ICP) in NL. (3) Felder fuer BTW-Nummer Strategaize (Settings) + BTW/USt-IdNr Empfaenger (Contact/Company). (4) PDF-Renderer-Block 'BTW verlegd' wenn Reverse-Charge aktiv + Steuer=0 + beide Nummern vorhanden. (5) Sprache deutsch fuer deutsche Kunden bleibt OK — nur Steuerlogik ist NL-konform. Recherche-Aufgabe: genaue Pflichtformulierung auf Rechnung pruefen + Formular-Pflicht ICP-Meldung. Voraussichtlich V6.0+ Slice (Steuer-Schema-Migration MIG-028 + Editor-Erweiterung + PDF-Block).",
       "createdAt": "2026-05-02"
