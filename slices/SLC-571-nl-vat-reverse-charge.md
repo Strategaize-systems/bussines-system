@@ -244,12 +244,12 @@ Den V5.5/V5.6-Angebot-Pfad NL+DE-konform machen. MIG-028 hebt das DB-Schema auf 
 - Verification: TSC `tsc --noEmit` clean, Vitest 208/208 gruen, `npm run build` PASS, Lint clean fuer alle MT-5+MT-6-Files. **Browser-Smoke ist /qa-Schritt nach User-Coolify-Redeploy.**
 - Dependencies: MT-3, MT-4, MT-5
 
-### MT-7: saveProposal Server-Action-Validation + TDD-Vitest + Audit-Log
+### MT-7: saveProposal Server-Action-Validation + TDD-Vitest + Audit-Log (DONE 2026-05-04 Code-side)
 - Goal: Server-Side-Enforcement der Reverse-Charge-Konsistenz + Audit-Eintrag bei Status-Aenderung
-- Files: `cockpit/src/app/(app)/proposals/actions.ts` (MODIFY), `cockpit/src/app/(app)/proposals/__tests__/save-proposal-validation.test.ts` (NEU oder MODIFY)
-- Expected behavior: 4 Reject-Pfade + 1 Audit-Insert-Pfad. Vergleich `reverse_charge`-Wert vor/nach Save.
-- Verification: Vitest gegen Coolify-DB mit RLS-Pattern. Manueller Curl-Test mit ungueltiger Payload.
-- Dependencies: MT-1, MT-2
+- Files (NEU): `cockpit/src/lib/proposal/reverse-charge-validation.ts` (Pure-Function `validateReverseCharge`), `cockpit/src/lib/proposal/reverse-charge-validation.test.ts` (14 Vitest-Cases). Files (MODIFY): `cockpit/src/lib/audit.ts` (`AuditAction`-Union um `"reverse_charge_toggled"`), `cockpit/src/app/(app)/proposals/actions.ts` (Resolved-State-Computation pre-UPDATE + 4 Reject-Pfade via validateReverseCharge wenn nextRC=true + zusaetzlicher logAudit-Call mit `action='reverse_charge_toggled'`, `changes={ before: {reverse_charge,tax_rate}, after: {reverse_charge,tax_rate} }`, `context='Reverse-Charge aktiviert/deaktiviert'`).
+- Expected behavior: 4 Reject-Pfade (RC=true ohne tax_rate=0 / ohne branding.vat_id / ohne company.vat_id / mit non-EU-country oder NL) liefern aussagekraeftige deutsche Fehlermeldungen anstelle der unbrauchbaren Postgres-CHECK-Errors. Audit-Eintrag nur bei tatsaechlicher RC-Status-Aenderung (Spam-Schutz). Pure Function ist Single-Source-of-Truth fuer UI + Server-Action.
+- Verification: 14/14 Vitest-Cases gruen (Off-State, alle 4 Reject-Pfade, Whitespace-Pflege, deterministische Reihenfolge der Fehler-Reihenfolge bei mehreren Verstoessen, AT/FR-Eligible-Cases, UK/CH non-EU, NL-Inland). 222/222 Gesamt-Vitest gruen. TSC + Build + ESLint clean.
+- Dependencies: MT-1 (DB-Schema), MT-2 (EU_COUNTRY_CODES + countryNameToCode-Reuse aus Editor-Hook)
 
 ### MT-8: PDF-Renderer reverse-charge-block.ts + Renderer-Erweiterung
 - Goal: Bilingualer Reverse-Charge-Block + Strategaize-vat_id-Footer im PDF

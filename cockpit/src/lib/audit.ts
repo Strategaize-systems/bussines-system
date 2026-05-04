@@ -7,7 +7,10 @@ export type AuditAction =
   | "status_change"
   | "create"
   | "update"
-  | "delete";
+  | "delete"
+  // V5.7 SLC-571 MT-7 — explizites Audit fuer Reverse-Charge-Status-Aenderung
+  // (DEC-126). Action-Wert wird vom Cockpit-Audit-Log ausgewertet.
+  | "reverse_charge_toggled";
 
 export type AuditEntityType =
   | "deal"

@@ -11,6 +11,7 @@ import {
 } from "@/lib/proposal/zod-schemas";
 import { calculateTotals } from "@/lib/proposal/calc";
 import { validateSkonto } from "@/lib/proposal/skonto-validation";
+import { validateReverseCharge } from "@/lib/proposal/reverse-charge-validation";
 import {
   validateMilestonesSum,
   validateMilestoneTrigger,
@@ -538,7 +539,7 @@ export async function updateProposal(
   const { data: before } = await supabase
     .from("proposals")
     .select(
-      "status, title, tax_rate, valid_until, payment_terms, skonto_percent, skonto_days, reverse_charge",
+      "status, title, tax_rate, valid_until, payment_terms, skonto_percent, skonto_days, reverse_charge, company_id",
     )
     .eq("id", proposalId)
     .maybeSingle();
@@ -546,6 +547,49 @@ export async function updateProposal(
   if (!before) return { ok: false, error: "Angebot nicht gefunden." };
   if (before.status !== "draft") {
     return { ok: false, error: "Angebot ist eingefroren — nur Drafts sind editierbar." };
+  }
+
+  // V5.7 SLC-571 MT-7 — Cross-Field-Validation fuer Reverse-Charge.
+  // Resolved-State (post-Patch) gegen die 4 Voraussetzungen pruefen, BEVOR
+  // wir das UPDATE schicken. Verhindert Postgres-CHECK-Errors mit
+  // unbrauchbarer Fehlermeldung und enforced die Server-side-only-Pfade
+  // (branding.vat_id, company.vat_id, country in EU != NL).
+  const nextRC =
+    "reverse_charge" in parsed.data
+      ? !!parsed.data.reverse_charge
+      : !!(before as { reverse_charge?: boolean }).reverse_charge;
+  const nextTaxRate =
+    "tax_rate" in parsed.data
+      ? (parsed.data.tax_rate as number)
+      : Number((before as { tax_rate: number }).tax_rate);
+
+  if (nextRC) {
+    const [{ data: brandingRow }, { data: companyRow }] = await Promise.all([
+      supabase
+        .from("branding_settings")
+        .select("vat_id")
+        .limit(1)
+        .maybeSingle(),
+      (before as { company_id: string | null }).company_id
+        ? supabase
+            .from("companies")
+            .select("vat_id, address_country")
+            .eq("id", (before as { company_id: string }).company_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+
+    const rcCheck = validateReverseCharge({
+      reverseCharge: nextRC,
+      taxRate: nextTaxRate,
+      brandingVatId: (brandingRow as { vat_id: string | null } | null)?.vat_id ?? null,
+      companyVatId:
+        (companyRow as { vat_id: string | null } | null)?.vat_id ?? null,
+      companyCountry:
+        (companyRow as { address_country: string | null } | null)
+          ?.address_country ?? null,
+    });
+    if (!rcCheck.ok) return { ok: false, error: rcCheck.error };
   }
 
   const update: Record<string, unknown> = {
@@ -580,6 +624,37 @@ export async function updateProposal(
       entityId: proposalId,
       changes: { before: auditChanges, after: auditChanges },
       context: "Workspace Auto-Save",
+    });
+  }
+
+  // V5.7 SLC-571 MT-7 — expliziter Audit-Eintrag bei Reverse-Charge-
+  // Status-Aenderung (DEC-126). Nur bei tatsaechlicher Status-Aenderung,
+  // nicht bei jedem Save (Spam-Schutz). Wenn der User toggled, aber kein
+  // Save dazwischenliegt, kommt patch.reverse_charge gar nicht erst rein.
+  if (
+    "reverse_charge" in parsed.data &&
+    !!(before as { reverse_charge?: boolean }).reverse_charge !==
+      !!parsed.data.reverse_charge
+  ) {
+    const taxBefore = Number((before as { tax_rate: number }).tax_rate);
+    const taxAfter = nextTaxRate;
+    void logAudit({
+      action: "reverse_charge_toggled",
+      entityType: "proposal",
+      entityId: proposalId,
+      changes: {
+        before: {
+          reverse_charge: !!(before as { reverse_charge?: boolean }).reverse_charge,
+          tax_rate: taxBefore,
+        },
+        after: {
+          reverse_charge: !!parsed.data.reverse_charge,
+          tax_rate: taxAfter,
+        },
+      },
+      context: parsed.data.reverse_charge
+        ? "Reverse-Charge aktiviert"
+        : "Reverse-Charge deaktiviert",
     });
   }
 
