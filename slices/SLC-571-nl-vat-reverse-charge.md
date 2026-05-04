@@ -230,18 +230,18 @@ Den V5.5/V5.6-Angebot-Pfad NL+DE-konform machen. MIG-028 hebt das DB-Schema auf 
 - Verification: Browser-Smoke `/companies` Neue-Firma-Sheet PASS Live (RPT-292, 2026-05-04): TC6 Form-Render mit vat_id-Feld + Label "USt-IdNr. / BTW-Nummer (optional)" ✓, TC7 Inline-Format-Error XX12345 ("Country-Code 'XX' ist kein EU-Mitglied") ✓, TC8 Inline-Format-PASS DE123456789 ✓, TC9 Inline-Format-PASS NL859123456B01 ✓, TC10 Sheet-Close ohne Save (Bestand unveraendert) ✓.
 - Dependencies: MT-1, MT-2
 
-### MT-5: useReverseChargeEligibility-Hook + TDD-Vitest
+### MT-5: useReverseChargeEligibility-Hook + TDD-Vitest (DONE 2026-05-04)
 - Goal: Voraussetzungs-Pruefung als testbare Pure Function (Hook-Wrapper als Convenience)
-- Files: `cockpit/src/app/(app)/proposals/[id]/edit/use-reverse-charge-eligibility.ts` (NEU), `cockpit/src/app/(app)/proposals/[id]/edit/__tests__/reverse-charge-eligibility.test.ts` (NEU)
-- Expected behavior: Function `checkReverseChargeEligibility(branding, company): { eligible: boolean, missing: string[] }`. Hook ruft Function mit Props auf.
-- Verification: Vitest fuer mindestens 6 Cases (alle 3 erfuellt, jede Voraussetzung einzeln fehlend, NL-Empfaenger, Drittland-UK).
+- Files: `cockpit/src/app/(app)/proposals/[id]/edit/use-reverse-charge-eligibility.ts` (NEU), `cockpit/src/app/(app)/proposals/[id]/edit/use-reverse-charge-eligibility.test.ts` (NEU — sibling pattern wie vat-id.test.ts).
+- Expected behavior: `checkReverseChargeEligibility(branding, company): { eligible, missing[] }` mit deterministischer Reihenfolge der `missing`-Codes (DE_MODE → BRANDING_VAT_ID → COMPANY_VAT_ID → COMPANY_COUNTRY_*). DE-Mode → eligible=false (BL-421). NL-Mode → 3 Voraussetzungen (branding.vatId, company.vat_id, company.address_country in EU != NL). Plus `countryNameToCode`-Mapper (Free-Text "Deutschland"→"DE", "Niederlande"→"NL", "Schweiz"→"CH", "United Kingdom"→"GB" etc., ISO-Code-Direktlauf, case-insensitive, Whitespace-Trim).
+- Verification: 24/24 Vitest-Cases gruen (10x countryNameToCode + 14x checkReverseChargeEligibility). Pure-Function-Hook ohne React-State.
 - Dependencies: MT-2 (EU_COUNTRY_CODES)
 
-### MT-6: Editor — Steuersatz-Dropdown + Reverse-Charge-Section
+### MT-6: Editor — Steuersatz-Dropdown + Reverse-Charge-Section (DONE 2026-05-04 Code-side)
 - Goal: UI-Komponenten fuer Steuersatz-Dropdown 21/9/0 + Reverse-Charge-Toggle gated
-- Files: `cockpit/src/app/(app)/proposals/[id]/edit/tax-rate-dropdown.tsx` (NEU), `cockpit/src/app/(app)/proposals/[id]/edit/reverse-charge-section.tsx` (NEU), `cockpit/src/app/(app)/proposals/[id]/edit/proposal-editor.tsx` (MODIFY)
-- Expected behavior: Dropdown rendert 21/9/0 + Legacy-19 wenn so persistiert. Toggle disabled mit Tooltip-Liste + Quick-Links wenn nicht eligible. Toggle-ON locks Dropdown auf 0%.
-- Verification: Browser-Smoke alle Voraussetzungs-Permutationen (siehe Editor-Smoke oben).
+- Files (NEU): `cockpit/src/app/(app)/proposals/[id]/edit/tax-rate-dropdown.tsx`, `cockpit/src/app/(app)/proposals/[id]/edit/reverse-charge-section.tsx`. Files (MODIFY): `cockpit/src/app/(app)/proposals/[id]/edit/proposal-editor.tsx` (Eligibility-Hook + handleTaxRateChange + handleReverseChargeToggle), `cockpit/src/app/(app)/proposals/[id]/edit/proposal-workspace.tsx` (EditorPatch widening, branding-Prop), `cockpit/src/app/(app)/proposals/actions.ts` (Proposal.reverse_charge, ProposalEditPayload.branding+company um vat_id/business_country/address_country, ProposalUpdatePatch widening, AUDIT_RELEVANT_FIELDS+reverse_charge, getProposalForEdit-Select, createProposal-Default NL=21/DE=19), `cockpit/src/lib/proposal/zod-schemas.ts` (PROPOSAL_TAX_RATES + tax_rate-Whitelist {0,7,9,19,21} + reverse_charge:boolean optional), `cockpit/src/lib/pdf/proposal-renderer.test.ts` (Test-Fixture Proposal um reverse_charge:false).
+- Expected behavior: Dropdown rendert per Country (NL: 21/9/0, DE: 19/7/0), Legacy-Wert wenn ausserhalb (z.B. 19% in NL-Mode) als erste Option mit Suffix "(Legacy)". Toggle disabled bei eligible=false mit Tooltip-Liste der fehlenden Voraussetzungen + Quick-Links (/settings/branding fuer BRANDING_VAT_ID, /companies fuer COMPANY_*). Toggle-ON sendet `{ reverse_charge:true, tax_rate:0 }` simultan + locked Dropdown. Toggle-OFF restored letzten User-Wert via useRef (oder Country-Default wenn letzter Wert 0% war).
+- Verification: TSC `tsc --noEmit` clean, Vitest 208/208 gruen, `npm run build` PASS, Lint clean fuer alle MT-5+MT-6-Files. **Browser-Smoke ist /qa-Schritt nach User-Coolify-Redeploy.**
 - Dependencies: MT-3, MT-4, MT-5
 
 ### MT-7: saveProposal Server-Action-Validation + TDD-Vitest + Audit-Log

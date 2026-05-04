@@ -44,6 +44,7 @@ function makeProposal(overrides: Partial<Proposal> = {}): Proposal {
     pdf_storage_path: null,
     skonto_percent: null,
     skonto_days: null,
+    reverse_charge: false,
     ...overrides,
   };
 }

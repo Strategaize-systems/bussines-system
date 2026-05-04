@@ -10,14 +10,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.7 SLC-571 4/9 MTs done + Browser-Smoke Live-PASS 2026-05-04.** Pre-Apply-Audit zeigte 7%-Legacy-Rows in Live-DB → User-Klaerung erweitert Scope um globalen `business_country`-Switch (DE/NL). DEC-122 supersedet, DEC-128 dokumentiert finale Strategie. MT-1 MIG-028 angewendet auf Hetzner (5 additive Aenderungen, idempotent verifiziert). MT-2 vat-id.ts Validation-Layer mit 30/30 Vitest-Cases gruen. MT-3 Branding-Settings hat Country-Dropdown + vat_id-Feld kontextabhaengig validiert (Browser-Smoke 5/5 PASS). MT-4 Company-Stammdaten vat_id-Feld mit EU-General-Validation (Browser-Smoke 5/5 PASS via RPT-292). TS-Build clean, 184/184 Tests gruen. Naechste = MT-5 useReverseChargeEligibility-Hook (NL-Mode-only in V5.7).
-- Current Phase: V5.7 — SLC-571 in_progress (4/9 MTs done), naechste = /backend SLC-571 MT-5+MT-6 (Eligibility-Hook + Editor-Country-Filter-Dropdown)
+- Current Focus: **V5.7 SLC-571 6/9 MTs Code-complete 2026-05-04 (MT-5+MT-6 done).** MT-5 useReverseChargeEligibility-Hook + countryNameToCode-Mapper mit 24/24 Vitest-Cases gruen — DE-Mode = out-of-scope (BL-421), NL-Mode prueft drei Voraussetzungen (branding.vatId / company.vat_id / address_country in EU != NL). MT-6 wired: TaxRateDropdown filtert pro business_country (DE: 0/7/19, NL: 0/9/21, plus Legacy-Wert), ReverseChargeSection mit Toggle + Tooltip-Liste der fehlenden Voraussetzungen + Quick-Links, Editor-Logic locked tax_rate=0 bei Toggle-ON und restored letzten User-Wert bei Toggle-OFF. Editor-Loader fuer branding.vat_id/business_country + companies.vat_id/address_country erweitert. createProposal-Default jetzt NL=21/DE=19. zod-Schema akzeptiert {0,7,9,19,21} + reverse_charge:boolean. AUDIT_RELEVANT_FIELDS um reverse_charge erweitert. TSC clean, Vitest 208/208 gruen, Build PASS, Lint clean fuer alle MT-5+MT-6-Files. Naechste = User-Coolify-Redeploy + /qa SLC-571 MT-5+MT-6 (Browser-Smoke Voraussetzungs-Permutationen) oder /backend MT-7 (saveProposal Server-Action-Validation + Audit-Log).
+- Current Phase: V5.7 — SLC-571 in_progress (6/9 MTs done), naechste = User-Coolify-Redeploy + /qa MT-5+MT-6 oder /backend MT-7 (saveProposal-Validation)
 
 ## Immediate Next Steps
-1. **User: Coolify-Redeploy Business System** mit aktuellem Code-Stand (commit folgt) — Browser-Smoke MT-3 + MT-4 ist nach Deploy ausstehend (Settings-Page + Company-Edit).
-2. **/backend SLC-571 MT-5** — useReverseChargeEligibility-Hook implementieren mit Vitest. Logic: nur `business_country='NL'` ist V5.7-Scope; `business_country='DE'` -> Toggle disabled mit Tooltip "Reverse-Charge in DE-Mode (§ 13b UStG) nicht in V5.7-Scope, BL-421". 3 NL-Voraussetzungen: branding.vatId NOT NULL + companies.vat_id NOT NULL + companies.address_country in EU_COUNTRY_CODES != 'NL'.
-3. **/backend SLC-571 MT-6** — Editor-Steuersatz-Dropdown filtert nach business_country (DE: 0/7/19, NL: 0/9/21, plus Legacy-Wert wenn persistiert) + Reverse-Charge-Section.
-4. **Sequentiell danach** MT-7 (saveProposal-Validation), MT-8 (PDF-Block), MT-9 (COMPLIANCE.md + Cockpit-Records-Final).
+1. **User: Coolify-Redeploy Business System** mit aktuellem Code-Stand — Browser-Smoke MT-3+MT-4+MT-5+MT-6 zusammen verifizierbar (Settings + Company-Edit + Editor-Dropdown + Reverse-Charge-Toggle in den Voraussetzungs-Permutationen aus dem Slice-QA-Focus).
+2. **/qa SLC-571 MT-5+MT-6** — Browser-Smokes nach Slice-QA-Focus "Editor-Smoke" abarbeiten: Default 21%/19% pro Country, Dropdown-Auswahl 9/0, Toggle disabled bei jeder fehlenden Voraussetzung mit korrekter Tooltip-Liste, Toggle aktivierbar wenn alle drei erfuellt, Toggle-ON locked Dropdown auf 0%, Toggle-OFF restored letzten Wert.
+3. **/backend SLC-571 MT-7** — saveProposal Server-Action-Validation: 4 Reject-Pfade (reverse_charge=true ohne tax_rate=0 / ohne branding.vatId / ohne company.vat_id / mit non-EU-country) + Audit-Insert bei Status-Aenderung (action='reverse_charge_toggled', meta={"to": true|false}).
+4. **Sequentiell danach** MT-8 (PDF-Block + Footer-vat_id + 4 Snapshot-Cases), MT-9 (COMPLIANCE.md + Cockpit-Records-Final).
 5. **(Passiv)** Coolify-Cron `meeting-briefing` Erst-Lauf-Verifikation V5.6.
 6. **Nach 24-48h Stable-Window V5.6**: /post-launch V5.6 (kann V5.5/V5.5.1/V5.4/V5.3 mitnehmen).
 
@@ -28,10 +28,10 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - V7 — reduziert auf Multi-User + Teamlead (FEAT-502/503)
 
 ## Active Scope
-**V5.7 — NL+DE-Compliance + Polish (in_progress, Slice-Planning + 4/9 MTs done 2026-05-04):**
+**V5.7 — NL+DE-Compliance + Polish (in_progress, Slice-Planning + 6/9 MTs done 2026-05-04):**
 - SLC-571 NL+DE-VAT-Saetze + Reverse-Charge (in_progress, FEAT-571, 9 MTs):
-  - DONE: MT-1 MIG-028 (5 additive Aenderungen, idempotent angewendet auf Hetzner), MT-2 vat-id.ts Validation-Layer (30/30 Vitest gruen), MT-3 Branding-Settings (Country-Dropdown + vat_id), MT-4 Company-Stammdaten vat_id-Feld.
-  - PENDING: MT-5 useReverseChargeEligibility-Hook, MT-6 Editor-Steuersatz-Dropdown gefiltert pro business_country + Reverse-Charge-Section, MT-7 saveProposal Server-Action-Validation + Audit-Log, MT-8 PDF-Renderer reverse-charge-block.ts + Footer-vat_id-Block, MT-9 COMPLIANCE.md + Cockpit-Records-Final.
+  - DONE: MT-1 MIG-028 (5 additive Aenderungen, idempotent angewendet auf Hetzner), MT-2 vat-id.ts Validation-Layer (30/30 Vitest gruen), MT-3 Branding-Settings (Country-Dropdown + vat_id), MT-4 Company-Stammdaten vat_id-Feld, MT-5 useReverseChargeEligibility-Hook + countryNameToCode-Mapper (24/24 Vitest gruen), MT-6 Editor-Steuersatz-Dropdown + Reverse-Charge-Section + createProposal-Default NL=21/DE=19 + zod-Whitelist {0,7,9,19,21} + reverse_charge-Patch + Audit-Field (TSC + 208/208 Vitest + Build + Lint clean Code-side).
+  - PENDING: MT-7 saveProposal Server-Action-Validation + Audit-Log, MT-8 PDF-Renderer reverse-charge-block.ts + Footer-vat_id-Block, MT-9 COMPLIANCE.md + Cockpit-Records-Final.
   - Scope-Erweiterung 2026-05-04: User-Klaerung nach Pre-Apply-Audit (7%-Legacy-Rows) → globaler `business_country`-Switch DE/NL. DEC-122 supersedet, DEC-128 finale Strategie. Whitelist `{0,7,9,19,21}`.
 - SLC-572 Skonto-Toggle UI-State-Drift Bugfix (planned, FEAT-572, ~30-60min, 4 MTs): MT-1 Investigation + Pattern-Erweiterung-Decision, MT-2 useRef-Revert-Logic, MT-3 Vitest fuer Save-Error-Pfad, MT-4 Cockpit-Records.
 - Reihenfolge: 571 zuerst (Schema + UI + PDF), 572 als Polish.

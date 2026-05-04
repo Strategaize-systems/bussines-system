@@ -52,11 +52,13 @@ type MobileTab = "positions" | "editor" | "preview";
 
 type EditorPatch = {
   title?: string;
-  tax_rate?: 0 | 7 | 19;
+  tax_rate?: 0 | 7 | 9 | 19 | 21;
   valid_until?: string | null;
   payment_terms?: string | null;
   skonto_percent?: number | null;
   skonto_days?: number | null;
+  // V5.7 SLC-571 (DEC-126).
+  reverse_charge?: boolean;
 };
 
 type ProposalWorkspaceProps = {
@@ -213,6 +215,7 @@ export function ProposalWorkspace({
       deal={payload.deal}
       company={payload.company}
       contact={payload.contact}
+      branding={payload.branding}
       milestones={milestones}
       totalGross={totals.total}
       onProposalChange={handleProposalChange}

@@ -18,17 +18,25 @@ import { PaymentTermsDropdown } from "./payment-terms-dropdown";
 import { SkontoSection } from "./skonto-section";
 import { SplitPlanSection } from "./split-plan-section";
 import { useSkontoMutex } from "./use-skonto-mutex";
+import { TaxRateDropdown } from "./tax-rate-dropdown";
+import { ReverseChargeSection } from "./reverse-charge-section";
+import { useReverseChargeEligibility } from "./use-reverse-charge-eligibility";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
+type EditorTaxRate = 0 | 7 | 9 | 19 | 21;
+
 type EditorPatch = {
   title?: string;
-  tax_rate?: 0 | 7 | 19;
+  tax_rate?: EditorTaxRate;
   valid_until?: string | null;
   payment_terms?: string | null;
   skonto_percent?: number | null;
   skonto_days?: number | null;
   notes?: string | null;
+  // V5.7 SLC-571 (DEC-126). Toggle-ON sendet { reverse_charge: true, tax_rate: 0 }
+  // simultan, damit DB-CHECK nicht zuschlaegt.
+  reverse_charge?: boolean;
 };
 
 type ProposalEditorProps = {
@@ -36,6 +44,7 @@ type ProposalEditorProps = {
   deal: ProposalEditPayload["deal"];
   company: ProposalEditPayload["company"];
   contact: ProposalEditPayload["contact"];
+  branding: ProposalEditPayload["branding"];
   milestones: PaymentMilestone[];
   totalGross: number;
   onProposalChange: (patch: EditorPatch) => void;
@@ -48,6 +57,7 @@ export function ProposalEditor({
   deal,
   company,
   contact,
+  branding,
   milestones,
   totalGross,
   onProposalChange,
@@ -82,7 +92,60 @@ export function ProposalEditor({
     [onProposalChange, debouncedPersist],
   );
 
-  const taxRate = (proposal.tax_rate as 0 | 7 | 19) ?? 19;
+  // V5.7 SLC-571 — Default-Fallback haengt von Strategaize-business_country ab.
+  // Existierende Angebote behalten ihren persistierten Wert (Snapshot-Prinzip).
+  const businessCountry = branding?.business_country ?? "NL";
+  const taxRateFallback: EditorTaxRate = businessCountry === "DE" ? 19 : 21;
+  const taxRate: EditorTaxRate =
+    (proposal.tax_rate as EditorTaxRate | null | undefined) ?? taxRateFallback;
+  const reverseCharge = !!proposal.reverse_charge;
+
+  // Vorletzten User-Steuersatz merken, damit Toggle-OFF den vorherigen Wert
+  // wiederherstellen kann statt blind auf Default zu fallen (DEC-128).
+  const lastUserTaxRateRef = useRef<EditorTaxRate>(
+    reverseCharge ? taxRateFallback : taxRate,
+  );
+
+  // Reverse-Charge-Eligibility live aus Branding + Company.
+  const eligibility = useReverseChargeEligibility(
+    branding
+      ? { businessCountry: branding.business_country, vatId: branding.vat_id }
+      : null,
+    company
+      ? { vat_id: company.vat_id, address_country: company.address_country }
+      : null,
+  );
+
+  const handleTaxRateChange = useCallback(
+    (next: EditorTaxRate) => {
+      if (!reverseCharge) {
+        lastUserTaxRateRef.current = next;
+      }
+      patchAndSave({ tax_rate: next });
+    },
+    [patchAndSave, reverseCharge],
+  );
+
+  const handleReverseChargeToggle = useCallback(
+    (next: boolean) => {
+      if (next) {
+        // Toggle-ON: tax_rate auf 0 locken (DB-CHECK).
+        if (!reverseCharge) {
+          lastUserTaxRateRef.current = taxRate;
+        }
+        patchAndSave({ reverse_charge: true, tax_rate: 0 });
+      } else {
+        // Toggle-OFF: zurueck auf den letzten User-Wert. Falls dieser 0% war
+        // (z.B. weil das Angebot mit Reverse-Charge angelegt wurde), faellt
+        // der Editor auf den Country-Default zurueck — sonst wuerde der
+        // Toggle-OFF einen verbotenen 0%-Tax-Rate ohne RC erzeugen.
+        const restore = lastUserTaxRateRef.current;
+        const restoreSafe: EditorTaxRate = restore === 0 ? taxRateFallback : restore;
+        patchAndSave({ reverse_charge: false, tax_rate: restoreSafe });
+      }
+    },
+    [patchAndSave, reverseCharge, taxRate, taxRateFallback],
+  );
   // V5.6 SLC-563 — Mutex aktiv sobald ein Vorkasse-Milestone (100% on_signature)
   // existiert. Toggle-State + Werte werden auto-clearend, wenn der Mutex
   // false → true wechselt (DEC-116).
@@ -155,20 +218,14 @@ export function ProposalEditor({
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Steuersatz" htmlFor="proposal-tax">
-            <select
+            <TaxRateDropdown
               id="proposal-tax"
+              businessCountry={businessCountry}
               value={taxRate}
-              onChange={(e) => {
-                const v = Number(e.target.value) as 0 | 7 | 19;
-                patchAndSave({ tax_rate: v });
-              }}
+              onChange={handleTaxRateChange}
               disabled={readonly}
-              className="h-10 w-full rounded-lg border-2 border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus:outline-none focus:border-[#4454b8] focus:ring-2 focus:ring-[#4454b8]/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <option value={19}>19%</option>
-              <option value={7}>7%</option>
-              <option value={0}>0%</option>
-            </select>
+              locked={reverseCharge}
+            />
           </Field>
           <Field label="Gueltig bis" htmlFor="proposal-valid-until">
             <Input
@@ -182,6 +239,15 @@ export function ProposalEditor({
             />
           </Field>
         </div>
+
+        <ReverseChargeSection
+          businessCountry={businessCountry}
+          enabled={reverseCharge}
+          eligibility={eligibility}
+          onChange={handleReverseChargeToggle}
+          disabled={readonly}
+          companyEditHref={company ? `/companies` : null}
+        />
 
         <Field label="Zahlungsbedingungen" htmlFor="proposal-payment-terms">
           <div className="space-y-3">

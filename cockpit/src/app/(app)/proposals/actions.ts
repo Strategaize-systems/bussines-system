@@ -61,6 +61,9 @@ export type Proposal = {
   // ueber proposals_skonto_both_or_none CHECK-Constraint enforced.
   skonto_percent: number | null;
   skonto_days: number | null;
+  // V5.7 MIG-028 addition (DEC-126). DB-Default false, NOT NULL. Konsistenz zu
+  // tax_rate=0 wird via DB-CHECK proposals_reverse_charge_consistency erzwungen.
+  reverse_charge: boolean;
   deals?: { id: string; title: string } | null;
   contacts?: { id: string; first_name: string; last_name: string } | null;
   companies?: { id: string; name: string } | null;
@@ -93,9 +96,21 @@ export type ProposalEditPayload = {
     font_family: string | null;
     footer_markdown: string | null;
     contact_block: unknown;
+    // V5.7 SLC-571 MT-3 / DEC-124+128 — Country-Switch + Strategaize-VAT-ID.
+    vat_id: string | null;
+    business_country: "DE" | "NL";
   } | null;
   deal: { id: string; title: string } | null;
-  company: { id: string; name: string } | null;
+  company:
+    | {
+        id: string;
+        name: string;
+        // V5.7 SLC-571 MT-4 / DEC-124 — Empfaenger-VAT + Free-Text-Country
+        // (vgl. countryNameToCode-Mapper im Editor-Hook).
+        vat_id: string | null;
+        address_country: string | null;
+      }
+    | null;
   contact: { id: string; first_name: string; last_name: string } | null;
 };
 
@@ -249,6 +264,17 @@ export async function createProposal(
     .maybeSingle();
   const paymentTerms = defaultTemplate?.body ?? DEFAULT_PAYMENT_TERMS;
 
+  // V5.7 SLC-571 (DEC-128) — Default-tax_rate haengt vom Strategaize-
+  // business_country ab: NL → 21%, DE → 19%. Fallback 21 wenn Branding
+  // fehlt (DB-Default ist NL).
+  const { data: brandingCountry } = await supabase
+    .from("branding_settings")
+    .select("business_country")
+    .limit(1)
+    .maybeSingle();
+  const defaultTaxRate =
+    brandingCountry?.business_country === "DE" ? 19.0 : 21.0;
+
   // valid_until = today + 30 Tage als ISO-Date (yyyy-mm-dd).
   const validUntil = new Date(Date.now() + DEFAULT_VALID_UNTIL_DAYS * 86400000)
     .toISOString()
@@ -266,7 +292,7 @@ export async function createProposal(
       title,
       version: 1,
       status: "draft",
-      tax_rate: 19.0,
+      tax_rate: defaultTaxRate,
       valid_until: validUntil,
       payment_terms: paymentTerms,
       parent_proposal_id: null,
@@ -325,14 +351,20 @@ export async function getProposalForEdit(
       .order("sequence", { ascending: true }),
     supabase
       .from("branding_settings")
-      .select("logo_url, primary_color, secondary_color, font_family, footer_markdown, contact_block")
+      .select(
+        "logo_url, primary_color, secondary_color, font_family, footer_markdown, contact_block, vat_id, business_country",
+      )
       .limit(1)
       .maybeSingle(),
     proposal.deal_id
       ? supabase.from("deals").select("id, title").eq("id", proposal.deal_id).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
     proposal.company_id
-      ? supabase.from("companies").select("id, name").eq("id", proposal.company_id).maybeSingle()
+      ? supabase
+          .from("companies")
+          .select("id, name, vat_id, address_country")
+          .eq("id", proposal.company_id)
+          .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
     proposal.contact_id
       ? supabase
@@ -422,11 +454,13 @@ const AUDIT_RELEVANT_FIELDS = [
   "payment_terms",
   "skonto_percent",
   "skonto_days",
+  // V5.7 SLC-571 — Audit-Eintrag bei Reverse-Charge-Toggle (DEC-126).
+  "reverse_charge",
 ] as const;
 
 type ProposalUpdatePatch = {
   title?: string;
-  tax_rate?: 0 | 7 | 19;
+  tax_rate?: 0 | 7 | 9 | 19 | 21;
   valid_until?: string | null;
   payment_terms?: string | null;
   contact_id?: string | null;
@@ -435,6 +469,9 @@ type ProposalUpdatePatch = {
   // validateSkonto in updateProposal (beide-oder-keiner).
   skonto_percent?: number | null;
   skonto_days?: number | null;
+  // V5.7 SLC-571 (DEC-126). DB-CHECK proposals_reverse_charge_consistency
+  // erzwingt tax_rate=0 wenn reverse_charge=true.
+  reverse_charge?: boolean;
 };
 
 // V5.5 SLC-554 — Read-only-Mode Server-Side-Guard.
@@ -500,7 +537,9 @@ export async function updateProposal(
 
   const { data: before } = await supabase
     .from("proposals")
-    .select("status, title, tax_rate, valid_until, payment_terms, skonto_percent, skonto_days")
+    .select(
+      "status, title, tax_rate, valid_until, payment_terms, skonto_percent, skonto_days, reverse_charge",
+    )
     .eq("id", proposalId)
     .maybeSingle();
 
