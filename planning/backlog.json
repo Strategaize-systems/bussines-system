@@ -1781,6 +1781,16 @@
       "version": "V5.7",
       "description": "Wenn der User in der SkontoSection einen ungueltigen Wert eingibt (z.B. Prozent=10), lehnt der Server via validateSkonto ab. Save-Status zeigt 'Fehler' korrekt. Aber: nach mehreren Auto-Save-Errors flippt der Toggle visuell in OFF-Zustand obwohl die DB den vorherigen gueltigen State haelt. Selbstheilend nach Page-Reload. DB ist immer korrekt. Validation greift korrekt. Vermutung: setState-Race im handleProposalChange/debouncedPersist-Pfad in proposal-editor.tsx. Optional: optimistic-update-Reset bei Save-Error oder explicit-revert-on-error. Reproduzierbar im Browser-Smoke RPT-277. Low-Severity weil DB-State korrekt, nur UX-cosmetic. Aufwand: ~30min Investigation + Fix.",
       "createdAt": "2026-05-02"
+    },
+    {
+      "id": "BL-420",
+      "title": "VIES-Online-Lookup-Integration fuer VAT-ID-Validierung",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": null,
+      "description": "V5.7 (DEC-124) hat die VAT-ID-Validierung bewusst auf Format-only beschraenkt (Regex + EU-Country-Code-Whitelist). VIES-Online-Lookup (https://ec.europa.eu/taxation_customs/vies/) wuerde echte Pruefung der Existenz und Aktualitaet einer BTW/USt-IdNr ermoeglichen. Implementierungs-Aufwand: SOAP/REST-Adapter mit Caching (24h-TTL ueblich), Error-Handling fuer VIES-Down-Faelle (graceful degradation auf Format-only), UI-Indikator fuer Validierungs-Status (live-checked vs format-only). Aufwand ~3-5h. Pre-Production-relevant. Spaeter angehen — Format-only reicht fuer Internal-Test-Mode.",
+      "createdAt": "2026-05-04"
     }
   ]
 }

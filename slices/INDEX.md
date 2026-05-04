@@ -228,3 +228,10 @@
 | SLC-562 | [Bedingungs-Dropdown im Editor + Skonto-Toggle (Sub-Themes A + C UI)](SLC-562-bedingungs-dropdown-skonto.md) | FEAT-561 | done | High | 2026-05-01 |
 | SLC-563 | [Split-Plan UI + PDF-Renderer-Erweiterung (Sub-Theme B + DEC-120)](SLC-563-split-plan-pdf.md) | FEAT-561 | done | High | 2026-05-01 |
 | SLC-564 | [Pre-Call Briefing Cron + Push/Email-Delivery + /settings/briefing](SLC-564-pre-call-briefing.md) | FEAT-562 | done | High | 2026-05-01 |
+
+## V5.7 Slices (NL-Compliance + Polish)
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-571 | [NL-VAT-Saetze + Reverse-Charge fuer EU-B2B-Cross-Border](SLC-571-nl-vat-reverse-charge.md) | FEAT-571 | planned | High | 2026-05-04 |
+| SLC-572 | [Skonto-Toggle UI-State-Drift Bugfix](SLC-572-skonto-toggle-bugfix.md) | FEAT-572 | planned | Low | 2026-05-04 |
