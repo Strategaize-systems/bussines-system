@@ -6923,3 +6923,203 @@ Gesamt: ~15-21h. Reihenfolge zwingend (561 -> 562 -> 563 -> 564). Pro Slice: `/b
 ### V5.6 Recommended Next Step
 
 `/slice-planning V5.6` — die 4 Slices SLC-561..564 strukturiert ausdefinieren mit Acceptance Criteria pro Slice, Micro-Tasks-Liste mit Reihenfolge, QA-Fokus pro Slice. Danach pro Slice `/backend|/frontend` -> `/qa` -> Coolify-Redeploy in fester Reihenfolge.
+
+## V5.7 — NL-Compliance + Polish Architecture
+
+### V5.7 Summary
+
+V5.7 erweitert den V5.5/V5.6-Angebot-Pfad um NL-konforme Steuerlogik. Strategaize Transition GmbH sitzt in den Niederlanden — die heute generierten PDFs sind mit deutschen 19%-Saetzen rechtlich nicht produktionstauglich. V5.7 hebt den Editor + PDF-Renderer auf NL-VAT (21/9/0) und ergaenzt den B2B-EU-Cross-Border-Pfad mit Reverse-Charge ("BTW verlegd"). Plus Skonto-Toggle UI-State-Drift Bugfix aus V5.6 SLC-562.
+
+KEINE neuen Container, KEINE neuen Cron-Jobs, KEINE neuen npm-Dependencies. Alle Aenderungen sind additiv im bestehenden V5.5-Stack.
+
+### V5.7 Main Components — kein Architektur-Sprung
+
+```
+Existing V5.5/V5.6 Angebot-Pipeline (unveraendert)
+  │
+  ├─ /settings/branding (V5.3 FEAT-531) ────┐
+  │                                          │
+  ├─ /companies/[id] Stammdaten ─────────────┤
+  │                                          │
+  ├─ /proposals/[id]/edit (V5.5 FEAT-552) ───┤
+  │                                          │
+  └─ /api/proposals/[id]/pdf (V5.5 FEAT-553) │
+                                              │
+                                     V5.7 erweitert:
+                                              │
+                                     • +vat_id Strategaize (branding_settings)
+                                     • +vat_id Empfaenger (companies)
+                                     • Steuersatz-Dropdown 21/9/0 (Editor)
+                                     • Reverse-Charge-Toggle (Editor, gated)
+                                     • Reverse-Charge-Block im PDF (Renderer)
+                                     • +Format-Validation NL/EU VAT-IDs
+                                     • Skonto-Toggle Optimistic-Revert (Editor)
+```
+
+### V5.7 Component-Detail — FEAT-571 NL-VAT + Reverse-Charge
+
+#### 1. DB-Schema (MIG-028, DEC-122/123/124)
+
+```
+proposals:
+  + tax_rate DEFAULT 21.00 (war 19.00)
+  + CHECK tax_rate IN (0.00, 9.00, 19.00, 21.00)
+  + reverse_charge BOOLEAN NOT NULL DEFAULT false
+  + CHECK (reverse_charge = false OR tax_rate = 0.00)
+
+branding_settings:
+  + vat_id TEXT NULL                   -- z.B. "NL859123456B01"
+
+companies:
+  + vat_id TEXT NULL                   -- z.B. "DE123456789", "AT12345678"
+```
+
+19% bleibt fuer Legacy-V5.5/V5.6-Rows in der Whitelist (DEC-122). UI-Dropdown bietet nur 21/9/0. Snapshot-Prinzip aus DEC-107 wird nicht gebrochen.
+
+#### 2. Validation-Layer (DEC-124, neu)
+
+`cockpit/src/lib/validation/vat-id.ts` (neu):
+- `EU_COUNTRY_CODES`-Constant mit 27 Mitgliedstaaten 2026 (AT, BE, BG, HR, CY, CZ, DK, EE, FI, FR, DE, GR, HU, IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK, SI, ES, SE)
+- `validateNlVatId(input): { ok: true } | { ok: false, reason: string }` — Pattern `^NL\d{9}B\d{2}$`
+- `validateEuVatId(input): { ok: true, country: string } | { ok: false, reason: string }` — Pattern `^[A-Z]{2}[A-Z0-9]{2,12}$` plus Country-Code-Whitelist-Pruefung
+
+Format-only — KEIN VIES-Online-Lookup (DEC-124). VIES-Lookup ist als BL-420 fuer spaeter angelegt.
+
+#### 3. Settings-Page Erweiterung (DEC-124)
+
+`/settings/branding` (V5.3 FEAT-531) bekommt einen neuen Eingabe-Block nach dem Footer-Markdown:
+
+```
+[BTW-Nummer Strategaize]
+[NL859123456B01            ]
+NL-Format: NL gefolgt von 9 Ziffern, B, 2 Ziffern.
+Wird auf der Rechnung gedruckt und qualifiziert das Reverse-Charge-Verfahren.
+```
+
+Inline-Format-Error wenn ungueltig. Server Action `saveBranding` speichert in `branding_settings.vat_id`.
+
+#### 4. Company-Stammdaten Erweiterung
+
+Company-Edit-Form (bestehend) bekommt nach `address_country` ein neues Feld:
+
+```
+[USt-IdNr / BTW-Nr.]
+[DE123456789              ]
+EU-Format: 2 Buchstaben Country-Code + 2-12 Zeichen.
+Pflicht fuer Reverse-Charge-Verfahren bei EU-Cross-Border.
+```
+
+#### 5. Editor-Erweiterung (DEC-122/123)
+
+`cockpit/src/app/(app)/proposals/[id]/edit/proposal-editor.tsx` bekommt im Bereich der Summary-Section:
+
+```
+Steuersatz:  [21% (Standard NL) ▼]
+              [21% (Standard NL)]
+              [9% (reduziert NL)]
+              [0% (steuerfrei / Reverse-Charge)]
+
+Reverse-Charge: [ Aus ●]   (gated)
+                Voraussetzungen:
+                ✓ BTW-Nummer Strategaize (Settings)
+                ✗ BTW-Nummer Empfaenger (Company-Stammdaten)
+                ✓ Empfaenger sitzt in EU (nicht NL)
+```
+
+Toggle-Aktivierung nur wenn alle 3 Voraussetzungen erfuellt. UI-Hinweis "Reverse-Charge nicht moeglich — Voraussetzung X fehlt" wenn eine Bedingung nicht erfuellt. Bei Toggle-ON wird `tax_rate` auf 0% gelockt + Server-Action validiert beide Felder kombiniert.
+
+#### 6. PDF-Renderer-Erweiterung (DEC-125)
+
+`cockpit/src/lib/pdf/proposal-renderer.ts` Adapter-Erweiterung. Neuer Block direkt unter dem Tax-Row im Summary-Block (Zeile 308 heute):
+
+```
+Subtotal Netto                    1.000,00 EUR
+Steuer (0%)                            0,00 EUR
+─────────────────────────────────────────────
+Total Brutto                      1.000,00 EUR
+
+BTW verlegd / Reverse Charge — Article 196 VAT Directive 2006/112/EC
+BTW-Nr. NL859123456B01 — BTW-Nr. DE123456789
+```
+
+Wenn `reverse_charge=false`: kein Block, PDF rendert wie heute. Wenn `reverse_charge=true`: Block + beide BTW-Nummern. Phrase ist hardcoded in `cockpit/src/lib/pdf/reverse-charge-block.ts` (DEC-125), kein Branding-Field.
+
+Optional Footer-Erweiterung: bei aktiver `branding_settings.vat_id` wird die Strategaize-BTW-Nr. immer im Footer ergaenzt (auch bei DE-Standard-Rechnung). Konvention NL-Pflicht: Sender muss seine Steuernummer auf jeder Rechnung zeigen.
+
+#### 7. Server-Action-Validation
+
+`saveProposal` Server-Action bekommt:
+- Validation: wenn `reverse_charge=true` → `tax_rate` MUSS 0 sein UND `companies.vat_id` MUSS NOT NULL UND `branding_settings.vat_id` MUSS NOT NULL UND `companies.address_country` MUSS in EU_COUNTRY_CODES UND != 'NL'
+- Bei Validation-Fehler: rejected mit aussagekraeftiger Fehlermeldung (analog skonto-validation Pattern aus V5.6)
+- DB-CHECK-Constraint ist Defense-in-Depth — Server-Action enforced fruehzeitig
+
+### V5.7 Component-Detail — FEAT-572 Skonto-Toggle Bugfix (DEC-126)
+
+`cockpit/src/app/(app)/proposals/[id]/edit/proposal-editor.tsx` — Pattern-Aenderung:
+
+- Neuer `useRef<{ skonto_percent: number | null; skonto_days: number | null }>`, initialisiert mit DB-State aus `initialProposal`
+- Bei jedem erfolgreichen Save wird ref auf neuen DB-State aktualisiert
+- Bei Save-Error setzt der `debouncedPersist`-Callback den `proposal`-State (skonto_percent + skonto_days) auf den ref-Wert zurueck
+- Toggle bleibt im konsistenten State, weil Source-of-Truth wieder das letzte gespeicherte DB-Bild ist
+
+Vitest-Test in `proposal-editor.test.tsx`: simuliere 5x Save-Error in Folge mit ungueltigem Prozent-Wert (z.B. 10), pruefe dass Toggle weiterhin korrekt rendert. Browser-Smoke gegen RPT-277-Repro.
+
+### V5.7 Data Flow — Reverse-Charge-Pfad
+
+```
+1. User oeffnet /settings/branding → traegt Strategaize-BTW ein → save (NL-Format-Validation)
+2. User oeffnet Company-Stammdaten → traegt Empfaenger-BTW ein → save (EU-Format-Validation)
+3. User oeffnet /proposals/{id}/edit
+4. Editor checkt Voraussetzungen:
+   - branding.vat_id IS NOT NULL?
+   - company.vat_id IS NOT NULL?
+   - company.address_country IN EU_COUNTRY_CODES AND != 'NL'?
+5. Wenn alle 3 erfuellt → Reverse-Charge-Toggle enabled
+6. User aktiviert Toggle → UI lockt tax_rate auf 0% → debouncedPersist → saveProposal
+7. Server-Action validiert: reverse_charge=true → tax_rate MUSS 0 + 3 Voraussetzungen
+8. DB-CHECK greift als Defense-in-Depth
+9. /api/proposals/{id}/pdf → renderProposalPdf → bilingual NL/EN-Block + beide BTW-Nummern
+10. PDF-Vorschau zeigt Block korrekt
+11. PDF-Send via Composing-Studio (V5.5 FEAT-555) — unveraendert, Block ist im PDF
+```
+
+### V5.7 External Dependencies
+
+KEIN delta. Alle V5.7-Funktionalitaet nutzt bestehende Dependencies (pdfmake, Next.js, Supabase). Validation-Regex ist in stdlib.
+
+### V5.7 Security / Privacy Considerations
+
+- **VAT-IDs sind keine sensiblen Daten** — sie stehen pflichtgemaess auf jeder Rechnung. Klartext-Speicherung in DB ist OK.
+- **Format-Validation reicht fuer V5.7** (DEC-124) — VIES-Lookup waere ein externer Call mit potentieller Verfuegbarkeits-Abhaengigkeit. Internal-Test-Mode toleriert manuelle Pflege.
+- **Reverse-Charge-Status persistiert in `proposals.reverse_charge`** — Audit-Log-Eintrag bei Toggle-Aenderung empfohlen (analog skonto-Audit V5.6). Zu pruefen in `/slice-planning`: ob V5.7 ein Audit-Field `reverse_charge_changed_at` braucht oder ob Standard-`updated_at` reicht.
+- **Internal-Test-Mode bleibt aktiv** — keine Aenderung am COMPLIANCE-Gate-Status.
+- **DSGVO-Sicht:** VAT-IDs sind oeffentlich (BTW-Nummer kann ueber VIES-Validator fuer alle EU-Mitgliedstaaten geprueft werden) — keine besondere Schutzbeduerftigkeit.
+
+### V5.7 Constraints und Tradeoffs
+
+- **Whitelist {0,9,19,21} statt strict {0,9,21}:** Kompromiss fuer Snapshot-Prinzip. Nachteil: Editor-UI muss filtern (nur 3 Optionen statt 4). Vorteil: keine Daten-Migration noetig, kein Cent-Drift.
+- **Reverse-Charge nur fuer EU-Empfaenger:** Drittland-Pfad (UK/CH/US) bleibt out-of-scope. Fuer V5.7 (Internal-Test, primaer DE/AT-Kunden) ausreichend. BL-XXX wenn erster Drittland-Kunde kommt.
+- **Format-only-VAT-Validation:** Akzeptiert erfundene Nummern. Mitigationsfaktor: Internal-Test-Mode + nicht-relevant fuer Final-Compliance-Gate. VIES-Lookup BL-420.
+- **PDF-Sprache deutsch + Reverse-Charge bilingue NL/EN:** Konvention. Vollstaendige Multi-Language-PDFs (NL/EN-Komplett-Variante) bleiben out-of-scope.
+- **ICP-Meldung manuell:** Quartalsweise Reporting-Pflicht des Unternehmers, nicht automatisierbar in V5.7-Scope.
+
+### V5.7 Open Technical Questions (fuer /slice-planning)
+
+1. **Position der vat_id-Anzeige im PDF-Footer:** zusammen mit Adress-Block oder separater Footer-Zeile? Empfehlung: in der Adress-Zeile direkt unter "Strategaize Transition GmbH". Final in SLC-571 Slice-Planning.
+2. **Audit-Eintrag bei Reverse-Charge-Toggle?** Empfehlung: ja, `audit_log`-Eintrag mit `entity_type='proposal'`, `action='reverse_charge_toggled'`, `meta={"to": true|false}`. Final in SLC-571 Slice-Planning.
+3. **Editor-UI Position des Steuersatz-Dropdown:** unter Position-Items oder im Summary-Bereich? Empfehlung: im Summary-Bereich neben dem Tax-Row, da steuerlogisch nahe. Final in SLC-571 Slice-Planning.
+4. **Reverse-Charge-Toggle-Voraussetzungen-UX:** wie wird der disabled-State kommuniziert? Empfehlung: Toggle disabled + Tooltip mit Liste der fehlenden Voraussetzungen + Quick-Links zu den Settings/Stammdaten-Pages. Final in SLC-571 Slice-Planning.
+5. **PaymentTermsDropdown / SplitPlanSection mit gleichem Pattern:** ist der Race-Bug auch dort? Empfehlung: in SLC-572 Investigation pruefen, falls ja: Pattern wiederverwenden, falls nein: out-of-scope. Final in SLC-572 Slice-Planning.
+
+### V5.7 Empfohlene Slice-Reihenfolge (DEC-127)
+
+| Slice | Feature | Scope | Schaetzung | QA-Fokus |
+|---|---|---|---|---|
+| SLC-571 | FEAT-571 | MIG-028 + Validation-Layer + Settings-vat_id + Company-vat_id + Editor-Steuersatz-Dropdown + Reverse-Charge-Toggle + Voraussetzungs-Logik + Server-Action-Validation + PDF-Renderer-Block | 5-7h | MIG-028 idempotent, Whitelist-CHECK greift, Reverse-Charge-Toggle gated korrekt, Server-Action-Validation sauber, PDF-Block bilingual rendert, alte 19%-Angebote regression-frei rendern, neue 21%-Angebote als Default |
+| SLC-572 | FEAT-572 | Investigation Skonto-Race + Optimistic-Revert via useRef + Vitest fuer Save-Error-Pfad + Browser-Smoke gegen RPT-277-Repro + ggf. Pattern-Erweiterung auf PaymentTermsDropdown/SplitPlanSection | 30min-1h | Toggle bleibt nach 5x Save-Error in Folge konsistent, Vitest PASS, Browser-Smoke PASS, regression-frei fuer PaymentTermsDropdown/SplitPlanSection |
+
+Gesamt: ~5.5-8h. Reihenfolge: 571 zuerst (groesserer Pfad, eigener QA-Cycle), 572 als Polish. Pro Slice: `/backend|/frontend` -> `/qa` -> Coolify-Redeploy. Final-Check + Go-Live + Deploy als REL-023 nach SLC-572.
+
+### V5.7 Recommended Next Step
+
+`/slice-planning V5.7` — die 2 Slices SLC-571 + SLC-572 strukturiert ausdefinieren mit Acceptance Criteria pro Slice, Micro-Tasks-Liste mit Reihenfolge, QA-Fokus pro Slice. Insbesondere: Voraussetzungs-Logik fuer Reverse-Charge-Toggle als testbare Helper-Funktion ausdefinieren, PDF-Snapshot-Tests erweitern (mit/ohne Reverse-Charge-Block), Skonto-Bugfix-Investigation als ersten Micro-Task in SLC-572.

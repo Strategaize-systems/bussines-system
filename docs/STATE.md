@@ -9,12 +9,12 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: requirements
-- Current Focus: **V5.7 Requirements done 2026-05-03.** 2 Features (FEAT-571 NL-VAT + Reverse-Charge, FEAT-572 Skonto-Toggle Bugfix), 8 Open Questions (Recherche-Fragen Pflicht-Phrase Reverse-Charge + ICP-Meldung-Pflicht + VIES-Validierung + Branding-Default + Sprache-PDF + Bestehende-Daten-Migration + Drittland-Faelle + Angebot-vs-Rechnung). Roadmap erweitert: V5.7 (NL-Compliance), V6.2 (Automation+Attribution mit BL-135/139 aus V7 ausgelagert), V7 reduziert auf reine Multi-User-Themen. Backlog: BL-417/419 → V5.7, BL-135/139 → V6.2, BL-397 weiterhin unassigned (deferred). V5.6 weiterhin stable in Production.
-- Current Phase: V5.7 — Requirements done, naechste = /architecture V5.7 (Open Questions klaeren, MIG-028 ausplanen, Snapshot-Prinzip-Anwendung, Editor-UI-Position fuer Steuersatz-Dropdown, Reverse-Charge-Toggle-Pfad)
+- High-Level State: architecture
+- Current Focus: **V5.7 Architecture done 2026-05-04.** Alle 8 Open Questions FEAT-571 + 3 Fix-Optionen FEAT-572 entschieden. 6 neue DECs (DEC-122..127): NL-VAT-Whitelist {0,9,19,21} mit Default 21 (Snapshot-Prinzip eingehalten, keine Daten-Migration), Reverse-Charge als BOOLEAN-Flag mit DB-CHECK, Format-only-VAT-Validation (kein VIES, BL-420 fuer spaeter), Reverse-Charge-Phrase hardcoded bilingual NL/EN, Skonto-Bugfix Option A (Optimistic-Revert via useRef), V5.7-Slicing-Schnitt 2 Slices SLC-571+572. MIG-028 ausgeplant (5 additive Aenderungen: tax_rate-Default+CHECK + reverse_charge BOOLEAN + branding_settings.vat_id + companies.vat_id). KEIN Architektur-Sprung — alles additiv. ICP-Meldung bleibt User-Reporting-Pflicht (NICHT in Rechnung). 5 verbleibende Open Technical Questions fuer /slice-planning (PDF-Footer-Position, Audit-Eintrag-Pflicht, Editor-UI-Position, Voraussetzungs-UX, ggf. Pattern-Erweiterung Skonto-Bugfix auf PaymentTerms/SplitPlan).
+- Current Phase: V5.7 — Architecture done, naechste = /slice-planning V5.7 (2 Slices SLC-571 NL-VAT-Schema+Editor+PDF + SLC-572 Skonto-Bugfix mit Acceptance Criteria, Micro-Tasks, QA-Fokus)
 
 ## Immediate Next Steps
-1. **/architecture V5.7** — 8 Open Questions klaeren, MIG-028 (tax_rate-Default 21 + CHECK + branding.vat_id + companies.vat_id) ausplanen, Reverse-Charge-Toggle-Logik definieren, PDF-Block-Layout entscheiden, Pflicht-Recherche zu NL-Reverse-Charge-Phrase.
+1. **/slice-planning V5.7** — die 2 Slices SLC-571 + SLC-572 ausdefinieren mit Acceptance Criteria, Micro-Tasks, QA-Fokus. SLC-571 ~5-7h (MIG-028 + 4 UI-Touchpoints + PDF-Block), SLC-572 ~30-60min (Optimistic-Revert + Vitest + Browser-Smoke).
 2. **(Passiv)** Coolify-Cron `meeting-briefing` Erst-Lauf-Verifikation V5.6 — app-Container-Log innerhalb naechster Min sollte `[Cron/MeetingBriefing] No candidates` (oder `processed=N`) zeigen.
 3. **Nach 24-48h Stable-Window V5.6**: /post-launch V5.6 (kann V5.5/V5.5.1/V5.4/V5.3 mitnehmen — alle ueberfaellig). Kann auch nach V5.7-Release als Sammelreview erfolgen.
 4. **Coolify-Cron `expire-proposals` Erst-Lauf 2026-05-02 02:00 Berlin verifizieren** — Audit-SQL aus REL-020-Notes Schritt 3. Passiv erledigen.
@@ -26,9 +26,10 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - V7 — reduziert auf Multi-User + Teamlead (FEAT-502/503)
 
 ## Active Scope
-**V5.7 — NL-Compliance + Polish (Requirements done 2026-05-03):**
-- FEAT-571 NL-VAT + Reverse-Charge (planned, BL-417 high-prio): NL-VAT-Saetze 21/9/0 + Reverse-Charge-Pfad fuer EU-B2B + BTW-Nummer-Felder Strategaize/Companies + PDF-Renderer-Block "BTW verlegd". MIG-028 erforderlich. 8 Open Questions in /architecture klaeren.
-- FEAT-572 Skonto-Toggle UI-State-Drift Bugfix (planned, BL-419 low/cosmetic): Race-Bug in proposal-editor.tsx `handleProposalChange`/`debouncedPersist`-Pfad, 3 Fix-Optionen (Optimistic-Revert / Server-Refetch / UI-Lock).
+**V5.7 — NL-Compliance + Polish (Architecture done 2026-05-04):**
+- FEAT-571 NL-VAT + Reverse-Charge (planned, BL-417 high-prio): MIG-028 mit tax_rate-Whitelist {0,9,19,21} + Default 21 + reverse_charge BOOLEAN + branding_settings.vat_id + companies.vat_id (DEC-122/123/124). PDF-Block bilingual NL/EN hardcoded (DEC-125). Reverse-Charge-Toggle gated auf 3 Voraussetzungen (Strategaize-BTW + Empfaenger-BTW + Country in EU != NL). Format-only-Validation, kein VIES (BL-420 fuer spaeter). Drittland out-of-scope. ICP-Meldung manuell.
+- FEAT-572 Skonto-Toggle UI-State-Drift Bugfix (planned, BL-419 low/cosmetic): Optimistic-Revert via useRef last-known-good (DEC-126 Option A), Vitest fuer Save-Error-Pfad, Browser-Smoke gegen RPT-277-Repro.
+- Slicing-Schnitt: 2 Slices (DEC-127), SLC-571 ~5-7h, SLC-572 ~30-60min, gesamt ~5.5-8h.
 
 **V5.5 — Angebot-Erstellung (RELEASED 2026-05-01 als REL-020):**
 - FEAT-551 Angebot-Schema-Erweiterung + Position-Items (in_progress, MIG-026 applied auf Hetzner, Server Actions + Pfad-Helper live)
