@@ -8,13 +8,21 @@
 - Impact: User-sichtbarer Display-Bruch nach jeder Vorlagen-Auswahl. Funktional intakt (richtiger Body wurde in Textarea geschrieben), nur die Trigger-Anzeige war kaputt.
 - Resolution: 2026-05-05 in V5.7-Follow-up. base-ui's `<Select.Value>` rendert den Raw-Value-String als Default; ohne render-callback gibt es keinen Mapping-Pfad zum Label. Fix: `renderSelected(value)` als Function-Child von `<SelectValue>` in `cockpit/src/app/(app)/proposals/[id]/edit/payment-terms-dropdown.tsx` — mappt CUSTOM_VALUE auf "(eigene Eingabe)" und Template-IDs auf `${tpl.label}${is_default ? ' (Default)' : ''}`. Live-Smoke nach User-Coolify-Redeploy.
 
+### ISSUE-053 — Skonto-Edit-Flicker durch Server-Save mit invaliden Zwischenzustand
+- Status: resolved
+- Severity: High
+- Area: UI / Proposals-Editor
+- Summary: Auch nach ISSUE-051-Fix (Inputs bleiben gemountet) erschien beim Backspace im Prozent- oder Tage-Input kurz die Validation-Message "Beide Skonto-Felder muessen gesetzt sein", danach rollte SLC-572-Revert auf den letzten gueltigen Wert zurueck. User konnte das Feld nicht editieren — er hatte nicht genug Zeit, eine neue Zahl zu tippen, bevor der debounced Server-Save mit dem invaliden Zwischenzustand feuerte und revertet wurde.
+- Impact: Selbst nach beiden vorherigen Fixes (ISSUE-049 via SLC-572 + ISSUE-051 via isOn-Inferenz) blieb das normale Edit-Tippen unbenutzbar. Discovered durch User-Smoke 2026-05-05 (2. Live-Smoke gegen commit 64c0178).
+- Resolution: 2026-05-05 in V5.7-Follow-up #2. Client-side Validation-Gate in `persistPatch` (proposal-editor.tsx). Wenn der debounced Patch einen Skonto-Touching-Patch ist und client-side `validateSkonto(patch.skonto_percent, patch.skonto_days)` rejected, wird der Server-Save NICHT ausgefuehrt — `return` statt `updateProposal()`. SkontoSection zeigt die Inline-Validation-Message via `<p>{validation.error}</p>` bereits an; SaveIndicator bleibt am letzten erfolgreichen Stand. Sobald der User einen validen Wert tippt (z.B. nach Backspace die "3" eingibt), feuert der naechste debounced Save mit gueltigem Patch durch. Mein SLC-572-Revert-on-Server-Error bleibt als Defense-in-Depth fuer echte Server-Reject-Pfade (z.B. Concurrent-Edit, Lock-Status).
+
 ### ISSUE-051 — Skonto-Inputs unmounten waehrend Edit-Tippen (Optimistic-null Race)
 - Status: resolved
 - Severity: High
 - Area: UI / Proposals-Editor
 - Summary: Mit V5.7 SLC-572 useRef-Revert-Fix: wenn der User waehrend Edit den Prozent- oder Tage-Input mit Backspace komplett leert, wechselt SkontoSection's `isOn = (skonto_percent !== null)` sofort auf false (optimistic state hat null), die Inputs unmounten DOM-mauml;ssig, der Cursor verliert das Feld. User kann keine neue Zahl eingeben. Fehlt fuer 500ms+ bis das Server-Reject + Revert die Inputs zurueckbringt.
 - Impact: SLC-572-Hauptfunktion (Toggle-Drift-Fix) ist technisch korrekt, aber das normale Editieren der Skonto-Werte ist gestoert. AC8 Live-Smoke konnte nicht ausgefuehrt werden, weil die Vorbereitungs-Aktion (Backspace) selbst den User-Flow unterbrach. Discovered durch User-Smoke 2026-05-05 RPT-302.
-- Resolution: 2026-05-05 in V5.7-Follow-up. `isOn = (skonto_percent !== null || skonto_days !== null)` statt `(skonto_percent !== null)` — Inputs bleiben gemountet solange mindestens ein Feld einen Wert hat. Toggle-Click setzt beide auf null, dadurch isOn=false korrekt erhalten. Edge-Case "User Backspace BEIDE Felder gleichzeitig" ist akzeptabel (debounce-timer reset bei jedem Keystroke macht das in der Praxis irrelevant). DEC-126 / lastKnownGoodSkontoRef-Pattern bleibt unangetastet.
+- Resolution: 2026-05-05 in V5.7-Follow-up. `isOn = (skonto_percent !== null || skonto_days !== null)` statt `(skonto_percent !== null)` — Inputs bleiben gemountet solange mindestens ein Feld einen Wert hat. Toggle-Click setzt beide auf null, dadurch isOn=false korrekt erhalten. Edge-Case "User Backspace BEIDE Felder gleichzeitig" ist akzeptabel (debounce-timer reset bei jedem Keystroke macht das in der Praxis irrelevant). DEC-126 / lastKnownGoodSkontoRef-Pattern bleibt unangetastet. **Hinweis:** Inputs bleiben zwar gemountet, aber das eigentliche Edit-Verhalten war erst nach ISSUE-053-Fix (Validation-Gate vor Server-Save) tatsaech.lich benutzbar.
 
 ### ISSUE-050 — Audit-Log UI-Renderer zeigt generic-update-changes als "[object Object]"
 - Status: open

@@ -13,6 +13,7 @@ import {
   type ProposalEditPayload,
 } from "@/app/(app)/proposals/actions";
 import { useDebouncedCallback } from "@/lib/utils/use-debounce";
+import { validateSkonto } from "@/lib/proposal/skonto-validation";
 import {
   nextSkontoRefAfterSave,
   revertPatchIfSkontoFailed,
@@ -84,6 +85,25 @@ export function ProposalEditor({
 
   const persistPatch = useCallback(
     async (patch: EditorPatch) => {
+      // V5.7 SLC-572 Follow-up #2 — Client-side Validation-Gate fuer Skonto.
+      // Wenn der debounced Patch einen invaliden Skonto-Zwischenzustand traegt
+      // (z.B. percent=null waehrend days=7, weil User gerade Backspace
+      // gedrueckt hat und noch nicht weitergetippt hat), feuern wir den
+      // Server-Save NICHT. Sonst Reject + Revert + Error-Flicker waehrend des
+      // User-Tippens (RPT-302 User-Smoke). SkontoSection zeigt die
+      // Inline-Validation-Message bereits an; SaveIndicator bleibt am letzten
+      // erfolgreichen Stand. Sobald der User einen validen Wert getippt hat,
+      // feuert der naech.ste Save mit gueltigem Patch durch.
+      const touchesSkonto =
+        "skonto_percent" in patch || "skonto_days" in patch;
+      if (touchesSkonto) {
+        const check = validateSkonto(
+          patch.skonto_percent ?? null,
+          patch.skonto_days ?? null,
+        );
+        if (!check.ok) return;
+      }
+
       setSaveStatus("saving");
       const res = await updateProposal(proposal.id, patch);
       if (res.ok) {
