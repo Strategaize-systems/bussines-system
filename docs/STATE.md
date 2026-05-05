@@ -9,15 +9,17 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: architecture
-- Current Focus: **V6.2 Architecture done 2026-05-05 (RPT-309).** Alle 13 Open Questions geklaert via DEC-129..141. ARCHITECTURE.md + DECISIONS.md + MIGRATIONS.md (MIG-029 als planned) erweitert. Kern-Entscheidungen: Hybrid-Trigger-Pattern (Sync-Dispatch + Async-Execute + 1-Min-Cron-Fallback), 5 Slices SLC-621..625, ~23-34h, KEIN neuer Container, KEINE neue npm-Library, Token via crypto.randomBytes, Bearer-Auth via FEAT-504-Pattern. V5.7+Sammel-Releases bleiben Post-Launch-Stable.
-- Current Phase: V6.2 Architecture abgeschlossen, bereit fuer /slice-planning
+- High-Level State: slice-planning
+- Current Focus: **V6.2 Slice-Planning done 2026-05-05 (RPT-310).** 5 Slice-Files SLC-621..625 vollstaendig ausdefiniert (Goal, Scope, ACs 21-30 pro Slice, 9-12 Micro-Tasks pro Slice mit Files+Verification+Dependencies, Risks, QA-Fokus). 8 Open Technical Questions aus RPT-309 vor /slice-planning aufgeloest via Code-Audit (createActivity-Aufrufer-Liste, /api/leads/intake existiert nicht → SLC-625, /pipeline/funnel-report.tsx eingebettet → kein eigener /funnel-Pfad, Won-Deal=`deals.status='won'` statt is_won-Field). 3 neue BL-Items angelegt (BL-423 Click-Log-Cleanup-Cron V6.3+, BL-424 Source-Migration-Tool V6.3+, BL-425 Multi-Touch-Tab V6.3+). MIG-029 wird in 3 Apply-Schritten aufgebaut (SLC-621 Workflow-Anteil, SLC-624 Campaigns-Anteil, SLC-625 Tracking-Anteil), alles in einer SQL-File idempotent.
+- Current Phase: V6.2 Slice-Planning abgeschlossen, bereit fuer /backend SLC-621
 
 ## Immediate Next Steps
-1. **/slice-planning V6.2** — die 5 Slices SLC-621..625 strukturiert ausdefinieren (ACs pro Slice, Micro-Tasks-Liste, QA-Fokus). ~1.5-2h, eigene Session empfohlen. Insbesondere: Trigger-Source-Server-Action-Liste in SLC-621 Code-Konfig finalisieren, Field-Whitelist-Validators in SLC-621, Cron-Setup-Anleitung fuer REL-024-Notes in SLC-622.
-2. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
-3. **(Optional)** BL-422 RC-Toggle-Drift-Polish (~30-45min) wenn als V5.7-Cleanup gewuenscht.
-4. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
+1. **/backend SLC-621** — Workflow-Foundation: MIG-029 Teil 1 + Trigger-Dispatcher + Field-Whitelist + Rule-CRUD-Server-Actions. 9 Micro-Tasks, ~5-7h.
+2. **/qa SLC-621** — Schema-Smoke gegen Coolify-DB + Anti-Loop-Tests + PII-Schutz-Tests + Server-Action-Roundtrip.
+3. Anschliessend SLC-622 (Engine, ~5-7h) → SLC-623 (Builder-UI, ~5-7h) → SLC-624 (Campaigns Foundation, ~4-6h) → SLC-625 (Tracking+Reporting+API, ~5-8h). Gesamt ~23-34h V6.2-Implementation.
+4. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
+5. **(Optional)** BL-422 RC-Toggle-Drift-Polish (~30-45min) wenn als V5.7-Cleanup gewuenscht.
+6. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"

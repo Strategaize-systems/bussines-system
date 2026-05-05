@@ -1811,6 +1811,36 @@
       "version": null,
       "description": "In Gesamt-/qa V5.7 (RPT-301) als Wiring-Trace-Observation entdeckt: Der Reverse-Charge-Toggle im Editor (proposal-editor.tsx handleReverseChargeToggle) hat strukturell den gleichen UI-State-Drift wie der frueher gefixte Skonto-Toggle (BL-419/ISSUE-049). Wenn der User RC ON toggled obwohl Voraussetzungen fehlen (z.B. branding.vat_id oder company.vat_id leer), lehnt der Server validateReverseCharge ab. Optimistic-State bleibt jedoch auf {reverse_charge: true, tax_rate: 0} bis Page-Reload. DB ist immer korrekt, validateRC greift mit klarer Fehlermeldung. SLC-572 hat den Skonto-Pfad mit useRef-last-known-good + revertPatchIfSkontoFailed gefixt; analoges Pattern (revertPatchIfReverseChargeFailed + lastKnownGoodReverseChargeRef) waere fuer RC moeglich. Low-Severity weil DB-State korrekt, nur UX-cosmetic, selbstheilend. Aufwand ~30-45min Pure-Function + Editor-Wiring.",
       "createdAt": "2026-05-04"
+    },
+    {
+      "id": "BL-423",
+      "title": "Click-Log-Cleanup-Cron (90-Tage-Retention fuer campaign_link_clicks)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V6.3",
+      "description": "Aus V6.2 Slice-Planning RPT-310 (DEC-138 + Architecture-Section): campaign_link_clicks soll nach 90 Tagen automatisch geloescht werden (DSGVO-Retention konsistent zu V5.2 COMPLIANCE.md). Pattern wie existing recording-retention/route.ts: tagliches Cron, DELETE WHERE clicked_at < now() - interval '90 days', LIMIT 10000 pro Lauf, INSERT audit_log fuer Retention-Aktion. Index idx_campaign_link_clicks_link_time DESC ist bereits in MIG-029 vorbereitet. NICHT V1-Scope weil V1-Internal-Test wenig Klick-Volume hat. Aufwand ~1-2h Cron-Endpoint + Coolify-Cron-Setup + REL-Notes.",
+      "createdAt": "2026-05-05"
+    },
+    {
+      "id": "BL-424",
+      "title": "Source-zu-Kampagne Bulk-Migration-Tool (alte source*-Freitext-Felder zu campaign_id)",
+      "type": "feature",
+      "priority": "low",
+      "status": "open",
+      "version": "V6.3",
+      "description": "Aus V6.2 Slice-Planning RPT-310 (DEC-136 keine V1-Source-Migration): contacts.source/source_detail + companies.source_type/source_detail bleiben in V6.2 backward-compatible unangetastet. Bei Bedarf kommt ein Settings-Tool das alte Freitext-Werte auf campaign_id mappt: User definiert Mapping 'LinkedIn April' -> campaign-id-X, Tool macht UPDATE WHERE source ILIKE 'LinkedIn April'. Out-of-V6.2-Scope weil Migration einmalig + manuell + niedrige Prioritaet. V6.3+ wenn historische Reporting-Wuensche kommen. Aufwand ~3-5h UI + Mapping-Logic + Bulk-UPDATE.",
+      "createdAt": "2026-05-05"
+    },
+    {
+      "id": "BL-425",
+      "title": "Multi-Touch-Journey-Tab auf Lead-Detail-Page (Click-Log-basierte Multi-Touch-Visibility)",
+      "type": "feature",
+      "priority": "low",
+      "status": "open",
+      "version": "V6.3",
+      "description": "Aus V6.2 Slice-Planning RPT-310 (DEC-138 First-Touch-Lock): V6.2 ist First-Touch-only (campaign_id wird beim Lead-Create einmalig gesetzt). Click-Log enthaelt aber Multi-Touch-Daten (welcher Lead hat wann welche Tracking-Links geklickt). V6.3+ ergaenzt einen 'Customer-Journey'-Tab auf der Contact-Detail-Page der Click-Log-Eintrage des Contacts (via ip_hash-Match? oder via Future-Cookie-Tracking) chronologisch zeigt. Optional Conversion-Path-Visualisierung. Out-of-V6.2-Scope. Aufwand ~5-8h UI + Query + ggf. neuer ip_hash-zu-contact_id-Lookup.",
+      "createdAt": "2026-05-05"
     }
   ]
 }
