@@ -10,12 +10,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.2 SLC-622 /backend done 2026-05-05 (RPT-313).** Workflow-Engine komplett: Action-Executor (Run-Lock + TOCTOU-Re-Eval + Recursion-Guard + Best-Effort-Action-Loop + Final-Status + Rule-Cache-Update), 4 Action-Types (`create_task`, `send_email_template`, `create_activity`, `update_field`), Pure-Functions `template-renderer` (10 Vitest), `assignee-resolver` (8 Vitest, DEC-134), `recursion-guard` (6 Vitest, DEC-138 max 3 update_field/(deal_id,60s)), Cron-Endpoint `/api/cron/automation-runner` (Pattern aus expire-proposals), Sync-Execution-Pfad im Dispatcher aktiv (fire-and-forget), Trigger-Verdrahtung in 4 zentralen User-Pfaden (`pipeline/actions.ts:moveDealToStage`+`moveDealToPipeline`+`createDeal` und `lib/actions/activity-actions.ts:createActivity`) mit `logAuditWithId`-Helper fuer eindeutigen Anti-Loop-Token, Stage-Delete-Soft-Disable (DEC-133, dependent Rules werden auto-pausiert mit Toast-Count). Vitest 308/308 PASS (24 neue automation-Tests). TypeScript-Build clean. Lint 0 neue Errors in SLC-622-Code. REL-024-Notes mit vollstaendiger Coolify-Cron-Setup-Anleitung in docs/RELEASES.md.
-- Current Phase: V6.2 SLC-622 done, bereit fuer /qa SLC-622
+- Current Focus: **V6.2 SLC-622 /qa PASS 2026-05-05 (RPT-314).** Live-Engine end-to-end gegen Coolify verifiziert: P1 create_task end-to-end success+activity-insert, P2 Recursion-Guard skipped 4. Run mit error_message='recursion-limit-exceeded (3/3)' (NACH H-01-Fix in commit 22673d4 — supabase-js .contains() schlug fehl mit invalid-json-syntax, defensiver Fallback hat Guard live deaktiviert; per Deviation Rule 1 direkt gefixt, Re-Test PASS), P3 PII Defense-in-Depth rejected mit error_message='field-not-whitelisted', P4 Stage-Delete-Soft-Disable SQL-Logic verifiziert (dependent count=1, paused_reason mit Stage-Name), P5 audit_log-Side-Effect mit actor_id=NULL + triggered_by_user_id + automation_rule_name + context. Vitest 310/310. Build clean. Lint 0 neue Errors. Bereit fuer /frontend SLC-623.
+- Current Phase: V6.2 SLC-622 done+QA-PASS, bereit fuer /frontend SLC-623
 
 ## Immediate Next Steps
-1. **/qa SLC-622** — Praxis-Verifikation Action-Executor + 4 Action-Types + Recursion-Guard + Cron-Endpoint + Stage-Soft-Disable + audit_log-Side-Effects. Schema-Smoke gegen Coolify-DB (Anti-Loop-Test-Rule + 4-Action-Run + Cron-Pickup-Test). PII-Schutz-Defense-in-Depth-Praxis. Vitest+Build+Lint Re-Check.
-2. Anschliessend SLC-623 (Builder-UI, ~5-7h) → SLC-624 (Campaigns Foundation, ~4-6h) → SLC-625 (Tracking+Reporting+API, ~5-8h). V6.2-Restschaetzung ~14-21h.
+1. **/frontend SLC-623** — Workflow-Builder-UI (Settings-Page `/settings/automation` mit Rule-Listing, Rule-Builder-Form mit Trigger+Conditions+4-Action-Types, Pause/Activate/Delete, Trockenlauf-Modus). ~5-7h.
+2. Anschliessend SLC-624 (Campaigns Foundation, ~4-6h) → SLC-625 (Tracking+Reporting+API, ~5-8h). V6.2-Restschaetzung ~9-15h.
 3. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
 4. **(Optional)** BL-422 RC-Toggle-Drift-Polish (~30-45min) wenn als V5.7-Cleanup gewuenscht.
 5. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
