@@ -44,14 +44,16 @@ export async function checkRecursionLimit(
 
   const since = new Date(Date.now() - WINDOW_MS).toISOString();
 
+  // Hinweis: supabase-js `.contains()` mit Array-of-Objects produziert ein
+  // postgrest-Query, das vom DB-Layer mit "invalid input syntax for type
+  // json" abgelehnt wird. Stattdessen: alle Runs in der Zeitfenster
+  // selektieren und in JS filtern. Das ist robust und unabhaengig von
+  // postgrest-Quirks.
   const { data, error } = await supabase
     .from("automation_runs")
     .select("action_results")
     .eq("trigger_entity_id", entityId)
-    .gte("started_at", since)
-    .contains("action_results", [
-      { type: "update_field", outcome: "success" },
-    ]);
+    .gte("started_at", since);
 
   if (error) {
     // Defensive: Fehler beim Counting blockt nicht (sicher = erlauben),
@@ -64,7 +66,20 @@ export async function checkRecursionLimit(
     };
   }
 
-  const count = (data ?? []).length;
+  let count = 0;
+  for (const row of data ?? []) {
+    const results = (row as { action_results: unknown }).action_results;
+    if (!Array.isArray(results)) continue;
+    const hasSuccessUpdateField = results.some(
+      (r) =>
+        r &&
+        typeof r === "object" &&
+        (r as { type?: unknown }).type === "update_field" &&
+        (r as { outcome?: unknown }).outcome === "success"
+    );
+    if (hasSuccessUpdateField) count++;
+  }
+
   return {
     allowed: count < MAX_UPDATE_FIELD_PER_ENTITY_PER_60S,
     count,
