@@ -1,5 +1,106 @@
 # Migrations
 
+### MIG-029 — V6.2 Workflow-Automation + Kampagnen-Attribution Schema
+- Date: planned (Apply via SLC-621 + SLC-624 — Workflow-Schema in SLC-621, Attribution-Schema in SLC-624; beide parts in einer Migration-File `029_v62_automation_and_campaigns.sql`)
+- Scope: 7 additive Aenderungen in einer Migration:
+  1. Neue Tabelle `automation_rules` (DEC-129..134, FEAT-621):
+     - `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`
+     - `name TEXT NOT NULL`, `description TEXT NULL`
+     - `status TEXT NOT NULL CHECK (status IN ('active','paused','disabled')) DEFAULT 'paused'`
+     - `trigger_event TEXT NOT NULL CHECK (trigger_event IN ('deal.stage_changed','deal.created','activity.created'))`
+     - `trigger_config JSONB NOT NULL DEFAULT '{}'` (z.B. {stage_id, activity_types[]})
+     - `conditions JSONB NOT NULL DEFAULT '[]'` (Array of {field, op, value} AND-only)
+     - `actions JSONB NOT NULL DEFAULT '[]'` (ordered Array of {type, params, assignee?})
+     - `references_stage_ids UUID[] DEFAULT '{}'` (denormalisiert fuer Stage-Loesch-Lookup, DEC-133)
+     - `paused_reason TEXT NULL` (z.B. "Stage geloescht")
+     - `created_by UUID NOT NULL`, `created_at TIMESTAMPTZ DEFAULT now()`, `updated_at TIMESTAMPTZ DEFAULT now()`
+     - `last_run_at TIMESTAMPTZ NULL`, `last_run_status TEXT NULL` (Cache fuer UI)
+     - 1 Partial-Index: `idx_automation_rules_active ON automation_rules(trigger_event, status) WHERE status='active'`
+     - RLS `authenticated_full_access` (Single-User-V1, V7-Multi-User-Erweiterung folgt)
+  2. Neue Tabelle `automation_runs` (DEC-129/131, FEAT-621):
+     - `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`
+     - `rule_id UUID NOT NULL REFERENCES automation_rules(id) ON DELETE CASCADE`
+     - `trigger_event TEXT NOT NULL`, `trigger_entity_type TEXT NOT NULL`, `trigger_entity_id UUID NOT NULL`
+     - `trigger_event_audit_id UUID NULL` (FK soft-link zu audit_log.id, kein REFERENCES wegen audit_log-Delete-Edge-Case)
+     - `conditions_match BOOLEAN NULL` (NULL bis evaluation done)
+     - `status TEXT NOT NULL CHECK (status IN ('pending','running','success','partial_failed','failed','skipped')) DEFAULT 'pending'`
+     - `started_at TIMESTAMPTZ DEFAULT now()`, `finished_at TIMESTAMPTZ NULL`
+     - `action_results JSONB NOT NULL DEFAULT '[]'` ([{action_index, type, outcome, error_message?, audit_log_id?}])
+     - `error_message TEXT NULL`
+     - `created_at TIMESTAMPTZ DEFAULT now()`
+     - **Anti-Loop-UNIQUE:** `UNIQUE (rule_id, trigger_entity_id, trigger_event_audit_id)` — verhindert dass identischer Trigger denselben Workflow erneut ausloest
+     - 2 Indizes: `idx_automation_runs_pending ON started_at WHERE status IN ('pending','running')` (Cron-Pickup), `idx_automation_runs_rule ON (rule_id, started_at DESC)` (UI-Statistik)
+     - RLS `authenticated_full_access`
+  3. Neue Tabelle `campaigns` (DEC-135, FEAT-622):
+     - `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`
+     - `name TEXT NOT NULL`, `type TEXT NOT NULL CHECK (type IN ('email','linkedin','event','ads','referral','other'))`
+     - `channel TEXT NULL`, `start_date DATE NOT NULL`, `end_date DATE NULL`
+     - `status TEXT NOT NULL CHECK (status IN ('draft','active','finished','archived')) DEFAULT 'draft'`
+     - `external_ref TEXT NULL` (System-4-Campaign-Id, partial UNIQUE)
+     - `notes TEXT NULL`, `created_by UUID NOT NULL`
+     - `created_at TIMESTAMPTZ DEFAULT now()`, `updated_at TIMESTAMPTZ DEFAULT now()`
+     - 2 UNIQUE-Constraints: `UNIQUE (LOWER(name))` (case-insensitive name), partial `UNIQUE (external_ref) WHERE external_ref IS NOT NULL`
+     - 1 Partial-Index: `idx_campaigns_status_active ON (status, start_date) WHERE status='active'`
+     - RLS `authenticated_full_access`
+  4. Neue Tabelle `campaign_links` (DEC-137, FEAT-622):
+     - `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`
+     - `campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE`
+     - `token TEXT UNIQUE NOT NULL` (8-char base64url via crypto.randomBytes)
+     - `target_url TEXT NOT NULL`, `utm_source TEXT NOT NULL`, `utm_medium TEXT NOT NULL`, `utm_campaign TEXT NOT NULL`
+     - `utm_content TEXT NULL`, `utm_term TEXT NULL`, `label TEXT NULL`
+     - `click_count INTEGER NOT NULL DEFAULT 0` (denormalisiert, gepflegt von /r/[token]-Endpoint)
+     - `created_at TIMESTAMPTZ DEFAULT now()`
+     - 1 Index: `idx_campaign_links_campaign ON (campaign_id)`
+     - RLS `authenticated_full_access`
+  5. Neue Tabelle `campaign_link_clicks` (DEC-138, FEAT-622):
+     - `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`
+     - `link_id UUID NOT NULL REFERENCES campaign_links(id) ON DELETE CASCADE`
+     - `clicked_at TIMESTAMPTZ DEFAULT now()`
+     - `ip_hash TEXT NULL` (SHA-256 von IP, DSGVO-konform)
+     - `user_agent TEXT NULL` (truncated 200 chars)
+     - `referer TEXT NULL` (truncated 500 chars)
+     - 1 Index: `idx_campaign_link_clicks_link_time ON (link_id, clicked_at DESC)`
+     - RLS `authenticated_full_access`
+     - retention 90 Tage (Cleanup-Cron BL-XXX V6.3, NICHT V1-Scope)
+  6. Erweiterung `contacts`, `companies`, `deals` um `campaign_id` (DEC-136 — additive FK, keine source*-Migration):
+     - `ALTER TABLE contacts ADD COLUMN IF NOT EXISTS campaign_id UUID NULL REFERENCES campaigns(id) ON DELETE SET NULL;`
+     - `ALTER TABLE companies ADD COLUMN IF NOT EXISTS campaign_id UUID NULL REFERENCES campaigns(id) ON DELETE SET NULL;`
+     - `ALTER TABLE deals ADD COLUMN IF NOT EXISTS campaign_id UUID NULL REFERENCES campaigns(id) ON DELETE SET NULL;`
+     - 3 Partial-Indizes: `idx_contacts_campaign WHERE campaign_id IS NOT NULL`, `idx_companies_campaign WHERE campaign_id IS NOT NULL`, `idx_deals_campaign WHERE campaign_id IS NOT NULL`
+     - Bestehende `contacts.source`, `contacts.source_detail`, `companies.source_type`, `companies.source_detail` bleiben unangetastet (DEC-136)
+  7. GRANTS auf alle neuen Tabellen: `GRANT ALL ON automation_rules, automation_runs, campaigns, campaign_links, campaign_link_clicks TO authenticated, service_role;`
+- Reason: V6.2 FEAT-621 + FEAT-622 brauchen das gemeinsame Schema in einer Migration. DEC-129..141 haben die Strategie festgelegt. Bestehende Daten bleiben unveraendert lesbar (alle neuen Spalten nullable / mit Defaults). Bestehende source*-Felder werden NICHT migriert (DEC-136). Anti-Loop-Garantie via UNIQUE-Constraint auf `automation_runs(rule_id, trigger_entity_id, trigger_event_audit_id)`. KEIN Worker-Container, KEIN neuer Cron-Job ueber `automation-runner` hinaus.
+- Affected Areas:
+  - Neue Server Actions in `cockpit/src/app/(app)/settings/automation/actions.ts` (CRUD fuer automation_rules)
+  - Neue Server Actions in `cockpit/src/app/(app)/settings/campaigns/actions.ts` (CRUD fuer campaigns)
+  - Neue Server Actions in `cockpit/src/app/(app)/campaigns/[id]/actions.ts` (createCampaignLink, listCampaignLinks)
+  - Neuer Helper `cockpit/src/lib/automation/dispatcher.ts` (Trigger-Dispatch nach Server-Action-Commit)
+  - Neuer Helper `cockpit/src/lib/automation/executor.ts` (Action-Execution mit 4 Action-Types)
+  - Neuer Helper `cockpit/src/lib/automation/dry-run.ts` (Trockenlauf gegen Source-Tabellen)
+  - Neuer Helper `cockpit/src/lib/automation/field-whitelist.ts` (Code-Konfig DEC-130)
+  - Neuer Helper `cockpit/src/lib/automation/assignee-resolver.ts` (Owner-Resolution DEC-134)
+  - Neuer Helper `cockpit/src/lib/campaigns/token.ts` (8-char base64url Token-Generator DEC-137)
+  - Neuer Helper `cockpit/src/lib/campaigns/mapper.ts` (utm→campaign Resolution DEC-135)
+  - Neue Pages: `/settings/automation` Listing + `/settings/automation/[id]/edit`, `/settings/campaigns` + `/campaigns/[id]`
+  - Neuer Public Route `/r/[token]/route.ts` (302-Redirect + Click-Log)
+  - Neuer Cron-Endpoint `/api/cron/automation-runner/route.ts` (Pattern aus expire-proposals/route.ts)
+  - Neuer API-Endpoint `/api/campaigns/[id]/performance/route.ts` (Bearer-Auth via verifyExportApiKey)
+  - Erweiterung Server Actions: `deals/actions.ts` (updateDealStage, createDeal — dispatchAutomationTrigger-Aufruf), `activities/actions.ts` (createActivity — dispatch), `pipeline-stages/actions.ts` (deletePipelineStage — Soft-Disable referenzierender Regeln)
+  - Erweiterung Stammdaten-UI: Contacts/Companies/Deals Edit-Form bekommt Kampagne-Dropdown
+  - Erweiterung `/funnel`-Page: Kampagne-Filter-Dropdown (DEC-139)
+  - KEINE Aenderung an `audit_log`-Schema (existing reicht), `email_templates`, `proposal*`, `meetings`, `briefing-cron`, `pgvector`-Tabellen, `email_messages`, `recordings`, `transcripts`
+- Risk: Niedrig — alle Aenderungen rein additiv. Neue Tabellen ohne Konflikt mit bestehenden. ALTER TABLE auf contacts/companies/deals ist Metadata-Change ohne Daten-Touch (alle 3 Spalten NULLable mit Default NULL). Anti-Loop-UNIQUE-Constraint hat klare Semantik (NULL-Werte in trigger_event_audit_id sind aus Postgres-UNIQUE-Sicht "verschieden" — daher Anti-Loop greift nur wenn audit_id gesetzt ist; trigger ohne audit_id wie deal.created sollte audit_id auf deal.id setzen oder via separate "synthetic trigger event id" Strategie behandeln, das wird in SLC-621 abschliessend implementiert).
+- Rollback Notes:
+  - `DROP TABLE campaign_link_clicks CASCADE;`
+  - `DROP TABLE campaign_links CASCADE;`
+  - `ALTER TABLE deals DROP COLUMN IF EXISTS campaign_id;`
+  - `ALTER TABLE companies DROP COLUMN IF EXISTS campaign_id;`
+  - `ALTER TABLE contacts DROP COLUMN IF EXISTS campaign_id;`
+  - `DROP TABLE campaigns CASCADE;`
+  - `DROP TABLE automation_runs CASCADE;`
+  - `DROP TABLE automation_rules CASCADE;`
+  - V5.7-Code funktioniert nach Rollback unveraendert weiter — bestehende source*-Felder bleiben primary attribution. Falls vor Rollback Tracking-Links public verteilt wurden: 302-Redirect-URLs werden zu 404 (Public-Endpoint /r/[token] verschwindet — Soft-Fail).
+
 ### MIG-001 — Initial Schema V1
 - Date: 2026-03-27
 - Scope: 9 Tabellen (profiles, companies, contacts, pipelines, pipeline_stages, deals, activities, documents, content_calendar) + RLS Policies + Seed-Daten (2 Pipelines mit Default-Stages)

@@ -9,12 +9,12 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: requirements
-- Current Focus: **V6.2 Requirements done 2026-05-05 (RPT-308).** 2 Features ausgeschrieben: FEAT-621 Workflow-Automation Rule Builder (BL-135) + FEAT-622 Kampagnen-Attribution + UTM-Tracking (BL-139). PRD-V6.2-Section + Slicing-Vorschlag (6 Slices SLC-621..626) + 13 Open Questions an /architecture. V5.7+Sammel-Releases bleiben Post-Launch-Stable (Container 0 Restarts seit 2026-05-04, RPT-307).
-- Current Phase: V6.2 Requirements abgeschlossen, bereit fuer /architecture
+- High-Level State: architecture
+- Current Focus: **V6.2 Architecture done 2026-05-05 (RPT-309).** Alle 13 Open Questions geklaert via DEC-129..141. ARCHITECTURE.md + DECISIONS.md + MIGRATIONS.md (MIG-029 als planned) erweitert. Kern-Entscheidungen: Hybrid-Trigger-Pattern (Sync-Dispatch + Async-Execute + 1-Min-Cron-Fallback), 5 Slices SLC-621..625, ~23-34h, KEIN neuer Container, KEINE neue npm-Library, Token via crypto.randomBytes, Bearer-Auth via FEAT-504-Pattern. V5.7+Sammel-Releases bleiben Post-Launch-Stable.
+- Current Phase: V6.2 Architecture abgeschlossen, bereit fuer /slice-planning
 
 ## Immediate Next Steps
-1. **/architecture V6.2** — 13 Open Questions klaeren (Trigger-Mechanismus, Action-Ausfuehrung, utm-Mapping, Source-Field-Migration, Funnel-Report-Erweiterung etc.). ~2-3h, eigene Session empfohlen.
+1. **/slice-planning V6.2** — die 5 Slices SLC-621..625 strukturiert ausdefinieren (ACs pro Slice, Micro-Tasks-Liste, QA-Fokus). ~1.5-2h, eigene Session empfohlen. Insbesondere: Trigger-Source-Server-Action-Liste in SLC-621 Code-Konfig finalisieren, Field-Whitelist-Validators in SLC-621, Cron-Setup-Anleitung fuer REL-024-Notes in SLC-622.
 2. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
 3. **(Optional)** BL-422 RC-Toggle-Drift-Polish (~30-45min) wenn als V5.7-Cleanup gewuenscht.
 4. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.

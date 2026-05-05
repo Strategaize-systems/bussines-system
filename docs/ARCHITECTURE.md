@@ -7123,3 +7123,550 @@ Gesamt: ~5.5-8h. Reihenfolge: 571 zuerst (groesserer Pfad, eigener QA-Cycle), 57
 ### V5.7 Recommended Next Step
 
 `/slice-planning V5.7` — die 2 Slices SLC-571 + SLC-572 strukturiert ausdefinieren mit Acceptance Criteria pro Slice, Micro-Tasks-Liste mit Reihenfolge, QA-Fokus pro Slice. Insbesondere: Voraussetzungs-Logik fuer Reverse-Charge-Toggle als testbare Helper-Funktion ausdefinieren, PDF-Snapshot-Tests erweitern (mit/ohne Reverse-Charge-Block), Skonto-Bugfix-Investigation als ersten Micro-Task in SLC-572.
+
+## V6.2 — Workflow-Automation + Kampagnen-Attribution Architecture
+
+### V6.2 Summary
+
+V6.2 fuegt zwei thematisch unabhaengige aber low-cost-zusammenpassende Bloecke ins bestehende V5.7-System ein: einen deterministischen Wenn-Dann-Workflow-Builder (FEAT-621) und ein strukturiertes Kampagnen-Attribution-Modell (FEAT-622). Beide Bloecke folgen der V6.2-Leitlinie: keine neuen Container, keine neuen npm-Packages, kein neuer LLM-Pfad, alle Patterns wiederverwendet (Cron, Audit, Server Actions, Export-API-Auth, pgvector ist nicht beruehrt).
+
+Die Hot-Path-Latenz fuer Workflows wird ueber ein Hybrid-Pattern erreicht: synchrone Trigger-Dispatch nach erfolgreichem Server-Action-Commit + asynchrone Action-Execution via fire-and-forget Promise + 1-Min-Cron als Defense-in-Depth-Fallback. Das ergibt < 30s Standard-Latenz ohne Worker-Container.
+
+KEINE neuen Container, KEINE neuen Cron-Jobs ueber den fixen `automation-runner`-Cron hinaus, KEINE neuen npm-Dependencies (Token-Generierung via Node-stdlib `crypto.randomBytes`).
+
+### V6.2 Main Components
+
+```
+                 ┌───────────────────────────────────────────────┐
+                 │           App-Layer (Next.js)                  │
+                 │                                                │
+  Server Actions ─┤  deals/actions.ts (updateDealStage, create..)│
+   (alle Mutate)  │  activities/actions.ts (createActivity)       │
+                 │     │                                          │
+                 │     │ nach DB-Commit:                          │
+                 │     ▼                                          │
+                 │  dispatchAutomationTrigger(event, entity)      │
+                 │     │                                          │
+                 │     ├─ matchActiveRules(event, entity) [SQL]   │
+                 │     │                                          │
+                 │     ├─ INSERT automation_runs (status=pending) │
+                 │     │  UNIQUE(rule_id, trigger_event_audit_id) │
+                 │     │  → Anti-Loop-Marker via ON CONFLICT      │
+                 │     │                                          │
+                 │     └─ Promise.race([executeAutomationRun(id), │
+                 │           setTimeout(50ms)])  // fire&forget   │
+                 │                                                │
+                 │  /api/cron/automation-runner/route.ts          │
+                 │     pickup pending runs (>60s old)             │
+                 │     → executeAutomationRun(id)                 │
+                 │                                                │
+                 │  /settings/automation                          │
+                 │     CRUD Builder UI + Trockenlauf              │
+                 │                                                │
+                 │  /settings/campaigns + /campaigns/[id]         │
+                 │  /r/[token] (Public Redirect)                  │
+                 │  /api/campaigns/[id]/performance (Read-API)    │
+                 └───────────────────────────────────────────────┘
+                              │
+                              ▼
+                 ┌───────────────────────────────────────────────┐
+                 │           Postgres (Supabase, Coolify)         │
+                 │                                                │
+  Workflow-Engine │  automation_rules (definitions)               │
+                 │  automation_runs (history + idempotency)       │
+                 │  audit_log (existing — Action-Side-Effects)    │
+                 │                                                │
+  Attribution    │  campaigns (Master)                            │
+                 │  campaign_links (Tracking-URLs)                │
+                 │  campaign_link_clicks (Click-Log, IP-Hash)     │
+                 │  contacts.campaign_id (additive FK)            │
+                 │  companies.campaign_id (additive FK)           │
+                 │  deals.campaign_id (additive FK)               │
+                 └───────────────────────────────────────────────┘
+```
+
+### V6.2 Component-Detail — FEAT-621 Workflow-Automation
+
+#### 1. DB-Schema (MIG-029 Teil 1, DEC-129..134)
+
+```
+automation_rules:
+  id UUID PRIMARY KEY
+  name TEXT NOT NULL
+  description TEXT NULL
+  status TEXT NOT NULL CHECK (status IN ('active','paused','disabled')) DEFAULT 'paused'
+  trigger_event TEXT NOT NULL CHECK (trigger_event IN
+    ('deal.stage_changed','deal.created','activity.created'))
+  trigger_config JSONB NOT NULL DEFAULT '{}'  -- z.B. {"stage_id":"...","activity_types":["call","email"]}
+  conditions JSONB NOT NULL DEFAULT '[]'      -- Array of {field, op, value} AND-only
+  actions JSONB NOT NULL DEFAULT '[]'         -- ordered Array of {type, params, assignee?}
+  references_stage_ids UUID[] DEFAULT '{}'   -- denormalisiert fuer Stage-Loesch-Lookup (DEC-133)
+  paused_reason TEXT NULL                    -- z.B. "Stage geloescht" (DEC-133)
+  created_by UUID NOT NULL
+  created_at TIMESTAMPTZ DEFAULT now()
+  updated_at TIMESTAMPTZ DEFAULT now()
+  last_run_at TIMESTAMPTZ NULL
+  last_run_status TEXT NULL                  -- success|partial_failed|failed (Cache fuer UI)
+
+automation_runs:
+  id UUID PRIMARY KEY
+  rule_id UUID NOT NULL REFERENCES automation_rules(id) ON DELETE CASCADE
+  trigger_event TEXT NOT NULL                -- redundant zu rule, aber stable bei Rule-Update
+  trigger_entity_type TEXT NOT NULL          -- 'deal'|'activity'
+  trigger_entity_id UUID NOT NULL
+  trigger_event_audit_id UUID NULL           -- audit_log.id der den Trigger ausgeloest hat (Anti-Loop)
+  conditions_match BOOLEAN NULL              -- NULL bis evaluation
+  status TEXT NOT NULL CHECK (status IN
+    ('pending','running','success','partial_failed','failed','skipped')) DEFAULT 'pending'
+  started_at TIMESTAMPTZ DEFAULT now()
+  finished_at TIMESTAMPTZ NULL
+  action_results JSONB NOT NULL DEFAULT '[]' -- [{action_index, type, outcome, error_message?, audit_log_id?}]
+  error_message TEXT NULL                    -- top-level error
+  created_at TIMESTAMPTZ DEFAULT now()
+
+  UNIQUE (rule_id, trigger_entity_id, trigger_event_audit_id)
+                  -- Anti-Loop-Marker: identischer Trigger triggert nicht erneut
+
+CREATE INDEX idx_automation_runs_pending ON automation_runs(started_at)
+  WHERE status='pending' OR status='running';
+CREATE INDEX idx_automation_runs_rule ON automation_runs(rule_id, started_at DESC);
+CREATE INDEX idx_automation_rules_active ON automation_rules(trigger_event, status)
+  WHERE status='active';
+```
+
+`automation_runs` ist Engine-Internal (Workflow-Lifecycle, Idempotency, UI-Statistik). Die GESCHAEFTLICHEN Side-Effects (z.B. `update_field` auf `deals.stage_id`) schreiben **zusaetzlich** ins existierende `audit_log` mit `actor_id=NULL` (V4.1-System-Marker), `entity_type=<entity>`, `action='update'`, `context='Automation rule {rule.name} executed'`. Dadurch bleibt das Business-Audit konsistent ohne Duplikat (DEC-131).
+
+#### 2. Trigger-Dispatcher (DEC-129)
+
+`cockpit/src/lib/automation/dispatcher.ts` (neu):
+
+```typescript
+export async function dispatchAutomationTrigger(args: {
+  event: 'deal.stage_changed' | 'deal.created' | 'activity.created';
+  entityType: 'deal' | 'activity';
+  entityId: string;
+  triggerEventAuditId?: string;  // optional, fuer Anti-Loop
+  changes?: Record<string, unknown>;  // before/after, fuer Conditions
+}): Promise<void>;
+```
+
+Aufgerufen von ALLEN mutating Server Actions die einen Trigger-Event darstellen:
+- `cockpit/src/app/(app)/deals/actions.ts` — `updateDealStage`, `createDeal`
+- `cockpit/src/app/(app)/activities/actions.ts` — `createActivity`
+- (zukuenftig: weitere Server Actions die Triggers darstellen)
+
+Pattern im Aufrufer:
+```typescript
+// nach erfolgreichem DB-Commit:
+const auditId = await insertAuditLog({...});
+await dispatchAutomationTrigger({
+  event: 'deal.stage_changed',
+  entityType: 'deal',
+  entityId: dealId,
+  triggerEventAuditId: auditId,
+  changes: { stage_id: { before: oldStageId, after: newStageId } }
+});
+```
+
+`dispatchAutomationTrigger` macht:
+1. SELECT alle aktiven Regeln mit passendem `trigger_event` (Index `idx_automation_rules_active`)
+2. App-side Condition-Match (kompakte JS-Engine, ~50 Zeilen — keine Library)
+3. INSERT `automation_runs (status='pending')` mit `ON CONFLICT (rule_id, trigger_entity_id, trigger_event_audit_id) DO NOTHING` → Anti-Loop
+4. Fire-and-forget `void executeAutomationRun(runId).catch(logErr)` — Server-Action returnt sofort, nicht-blockierend
+5. Cron-Fallback uebernimmt im Worst-Case bei App-Crash
+
+**Latenz-Argument:** Trigger inserted innerhalb der Server-Action-Transaction → executeAutomationRun startet sofort nach Tx-Commit → Actions laufen typisch < 5s ueber DB+Mail. 30s-AC mit Sicherheitsmarge erfuellt.
+
+#### 3. Action-Executor (DEC-129/130/134)
+
+`cockpit/src/lib/automation/executor.ts` (neu):
+
+```typescript
+export async function executeAutomationRun(runId: string): Promise<void>;
+```
+
+Fuehrt aus:
+1. UPDATE run SET status='running' (idempotent via WHERE status='pending')
+2. Lade rule + entity via SELECT
+3. Re-Evaluate conditions (Defense-in-Depth gegen TOCTOU)
+4. Fuer jede Action in rule.actions:
+   - Whitelist-Check via `cockpit/src/lib/automation/field-whitelist.ts` (DEC-130, Code-Konfig)
+   - Action-Type-Switch:
+     - `create_task` → `createActivity({type:'task', deal_id, assignee, due_at})` mit Owner-Resolution (DEC-134: deal_owner default, override moeglich)
+     - `send_email_template` → existing V5.3 `email_templates`-Render + send via `cockpit/src/lib/email/send.ts`
+     - `create_activity` → `createActivity({type, deal_id, title, description})`
+     - `update_field` → Server Action wrapper mit Field-Whitelist + Range-Validation
+   - Bei Fehler: action_results[i].outcome='failed', weiter zur naechsten Action (best-effort, AC9)
+   - Bei Erfolg: audit_log-Eintrag mit `actor_id=NULL`, context=`Automation rule {rule.name} executed`
+5. UPDATE run SET status=<resolved>, finished_at=now(), action_results=<json>
+
+**Field-Whitelist (DEC-130)** in Code-Konfig:
+```typescript
+export const UPDATE_FIELD_WHITELIST: Record<EntityType, FieldSpec[]> = {
+  deal: [
+    { field: 'stage_id', validate: validateStageId },
+    { field: 'value', validate: v => typeof v === 'number' && v >= 0 },
+    { field: 'expected_close_date', validate: validateIsoDate },
+  ],
+  contact: [
+    { field: 'tags', validate: validateTagsArray },
+  ],
+  company: [
+    { field: 'tags', validate: validateTagsArray },
+  ],
+};
+```
+
+#### 4. Cron-Fallback (DEC-129)
+
+`cockpit/src/app/api/cron/automation-runner/route.ts` (neu, Pattern aus `expire-proposals/route.ts`):
+
+```typescript
+export async function POST(request: NextRequest) {
+  const authError = verifyCronSecret(request);
+  if (authError) return authError;
+
+  // Pickup runs die >60s in pending oder running haengen (App-Crash-Fallback)
+  const stuck = await sb.from('automation_runs')
+    .select('id')
+    .in('status', ['pending', 'running'])
+    .lt('started_at', new Date(Date.now() - 60_000).toISOString())
+    .limit(50);
+
+  for (const r of stuck) {
+    await executeAutomationRun(r.id).catch(logErr);
+  }
+
+  return NextResponse.json({success:true, picked:stuck.length});
+}
+```
+
+**Coolify-Cron-Setup** (REL-024-Notes): Cron-Expression `* * * * *` (jede Minute), CRON_SECRET-Header. Re-uses existing `verify-cron-secret` Helper. Naechste neuer Cron-Eintrag im Coolify-UI nach Deploy von SLC-622.
+
+#### 5. Trockenlauf (Dry-Run, DEC-132)
+
+`cockpit/src/lib/automation/dry-run.ts` (neu):
+
+```typescript
+export async function dryRunRule(rule: AutomationRule, daysBack=30): Promise<DryRunResult[]>;
+```
+
+Macht **read-only** SQL-Query gegen Source-Tabellen (kein dedizierter Replay-Layer):
+- `deal.stage_changed` → SELECT FROM `audit_log` WHERE entity_type='deal' AND action='stage_change' AND created_at > now() - interval '30 days'
+- `deal.created` → SELECT FROM `deals` WHERE created_at > now() - interval '30 days'
+- `activity.created` → SELECT FROM `activities` WHERE created_at > now() - interval '30 days'
+
+Fuer jeden Treffer: App-Level-Condition-Match → Liste `[{entity_id, entity_label, would_match: bool, matched_actions: string[]}]`.
+
+Result-Limit 100 Eintraege (UI-Anzeige in Builder-Step-4 als "Vorschau letzte 30 Tage"). KEINE DB-Schreibvorgaenge waehrend Dry-Run.
+
+#### 6. Stage-Delete-Handling (DEC-133)
+
+Server Action `deletePipelineStage(stageId)` (existing oder erweitert) checkt vor Delete:
+```typescript
+const dependentRules = await sb.from('automation_rules')
+  .select('id, name')
+  .contains('references_stage_ids', [stageId])
+  .eq('status', 'active');
+```
+
+Wenn dependent rules: Soft-Disable statt Hard-Block. UPDATE rules SET status='paused', paused_reason=`Pipeline-Stage "${stageName}" wurde geloescht`. Toast-Message zeigt Anzahl pausierter Regeln. UI in `/settings/automation` zeigt paused-Regeln mit Warning-Badge + "Pausiert: <Reason>" + Edit-Link.
+
+`references_stage_ids` ist ein denormalisierter Cache, gepflegt von Server Action `saveAutomationRule` (Walk durch trigger_config + conditions, sammle alle stage_id-References).
+
+#### 7. Builder-UI
+
+`cockpit/src/app/(app)/settings/automation/page.tsx` (neu) — Listing aller Regeln (Status-Badge, last_run_at, Run-Count letzte 7 Tage, Edit/Toggle/Delete-Buttons).
+
+`cockpit/src/app/(app)/settings/automation/[id]/edit/page.tsx` (neu) — 4-Step-Form:
+1. **Trigger** — Radio (3 Trigger-Typen) + Sub-Form je nach Auswahl (z.B. Stage-Picker bei stage_changed)
+2. **Conditions** — Add-Row-Liste (field-Picker + op-Picker + value-Input), AND-only
+3. **Actions** — Add-Row-Liste (4 Action-Type-Buttons + Sub-Form je Action), Reorder via Up/Down
+4. **Aktivieren + Trockenlauf** — Save-Draft (status=paused) oder Save-and-Activate (status=active), "Trockenlauf 30 Tage" Button zeigt Dry-Run-Result inline
+
+Style Guide V2 verbindlich (Card-Layout, Badge-Komponenten, Form-Field-Pattern aus `/settings/payment-terms`).
+
+### V6.2 Component-Detail — FEAT-622 Kampagnen-Attribution
+
+#### 1. DB-Schema (MIG-029 Teil 2, DEC-135..138)
+
+```
+campaigns:
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+  name TEXT NOT NULL
+  type TEXT NOT NULL CHECK (type IN ('email','linkedin','event','ads','referral','other'))
+  channel TEXT NULL                          -- z.B. "LinkedIn Ads Q2"
+  start_date DATE NOT NULL
+  end_date DATE NULL
+  status TEXT NOT NULL CHECK (status IN ('draft','active','finished','archived')) DEFAULT 'draft'
+  external_ref TEXT NULL                     -- System-4-Campaign-Id (DEC-135 primary match)
+  notes TEXT NULL
+  created_by UUID NOT NULL
+  created_at TIMESTAMPTZ DEFAULT now()
+  updated_at TIMESTAMPTZ DEFAULT now()
+  UNIQUE (external_ref) WHERE external_ref IS NOT NULL  -- partial unique
+  UNIQUE (LOWER(name))                                  -- case-insensitive name uniqueness
+
+campaign_links:
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+  campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE
+  token TEXT UNIQUE NOT NULL                 -- 8-char base64url (DEC-137)
+  target_url TEXT NOT NULL
+  utm_source TEXT NOT NULL
+  utm_medium TEXT NOT NULL
+  utm_campaign TEXT NOT NULL
+  utm_content TEXT NULL
+  utm_term TEXT NULL
+  label TEXT NULL                            -- User-Notiz fuer den Link
+  click_count INTEGER NOT NULL DEFAULT 0     -- denormalisiert, gepflegt vom Click-Endpoint
+  created_at TIMESTAMPTZ DEFAULT now()
+
+campaign_link_clicks:
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+  link_id UUID NOT NULL REFERENCES campaign_links(id) ON DELETE CASCADE
+  clicked_at TIMESTAMPTZ DEFAULT now()
+  ip_hash TEXT NULL                          -- SHA-256 von IP (DSGVO-konform)
+  user_agent TEXT NULL                       -- truncated 200 chars
+  referer TEXT NULL                          -- truncated 500 chars
+
+CREATE INDEX idx_campaign_links_campaign ON campaign_links(campaign_id);
+CREATE INDEX idx_campaign_link_clicks_link_time ON campaign_link_clicks(link_id, clicked_at DESC);
+CREATE INDEX idx_campaigns_status_active ON campaigns(status, start_date) WHERE status='active';
+
+-- Additive FK-Spalten (DEC-136 — bestehende source*-Felder unangetastet)
+ALTER TABLE contacts  ADD COLUMN IF NOT EXISTS campaign_id UUID NULL REFERENCES campaigns(id) ON DELETE SET NULL;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS campaign_id UUID NULL REFERENCES campaigns(id) ON DELETE SET NULL;
+ALTER TABLE deals     ADD COLUMN IF NOT EXISTS campaign_id UUID NULL REFERENCES campaigns(id) ON DELETE SET NULL;
+
+CREATE INDEX idx_contacts_campaign  ON contacts(campaign_id)  WHERE campaign_id IS NOT NULL;
+CREATE INDEX idx_companies_campaign ON companies(campaign_id) WHERE campaign_id IS NOT NULL;
+CREATE INDEX idx_deals_campaign     ON deals(campaign_id)     WHERE campaign_id IS NOT NULL;
+```
+
+Click-Log retention: 90 Tage. Daily-Cron-Cleanup (Reuse-Pattern aus V5.1 `recording-retention/route.ts`). NICHT V1-Scope, BL-XXX angelegt fuer V6.3.
+
+#### 2. Tracking-Link-Generator (DEC-137)
+
+`cockpit/src/lib/campaigns/token.ts` (neu):
+```typescript
+import { randomBytes } from 'node:crypto';
+
+export function generateCampaignToken(): string {
+  return randomBytes(6).toString('base64url'); // 8 chars, ~2.8e14 combos
+}
+```
+
+Server Action `createCampaignLink(campaignId, params)` ruft `generateCampaignToken()`. Bei UNIQUE-Conflict (extrem selten): retry max 5x. Token wird URL-safe rendered: `https://app.example.com/r/<token>`.
+
+#### 3. Public Redirect-Endpoint
+
+`cockpit/src/app/r/[token]/route.ts` (neu, **public, KEIN Auth**):
+
+```typescript
+export async function GET(req: NextRequest, { params }: { params: { token: string } }) {
+  const sb = createServiceRoleClient();
+  const { data: link } = await sb.from('campaign_links')
+    .select('id, target_url')
+    .eq('token', params.token)
+    .single();
+
+  if (!link) return NextResponse.redirect('https://strategaize.com/404', 302);
+
+  // Click-Log async (kein await — Redirect first)
+  void logClick(link.id, req).catch(logErr);
+
+  // UTM-Parameter aus Link an Target-URL anhaengen (oder beibehalten falls schon da)
+  const target = appendUtmIfMissing(link.target_url, link);
+
+  return NextResponse.redirect(target, 302);
+}
+```
+
+`logClick` macht 2 INSERTs: 1x `campaign_link_clicks`, 1x `UPDATE campaign_links SET click_count=click_count+1 WHERE id=...`. Beide non-blocking via `void`.
+
+`ip_hash` = SHA-256 von `req.headers.get('x-forwarded-for')` (oder `x-real-ip`, Coolify-Traefik liefert beides).
+
+#### 4. UTM → Campaign-Mapping (DEC-135)
+
+`cockpit/src/lib/campaigns/mapper.ts` (neu):
+
+```typescript
+export async function resolveCampaignFromUtm(utm: UtmParams): Promise<string | null> {
+  // Priority 1: external_ref Match (System 4 sendet das)
+  if (utm.utm_source === 'system4' && utm.utm_content) {
+    const c = await findCampaignByExternalRef(utm.utm_content);
+    if (c) return c.id;
+  }
+
+  // Priority 2: utm_campaign = campaigns.name (case-insensitive trim)
+  if (utm.utm_campaign) {
+    const c = await findCampaignByName(utm.utm_campaign.trim());
+    if (c) return c.id;
+  }
+
+  return null;  // Lead bekommt campaign_id=NULL, source*-Felder bleiben primary lookup
+}
+```
+
+Aufgerufen von Lead-Insert-Pfaden (Webhook-API `/api/leads/intake`, manueller Contact-Create). NICHT bei Click — Click logged nur, Lead-Resolution erst bei Form-Submit.
+
+#### 5. First-Touch-Lock (DEC-138)
+
+Bei `INSERT INTO contacts (...)` mit utm-Werten:
+- Wenn neuer Kontakt: `campaign_id` wird gesetzt aus `resolveCampaignFromUtm`.
+- Wenn existierender Kontakt (Update via E-Mail-Match): `campaign_id` bleibt unangetastet wenn schon gesetzt (`UPDATE ... SET campaign_id = COALESCE(campaign_id, $new)`).
+
+Click-Log enthaelt Multi-Touch-Visibility ohne Schema-Aenderung: Funnel-Report kann optional zeigen "Lead X kam ueber Kampagne A (first-touch), hat aber 3x bei Kampagne B geklickt" via JOIN auf `campaign_link_clicks`. Spaetere Multi-Touch-Auswertung bleibt nachruestbar ohne Datenverlust.
+
+#### 6. Reporting-Page `/campaigns/[id]`
+
+`cockpit/src/app/(app)/campaigns/[id]/page.tsx` (neu):
+
+- **Header-Block:** Name, Typ, Channel, Zeitraum (start_date..end_date), Status-Badge
+- **KPIs (5 Cards):** Lead-Count (`contacts WHERE campaign_id=X`), Deal-Count (`deals WHERE campaign_id=X`), Won-Count (`deals WHERE campaign_id=X AND stage.type='won'`), Won-Value (SUM(deals.value)), Conversion-Rate (Won-Count / Lead-Count)
+- **Tabs:**
+  - "Leads" — Liste verknuepfter Contacts mit Stage-Filter
+  - "Deals" — Liste verknuepfter Deals mit Status-Filter
+  - "Tracking-Links" — Liste der Links + Click-Counts + Klicks-Chart-letzte-30-Tage (kompakt)
+- **Actions:** "CSV-Export" Button (Reuse `/api/export/*`-Pattern), "External-Ref editieren"
+
+`/settings/campaigns/page.tsx` (neu) — Listing alle Kampagnen + Create-Button + Status-Filter.
+
+#### 7. Funnel-Report-Filter (FEAT-335 Erweiterung, DEC-139)
+
+Existing `/funnel`-Page bekommt im Filter-Bar einen neuen Dropdown "Kampagne" zwischen "Pipeline" und "Stage". Backend-Query erweitert um `WHERE deals.campaign_id = $X` (optional). UI-Eingriff ~1h, ein zusaetzlicher Filter-Renderer + ein zusaetzlicher Query-Param.
+
+#### 8. Read-API `/api/campaigns/[id]/performance` (DEC-140)
+
+`cockpit/src/app/api/campaigns/[id]/performance/route.ts` (neu):
+```typescript
+export async function GET(req: NextRequest, { params }) {
+  const authError = verifyExportApiKey(req);  // FEAT-504/DEC-067 Pattern
+  if (authError) return authError;
+
+  const data = await loadCampaignPerformance(params.id);
+  return NextResponse.json(data);
+}
+```
+
+Response-Schema:
+```json
+{
+  "campaign_id": "...",
+  "name": "LinkedIn April 2026",
+  "external_ref": "sys4-camp-42",
+  "leads": 87,
+  "deals": 12,
+  "won_deals": 4,
+  "won_value": 24500.00,
+  "conversion_rate": 0.046,
+  "click_count_total": 1432,
+  "click_count_last_30d": 521,
+  "first_lead_at": "2026-04-02T...",
+  "last_activity_at": "2026-04-28T..."
+}
+```
+
+KEIN Push-Webhook V1 (DEC-140). System 4 polled diesen Endpoint nach eigenem Schedule.
+
+### V6.2 Data Flow — Workflow-Trigger-Pfad
+
+```
+1. User aendert Deal-Stage in Workspace-UI
+2. Server Action updateDealStage(dealId, newStageId):
+   2a. UPDATE deals SET stage_id=$new WHERE id=$id
+   2b. INSERT audit_log (actor_id=user, action='stage_change', entity_type='deal', entity_id=$id, changes={...}) RETURNING id AS audit_id
+   2c. dispatchAutomationTrigger({ event:'deal.stage_changed', entityType:'deal', entityId:$id, triggerEventAuditId:audit_id, changes:{stage_id:{before,after}} })
+3. dispatchAutomationTrigger:
+   3a. SELECT FROM automation_rules WHERE trigger_event='deal.stage_changed' AND status='active'
+   3b. Fuer jede passende Regel: App-Level-Condition-Match
+   3c. Bei Match: INSERT automation_runs (status='pending', UNIQUE-Conflict-Skip)
+   3d. void executeAutomationRun(runId).catch(logErr)  -- fire-and-forget
+4. Server Action returnt sofort zum User (UI ist responsive)
+5. executeAutomationRun (parallel im Hintergrund):
+   5a. UPDATE runs SET status='running'
+   5b. Re-Eval Conditions
+   5c. Fuer jede Action: Whitelist-Check + Action-Switch + audit_log-Eintrag bei Side-Effect
+   5d. UPDATE runs SET status='success'|'partial_failed'|'failed', finished_at=now(), action_results=[...]
+   5e. UPDATE rules SET last_run_at, last_run_status (Cache fuer UI)
+6. Cron-Fallback (1 Min Takt):
+   6a. Pickup pending/running runs >60s alt
+   6b. executeAutomationRun(runId) erneut versucht (idempotent via status-WHERE)
+```
+
+**Anti-Loop-Garantie:** Wenn Action `update_field` `deals.stage_id` aendert, schreibt sie einen NEUEN audit_log-Eintrag. Dieser triggert wieder `dispatchAutomationTrigger`. Aber: das `INSERT automation_runs ... ON CONFLICT (rule_id, trigger_entity_id, trigger_event_audit_id) DO NOTHING` bezieht sich auf den NEUEN audit_id. Damit ist die Loop-Sicherung nicht "ein Run pro audit_id", sondern "ein Run pro (rule, entity, audit_id)" — d.h. 2x Stage-Change auf demselben Deal kann denselben Workflow erneut triggern (was richtig ist), aber dieselbe Stage-Change kann denselben Workflow nicht erneut triggern (auch richtig). Plus: harter Recursion-Counter im Executor: max 3 update_field-Actions pro Deal pro 60s (counter via `automation_runs WHERE trigger_entity_id=X AND started_at > now()-60s`).
+
+### V6.2 Data Flow — Click-zu-Lead-Pfad
+
+```
+1. User klickt LinkedIn-Ad mit Tracking-URL https://app.../r/<token>?utm_source=linkedin&utm_campaign=Q2-Spring
+2. /r/[token]/route.ts:
+   2a. SELECT campaign_links WHERE token=<token>
+   2b. logClick (async, non-blocking) → campaign_link_clicks INSERT + click_count++
+   2c. Redirect 302 zu Ziel-URL mit utm-Params
+3. User landet auf System-4-Form (extern), fuellt Lead-Form aus
+4. System 4 POSTed an Business-System-API /api/leads/intake mit utm-Werten + Kontakt-Daten
+5. /api/leads/intake/route.ts:
+   5a. resolveCampaignFromUtm({utm_source, utm_campaign, ...}) → campaign_id (oder NULL)
+   5b. INSERT/UPDATE contacts mit campaign_id (First-Touch-Lock via COALESCE bei UPDATE)
+   5c. dispatchAutomationTrigger({event:'deal.created', ...}) — falls Form auch Deal anlegt
+6. /campaigns/[id] UI zeigt Lead, Click-Counter, Conversion-Rate
+```
+
+### V6.2 External Dependencies
+
+KEIN delta. Alle V6.2-Funktionalitaet nutzt bestehende Dependencies:
+- Next.js Server Actions + Route Handlers
+- Supabase Service-Role-Client
+- Node-stdlib `crypto.randomBytes` fuer Token-Generierung
+- Existing pdfmake, Bedrock, Whisper unbeteiligt
+- Existing Coolify-Cron-Pattern (`expire-proposals`, `meeting-briefing` als Vorlage)
+
+### V6.2 Security / Privacy Considerations
+
+- **Public `/r/[token]`-Endpoint:** KEIN Auth. Token ist Zugangskontrolle via Obscurity (8-char, ~2.8e14 Combos). Bei Brute-Force: Rate-Limit am Edge (Coolify-Traefik) — V1 ohne, BL-XXX bei Bedarf.
+- **IP-Logging:** SHA-256-Hashed (`crypto.createHash('sha256').update(ip).digest('hex')`) — DSGVO-konform, kein Klartext. retention 90 Tage.
+- **Read-API:** Bearer-Token via EXPORT_API_KEY ENV (FEAT-504-Pattern). System 4 holt Token aus Coolify-ENV.
+- **Workflow-Engine schreibt NICHT in PII-Felder:** Field-Whitelist verbietet `contacts.email`, `contacts.phone`, `companies.name`, `deals.title` als update_field-Targets. NUR `tags`, `value`, `stage_id`, `expected_close_date`. Whitelist DEC-130.
+- **Anti-Loop-Marker** schuetzt vor versehentlichen Recursion-Loops UND vor versehentlichen Replay-Loops bei Cron-Fallback.
+- **`actor_id=NULL`-Pattern** im audit_log identifiziert system-getriebene Aenderungen (Cron-Konsistenz mit V5.5/V5.6).
+- **Internal-Test-Mode bleibt aktiv** — keine Aenderung am COMPLIANCE-Gate.
+
+### V6.2 Constraints und Tradeoffs
+
+- **Hybrid-Trigger statt LISTEN/NOTIFY:** Postgres LISTEN/NOTIFY waere reliability-staerker, braucht aber persistente Connection und Re-Connect-Logic. Next.js Server-Routes sind serverless-tauglich → kein guter Match. Hybrid-Pattern (Sync + Cron-Fallback) erfuellt 30s-AC mit Standard-Patterns.
+- **AND-only Conditions:** OR/Gruppierung waere flexibler, aber UI-Aufwand fuer einfache Single-User-V1 nicht gerechtfertigt. Multi-Rule-Workaround moeglich (zwei Regeln mit identischen Actions).
+- **First-Touch-Lock:** Multi-Touch-Attribution waere genauer, aber Single-User-V1 mit ~3-5 Kampagnen parallel hat kaum Multi-Touch-Realitaet. Click-Log bewahrt die Daten fuer spaetere Auswertung.
+- **`utm_campaign`-Match case-insensitive:** Robust genug fuer Single-Tenant-V1. Multi-Tenant koennte Kollisionen bekommen → V7-Sache.
+- **Code-Konfig-Whitelist:** DB-Tabelle waere zur Laufzeit aenderbar, aber Single-User-V1 braucht das nicht. Code-Konfig ist Type-safe, Reviewable in Git, Test-bar.
+- **`automation_runs` als Pending-Queue OHNE Worker:** Fire-and-forget reicht weil Server Actions bereits Concurrent-fest sind und Cron-Fallback alles abfaengt was App-Crash-haendisch verloren geht. Keine Bull/BullMQ-Library noetig.
+- **Click-Log retention 90 Tage:** Konsistent mit V5.2 COMPLIANCE.md. Cleanup-Cron nicht V1-Scope (BL-XXX V6.3).
+
+### V6.2 Empfohlene Slice-Reihenfolge (DEC-141)
+
+| Slice | Feature | Scope | Schaetzung | QA-Fokus |
+|---|---|---|---|---|
+| SLC-621 | FEAT-621 (Foundation) | MIG-029 Teil 1 (`automation_rules` + `automation_runs`) + Trigger-Dispatcher + Anti-Loop-Marker + Field-Whitelist + Server Actions saveRule/listRules/deleteRule | 4-6h | Schema idempotent, Anti-Loop-UNIQUE greift, Whitelist verbietet PII-Felder, Server-Action-CRUD persistiert sauber |
+| SLC-622 | FEAT-621 (Engine) | Action-Executor (4 Action-Types) + executeAutomationRun + Cron-Endpoint /api/cron/automation-runner + Coolify-Cron-Setup + Stage-Delete-Soft-Disable | 5-7h | 4 Actions live, Cron-Fallback greift, Loop-Test (Endless-Loop-Provokation), Stage-Delete pausiert Regeln, audit_log-Eintraege bei Side-Effects |
+| SLC-623 | FEAT-621 (UI) | `/settings/automation` Listing + 4-Step-Builder + Trockenlauf + Aktiv-Toggle | 5-7h | Builder rendert alle Trigger/Conditions/Actions, Trockenlauf zeigt Treffer ohne Schreib-Side-Effects, Toggle aktiviert/pausiert ohne Rule-Save, Listing zeigt last_run_status |
+| SLC-624 | FEAT-622 (Foundation) | MIG-029 Teil 2 (`campaigns` + `campaign_links` + `campaign_link_clicks` + 3 FK-Spalten) + `/settings/campaigns` Listing + `/campaigns/[id]` Detail + Stammdaten-Dropdown (Contacts/Companies/Deals) | 4-6h | Schema additiv, FK-Defaults (Deal von Contact-Primary), Stammdaten-Dropdown-Picker live, Detail-Page rendert KPIs |
+| SLC-625 | FEAT-622 (Tracking + Reporting + API) | Token-Generator + Tracking-Link-CRUD + `/r/[token]` Public Redirect + Click-Log + Reporting-KPIs auf Detail-Page + Funnel-Report-Filter + Read-API `/api/campaigns/[id]/performance` | 5-8h | `/r/[token]`-Redirect 302, Click-Log mit IP-Hash, KPIs korrekt aggregiert, Funnel-Filter zeigt scoped Funnel, Read-API mit Bearer-Auth gibt JSON |
+
+Gesamt ~23-34h. Reihenfolge zwingend: 621 -> 622 -> 623 (Workflow-Engine zuerst), 624 -> 625 (Attribution danach). 624 koennte parallel zu 623 laufen wenn separater Branch — aber Empfehlung: sequenziell, weil V6.2 ein Single-User-Solo-Build ist und Worktree-Switching Kontext-Kosten hat.
+
+Pro Slice: `/backend|/frontend` -> `/qa` -> Coolify-Redeploy. Final-Check + Go-Live + Deploy als REL-024 nach SLC-625.
+
+### V6.2 Open Technical Questions (fuer /slice-planning)
+
+1. **Trigger-Dispatcher Aufrufer-Liste vollstaendig?** Welche Server Actions heute schreiben Stage-Changes oder Deal-Creates oder Activity-Creates ausserhalb der zentralen Actions? (z.B. IMAP-Sync der eine Activity inserted, Cal.com-Sync der ein Meeting erzeugt das eine Activity inserted, manuelle SQL-Inserts gibt es nicht.) Empfehlung: in SLC-621 explizite Audit-Liste der Trigger-Source-Server-Actions als Code-Konfig.
+2. **Anti-Loop bei `update_field`-Cascade:** Eine Regel A aktualisiert `deals.value`. Regel B triggert auf `deal.value_changed` (V1-Out-of-Scope, aber zukuenftig). Recursion-Counter `max 3 update_field per Deal per 60s` reicht? Empfehlung: ja fuer V1-Trigger-Set, V2-Trigger-Erweiterung muss Cascade-Limit feiner kontrollieren.
+3. **Trockenlauf-Performance bei viel History:** 30 Tage = ~10k audit_log-Eintraege fuer einen aktiven Single-User. SQL-Query mit App-Side-Match ist OK, aber bei groesseren Tenants (Multi-User V7) wird das langsam. Empfehlung: V1 OK, V7-Erweiterung ueber Background-Materialized-View.
+4. **Click-Log Cleanup Cron-Anlage:** 90 Tage Retention via taeglichem Cron `campaign-cleanup` analog `recording-retention`. NICHT V1-Scope, BL-XXX angelegt fuer V6.3. Empfehlung: in SLC-625 nur Schema vorbereiten (Index auf `clicked_at`), Cron-Endpoint kommt im naechsten V6.x-Sprint.
+5. **System-4-API-Kontrakt /api/leads/intake:** Wer baut das? Empfehlung: Existing oder neuer Endpoint? In SLC-624 pruefen ob `/api/leads/intake` schon existiert (V4 IMAP-Pfad nutzt potentiell anderen Pfad). Falls neu: in SLC-624 mit aufnehmen oder in SLC-625 ergaenzen.
+6. **Conversion-Definition "Won-Deal":** Stage-Type `won` ist im V3-Pipeline-Modell vorhanden. SLC-625 Reporting-Query `JOIN pipeline_stages WHERE stage.type='won'`. Pipeline-Stages haben `is_won BOOLEAN` heute (zu pruefen) oder `stage_type ENUM`. Empfehlung: in SLC-625 SLC-Plan endgueltig festlegen.
+7. **Funnel-Report-Page Pfad:** `/funnel` oder `/reports/funnel`? Empfehlung: existing path nutzen, bei Slice-Plan verifizieren.
+8. **`audit_log` actor_id=user vs. NULL bei System-actions:** existing Cron-Pattern (recording-retention) nutzt `actor_id=null`. Workflow-Action-Side-Effects sollten dasselbe Pattern: `actor_id=null, context='Automation rule {name} executed'`. Aber Trigger-Source-actor (User der den Stage-Change ausgeloest hat) sollte im audit_log-changes-JSONB-Feld als `triggered_by_user_id: ...` ergaenzt sein, damit Audit-View "von wem ausgeloest" sichtbar bleibt. Empfehlung: in SLC-622 implementieren.
+
+### V6.2 Recommended Next Step
+
+`/slice-planning V6.2` — die 5 Slices SLC-621..625 strukturiert ausdefinieren mit Acceptance Criteria pro Slice, Micro-Tasks-Liste mit Reihenfolge, QA-Fokus pro Slice. Insbesondere: Trigger-Source-Server-Action-Liste in SLC-621 Code-Konfig, Field-Whitelist-Liste mit Validators in SLC-621, Cron-Setup-Anleitung fuer REL-024-Notes in SLC-622, Trockenlauf-UI-Komponente in SLC-623, Stammdaten-Dropdown-Komponente (wiederverwendbar Contacts/Companies/Deals) in SLC-624, `/r/[token]`-Endpoint mit Click-Log-Tests in SLC-625, Read-API-Smoke-Test mit Bearer-Token in SLC-625.
