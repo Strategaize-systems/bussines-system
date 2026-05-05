@@ -10,16 +10,15 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.2 SLC-621 /backend done 2026-05-05 (RPT-311).** Workflow-Foundation komplett: MIG-029 Phase 1 idempotent appliziert auf Coolify-DB (automation_rules + automation_runs + Anti-Loop-UNIQUE + 3 Indizes + RLS + GRANTS), 9 Micro-Tasks alle done (trigger-sources Audit-Liste, Types, MIG-029-Apply, Condition-Engine, Field-Whitelist mit PII-Schutz, Dispatcher, Rule-CRUD-Server-Actions, Schema-Smoke). 37 neue Vitest-Tests gruen (gesamt 284/284 PASS), TypeScript-Build clean, keine neuen Lint-Errors. Schema-Smoke-Test 6/6 PASS direkt gegen Coolify-DB (Anti-Loop, CASCADE-Delete, CHECK-Constraints).
-- Current Phase: V6.2 SLC-621 done, bereit fuer /qa SLC-621
+- Current Focus: **V6.2 SLC-621 /qa PASS 2026-05-05 (RPT-312).** Schema-Smoke-Replay 6 explizite + 2 negative-CHECK + 2 RAISE-NOTICE Tests alle PASS gegen Coolify-DB inkl. Anti-Loop-Praxis (count=1 nach 2 INSERTs mit identischem Tripel) + CASCADE-Delete-Praxis. Vitest 284/284 nach M-01-Fix (paused_reason no-op ternary in saveAutomationRule per Deviation Rule 1 direkt gefixt). TypeScript-Build clean. Lint 0 neue Errors in SLC-621-Code (166 pre-existing aus V5.x in nicht-touched Files). PII-Schutz code-verifiziert (isFieldWhitelisted reject 6 PII-Felder). Audit-Log-Side-Effect verifiziert (alle 5 Server Actions schreiben audit_log mit entityType='automation_rule'). 1 Medium-Finding direkt gefixt, 2 Low-Findings pre-existing (nicht-V6.2). Bereit fuer /backend SLC-622.
+- Current Phase: V6.2 SLC-621 done+QA-PASS, bereit fuer /backend SLC-622
 
 ## Immediate Next Steps
-1. **/qa SLC-621** — Schema-Smoke-Audit-Replay + Anti-Loop-Manual-Test + PII-Schutz-Verifikation + Server-Action-Roundtrip-Smoke (manueller Browser-Test im Local-Dev-Server).
-2. **/backend SLC-622** — Workflow-Engine: 4 Action-Types + Cron-Fallback + Stage-Soft-Disable + 7+ Trigger-Source-Verdrahtungen, ~5-7h, 11 Micro-Tasks.
-3. Anschliessend SLC-623 (Builder-UI, ~5-7h) → SLC-624 (Campaigns Foundation, ~4-6h) → SLC-625 (Tracking+Reporting+API, ~5-8h). V6.2-Restschaetzung ~20-29h.
-4. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
-5. **(Optional)** BL-422 RC-Toggle-Drift-Polish (~30-45min) wenn als V5.7-Cleanup gewuenscht.
-6. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
+1. **/backend SLC-622** — Workflow-Engine: 4 Action-Types (create_task, send_email_template, create_activity, update_field) + Cron-Endpoint /api/cron/automation-runner + Stage-Soft-Disable (DEC-133) + 11 Trigger-Source-Verdrahtungen + Recursion-Counter max 3 update_field/(deal_id,60s) + Telemetrie-Truncation gegen PII-Leak in error_message. ~5-7h, 11 Micro-Tasks.
+2. Anschliessend SLC-623 (Builder-UI, ~5-7h) → SLC-624 (Campaigns Foundation, ~4-6h) → SLC-625 (Tracking+Reporting+API, ~5-8h). V6.2-Restschaetzung ~20-29h.
+3. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
+4. **(Optional)** BL-422 RC-Toggle-Drift-Polish (~30-45min) wenn als V5.7-Cleanup gewuenscht.
+5. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"

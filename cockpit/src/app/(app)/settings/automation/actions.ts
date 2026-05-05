@@ -170,7 +170,7 @@ export async function saveAutomationRule(
     conditions: input.conditions as Condition[],
     actions: input.actions as Action[],
     references_stage_ids,
-    paused_reason: input.status === "paused" ? null : null,
+    paused_reason: null,
   };
 
   if (input.id) {
