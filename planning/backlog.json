@@ -1841,6 +1841,16 @@
       "version": "V6.3",
       "description": "Aus V6.2 Slice-Planning RPT-310 (DEC-138 First-Touch-Lock): V6.2 ist First-Touch-only (campaign_id wird beim Lead-Create einmalig gesetzt). Click-Log enthaelt aber Multi-Touch-Daten (welcher Lead hat wann welche Tracking-Links geklickt). V6.3+ ergaenzt einen 'Customer-Journey'-Tab auf der Contact-Detail-Page der Click-Log-Eintrage des Contacts (via ip_hash-Match? oder via Future-Cookie-Tracking) chronologisch zeigt. Optional Conversion-Path-Visualisierung. Out-of-V6.2-Scope. Aufwand ~5-8h UI + Query + ggf. neuer ip_hash-zu-contact_id-Lookup.",
       "createdAt": "2026-05-05"
+    },
+    {
+      "id": "BL-426",
+      "title": "V6.3 Polish: SLC-623 Workflow-Builder Low-Findings Cleanup",
+      "type": "improvement",
+      "priority": "low",
+      "status": "open",
+      "version": "V6.3",
+      "description": "Aus SLC-623 /qa RPT-316 — 3 Low-Findings die fuer V6.2-Release nicht-blocker sind, in V6.3-Polish-Slice gebuendelt: (1) rule-builder.tsx:57 react-hooks/set-state-in-effect Lint-Warning — useState-Initializer-Function statt useEffect bei MQ-Init; (2) Settings-Sub-Nav (Sidebar in /settings/...) zeigt keinen Eintrag fuer 'Workflow-Automation' — nur per /settings-Index-Card-Link erreichbar; (3) Primary-Button-Position-Inkonsistenz: /settings/automation rendert 'Neue Regel' im Page-Header rechts, /settings/payment-terms rendert 'Neue Vorlage' innerhalb der Card-Header. Beide vereinheitlichen. Aufwand ~30-60min als Cleanup-Slice.",
+      "createdAt": "2026-05-05"
     }
   ]
 }
