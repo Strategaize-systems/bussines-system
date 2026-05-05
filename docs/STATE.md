@@ -10,15 +10,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: stable
-- Current Focus: **V5.7 RELEASED 2026-05-05 als REL-023.** Image-Tag `908eb81479e09df28cd96b85011462140880d208` live auf Hetzner via Coolify, app + supabase-db + kong + meta alle healthy. Vollstaendige Skill-Sequenz durchgezogen: /backend SLC-572 → /qa V5.7 Gesamt → 3 Live-Smoke-Runden mit 3 Hot-Fixes (ISSUE-051/052/053) → /final-check RPT-304 → /go-live RPT-305 → /deploy RPT-306. User-Bestaetigung "alles pass" 2026-05-05. Naechste = 24-48h Stable-Window beobachten, dann /post-launch V5.7 (kann V5.6/V5.5/V5.5.1/V5.4/V5.3 mitnehmen).
-- Current Phase: V5.7 — Released, in 24-48h Stable-Window
+- Current Focus: **V5.7 + Sammel V5.6/V5.5/V5.5.1/V5.4/V5.3 POST-LAUNCH STABLE 2026-05-05 (RPT-307).** Container 0 App-Restarts seit Release, Audit-Log zeigt 5 reverse_charge_toggled + 33 update Events letzte 24h, V5.7-Features funktional persistiert (1 RC + 1 Skonto Proposal in DB). Keine Hotfix-Notwendigkeit. Naechste aktive Entwicklung = /requirements V6.2 (Workflow-Automation + Kampagnen-Attribution, BL-135 + BL-139).
+- Current Phase: stable — bereit fuer naechste Entwicklungs-Runde V6.2
 
 ## Immediate Next Steps
-1. **24-48h Stable-Window** beobachten — App-Container-Restart-Counter, Audit-Log auf `reverse_charge_toggled`-Eintraege, User-Feedback Skonto/RC-Edit.
-2. **/post-launch V5.7** — kann V5.6/V5.5/V5.5.1/V5.4/V5.3 mitnehmen (alle ohne Post-Launch-Review).
-3. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen (`[object Object]`-Render fuer generic-update-Eintraege).
-4. **(Passiv)** Coolify-Cron `meeting-briefing` Erst-Lauf-Verifikation V5.6.
-5. **(Optional, V5.7-Polish)** BL-422 RC-Toggle-Drift analog ISSUE-049 fixen (~30-45min Pure-Function + Editor-Wiring).
+1. **/requirements V6.2** — Workflow-Automation + Kampagnen-Attribution (BL-135 + BL-139 aus V7 ausgelagert). ~2-3h, eigene Session empfohlen.
+2. **(Optional davor)** BL-422 RC-Toggle-Drift-Polish (~30-45min) wenn als V5.7-Cleanup gewuenscht.
+3. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
+4. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
