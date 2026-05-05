@@ -10,14 +10,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.2 SLC-623 /frontend done 2026-05-05 (RPT-315).** FEAT-621 komplett: Workflow-Foundation + Engine + Builder-UI live. SLC-623 Implementation: dry-run.ts (read-only Trockenlauf gegen audit_log/deals/activities, DEC-132), runDryRun Server-Action mit Form-Validation, Listing-Page /settings/automation (Card-Liste + Status-Badges + last_run_at + Erfolgsquote 7d + Toggle/Edit/Delete + Empty-State), 4-Step-Wizard /settings/automation/new + /[id]/edit (Step1 Trigger mit Pipeline+Stage-Picker, Step2 Conditions mit Field-Picker + 9 Operators, Step3 Actions mit 4 Sub-Forms + Reorder, Step4 Activate + Trockenlauf-Result-View), StepIndicator mit Click-back, Cancel-Confirm-Dialog bei dirty, Mobile-Hint via useMediaQuery, Style Guide V2 conform. Vitest 316/316 (6 neue dry-run-Cases). Build clean. Lint 0 neue Errors in SLC-623-Code. Bereit fuer /qa SLC-623.
-- Current Phase: V6.2 3/5 Slices done (SLC-621+622+623), FEAT-621 done. Naechster Schritt /qa SLC-623.
+- Current Focus: **V6.2 SLC-623 /qa PASS 2026-05-05 (RPT-316).** FEAT-621 vollstaendig verifiziert. SLC-623 QA: 1 Blocker gefunden (buttonVariants Server-Component-Crash) + per Deviation Rule 1 direkt gefixt (commit `fe0d5b4`, neuer `button-variants.ts` ohne `"use client"`). Nach User-Redeploy alle 7 Pruefpunkte PASS: Listing-Empty+Card+Toggle+Delete-CASCADE, 4-Step-Wizard durch, Trockenlauf 3 Treffer + DEC-132 Read-Only-Verifikation (pre=post 26|153|4|3|0), Edit-Roundtrip vorbelegt, Mobile-Hint-Card, Style-Guide-V2-konsistent. 3 Low-Findings (rule-builder.tsx:57 set-state-in-effect, Sub-Nav-Eintrag fehlt, Primary-Button-Position) → V6.3-Polish. Vitest 316/316. Image-Tag `fe0d5b4` live. Bereit fuer /backend SLC-624.
+- Current Phase: V6.2 3/5 Slices done (SLC-621+622+623), FEAT-621 done. Naechster Schritt /backend SLC-624.
 
 ## Immediate Next Steps
-1. **/qa SLC-623** — Browser-Smoke der Builder-UI (Listing rendern, 4-Step-Wizard durchgehen, Trockenlauf-Button + Result-Render, Toggle + Delete + Cancel-Dialog). DB-Logic dry-run via SELECT-snapshot vor/nach. Mobile-Hint pruefen. Style Guide V2-Konsistenz pruefen.
-2. Anschliessend SLC-624 (Campaigns Foundation, ~4-6h) → SLC-625 (Tracking+Reporting+API, ~5-8h). V6.2-Restschaetzung ~9-15h.
+1. **/backend SLC-624** — Campaigns Foundation (FEAT-622, ~4-6h, MIG-029 Phase 2). Schema fuer campaign-Tabellen + Server-Actions + Whitelists.
+2. Anschliessend /backend SLC-625 (Tracking+Reporting+API, ~5-8h, MIG-029 Phase 3) → V6.2-Final-QA → /final-check → /go-live → /deploy als REL-024.
 3. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
-4. **(Optional)** BL-422 RC-Toggle-Drift-Polish (~30-45min) wenn als V5.7-Cleanup gewuenscht.
+4. **(V6.3-Polish)** L1 Lint-Cleanup rule-builder.tsx:57 + L2 Settings-Sub-Nav fuer Workflow-Automation + L3 Primary-Button-Position vereinheitlichen.
 5. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
 
 ## Spaeter (nicht jetzt)
