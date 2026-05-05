@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   Select,
   SelectContent,
@@ -47,6 +47,17 @@ export function PaymentTermsDropdown({ onSelectTemplate, disabled }: Props) {
     if (template) onSelectTemplate(template.body);
   }
 
+  // V5.7 SLC-572 Follow-up — base-ui SelectValue rendert per Default den
+  // Raw-Value (UUID) wenn keine Render-Callback gesetzt ist. Wir mappen den
+  // value (Template-ID oder CUSTOM_VALUE) auf das passende Label.
+  function renderSelected(value: string): ReactNode {
+    if (!value) return null; // leer -> Placeholder greift
+    if (value === CUSTOM_VALUE) return "(eigene Eingabe)";
+    const template = templates?.find((t) => t.id === value);
+    if (!template) return null;
+    return `${template.label}${template.is_default ? " (Default)" : ""}`;
+  }
+
   return (
     <div className="space-y-1.5">
       <Label htmlFor="payment-terms-template">Vorlage waehlen</Label>
@@ -56,7 +67,9 @@ export function PaymentTermsDropdown({ onSelectTemplate, disabled }: Props) {
         disabled={disabled || templates === null}
       >
         <SelectTrigger id="payment-terms-template">
-          <SelectValue placeholder="(eigene Eingabe)" />
+          <SelectValue placeholder="(eigene Eingabe)">
+            {renderSelected}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={CUSTOM_VALUE}>(eigene Eingabe)</SelectItem>

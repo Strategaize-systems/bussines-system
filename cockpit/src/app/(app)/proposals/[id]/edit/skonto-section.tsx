@@ -21,7 +21,14 @@ export function SkontoSection({
   onChange,
   disabled = false,
 }: Props) {
-  const isOn = skonto_percent !== null;
+  // V5.7 SLC-572 Follow-up — isOn aus beiden Feldern ableiten, damit ein
+  // transient-null-Wert (z.B. wenn der User Backspace im Prozent-Input drueckt)
+  // die Inputs nicht sofort unmountet. Der Toggle wird nur als OFF gerendert,
+  // wenn BEIDE Felder null sind — was im Editor nur durch Toggle-Click selbst
+  // (onChange(null, null)) oder durch Mutex-Auto-Clear erreicht wird. So
+  // kann der User die Werte editieren ohne dass das Input-Feld waehrend des
+  // Tippens DOM-mauml;ssig verschwindet.
+  const isOn = skonto_percent !== null || skonto_days !== null;
   const validation = validateSkonto(skonto_percent, skonto_days);
 
   function toggle() {

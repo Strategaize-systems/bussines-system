@@ -1,5 +1,21 @@
 # Known Issues
 
+### ISSUE-052 — PaymentTerms-Dropdown zeigt Template-UUID statt Label nach Auswahl
+- Status: resolved
+- Severity: Medium
+- Area: UI / Proposals-Editor
+- Summary: Im Editor "Vorlage waehlen"-Dropdown wurde nach Auswahl eines Templates die rohe Template-UUID (`f57bd7b7-c711-4d5f-bbd6-894e63ec38e4`) im Trigger angezeigt statt des lesbaren Labels (`Standard 14 Tage netto (Default)`).
+- Impact: User-sichtbarer Display-Bruch nach jeder Vorlagen-Auswahl. Funktional intakt (richtiger Body wurde in Textarea geschrieben), nur die Trigger-Anzeige war kaputt.
+- Resolution: 2026-05-05 in V5.7-Follow-up. base-ui's `<Select.Value>` rendert den Raw-Value-String als Default; ohne render-callback gibt es keinen Mapping-Pfad zum Label. Fix: `renderSelected(value)` als Function-Child von `<SelectValue>` in `cockpit/src/app/(app)/proposals/[id]/edit/payment-terms-dropdown.tsx` — mappt CUSTOM_VALUE auf "(eigene Eingabe)" und Template-IDs auf `${tpl.label}${is_default ? ' (Default)' : ''}`. Live-Smoke nach User-Coolify-Redeploy.
+
+### ISSUE-051 — Skonto-Inputs unmounten waehrend Edit-Tippen (Optimistic-null Race)
+- Status: resolved
+- Severity: High
+- Area: UI / Proposals-Editor
+- Summary: Mit V5.7 SLC-572 useRef-Revert-Fix: wenn der User waehrend Edit den Prozent- oder Tage-Input mit Backspace komplett leert, wechselt SkontoSection's `isOn = (skonto_percent !== null)` sofort auf false (optimistic state hat null), die Inputs unmounten DOM-mauml;ssig, der Cursor verliert das Feld. User kann keine neue Zahl eingeben. Fehlt fuer 500ms+ bis das Server-Reject + Revert die Inputs zurueckbringt.
+- Impact: SLC-572-Hauptfunktion (Toggle-Drift-Fix) ist technisch korrekt, aber das normale Editieren der Skonto-Werte ist gestoert. AC8 Live-Smoke konnte nicht ausgefuehrt werden, weil die Vorbereitungs-Aktion (Backspace) selbst den User-Flow unterbrach. Discovered durch User-Smoke 2026-05-05 RPT-302.
+- Resolution: 2026-05-05 in V5.7-Follow-up. `isOn = (skonto_percent !== null || skonto_days !== null)` statt `(skonto_percent !== null)` — Inputs bleiben gemountet solange mindestens ein Feld einen Wert hat. Toggle-Click setzt beide auf null, dadurch isOn=false korrekt erhalten. Edge-Case "User Backspace BEIDE Felder gleichzeitig" ist akzeptabel (debounce-timer reset bei jedem Keystroke macht das in der Praxis irrelevant). DEC-126 / lastKnownGoodSkontoRef-Pattern bleibt unangetastet.
+
 ### ISSUE-050 — Audit-Log UI-Renderer zeigt generic-update-changes als "[object Object]"
 - Status: open
 - Severity: Medium
