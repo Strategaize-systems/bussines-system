@@ -240,7 +240,7 @@
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-621 | [Workflow-Automation Foundation (Schema + Trigger-Dispatcher + Whitelist + Rule-CRUD)](SLC-621-automation-foundation.md) | FEAT-621 | planned | Blocker | 2026-05-05 |
+| SLC-621 | [Workflow-Automation Foundation (Schema + Trigger-Dispatcher + Whitelist + Rule-CRUD)](SLC-621-automation-foundation.md) | FEAT-621 | done | Blocker | 2026-05-05 |
 | SLC-622 | [Workflow-Automation Engine (Action-Executor + Cron-Fallback + Stage-Soft-Disable)](SLC-622-automation-engine.md) | FEAT-621 | planned | Blocker | 2026-05-05 |
 | SLC-623 | [Workflow-Automation Builder-UI (Listing + 4-Step-Form + Trockenlauf)](SLC-623-automation-builder-ui.md) | FEAT-621 | planned | High | 2026-05-05 |
 | SLC-624 | [Campaigns Foundation (Schema + CRUD + Stammdaten-Dropdown)](SLC-624-campaigns-foundation.md) | FEAT-622 | planned | Blocker | 2026-05-05 |

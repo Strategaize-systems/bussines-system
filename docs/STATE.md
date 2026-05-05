@@ -9,14 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: **V6.2 Slice-Planning done 2026-05-05 (RPT-310).** 5 Slice-Files SLC-621..625 vollstaendig ausdefiniert (Goal, Scope, ACs 21-30 pro Slice, 9-12 Micro-Tasks pro Slice mit Files+Verification+Dependencies, Risks, QA-Fokus). 8 Open Technical Questions aus RPT-309 vor /slice-planning aufgeloest via Code-Audit (createActivity-Aufrufer-Liste, /api/leads/intake existiert nicht → SLC-625, /pipeline/funnel-report.tsx eingebettet → kein eigener /funnel-Pfad, Won-Deal=`deals.status='won'` statt is_won-Field). 3 neue BL-Items angelegt (BL-423 Click-Log-Cleanup-Cron V6.3+, BL-424 Source-Migration-Tool V6.3+, BL-425 Multi-Touch-Tab V6.3+). MIG-029 wird in 3 Apply-Schritten aufgebaut (SLC-621 Workflow-Anteil, SLC-624 Campaigns-Anteil, SLC-625 Tracking-Anteil), alles in einer SQL-File idempotent.
-- Current Phase: V6.2 Slice-Planning abgeschlossen, bereit fuer /backend SLC-621
+- High-Level State: implementing
+- Current Focus: **V6.2 SLC-621 /backend done 2026-05-05 (RPT-311).** Workflow-Foundation komplett: MIG-029 Phase 1 idempotent appliziert auf Coolify-DB (automation_rules + automation_runs + Anti-Loop-UNIQUE + 3 Indizes + RLS + GRANTS), 9 Micro-Tasks alle done (trigger-sources Audit-Liste, Types, MIG-029-Apply, Condition-Engine, Field-Whitelist mit PII-Schutz, Dispatcher, Rule-CRUD-Server-Actions, Schema-Smoke). 37 neue Vitest-Tests gruen (gesamt 284/284 PASS), TypeScript-Build clean, keine neuen Lint-Errors. Schema-Smoke-Test 6/6 PASS direkt gegen Coolify-DB (Anti-Loop, CASCADE-Delete, CHECK-Constraints).
+- Current Phase: V6.2 SLC-621 done, bereit fuer /qa SLC-621
 
 ## Immediate Next Steps
-1. **/backend SLC-621** — Workflow-Foundation: MIG-029 Teil 1 + Trigger-Dispatcher + Field-Whitelist + Rule-CRUD-Server-Actions. 9 Micro-Tasks, ~5-7h.
-2. **/qa SLC-621** — Schema-Smoke gegen Coolify-DB + Anti-Loop-Tests + PII-Schutz-Tests + Server-Action-Roundtrip.
-3. Anschliessend SLC-622 (Engine, ~5-7h) → SLC-623 (Builder-UI, ~5-7h) → SLC-624 (Campaigns Foundation, ~4-6h) → SLC-625 (Tracking+Reporting+API, ~5-8h). Gesamt ~23-34h V6.2-Implementation.
+1. **/qa SLC-621** — Schema-Smoke-Audit-Replay + Anti-Loop-Manual-Test + PII-Schutz-Verifikation + Server-Action-Roundtrip-Smoke (manueller Browser-Test im Local-Dev-Server).
+2. **/backend SLC-622** — Workflow-Engine: 4 Action-Types + Cron-Fallback + Stage-Soft-Disable + 7+ Trigger-Source-Verdrahtungen, ~5-7h, 11 Micro-Tasks.
+3. Anschliessend SLC-623 (Builder-UI, ~5-7h) → SLC-624 (Campaigns Foundation, ~4-6h) → SLC-625 (Tracking+Reporting+API, ~5-8h). V6.2-Restschaetzung ~20-29h.
 4. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
 5. **(Optional)** BL-422 RC-Toggle-Drift-Polish (~30-45min) wenn als V5.7-Cleanup gewuenscht.
 6. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.

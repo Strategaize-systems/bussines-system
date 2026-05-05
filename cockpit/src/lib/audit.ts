@@ -20,7 +20,9 @@ export type AuditEntityType =
   | "company"
   | "proposal"
   | "pipeline"
-  | "payment_terms_template";
+  | "payment_terms_template"
+  // V6.2 SLC-621 — Workflow-Automation Rule-CRUD
+  | "automation_rule";
 
 export interface AuditParams {
   action: AuditAction;
