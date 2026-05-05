@@ -10,11 +10,11 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.2 SLC-622 /qa PASS 2026-05-05 (RPT-314).** Live-Engine end-to-end gegen Coolify verifiziert: P1 create_task end-to-end success+activity-insert, P2 Recursion-Guard skipped 4. Run mit error_message='recursion-limit-exceeded (3/3)' (NACH H-01-Fix in commit 22673d4 — supabase-js .contains() schlug fehl mit invalid-json-syntax, defensiver Fallback hat Guard live deaktiviert; per Deviation Rule 1 direkt gefixt, Re-Test PASS), P3 PII Defense-in-Depth rejected mit error_message='field-not-whitelisted', P4 Stage-Delete-Soft-Disable SQL-Logic verifiziert (dependent count=1, paused_reason mit Stage-Name), P5 audit_log-Side-Effect mit actor_id=NULL + triggered_by_user_id + automation_rule_name + context. Vitest 310/310. Build clean. Lint 0 neue Errors. Bereit fuer /frontend SLC-623.
-- Current Phase: V6.2 SLC-622 done+QA-PASS, bereit fuer /frontend SLC-623
+- Current Focus: **V6.2 SLC-623 /frontend done 2026-05-05 (RPT-315).** FEAT-621 komplett: Workflow-Foundation + Engine + Builder-UI live. SLC-623 Implementation: dry-run.ts (read-only Trockenlauf gegen audit_log/deals/activities, DEC-132), runDryRun Server-Action mit Form-Validation, Listing-Page /settings/automation (Card-Liste + Status-Badges + last_run_at + Erfolgsquote 7d + Toggle/Edit/Delete + Empty-State), 4-Step-Wizard /settings/automation/new + /[id]/edit (Step1 Trigger mit Pipeline+Stage-Picker, Step2 Conditions mit Field-Picker + 9 Operators, Step3 Actions mit 4 Sub-Forms + Reorder, Step4 Activate + Trockenlauf-Result-View), StepIndicator mit Click-back, Cancel-Confirm-Dialog bei dirty, Mobile-Hint via useMediaQuery, Style Guide V2 conform. Vitest 316/316 (6 neue dry-run-Cases). Build clean. Lint 0 neue Errors in SLC-623-Code. Bereit fuer /qa SLC-623.
+- Current Phase: V6.2 3/5 Slices done (SLC-621+622+623), FEAT-621 done. Naechster Schritt /qa SLC-623.
 
 ## Immediate Next Steps
-1. **/frontend SLC-623** — Workflow-Builder-UI (Settings-Page `/settings/automation` mit Rule-Listing, Rule-Builder-Form mit Trigger+Conditions+4-Action-Types, Pause/Activate/Delete, Trockenlauf-Modus). ~5-7h.
+1. **/qa SLC-623** — Browser-Smoke der Builder-UI (Listing rendern, 4-Step-Wizard durchgehen, Trockenlauf-Button + Result-Render, Toggle + Delete + Cancel-Dialog). DB-Logic dry-run via SELECT-snapshot vor/nach. Mobile-Hint pruefen. Style Guide V2-Konsistenz pruefen.
 2. Anschliessend SLC-624 (Campaigns Foundation, ~4-6h) → SLC-625 (Tracking+Reporting+API, ~5-8h). V6.2-Restschaetzung ~9-15h.
 3. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
 4. **(Optional)** BL-422 RC-Toggle-Drift-Polish (~30-45min) wenn als V5.7-Cleanup gewuenscht.

@@ -1,11 +1,12 @@
 "use server";
 
-// V6.2 SLC-621 MT-7 — Workflow-Automation Rule-CRUD Server Actions
+// V6.2 SLC-621 MT-7 + SLC-623 — Workflow-Automation Server Actions
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { isFieldWhitelisted } from "@/lib/automation/field-whitelist";
+import { dryRunRule, type DryRunResult } from "@/lib/automation/dry-run";
 import type {
   Action,
   AutomationRule,
@@ -266,4 +267,70 @@ export async function deleteAutomationRule(
   });
   revalidatePath("/settings/automation");
   return { ok: true };
+}
+
+/**
+ * V6.2 SLC-623 — Trockenlauf einer Rule.
+ *
+ * Read-only: liest historische audit_log/deals/activities und matcht conditions.
+ * Schreibt KEINE INSERT/UPDATE waehrend Dry-Run (DEC-132).
+ *
+ * Akzeptiert eine input-Rule (kann ungespeicherte Form-Daten sein) oder eine
+ * existierende rule.id (laedt aus DB). Bei beiden Pfaden Auth-Check.
+ */
+export async function runDryRun(
+  input: SaveAutomationRuleInput | { id: string },
+  daysBack = 30
+): Promise<{ ok: true; result: DryRunResult } | { ok: false; error: string }> {
+  const { supabase } = await requireUser();
+
+  let rule: AutomationRule;
+  if ("id" in input && Object.keys(input).length === 1) {
+    // Persisted-Rule via id
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select("*")
+      .eq("id", input.id)
+      .maybeSingle();
+    if (error || !data) {
+      return {
+        ok: false,
+        error: error?.message ?? `Regel ${input.id} nicht gefunden`,
+      };
+    }
+    rule = data as AutomationRule;
+  } else {
+    // Form-Daten (ungespeicherte Rule). Validation analog saveAutomationRule.
+    const draftInput = input as SaveAutomationRuleInput;
+    const validErr = validateRuleInput(draftInput);
+    if (validErr) return { ok: false, error: validErr };
+
+    rule = {
+      id: draftInput.id ?? "draft",
+      name: draftInput.name.trim(),
+      description: draftInput.description ?? null,
+      status: "active",
+      trigger_event: draftInput.trigger_event,
+      trigger_config: draftInput.trigger_config,
+      conditions: draftInput.conditions,
+      actions: draftInput.actions,
+      references_stage_ids: [],
+      paused_reason: null,
+      created_by: "draft",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      last_run_at: null,
+      last_run_status: null,
+    };
+  }
+
+  try {
+    const result = await dryRunRule(rule, daysBack);
+    return { ok: true, result };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Unbekannter Fehler",
+    };
+  }
 }

@@ -385,9 +385,9 @@
       "title": "Workflow-Automation (Wenn X dann Y)",
       "type": "feature",
       "priority": "low",
-      "status": "in_progress",
+      "status": "done",
       "version": "V6.2",
-      "description": "Regel-basierte Automation: z.B. 'Wenn Deal in Stage Angebot → E-Mail-Template senden + Aufgabe erstellen'. Form-basierter Rule Builder unter /settings/automation, 3 Trigger (deal.stage_changed, deal.created, activity.created) + 4 Action-Whitelist (create_task, send_email_template, create_activity, update_field), Audit-Log + Trockenlauf-Modus, Anti-Loop-Marker. Requirements done 2026-05-05 als FEAT-621 (RPT-308), naechste = /architecture.",
+      "description": "Regel-basierte Automation done 2026-05-05 (FEAT-621 komplett, SLC-621+SLC-622+SLC-623). Foundation+Engine+Builder-UI live: 3 Trigger (deal.stage_changed, deal.created, activity.created), 4 Actions (create_task, send_email_template, create_activity, update_field), Recursion-Guard (DEC-138), Stage-Soft-Disable (DEC-133), Cron-Fallback /api/cron/automation-runner, audit_log-Side-Effect mit triggered_by_user_id (DEC-131). UI: Listing + 4-Step-Wizard (Trigger→Conditions→Actions→Activate) + Trockenlauf-Modul (DEC-132, read-only). RPT-311..314 + RPT-315.",
       "createdAt": "2026-04-03"
     },
     {
