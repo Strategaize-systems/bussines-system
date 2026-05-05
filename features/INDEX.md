@@ -173,12 +173,12 @@
 | FEAT-561 | Zahlungsbedingungen Vorauswahl + Split-Plan (BL-412) | deployed | — | 2026-05-01 |
 | FEAT-562 | Pre-Call Briefing Auto-Push (BL-385) | deployed | — | 2026-05-01 |
 
-## V5.7 Features (NL-Compliance + Polish — planned)
+## V5.7 Features (NL-Compliance + Polish — released REL-023 2026-05-05)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-571 | NL-VAT-Saetze + Reverse-Charge (BL-417) | done | [Spec](FEAT-571-nl-vat-reverse-charge.md) | 2026-05-03 |
-| FEAT-572 | Skonto-Toggle UI-State-Drift Bugfix (BL-419) | done | [Spec](FEAT-572-skonto-toggle-bugfix.md) | 2026-05-03 |
+| FEAT-571 | NL-VAT-Saetze + Reverse-Charge (BL-417) | deployed | [Spec](FEAT-571-nl-vat-reverse-charge.md) | 2026-05-03 |
+| FEAT-572 | Skonto-Toggle UI-State-Drift Bugfix (BL-419) | deployed | [Spec](FEAT-572-skonto-toggle-bugfix.md) | 2026-05-03 |
 
 ## V6.2 Features (Automation + Attribution — planned)
 

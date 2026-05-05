@@ -143,7 +143,7 @@
     {
       "id": "v5-7",
       "name": "V5.7",
-      "status": "planned",
+      "status": "released",
       "summary": "NL-Compliance + Polish: 2 Features (FEAT-571..572) — NL-Mehrwertsteuer-Saetze 21/9/0 + Reverse-Charge fuer EU-B2B-Cross-Border (BL-417, high prio: Strategaize Transition GmbH NL-Sitz, Rechnungs-PDFs muessen NL-konform werden), BTW-Nummer-Felder fuer Strategaize-Settings + Company-Stammdaten, PDF-Renderer-Block fuer Reverse-Charge. Plus Skonto-Toggle UI-State-Drift Bugfix aus V5.6 SLC-562 (BL-419, low/cosmetic).",
       "order": 21
     },

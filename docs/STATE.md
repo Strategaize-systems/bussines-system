@@ -9,16 +9,16 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: **V5.7 vollstaendig code- + live-side PASS 2026-05-05.** Beide Slices done (SLC-571 9/9 MTs + RPT-298 PDF-PASS, SLC-572 4/4 MTs + 3 Follow-up-Fixes nach 3 Live-Smoke-Runden). Gesamt-/qa V5.7 PASS via RPT-301..303 + User-"alles pass" 2026-05-05. Aktuelles Image `908eb81` deployed auf Hetzner via Coolify, healthy. Final-Check abgeschlossen via RPT-304: 0 Blocker, 0 High, 1 Medium-akzeptiert (ISSUE-050 Audit-Log-UI-Renderer pre-existing), 3 Low-akzeptiert (BL-420/421/422 deferred). Naechste = /go-live V5.7 → /deploy als REL-023.
-- Current Phase: V5.7 — Final-Check PASS, ready fuer /go-live + Release REL-023
+- High-Level State: stable
+- Current Focus: **V5.7 RELEASED 2026-05-05 als REL-023.** Image-Tag `908eb81479e09df28cd96b85011462140880d208` live auf Hetzner via Coolify, app + supabase-db + kong + meta alle healthy. Vollstaendige Skill-Sequenz durchgezogen: /backend SLC-572 → /qa V5.7 Gesamt → 3 Live-Smoke-Runden mit 3 Hot-Fixes (ISSUE-051/052/053) → /final-check RPT-304 → /go-live RPT-305 → /deploy RPT-306. User-Bestaetigung "alles pass" 2026-05-05. Naechste = 24-48h Stable-Window beobachten, dann /post-launch V5.7 (kann V5.6/V5.5/V5.5.1/V5.4/V5.3 mitnehmen).
+- Current Phase: V5.7 — Released, in 24-48h Stable-Window
 
 ## Immediate Next Steps
-1. **/go-live V5.7** — Release-Risk-Bewertung dokumentieren, Image-Tag pinnen.
-2. **/deploy V5.7 als REL-023** — RELEASES.md-Eintrag, roadmap.json V5.7 → released, features auf "deployed".
-3. **(Parallel)** Pre-existing Audit-Log-UI-Renderer-Bug ISSUE-050 (generic-update-Eintraege zeigen `[object Object]`) — pre-existing, kein V5.7-Blocker.
+1. **24-48h Stable-Window** beobachten — App-Container-Restart-Counter, Audit-Log auf `reverse_charge_toggled`-Eintraege, User-Feedback Skonto/RC-Edit.
+2. **/post-launch V5.7** — kann V5.6/V5.5/V5.5.1/V5.4/V5.3 mitnehmen (alle ohne Post-Launch-Review).
+3. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen (`[object Object]`-Render fuer generic-update-Eintraege).
 4. **(Passiv)** Coolify-Cron `meeting-briefing` Erst-Lauf-Verifikation V5.6.
-5. **Nach 24-48h Stable-Window V5.7**: /post-launch V5.7 (kann V5.6/V5.5/V5.5.1/V5.4/V5.3 mitnehmen).
+5. **(Optional, V5.7-Polish)** BL-422 RC-Toggle-Drift analog ISSUE-049 fixen (~30-45min Pure-Function + Editor-Wiring).
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
@@ -70,6 +70,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - aktuell keine
 
 ## Last Stable Version
+- V5.7 — 2026-05-05 — released auf Hetzner als REL-023 (NL+DE-VAT-Saetze + Reverse-Charge fuer EU-B2B-Cross-Border + Skonto-Toggle UI-State-Drift Bugfix mit 3 Follow-up-Fixes nach iterativen Live-Smoke-Runden. Image-Tag 908eb81, MIG-028 live, BTW-IDs in Branding+Companies, country-aware Steuersatz-Dropdown, bilingualer Reverse-Charge-PDF-Block, Validation-Gate vor Server-Save fuer Skonto-Edit. Internal-Test-Mode bleibt aktiv. RPT-298+301..306.)
 - V5.6 — 2026-05-03 — released auf Hetzner als REL-022 (Zahlungsbedingungen + Pre-Call Briefing: payment_terms_templates + Skonto + Split-Plan-Milestones + Briefing-Cron + ActivityBriefingCard, Internal-Test-Mode, Image-Tag a7b787d, MIG-027 live, Coolify-Cron meeting-briefing aktiv. Final-Smoke alle Endpoints PASS, RPT-272..286.)
 - V5.5.1 — 2026-05-01 — released auf Hetzner als REL-021 (Polish-Patch: Hydration-Mitigation + 3 V5.4-Carryover. Live-Image-Tag `4415928` Coolify-Deployment-ID 173 finished 07:50:22. app-Container healthy, HTTPS-Endpoint HTTP 200. TSC + Vitest 97/97 PASS pre-Deploy.)
 - V5.5 — 2026-05-01 — released auf Hetzner als REL-020 (Angebot-Erstellung: Schema+Workspace+PDF+Lifecycle+Composing-Hookup, Internal-Test-Mode, Live-Smoke PASS RPT-263 4 Mail-Sends + 6 Browser-Smokes + CHECK-Constraint-Tests, Cron expire-proposals live, MIG-026 live, V5.5-Code-Stand seit 2026-04-30 17:04 Image-Tag `417dc8a`)
