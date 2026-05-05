@@ -23,59 +23,68 @@ export interface TriggerSourceEntry {
 }
 
 /**
- * Alle bekannten Trigger-Quellen im Codebase Stand 2026-05-05 (V6.2 SLC-621).
+ * Alle bekannten Trigger-Quellen im Codebase.
  *
- * SLC-621 baut nur die Audit-Liste. SLC-622 verdrahtet alle Pfade mit
- * `dispatches_now: true` (siehe SLC-622 MT-7).
+ * SLC-621 hat nur die Audit-Liste angelegt. SLC-622 hat die zentralen
+ * User-Pfade in pipeline/actions.ts und lib/actions/activity-actions.ts
+ * verdrahtet. Cron-Routes sind in V1 NOCH NICHT verdrahtet (nicht jeder
+ * Cron erzeugt Activities; ggf. zukuenftige Erweiterung).
+ *
+ * Slice-Annahme `(app)/deals/actions.ts` und `(app)/activities/actions.ts`
+ * existiert nicht — alle Deal-Mutations leben in pipeline/actions.ts, alle
+ * Activity-Mutations laufen ueber den zentralen activity-actions-Helper.
  */
 export const TRIGGER_SOURCE_AUDIT: TriggerSourceEntry[] = [
   // -------- Zentrale Server Actions (User-getrieben) --------
   {
-    path: "cockpit/src/app/(app)/deals/actions.ts",
-    function_name: "updateDealStage",
+    path: "cockpit/src/app/(app)/pipeline/actions.ts",
+    function_name: "moveDealToStage",
     trigger_event: "deal.stage_changed",
-    dispatches_now: false,
-    notes: "Primary stage-change Pfad, audit_log mit action='stage_change'.",
+    dispatches_now: true,
+    notes:
+      "Primary stage-change Pfad (Pipeline-Board + Deal-Sheet). audit_log mit action='stage_change' RETURNING id, dann dispatch.",
   },
   {
-    path: "cockpit/src/app/(app)/deals/actions.ts",
+    path: "cockpit/src/app/(app)/pipeline/actions.ts",
+    function_name: "moveDealToPipeline",
+    trigger_event: "deal.stage_changed",
+    dispatches_now: true,
+    notes:
+      "Pipeline-Wechsel ist semantisch auch ein Stage-Change (Deal landet in erster Stage der Ziel-Pipeline).",
+  },
+  {
+    path: "cockpit/src/app/(app)/pipeline/actions.ts",
     function_name: "createDeal",
     trigger_event: "deal.created",
-    dispatches_now: false,
-    notes: "Primary deal-create Pfad, audit_log mit action='create'.",
-  },
-  {
-    path: "cockpit/src/app/(app)/activities/actions.ts",
-    function_name: "createActivity",
-    trigger_event: "activity.created",
-    dispatches_now: false,
+    dispatches_now: true,
     notes:
-      "Primary activity-create Pfad. Falls existing oder ueber zentralen Helper aufgeloest, Helper bekommt dispatch.",
+      "Primary deal-create Pfad. audit_log RETURNING id wird als Anti-Loop-Token verwendet.",
   },
   {
     path: "cockpit/src/lib/actions/activity-actions.ts",
     function_name: "createActivity",
     trigger_event: "activity.created",
-    dispatches_now: false,
+    dispatches_now: true,
     notes:
-      "Zentraler Activity-Helper (DRY). Andere Pfade rufen ueber den - Helper bekommt dispatch und alle Aufrufer profitieren automatisch.",
-  },
-  {
-    path: "cockpit/src/app/(app)/pipeline/actions.ts",
-    function_name: "moveCardToStage",
-    trigger_event: "deal.stage_changed",
-    dispatches_now: false,
-    notes: "Drag&Drop-Pfad im Pipeline-Board.",
+      "Zentraler Activity-Helper (DRY). Alle Aufrufer (mein-tag, focus, contacts, deals) profitieren automatisch.",
   },
 
-  // -------- Sekundaere Server Actions (User-getrieben, optional via Helper) --------
+  // -------- Sekundaere Server Actions (User-getrieben, ggf. ueber Helper) --------
+  {
+    path: "cockpit/src/app/(app)/pipeline/actions.ts",
+    function_name: "updateDeal",
+    trigger_event: "deal.stage_changed",
+    dispatches_now: false,
+    notes:
+      "Generisches Deal-Update kann auch stage_id aendern. V1 verzichtet auf dispatch hier — moveDealToStage ist der primaere Pfad. V2 ergaenzt diff-basierten dispatch wenn stage_id im updatePayload abweicht.",
+  },
   {
     path: "cockpit/src/app/(app)/meetings/actions.ts",
     function_name: "createMeeting",
     trigger_event: "activity.created",
     dispatches_now: false,
     notes:
-      "Optional dispatch, falls Meeting auch eine Activity-Row anlegt (nicht jeder Meeting-Type tut das).",
+      "Falls Meeting auch eine Activity-Row anlegt (nicht jeder Meeting-Type tut das). V1 nicht verdrahtet — Meeting-Briefing-Cron erzeugt Activities ueber separaten Pfad.",
   },
   {
     path: "cockpit/src/app/(app)/calls/actions.ts",
@@ -83,7 +92,7 @@ export const TRIGGER_SOURCE_AUDIT: TriggerSourceEntry[] = [
     trigger_event: "activity.created",
     dispatches_now: false,
     notes:
-      "User-loggter Anruf erzeugt Activity. Falls existing Pfad - dispatch ergaenzen.",
+      "User-loggter Anruf erzeugt Activity. V1 nicht verdrahtet — meist ueber zentralen Helper.",
   },
   {
     path: "cockpit/src/lib/actions/insight-actions.ts",
@@ -91,30 +100,7 @@ export const TRIGGER_SOURCE_AUDIT: TriggerSourceEntry[] = [
     trigger_event: "activity.created",
     dispatches_now: false,
     notes:
-      "KI-Insight-Approval. Falls Approve eine Activity erzeugt, dispatch.",
-  },
-  {
-    path: "cockpit/src/app/(app)/mein-tag/actions.ts",
-    function_name: "(diverse)",
-    trigger_event: "activity.created",
-    dispatches_now: false,
-    notes:
-      "Mein-Tag-Schnellaktionen. Wenn ueber zentralen Activity-Helper, automatisch abgedeckt.",
-  },
-  {
-    path: "cockpit/src/app/(app)/focus/actions.ts",
-    function_name: "(diverse)",
-    trigger_event: "activity.created",
-    dispatches_now: false,
-    notes:
-      "Focus-View-Schnellaktionen. Wenn ueber zentralen Activity-Helper, automatisch abgedeckt.",
-  },
-  {
-    path: "cockpit/src/app/actions/meetings.ts",
-    function_name: "(diverse)",
-    trigger_event: "activity.created",
-    dispatches_now: false,
-    notes: "Globaler app-actions/meetings.ts Pfad (V3+).",
+      "KI-Insight-Approval. V1 nicht verdrahtet — Insight-Activities sind selten und ggf. nicht workflow-relevant.",
   },
 
   // -------- Cron-Routes (System-getrieben) --------
@@ -124,7 +110,7 @@ export const TRIGGER_SOURCE_AUDIT: TriggerSourceEntry[] = [
     trigger_event: "activity.created",
     dispatches_now: false,
     notes:
-      "Briefing-Cron erzeugt Briefing-Activity je Meeting. dispatch nach Activity-Insert mit actor_id=NULL.",
+      "Briefing-Cron erzeugt Briefing-Activity je Meeting. V1 nicht verdrahtet — Cron schreibt audit_log mit actor_id=NULL und braucht eigenen dispatch-Pfad. Erweiterung in V2 oder bei konkretem User-Use-Case.",
   },
   {
     path: "cockpit/src/app/api/cron/call-processing/route.ts",
@@ -132,7 +118,7 @@ export const TRIGGER_SOURCE_AUDIT: TriggerSourceEntry[] = [
     trigger_event: "activity.created",
     dispatches_now: false,
     notes:
-      "Call-Processing-Cron erzeugt Call-Activity. dispatch nach Insert.",
+      "Call-Processing-Cron. V1 nicht verdrahtet (siehe meeting-briefing).",
   },
   {
     path: "cockpit/src/app/api/cron/meeting-summary/route.ts",
@@ -140,7 +126,7 @@ export const TRIGGER_SOURCE_AUDIT: TriggerSourceEntry[] = [
     trigger_event: "activity.created",
     dispatches_now: false,
     notes:
-      "Falls Meeting-Summary eine Activity-Row anlegt, dispatch ergaenzen.",
+      "Meeting-Summary-Cron. V1 nicht verdrahtet (siehe meeting-briefing).",
   },
 ];
 

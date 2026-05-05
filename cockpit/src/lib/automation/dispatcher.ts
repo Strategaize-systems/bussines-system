@@ -14,6 +14,7 @@ import type {
   TriggerEvent,
 } from "@/types/automation";
 import { evaluateConditions } from "./condition-engine";
+import { executeAutomationRun } from "./executor";
 
 export interface DispatchTriggerArgs {
   event: TriggerEvent;
@@ -88,7 +89,7 @@ export async function dispatchAutomationTrigger(
       if (!conditionsMatch) continue;
 
       // INSERT automation_runs (status='pending') mit ON CONFLICT
-      const { error: insErr } = await supabase
+      const { data: insertedRun, error: insErr } = await supabase
         .from("automation_runs")
         .insert({
           rule_id: rule.id,
@@ -98,18 +99,33 @@ export async function dispatchAutomationTrigger(
           trigger_event_audit_id: antiLoopToken,
           conditions_match: true,
           status: "pending",
-        });
+        })
+        .select("id")
+        .maybeSingle();
 
       // ON CONFLICT (rule_id, trigger_entity_id, trigger_event_audit_id) DO NOTHING
-      // Postgres UNIQUE-Constraint-Verletzung kommt als error code 23505
-      if (insErr && insErr.code !== "23505") {
-        console.error(
-          "[automation-dispatcher] run-insert failed:",
-          insErr.message
-        );
+      // Postgres UNIQUE-Constraint-Verletzung kommt als error code 23505 -
+      // dann ist insertedRun null und wir skippen die Execution.
+      if (insErr) {
+        if (insErr.code !== "23505") {
+          console.error(
+            "[automation-dispatcher] run-insert failed:",
+            insErr.message
+          );
+        }
+        continue;
       }
 
-      // TODO SLC-622: void executeAutomationRun(insertedRunId).catch(logErr)
+      // V6.2 SLC-622 MT-7: Sync-Execution als Fire-and-forget. Cron-Endpoint
+      // /api/cron/automation-runner ist Defense-in-Depth fuer App-Crash.
+      if (insertedRun?.id) {
+        void executeAutomationRun(insertedRun.id).catch((err) => {
+          console.error(
+            `[automation-dispatcher] sync-execution failed for run ${insertedRun.id}:`,
+            err instanceof Error ? err.message : String(err)
+          );
+        });
+      }
     }
   } catch (err) {
     // Nie throwen - Workflow-Fehler darf Server-Action nicht blockieren

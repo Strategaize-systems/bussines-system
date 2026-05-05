@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { indexActivity } from "@/lib/knowledge/indexer";
+import { logAuditWithId } from "@/lib/audit";
+import { dispatchAutomationTrigger } from "@/lib/automation/dispatcher";
 
 export type Activity = {
   id: string;
@@ -81,6 +83,31 @@ export async function createActivity(formData: FormData) {
     indexActivity(inserted.id)
       .then((r) => console.log(`[Activity] Auto-embedded ${inserted.id}: ${r.stored} chunks`))
       .catch((err) => console.error(`[Activity] Auto-embed failed: ${inserted.id}`, err.message));
+  }
+
+  // V6.2 SLC-622 MT-7: Workflow-Trigger fuer activity.created.
+  if (inserted?.id) {
+    const activityType = formData.get("type") as string;
+    const auditId = await logAuditWithId({
+      action: "create",
+      entityType: "task",
+      entityId: inserted.id,
+      changes: { after: { type: activityType, deal_id: dealId } },
+      context: `Activity erstellt (${activityType})`,
+    });
+    void dispatchAutomationTrigger({
+      event: "activity.created",
+      entityType: "activity",
+      entityId: inserted.id,
+      triggerEventAuditId: auditId,
+      entitySnapshot: {
+        type: activityType,
+        activity_type: activityType,
+        deal_id: dealId,
+        contact_id: contactId,
+        company_id: companyId,
+      },
+    }).catch(() => {});
   }
 
   if (contactId) revalidatePath(`/contacts/${contactId}`);

@@ -69,6 +69,50 @@ export async function logAudit(params: AuditParams): Promise<void> {
 }
 
 /**
+ * V6.2 SLC-622 — wie logAudit, aber returnt die audit_log.id (oder null).
+ *
+ * Wird von Trigger-Source-Pfaden (updateDealStage, createDeal,
+ * createActivity-Helper, ...) verwendet, um eine eindeutige
+ * `triggerEventAuditId` an `dispatchAutomationTrigger` weiterzureichen
+ * (Anti-Loop-Token).
+ *
+ * Im Gegensatz zu `logAudit` ist diese Funktion `await`-ed, weil der
+ * Workflow-Dispatcher die ID braucht. Bei Fehler oder fehlendem User
+ * returnt `null` — der Aufrufer kann dann auf entityId-Fallback gehen.
+ */
+export async function logAuditWithId(
+  params: AuditParams
+): Promise<string | null> {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from("audit_log")
+      .insert({
+        actor_id: user.id,
+        action: params.action,
+        entity_type: params.entityType,
+        entity_id: params.entityId,
+        changes: params.changes ?? null,
+        context: params.context ?? null,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return (data as { id: string }).id;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Get the current user's role from the profiles table.
  * Returns 'admin' by default (single-user system).
  */

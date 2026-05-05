@@ -2,7 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { logAudit } from "@/lib/audit";
+import { logAudit, logAuditWithId } from "@/lib/audit";
+import { dispatchAutomationTrigger } from "@/lib/automation/dispatcher";
 
 export type Pipeline = {
   id: string;
@@ -193,13 +194,29 @@ export async function createDeal(formData: FormData) {
       title: `Deal "${title}" erstellt`,
     });
 
-    // Audit trail — fire and forget
-    logAudit({
+    // V6.2 SLC-622 MT-7: Audit-Insert mit RETURNING id, dann
+    // Workflow-Dispatch. ID dient als Anti-Loop-Token.
+    const auditId = await logAuditWithId({
       action: "create",
       entityType: "deal",
       entityId: newDeal.id,
       changes: { after: { title, value: formData.get("value") ? Number(formData.get("value")) : null, contact_id: contactId, company_id: companyId } },
       context: "Deal erstellt",
+    });
+
+    void dispatchAutomationTrigger({
+      event: "deal.created",
+      entityType: "deal",
+      entityId: newDeal.id,
+      triggerEventAuditId: auditId,
+      entitySnapshot: {
+        pipeline_id: formData.get("pipeline_id") as string,
+        stage_id: formData.get("stage_id") as string,
+        value: formData.get("value") ? Number(formData.get("value")) : null,
+        title,
+        contact_id: contactId,
+        company_id: companyId,
+      },
     }).catch(() => {});
   }
 
@@ -371,8 +388,8 @@ export async function moveDealToStage(dealId: string, newStageId: string, stageN
     });
   }
 
-  // Audit trail: stage change — fire and forget
-  logAudit({
+  // V6.2 SLC-622 MT-7: Audit mit RETURNING id, dann Workflow-Dispatch.
+  const auditId = await logAuditWithId({
     action: "stage_change",
     entityType: "deal",
     entityId: dealId,
@@ -381,6 +398,22 @@ export async function moveDealToStage(dealId: string, newStageId: string, stageN
       after: { stage: stageName },
     },
     context: `Pipeline Stage: ${oldStageName} → ${stageName}`,
+  });
+
+  void dispatchAutomationTrigger({
+    event: "deal.stage_changed",
+    entityType: "deal",
+    entityId: dealId,
+    triggerEventAuditId: auditId,
+    entitySnapshot: {
+      stage_id: { before: currentDeal?.stage_id ?? null, after: newStageId },
+      pipeline_id: (currentDeal as { pipeline_id?: string })?.pipeline_id,
+      value: currentDeal?.value ?? null,
+      contact_id: currentDeal?.contact_id ?? null,
+      company_id: currentDeal?.company_id ?? null,
+      title: currentDeal?.title ?? null,
+      status: autoStatus,
+    },
   }).catch(() => {});
 
   // Audit trail: status change (won/lost) — separate entry, fire and forget
@@ -453,6 +486,27 @@ export async function moveDealToPipeline(dealId: string, targetPipelineId: strin
       type: "stage_change",
       title: `Deal "${deal.title}" → Pipeline "${pipeline.name}" (${firstStage.name})`,
     });
+
+    // V6.2 SLC-622 MT-7: Pipeline-Wechsel ist auch ein stage_changed-Event.
+    const auditId = await logAuditWithId({
+      action: "stage_change",
+      entityType: "deal",
+      entityId: dealId,
+      changes: { after: { pipeline_id: targetPipelineId, stage_id: firstStage.id } },
+      context: `Pipeline-Wechsel zu "${pipeline.name}"`,
+    });
+    void dispatchAutomationTrigger({
+      event: "deal.stage_changed",
+      entityType: "deal",
+      entityId: dealId,
+      triggerEventAuditId: auditId,
+      entitySnapshot: {
+        stage_id: firstStage.id,
+        pipeline_id: targetPipelineId,
+        contact_id: deal.contact_id,
+        company_id: deal.company_id,
+      },
+    }).catch(() => {});
   }
 
   revalidatePath("/pipeline");
@@ -741,12 +795,50 @@ export async function updateStage(id: string, formData: FormData) {
 
 export async function deleteStage(id: string) {
   const supabase = await createClient();
+
+  // V6.2 SLC-622 MT-8 (DEC-133): Stage-Delete-Soft-Disable.
+  // Vor Delete pruefen ob aktive Workflow-Regeln diese Stage referenzieren
+  // (references_stage_ids @> [stageId]). Wenn ja: pausieren mit
+  // lesbarem paused_reason. Stage-Delete laeuft trotzdem durch.
+  const { data: stageRow } = await supabase
+    .from("pipeline_stages")
+    .select("name")
+    .eq("id", id)
+    .maybeSingle();
+  const stageName = stageRow?.name ?? "Unbekannt";
+
+  const { data: dependentRules } = await supabase
+    .from("automation_rules")
+    .select("id, name")
+    .eq("status", "active")
+    .contains("references_stage_ids", [id]);
+
+  let pausedCount = 0;
+  if (dependentRules && dependentRules.length > 0) {
+    const pausedReason = `Pipeline-Stage "${stageName}" wurde geloescht`;
+    const ruleIds = dependentRules.map((r) => (r as { id: string }).id);
+    const { error: pauseErr } = await supabase
+      .from("automation_rules")
+      .update({
+        status: "paused",
+        paused_reason: pausedReason,
+        updated_at: new Date().toISOString(),
+      })
+      .in("id", ruleIds);
+    if (!pauseErr) pausedCount = ruleIds.length;
+  }
+
   const { error } = await supabase.from("pipeline_stages").delete().eq("id", id);
 
   if (error) return { error: error.message };
 
   revalidatePath("/pipeline");
   revalidatePath("/settings");
-  return { error: "" };
+  return {
+    error: "",
+    pausedAutomationRules: pausedCount,
+    pausedRuleNames:
+      dependentRules?.map((r) => (r as { name: string }).name) ?? [],
+  };
 }
 

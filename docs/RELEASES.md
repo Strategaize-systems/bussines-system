@@ -1,5 +1,35 @@
 # Releases
 
+### REL-024 — V6.2 Workflow-Automation + Kampagnen-Attribution
+- Date: planned
+- Scope: V6.2 Foundation + Engine. **SLC-621** Workflow-Foundation (done): MIG-029 Phase 1 (`automation_rules` + `automation_runs` mit Anti-Loop-UNIQUE + 3 Indizes + RLS + GRANTS), Trigger-Source-Audit-Liste, Condition-Engine (9 Operators, AND-only), Field-Whitelist mit PII-Schutz, Trigger-Dispatcher, 5 Server Actions Rule-CRUD. **SLC-622** Workflow-Engine (done): Action-Executor mit Run-Lock + TOCTOU-Re-Eval + Recursion-Guard, 4 Action-Types (`create_task`, `send_email_template`, `create_activity`, `update_field`), `assignee-resolver` (DEC-134), `template-renderer` (Pure-Function {{var}}-Substitution), `recursion-guard` (max 3 update_field/(deal_id,60s) per DEC-138), Cron-Endpoint `/api/cron/automation-runner` als Defense-in-Depth-Fallback, Sync-Execution-Path im Dispatcher (fire-and-forget), Trigger-Verdrahtung in 4 zentralen User-Pfaden (`pipeline/actions.ts:moveDealToStage`, `moveDealToPipeline`, `createDeal`, `lib/actions/activity-actions.ts:createActivity`), Stage-Delete-Soft-Disable (DEC-133, dependent Rules werden auto-pausiert mit Toast-Count). **SLC-623..625** noch ausstehend (UI Builder, Campaigns-Foundation, Tracking).
+- Summary: V6.2 ist die erste Workflow-Automation in einem Strategaize-System. V1 ist explizit "Internal-Tool"-Scope: keine UI-Page (kommt SLC-623), Server-Actions sind nur via Code-Test reachable. Alle 4 Action-Types verifiziert via Schema-Smoke + Vitest. Anti-Loop-UNIQUE praxis-getestet gegen Coolify-DB. Recursion-Guard verhindert Endlos-Schleifen bei update_field. Stage-Delete pausiert dependent Rules sauber + Toast-Hinweis. PII-Schutz ist Defense-in-Depth aktiv (Whitelist im Server-Action-Validator + im Action-Executor).
+- Risks: **Coolify-Cron muss manuell angelegt werden** — sonst Cron-Fallback inaktiv (Sync-Pfad funktioniert weiter). **MIG-029 Phase 2+3** sind als TODO-Marker im SQL-File — kommen mit SLC-624 + SLC-625, nicht mit REL-024-Deploy. **Action-Idempotenz** — `create_task`/`create_activity` sind nicht idempotent (Cron-Re-Run nach App-Crash kann Duplikate erzeugen). User-Workaround: Duplikate manuell loeschen. **Trigger-Source-Coverage**: Cron-Routes (meeting-briefing, call-processing, meeting-summary) sind in V1 NICHT verdrahtet — System-getriebene Activities loesen keine Workflows aus. Bei konkretem Use-Case in V2 ergaenzbar. **Performance-Latenz**: Sync-Dispatch-Pfad theoretisch <100ms (1 SELECT + N INSERTs + fire-and-forget Executor). In Live-Last nicht aktiv gemessen — beobachten in /post-launch.
+- Rollback Notes: MIG-029 Phase 1 ist additiv (CREATE TABLE IF NOT EXISTS + Indizes + RLS + GRANTS). Rollback per Coolify-Image-History → vorheriger stable Tag REL-023 (`908eb81479e09df28cd96b85011462140880d208`). Schema bleibt drin (idempotente Re-Apply), Code-Layer faellt auf V5.7-Verhalten zurueck (kein Workflow-Dispatch in pipeline/actions.ts + activity-actions.ts). User-bestehende Daten bleiben unveraendert. Wenn Workflows aktiv sind: vor Rollback alle `automation_rules` per UPDATE auf `status='disabled'` setzen, damit nach Re-Deploy keine "verlorenen" Runs hochkommen.
+
+#### Coolify-Cron-Setup nach Deploy (PFLICHT)
+
+Nach erfolgreichem Coolify-Deploy von V6.2 muss in Coolify ein neuer Cron-Eintrag manuell angelegt werden, damit der Cron-Fallback aktiv wird:
+
+| Feld | Wert |
+|------|------|
+| **Container** | `app` |
+| **Schedule** | `* * * * *` (jede Minute) |
+| **Command** | `node -e "fetch('http://localhost:3000/api/cron/automation-runner', {method:'POST', headers:{'x-cron-secret': process.env.CRON_SECRET}}).then(r=>r.text()).then(console.log)"` |
+
+ENV `CRON_SECRET` ist bereits gesetzt (existing aus REL-018). Kein neues Secret noetig.
+
+**Smoke-Test nach Anlage** (von Hetzner-Server-Konsole):
+```bash
+docker exec -it $(docker ps --format "{{.Names}}" | grep "^app-") node -e \
+  "fetch('http://localhost:3000/api/cron/automation-runner', {method:'POST', headers:{'x-cron-secret': process.env.CRON_SECRET}}).then(r=>r.json()).then(console.log)"
+```
+Erwartete Antwort: `{ success: true, picked: 0, processed: 0, failed: 0 }` (bei leerer Queue).
+
+Wenn `Unauthorized` returnt: CRON_SECRET-Header stimmt nicht — Coolify-ENV pruefen.
+
+**Defense-in-Depth-Hinweis**: Auch ohne Cron funktioniert die Workflow-Engine im Happy-Path. Der Cron picked nur stuck-Runs (>60s pending/running) auf — relevant nur bei App-Crash zwischen Dispatch-Insert und Sync-Execution.
+
 ### REL-023 — V5.7 NL+DE-VAT-Saetze + Reverse-Charge + Skonto-Toggle Bugfix
 - Date: 2026-05-05
 - Scope: V5.7 Final-Release. 2 Slices: **SLC-571** NL+DE-VAT-Saetze + Reverse-Charge fuer EU-B2B-Cross-Border (9 MTs, FEAT-571, BL-417): MIG-028 (5 additive Aenderungen idempotent), VAT-ID Format-Validation-Layer (vat-id.ts, 30 Vitest), Branding-Settings Country-Dropdown DE/NL + vat_id-Feld, Company-Stammdaten vat_id, useReverseChargeEligibility-Hook + countryNameToCode-Mapper (24 Vitest), Editor-Steuersatz-Dropdown country-aware {0,7,9,19,21}, Reverse-Charge-Section + saveProposal Server-Action-Validation + Audit-Insert (`reverse_charge_toggled`-Event, validateReverseCharge mit 4 Reject-Pfaden, 14 Vitest), PDF-Renderer reverse-charge-block.ts + bilingualer Block (8 Vitest inkl. 3 Snapshots), COMPLIANCE.md V5.7-Section, DEC-122..128. **SLC-572** Skonto-Toggle UI-State-Drift Bugfix (4 MTs + 3 Follow-up-Fixes, FEAT-572, BL-419): lastKnownGoodSkontoRef + revertPatchIfSkontoFailed Pure-Function (skonto-revert.ts, 16 Vitest inkl. RPT-277-Repro), 3 Follow-up-Hot-Fixes nach Live-Smoke 2026-05-05 — ISSUE-051 (isOn-Inferenz auf percent OR days, Inputs bleiben gemountet), ISSUE-052 (PaymentTerms-Dropdown UUID-Display via render-callback), ISSUE-053 (Validation-Gate vor Server-Save verhindert Edit-Flicker). **Image-Tag:** `908eb81479e09df28cd96b85011462140880d208`. **Dependencies:** keine neuen NPM-Pakete. **Schema-Migration:** MIG-028 idempotent, additive, bereits live auf Hetzner.
