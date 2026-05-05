@@ -10,16 +10,15 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V5.7 vollstaendig code-complete 2026-05-04 — beide Slices done (SLC-571 9/9 MTs + Live-PASS, SLC-572 4/4 MTs).** SLC-572 fixt den in RPT-277 dokumentierten Skonto-Toggle UI-State-Drift Bug (DEC-126 Option A): `lastKnownGoodSkontoRef` useRef in proposal-editor.tsx + revert-on-error via `onProposalChange`, Decision-Logic als Pure Function `cockpit/src/lib/proposal/skonto-revert.ts` mit 16 Vitest-Tests inkl. RPT-277-Repro. `npm run test` 247/247 PASS (231 vorher + 16 neu). `npm run build` clean. Pattern-Erweiterung auf PaymentTermsDropdown/SplitPlanSection out-of-scope (andere Persist-Pfade ohne den gleichen Race). ISSUE-049 resolved, BL-419 done. Naechste = Gesamt-/qa V5.7.
-- Current Phase: V5.7 — beide Slices done (SLC-571 + SLC-572), naechste = Gesamt-/qa V5.7
+- Current Focus: **V5.7 vollstaendig code- + live-side PASS 2026-05-05.** Beide Slices done (SLC-571 9/9 MTs + RPT-298 PDF-PASS, SLC-572 4/4 MTs + 3 Follow-up-Fixes nach 3 Live-Smoke-Runden). Gesamt-/qa V5.7 PASS via RPT-301..303 + User-"alles pass" 2026-05-05. Aktuelles Image `908eb81` deployed auf Hetzner via Coolify, healthy. Final-Check abgeschlossen via RPT-304: 0 Blocker, 0 High, 1 Medium-akzeptiert (ISSUE-050 Audit-Log-UI-Renderer pre-existing), 3 Low-akzeptiert (BL-420/421/422 deferred). Naechste = /go-live V5.7 → /deploy als REL-023.
+- Current Phase: V5.7 — Final-Check PASS, ready fuer /go-live + Release REL-023
 
 ## Immediate Next Steps
-1. **Gesamt-/qa V5.7** — alle 2 Slices zusammen (SLC-571 + SLC-572) inklusive Vitest 247/247 + Browser-Smoke-Sweep gegen aktuellen main + Browser-Repro RPT-277 (Toggle bleibt nach 5x Save-Error visuell auf ON, Werte bleiben sichtbar).
-2. **/final-check** V5.7 — Hygiene/Dependencies/Security.
-3. **/go-live** + **/deploy** V5.7 als REL-023.
-4. **(Parallel)** Pre-existing Audit-Log-UI-Renderer-Bug ISSUE-050 als BL-Item erfassen (generic-update-Eintraege zeigen `[object Object]`).
-5. **(Passiv)** Coolify-Cron `meeting-briefing` Erst-Lauf-Verifikation V5.6.
-6. **Nach 24-48h Stable-Window V5.6**: /post-launch V5.6 (kann V5.5/V5.5.1/V5.4/V5.3 mitnehmen).
+1. **/go-live V5.7** — Release-Risk-Bewertung dokumentieren, Image-Tag pinnen.
+2. **/deploy V5.7 als REL-023** — RELEASES.md-Eintrag, roadmap.json V5.7 → released, features auf "deployed".
+3. **(Parallel)** Pre-existing Audit-Log-UI-Renderer-Bug ISSUE-050 (generic-update-Eintraege zeigen `[object Object]`) — pre-existing, kein V5.7-Blocker.
+4. **(Passiv)** Coolify-Cron `meeting-briefing` Erst-Lauf-Verifikation V5.6.
+5. **Nach 24-48h Stable-Window V5.7**: /post-launch V5.7 (kann V5.6/V5.5/V5.5.1/V5.4/V5.3 mitnehmen).
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
