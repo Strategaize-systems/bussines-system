@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus, Zap } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { listAutomationRules } from "./actions";
 import { RuleList } from "./_components/rule-list";
 
