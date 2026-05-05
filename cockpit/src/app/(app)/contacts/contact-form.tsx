@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { DuplicateWarning, useDuplicateCheck } from "@/components/ui/duplicate-warning";
 import { checkContactDuplicate } from "@/lib/duplicate-check";
 import { useState, useCallback } from "react";
+import { CampaignPicker } from "@/components/campaigns/campaign-picker";
 import type { Contact } from "./actions";
 
 const selectClass = "select-premium";
@@ -27,6 +28,9 @@ export function ContactForm({
   isPending,
 }: ContactFormProps) {
   const [tags, setTags] = useState<string[]>(contact?.tags ?? []);
+  const [campaignId, setCampaignId] = useState<string | null>(
+    contact?.campaign_id ?? null
+  );
   const dupCheck = useDuplicateCheck(useCallback((v: string) => checkContactDuplicate(v), []));
 
   return (
@@ -191,6 +195,13 @@ export function ContactForm({
           />
         </div>
       </div>
+
+      <CampaignPicker
+        value={campaignId}
+        onChange={setCampaignId}
+        helperText="Verknuepft den Kontakt mit einer Marketing-Kampagne fuer Attribution."
+      />
+      <input type="hidden" name="campaign_id" value={campaignId ?? ""} />
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">

@@ -1,7 +1,11 @@
 # Migrations
 
 ### MIG-029 — V6.2 Workflow-Automation + Kampagnen-Attribution Schema
-- Date: planned (Apply via SLC-621 + SLC-624 — Workflow-Schema in SLC-621, Attribution-Schema in SLC-624; beide parts in einer Migration-File `029_v62_automation_and_campaigns.sql`)
+- Date: 2026-05-05 (Phase 1 + Phase 2 applied auf Hetzner; Phase 3 SLC-625 ausstehend)
+- Apply-History:
+  - Phase 1 (Workflow): applied via SLC-621 (2026-05-05) — automation_rules + automation_runs + Anti-Loop-UNIQUE
+  - Phase 2 (Campaigns): applied via SLC-624 (2026-05-05) — campaigns + 3 ALTER campaign_id FKs auf contacts/companies/deals + Partial-Indizes + RLS + GRANTS. Live-verifiziert via psql `\d campaigns`: 11 Spalten, 2 UNIQUE-Indizes (LOWER(name) + partial external_ref), 1 Partial-Index (status='active'), Date-Range-CHECK, RLS aktiv, 3 FK ON DELETE SET NULL.
+  - Phase 3 (Tracking-Links): pending SLC-625
 - Scope: 7 additive Aenderungen in einer Migration:
   1. Neue Tabelle `automation_rules` (DEC-129..134, FEAT-621):
      - `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`

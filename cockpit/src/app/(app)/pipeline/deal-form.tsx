@@ -6,7 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TagInput } from "@/components/ui/tag-input";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { CampaignPicker } from "@/components/campaigns/campaign-picker";
+import { getContactCampaignId } from "@/app/(app)/contacts/actions";
 import type { Deal, PipelineStage } from "./actions";
 
 const selectClass = "select-premium";
@@ -38,6 +40,28 @@ export function DealForm({
   const [selectedStageId, setSelectedStageId] = useState(
     deal?.stage_id ?? stages[0]?.id ?? ""
   );
+  const [contactId, setContactId] = useState<string>(deal?.contact_id ?? "");
+  const [campaignId, setCampaignId] = useState<string | null>(
+    deal?.campaign_id ?? null
+  );
+  // V6.2 SLC-624 — Auto-Vorbelegung der Kampagne beim Contact-Wechsel,
+  // aber nur wenn User die Kampagne nicht manuell veraendert hat.
+  const userTouchedCampaign = useRef(false);
+
+  useEffect(() => {
+    if (userTouchedCampaign.current) return;
+    if (!contactId) return;
+    let cancelled = false;
+    void getContactCampaignId(contactId).then((cid) => {
+      if (cancelled) return;
+      if (cid && !userTouchedCampaign.current) {
+        setCampaignId(cid);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [contactId]);
 
   const selectedStage = stages.find((s) => s.id === selectedStageId);
   const isLostStage = selectedStage
@@ -145,7 +169,8 @@ export function DealForm({
           <select
             id="contact_id"
             name="contact_id"
-            defaultValue={deal?.contact_id ?? ""}
+            value={contactId}
+            onChange={(e) => setContactId(e.target.value)}
             className={selectClass}
           >
             <option value="">— Kein Kontakt —</option>
@@ -243,6 +268,16 @@ export function DealForm({
           </div>
         </>
       )}
+
+      <CampaignPicker
+        value={campaignId}
+        onChange={(id) => {
+          userTouchedCampaign.current = true;
+          setCampaignId(id);
+        }}
+        helperText="Wird beim Wechsel des Kontakts automatisch vorbelegt (Override moeglich)."
+      />
+      <input type="hidden" name="campaign_id" value={campaignId ?? ""} />
 
       <div className="space-y-2">
         <Label>Tags</Label>

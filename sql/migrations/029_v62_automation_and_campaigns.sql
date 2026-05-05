@@ -108,12 +108,77 @@ GRANT ALL ON automation_runs TO authenticated, service_role;
 -- ============================================================================
 -- PHASE 2 (SLC-624) — Campaigns Schema
 -- ============================================================================
--- Wird aktiviert mit SLC-624 Implementation. In SLC-621 nur Workflow-Anteil.
--- Folgender Block ist in SLC-621-Apply auskommentiert; SLC-624 entfernt die
--- Kommentar-Marker und re-applied dieselbe SQL-File.
+-- Aktiviert mit SLC-624 Implementation (FEAT-622, DEC-135 + DEC-136).
+-- Re-Apply nach SLC-621 — Workflow-Tabellen bleiben unangetastet, jetzt
+-- kommen Campaigns + 3 ALTER-FKs auf contacts/companies/deals dazu.
 -- ============================================================================
 
--- TODO SLC-624: Phase 2 hier einfuegen (campaigns + ALTER campaign_id + Indizes)
+-- 2.1  campaigns — Kampagnen-Definition
+CREATE TABLE IF NOT EXISTS campaigns (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('email', 'linkedin', 'event', 'ads', 'referral', 'other')),
+  channel TEXT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NULL,
+  status TEXT NOT NULL CHECK (status IN ('draft', 'active', 'finished', 'archived')) DEFAULT 'draft',
+  external_ref TEXT NULL,
+  notes TEXT NULL,
+  created_by UUID NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT campaigns_date_range_chk CHECK (end_date IS NULL OR end_date >= start_date)
+);
+
+-- UNIQUE (LOWER(name)) — case-insensitive Name-Uniqueness
+-- (DEC-135: utm_campaign-Match case-insensitive)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_campaigns_name_lower_uq
+  ON campaigns (LOWER(name));
+
+-- Partial UNIQUE auf external_ref (nur wenn gesetzt)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_campaigns_external_ref_uq
+  ON campaigns (external_ref) WHERE external_ref IS NOT NULL;
+
+-- Partial-Index fuer aktive Kampagnen (CampaignPicker Default-Query)
+CREATE INDEX IF NOT EXISTS idx_campaigns_status_active
+  ON campaigns (status, start_date)
+  WHERE status = 'active';
+
+-- 2.2  RLS Policy — Single-User V1: full-access fuer authenticated
+ALTER TABLE campaigns ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS campaigns_full_access ON campaigns;
+CREATE POLICY campaigns_full_access
+  ON campaigns
+  FOR ALL
+  TO authenticated
+  USING (true)
+  WITH CHECK (true);
+
+-- 2.3  GRANTS — service_role + authenticated
+GRANT ALL ON campaigns TO authenticated, service_role;
+
+-- 2.4  ALTER TABLE — campaign_id-FK auf contacts/companies/deals
+-- DEC-136: additive FK, keine Source-Migration. ON DELETE SET NULL = sicheres
+-- Default-Verhalten wenn Kampagne geloescht wird.
+ALTER TABLE contacts
+  ADD COLUMN IF NOT EXISTS campaign_id UUID NULL REFERENCES campaigns(id) ON DELETE SET NULL;
+
+ALTER TABLE companies
+  ADD COLUMN IF NOT EXISTS campaign_id UUID NULL REFERENCES campaigns(id) ON DELETE SET NULL;
+
+ALTER TABLE deals
+  ADD COLUMN IF NOT EXISTS campaign_id UUID NULL REFERENCES campaigns(id) ON DELETE SET NULL;
+
+-- Partial-Indizes fuer schnelle JOIN-Queries auf KPI-Subqueries
+CREATE INDEX IF NOT EXISTS idx_contacts_campaign
+  ON contacts (campaign_id) WHERE campaign_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_companies_campaign
+  ON companies (campaign_id) WHERE campaign_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_deals_campaign
+  ON deals (campaign_id) WHERE campaign_id IS NOT NULL;
 
 
 -- ============================================================================

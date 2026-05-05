@@ -26,6 +26,8 @@ export type Contact = {
   multiplier_type: string | null;
   last_interaction_date: string | null;
   meeting_link: string | null;
+  // V6.2 SLC-624 — FEAT-622 Campaign-Attribution
+  campaign_id: string | null;
   consent_status: ConsentStatus;
   consent_date: string | null;
   consent_source: ConsentSource | null;
@@ -101,6 +103,7 @@ export async function createContact(formData: FormData) {
     is_multiplier: formData.get("is_multiplier") === "on",
     multiplier_type: (formData.get("multiplier_type") as string) || null,
     meeting_link: (formData.get("meeting_link") as string) || null,
+    campaign_id: (formData.get("campaign_id") as string) || null,
   });
 
   if (error) return { error: error.message };
@@ -140,6 +143,7 @@ export async function updateContact(id: string, formData: FormData) {
       is_multiplier: formData.get("is_multiplier") === "on",
       multiplier_type: (formData.get("multiplier_type") as string) || null,
       meeting_link: (formData.get("meeting_link") as string) || null,
+      campaign_id: (formData.get("campaign_id") as string) || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
@@ -149,6 +153,25 @@ export async function updateContact(id: string, formData: FormData) {
   revalidatePath("/contacts");
   revalidatePath(`/contacts/${id}`);
   return { error: "" };
+}
+
+/**
+ * V6.2 SLC-624 — Helper fuer Auto-Vorbelegung in Deal-Form.
+ * Liest die campaign_id eines Contacts. Wird vom CampaignPicker im
+ * Deal-Form aufgerufen, sobald der Primary-Contact gewechselt wird.
+ */
+export async function getContactCampaignId(
+  id: string
+): Promise<string | null> {
+  if (!id) return null;
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("contacts")
+    .select("campaign_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) return null;
+  return (data?.campaign_id as string | null) ?? null;
 }
 
 export async function deleteContact(id: string) {

@@ -10,14 +10,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.2 SLC-623 /qa PASS 2026-05-05 (RPT-316).** FEAT-621 vollstaendig verifiziert. SLC-623 QA: 1 Blocker gefunden (buttonVariants Server-Component-Crash) + per Deviation Rule 1 direkt gefixt (commit `fe0d5b4`, neuer `button-variants.ts` ohne `"use client"`). Nach User-Redeploy alle 7 Pruefpunkte PASS: Listing-Empty+Card+Toggle+Delete-CASCADE, 4-Step-Wizard durch, Trockenlauf 3 Treffer + DEC-132 Read-Only-Verifikation (pre=post 26|153|4|3|0), Edit-Roundtrip vorbelegt, Mobile-Hint-Card, Style-Guide-V2-konsistent. 3 Low-Findings (rule-builder.tsx:57 set-state-in-effect, Sub-Nav-Eintrag fehlt, Primary-Button-Position) → V6.3-Polish. Vitest 316/316. Image-Tag `fe0d5b4` live. Bereit fuer /backend SLC-624.
-- Current Phase: V6.2 3/5 Slices done (SLC-621+622+623), FEAT-621 done. Naechster Schritt /backend SLC-624.
+- Current Focus: **V6.2 SLC-624 /backend done 2026-05-05.** FEAT-622 startet (Attribution-Block). MIG-029 Phase 2 live applied auf Hetzner: campaigns-Tabelle (11 Spalten, 2 UNIQUE, 1 Partial-Index, RLS, Date-Range-CHECK) + 3 ALTER TABLE ADD COLUMN campaign_id UUID NULL REFERENCES campaigns(id) ON DELETE SET NULL auf contacts/companies/deals + 3 Partial-Indizes. Code-Side: 5 Server-Actions (saveCampaign mit case-insensitive Name-Validation, listCampaigns/listCampaignsForPicker, getCampaign mit KPI-Subqueries, archiveCampaign, deleteCampaign), Listing-Page /settings/campaigns mit Filter-Bar + Card-Grid + Delete-Confirm-Dialog, Editor /new + /[id]/edit mit 8-Feld-Single-Form, Detail-Page /campaigns/[id] mit Header + 5 KPI-Cards (Leads, Deals, Won-Deals, Won-Value, Conversion-Rate) + 3 Tabs (Leads, Deals, Tracking-Links Coming-Soon Placeholder fuer SLC-625), wiederverwendbarer CampaignPicker als Combobox-Pattern integriert in 3 Stammdaten-Forms (contact-form.tsx, company-form.tsx, pipeline/deal-form.tsx) inkl. Auto-Vorbelegung von deal.campaign_id beim Primary-Contact-Wechsel via getContactCampaignId-Helper + userTouchedCampaign-Ref-Override. TSC + ESLint clean, Vitest 330/330 PASS (14 neue MT-8 Schema-Smoke-Tests gegen Migration-Datei-Inhalt — Live-DB-Verifikation per psql `\d campaigns` bereits in MT-2 erfolgt, keine pg-Dep-Sprawl fuer V1 internal-tool). Bereit fuer /qa SLC-624.
+- Current Phase: V6.2 4/5 Slices done (SLC-621+622+623+624). FEAT-621 done, FEAT-622 in_progress. Naechster Schritt /qa SLC-624 dann /backend SLC-625.
 
 ## Immediate Next Steps
-1. **/backend SLC-624** — Campaigns Foundation (FEAT-622, ~4-6h, MIG-029 Phase 2). Schema fuer campaign-Tabellen + Server-Actions + Whitelists.
-2. Anschliessend /backend SLC-625 (Tracking+Reporting+API, ~5-8h, MIG-029 Phase 3) → V6.2-Final-QA → /final-check → /go-live → /deploy als REL-024.
+1. **/qa SLC-624** — Schema-Smoke + CRUD-Roundtrip + Duplikat-Test + KPI-Korrektheit + Stammdaten-Picker + Auto-Vorbelegung + Detail-Page-Tabs + Style-Guide-V2-Konsistenz.
+2. **/backend SLC-625** — Tracking+Reporting+API (~5-8h, MIG-029 Phase 3) → V6.2-Final-QA → /final-check → /go-live → /deploy als REL-024.
 3. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
-4. **(V6.3-Polish)** L1 Lint-Cleanup rule-builder.tsx:57 + L2 Settings-Sub-Nav fuer Workflow-Automation + L3 Primary-Button-Position vereinheitlichen.
+4. **(V6.3-Polish)** L1 Lint-Cleanup rule-builder.tsx:57 + L2 Settings-Sub-Nav fuer Workflow-Automation + Kampagnen + L3 Primary-Button-Position vereinheitlichen.
 5. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
 
 ## Spaeter (nicht jetzt)

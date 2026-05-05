@@ -117,7 +117,7 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
         contact_id: null, company_id: null, title: "", value: null,
         expected_close_date: null, next_action: null, next_action_date: null,
         status: "active", opportunity_type: null, won_lost_reason: null,
-        won_lost_details: null, closed_at: null, tags: [], created_at: "", updated_at: "",
+        won_lost_details: null, closed_at: null, tags: [], campaign_id: null, created_at: "", updated_at: "",
       }
     : null;
 

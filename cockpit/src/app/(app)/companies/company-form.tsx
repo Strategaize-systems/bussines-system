@@ -10,6 +10,7 @@ import { DuplicateWarning, useDuplicateCheck } from "@/components/ui/duplicate-w
 import { PlzCityAutocomplete } from "@/components/ui/plz-city-autocomplete";
 import { checkCompanyDuplicate } from "@/lib/duplicate-check";
 import { useMemo, useState, useCallback } from "react";
+import { CampaignPicker } from "@/components/campaigns/campaign-picker";
 import type { Company } from "./actions";
 import { validateEuVatId } from "@/lib/validation/vat-id";
 
@@ -26,6 +27,9 @@ export function CompanyForm({ company, onSubmit, isPending }: CompanyFormProps) 
   const [plz, setPlz] = useState(company?.address_zip ?? "");
   const [city, setCity] = useState(company?.address_city ?? "");
   const [vatId, setVatId] = useState(company?.vat_id ?? "");
+  const [campaignId, setCampaignId] = useState<string | null>(
+    company?.campaign_id ?? null
+  );
   const dupCheck = useDuplicateCheck(useCallback((v: string) => checkCompanyDuplicate(v), []));
 
   const vatIdInlineError = useMemo(() => {
@@ -348,6 +352,13 @@ export function CompanyForm({ company, onSubmit, isPending }: CompanyFormProps) 
           />
         </div>
       </div>
+
+      <CampaignPicker
+        value={campaignId}
+        onChange={setCampaignId}
+        helperText="Verknuepft die Firma mit einer Marketing-Kampagne fuer Attribution."
+      />
+      <input type="hidden" name="campaign_id" value={campaignId ?? ""} />
 
       <div className="space-y-2">
         <Label>Tags</Label>

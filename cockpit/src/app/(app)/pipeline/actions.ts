@@ -38,6 +38,8 @@ export type Deal = {
   won_lost_details: string | null;
   closed_at: string | null;
   tags: string[];
+  // V6.2 SLC-624 — FEAT-622 Campaign-Attribution
+  campaign_id: string | null;
   created_at: string;
   updated_at: string;
   contacts?: { id: string; first_name: string; last_name: string } | null;
@@ -179,6 +181,7 @@ export async function createDeal(formData: FormData) {
     referral_source_id: (formData.get("referral_source_id") as string) || null,
     won_lost_reason: (formData.get("won_lost_reason") as string) || null,
     won_lost_details: (formData.get("won_lost_details") as string) || null,
+    campaign_id: (formData.get("campaign_id") as string) || null,
     tags,
   }).select("id").single();
 
@@ -258,6 +261,7 @@ export async function updateDeal(id: string, formData: FormData) {
     referral_source_id: (formData.get("referral_source_id") as string) || null,
     won_lost_reason: (formData.get("won_lost_reason") as string) || null,
     won_lost_details: (formData.get("won_lost_details") as string) || null,
+    campaign_id: (formData.get("campaign_id") as string) || null,
     status,
     closed_at: status === "won" || status === "lost" ? new Date().toISOString() : null,
     tags,

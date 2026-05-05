@@ -22,7 +22,9 @@ export type AuditEntityType =
   | "pipeline"
   | "payment_terms_template"
   // V6.2 SLC-621 — Workflow-Automation Rule-CRUD
-  | "automation_rule";
+  | "automation_rule"
+  // V6.2 SLC-624 — Campaign-CRUD (FEAT-622)
+  | "campaign";
 
 export interface AuditParams {
   action: AuditAction;

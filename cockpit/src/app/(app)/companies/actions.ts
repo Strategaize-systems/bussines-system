@@ -32,6 +32,8 @@ export type Company = {
   revenue_range: string | null;
   source_type: string | null;
   source_detail: string | null;
+  // V6.2 SLC-624 — FEAT-622 Campaign-Attribution
+  campaign_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -136,6 +138,7 @@ export async function createCompany(formData: FormData) {
     revenue_range: (formData.get("revenue_range") as string) || null,
     source_type: (formData.get("source_type") as string) || null,
     source_detail: (formData.get("source_detail") as string) || null,
+    campaign_id: (formData.get("campaign_id") as string) || null,
   });
 
   if (error) return { error: error.message };
@@ -186,6 +189,7 @@ export async function updateCompany(id: string, formData: FormData) {
       revenue_range: (formData.get("revenue_range") as string) || null,
       source_type: (formData.get("source_type") as string) || null,
       source_detail: (formData.get("source_detail") as string) || null,
+      campaign_id: (formData.get("campaign_id") as string) || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
