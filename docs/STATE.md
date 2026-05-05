@@ -9,20 +9,19 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: stable
-- Current Focus: **V5.7 + Sammel V5.6/V5.5/V5.5.1/V5.4/V5.3 POST-LAUNCH STABLE 2026-05-05 (RPT-307).** Container 0 App-Restarts seit Release, Audit-Log zeigt 5 reverse_charge_toggled + 33 update Events letzte 24h, V5.7-Features funktional persistiert (1 RC + 1 Skonto Proposal in DB). Keine Hotfix-Notwendigkeit. Naechste aktive Entwicklung = /requirements V6.2 (Workflow-Automation + Kampagnen-Attribution, BL-135 + BL-139).
-- Current Phase: stable — bereit fuer naechste Entwicklungs-Runde V6.2
+- High-Level State: requirements
+- Current Focus: **V6.2 Requirements done 2026-05-05 (RPT-308).** 2 Features ausgeschrieben: FEAT-621 Workflow-Automation Rule Builder (BL-135) + FEAT-622 Kampagnen-Attribution + UTM-Tracking (BL-139). PRD-V6.2-Section + Slicing-Vorschlag (6 Slices SLC-621..626) + 13 Open Questions an /architecture. V5.7+Sammel-Releases bleiben Post-Launch-Stable (Container 0 Restarts seit 2026-05-04, RPT-307).
+- Current Phase: V6.2 Requirements abgeschlossen, bereit fuer /architecture
 
 ## Immediate Next Steps
-1. **/requirements V6.2** — Workflow-Automation + Kampagnen-Attribution (BL-135 + BL-139 aus V7 ausgelagert). ~2-3h, eigene Session empfohlen.
-2. **(Optional davor)** BL-422 RC-Toggle-Drift-Polish (~30-45min) wenn als V5.7-Cleanup gewuenscht.
-3. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
+1. **/architecture V6.2** — 13 Open Questions klaeren (Trigger-Mechanismus, Action-Ausfuehrung, utm-Mapping, Source-Field-Migration, Funnel-Report-Erweiterung etc.). ~2-3h, eigene Session empfohlen.
+2. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
+3. **(Optional)** BL-422 RC-Toggle-Drift-Polish (~30-45min) wenn als V5.7-Cleanup gewuenscht.
 4. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
 - BL-397 GitHub-App Org-Anbindung (Infra-Hygiene)
-- V6.2 — Workflow-Automation (BL-135) + Kampagnen-Attribution (BL-139), aus V7 ausgelagert
 - V7 — reduziert auf Multi-User + Teamlead (FEAT-502/503)
 
 ## Active Scope
@@ -58,10 +57,9 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V5.5, V5.5.1, V6, V6.1
 
 **Active:**
-- V5.7 — NL-Compliance + Polish (Requirements done 2026-05-03, naechste = /architecture)
+- V6.2 — Automation + Attribution (Requirements done 2026-05-05, FEAT-621+622, naechste = /architecture)
 
 **Planned (Reihenfolge):**
-- V6.2 — Automation + Attribution (Workflow-Rule-Builder + Kampagnen + UTM, aus V7 ausgelagert)
 - V7 — Multi-User + Teamlead (Routing/Territories + Teamlead-Rolle, reduzierter Scope)
 - Pre-Production-Compliance-Gate (irgendwann vor V7) — Anwaltspruefung + Azure-EU-Whisper + ISSUE-042 — laut User 2026-05-01 NICHT prioritaer
 

@@ -150,8 +150,8 @@
     {
       "id": "v6-2",
       "name": "V6.2",
-      "status": "planned",
-      "summary": "Automation + Attribution: 2 Features (FEAT-621..622) — Workflow-Automation Rule Builder (BL-135, 'Wenn X dann Y'-Regeln, visueller Builder) + Kampagnen-Attribution (BL-139, Kampagne als Objekt + UTM/Tracking-Links + Conversion-Auswertung pro Kampagne). Aus V7-Scope ausgelagert weil thematisch eigenstaendig.",
+      "status": "active",
+      "summary": "Automation + Attribution: 2 Features (FEAT-621..622) — Workflow-Automation Rule Builder (BL-135, 'Wenn X dann Y'-Regeln, form-basierter Builder, 3 Trigger + 4 Action-Whitelist, Audit-Log + Trockenlauf, Anti-Loop-Marker) + Kampagnen-Attribution (BL-139, neue campaigns-Tabelle + FK auf Contacts/Companies/Deals + UTM-Tracking-Links via /r/[token]-Redirector + Conversion-Reporting + Read-API fuer System 4). Reuse Audit-Log-Pattern V5.7 + Coolify-Cron + Export-API FEAT-504. Keine LLM-Calls, keine neuen Container, keine neuen Packages wenn vermeidbar. Requirements done 2026-05-05 (RPT-308), naechste = /architecture.",
       "order": 22
     },
     {

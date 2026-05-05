@@ -2992,3 +2992,148 @@ User-Sign-Off vom 2026-05-01. Empfehlungen wurden uebernommen, ausser F2 + F4 + 
   - SLC-564: Pre-Call Briefing Cron + Push/E-Mail-Delivery + `/settings/briefing` Page
 
 **V5.6 Requirements ready for `/architecture`.**
+
+---
+
+## V6.2 — Workflow-Automation + Kampagnen-Attribution
+
+### V6.2 Problem Statement
+
+Zwei produktive Schmerzen sammeln sich seit V3..V5.7:
+
+1. **Repetitive operative Reaktionen ohne Automatisierung.** Deal rutscht in eine bestimmte Stage → Aufgabe muss angelegt werden. Activity-Typ "Disqualifizierung" landet → Stage soll auf "Lost". Meeting wird durchgefuehrt → Follow-up-Mail-Template soll auf den Deal. Bisher alles per Hand. Cadences (FEAT-501) decken nur Outreach-Sequenzen ab, KI-Wiedervorlagen (FEAT-407) sind freigabepflichtig — die deterministische Wenn-Dann-Schicht fehlt komplett.
+2. **Lead-Quelle nicht aggregierbar.** Kontakte und Firmen haben Freitext-`source`/`source_detail`-Felder seit V2 + V3.1. "Wieviele Leads kamen aus der LinkedIn-Kampagne im April?" laesst sich nur per LIKE-Pattern beantworten, "welche Kampagnen brachen die meisten gewonnenen Deals?" gar nicht. System 4 plant Kampagnen, aber die Attribution-Schleife zurueck endet im Business System mit unbrauchbarem Freitext.
+
+V6.2 schliesst beide Luecken parallel, weil sie thematisch eigenstaendig und beide low-cost (kein neuer LLM-Pfad, kein neuer Container) sind.
+
+### V6.2 Goal / Intended Outcome
+
+- User legt unter `/settings/automation` Wenn-Dann-Regeln an, die ohne KI und ohne Freigabe deterministisch laufen.
+- Kampagnen werden als eigenes Datenobjekt gefuehrt; Leads/Deals werden strukturiert verknuepft; UTM-getrackte Tracking-Links liefern automatisch Lead-Attribution; eine Reporting-Page pro Kampagne zeigt Conversion-Rate.
+- System 4 zieht Kampagnen-Performance per Read-API (kein Push, kein Webhook V1).
+
+### V6.2 Primary User
+Founder als Single-User. Multi-User kommt mit V7.
+
+### V6.2 Delivery Mode
+Internal-tool — die existierenden Patterns (Coolify-Cron, Audit-Log, Read-API) reichen, kein zusaetzlicher Operations-Overhead.
+
+### V6.2 Architekturleitplanken
+- **Kein neuer LLM-Pfad.** Workflow-Engine ist 100% deterministisch — konsistent mit `feedback_no_api_costs.md`.
+- **Reuse statt neu bauen.** Audit-Log-Pattern aus V5.7 fuer Rule-Runs und Click-Logs. Coolify-Cron-Pattern fuer asynchrone Action-Ausfuehrung. Export-API-Pattern (FEAT-504) fuer Read-API. V5.3-E-Mail-Templates fuer Send-Email-Action.
+- **Keine neuen Container, keine neuen npm-Packages** wenn vermeidbar.
+- **First-Touch-Attribution V1, keine Multi-Touch.**
+- **Existierende Source-Felder bleiben unangetastet** — campaign_id ist additiv.
+
+### V6.2 Features (2 Features)
+
+#### FEAT-621 — Workflow-Automation Rule Builder (BL-135)
+
+Form-basierter Wenn-Dann-Regel-Builder unter `/settings/automation` mit:
+- **3 V1-Trigger:** `deal.stage_changed`, `deal.created`, `activity.created` (mit Typ-Filter)
+- **Conditions:** AND-only, kein OR, keine Cross-Entity-Joins
+- **4 V1-Actions:** `create_task`, `send_email_template`, `create_activity`, `update_field` (Whitelist)
+- **Audit-Log + Trockenlauf** ueber letzte 30 Tage ohne Side-Effects
+- **Aktiv-Toggle** — Regeln pausierbar
+- **Anti-Loop-Marker** pro (rule_id, entity_id, trigger_event_id)
+
+Out of Scope V1: Time-based-Trigger, Multi-Step-Sequences (kommt aus Cadences), KI-Branchen, Cross-Entity-Conditions, OR-Conditions, Webhook-Actions, Drag&Drop-Node-Editor, User-Scope (V7).
+
+Spec: `/features/FEAT-621-workflow-automation.md`
+
+#### FEAT-622 — Kampagnen-Attribution + UTM-Tracking (BL-139)
+
+Neue Tabelle `campaigns` + Verknuepfung Leads/Deals + UTM-Tracking-Links:
+- **`campaigns`-Tabelle** mit `id, name, type (whitelist email|linkedin|event|ads|referral|other), channel, start_date, end_date, status, external_ref, notes`
+- **FK-Felder** `contacts.campaign_id`, `companies.campaign_id`, `deals.campaign_id`
+- **`campaign_links`-Tabelle** mit `token, target_url, utm_source/medium/campaign/content/term`
+- **`/r/[token]`-Redirector** mit Click-Logging (IP gehashed, retention 90 Tage)
+- **`/campaigns/[id]`-Reporting-Page** mit Lead/Deal/Won-KPIs + Tracking-Links-Tab
+- **Funnel-Report-Erweiterung** (FEAT-335) um Kampagne-Filter
+- **Read-API** `GET /api/campaigns/[id]/performance` (Reuse FEAT-504 Auth-Pattern)
+- Bestehende `source*`-Freitext-Felder bleiben backward-compatible erhalten
+
+Out of Scope V1: Multi-Touch-Attribution, A/B-Test, Cookie-basiertes Cross-Session-Tracking, Push-Webhooks, Auto-Migration der Alt-Source-Werte, eigener Form-Builder.
+
+Spec: `/features/FEAT-622-kampagnen-attribution.md`
+
+### V6.2 In Scope
+- Form-basierter Workflow-Rule-Builder mit 3 Trigger + 4 Action-Whitelist
+- Asynchrone Rule-Ausfuehrung mit Audit-Log + Anti-Loop-Marker
+- Trockenlauf-Modus (letzte 30 Tage Replay)
+- Kampagnen-Tabelle + FK-Verknuepfung zu Contacts/Companies/Deals
+- UTM-Tracking-Link-Generator + Redirector + Click-Log
+- Reporting-Page pro Kampagne + Funnel-Report-Filter
+- Read-API fuer Kampagnen-Performance
+- Backward-Compat zu existierenden `source*`-Feldern (additiv)
+
+### V6.2 Out of Scope
+- Time-based-Trigger ("wenn 7 Tage nichts passiert")
+- Multi-Step-Workflows mit Wartezeit (das machen Cadences FEAT-501)
+- KI-getriebene Action-Decision (das macht FEAT-407 KI-Wiedervorlagen)
+- Drag&Drop-Node-Graph-Editor
+- E-Mail-Empfangs-Trigger (das macht FEAT-408 KI-Gatekeeper)
+- Webhook-Actions
+- OR-Conditions / verschachtelte Boolesche Logik
+- Multi-Touch-Attribution (First-Touch only V1)
+- A/B-Testing von Kampagnen oder Regel-Varianten
+- Cookie-basiertes Cross-Session-Tracking
+- Push-Webhooks zu System 4
+- Auto-Migration der `source*`-Freitext-Felder zu `campaign_id`
+- Eigener Form-Builder (Lead-Capture)
+- User-Scope von Regeln (V7 Multi-User)
+
+### V6.2 Constraints
+- **Internal-Test-Mode** bleibt aktiv bis Pre-Production-Compliance-Gate (laut User 2026-05-01 NICHT prioritaer).
+- **Keine neuen npm-Packages oder Container** wenn vermeidbar (Reuse-Disziplin).
+- **Keine LLM-Calls in Hot-Path** der Rule-Engine — `feedback_no_api_costs.md`.
+- **Kein Browser-Supabase** — alle Mutationen ueber Server-API-Routes — `feedback_no_browser_supabase.md`.
+- **Style Guide V2 verbindlich** fuer alle UI-Arbeiten — `feedback_style_guide_v2_mandatory.md`.
+
+### V6.2 Risks & Assumptions
+- **Risiko Endless-Loop** zwischen Regel-Ausfuehrung und Stage-Change-Trigger. **Mitigation:** Idempotency-Marker pro (rule, entity, trigger_event) + harter Recursion-Counter (max 3 Stage-Changes pro Deal pro 60s).
+- **Risiko Race** mit Cadences und KI-Wiedervorlagen die das gleiche Feld setzen. **Mitigation:** Audit-Log dokumentiert Quelle.
+- **Risiko PII** beim Click-Log. **Mitigation:** IP gehashed, retention 90 Tage, konsistent mit COMPLIANCE.md V5.2.
+- **Risiko Source-Doppelpflege** alter `source` Freitext + neues `campaign_id`. **Mitigation:** UI zeigt beide transparent, manuelle Migration out-of-band.
+- **Annahme:** Form-basierter Rule-Builder reicht V1; Drag&Drop-Editor erst wenn Regelkomplexitaet das fordert.
+- **Annahme:** System 4 sendet utm-Werte beim Lead-Insert via Form-Embed-API — Business System baut keinen JS-Tracker selbst.
+- **Annahme:** First-Touch-Attribution ist akzeptabel, Multi-Touch erst wenn ein Lead nachweislich von 2+ Kampagnen beruehrt wurde und das Reporting-Verzerrung produziert.
+
+### V6.2 Success Criteria
+- 5+ produktive Workflow-Regeln aktiv nach 2 Wochen
+- 0 ausgeloeste Endless-Loops im Audit-Log
+- Trigger-Latenz < 30s vom Trigger-Event bis zur ersten Action
+- 3+ Kampagnen produktiv angelegt nach 2 Wochen
+- Conversion-Rate pro Kampagne fuer >50% der Won-Deals der letzten 90 Tage sichtbar
+- Read-API `/api/campaigns/[id]/performance` returns gueltiges JSON
+
+### V6.2 Open Questions (fuer /architecture)
+
+**Workflow-Automation (FEAT-621):**
+- F1: Trigger-Mechanismus — Postgres-NOTIFY/LISTEN, In-Process-Event-Emitter oder Polling? Trade-off Reliability vs. Code-Komplexitaet.
+- F2: Field-Whitelist fuer `update_field`-Action — Code-Konfig oder DB-Tabelle?
+- F3: Action-Ausfuehrung — synchron im Trigger-Request, im existierenden Coolify-Cron-Pattern, oder neuer Worker-Loop?
+- F4: Audit-Log-Tabelle — existierende `audit_log` (V5.7) erweitern oder neue `automation_runs`?
+- F5: Trockenlauf "letzte 30 Tage" — wie wird historischer Trigger-Stream rekonstruiert (Activities-Tabelle reicht oder Replay-Layer)?
+- F6: Was passiert mit aktiven Regeln, die auf eine geloeschte Pipeline-Stage referenzieren — Soft-Disable + Warning oder Hard-Block beim Loeschen?
+- F7: `create_task`-Action Owner-Default — Trigger-User oder Deal-Owner?
+
+**Kampagnen-Attribution (FEAT-622):**
+- F8: utm-Parameter zu `campaigns.id` Mapping — ueber `utm_campaign = campaigns.name` (case-insensitive) oder ueber `external_ref`?
+- F9: Existierende `source`/`source_detail`-Felder — parallel halten, deprecaten, oder Auto-Migration in einem extra-Sprint?
+- F10: Tracking-Link-Token-Schema — kurz (~8 char) oder UUID-prefix? Trade-off Lesbarkeit vs. Kollision.
+- F11: First-Touch-Persistenz — wenn ein bestehender Kontakt einen 2. Kampagnen-Klick macht: `campaign_id` ueberschreiben oder gelocked? (V1-Empfehlung: gelocked).
+- F12: Funnel-Report-Erweiterung (FEAT-335) — wie tief der UI-Eingriff fuer den Kampagne-Filter?
+- F13: Read-API `/api/campaigns/[id]/performance` Auth — FEAT-504-Pattern bestaetigen oder neue Auth?
+
+### V6.2 Slicing-Vorschlag (zur /architecture-Entscheidung)
+- **SLC-621** Workflow-Foundation: `automation_rules` + `automation_runs` Schema, Trigger-Listener-Layer, Audit-Log-Erweiterung
+- **SLC-622** Workflow-Builder-UI + Trockenlauf: `/settings/automation` Page + 4-Step-Form
+- **SLC-623** Action-Executors: `create_task`, `send_email_template`, `create_activity`, `update_field` mit Whitelist + Anti-Loop-Marker
+- **SLC-624** Kampagnen-Foundation: `campaigns` Tabelle + FK auf Contacts/Companies/Deals + `/settings/campaigns` Listing + `/campaigns/[id]` Detail
+- **SLC-625** Tracking-Links + Click-Log: `campaign_links` + `campaign_link_clicks` + `/r/[token]` Redirector + Reporting-KPIs
+- **SLC-626** Read-API + Funnel-Report-Filter: `/api/campaigns/[id]/performance` + Funnel-Report-Erweiterung
+
+(6 Slices als erste Schaetzung, /architecture konsolidiert auf finale Slice-Anzahl.)
+
+**V6.2 Requirements ready for `/architecture`.**
