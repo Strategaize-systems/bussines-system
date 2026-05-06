@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.3 SLC-631 /frontend code-side done 2026-05-06** (RPT-326). Alle 7 MTs implementiert: MT-7 (npm audit fix non-breaking 9→6 + BL-Dedup BL-427/428/429 + neuer BL-430 V6.4-Defer), MT-1 (rule-builder.tsx useState lazy-init), MT-6 (trigger-sources.ts Doku + SLC-622 AC12 Wortlaut), MT-2 (Sidebar-Eintrag Workflow-Automation in settings/layout.tsx), MT-3 (payment-terms Page-Header-Refactor mit PaymentTermsPageContent-Wrapper + Adjust-State-During-Render-Pattern), MT-4 (BL-422 reverse-charge-revert.ts Pure-Function + 20 Vitest + proposal-editor.tsx Wiring), MT-5 (ISSUE-050 audit/format.ts Pure-Function + 12 Vitest + audit-log-client.tsx Wire-Up). Slice-Level-Verification: Lint clean fuer 12 V6.3-Files (Repo-Baseline 166 Errors unveraendert), Build success in 13.2s, Vitest 393/393 PASS (361 Baseline + 32 neu). Live-Smoke nach Coolify-Redeploy steht im /qa-Schritt aus. V6.2 stable seit 2026-05-06 als REL-024 (Image-Tag 766e4ac), bleibt Last Stable Version. Naechster Schritt = /qa SLC-631.
-- Current Phase: V6.3 SLC-631 /frontend code-side done. Naechster Schritt = /qa SLC-631 (Live-Smoke nach Coolify-Redeploy).
+- Current Focus: **V6.3 SLC-631 /qa Live-Smoke PASS 2026-05-06** (RPT-327). Alle 5 Browser-Smokes (MT-1..MT-5) gegen Live-Image `f7fd2310...` (Coolify-Redeploy 14:17) verifiziert: MT-1 Mobile-Fallback @375px (Smartphone-Icon-Card), MT-2 Sidebar-Workflow-Eintrag mit Zap-Icon + Active-State, MT-3 Page-Header "Neue Vorlage" rechts oben + createNonce-Re-Open-Pattern, MT-4 RC-Drift-Fix Server-Reject Defense-in-Depth via Race-Path (mid-session SQL-Update Branding-vat_id=NULL → Toggle-Click → DB unveraendert, kein Audit-Insert), MT-5 ISSUE-050 Audit-Log doppelt-verschachtelte Workspace-Auto-Save-Eintraege rendern lesbar (`title: A → B`) + V5.7 flat backward compat. AC-9 Vitest 393/393 lokal PASS. AC-10 alle 6 funktionalen MTs Live-bestaetigt. Test-Artefakte (Branding-vat_id + Proposal-State) wiederhergestellt. SLC-631 release-bereit. Naechster Schritt = /final-check V6.3.
+- Current Phase: V6.3 SLC-631 /qa PASS. Naechster Schritt = /final-check V6.3 → /go-live V6.3 → /deploy als REL-025.
 
 ## Immediate Next Steps
-1. **User-Coolify-Redeploy** auf neuen Commit-Tag fuer SLC-631 — User triggert manuell via Coolify-UI. Container-Tag wird dann verfuegbar.
-2. **/qa SLC-631** — 5 Browser-Smokes (Mobile-Fallback rule-builder, Sidebar-Eintrag, Page-Header-Button payment-terms, RC-Toggle-Reject-Revert mit Test-Proposal ohne vat_id, Audit-Log update-Render) + AC-9 lokal Vitest.
-3. **/final-check V6.3** + **/go-live V6.3** + **/deploy als REL-025** mit User-Coolify-Redeploy.
+1. **/final-check V6.3** — Hygiene-Audit (Dependencies, Secrets, Lint-Baseline-Drift, Cron-Health, MIG-Stand).
+2. **/go-live V6.3** — Release-Risk explicit machen, Internal-Test-Mode-Bestaetigung.
+3. **/deploy als REL-025** — User-Coolify-Redeploy + Live-Smoke-Confirmation.
 4. **(Optional, empfohlen)** Workflow-Trigger-End-to-End-Smoke aus V6.2 (1 Test-Rule aktivieren → Stage-Change auf Test-Deal → automation_run-Insert + Activity-Insert verifizieren).
 5. **(Post-Launch-Phase, ~1-2 Wochen Beobachtung)** /post-launch V6.2 + V6.3 — Live-Stability + erste echte User-Workflows beobachten.
 6. **(Naechster Major-Schritt nach V6.3)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503, reduzierter Scope nach V6.2-Auslagerung).
