@@ -4,13 +4,16 @@
 // Priority 2: campaigns.name = utm_campaign (case-insensitive trim)
 // Returnt campaign.id oder null.
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { UtmParams } from "@/types/campaign";
 
 export async function resolveCampaignFromUtm(
   utm: UtmParams
 ): Promise<string | null> {
-  const supabase = await createClient();
+  // Admin-Client (service_role) noetig: Aufrufer ist Lead-Intake-API mit
+  // Bearer-Auth (kein User-Cookie). User-Client liefe als anon und
+  // RLS auf campaigns blockt den Lookup → silent campaign_id=null.
+  const supabase = createAdminClient();
 
   // Priority 1: external_ref Match
   if (utm.utm_source === "system4" && utm.utm_content) {

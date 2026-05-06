@@ -166,8 +166,11 @@ export async function POST(request: Request) {
     wasNew = true;
   }
 
-  // 5) Audit log (system insert, actor_id = NULL)
-  void supabase
+  // 5) Audit log (system insert, actor_id = NULL).
+  // Await ist Pflicht: ohne await wird der Insert in Serverless-/Container-
+  // Lifetimes nach dem Response nicht garantiert vollendet → Audit-Trail
+  // verloren. ~5-10ms Latency-Kosten sind akzeptabel.
+  await supabase
     .from("audit_log")
     .insert({
       actor_id: null,
