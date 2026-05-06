@@ -147,6 +147,17 @@ function DealStageChangedSubForm({
     ? stages.filter((s) => s.pipeline_id === config.pipeline_id)
     : [];
 
+  // base-ui SelectValue rendert per Default den Raw-Value (UUID) ohne
+  // Render-Callback. Pattern aus ISSUE-052: Function-Child mappt UUID auf Label.
+  const renderPipeline = (value: string) => {
+    if (value === "__any__") return "Alle Pipelines";
+    return pipelines.find((p) => p.id === value)?.name ?? value;
+  };
+  const renderStage = (value: string) => {
+    if (value === "__any__") return "Alle Stages";
+    return stages.find((s) => s.id === value)?.name ?? value;
+  };
+
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
       <p className="text-xs text-slate-600">
@@ -167,7 +178,7 @@ function DealStageChangedSubForm({
             }}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue>{renderPipeline}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__any__">Alle Pipelines</SelectItem>
@@ -193,7 +204,7 @@ function DealStageChangedSubForm({
             disabled={!config.pipeline_id}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue>{renderStage}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__any__">Alle Stages</SelectItem>
@@ -219,6 +230,10 @@ function DealCreatedSubForm({
   pipelines: PipelineOption[];
   onChange: (c: { pipeline_id?: string }) => void;
 }) {
+  const renderPipeline = (value: string) => {
+    if (value === "__any__") return "Alle Pipelines";
+    return pipelines.find((p) => p.id === value)?.name ?? value;
+  };
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2">
       <p className="text-xs text-slate-600">
@@ -233,7 +248,7 @@ function DealCreatedSubForm({
         }}
       >
         <SelectTrigger>
-          <SelectValue />
+          <SelectValue>{renderPipeline}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="__any__">Alle Pipelines</SelectItem>

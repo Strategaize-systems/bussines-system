@@ -1,5 +1,21 @@
 # Known Issues
 
+### ISSUE-056 — Kampagnen-Verwaltung nicht in Settings-Landing-Page verlinkt
+- Status: resolved
+- Severity: Medium
+- Area: UI / Settings-Navigation / V6.2
+- Summary: V6.2 SLC-624 hat `/settings/campaigns/page.tsx` als Listing erstellt, aber die Settings-Landing-Page (`cockpit/src/app/(app)/settings/page.tsx`) listet nur 5 Link-Karten (Meeting, Branding, Zahlungsbedingungen, Workflow-Automation, Einwilligungstexte) + Inline-Sections (ImapStatus, PipelineConfig, TemplatesConfig). Kampagnen-Karte wurde nicht ergaenzt.
+- Impact: User findet `/settings/campaigns` nur ueber Direkt-URL, da auch in der Sidebar kein Kampagnen-Link existiert. Funktion arbeitet, aber UX-blockiert (effektiv unsichtbar).
+- Resolution: 2026-05-06 in V6.2-Hotfix. Neue Link-Karte "Kampagnen" → `/settings/campaigns` in `settings/page.tsx` zwischen Workflow-Automation und Einwilligungstexte. `Megaphone`-Icon aus `lucide-react`, `bg-sky-50` Background-Tint zur visuellen Differenzierung von Workflow-Karte. Build clean, Vitest 361/361 PASS.
+
+### ISSUE-055 — Workflow-Wizard zeigt Pipeline+Stage UUIDs statt Labels
+- Status: resolved
+- Severity: Medium
+- Area: UI / Workflow-Wizard / V6.2
+- Summary: Im Wizard `/settings/automation/new` Schritt 1 "Trigger" zeigen die Dropdowns "Pipeline" + "Stage (Ziel)" (DealStageChangedSubForm) sowie "Pipeline" (DealCreatedSubForm) nach Auswahl die rohe UUID statt des lesbaren Namens. Pattern identisch zu ISSUE-052 (PaymentTerms-Dropdown V5.7-Fix): base-ui `<SelectValue />` rendert per Default den Raw-Value-String (UUID) ohne Render-Callback.
+- Impact: User sieht UUIDs wie `b0000000-0000-0000-0000-000000000002` statt "Sales-Pipeline" und `12993d55-4c15-4392-8e5d-d2ec242557cc` statt z.B. "Closed Won". Funktional intakt — die richtigen IDs werden korrekt persistiert und der Workflow funktioniert. Nur die Trigger-Anzeige ist unleserlich.
+- Resolution: 2026-05-06 in V6.2-Hotfix. `cockpit/src/app/(app)/settings/automation/_components/step-trigger.tsx` an 3 Stellen: `renderPipeline` + `renderStage`-Helper-Funktionen (mappen `__any__` auf "Alle Pipelines"/"Alle Stages" und UUID auf `pipeline.name`/`stage.name`), als Function-Child von `<SelectValue>{renderFn}</SelectValue>` analog ISSUE-052. Build clean, Vitest 361/361 PASS, kein neuer Lint-Error.
+
 ### ISSUE-054 — EXPORT_API_KEY-ENV nicht im Coolify-Container gesetzt
 - Status: resolved
 - Severity: High

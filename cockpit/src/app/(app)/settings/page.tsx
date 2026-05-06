@@ -5,7 +5,7 @@ import { getEmailTemplates } from "./template-actions";
 import { getImapSyncStatus } from "./imap-actions";
 import { ImapStatus } from "./imap-status";
 import { getCurrentUserRole } from "@/lib/audit";
-import { Shield, Bell, FileText, Palette, Receipt, Zap } from "lucide-react";
+import { Shield, Bell, FileText, Palette, Receipt, Zap, Megaphone } from "lucide-react";
 import Link from "next/link";
 import type { PipelineStage } from "../pipeline/actions";
 
@@ -106,6 +106,21 @@ export default async function SettingsPage() {
             <div>
               <p className="text-sm font-medium text-slate-900">Workflow-Automation</p>
               <p className="text-sm text-slate-500">Wenn-Dann-Regeln fuer Routine-Reaktionen (Stage-Change, Activity, Deal-Create)</p>
+            </div>
+          </div>
+        </div>
+      </Link>
+
+      {/* Kampagnen link */}
+      <Link href="/settings/campaigns" className="block">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:bg-slate-50">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-50">
+              <Megaphone className="h-4 w-4 text-sky-600" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-900">Kampagnen</p>
+              <p className="text-sm text-slate-500">Kampagnen-Verwaltung mit Tracking-Links + Performance-KPIs (Klicks, Leads, Deals, Conversion-Rate)</p>
             </div>
           </div>
         </div>
