@@ -184,4 +184,67 @@ CREATE INDEX IF NOT EXISTS idx_deals_campaign
 -- ============================================================================
 -- PHASE 3 (SLC-625) — Tracking-Links + Click-Log
 -- ============================================================================
--- TODO SLC-625: Phase 3 hier einfuegen (campaign_links + campaign_link_clicks)
+-- Aktiviert mit SLC-625 Implementation (FEAT-622, DEC-137 + DEC-138).
+-- Re-Apply nach SLC-624 — Campaigns bleiben unangetastet, jetzt kommen
+-- campaign_links + campaign_link_clicks dazu.
+-- ============================================================================
+
+-- 3.1  campaign_links — Tracking-Link-Definition pro Kampagne
+-- Token ist 8-char base64url (DEC-137), pro Kampagne mehrere Links moeglich.
+CREATE TABLE IF NOT EXISTS campaign_links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+  token TEXT NOT NULL UNIQUE,
+  target_url TEXT NOT NULL,
+  utm_source TEXT NOT NULL,
+  utm_medium TEXT NOT NULL,
+  utm_campaign TEXT NOT NULL,
+  utm_content TEXT NULL,
+  utm_term TEXT NULL,
+  label TEXT NULL,
+  click_count INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT campaign_links_target_url_chk CHECK (target_url ~* '^https?://')
+);
+
+CREATE INDEX IF NOT EXISTS idx_campaign_links_campaign
+  ON campaign_links (campaign_id);
+
+-- 3.2  campaign_link_clicks — Click-Log mit IP-Hash (DSGVO)
+-- ip_hash = SHA-256(ip + IP_HASH_SALT) — Klartext-IP wird nie persistiert.
+-- Index ist Cleanup-vorbereitet fuer 90-Tage-Retention (BL V6.3+).
+CREATE TABLE IF NOT EXISTS campaign_link_clicks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  link_id UUID NOT NULL REFERENCES campaign_links(id) ON DELETE CASCADE,
+  clicked_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ip_hash TEXT NULL,
+  user_agent TEXT NULL,
+  referer TEXT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_campaign_link_clicks_link_time
+  ON campaign_link_clicks (link_id, clicked_at DESC);
+
+-- 3.3  RLS Policies — Single-User V1: full-access fuer authenticated
+ALTER TABLE campaign_links ENABLE ROW LEVEL SECURITY;
+ALTER TABLE campaign_link_clicks ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS campaign_links_full_access ON campaign_links;
+CREATE POLICY campaign_links_full_access
+  ON campaign_links
+  FOR ALL
+  TO authenticated
+  USING (true)
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS campaign_link_clicks_full_access ON campaign_link_clicks;
+CREATE POLICY campaign_link_clicks_full_access
+  ON campaign_link_clicks
+  FOR ALL
+  TO authenticated
+  USING (true)
+  WITH CHECK (true);
+
+-- 3.4  GRANTS — service_role + authenticated brauchen explizite Table-GRANTs
+GRANT ALL ON campaign_links TO authenticated, service_role;
+GRANT ALL ON campaign_link_clicks TO authenticated, service_role;

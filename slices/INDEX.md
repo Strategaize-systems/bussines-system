@@ -244,4 +244,4 @@
 | SLC-622 | [Workflow-Automation Engine (Action-Executor + Cron-Fallback + Stage-Soft-Disable)](SLC-622-automation-engine.md) | FEAT-621 | done | Blocker | 2026-05-05 |
 | SLC-623 | [Workflow-Automation Builder-UI (Listing + 4-Step-Form + Trockenlauf)](SLC-623-automation-builder-ui.md) | FEAT-621 | done | High | 2026-05-05 |
 | SLC-624 | [Campaigns Foundation (Schema + CRUD + Stammdaten-Dropdown)](SLC-624-campaigns-foundation.md) | FEAT-622 | done | Blocker | 2026-05-05 |
-| SLC-625 | [Tracking-Links + Reporting + Read-API + Funnel-Filter](SLC-625-tracking-reporting-api.md) | FEAT-622 | planned | High | 2026-05-05 |
+| SLC-625 | [Tracking-Links + Reporting + Read-API + Funnel-Filter](SLC-625-tracking-reporting-api.md) | FEAT-622 | done | High | 2026-05-06 |

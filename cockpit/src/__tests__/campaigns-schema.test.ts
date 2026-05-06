@@ -161,3 +161,86 @@ describe("MIG-029 Phase 2 — Campaigns Schema", () => {
     });
   });
 });
+
+// V6.2 SLC-625 MT-10 — Phase 3 Schema Smoke-Test
+describe("MIG-029 Phase 3 — Tracking-Links + Click-Log", () => {
+  describe("campaign_links Tabelle", () => {
+    it("CREATE TABLE mit allen Pflichtspalten", () => {
+      expect(sql).toMatch(/CREATE TABLE IF NOT EXISTS campaign_links/);
+      expect(sql).toMatch(/campaign_id UUID NOT NULL REFERENCES campaigns\(id\) ON DELETE CASCADE/);
+      expect(sql).toMatch(/token TEXT NOT NULL UNIQUE/);
+      expect(sql).toMatch(/target_url TEXT NOT NULL/);
+      expect(sql).toMatch(/utm_source TEXT NOT NULL/);
+      expect(sql).toMatch(/utm_medium TEXT NOT NULL/);
+      expect(sql).toMatch(/utm_campaign TEXT NOT NULL/);
+      expect(sql).toMatch(/utm_content TEXT NULL/);
+      expect(sql).toMatch(/utm_term TEXT NULL/);
+      expect(sql).toMatch(/click_count INTEGER NOT NULL DEFAULT 0/);
+    });
+
+    it("CHECK-Constraint fuer http(s)://-Prefix", () => {
+      expect(sql).toMatch(/CONSTRAINT campaign_links_target_url_chk CHECK \(target_url ~\* '\^https\?:\/\/'\)/);
+    });
+
+    it("Index auf campaign_id", () => {
+      expect(sql).toMatch(/CREATE INDEX IF NOT EXISTS idx_campaign_links_campaign\s*\n\s*ON campaign_links \(campaign_id\)/);
+    });
+
+    it("RLS aktiv + Policy fuer authenticated", () => {
+      expect(sql).toMatch(/ALTER TABLE campaign_links ENABLE ROW LEVEL SECURITY/);
+      expect(sql).toMatch(/DROP POLICY IF EXISTS campaign_links_full_access/);
+      expect(sql).toMatch(/CREATE POLICY campaign_links_full_access[\s\S]+?TO authenticated/);
+    });
+
+    it("GRANTS auf authenticated + service_role", () => {
+      expect(sql).toMatch(/GRANT ALL ON campaign_links TO authenticated, service_role/);
+    });
+  });
+
+  describe("campaign_link_clicks Tabelle", () => {
+    it("CREATE TABLE mit Pflichtspalten + ip_hash", () => {
+      expect(sql).toMatch(/CREATE TABLE IF NOT EXISTS campaign_link_clicks/);
+      expect(sql).toMatch(/link_id UUID NOT NULL REFERENCES campaign_links\(id\) ON DELETE CASCADE/);
+      expect(sql).toMatch(/clicked_at TIMESTAMPTZ NOT NULL DEFAULT now\(\)/);
+      expect(sql).toMatch(/ip_hash TEXT NULL/);
+      expect(sql).toMatch(/user_agent TEXT NULL/);
+      expect(sql).toMatch(/referer TEXT NULL/);
+    });
+
+    it("Cleanup-vorbereiteter Time-DESC-Index", () => {
+      expect(sql).toMatch(/CREATE INDEX IF NOT EXISTS idx_campaign_link_clicks_link_time\s*\n\s*ON campaign_link_clicks \(link_id, clicked_at DESC\)/);
+    });
+
+    it("RLS aktiv + GRANTS", () => {
+      expect(sql).toMatch(/ALTER TABLE campaign_link_clicks ENABLE ROW LEVEL SECURITY/);
+      expect(sql).toMatch(/CREATE POLICY campaign_link_clicks_full_access/);
+      expect(sql).toMatch(/GRANT ALL ON campaign_link_clicks TO authenticated, service_role/);
+    });
+  });
+
+  describe("CASCADE-Verhalten", () => {
+    it("campaign_links FK auf campaigns ON DELETE CASCADE", () => {
+      // Campaign-Delete -> alle zugehoerigen Links + clicks weg
+      expect(sql).toMatch(/REFERENCES campaigns\(id\) ON DELETE CASCADE/);
+    });
+
+    it("campaign_link_clicks FK auf campaign_links ON DELETE CASCADE", () => {
+      // Link-Delete -> alle zugehoerigen clicks weg
+      expect(sql).toMatch(/REFERENCES campaign_links\(id\) ON DELETE CASCADE/);
+    });
+  });
+
+  describe("Idempotenz", () => {
+    it("Phase 3 Statements nutzen IF NOT EXISTS / DROP-IF-EXISTS", () => {
+      const phase3 = sql.split("PHASE 3 (SLC-625)")[1] ?? "";
+      // 2 CREATE TABLE IF NOT EXISTS (links + clicks)
+      expect(phase3.match(/CREATE TABLE IF NOT EXISTS/g)?.length ?? 0).toBe(2);
+      // 2 CREATE INDEX IF NOT EXISTS
+      expect(phase3.match(/CREATE INDEX IF NOT EXISTS/g)?.length ?? 0).toBe(2);
+      // 2 DROP POLICY IF EXISTS
+      expect(phase3.match(/DROP POLICY IF EXISTS/g)?.length ?? 0).toBe(2);
+      // 2 GRANT ALL
+      expect(phase3.match(/GRANT ALL ON/g)?.length ?? 0).toBe(2);
+    });
+  });
+});

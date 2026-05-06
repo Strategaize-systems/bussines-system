@@ -98,14 +98,23 @@ export async function getPipelineStages(pipelineId: string) {
 
 // ── Deal queries ─────────────────────────────────────────────────────
 
-export async function getDealsForPipeline(pipelineId: string) {
+export async function getDealsForPipeline(
+  pipelineId: string,
+  options?: { campaignId?: string | null }
+) {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let q = supabase
     .from("deals")
     .select("*, contacts(id, first_name, last_name), companies(id, name)")
     .eq("pipeline_id", pipelineId)
     .order("created_at", { ascending: false });
 
+  // V6.2 SLC-625 — optionaler Campaign-Filter (DEC-139)
+  if (options?.campaignId) {
+    q = q.eq("campaign_id", options.campaignId);
+  }
+
+  const { data, error } = await q;
   if (error) throw new Error(error.message);
   return data as Deal[];
 }

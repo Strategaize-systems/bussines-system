@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/tabs";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import { getCampaign } from "../../settings/campaigns/actions";
+import { getClicksLast30Days, listCampaignLinks } from "./actions";
 import {
   type CampaignStatus,
   type CampaignType,
@@ -81,6 +82,16 @@ export default async function CampaignDetailPage({
   const { id } = await params;
   const campaign = await getCampaign(id);
   if (!campaign) notFound();
+
+  const [trackingLinks, clicks30d] = await Promise.all([
+    listCampaignLinks(id),
+    getClicksLast30Days(id),
+  ]);
+  const trackingClickTotal = trackingLinks.reduce(
+    (s, l) => s + (l.click_count ?? 0),
+    0
+  );
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
   return (
     <main className="px-8 py-8 space-y-6">
@@ -197,7 +208,10 @@ export default async function CampaignDetailPage({
             <TabsTrigger value="deals">
               Deals ({campaign.deal_count})
             </TabsTrigger>
-            <TabsTrigger value="tracking-links">Tracking-Links</TabsTrigger>
+            <TabsTrigger value="tracking-links">
+              Tracking-Links ({trackingLinks.length}
+              {trackingClickTotal > 0 ? ` · ${trackingClickTotal} Klicks` : ""})
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="leads">
@@ -207,7 +221,12 @@ export default async function CampaignDetailPage({
             <DealsTab campaignId={campaign.id} />
           </TabsContent>
           <TabsContent value="tracking-links">
-            <TrackingLinksTab />
+            <TrackingLinksTab
+              campaignId={campaign.id}
+              appUrl={appUrl}
+              initialLinks={trackingLinks}
+              clicksLast30Days={clicks30d}
+            />
           </TabsContent>
         </Tabs>
       </div>

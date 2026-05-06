@@ -185,7 +185,7 @@
 | ID | Feature | Status | Created |
 |----|---------|--------|---------|
 | FEAT-621 | Workflow-Automation Rule Builder (BL-135) | done | 2026-05-03 |
-| FEAT-622 | Kampagnen-Attribution + UTM-Tracking (BL-139) | in_progress | 2026-05-03 |
+| FEAT-622 | Kampagnen-Attribution + UTM-Tracking (BL-139) | done | 2026-05-03 |
 
 ## V7 Features (Multi-User + Teamlead — planned)
 

@@ -415,10 +415,40 @@
       "title": "Kampagnen-Attribution (Lead-Quelle + Kampagnen-Tracking)",
       "type": "feature",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V6.2",
-      "description": "Kampagnen als eigenes Objekt: Name, Typ (email|linkedin|event|ads|referral|other), Start/Ende, Status. FK contacts.campaign_id + companies.campaign_id + deals.campaign_id (additiv zu existierenden source*-Freitext-Feldern). UTM-Tracking-Links via /r/[token]-Redirector mit Click-Log (IP gehashed, retention 90d). Reporting-Page /campaigns/[id] (Lead/Deal/Won-KPIs + Tracking-Links-Tab) + Funnel-Report-Filter (FEAT-335) + Read-API GET /api/campaigns/[id]/performance fuer System 4 (Reuse FEAT-504). First-Touch-Attribution V1, kein Multi-Touch, kein Push-Webhook. Requirements done 2026-05-05 als FEAT-622 (RPT-308), naechste = /architecture.",
+      "description": "Kampagnen als eigenes Objekt: Name, Typ (email|linkedin|event|ads|referral|other), Start/Ende, Status. FK contacts.campaign_id + companies.campaign_id + deals.campaign_id (additiv zu existierenden source*-Freitext-Feldern). UTM-Tracking-Links via /r/[token]-Redirector mit Click-Log (IP gehashed, retention 90d). Reporting-Page /campaigns/[id] (Lead/Deal/Won-KPIs + Tracking-Links-Tab) + Funnel-Report-Filter (FEAT-335) + Read-API GET /api/campaigns/[id]/performance fuer System 4 (Reuse FEAT-504). First-Touch-Attribution V1. Done 2026-05-06 mit SLC-624 + SLC-625, FEAT-622 vollstaendig.",
       "createdAt": "2026-04-03"
+    },
+    {
+      "id": "BL-427",
+      "title": "Click-Log-Cleanup-Cron (90-Tage-Retention)",
+      "type": "feature",
+      "priority": "low",
+      "status": "open",
+      "version": null,
+      "description": "Cron `campaign-cleanup` der campaign_link_clicks-Eintraege aelter als 90 Tage loescht. Index `idx_campaign_link_clicks_link_time DESC` ist bereits Cleanup-vorbereitet. V6.3+ Polish-Item — V1 toleriert <1000 Clicks/Tag.",
+      "createdAt": "2026-05-06"
+    },
+    {
+      "id": "BL-428",
+      "title": "Source-zu-Kampagne Bulk-Migration-Tool",
+      "type": "feature",
+      "priority": "low",
+      "status": "open",
+      "version": null,
+      "description": "Settings-Tool mit Bulk-Mapping-UI: User waehlt aus Liste alter source/source_detail-Werte und mappt zu Kampagnen. Per DEC-136 explizit V1 out-of-scope (additive Loesung — alte source* + neue campaign_id parallel).",
+      "createdAt": "2026-05-06"
+    },
+    {
+      "id": "BL-429",
+      "title": "Multi-Touch-Attribution-Tab fuer Lead-Detail",
+      "type": "feature",
+      "priority": "low",
+      "status": "open",
+      "version": null,
+      "description": "Tab auf Contact-Detail-Page der alle Click-Events mit Kampagnen-Bezug visualisiert (Multi-Touch-Journey). Daten sind via JOIN auf campaign_link_clicks + campaign_links bereits rekonstruierbar. V6.3+ wenn relevant — V1 zeigt First-Touch via campaign_id (DEC-138).",
+      "createdAt": "2026-05-06"
     },
     {
       "id": "BL-140",

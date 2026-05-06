@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Briefcase } from "lucide-react";
+import { Briefcase, Download } from "lucide-react";
 
 interface DealRow {
   id: string;
@@ -67,6 +67,20 @@ export async function DealsTab({ campaignId }: { campaignId: string }) {
   }
 
   return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-slate-500">
+          {deals.length} Deal{deals.length === 1 ? "" : "s"} dieser Kampagne
+        </p>
+        <a
+          href={`/api/campaigns/${campaignId}/export?type=deals`}
+          download
+          className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Export CSV
+        </a>
+      </div>
     <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
       <table className="w-full text-sm">
         <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
@@ -101,6 +115,7 @@ export async function DealsTab({ campaignId }: { campaignId: string }) {
           ))}
         </tbody>
       </table>
+    </div>
     </div>
   );
 }

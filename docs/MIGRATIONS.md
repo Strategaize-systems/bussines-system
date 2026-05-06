@@ -1,11 +1,11 @@
 # Migrations
 
 ### MIG-029 — V6.2 Workflow-Automation + Kampagnen-Attribution Schema
-- Date: 2026-05-05 (Phase 1 + Phase 2 applied auf Hetzner; Phase 3 SLC-625 ausstehend)
+- Date: 2026-05-06 (alle 3 Phasen applied auf Hetzner)
 - Apply-History:
   - Phase 1 (Workflow): applied via SLC-621 (2026-05-05) — automation_rules + automation_runs + Anti-Loop-UNIQUE
-  - Phase 2 (Campaigns): applied via SLC-624 (2026-05-05) — campaigns + 3 ALTER campaign_id FKs auf contacts/companies/deals + Partial-Indizes + RLS + GRANTS. Live-verifiziert via psql `\d campaigns`: 11 Spalten, 2 UNIQUE-Indizes (LOWER(name) + partial external_ref), 1 Partial-Index (status='active'), Date-Range-CHECK, RLS aktiv, 3 FK ON DELETE SET NULL.
-  - Phase 3 (Tracking-Links): pending SLC-625
+  - Phase 2 (Campaigns): applied via SLC-624 (2026-05-05) — campaigns + 3 ALTER campaign_id FKs auf contacts/companies/deals + Partial-Indizes + RLS + GRANTS. Live-verifiziert via psql `\d campaigns`: 12 Spalten, 2 UNIQUE-Indizes (LOWER(name) + partial external_ref), 1 Partial-Index (status='active'), Date-Range-CHECK, RLS aktiv, 3 FK ON DELETE SET NULL.
+  - Phase 3 (Tracking-Links): applied via SLC-625 (2026-05-06) — campaign_links (12 Spalten, UNIQUE-Token, target_url-CHECK https?://, FK CASCADE auf campaigns, idx_campaign_id) + campaign_link_clicks (id, link_id FK CASCADE, clicked_at, ip_hash, user_agent, referer, idx_link_id+clicked_at_DESC) + RLS + GRANTS. Live-verifiziert via psql `\d campaign_links` und `\d campaign_link_clicks`.
 - Scope: 7 additive Aenderungen in einer Migration:
   1. Neue Tabelle `automation_rules` (DEC-129..134, FEAT-621):
      - `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`

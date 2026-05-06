@@ -30,6 +30,9 @@ interface PipelineViewProps {
   companies: { id: string; name: string }[];
   referrals?: { id: string; label: string }[];
   currentSlug: string;
+  // V6.2 SLC-625 — optionaler Campaign-Filter (DEC-139)
+  campaigns?: Array<{ id: string; name: string }>;
+  selectedCampaignId?: string | null;
 }
 
 // Known slugs for built-in pipelines (static routes)
@@ -53,6 +56,8 @@ export function PipelineView({
   companies,
   referrals,
   currentSlug,
+  campaigns = [],
+  selectedCampaignId = null,
 }: PipelineViewProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -271,6 +276,29 @@ export function PipelineView({
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
+              {/* V6.2 SLC-625 — Campaign-Filter (DEC-139) */}
+              {campaigns.length > 0 && (
+                <select
+                  value={selectedCampaignId ?? "all"}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    const params = new URLSearchParams(window.location.search);
+                    if (v === "all") params.delete("campaign");
+                    else params.set("campaign", v);
+                    const qs = params.toString();
+                    router.push(`${window.location.pathname}${qs ? `?${qs}` : ""}`);
+                  }}
+                  className="px-3 py-2 rounded-lg border-2 border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#4454b8] cursor-pointer shrink-0 max-w-[200px]"
+                  title="Auf Kampagne filtern"
+                >
+                  <option value="all">Alle Kampagnen</option>
+                  {campaigns.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           </div>
         </div>
