@@ -10,17 +10,17 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.2 SLC-625 /backend done 2026-05-06.** FEAT-622 vollstaendig — V6.2 5/5 Slices durch. MIG-029 Phase 3 live applied: campaign_links (12 Spalten, UNIQUE-Token, target_url-CHECK https?://, FK CASCADE, idx_campaign_id) + campaign_link_clicks (mit ip_hash + Cleanup-vorbereitetem TIME-DESC-Index) + RLS + GRANTS. Code-Side: 4 Pure-Functions (token via crypto.randomBytes, hashIp SHA-256+ENV-Salt, appendUtmIfMissing URL-Param-Merge, resolveCampaignFromUtm hybrid external_ref+name DEC-135), 4 Tracking-Link Server-Actions (createCampaignLink mit 5x-Token-Retry, listCampaignLinks, deleteCampaignLink, getClicksLast30Days), Public Redirect `/r/[token]/route.ts` mit async Click-Log + read-modify-write click_count-Increment + 302 NoStore, Lead-Intake `POST /api/leads/intake` mit Bearer-Auth + First-Touch-Lock COALESCE DEC-138 + audit_log-Insert, Read-API `GET /api/campaigns/[id]/performance` mit Bearer-Auth + 11-Felder-JSON DEC-140, Tracking-Links-Tab UI (Coming-Soon ersetzt) mit NewLinkModal + Copy-Token-URL + Sparkline-Chart + Delete-Confirm-mit-CASCADE-Warnung, Funnel-Filter Campaign-Dropdown im /pipeline-Filter-Bar mit URL-Param-Persistenz DEC-139, CSV-Export `/api/campaigns/[id]/export?type=leads|deals` (Server-side Auth, attachment-Download). 27 Vitest-Files / 361/361 Tests PASS (von 330 nach SLC-624). TSC clean (modulo skonto-revert pre-existing V5.7). ESLint clean auf V6.2-Files. Bereit fuer /qa SLC-625 + Gesamt-/qa V6.2 + /final-check + /go-live + /deploy als REL-024.
-- Current Phase: V6.2 5/5 Slices done. FEAT-621 done, FEAT-622 done. Naechster Schritt /qa SLC-625 + Gesamt-/qa V6.2.
+- Current Focus: **V6.2 SLC-625 /qa PASS 2026-05-06** (RPT-320). Live-Smoke deckte 3 /backend-Bugs auf, alle in zwei Hotfix-Cycles behoben (Commits `fd7dda8` Middleware-publicPaths + `dc9ea14` Mapper-Admin-Client + Audit-Log-await). Image-Tag `dc9ea14` live healthy. Alle 14 QA-Fokus-Punkte verifiziert: Schema-Live, Token-UNIQUE-Constraint live, Public Redirect 302+UTM+CASCADE, click_count-Increment, ip_hash SHA-256 (DSGVO kein Klartext), Latency TTFB warm 92-118ms (AC10 marginal Low), Lead-Intake 401/200 + First-Touch-Lock-Pattern + Audit-Log persistiert + campaign_id-Match via external_ref greift, Read-API 401/200/404 + 12 KPI-Felder, Funnel-Filter + CSV-Export Code-Review verdrahtet, Test-Daten-Cleanup CASCADE-verified. 361/361 Vitest grün. ISSUE-054 resolved (User hat EXPORT_API_KEY+IP_HASH_SALT in Coolify-ENV gesetzt). FEAT-622 + V6.2 5/5 Slices vollstaendig done, code-stable, bereit fuer Gesamt-/qa V6.2 + /final-check + /go-live + /deploy als REL-024.
+- Current Phase: V6.2 5/5 Slices done + SLC-625 /qa PASS. Naechster Schritt = Gesamt-/qa V6.2.
 
 ## Immediate Next Steps
-1. **/qa SLC-625** — Schema-Smoke (campaign_links + campaign_link_clicks Live-CASCADE), Token-Uniqueness (1000x), Public-Redirect-Smoke (curl `/r/<token>` → 302 + Click-Count-Increment + ip_hash NICHT klartext), Lead-Intake-Smoke (curl POST + UTM-Body + 2nd-Call First-Touch-Lock-Verify), Read-API-Smoke (curl GET + Bearer + 11 Felder + 401 ohne Auth), Funnel-Filter-Smoke (`/pipeline?campaign=<id>`), CSV-Export.
-2. **Gesamt-QA V6.2** — End-to-End ueber alle 5 Slices.
-3. **/final-check + /go-live + /deploy** als REL-024.
-4. **(Pre-Production-spaeter)** IP_HASH_SALT-ENV setzen, BL-427 Cleanup-Cron, BL-428 Source-Migration-Tool, BL-429 Multi-Touch-Tab.
-3. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
-4. **(V6.3-Polish)** L1 Lint-Cleanup rule-builder.tsx:57 + L2 Settings-Sub-Nav fuer Workflow-Automation + Kampagnen + L3 Primary-Button-Position vereinheitlichen.
-5. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
+1. **Gesamt-/qa V6.2** — End-to-End ueber alle 5 Slices (SLC-621..625): Workflow-Automation-Engine, Trigger-Quellen, Action-Library, Campaigns-CRUD + Detail-Page, Tracking + Reporting + Lead-Intake + Read-API.
+2. **/final-check V6.2** — Hygiene, Dependencies, Security.
+3. **/go-live + /deploy** als REL-024.
+4. **(Pre-Production-spaeter)** BL-427 Cleanup-Cron, BL-428 Source-Migration-Tool, BL-429 Multi-Touch-Tab.
+5. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
+6. **(V6.3-Polish)** L1 Lint-Cleanup rule-builder.tsx:57 + L2 Settings-Sub-Nav fuer Workflow-Automation + Kampagnen + L3 Primary-Button-Position vereinheitlichen.
+7. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
