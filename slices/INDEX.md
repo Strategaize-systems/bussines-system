@@ -245,3 +245,9 @@
 | SLC-623 | [Workflow-Automation Builder-UI (Listing + 4-Step-Form + Trockenlauf)](SLC-623-automation-builder-ui.md) | FEAT-621 | done | High | 2026-05-05 |
 | SLC-624 | [Campaigns Foundation (Schema + CRUD + Stammdaten-Dropdown)](SLC-624-campaigns-foundation.md) | FEAT-622 | done | Blocker | 2026-05-05 |
 | SLC-625 | [Tracking-Links + Reporting + Read-API + Funnel-Filter](SLC-625-tracking-reporting-api.md) | FEAT-622 | done | High | 2026-05-06 |
+
+## V6.3 Slices (Polish-Sprint)
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-631 | [V6.3 Polish-Bündel (BL-426 + BL-422 + ISSUE-050 + L4 + L5 + BL-Dedup)](SLC-631-v63-polish-bundle.md) | BL-426 + BL-422 + ISSUE-050 | planned | Medium | 2026-05-06 |

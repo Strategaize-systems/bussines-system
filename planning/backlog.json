@@ -1838,7 +1838,7 @@
       "type": "bug",
       "priority": "low",
       "status": "open",
-      "version": null,
+      "version": "V6.3",
       "description": "In Gesamt-/qa V5.7 (RPT-301) als Wiring-Trace-Observation entdeckt: Der Reverse-Charge-Toggle im Editor (proposal-editor.tsx handleReverseChargeToggle) hat strukturell den gleichen UI-State-Drift wie der frueher gefixte Skonto-Toggle (BL-419/ISSUE-049). Wenn der User RC ON toggled obwohl Voraussetzungen fehlen (z.B. branding.vat_id oder company.vat_id leer), lehnt der Server validateReverseCharge ab. Optimistic-State bleibt jedoch auf {reverse_charge: true, tax_rate: 0} bis Page-Reload. DB ist immer korrekt, validateRC greift mit klarer Fehlermeldung. SLC-572 hat den Skonto-Pfad mit useRef-last-known-good + revertPatchIfSkontoFailed gefixt; analoges Pattern (revertPatchIfReverseChargeFailed + lastKnownGoodReverseChargeRef) waere fuer RC moeglich. Low-Severity weil DB-State korrekt, nur UX-cosmetic, selbstheilend. Aufwand ~30-45min Pure-Function + Editor-Wiring.",
       "createdAt": "2026-05-04"
     },
