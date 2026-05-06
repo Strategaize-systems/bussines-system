@@ -180,12 +180,12 @@
 | FEAT-571 | NL-VAT-Saetze + Reverse-Charge (BL-417) | deployed | [Spec](FEAT-571-nl-vat-reverse-charge.md) | 2026-05-03 |
 | FEAT-572 | Skonto-Toggle UI-State-Drift Bugfix (BL-419) | deployed | [Spec](FEAT-572-skonto-toggle-bugfix.md) | 2026-05-03 |
 
-## V6.2 Features (Automation + Attribution — planned)
+## V6.2 Features (Automation + Attribution — released 2026-05-06 als REL-024)
 
 | ID | Feature | Status | Created |
 |----|---------|--------|---------|
-| FEAT-621 | Workflow-Automation Rule Builder (BL-135) | done | 2026-05-03 |
-| FEAT-622 | Kampagnen-Attribution + UTM-Tracking (BL-139) | done | 2026-05-03 |
+| FEAT-621 | Workflow-Automation Rule Builder (BL-135) | deployed | 2026-05-03 |
+| FEAT-622 | Kampagnen-Attribution + UTM-Tracking (BL-139) | deployed | 2026-05-03 |
 
 ## V7 Features (Multi-User + Teamlead — planned)
 

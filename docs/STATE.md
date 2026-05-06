@@ -9,14 +9,18 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: **V6.2 Go-Live-Decision: GO 2026-05-06** (RPT-323). Release-Target: Production auf Hetzner-Coolify (Internal-Test-Mode bleibt aktiv). Basis: RPT-321 Gesamt-/qa PASS + RPT-322 Final-Check READY. 0 Blocker, 0 Required-Fixes-Before-Release. Operational-Minima fuer Self-hosted Stack erfuellt: Container app+db Up healthy auf dc9ea14, ENVs (EXPORT_API_KEY, CRON_SECRET, IP_HASH_SALT) gesetzt, Auth-Gates 7/7, RLS+GRANTS auf 5 V6.2-Tabellen, MIG-029 alle 3 Phasen applied, FK-CASCADEs verifiziert, Vitest 361/361 PASS, Build success. Akzeptierte Residual-Risks transparent dokumentiert: 1 Post-Deploy-Manuelle-Aktion (Coolify-Cron automation-runner mit Anleitung in REL-024), 7 V1-Limits (Action-Idempotenz, Click-Log-Skalierung, click_count-Race, First-Touch-Lock, Public-Redirect ohne Rate-Limit, Trigger-Source-Coverage AC12-Wortlaut, IP_HASH_SALT V1-Default), 11 pre-V6.2 Issues weiter offen (alle vorher klassifiziert), ISSUE-050 V6.3-Polish, ISSUE-042 + Compliance-Gate Pre-Production-spaeter. Rollback-Anker: REL-023 Image-Tag 908eb81. V6.2 bereit fuer /deploy als REL-024.
-- Current Phase: V6.2 Go-Live-Decision: GO. Naechster Schritt = /deploy V6.2 als REL-024.
+- High-Level State: stable
+- Current Focus: **V6.2 RELEASED 2026-05-06 als REL-024** (Image-Tag `766e4ac`). Workflow-Automation + Kampagnen-Attribution live auf Hetzner via Coolify-Redeploy. 5 Slices SLC-621..625 deployed, FEAT-621+622 deployed, MIG-029 alle 3 Phasen applied. V6.2-Hotfix mit ISSUE-055 (Workflow-Wizard UUID-Display) + ISSUE-056 (Kampagnen-Settings-Karte) im Same-Day-Cycle nach erstem Live-Smoke gefixt + redeployed. User-Smoke OK: Workflow-Wizard rendert Pipeline+Stage-Namen, Settings-Page zeigt Kampagnen-Karte (Megaphone-Icon, sky-blau). Coolify-Cron `automation-runner` aktiv (jede Minute, picked=0). ENVs (EXPORT_API_KEY, CRON_SECRET, IP_HASH_SALT) gesetzt. Internal-Test-Mode bleibt aktiv bis Pre-Production-Compliance-Gate (User-Direktive 2026-05-01 "kommt viel später"). Naechster Schritt = /post-launch oder /requirements V7 (Multi-User+Teamlead). **Cockpit-Refresh empfohlen** damit V6.2-Records sichtbar werden.
+- Current Phase: V6.2 RELEASED. Stable seit 2026-05-06.
 
 ## Immediate Next Steps
-1. **/deploy V6.2** als REL-024 — Coolify-Redeploy auf HEAD `66a0f62`, Records-Updates (roadmap V6.2 → released, feature-INDEX done → deployed, REL-024 Date + Image-Tag finalisieren), Coolify-Cron `automation-runner` anlegen, Smoke-Test ausfuehren.
-2. **(Post-Deploy-Smoke)** Workflow-Trigger-End-to-End als Internal-Test-Mode-Smoke (1 Test-Rule aktivieren → Stage-Change → automation_run-Insert → Action-Execution + Activity-Insert).
-3. **(Im /deploy mit-aktualisieren)** STATE.md Active-Scope-Section auf V6.2 (Doku-Drift L3 aus RPT-322).
+1. **(Optional, empfohlen)** Workflow-Trigger-End-to-End-Smoke (1 Test-Rule aktivieren → Stage-Change auf Test-Deal → automation_run-Insert + Activity-Insert verifizieren).
+2. **(Post-Launch-Phase, ~1-2 Wochen Beobachtung)** /post-launch V6.2 — Live-Stability + erste echte User-Workflows beobachten.
+3. **(Naechster Major-Schritt)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503, reduzierter Scope nach V6.2-Auslagerung).
+4. **(Pre-Production-spaeter)** BL-427 Cleanup-Cron, BL-428 Source-Migration-Tool, BL-429 Multi-Touch-Tab.
+5. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer als V6.3-Polish-Slice spaeter fixen.
+6. **(V6.3-Polish-Bündel)** L1 Lint-Cleanup rule-builder.tsx:57 + L2 Settings-Sub-Nav (war ISSUE-056, bereits resolved) + L3 Primary-Button-Position vereinheitlichen + L4 trigger-sources.ts AC12-Wortlaut/dispatcher-Coverage Doku-Update + L5 npm audit fix --force (mit Breaking-Changes pruefen).
+7. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
 4. **(Pre-Production-spaeter)** BL-427 Cleanup-Cron, BL-428 Source-Migration-Tool, BL-429 Multi-Touch-Tab.
 5. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
 6. **(V6.3-Polish)** L1 Lint-Cleanup rule-builder.tsx:57 + L2 Settings-Sub-Nav fuer Workflow-Automation + Kampagnen + L3 Primary-Button-Position vereinheitlichen + L4 trigger-sources.ts AC12-Wortlaut/dispatcher-Coverage Doku-Update + L5 STATE.md Active-Scope-Refresh nach V6.2-Release.
@@ -28,7 +32,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - V7 — reduziert auf Multi-User + Teamlead (FEAT-502/503)
 
 ## Active Scope
-**V5.7 — NL+DE-Compliance + Polish (in_progress, SLC-571 done 2026-05-04, SLC-572 planned):**
+**V6.2 — Workflow-Automation + Kampagnen-Attribution (RELEASED 2026-05-06 als REL-024, Image-Tag `766e4ac`):**
+- FEAT-621 Workflow-Automation Rule Builder (deployed 2026-05-06, FEAT-621, BL-135): 3 Trigger (deal.stage_changed, deal.created, activity.created), 4 Actions (create_task, send_email_template, create_activity, update_field), Recursion-Guard (DEC-129), Stage-Soft-Disable (DEC-133), Cron-Fallback /api/cron/automation-runner (Coolify-Cron jede Minute, picked=0 in Smoke). Builder-UI Listing + 4-Step-Wizard + Trockenlauf-Modul (DEC-132 read-only). Audit-Log-Side-Effect mit triggered_by_user_id (DEC-131). 4 dispatcher-Pfade verdrahtet (pipeline.moveDealToStage/moveDealToPipeline/createDeal + activity-actions.createActivity).
+- FEAT-622 Kampagnen-Attribution + UTM-Tracking (deployed 2026-05-06, FEAT-622, BL-139): campaigns-Tabelle + 3 ALTER campaign_id auf contacts/companies/deals (ON DELETE SET NULL). 5 KPI-Cards + 3 Tabs auf Detail-Seite. Tracking-Links via /r/[token]-Redirector mit DSGVO IP-Hash (SHA-256+Salt). UTM→Campaign-Mapper hybrid (DEC-135 external_ref primary + LOWER(name)-ilike fallback). Lead-Intake POST /api/leads/intake mit Bearer EXPORT_API_KEY + First-Touch-Lock COALESCE (DEC-138). Read-API GET /api/campaigns/[id]/performance mit 12-Felder-JSON (DEC-140). Funnel-Filter Campaign-Dropdown im /pipeline-Filter-Bar (DEC-139). CSV-Export Leads + Deals.
+- V6.2-Hotfix Same-Day (Commit `766e4ac`): ISSUE-055 step-trigger.tsx renderPipeline/renderStage Function-Childs (3 SelectValue-Stellen, Pattern aus ISSUE-052), ISSUE-056 settings/page.tsx Kampagnen-Link-Karte zwischen Workflow + Compliance.
+- 5 Slices SLC-621..625 done. MIG-029 (3 Phasen) live. DEC-129..140 dokumentiert. RPT-310..324 Reports-Sequenz.
+
+**V5.7 — NL+DE-Compliance + Polish (RELEASED 2026-05-05 als REL-023):**
 - SLC-571 NL+DE-VAT-Saetze + Reverse-Charge (**done 2026-05-04**, FEAT-571, 9/9 MTs):
   - MT-1 MIG-028 (5 additive Aenderungen, idempotent angewendet auf Hetzner)
   - MT-2 vat-id.ts Validation-Layer (30/30 Vitest gruen)
@@ -57,10 +67,10 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 **Architektur-Entscheidungen V5.5:** DEC-105 pdfmake, DEC-106 HTML-Live-Preview, DEC-107 Snapshot inkl. price_at_creation, DEC-108 Status-Sent automatisch+manuell, DEC-109 V1-Status unangetastet, DEC-110 Cron 02:00 Berlin, DEC-111 Pfad-Schema, DEC-112 alle Status zeigen+Warning, DEC-113 Footer+Suffix-Watermark, DEC-114 5 Slices 1:1 zu Features.
 
 **Released (deployed):**
-- V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V5.5, V5.5.1, V6, V6.1
+- V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V5.5, V5.5.1, V5.6, V5.7, V6, V6.1, V6.2
 
 **Active:**
-- V6.2 — Automation + Attribution (Requirements done 2026-05-05, FEAT-621+622, naechste = /architecture)
+- aktuell keine — V6.2 stable seit 2026-05-06
 
 **Planned (Reihenfolge):**
 - V7 — Multi-User + Teamlead (Routing/Territories + Teamlead-Rolle, reduzierter Scope)
@@ -70,6 +80,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - aktuell keine
 
 ## Last Stable Version
+- V6.2 — 2026-05-06 — released auf Hetzner als REL-024 (Workflow-Automation + Kampagnen-Attribution: 5 Slices SLC-621..625, FEAT-621+622, MIG-029 alle 3 Phasen. Image-Tag `766e4ac` inkl. V6.2-Hotfix ISSUE-055 + ISSUE-056. Coolify-Cron `automation-runner` aktiv jede Minute. Internal-Test-Mode aktiv. RPT-321..324.)
 - V5.7 — 2026-05-05 — released auf Hetzner als REL-023 (NL+DE-VAT-Saetze + Reverse-Charge fuer EU-B2B-Cross-Border + Skonto-Toggle UI-State-Drift Bugfix mit 3 Follow-up-Fixes nach iterativen Live-Smoke-Runden. Image-Tag 908eb81, MIG-028 live, BTW-IDs in Branding+Companies, country-aware Steuersatz-Dropdown, bilingualer Reverse-Charge-PDF-Block, Validation-Gate vor Server-Save fuer Skonto-Edit. Internal-Test-Mode bleibt aktiv. RPT-298+301..306.)
 - V5.6 — 2026-05-03 — released auf Hetzner als REL-022 (Zahlungsbedingungen + Pre-Call Briefing: payment_terms_templates + Skonto + Split-Plan-Milestones + Briefing-Cron + ActivityBriefingCard, Internal-Test-Mode, Image-Tag a7b787d, MIG-027 live, Coolify-Cron meeting-briefing aktiv. Final-Smoke alle Endpoints PASS, RPT-272..286.)
 - V5.5.1 — 2026-05-01 — released auf Hetzner als REL-021 (Polish-Patch: Hydration-Mitigation + 3 V5.4-Carryover. Live-Image-Tag `4415928` Coolify-Deployment-ID 173 finished 07:50:22. app-Container healthy, HTTPS-Endpoint HTTP 200. TSC + Vitest 97/97 PASS pre-Deploy.)

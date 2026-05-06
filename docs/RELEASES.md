@@ -1,7 +1,8 @@
 # Releases
 
 ### REL-024 — V6.2 Workflow-Automation + Kampagnen-Attribution (Foundation + Engine + UI + Tracking)
-- Date: planned
+- Date: 2026-05-06
+- Image-Tag: `766e4ac` (V6.2-Hotfix: ISSUE-055 Workflow-Wizard UUID-Display + ISSUE-056 Kampagnen-Settings-Karte)
 - Scope: V6.2 Final-Release. Alle 5 Slices abgeschlossen.
   - **SLC-621** Workflow-Foundation (MIG-029 Phase 1, `automation_rules` + `automation_runs` + Anti-Loop-UNIQUE + 3 Indizes + RLS + GRANTS, Trigger-Source-Audit-Liste, Condition-Engine 9 Operators AND-only, Field-Whitelist mit PII-Schutz, Trigger-Dispatcher, 5 Server Actions Rule-CRUD)
   - **SLC-622** Workflow-Engine (Action-Executor + Run-Lock + TOCTOU-Re-Eval + Recursion-Guard, 4 Action-Types `create_task`/`send_email_template`/`create_activity`/`update_field`, assignee-resolver, template-renderer, Cron-Endpoint `/api/cron/automation-runner` als Defense-in-Depth-Fallback, Sync-Execution-Path im Dispatcher, Trigger-Verdrahtung in 4 zentralen User-Pfaden, Stage-Delete-Soft-Disable)
