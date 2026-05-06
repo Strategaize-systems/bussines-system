@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Palette, Receipt, Bell } from "lucide-react";
+import { Palette, Receipt, Bell, Zap } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +25,11 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
     label: "Briefing",
     href: "/settings/briefing",
     icon: Bell,
+  },
+  {
+    label: "Workflow-Automation",
+    href: "/settings/automation",
+    icon: Zap,
   },
 ];
 

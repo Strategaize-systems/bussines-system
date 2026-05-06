@@ -98,7 +98,7 @@ Im Anschluss-SLC-623 wird die Builder-UI live geschaltet.
 - AC9: Cron-Endpoint ohne valid CRON_SECRET returnt 401.
 - AC10: Stage-Delete einer von Regel referenzierten Stage fuehrt zu UPDATE rules SET status='paused', paused_reason='Pipeline-Stage "X" wurde geloescht'. Stage-Delete selbst geht erfolgreich durch.
 - AC11: Toast-Message bei Stage-Delete zeigt korrekte Pause-Count.
-- AC12: 7+ Trigger-Source-Pfade haben `dispatchAutomationTrigger`-Aufruf integriert (Audit-Liste in `trigger-sources.ts` zeigt `dispatches_now:true` fuer alle).
+- AC12: Alle aktiven primaeren User-Pfade haben `dispatchAutomationTrigger`-Aufruf integriert (V1-Reduktion: 4 von ~12 Trigger-Source-Audit-Eintraegen dispatchen, 8 sind in `trigger-sources.ts` mit `dispatches_now:false` dokumentiert + Begruendung). System-getriggerte Activities aus Cron-Pfaden loesen in V1 bewusst keine Workflows aus (siehe MT-6 Doku-Update fuer V6.3, RPT-321 Medium-Finding).
 - AC13: End-to-End-Test "Stage-Change → Workflow-Trigger → Action-Executor → Activity-Insert" gruen (Vitest gegen Coolify-DB, Standard-Latenz <30s erfuellt).
 - AC14: TypeScript-Build (`npm run build`) gruen.
 - AC15: Vitest (`npm run test`) gruen — neue Tests fuer executor, recursion-guard, cron-endpoint, integration-test.

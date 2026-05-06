@@ -25,10 +25,16 @@ export interface TriggerSourceEntry {
 /**
  * Alle bekannten Trigger-Quellen im Codebase.
  *
- * SLC-621 hat nur die Audit-Liste angelegt. SLC-622 hat die zentralen
- * User-Pfade in pipeline/actions.ts und lib/actions/activity-actions.ts
- * verdrahtet. Cron-Routes sind in V1 NOCH NICHT verdrahtet (nicht jeder
- * Cron erzeugt Activities; ggf. zukuenftige Erweiterung).
+ * V1-Reduktion (Stand V6.2 SLC-622 / V6.3 MT-6 Doku-Update):
+ * - 4 von ~12 Eintraegen dispatchen (`dispatches_now:true`): die zentralen
+ *   primaeren User-Pfade in pipeline/actions.ts und lib/actions/activity-actions.ts.
+ * - 8 Eintraege sind bewusst NICHT verdrahtet (`dispatches_now:false`) — siehe
+ *   notes-Feld pro Eintrag fuer die spezifische Begruendung. Gemeinsamer Nenner:
+ *   sekundaere User-Pfade (updateDeal, createMeeting, logCall, approveInsight)
+ *   delegieren entweder an einen primaeren Pfad oder sind nicht workflow-relevant
+ *   genug fuer V1; system-getriggerte Cron-Pfade (meeting-briefing, call-processing,
+ *   meeting-summary) loesen V1 keine Workflows aus weil sie audit_log mit
+ *   actor_id=NULL schreiben und einen eigenen dispatch-Pfad braeuchten.
  *
  * Slice-Annahme `(app)/deals/actions.ts` und `(app)/activities/actions.ts`
  * existiert nicht — alle Deal-Mutations leben in pipeline/actions.ts, alle
@@ -138,8 +144,12 @@ export function getDispatchersFor(event: TriggerEvent): TriggerSourceEntry[] {
 }
 
 /**
- * Helper: alle Pfade die NOCH NICHT dispatchen (V1-Baseline-Audit).
- * Diese Liste sollte nach SLC-622 MT-7 leer sein.
+ * Helper: alle Pfade die NICHT dispatchen.
+ * In V1 bewusst nicht-leer (~8 Eintraege) — sekundaere User-Pfade und
+ * Cron-Routes mit dokumentiertem `dispatches_now:false`. Wenn ein V2 oder
+ * spaeterer User-Use-Case einen dieser Pfade braucht, hier den Eintrag
+ * auf `dispatches_now:true` umstellen, dispatchAutomationTrigger im
+ * jeweiligen Handler einbauen und notes-Feld aktualisieren.
  */
 export function getMissingDispatchers(): TriggerSourceEntry[] {
   return TRIGGER_SOURCE_AUDIT.filter((e) => !e.dispatches_now);

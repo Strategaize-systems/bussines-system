@@ -49,13 +49,13 @@
 - Resolution: 2026-05-05 in V5.7-Follow-up. `isOn = (skonto_percent !== null || skonto_days !== null)` statt `(skonto_percent !== null)` — Inputs bleiben gemountet solange mindestens ein Feld einen Wert hat. Toggle-Click setzt beide auf null, dadurch isOn=false korrekt erhalten. Edge-Case "User Backspace BEIDE Felder gleichzeitig" ist akzeptabel (debounce-timer reset bei jedem Keystroke macht das in der Praxis irrelevant). DEC-126 / lastKnownGoodSkontoRef-Pattern bleibt unangetastet. **Hinweis:** Inputs bleiben zwar gemountet, aber das eigentliche Edit-Verhalten war erst nach ISSUE-053-Fix (Validation-Gate vor Server-Save) tatsaech.lich benutzbar.
 
 ### ISSUE-050 — Audit-Log UI-Renderer zeigt generic-update-changes als "[object Object]"
-- Status: open
+- Status: resolved
 - Severity: Medium
 - Area: UI / Audit-Log
 - Summary: Auf `/audit-log` rendert der Changes-Cell-Renderer fuer Eintraege mit `action='update'` und nested `changes={ before: {...}, after: {...} }` den Wert als JS-Default-Repr `[object Object] → [object Object]` statt formatierter Diff. `action='reverse_charge_toggled'`-Eintraege (V5.7 MT-7) und andere flat-changes-Actions rendern dagegen sauber (z.B. `tax_rate: 9 → 0`).
 - Impact: Audit-Trail ist fuer alle Workspace-Auto-Save-Eintraege (mehrere pro Tag) effektiv unleserlich. DSGVO-/Compliance-Reviewability eingeschraenkt. Daten in DB sind korrekt, nur Rendering ist defekt.
 - Workaround: Direkter SQL-Query auf `audit_log.changes` JSONB liefert die echten Werte. Cockpit-View nicht nutzbar.
-- Next Action: Audit-Log-Page-Renderer auf nested-vs-flat-changes-Heuristik anpassen — entweder die `before/after`-Wrapper bei `update`-Action auflösen, oder das `update`-Audit-Insert-Schema aendern (siehe `actions.ts` Workspace-Auto-Save-Audit). Vermutlich seit V5.6 vorhanden, von MT-7-QA aufgedeckt (RPT-296).
+- Resolution: 2026-05-06 in V6.3 SLC-631 MT-5. Pure-Function `formatAuditChanges(changes, action)` in `cockpit/src/lib/audit/format.ts` extrahiert + 12 Vitest-Cases in node-Env. Heuristisches Detect: wenn der erste Wert in changes.before/after selbst ein {before,after}-Objekt ist, wird die Struktur als doppelt-verschachtelt behandelt (Workspace-Auto-Save in saveProposal-Pattern, `before: { tax_rate: { before: 9, after: 0 } }`). Sonst flat-Pattern (V5.7 explicit-action-Schreibweise mit `before: { tax_rate: 9 }`). `audit-log-client.tsx ChangesPreview` ruft die Pure-Function statt selbst zu formatieren. Pre-Scan zeigte nur eine Renderer-Stelle, daher kein Sub-Tasks notwendig. Schema in DB unveraendert — kein retroaktives Re-Format historischer Eintraege.
 
 ### ISSUE-049 — SLC-562 UI-State-Drift im SkontoSection nach Auto-Save-Error
 - Status: resolved

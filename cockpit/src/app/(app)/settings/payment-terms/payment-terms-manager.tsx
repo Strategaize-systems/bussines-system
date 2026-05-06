@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Pencil, Trash2, Plus, Star } from "lucide-react";
+import { Pencil, Trash2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,14 +32,28 @@ type Mode =
 
 export function PaymentTermsManager({
   initialTemplates,
+  createNonce = 0,
 }: {
   initialTemplates: PaymentTermsTemplate[];
+  createNonce?: number;
 }) {
   const [templates, setTemplates] =
     useState<PaymentTermsTemplate[]>(initialTemplates);
   const [mode, setMode] = useState<Mode>({ kind: "idle" });
   const [isPending, startTransition] = useTransition();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [lastCreateNonce, setLastCreateNonce] = useState(createNonce);
+
+  // Page-Header-Trigger (V6.3 MT-3): Inkrementiert der Page-Header-Button "Neue
+  // Vorlage" den Nonce, oeffnen wir den Create-Mode. Adjust-state-during-render
+  // statt useEffect, weil React damit ohne cascading re-render dispatcht.
+  if (createNonce !== lastCreateNonce) {
+    setLastCreateNonce(createNonce);
+    if (createNonce > 0) {
+      setMode({ kind: "create" });
+      setErrorMessage(null);
+    }
+  }
 
   function refresh() {
     void listPaymentTermsTemplates().then((rows) => setTemplates(rows));
@@ -52,16 +66,6 @@ export function PaymentTermsManager({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end">
-        <Button
-          onClick={() => setMode({ kind: "create" })}
-          className="gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Neue Vorlage
-        </Button>
-      </div>
-
       {templates.length === 0 ? (
         <div className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
           Noch keine Vorlagen angelegt.

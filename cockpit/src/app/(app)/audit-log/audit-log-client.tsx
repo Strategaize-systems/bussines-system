@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Shield, Filter, X } from "lucide-react";
 import type { AuditLogEntry } from "./actions";
+import { formatAuditChanges } from "@/lib/audit/format";
 
 const ACTION_LABELS: Record<string, string> = {
   stage_change: "Stage-Wechsel",
@@ -60,43 +61,23 @@ function formatDate(dateStr: string): string {
 
 function ChangesPreview({
   changes,
+  action,
 }: {
   changes: AuditLogEntry["changes"];
+  action: string;
 }) {
-  if (!changes) return <span className="text-slate-400">-</span>;
-
-  const parts: string[] = [];
-
-  if (changes.before && changes.after) {
-    // Show key diffs
-    for (const key of Object.keys(changes.after)) {
-      const oldVal = changes.before[key];
-      const newVal = changes.after[key];
-      if (oldVal !== newVal) {
-        parts.push(`${key}: ${oldVal ?? "-"} → ${newVal ?? "-"}`);
-      }
-    }
-  } else if (changes.after) {
-    for (const [key, val] of Object.entries(changes.after)) {
-      if (val !== null && val !== undefined) {
-        parts.push(`${key}: ${val}`);
-      }
-    }
-  } else if (changes.before) {
-    for (const [key, val] of Object.entries(changes.before)) {
-      if (val !== null && val !== undefined) {
-        parts.push(`${key}: ${val}`);
-      }
-    }
-  }
+  // V6.3 SLC-631 MT-5 (ISSUE-050) — formatAuditChanges erkennt sowohl flache
+  // (V5.7 explicit-action-Eintraege) als auch doppelt-verschachtelte
+  // (Workspace-Auto-Save-update) Schemas und vermeidet [object Object].
+  const parts = formatAuditChanges(changes ?? null, action);
 
   if (parts.length === 0) return <span className="text-slate-400">-</span>;
 
   return (
     <div className="max-w-xs space-y-0.5">
-      {parts.slice(0, 3).map((p, i) => (
-        <div key={i} className="text-xs text-slate-600 truncate">
-          {p}
+      {parts.slice(0, 3).map((p) => (
+        <div key={p.key} className="text-xs text-slate-600 truncate">
+          {p.display}
         </div>
       ))}
       {parts.length > 3 && (
@@ -263,7 +244,10 @@ export function AuditLogClient({
                       {ENTITY_LABELS[entry.entity_type] ?? entry.entity_type}
                     </TableCell>
                     <TableCell>
-                      <ChangesPreview changes={entry.changes} />
+                      <ChangesPreview
+                        changes={entry.changes}
+                        action={entry.action}
+                      />
                     </TableCell>
                     <TableCell className="text-xs text-slate-500 max-w-[200px] truncate">
                       {entry.context ?? "-"}

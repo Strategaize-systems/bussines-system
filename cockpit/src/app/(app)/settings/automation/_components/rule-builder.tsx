@@ -50,11 +50,13 @@ export function RuleBuilder({
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, startSave] = useTransition();
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(max-width: 768px)").matches;
+  });
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 768px)");
-    setIsMobile(mq.matches);
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);

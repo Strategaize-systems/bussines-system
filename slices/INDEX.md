@@ -250,4 +250,4 @@
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-631 | [V6.3 Polish-Bündel (BL-426 + BL-422 + ISSUE-050 + L4 + L5 + BL-Dedup)](SLC-631-v63-polish-bundle.md) | BL-426 + BL-422 + ISSUE-050 | planned | Medium | 2026-05-06 |
+| SLC-631 | [V6.3 Polish-Bündel (BL-426 + BL-422 + ISSUE-050 + L4 + L5 + BL-Dedup)](SLC-631-v63-polish-bundle.md) | BL-426 + BL-422 + ISSUE-050 | done | Medium | 2026-05-06 |

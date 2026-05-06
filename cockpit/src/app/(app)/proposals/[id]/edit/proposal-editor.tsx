@@ -19,6 +19,11 @@ import {
   revertPatchIfSkontoFailed,
   type SkontoState,
 } from "@/lib/proposal/skonto-revert";
+import {
+  nextReverseChargeRefAfterSave,
+  revertPatchIfReverseChargeFailed,
+  type ReverseChargeState,
+} from "@/lib/proposal/reverse-charge-revert";
 import type { PaymentMilestone } from "@/types/proposal-payment";
 import { PaymentTermsDropdown } from "./payment-terms-dropdown";
 import { SkontoSection } from "./skonto-section";
@@ -83,6 +88,17 @@ export function ProposalEditor({
     skonto_days: proposal.skonto_days,
   });
 
+  // V6.3 SLC-631 MT-4 (BL-422) — Last-known-good Reverse-Charge-Werte vom
+  // Server. Pattern 1:1 von Skonto uebernommen. Greift bei allen 4 Reject-
+  // Pfaden aus validateReverseCharge (tax_rate inkonsistent, branding-vat_id
+  // fehlt, company-vat_id fehlt, company-country nicht-EU/NL).
+  const lastKnownGoodReverseChargeRef = useRef<ReverseChargeState>({
+    reverse_charge: !!proposal.reverse_charge,
+    tax_rate:
+      (proposal.tax_rate as number | null | undefined) ??
+      (branding?.business_country === "DE" ? 19 : 21),
+  });
+
   const persistPatch = useCallback(
     async (patch: EditorPatch) => {
       // V5.7 SLC-572 Follow-up #2 — Client-side Validation-Gate fuer Skonto.
@@ -113,14 +129,33 @@ export function ProposalEditor({
           lastKnownGoodSkontoRef.current,
           patch,
         );
+        lastKnownGoodReverseChargeRef.current = nextReverseChargeRefAfterSave(
+          lastKnownGoodReverseChargeRef.current,
+          patch,
+        );
       } else {
         setSaveStatus("error");
         setErrorMessage(res.error);
-        const revert = revertPatchIfSkontoFailed(
+        const skontoRevert = revertPatchIfSkontoFailed(
           patch,
           lastKnownGoodSkontoRef.current,
         );
-        if (revert) onProposalChange(revert);
+        if (skontoRevert) onProposalChange(skontoRevert);
+        const rcRevert = revertPatchIfReverseChargeFailed(
+          patch,
+          lastKnownGoodReverseChargeRef.current,
+        );
+        if (rcRevert) {
+          // ReverseChargeState.tax_rate ist generisch number; der Editor
+          // arbeitet immer nur mit EditorTaxRate (0|7|9|19|21). Da der Ref
+          // ausschliesslich aus erfolgreich persistierten EditorPatch-Werten
+          // gespeist wird (oder dem initialen proposal.tax_rate), ist die
+          // Verengung sicher.
+          onProposalChange({
+            reverse_charge: rcRevert.reverse_charge,
+            tax_rate: rcRevert.tax_rate as EditorTaxRate,
+          });
+        }
       }
     },
     [proposal.id, onProposalChange],
