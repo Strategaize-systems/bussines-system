@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.2 Gesamt-/qa PASS 2026-05-06** (RPT-321). End-to-End-Smoke gegen `dc9ea14` live verifiziert: 7/7 Auth-Gates greifen (cron+intake+performance+UI-routes), Public-Redirect 302 + UTM-Append + click_count=3-Increment + ip_hash 64-char SHA-256 (DSGVO), Lead-Intake external_ref-Mapping + First-Touch-Lock greift in DB (campaign_id behält 1. Touch via COALESCE), Performance-API liefert 12 KPI-Felder, Cron-Endpoint authenticated picked=0, CASCADE-Delete clean. 361/361 Vitest, Build compile success, 1 V6.2-Lint-Finding (rule-builder.tsx:57 set-state-in-effect, V6.3-Polish). 1 Medium-Audit-Finding: trigger-sources.ts dokumentiert 8 V1-nicht-verdrahtete Pfade (4 Cron + 4 sekundäre Server Actions), AC12-Wortlaut nicht 100% getroffen aber V1-Reduktion plausibel. 1 Low-Doku-Finding: STATE.md Active Scope listet noch V5.7/V5.5, sollte V6.2 reflektieren (im /deploy mitziehen). V6.2 5/5 Slices code-stable, bereit fuer /final-check + /go-live + /deploy als REL-024.
-- Current Phase: V6.2 Gesamt-/qa PASS. Naechster Schritt = /final-check V6.2.
+- Current Focus: **V6.2 Final-Check PASS 2026-05-06** (RPT-322). 7-Dimensionen-Audit (Code-Quality, Security+Privacy, Legal+Compliance, Testing-Depth, CI/CD+Deployment, Observability+Operations, Post-Go-Live) abgeschlossen mit Overall-Assessment **READY for /go-live**. 0 Blocker, 0 High, 0 Medium V6.2-spezifisch. 5 Low-Findings (L1 dispatcher.ts:8 Header-TODO cosmetic, L2 rule-builder.tsx:57 set-state-in-effect V6.3-Polish, L3 STATE.md Active-Scope-Drift /deploy-Action, L4 V5.7 skonto-revert.test.ts:19 tsc strict pre-existing, L5 npm audit 9 dev-deps Vulnerabilities kein Production-Runtime-Impact). Build compile success, Vitest 361/361 PASS reproduziert, 0 hardcoded Secrets V6.2-Code, RLS+GRANTS auf 5 V6.2-Tabellen verifiziert, Auth-Gates 7/7 (RPT-321), DSGVO IP-Hash 64-char SHA-256 live. ISSUE-042 + COMPLIANCE-Gate + IP_HASH_SALT-Rotation explizit als Pre-Production-Pflicht-Items (User-Direktive 2026-05-01 "kommt viel später") akzeptiert. REL-024-Block in RELEASES.md vollständig vorbereitet inkl. Coolify-Cron-Setup-Anleitung als Post-Deploy-Manuelle-Aktion. V6.2 5/5 Slices code-stable, bereit fuer /go-live + /deploy als REL-024.
+- Current Phase: V6.2 Final-Check PASS. Naechster Schritt = /go-live V6.2.
 
 ## Immediate Next Steps
-1. **/final-check V6.2** — Hygiene, Dependencies, Security, Build-Artefakte, Repo-Cleanup.
-2. **/go-live V6.2** — Release-Readiness-Decision.
-3. **/deploy V6.2** als REL-024 mit Coolify-Cron-Setup für `automation-runner` (REL-024-Notes vorbereitet).
+1. **/go-live V6.2** — Release-Readiness-Decision (Final-Check PASS via RPT-322).
+2. **/deploy V6.2** als REL-024 mit Coolify-Cron-Setup für `automation-runner` (REL-024-Notes vorbereitet).
+3. **(Post-Deploy-Smoke)** Workflow-Trigger-End-to-End als Internal-Test-Mode-Smoke (Rule aktivieren → Stage-Change → automation_run-Insert → Action-Execution).
 4. **(Pre-Production-spaeter)** BL-427 Cleanup-Cron, BL-428 Source-Migration-Tool, BL-429 Multi-Touch-Tab.
 5. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
 6. **(V6.3-Polish)** L1 Lint-Cleanup rule-builder.tsx:57 + L2 Settings-Sub-Nav fuer Workflow-Automation + Kampagnen + L3 Primary-Button-Position vereinheitlichen + L4 trigger-sources.ts AC12-Wortlaut/dispatcher-Coverage Doku-Update + L5 STATE.md Active-Scope-Refresh nach V6.2-Release.
