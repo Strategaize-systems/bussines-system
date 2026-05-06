@@ -10,16 +10,16 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.2 SLC-625 /qa PASS 2026-05-06** (RPT-320). Live-Smoke deckte 3 /backend-Bugs auf, alle in zwei Hotfix-Cycles behoben (Commits `fd7dda8` Middleware-publicPaths + `dc9ea14` Mapper-Admin-Client + Audit-Log-await). Image-Tag `dc9ea14` live healthy. Alle 14 QA-Fokus-Punkte verifiziert: Schema-Live, Token-UNIQUE-Constraint live, Public Redirect 302+UTM+CASCADE, click_count-Increment, ip_hash SHA-256 (DSGVO kein Klartext), Latency TTFB warm 92-118ms (AC10 marginal Low), Lead-Intake 401/200 + First-Touch-Lock-Pattern + Audit-Log persistiert + campaign_id-Match via external_ref greift, Read-API 401/200/404 + 12 KPI-Felder, Funnel-Filter + CSV-Export Code-Review verdrahtet, Test-Daten-Cleanup CASCADE-verified. 361/361 Vitest grün. ISSUE-054 resolved (User hat EXPORT_API_KEY+IP_HASH_SALT in Coolify-ENV gesetzt). FEAT-622 + V6.2 5/5 Slices vollstaendig done, code-stable, bereit fuer Gesamt-/qa V6.2 + /final-check + /go-live + /deploy als REL-024.
-- Current Phase: V6.2 5/5 Slices done + SLC-625 /qa PASS. Naechster Schritt = Gesamt-/qa V6.2.
+- Current Focus: **V6.2 Gesamt-/qa PASS 2026-05-06** (RPT-321). End-to-End-Smoke gegen `dc9ea14` live verifiziert: 7/7 Auth-Gates greifen (cron+intake+performance+UI-routes), Public-Redirect 302 + UTM-Append + click_count=3-Increment + ip_hash 64-char SHA-256 (DSGVO), Lead-Intake external_ref-Mapping + First-Touch-Lock greift in DB (campaign_id behält 1. Touch via COALESCE), Performance-API liefert 12 KPI-Felder, Cron-Endpoint authenticated picked=0, CASCADE-Delete clean. 361/361 Vitest, Build compile success, 1 V6.2-Lint-Finding (rule-builder.tsx:57 set-state-in-effect, V6.3-Polish). 1 Medium-Audit-Finding: trigger-sources.ts dokumentiert 8 V1-nicht-verdrahtete Pfade (4 Cron + 4 sekundäre Server Actions), AC12-Wortlaut nicht 100% getroffen aber V1-Reduktion plausibel. 1 Low-Doku-Finding: STATE.md Active Scope listet noch V5.7/V5.5, sollte V6.2 reflektieren (im /deploy mitziehen). V6.2 5/5 Slices code-stable, bereit fuer /final-check + /go-live + /deploy als REL-024.
+- Current Phase: V6.2 Gesamt-/qa PASS. Naechster Schritt = /final-check V6.2.
 
 ## Immediate Next Steps
-1. **Gesamt-/qa V6.2** — End-to-End ueber alle 5 Slices (SLC-621..625): Workflow-Automation-Engine, Trigger-Quellen, Action-Library, Campaigns-CRUD + Detail-Page, Tracking + Reporting + Lead-Intake + Read-API.
-2. **/final-check V6.2** — Hygiene, Dependencies, Security.
-3. **/go-live + /deploy** als REL-024.
+1. **/final-check V6.2** — Hygiene, Dependencies, Security, Build-Artefakte, Repo-Cleanup.
+2. **/go-live V6.2** — Release-Readiness-Decision.
+3. **/deploy V6.2** als REL-024 mit Coolify-Cron-Setup für `automation-runner` (REL-024-Notes vorbereitet).
 4. **(Pre-Production-spaeter)** BL-427 Cleanup-Cron, BL-428 Source-Migration-Tool, BL-429 Multi-Touch-Tab.
 5. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
-6. **(V6.3-Polish)** L1 Lint-Cleanup rule-builder.tsx:57 + L2 Settings-Sub-Nav fuer Workflow-Automation + Kampagnen + L3 Primary-Button-Position vereinheitlichen.
+6. **(V6.3-Polish)** L1 Lint-Cleanup rule-builder.tsx:57 + L2 Settings-Sub-Nav fuer Workflow-Automation + Kampagnen + L3 Primary-Button-Position vereinheitlichen + L4 trigger-sources.ts AC12-Wortlaut/dispatcher-Coverage Doku-Update + L5 STATE.md Active-Scope-Refresh nach V6.2-Release.
 7. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
 
 ## Spaeter (nicht jetzt)
