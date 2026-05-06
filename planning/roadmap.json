@@ -157,8 +157,8 @@
     {
       "id": "v6-3",
       "name": "V6.3",
-      "status": "active",
-      "summary": "Polish-Sprint: 1 Slice SLC-631 mit 7 MTs — V6.2-/qa-Findings (BL-426 Workflow-Builder Lint+Sub-Nav+Button-Position, BL-422 Reverse-Charge-Toggle Drift-Fix, ISSUE-050 Audit-Log-UI-Renderer, L4 trigger-sources.ts AC12-Doku, L5 npm audit Investigation, Housekeeping BL-Dedup). Keine Schema-Changes, keine neuen Routes, alles existing-Code-Cleanup. Aufwand ~3-4h. Created 2026-05-06, naechster Schritt /frontend SLC-631.",
+      "status": "released",
+      "summary": "Polish-Sprint released 2026-05-06 als REL-025 (Image-Tag f7fd231): 1 Slice SLC-631 mit 7 MTs — BL-426 Workflow-Builder Lint+Sub-Nav+Button-Position, BL-422 RC-Toggle Drift-Fix Defense-in-Depth, ISSUE-050 Audit-Log-Render-Fix, L4 trigger-sources.ts Doku, L5/MT-7 npm audit fix non-breaking + BL-Dedup. Vitest 393/393 PASS, 5 Browser-Smokes Live-bestaetigt. Internal-Test-Mode bleibt aktiv. RPT-326+327+328.",
       "order": 23
     },
     {

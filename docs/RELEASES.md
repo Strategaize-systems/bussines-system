@@ -1,5 +1,20 @@
 # Releases
 
+### REL-025 — V6.3 Polish-Bündel (BL-426 + BL-422 + ISSUE-050 + Backlog-Hygiene)
+- Date: 2026-05-06
+- Image-Tag: `f7fd231` (Commit `f7fd2310e83bc36beb84f928f4d97f89430d82c7`, Coolify-Redeploy 14:17 UTC)
+- Scope: V6.3 Polish-Sprint, 1 Slice mit 7 Micro-Tasks. Keine Schema-Aenderungen, keine neuen Routes, keine Architektur-Pivots.
+  - **MT-1** rule-builder.tsx useState lazy-init mit `typeof window`-Guard (lint react-hooks/set-state-in-effect Fix)
+  - **MT-2** Sidebar-Eintrag "Workflow-Automation" mit Zap-Icon in `settings/layout.tsx` (BL-426 Sub-Item 2)
+  - **MT-3** Page-Header-Refactor `/settings/payment-terms` — neuer `PaymentTermsPageContent`-Wrapper, Adjust-State-During-Render-Pattern statt useEffect, Inline-Button entfernt, createNonce-Counter-Re-Open (BL-426 Sub-Item 3)
+  - **MT-4** `cockpit/src/lib/proposal/reverse-charge-revert.ts` Pure-Function-Lib + 20 Vitest (analog SLC-572 Skonto-Pattern) + Editor-Wiring `lastKnownGoodReverseChargeRef` + `revertPatchIfReverseChargeFailed` (BL-422 Defense-in-Depth gegen UI-State-Drift bei Server-Reject)
+  - **MT-5** `cockpit/src/lib/audit/format.ts` Pure-Function `formatAuditChanges` + 12 Vitest + audit-log-client.tsx Wire-Up — heuristisches Detect doppelt-verschachtelt vs. flat (ISSUE-050 Audit-Log `[object Object]`-Render-Bug eliminiert)
+  - **MT-6** `trigger-sources.ts` notes-Felder + SLC-622-Spec AC12 Wortlaut praeziser (V1-Reduktion: 4 von ~12 Pfaden dispatchen, dokumentiert)
+  - **MT-7** Backlog-Hygiene: `npm audit fix` non-breaking 9→6 (1 high + 2 moderate resolved), BL-Dedup BL-427/428/429 als Duplicate-of-BL-423/424/425 markiert, neuer BL-430 fuer Breaking-Change-Path `npm audit fix --force` (V6.4-Defer)
+- Summary: Polish-Sprint mit 5 V6.2-/qa-Findings + 1 V5.6-Carryover (ISSUE-050) + Backlog-Hygiene gebuendelt in einer Session. Bug-Klasse: alle UX-Polish-Items, kein Funktions-Bruch. Live-Image deployed seit 14:17 UTC. Internal-Test-Mode bleibt aktiv bis Pre-Production-Compliance-Gate (User-Direktive 2026-05-01 "kommt viel spaeter"). RPT-326 (Implementation), RPT-327 (/qa Live-Smoke), RPT-328 (/final-check). Vitest 393/393 PASS (32 neu: 20 reverse-charge-revert + 12 audit/format).
+- Risks: **Test-Artefakte im Audit-Log** — `qa-test`-Title-Edits + 3 RC-Toggle-Cycles auf Proposal `0c1f7e10-...` durch /qa-Smokes; History-Rauschen, kein Daten-Verlust. **MT-4 UI-Toast-Wortlaut Live-Smoke nicht direkt gemessen** (Browser-Crash beim kontinuierlichen JS-Sampling); DB-Audit-Log + 20 Vitest-Cases beweisen Defense-in-Depth-Reject. **6 verbleibende `npm audit` moderate Vulnerabilities** (BL-430 V6.4-Defer, alle Build-/Dev-Toolchain ohne produktive Exposure). **`useReverseChargeEligibility`-Hook nicht reaktiv auf live Branding-Updates** — bei mid-session Branding-vat_id-Aenderung kann Toggle kurz enabled bleiben (Race-Path); Defense-in-Depth fängt das ab (DB-Beweis aus /qa).
+- Rollback Notes: V6.3 ist rein additiv (4 neue Files + 8 modifizierte Files, kein Schema-Change). Rollback per Coolify-Image-History → vorheriger stable Tag REL-024 (`766e4ac`). User-bestehende Daten bleiben unveraendert. Bei Rollback verschwinden V6.3-Polish-Effekte: Sidebar-Workflow-Eintrag, Page-Header-Button payment-terms, RC-Drift-Fix, Audit-Log-Render-Fix. Vorhandene `qa-test`-Audit-Eintraege bleiben (DB unveraendert). Keine Cron-Aenderung, keine ENV-Aenderung, keine MIG noetig.
+
 ### REL-024 — V6.2 Workflow-Automation + Kampagnen-Attribution (Foundation + Engine + UI + Tracking)
 - Date: 2026-05-06
 - Image-Tag: `766e4ac` (V6.2-Hotfix: ISSUE-055 Workflow-Wizard UUID-Display + ISSUE-056 Kampagnen-Settings-Karte)

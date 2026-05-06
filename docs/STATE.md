@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.3 SLC-631 /qa Live-Smoke PASS 2026-05-06** (RPT-327). Alle 5 Browser-Smokes (MT-1..MT-5) gegen Live-Image `f7fd2310...` (Coolify-Redeploy 14:17) verifiziert: MT-1 Mobile-Fallback @375px (Smartphone-Icon-Card), MT-2 Sidebar-Workflow-Eintrag mit Zap-Icon + Active-State, MT-3 Page-Header "Neue Vorlage" rechts oben + createNonce-Re-Open-Pattern, MT-4 RC-Drift-Fix Server-Reject Defense-in-Depth via Race-Path (mid-session SQL-Update Branding-vat_id=NULL → Toggle-Click → DB unveraendert, kein Audit-Insert), MT-5 ISSUE-050 Audit-Log doppelt-verschachtelte Workspace-Auto-Save-Eintraege rendern lesbar (`title: A → B`) + V5.7 flat backward compat. AC-9 Vitest 393/393 lokal PASS. AC-10 alle 6 funktionalen MTs Live-bestaetigt. Test-Artefakte (Branding-vat_id + Proposal-State) wiederhergestellt. SLC-631 release-bereit. Naechster Schritt = /final-check V6.3.
-- Current Phase: V6.3 SLC-631 /qa PASS. Naechster Schritt = /final-check V6.3 → /go-live V6.3 → /deploy als REL-025.
+- Current Focus: **V6.3 RELEASED 2026-05-06 als REL-025**. /qa PASS (RPT-327), /final-check PASS (RPT-328), /go-live PASS — Code ist live seit 14:17 UTC auf Image-Tag `f7fd231`. Polish-Sprint: 7 MTs gebuendelt (BL-426 Workflow-Builder Lint+Sidebar+Page-Header, BL-422 RC-Drift-Fix Defense-in-Depth, ISSUE-050 Audit-Log-Render-Fix, L4 trigger-sources-Doku, L5/MT-7 npm audit fix non-breaking + Backlog-Dedup BL-427/428/429 + neuer BL-430 V6.4-Defer). Vitest 393/393 PASS, 5 Browser-Smokes Live-bestaetigt, Internal-Test-Mode aktiv. Naechster Schritt = /deploy als formaler Release-Marker (Code ist effektiv schon deployed) ODER /post-launch-Phase.
+- Current Phase: V6.3 released. Naechster Schritt = /deploy als REL-025-Marker oder /post-launch V6.2+V6.3-Beobachtung.
 
 ## Immediate Next Steps
-1. **/final-check V6.3** — Hygiene-Audit (Dependencies, Secrets, Lint-Baseline-Drift, Cron-Health, MIG-Stand).
-2. **/go-live V6.3** — Release-Risk explicit machen, Internal-Test-Mode-Bestaetigung.
-3. **/deploy als REL-025** — User-Coolify-Redeploy + Live-Smoke-Confirmation.
+1. **/deploy als REL-025** — formaler Release-Marker (User-Coolify-Status bestaetigen, Live-Smoke-Confirm, README-/Cockpit-Refresh).
+2. **/post-launch V6.2 + V6.3** — 1-2 Wochen passive Beobachtung (Live-Stability + erste echte User-Workflows).
+3. **(Naechster Major-Schritt)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503, reduzierter Scope nach V6.2-Auslagerung).
 4. **(Optional, empfohlen)** Workflow-Trigger-End-to-End-Smoke aus V6.2 (1 Test-Rule aktivieren → Stage-Change auf Test-Deal → automation_run-Insert + Activity-Insert verifizieren).
 5. **(Post-Launch-Phase, ~1-2 Wochen Beobachtung)** /post-launch V6.2 + V6.3 — Live-Stability + erste echte User-Workflows beobachten.
 6. **(Naechster Major-Schritt nach V6.3)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503, reduzierter Scope nach V6.2-Auslagerung).
@@ -82,6 +82,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - aktuell keine
 
 ## Last Stable Version
+- V6.3 — 2026-05-06 — released auf Hetzner als REL-025 (Polish-Bündel: SLC-631 mit 7 MTs — BL-426 Sub-Items 1-3 + BL-422 RC-Drift-Fix + ISSUE-050 Audit-Log-Render-Fix + L4 trigger-sources-Doku + L5/MT-7 npm audit + Backlog-Hygiene. Image-Tag `f7fd231` Commit `f7fd2310...`. Internal-Test-Mode bleibt aktiv. Vitest 393/393 PASS, 5 Browser-Smokes Live-bestaetigt. RPT-326+327+328.)
 - V6.2 — 2026-05-06 — released auf Hetzner als REL-024 (Workflow-Automation + Kampagnen-Attribution: 5 Slices SLC-621..625, FEAT-621+622, MIG-029 alle 3 Phasen. Image-Tag `766e4ac` inkl. V6.2-Hotfix ISSUE-055 + ISSUE-056. Coolify-Cron `automation-runner` aktiv jede Minute. Internal-Test-Mode aktiv. RPT-321..324.)
 - V5.7 — 2026-05-05 — released auf Hetzner als REL-023 (NL+DE-VAT-Saetze + Reverse-Charge fuer EU-B2B-Cross-Border + Skonto-Toggle UI-State-Drift Bugfix mit 3 Follow-up-Fixes nach iterativen Live-Smoke-Runden. Image-Tag 908eb81, MIG-028 live, BTW-IDs in Branding+Companies, country-aware Steuersatz-Dropdown, bilingualer Reverse-Charge-PDF-Block, Validation-Gate vor Server-Save fuer Skonto-Edit. Internal-Test-Mode bleibt aktiv. RPT-298+301..306.)
 - V5.6 — 2026-05-03 — released auf Hetzner als REL-022 (Zahlungsbedingungen + Pre-Call Briefing: payment_terms_templates + Skonto + Split-Plan-Milestones + Briefing-Cron + ActivityBriefingCard, Internal-Test-Mode, Image-Tag a7b787d, MIG-027 live, Coolify-Cron meeting-briefing aktiv. Final-Smoke alle Endpoints PASS, RPT-272..286.)
