@@ -1,5 +1,14 @@
 # Known Issues
 
+### ISSUE-054 — EXPORT_API_KEY-ENV nicht im Coolify-Container gesetzt
+- Status: open
+- Severity: High
+- Area: ENV / Deployment
+- Summary: Live-Container `app-k9f5pn5upfq7etoefb5ukbcg-071523293009` (Image-Tag `34be6cc`) hat `EXPORT_API_KEY` als ENV nicht gesetzt — `printenv EXPORT_API_KEY` returnt leer. SLC-625-Spec ging davon aus, dass die ENV "existing aus FEAT-504" ist. Konsequenz: Bearer-Auth-Endpoints `/api/leads/intake` und `/api/campaigns/[id]/performance` antworten 500 "EXPORT_API_KEY not configured" statt 401 ohne Auth bzw. 200 mit gueltigem Bearer.
+- Impact: Diese 2 von 4 SLC-625-API-Endpoints sind ohne User-ENV-Setup nicht voll testbar in /qa SLC-625. Public Redirect `/r/[token]` und CSV-Export funktionieren (kein Bearer-Auth). System-4-Integration muss vor erstem Live-Use vom User konfiguriert werden.
+- Workaround: User setzt in Coolify-Project-ENV: `EXPORT_API_KEY=<random-32-char>` + `IP_HASH_SALT=<random-32-char>` + Redeploy. Danach sind alle 4 Endpoints + DSGVO-konforme Click-Logs operational.
+- Next Action: User-Aufgabe vor /go-live REL-024. Beide ENV-Werte in Coolify setzen + Redeploy + dann /qa Live-Smokes der Bearer-Auth-Pfade.
+
 ### ISSUE-052 — PaymentTerms-Dropdown zeigt Template-UUID statt Label nach Auswahl
 - Status: resolved
 - Severity: Medium
