@@ -196,7 +196,7 @@ export async function findFollowupCandidates(
         `
         id,
         title,
-        value,
+        total_gross,
         sent_at,
         deal_id,
         deals ( title, companies ( name ) )
@@ -204,7 +204,7 @@ export async function findFollowupCandidates(
       )
       .eq("status", "sent")
       .lt("sent_at", sevenDaysAgo)
-      .order("value", { ascending: false, nullsFirst: false })
+      .order("total_gross", { ascending: false, nullsFirst: false })
       .limit(5);
 
     if (proposalsError) {
@@ -232,7 +232,7 @@ export async function findFollowupCandidates(
             ? daysSinceDate(proposal.sent_at)
             : 0,
           context: {
-            proposalValue: proposal.value ?? null,
+            proposalValue: proposal.total_gross ?? null,
             companyName: deal?.companies?.name ?? null,
             lastActivity: proposal.sent_at,
           },
