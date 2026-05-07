@@ -7,6 +7,7 @@
 // reasoning via Bedrock, and creates action queue entries for
 // human-in-the-loop approval.
 
+import { randomUUID } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { queryLLM } from "./bedrock-client";
 import { parseLLMResponse } from "./parser";
@@ -373,13 +374,10 @@ export async function processFollowupCandidates(
   const candidates = await findFollowupCandidates(limit);
   result.candidates = candidates.length;
 
-  if (candidates.length === 0) {
-    return result;
-  }
-
   const supabase = createAdminClient();
 
-  // Step 2: Process each candidate sequentially
+  // Step 2: Process each candidate sequentially (loop is no-op for 0 candidates,
+  // but the audit-log insert below still records the run).
   for (const candidate of candidates) {
     const dedupKey = `followup-${candidate.entityType}-${candidate.entityId}`;
 
@@ -432,6 +430,31 @@ export async function processFollowupCandidates(
       );
       result.failed++;
     }
+  }
+
+  // Audit-Log: 1 row per cron run (CA-008 compliance trail).
+  // Audit failure must not fail the engine — log and continue.
+  const runId = randomUUID();
+  const { error: auditError } = await supabase.from("audit_log").insert({
+    actor_id: null,
+    action: "ai_followup_run",
+    entity_type: "ai_action_queue",
+    entity_id: runId,
+    changes: {
+      run_id: runId,
+      candidates: result.candidates,
+      suggested: result.suggested,
+      skipped: result.skipped,
+      failed: result.failed,
+      run_at: new Date().toISOString(),
+    },
+    context: `FollowupEngine run: ${result.candidates} candidates, ${result.suggested} suggested, ${result.skipped} skipped, ${result.failed} failed`,
+  });
+  if (auditError) {
+    console.error(
+      "[FollowupEngine] audit_log insert failed:",
+      auditError.message,
+    );
   }
 
   return result;

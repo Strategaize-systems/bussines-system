@@ -8,6 +8,7 @@
 // signal extractor, and updates status to completed/no_signals.
 // Max 3 items per run to respect Bedrock rate limits.
 
+import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCronSecret } from "../verify-cron-secret";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -164,7 +165,33 @@ export async function POST(request: NextRequest) {
       console.log(`[Cron/Signal] Auto-expired ${expiredCount} old signal items`);
     }
 
-    // ── 4. Return stats ───────────────────────────────────────
+    // ── 4. Audit-Log: 1 row per cron run (CA-008 compliance trail) ──
+
+    const runId = randomUUID();
+    const { error: auditError } = await admin.from("audit_log").insert({
+      actor_id: null,
+      action: "ai_signal_extract_run",
+      entity_type: "ai_action_queue",
+      entity_id: runId,
+      changes: {
+        run_id: runId,
+        meetings_processed: stats.meetingsProcessed,
+        emails_processed: stats.emailsProcessed,
+        signals_created: stats.signalsCreated,
+        expired: expiredCount,
+        errors: stats.errors.length,
+        run_at: new Date().toISOString(),
+      },
+      context: `SignalExtract run: ${stats.meetingsProcessed} meetings, ${stats.emailsProcessed} emails, ${stats.signalsCreated} signals created, ${expiredCount} expired, ${stats.errors.length} errors`,
+    });
+    if (auditError) {
+      console.error(
+        "[Cron/Signal] audit_log insert failed:",
+        auditError.message,
+      );
+    }
+
+    // ── 5. Return stats ───────────────────────────────────────
 
     console.log(
       `[Cron/Signal] Done — meetings=${stats.meetingsProcessed}, emails=${stats.emailsProcessed}, signals=${stats.signalsCreated}, expired=${expiredCount}, errors=${stats.errors.length}`

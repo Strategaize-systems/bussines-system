@@ -20,16 +20,25 @@ interface ProposalsCapture {
   orderOpts: unknown;
 }
 
+interface AuditCapture {
+  inserts: Array<Record<string, unknown>>;
+}
+
 const proposalsCapture: ProposalsCapture = {
   selectArg: null,
   orderColumn: null,
   orderOpts: null,
 };
 
+const auditCapture: AuditCapture = {
+  inserts: [],
+};
+
 function resetCapture() {
   proposalsCapture.selectArg = null;
   proposalsCapture.orderColumn = null;
   proposalsCapture.orderOpts = null;
+  auditCapture.inserts = [];
 }
 
 function makeQueryBuilder(table: string) {
@@ -50,6 +59,11 @@ function makeQueryBuilder(table: string) {
     return builder;
   };
   builder.limit = async () => ({ data: [], error: null });
+  builder.maybeSingle = async () => ({ data: null, error: null });
+  builder.insert = async (row: Record<string, unknown>) => {
+    if (table === "audit_log") auditCapture.inserts.push(row);
+    return { error: null };
+  };
 
   return builder;
 }
@@ -112,5 +126,41 @@ describe("findFollowupCandidates — Open-Proposals-Query (ISSUE-057)", () => {
       ascending: false,
       nullsFirst: false,
     });
+  });
+});
+
+describe("processFollowupCandidates — Audit-Log (CA-008)", () => {
+  beforeEach(() => {
+    resetCapture();
+  });
+
+  it("schreibt 1 audit_log-Zeile pro Cron-Run mit run_id, candidates, suggested, skipped, failed", async () => {
+    const { processFollowupCandidates } = await import("./followup-engine");
+    const result = await processFollowupCandidates();
+
+    // 0 Kandidaten — Loop ist no-op, Audit-Log-Insert wird trotzdem ausgefuehrt.
+    expect(result.candidates).toBe(0);
+    expect(auditCapture.inserts).toHaveLength(1);
+
+    const row = auditCapture.inserts[0];
+    expect(row.action).toBe("ai_followup_run");
+    expect(row.entity_type).toBe("ai_action_queue");
+    expect(row.actor_id).toBeNull();
+    // entity_id is the runId (UUID v4-shaped)
+    expect(typeof row.entity_id).toBe("string");
+    expect(row.entity_id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    );
+
+    const changes = row.changes as Record<string, unknown>;
+    expect(changes.run_id).toBe(row.entity_id);
+    expect(changes.candidates).toBe(0);
+    expect(changes.suggested).toBe(0);
+    expect(changes.skipped).toBe(0);
+    expect(changes.failed).toBe(0);
+    expect(typeof changes.run_at).toBe("string");
+
+    expect(typeof row.context).toBe("string");
+    expect(row.context).toContain("FollowupEngine run");
   });
 });
