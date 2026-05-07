@@ -37,23 +37,6 @@ export async function getReferrals() {
   return data as Referral[];
 }
 
-export async function getReferralsByReferrer(referrerId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("referrals")
-    .select(`
-      *,
-      referred_contact:contacts!referred_contact_id(id, first_name, last_name),
-      referred_company:companies!referred_company_id(id, name),
-      deals(id, title)
-    `)
-    .eq("referrer_id", referrerId)
-    .order("created_at", { ascending: false });
-
-  if (error) throw new Error(error.message);
-  return data;
-}
-
 export async function createReferral(formData: FormData) {
   const supabase = await createClient();
 
