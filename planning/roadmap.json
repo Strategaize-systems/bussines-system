@@ -162,11 +162,18 @@
       "order": 23
     },
     {
+      "id": "v6-4",
+      "name": "V6.4",
+      "status": "active",
+      "summary": "Hygiene-Sprint vor V7: ISSUE-057 FollowupEngine-Bug fix (proposals.value-Drift seit V5.5/MIG-026), BL-423 DSGVO Click-Log-Cleanup-Cron (90-Tage-Retention auf campaign_link_clicks), /doctor-Code-Audit (doppelte Logik, obsolete Pfade, ungenutzte Cron-Jobs identifizieren), /ui-update Audit (Settings-Landing aufraeumen, Sidebar-Konsistenz, redundante Buttons). Ziel: arbeitsfaehiges System vor V7-Multi-User-Sprint.",
+      "order": 24
+    },
+    {
       "id": "v7",
       "name": "V7",
       "status": "planned",
       "summary": "Multi-User + Teamlead: Routing/Territories (FEAT-502), Teamlead-Rolle mit Teamsicht (FEAT-503). Reduziert auf Multi-User-Themen — Workflow-Automation und Kampagnen-Attribution nach V6.2 ausgelagert.",
-      "order": 24
+      "order": 25
     }
   ]
 }

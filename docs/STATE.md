@@ -9,18 +9,19 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: post-launch
-- Current Focus: **V6.2 + V6.3 POST-LAUNCH-Review durchlaufen 2026-05-07 (RPT-331)**. Live-System healthy seit 16h Uptime auf Image-Tag `f7fd231`, 9 Container Up + healthy, Endpoints TTFB <200ms. Cron-Aktivitaet sauber bis auf 1 Finding: ISSUE-057 (FollowupEngine.openProposals selektiert auf nicht-existenter Spalte `proposals.value`, latent seit V5.5/MIG-026). Aktueller User-Impact null (0 reale Kandidaten). Klassifikation: STABIL mit latenter Schwachstelle. Kein Hotfix-Druck. Naechster Major-Schritt = /requirements V7 oder Mini-Hotfix-Slice fuer ISSUE-057 vor V7.
-- Current Phase: V6.3 released + Post-Launch-Review abgeschlossen. Naechster Schritt = /requirements V7 (Multi-User + Teamlead) ODER Mini-Hotfix ISSUE-057.
+- High-Level State: requirements
+- Current Focus: **V6.4 HYGIENE-SPRINT gestartet 2026-05-07** als Klammer vor V7-Multi-User. Ziel: arbeitsfaehiges System ohne latente Bugs und ohne UI-/Code-Wildwuchs aus V2..V6.3-Wachstum. Inhalt: ISSUE-057 FollowupEngine-Fix + BL-423 DSGVO Click-Log-Cleanup-Cron + /doctor-Audit (doppelte Logik, obsolete Pfade, ungenutzte Cron-Jobs) + /ui-update Audit (Settings-Landing, Sidebar, Button-Konsistenz). V6.3 selbst ist released (REL-025), Post-Launch-Review (RPT-331) bestaetigt: STABIL mit ISSUE-057 als einziger latenter Schwachstelle. Backlog-Hygiene 2026-05-07: BL-423 auf V6.4 umgelabelt, BL-424/425 zu unassigned (Komfort-Features ohne Druck). Naechster Schritt = /requirements V6.4.
+- Current Phase: V6.4 Hygiene-Sprint Requirements-Phase. V6.3 released + Post-Launch durchlaufen.
 
 ## Immediate Next Steps
-1. **(Empfehlung A)** Mini-Hotfix-Slice fuer ISSUE-057 — `proposals.value` → `total_gross` in followup-engine.ts (~30min, schliesst latente Luecke vor erstem realem Sales-Flow).
-2. **(Empfehlung B, Major-Track)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503, reduzierter Scope nach V6.2-Auslagerung). ISSUE-057 als BL-431 mitnehmen, im V7-Backend-Slice mit-fixen.
-3. **(Routine, naechster Post-Launch ca. 2026-05-21)** /post-launch erneut nach 1-2 Wochen weiterer Beobachtung.
-4. **(Optional, empfohlen)** Workflow-Trigger-End-to-End-Smoke aus V6.2 (1 Test-Rule aktivieren → Stage-Change auf Test-Deal → automation_run-Insert + Activity-Insert verifizieren).
-5. **(Spaeter)** BL-426 Sub-Items 4+5 Workflow-Polish, BL-427 Cleanup-Cron, BL-428 Source-Migration-Tool, BL-429 Multi-Touch-Tab.
-6. **(Spaeter)** BL-397 GitHub-App Org-Anbindung, BL-420 VIES-Lookup, BL-421 DE-Reverse-Charge — separate Compliance-/Tax-Sprints.
+1. **/requirements V6.4 Hygiene-Sprint** — User-Sign-Off auf Scope (ISSUE-057 + BL-423 + Code-Audit + UI-Audit), Open Questions klaeren.
+2. **/architecture V6.4** — kleine Architektur-Note (groesstenteils additiv: 1 Cron-Endpoint, 1 Fix, 1 Audit-Lauf), DECs falls noetig.
+3. **/slice-planning V6.4** — Hygiene-Sprint in 3-4 Slices aufteilen (Bug-Fix + Cron + Code-Audit + UI-Audit).
+4. **/backend + /qa pro Slice** wie ueblich.
+5. **(Spaeter, V6.4-Folge)** BL-424 Source-Migration-Tool (on-demand), BL-425 Multi-Touch-Tab (Komfort-Feature).
+6. **(Naechster Major-Schritt nach V6.4)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503).
 7. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (User-Direktive 2026-05-01 "kommt viel spaeter").
+8. **(Spaeter)** BL-397 GitHub-App Org-Anbindung, BL-420 VIES-Lookup, BL-421 DE-Reverse-Charge, BL-430 npm audit --force — separate Sprints.
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
@@ -66,7 +67,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V5.5, V5.5.1, V5.6, V5.7, V6, V6.1, V6.2
 
 **Active:**
-- V6.3 — Polish-Sprint (SLC-631 planned, 7 MTs, ~3-4h, naechste = /frontend SLC-631)
+- V6.4 — Hygiene-Sprint (Requirements-Phase, naechster Schritt = /requirements V6.4)
 
 **Planned (Reihenfolge):**
 - V7 — Multi-User + Teamlead (Routing/Territories + Teamlead-Rolle, reduzierter Scope)
