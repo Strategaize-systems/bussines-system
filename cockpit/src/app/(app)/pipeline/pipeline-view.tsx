@@ -153,7 +153,7 @@ export function PipelineView({
     <div style={{ width: 'calc(100vw - 16rem)', height: '100vh' }} className="flex flex-col overflow-hidden">
       {/* Header — left-aligned */}
       <div className="shrink-0 bg-white/95 backdrop-blur-xl border-b border-slate-200/60 px-8 py-4 shadow-sm z-20">
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Pipeline</h1>
+        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Pipeline</h1>
         <p className="text-sm text-slate-500">Sales Pipeline · Deals & Opportunities Management</p>
       </div>
 
