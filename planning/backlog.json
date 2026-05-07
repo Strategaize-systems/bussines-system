@@ -1847,9 +1847,9 @@
       "title": "Click-Log-Cleanup-Cron (90-Tage-Retention fuer campaign_link_clicks)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V6.4",
-      "description": "Aus V6.2 Slice-Planning RPT-310 (DEC-138 + Architecture-Section): campaign_link_clicks soll nach 90 Tagen automatisch geloescht werden (DSGVO-Retention konsistent zu V5.2 COMPLIANCE.md). Pattern wie existing recording-retention/route.ts: tagliches Cron, DELETE WHERE clicked_at < now() - interval '90 days', LIMIT 10000 pro Lauf, INSERT audit_log fuer Retention-Aktion. Index idx_campaign_link_clicks_link_time DESC ist bereits in MIG-029 vorbereitet. NICHT V1-Scope weil V1-Internal-Test wenig Klick-Volume hat. Aufwand ~1-2h Cron-Endpoint + Coolify-Cron-Setup + REL-Notes.",
+      "description": "Aus V6.2 Slice-Planning RPT-310 (DEC-138 + Architecture-Section): campaign_link_clicks soll nach 90 Tagen automatisch geloescht werden (DSGVO-Retention konsistent zu V5.2 COMPLIANCE.md). Pattern wie existing recording-retention/route.ts: tagliches Cron, DELETE WHERE clicked_at < now() - interval '90 days', LIMIT 10000 pro Lauf, INSERT audit_log fuer Retention-Aktion. Index idx_campaign_link_clicks_link_time DESC ist bereits in MIG-029 vorbereitet. NICHT V1-Scope weil V1-Internal-Test wenig Klick-Volume hat. Aufwand ~1-2h Cron-Endpoint + Coolify-Cron-Setup + REL-Notes. Done 2026-05-07 in SLC-641 MT-3+4 (Commit fff4116) + Hotfix entity_id (Commit 2b7a986). Live-Smoke gegen Hetzner: 2 Audit-Log-Rows verifiziert (run_id, entity_type=campaign_link_clicks, changes-JSONB komplett). Coolify-Cron-Setup ist User-Action (Snippet im RPT-XXX dokumentiert).",
       "createdAt": "2026-05-05"
     },
     {
@@ -1897,9 +1897,9 @@
       "title": "ISSUE-057 FollowupEngine-Bug-Fix (proposals.value -> total_gross)",
       "type": "bug",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V6.4",
-      "description": "FEAT-641 Teil 1: Schema-Drift seit V5.5/MIG-026 behebt. cockpit/src/lib/ai/followup-engine.ts:194-208 selektiert auf nicht-existenter Spalte value, Fix auf total_gross. Aus RPT-331 Post-Launch-Review.",
+      "description": "FEAT-641 Teil 1: Schema-Drift seit V5.5/MIG-026 behebt. cockpit/src/lib/ai/followup-engine.ts:194-208 selektiert auf nicht-existenter Spalte value, Fix auf total_gross. Aus RPT-331 Post-Launch-Review. Done 2026-05-07 in SLC-641 MT-1+2 (Commit f1af68b): 3 Stellen gefixt (Z. 199 select + Z. 207 order + Z. 235 candidate-context). Vitest-Regression-Test mit Mock-Supabase ergaenzt. Live-Smoke /api/cron/followups: success:true, candidates:2, failed:0, kein column-proposals.value-Error im Container-Log.",
       "createdAt": "2026-05-07"
     },
     {
@@ -1907,9 +1907,9 @@
       "title": "BL-423-Implementation: DSGVO Click-Log-Cleanup-Cron (90-Tage-Retention)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V6.4",
-      "description": "FEAT-641 Teil 2: Neuer Cron /api/cron/click-log-cleanup loescht campaign_link_clicks aelter 90 Tage. Pattern analog expire-proposals (V5.5). Coolify-Cron 24h. Audit-Log-Eintrag pro Lauf. Setzt BL-423 um.",
+      "description": "FEAT-641 Teil 2: Neuer Cron /api/cron/click-log-cleanup loescht campaign_link_clicks aelter 90 Tage. Pattern analog expire-proposals (V5.5). Coolify-Cron 24h. Audit-Log-Eintrag pro Lauf. Setzt BL-423 um. Done 2026-05-07 in SLC-641 MT-3+4 (Commit fff4116) + Hotfix audit_log.entity_id (Commit 2b7a986). 8 Vitest-Cases inkl. Idempotenz, Cutoff-UTC, Error-Pfade, Default-UUID. Live-Smoke verifiziert success:true / deleted:0 / Audit-Log-Insert mit run_id als entity_id. Coolify-Cron-Setup-Snippet im RPT, User-Aktion offen.",
       "createdAt": "2026-05-07"
     },
     {

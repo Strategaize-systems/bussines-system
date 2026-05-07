@@ -1,13 +1,12 @@
 # Known Issues
 
 ### ISSUE-057 — FollowupEngine.openProposals query bricht auf nicht-existenter Spalte `proposals.value`
-- Status: open
+- Status: resolved
 - Severity: Medium
 - Area: Backend / Cron / FollowupEngine / Schema-Drift
 - Summary: `cockpit/src/lib/ai/followup-engine.ts:194-208` selektiert + sortiert auf Spalte `value` der Proposals-Tabelle. Diese Spalte existiert nicht; tatsaechliche Felder sind `subtotal_net`, `tax_amount`, `total_gross`. Cron-Log-Hit: `[FollowupEngine] Open proposals query failed: column proposals.value does not exist` (3x in 16h, siehe RPT-331). Engine-Code stammt aus SLC-405 (V4), Schema wurde durch SLC-551 / MIG-026 (V5.5, 2026-04-29) restrukturiert — `value` wurde dabei nicht migriert.
 - Impact: Aktuell null (0 Proposals mit status='sent' und sent_at < NOW()-7d in DB). Sobald reale Proposals versendet werden, wuerden KI-Wiedervorlagen fuer Open-Proposals still uebersprungen. Stagnant-Deal-Pfad der gleichen Engine ist nicht betroffen.
-- Workaround: Keiner — Code-Fix erforderlich.
-- Next Action: `value` → `total_gross` in followup-engine.ts an 2 Stellen (Select Z. 199 + order Z. 207). Vitest fuer Engine ergaenzen, falls vorhanden — sonst minimal Pure-Function-Test fuer den Query-Builder. ~30min Aufwand. Kein Hotfix-Druck unter Internal-Test-Mode.
+- Resolution: 2026-05-07 in SLC-641 MT-1+2 (Commit f1af68b). 3 Stellen gefixt: Select Z. 199 + Order Z. 207 + Candidate-Context `proposalValue` Z. 235. Spec sagte 2 Stellen, real waren 3 — Z. 235 haette sonst `undefined` zurueckgegeben. Vitest `cockpit/src/lib/ai/followup-engine.test.ts` mit Mock-Supabase-Client + 2 Regression-Tests ergaenzt. Live-Smoke: Followups-Cron auf Hetzner manuell getriggert, Container-Log ohne `column proposals.value`-Fehler, Cron meldet `success:true, candidates:2, failed:0`.
 
 ### ISSUE-056 — Kampagnen-Verwaltung nicht in Settings-Landing-Page verlinkt
 - Status: resolved
