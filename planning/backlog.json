@@ -1927,9 +1927,69 @@
       "title": "UI-Hygiene-Audit (Settings + Sidebar + Button-Konsistenz + Pipeline-Stages)",
       "type": "improvement",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V6.4",
-      "description": "FEAT-643: Strukturierter UI-Audit ueber Settings-Landing, Sidebar, Button-Konsistenz, Pipeline-Stages, Page-Header. Output Audit-Report mit Vorher/Nachher pro Item + User-Sign-Off. Mindest-Quote 2 umgesetzte Items in V6.4.",
+      "description": "FEAT-643: Strukturierter UI-Audit ueber Settings-Landing, Sidebar, Button-Konsistenz, Pipeline-Stages, Page-Header. Output Audit-Report mit Vorher/Nachher pro Item + User-Sign-Off. Done 2026-05-07: SLC-644 Inventur (RPT-338, 13 Items in 6 Bereichen) + SLC-645 Cleanup (5 Klar-Items Pfad-A umgesetzt, Mindestquote 2 uebererfuellt) — UA-001 Settings auf PageHeader, UA-003 Einwilligungstexte bg-rose-50, UA-005 Sidebar Termine→Termine-Liste, UA-006 Primary Green→Blue Pipeline+Proposals, UA-010 Pipeline h1 text-3xl. Build clean, Vitest 405/405 PASS, Live-Image-Tag f99726b deployed. 8 Audit-Items deferred via BL-436..441.",
+      "createdAt": "2026-05-07"
+    },
+    {
+      "id": "BL-436",
+      "title": "UA-002 Settings inline-Sections in eigene Pages auslagern",
+      "type": "improvement",
+      "priority": "low",
+      "status": "open",
+      "version": "V6.5",
+      "description": "Aus RPT-338 V6.4 UI-Audit (UA-002). Settings-Landing rendert PipelineConfig + TemplatesConfig inline trotz eigener Page /settings/products + Sidebar-Eintrag Produkte. Mix von Karten-Klicks und always-visible Inline-Bloecken ist hierarchisch unklar. Vorschlag: PipelineConfig nach /settings/pipelines + TemplatesConfig nach /settings/templates als eigene Pages, mit Karten-Eintrag auf Settings-Landing. ImapStatus bleibt inline (Status-Banner-Charakter). Aufwand mittel 1-3h.",
+      "createdAt": "2026-05-07"
+    },
+    {
+      "id": "BL-437",
+      "title": "UA-004 Sidebar VERWALTUNG-Gruppe Mega-Menu-Split (V7-Konflikt)",
+      "type": "improvement",
+      "priority": "low",
+      "status": "open",
+      "version": null,
+      "description": "Aus RPT-338 V6.4 UI-Audit (UA-004). VERWALTUNG-Sidebar-Gruppe hat 11 Eintraege, Settings ist Position 10 von 11 — sehr tief vergraben. Vorschlag: Split in 2 Sub-Gruppen 'Meine Daten' + 'Setup' oder Settings als prominenten Footer-Eintrag. Aufwand mittel 1-3h. Deferred wegen V7-Multi-User-Sprint (FEAT-502) Sidebar-Umbau mit Team-Switcher.",
+      "createdAt": "2026-05-07"
+    },
+    {
+      "id": "BL-438",
+      "title": "UA-007 Pipeline ViewToggle generisch refactorn",
+      "type": "improvement",
+      "priority": "low",
+      "status": "open",
+      "version": "V6.5",
+      "description": "Aus RPT-338 V6.4 UI-Audit (UA-007). pipeline-view.tsx hat 4 ViewToggle-Buttons (Kanban, Liste, Funnel, Win/Loss) mit identischem cn(...)-Pattern viermal kopiert. ViewToggle-Component existiert (components/ui/view-toggle.tsx) generisch nur fuer 2 Modi. Vorschlag: ViewToggle generisches Mode-Type-Generic, Pipeline einsetzen. Aufwand mittel 1-3h, niedriger ROI.",
+      "createdAt": "2026-05-07"
+    },
+    {
+      "id": "BL-439",
+      "title": "UA-008 Pipeline-Stages Soft-Disable per DEC-133 (20/22 Stages 0 Deals)",
+      "type": "improvement",
+      "priority": "low",
+      "status": "open",
+      "version": null,
+      "description": "Aus RPT-338 V6.4 UI-Audit (UA-008). SQL-Live-Daten 2026-05-07: 20 von 22 Pipeline-Stages haben deal_count=0, kein Deal hat je Stage-Position > 1 erreicht. 'Gewonnen/Verloren/Geparkt'-Stages funktional doppelt mit deals.status (V2.1 SLC-201). Vorschlag: DEC-133 Stage-Soft-Disable nutzen oder Stages auf 4-5 echte Schritte reduzieren. Aufwand mittel 1-3h. Deferred wegen V7-Pipeline-Owner-Filter (FEAT-502) Konflikt.",
+      "createdAt": "2026-05-07"
+    },
+    {
+      "id": "BL-440",
+      "title": "UA-009 Pipeline-View auf PageHeader-Component umstellen",
+      "type": "improvement",
+      "priority": "low",
+      "status": "open",
+      "version": "V6.5",
+      "description": "Aus RPT-338 V6.4 UI-Audit (UA-009). Pipeline-View nutzt native h1-Header statt PageHeader-Component. Settings wurde in SLC-645 umgestellt (UA-001), Pipeline blieb wegen 2-Layer-Header (h1+Tabs+KPIs als Sticky-Sandwich) komplexer. Vorschlag: H1+Subtitle in PageHeader-Slot, Tabs+KPIs darunter eigene shrink-0-Section. Aufwand mittel 1-3h. Layer-Risiko mittel — kanbanRef + sticky-Layer-Management muss erhalten bleiben.",
+      "createdAt": "2026-05-07"
+    },
+    {
+      "id": "BL-441",
+      "title": "V6.5 Theming-Sprint — Brand-Tokens in tailwind.config.ts + Migration UA-011/012/013",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V6.5",
+      "description": "Aus RPT-338 V6.4 UI-Audit (UA-011 + UA-012 + UA-013). Style-Guide-V2-Drift systemisch: 73 arbitrary [#xxxxxx] Color-Klassen + 41 arbitrary Spacing + 64 arbitrary Gradient-Hex ueber 30 Files. tailwind.config.ts hat keine Brand-Tokens. Vorschlag 2-Phasen: Phase A (klein ~30min) tailwind.config.ts colors.primary/success/warning + utility-classes fuer Brand-Gradients. Phase B (gross 8-15h) 30 Files inkrementell migrieren. Eigener V-Release-Kandidat V6.5 'Theming-Sprint'. Risiko niedrig (rein semantisch).",
       "createdAt": "2026-05-07"
     },
     {
