@@ -33,10 +33,6 @@ export {
 } from "./indexer";
 export type { EmbedResult } from "./indexer";
 
-// Backfill
-export { runBackfill } from "./backfill";
-export type { BackfillResult, BackfillSourceResult } from "./backfill";
-
 // Search (SLC-424)
 export {
   searchKnowledge,
