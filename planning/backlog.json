@@ -1891,6 +1891,46 @@
       "version": "V6.4",
       "description": "Aus SLC-631 MT-7 (V6.3 Polish-Sprint, 2026-05-06): npm audit fix (non-force) hat 9 → 6 Vulnerabilities reduziert (1 high + 2 moderate resolved: @xmldom/xmldom 0.8.12→0.8.13, fast-xml-parser 5.5.8→5.7.2, @aws-sdk/xml-builder, next 16.2.3→16.2.4 patch, shadcn 4.1.1→4.7.0, express-rate-limit 8.3.1→8.5.0, @modelcontextprotocol/sdk 1.28.0→1.29.0). Verbleiben 6 moderate: @modelcontextprotocol/sdk + express-rate-limit + ip-address (Chain via shadcn), postcss <8.5.10 (sub-dep von next, fix verlangt next@9.3.3 Downgrade — Breaking), shadcn-Defekt durch SDK-Chain. Alle erfordern `npm audit fix --force`. Defer in V6.4-Sprint mit dediziertem Build+Test-Cycle. Aufwand ~1-2h plus Regression-Risiko bei Breaking-Change-Path. KEINE produktive Exposure: shadcn ist Build-Time-only, ip-address-XSS nur in HTML-Address6-Methode (von uns nicht genutzt), postcss-XSS nur bei untrusted-CSS-Input (alle CSS bei uns autorisiert). Status nach MT-7-Fix dokumentiert in cockpit/package-lock.json (package.json unveraendert).",
       "createdAt": "2026-05-06"
+    },
+    {
+      "id": "BL-431",
+      "title": "ISSUE-057 FollowupEngine-Bug-Fix (proposals.value -> total_gross)",
+      "type": "bug",
+      "priority": "medium",
+      "status": "open",
+      "version": "V6.4",
+      "description": "FEAT-641 Teil 1: Schema-Drift seit V5.5/MIG-026 behebt. cockpit/src/lib/ai/followup-engine.ts:194-208 selektiert auf nicht-existenter Spalte value, Fix auf total_gross. Aus RPT-331 Post-Launch-Review.",
+      "createdAt": "2026-05-07"
+    },
+    {
+      "id": "BL-432",
+      "title": "BL-423-Implementation: DSGVO Click-Log-Cleanup-Cron (90-Tage-Retention)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V6.4",
+      "description": "FEAT-641 Teil 2: Neuer Cron /api/cron/click-log-cleanup loescht campaign_link_clicks aelter 90 Tage. Pattern analog expire-proposals (V5.5). Coolify-Cron 24h. Audit-Log-Eintrag pro Lauf. Setzt BL-423 um.",
+      "createdAt": "2026-05-07"
+    },
+    {
+      "id": "BL-433",
+      "title": "Code-Hygiene-Audit (Inventur 5 Hot-Spots + selektives Cleanup)",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V6.4",
+      "description": "FEAT-642: Strukturierter Audit ueber Cron-Jobs (19), AI-Engines, Source-Schema-Inkonsistenzen, tote Server-Actions, tote API-Routes. Output Audit-Report mit Severity-Klassifikation + User-Sign-Off pro Item. Mindest-Quote 3 umgesetzte Items in V6.4.",
+      "createdAt": "2026-05-07"
+    },
+    {
+      "id": "BL-434",
+      "title": "UI-Hygiene-Audit (Settings + Sidebar + Button-Konsistenz + Pipeline-Stages)",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V6.4",
+      "description": "FEAT-643: Strukturierter UI-Audit ueber Settings-Landing, Sidebar, Button-Konsistenz, Pipeline-Stages, Page-Header. Output Audit-Report mit Vorher/Nachher pro Item + User-Sign-Off. Mindest-Quote 2 umgesetzte Items in V6.4.",
+      "createdAt": "2026-05-07"
     }
   ]
 }

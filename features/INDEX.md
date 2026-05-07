@@ -187,6 +187,14 @@
 | FEAT-621 | Workflow-Automation Rule Builder (BL-135) | deployed | 2026-05-03 |
 | FEAT-622 | Kampagnen-Attribution + UTM-Tracking (BL-139) | deployed | 2026-05-03 |
 
+## V6.4 Features (Hygiene-Sprint — active)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-641 | System-Stabilitaet & DSGVO-Hygiene (ISSUE-057 + BL-423) | planned | [Spec](FEAT-641-system-stabilitaet.md) | 2026-05-07 |
+| FEAT-642 | Code-Hygiene-Audit (Inventur + selektives Cleanup) | planned | [Spec](FEAT-642-code-audit.md) | 2026-05-07 |
+| FEAT-643 | UI-Hygiene-Audit (Inventur + selektives Cleanup) | planned | [Spec](FEAT-643-ui-audit.md) | 2026-05-07 |
+
 ## V7 Features (Multi-User + Teamlead — planned)
 
 | ID | Feature | Status | Created |

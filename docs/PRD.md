@@ -3137,3 +3137,159 @@ Spec: `/features/FEAT-622-kampagnen-attribution.md`
 (6 Slices als erste Schaetzung, /architecture konsolidiert auf finale Slice-Anzahl.)
 
 **V6.2 Requirements ready for `/architecture`.**
+
+---
+
+## V6.4 — Hygiene-Sprint (System-Aufraeumung vor V7)
+
+### V6.4 Problem Statement
+
+Nach 23 Releases (V2 bis V6.3) ist das System funktional weit gewachsen, aber strukturell ungeprueft. Drei konkrete Beobachtungen aus dem 2026-05-07 Post-Launch-Review (RPT-331):
+
+1. **Latenter Bug in Production:** `FollowupEngine.openProposals` selektiert auf der nicht-existenten Spalte `proposals.value`. Schema-Drift seit V5.5/MIG-026 (2026-04-29). Aktuell harmlos (0 reale Kandidaten in DB), wird aber sichtbar sobald reale Proposals versendet werden.
+
+2. **DSGVO-Luecke in Production:** `campaign_link_clicks` waechst seit V6.2-Release (2026-05-06) unbegrenzt. Die geplante 90-Tage-Retention (DSGVO konsistent zu V5.2 COMPLIANCE.md) wurde im Slice-Plan dokumentiert (BL-423), aber nie implementiert.
+
+3. **User-Wahrnehmung "doppelt und dreifach gebaut":** Konkrete Beispiele:
+   - 2 parallele Lead-Quellen-Konzepte (alte `source`/`source_detail` Freitext + neue `campaign_id`)
+   - Multiple AI-Engines parallel (FollowupEngine, Briefing-Engine, Signal-Extract, Bedrock-Pfade) mit potenzieller Logik-Ueberlappung
+   - 19 Cron-Jobs aktiv, davon viele mit `picked=0` / `processed=0` Logs ueber Stunden — Verdacht auf obsolete oder redundante Cron-Pfade
+   - Settings-Landing-Page mit 6+ Sub-Sections + Inline-Bloecken — moeglicherweise unuebersichtlich
+   - Pipeline-Stage-Anzahl historisch gewachsen, ggf. nicht mehr optimal
+
+V6.4 schliesst diese 3 Luecken bevor V7 (Multi-User) startet, damit V7 nicht auf einem System mit latenten Bugs und Wildwuchs aufbaut.
+
+### V6.4 Goal / Intended Outcome
+
+Ein arbeitsfaehiges System, mit dem der User produktiv arbeiten kann, ohne dass:
+- latente Bugs sichtbar werden sobald echte Daten fliessen
+- DSGVO-Luecken zum Compliance-Risiko werden
+- die UI durch Wildwuchs unuebersichtlich wird
+- doppelte Logik zukuenftige Aenderungen verlangsamt
+
+Ergebnis: Stabile Basis fuer V7-Multi-User-Sprint und erste produktive Sales-Flows.
+
+### V6.4 Primary User
+
+- **Richard (initialer Berater)** — einziger aktiver User in Internal-Test-Mode. Will produktiv mit dem System arbeiten, ohne ueber Wildwuchs nachdenken zu muessen.
+
+### V6.4 V1 Scope
+
+**FEAT-641 — System-Stabilitaet & DSGVO-Hygiene** *(klein, bekannt, schreibend)*
+- ISSUE-057 FollowupEngine-Fix: `proposals.value` -> `total_gross` an 2 Stellen in `cockpit/src/lib/ai/followup-engine.ts:194-208`. Vitest-Patch falls Tests existieren, sonst Pure-Function-Test fuer den Query-Builder.
+- BL-423 Click-Log-Cleanup-Cron: Neuer Cron-Endpoint `/api/cron/click-log-cleanup` der `campaign_link_clicks` aelter 90 Tage loescht. Coolify-Cron alle 24h. Pattern analog `expire-proposals` (V5.5).
+- Audit-Log-Eintrag bei jedem Cleanup-Lauf (geloeschte Anzahl, Zeitraum).
+
+**FEAT-642 — Code-Hygiene-Audit** *(Inventur + selektives Cleanup)*
+- Strukturierter `/doctor`-Lauf ueber Code-Base mit Fokus auf:
+  - Doppelte Logik (z.B. mehrere Cron-Jobs die aehnliches tun, mehrere AI-Engines mit Ueberlappung)
+  - Obsolete Code-Pfade (Code der seit V2..V6.3 nicht mehr aufgerufen wird)
+  - Ungenutzte Cron-Jobs (alle 19 Cron-Endpoints durchgehen, je mit Trigger-Source und letztem realem Output bewerten)
+  - Tote API-Routes (Routes ohne Caller)
+  - Schema-Inkonsistenzen (Tabellen mit alter+neuer Variante parallel, z.B. source vs. campaign_id)
+- Output: strukturierte Audit-Liste mit Severity (Klar-obsolet / Verdacht / Behalten) + User-Sign-Off pro Item
+- Selektives Cleanup IN V6.4: nur Items die der User explizit mit "loeschen" markiert hat
+- Rest als BL fuer V6.5 oder spaeter
+
+**FEAT-643 — UI-Hygiene-Audit** *(Inventur + selektives Cleanup)*
+- Strukturierter `/ui-update` Audit mit Fokus auf:
+  - Settings-Landing-Page: Sub-Sections + Inline-Bloecke pruefen, redundante Karten konsolidieren, Hierarchie pruefen
+  - Sidebar: Eintraege gegen tatsaechliche Nutzung pruefen (welche Pages werden noch geoeffnet?)
+  - Button-Konsistenz: Primary-/Secondary-/Destructive-Verteilung, Position, Label-Stil
+  - Pipeline-Stages: Anzahl + Beschriftung pro Pipeline pruefen, ueberfluessige Stages konsolidieren
+  - Page-Header-Pattern: einheitlich vs. abweichend
+- Output: strukturierte UI-Audit-Liste mit Vorher/Nachher-Mockup-Beschreibung + User-Sign-Off pro Item
+- Selektives Cleanup IN V6.4: nur Items die der User explizit mit "umsetzen" markiert hat
+- Rest als BL fuer V6.5 oder spaeter
+
+### V6.4 Out of Scope
+
+**NICHT in V6.4:**
+- BL-420 VIES-Online-Lookup (V5.7-DEC-124 Format-only ist bewusst gewaehlt)
+- BL-421 DE-Reverse-Charge § 13b (V5.7-DEC-128 NL-only ist V1-Fokus)
+- BL-424 Source-Migration-Tool (on-demand, kein Druck)
+- BL-425 Multi-Touch-Journey-Tab (Komfort-Feature)
+- BL-430 npm audit --force Cleanup (V6.4-defer wegen Breaking-Change-Path)
+- BL-397 GitHub-App Org-Anbindung (Infra-Hygiene, nicht Code-Hygiene)
+- ISSUE-042 OpenAI-Key + Compliance-Gate (User-Direktive 2026-05-01 "kommt viel spaeter")
+- Multi-User / Teamlead-Funktionalitaet -> V7
+- Neue Features oder UI-Komponenten — V6.4 ist striktes Aufraeumen, nicht Funktions-Erweiterung
+- Refactor-Sprints ohne konkrete User-Sichtbarkeit — keine "Code-Verbesserungen aus Prinzip"
+
+**Zwischenstellung:**
+- Tiefe Datenbankreorganisation (z.B. source/source_detail-Felder droppen) -> erst nach BL-424 Migration-Tool
+- Cron-Job-Loeschungen die produktive Aufgaben tangieren -> nur mit User-Sign-Off pro Job
+
+### V6.4 Constraints
+
+- **Internal-Test-Mode bleibt aktiv** — kein Wechsel zu Production-Compliance bis Pre-Production-Compliance-Gate (User-Direktive 2026-05-01).
+- **KEINE neuen npm-Packages** — V6.4 nutzt nur Bestehendes.
+- **KEINE neuen Container** — kein Asterisk/Whisper/Bedrock-Anbieter-Wechsel im Hygiene-Sprint.
+- **KEIN Schema-Bruch** — nur additive oder loeschende Migrationen, kein Type-Change auf bestehenden Spalten.
+- **Cleanup-Items nur mit User-Sign-Off pro Item** — V6.4 darf keinen Cron-Job/keine Page/keine Funktion still loeschen.
+- **Coolify-Cron** ist die Standard-Scheduler-Loesung — kein neuer Cron-Mechanismus.
+- **Style Guide V2 verbindlich** fuer alle UI-Aenderungen.
+- **Atomic Commits per Slice** — pro Cleanup-Item (oder eng zusammenhaengender Cleanup-Gruppe) ein Commit, damit Rollback einzelner Items moeglich.
+
+### V6.4 Risks & Assumptions
+
+**Risiken:**
+- **Risiko Audit-Scope-Explosion:** Code-Audit findet 50+ Cleanup-Kandidaten, V6.4 wird zu gross. **Mitigation:** Strenge User-Sign-Off-Pflicht pro Item, Rest geht als BL in V6.5.
+- **Risiko Falsch-Positiv:** "Obsoleter" Code wird geloescht, ist aber doch noch gebraucht (z.B. fuer einen seltenen Edge-Case-Pfad). **Mitigation:** Vor Loeschung mind. einmal grep + Coolify-Cron-Liste durchgehen, plus Live-Smoke-Test nach Cleanup.
+- **Risiko UI-Drift:** UI-Audit fuehrt zu Stil-Bruechen mit V5.3-V6.3-Pattern. **Mitigation:** Style Guide V2 als Referenz, /ui-update folgt bestehender Visual-Sprache.
+- **Risiko Compliance-Drift:** Cleanup tangiert Audit-Log-Schreiber oder andere Compliance-relevante Pfade. **Mitigation:** Audit-Log-Pfade explizit als "Behalten" markieren, separate Risk-Liste fuer Compliance-relevante Loeschungen.
+
+**Annahmen:**
+- **Annahme:** Internal-Test-Mode mit 1 User reicht zur V6.4-Verifikation — kein Multi-User-Test-Scenario noetig.
+- **Annahme:** Audit-Liste mit User-Sign-Off pro Item ist effektiver als pauschale "alles aufraeumen"-Direktive.
+- **Annahme:** /doctor-Skill und /ui-update-Skill sind ausreichend strukturiert um die Audits zu fahren — bei Luecken wird per IMP nachgepflegt.
+- **Annahme:** Click-Log-Cleanup mit 90 Tagen ist DSGVO-konform und konsistent mit V5.2 COMPLIANCE.md — kein Anwalts-Sign-Off in V6.4-Scope (gehoert zum Pre-Production-Compliance-Gate).
+
+### V6.4 Success Criteria
+
+- ISSUE-057 ist resolved + Live-Smoke gegen Followup-Cron PASS
+- BL-423 Cleanup-Cron ist live, Coolify-Cron-Eintrag aktiv, mind. 1 erfolgreicher Lauf in Logs sichtbar
+- Code-Audit-Output existiert als strukturiertes Dokument (RPT) mit Severity-Klassifikation
+- UI-Audit-Output existiert als strukturiertes Dokument (RPT) mit Vorher/Nachher pro Item
+- Beide Audits sind vom User signed-off (Item-by-Item: "loeschen / umsetzen / spaeter / nicht")
+- Mind. 5 Cleanup-Items sind tatsaechlich umgesetzt (sonst war der Audit nicht produktiv)
+- Vitest 393/393 (oder mehr) PASS nach allen V6.4-Aenderungen
+- Live-Smoke nach V6.4-Deploy: alle Settings-Pages laden, Pipeline funktioniert, Composing-Studio funktioniert, Proposals funktionieren
+- 0 neue Regressions auf V6.0..V6.3-Funktionalitaet
+
+### V6.4 Open Questions (fuer /architecture)
+
+**Scoping:**
+- F1: **Audit-Tiefe** — Soll der Code-Audit nur eine Inventur produzieren (User entscheidet danach), oder soll er auch Auto-Cleanup-Empfehlungen mit Confidence-Score machen? Empfehlung: nur Inventur + Severity-Klassifikation, kein Auto-Cleanup.
+- F2: **Audit-Breite** — Soll der Code-Audit ueber den gesamten Code-Base laufen (~ einige hundert Dateien) oder nur ueber Hot-Spots (Cron-Jobs, AI-Engines, Server-Actions)? Empfehlung: Hot-Spots zuerst, restlicher Code als BL fuer spaeter.
+- F3: **UI-Audit-Breite** — Settings + Sidebar + Buttons (eng) oder ALLE Pages (breit)? Empfehlung: eng. Page-Audits einzeln spaeter.
+- F4: **Cleanup-Quote** — Wieviele Audit-Items soll V6.4 mindestens umsetzen? Empfehlung: mindestens 5 echte Cleanups, sonst war der Sprint nicht produktiv.
+
+**Tooling:**
+- F5: **Cron-Audit-Methode** — Container-Logs der letzten 24h pro Cron auswerten ist ausreichend, oder lieber 7-Tage-Sample? Empfehlung: 24h reicht, da wenig User-Aktivitaet.
+- F6: **Schema-Audit** — Soll V6.4 auch ueber DB-Schema laufen (ungenutzte Spalten, redundante Indizes) oder nur Code? Empfehlung: nur Code in V6.4. Schema-Audit als separater V6.5-Slice falls relevant.
+- F7: **/doctor-Reuse** — Bestehender /doctor-Skill ist eher fuer "Diagnose unstabiler Releases", nicht fuer "systematischer Code-Audit". Erweitern oder neuen Audit-Mechanismus bauen? Empfehlung: /doctor erweitern, Audit-Pattern als IMP fuer Dev-System dokumentieren.
+
+**Cleanup-Strategie:**
+- F8: **Cron-Job-Loeschung** — Wenn ein Cron-Job seit 7+ Tagen nur `picked=0` hat: direkt loeschen oder als "verdaechtig" markieren und 30 Tage beobachten? Empfehlung: markieren + Soft-Disable (Cron deaktivieren in Coolify, Code bleibt). Hart-Loeschung erst nach 30 Tagen Soft-Disable ohne User-Beanstandung.
+- F9: **AI-Engine-Konsolidierung** — Wenn FollowupEngine + Briefing-Engine + Signal-Extract Logik teilen: separates Refactoring-Slice (riskanter, hoher Wert) oder als BL deferren? Empfehlung: deferren in V6.5, V6.4 bleibt im Hygiene-Scope.
+- F10: **UI-Polish-Tiefe** — UI-Audit-Cleanup macht nur Settings/Sidebar/Buttons (klein), oder gleich komplette Settings-Page-Restructure (gross)? Empfehlung: klein in V6.4, grosse Restructures als V6.5 wenn der Audit das rechtfertigt.
+
+**Definition-of-Done:**
+- F11: **V6.4-Release-Gate** — Wann gilt V6.4 als releaseable? Empfehlung: ISSUE-057 + BL-423 fixed + mindestens 5 Cleanups umgesetzt + Vitest gruen + Live-Smoke ueber 5 Haupt-Pages.
+
+### V6.4 Slicing-Vorschlag (zur /architecture-Entscheidung)
+
+- **SLC-641** — System-Stabilitaet & DSGVO (FEAT-641): ISSUE-057 fix + BL-423 Cleanup-Cron + Audit-Log + Vitest-Erweiterung. ~3-4h.
+- **SLC-642** — Code-Audit Inventur (FEAT-642): /doctor-Lauf, RPT mit Severity-Liste, User-Sign-Off-Pause. Kein Code geaendert in diesem Slice. ~2-3h Inventur + User-Pause.
+- **SLC-643** — Code-Cleanup Implementation (FEAT-642): Umsetzung der mindestens 3 Code-Items aus SLC-642 die der User signed-off hat. ~2-4h je nach Items.
+- **SLC-644** — UI-Audit Inventur (FEAT-643): /ui-update-Lauf, RPT mit Vorher/Nachher pro Item, User-Sign-Off-Pause. Kein UI-Code geaendert. ~2h + User-Pause.
+- **SLC-645** — UI-Cleanup Implementation (FEAT-643): Umsetzung der mindestens 2 UI-Items die der User signed-off hat. ~2-4h je nach Items.
+
+(5 Slices als erste Schaetzung, /architecture konsolidiert auf finale Anzahl. Audits + Cleanup-Implementation getrennt halten ist wichtig wegen User-Sign-Off-Punkt zwischen Inventur und Aktion.)
+
+### V6.4 Delivery Mode
+
+**Internal-Tool, Hygiene-Sprint.** Klein, additiv (1 Cron + 1 Bug-Fix + 2 Audits + selektive Cleanups), risikoarm. Internal-Test-Mode bleibt aktiv. Kein Compliance-Sprint, kein neuer Provider, kein neues Backend-Module. Pre-Production-Compliance-Gate kommt separat spaeter.
+
+**V6.4 Requirements ready for `/architecture`.**
