@@ -192,7 +192,7 @@
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
 | FEAT-641 | System-Stabilitaet & DSGVO-Hygiene (ISSUE-057 + BL-423) | done | [Spec](FEAT-641-system-stabilitaet.md) | 2026-05-07 |
-| FEAT-642 | Code-Hygiene-Audit (Inventur + selektives Cleanup) | planned | [Spec](FEAT-642-code-audit.md) | 2026-05-07 |
+| FEAT-642 | Code-Hygiene-Audit (Inventur + selektives Cleanup) | in_progress | [Spec](FEAT-642-code-audit.md) | 2026-05-07 |
 | FEAT-643 | UI-Hygiene-Audit (Inventur + selektives Cleanup) | planned | [Spec](FEAT-643-ui-audit.md) | 2026-05-07 |
 
 ## V7 Features (Multi-User + Teamlead — planned)

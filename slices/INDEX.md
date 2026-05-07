@@ -257,7 +257,7 @@
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-641 | [System-Stabilitaet & DSGVO (ISSUE-057 + Click-Log-Cleanup-Cron)](SLC-641-stabilitaet-dsgvo.md) | FEAT-641 | done | High | 2026-05-07 |
-| SLC-642 | [Code-Audit Inventur (5 Hot-Spots, kein Cleanup)](SLC-642-code-audit-inventur.md) | FEAT-642 | pending-signoff | Medium | 2026-05-07 |
+| SLC-642 | [Code-Audit Inventur (5 Hot-Spots, kein Cleanup)](SLC-642-code-audit-inventur.md) | FEAT-642 | done | Medium | 2026-05-07 |
 | SLC-643 | [Code-Cleanup Implementation (signed-off Items, mindestens 3)](SLC-643-code-cleanup.md) | FEAT-642 | planned | Medium | 2026-05-07 |
 | SLC-644 | [UI-Audit Inventur (5 UI-Bereiche, kein Cleanup)](SLC-644-ui-audit-inventur.md) | FEAT-643 | planned | Medium | 2026-05-07 |
 | SLC-645 | [UI-Cleanup Implementation (signed-off Items, mindestens 2)](SLC-645-ui-cleanup.md) | FEAT-643 | planned | Medium | 2026-05-07 |
