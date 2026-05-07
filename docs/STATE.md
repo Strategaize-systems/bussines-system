@@ -9,22 +9,23 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: **V6.4 HYGIENE-SPRINT — /requirements + /architecture done 2026-05-07** (RPT-332 + RPT-333). 3 Features (FEAT-641 Stabilitaet+DSGVO, FEAT-642 Code-Audit, FEAT-643 UI-Audit), 10 DECs (DEC-142..151), 4 Backlog-Items (BL-431..434), 5 Slices SLC-641..645 ueber ~14-21h geplant. User hat 5 Empfehlungen aus Open Questions bestaetigt (Audit-Tiefe, Audit-Breite, UI-Eng, Soft-Disable+30d, AI-Konsolidierung-defer-V6.5). Architektur konsolidiert auf Reuse-Pattern: Click-Log-Cleanup analog expire-proposals, /doctor + /ui-update als Audit-Vehikel, keine neuen Container/npm/Schema. Pause-Punkte zwischen Inventur (SLC-642+SLC-644) und Cleanup-Implementation (SLC-643+SLC-645) sind Pflicht. Naechster Schritt = /slice-planning V6.4.
-- Current Phase: V6.4 Hygiene-Sprint Slice-Planning-Phase. V6.3 released + Post-Launch durchlaufen + V6.4 Requirements + Architecture komplett.
+- High-Level State: implementing
+- Current Focus: **V6.4 HYGIENE-SPRINT — /slice-planning done 2026-05-07** (RPT-334). 5 Slices SLC-641..645 vollstaendig spezifiziert in `slices/SLC-64*.md` mit Per-Slice Acceptance Criteria + Micro-Tasks + Verification Strategy + Risks. Reihenfolge zwingend seriell mit 2 User-Sign-Off-Pausen (nach SLC-642 Code-Audit Inventur und SLC-644 UI-Audit Inventur). SLC-643 + SLC-645 sind Worktree-Isolation-Pflicht. Naechster Schritt = /backend SLC-641 (FEAT-641: ISSUE-057 fix + Click-Log-Cleanup-Cron, ~3-4h, 5 MTs).
+- Current Phase: V6.4 Implementation-Phase. V6.3 released + Post-Launch durchlaufen + V6.4 Requirements + Architecture + Slice-Planning komplett.
 
 ## Immediate Next Steps
-1. **/slice-planning V6.4** — 5 Slices SLC-641..645 strukturiert ausdefinieren mit ACs + Micro-Tasks + QA-Fokus + User-Sign-Off-Pause-Definition.
-2. **/backend SLC-641** (FEAT-641) — ISSUE-057 fix + Click-Log-Cleanup-Cron + Vitest + Coolify-Cron-Setup. ~3-4h.
-3. **/qa SLC-641** + Live-Cron-Smoke.
-4. **/doctor V6.4-code-audit (SLC-642)** — Inventur 5 Hot-Spots, RPT-XXX-code-audit erzeugen. User-Sign-Off-Pause.
-5. **/backend SLC-643** — Code-Cleanup-Implementation der signed-off Items. Atomare Commits.
-6. **/ui-update V6.4-ui-audit (SLC-644)** — Inventur 5 UI-Bereiche. User-Sign-Off-Pause.
-7. **/frontend SLC-645** — UI-Cleanup-Implementation der signed-off Items.
-8. **/qa Gesamt-V6.4 + /final-check + /go-live + /deploy als REL-026** nach allen 5 Slices.
-9. **(Spaeter, V6.4-Folge)** BL-424 Source-Migration-Tool, BL-425 Multi-Touch-Tab, V6.5 Schema-Audit + AI-Engine-Konsolidierung.
-10. **(Naechster Major-Schritt nach V6.4)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503).
-11. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
+1. **/backend SLC-641** (FEAT-641 Stabilitaet+DSGVO) — ISSUE-057 fix + Click-Log-Cleanup-Cron + Vitest + REL-026-Cron-Setup-Anleitung. 5 MTs, ~3-4h.
+2. **/qa SLC-641** + Live-Cron-Smoke gegen Hetzner.
+3. **/doctor V6.4-code-audit (SLC-642)** — Inventur 5 Hot-Spots, RPT-XXX-code-audit erzeugen. **USER-PAUSE** danach (Item-Klassifikation).
+4. **/backend SLC-643** — Code-Cleanup-Implementation der signed-off Items, atomare Commits, Soft-Disable-Pattern fuer Crons.
+5. **/qa SLC-643** + Live-Smoke.
+6. **/ui-update V6.4-ui-audit (SLC-644)** — Inventur 5 UI-Bereiche. **USER-PAUSE** danach.
+7. **/frontend SLC-645** — UI-Cleanup-Implementation der signed-off klein/mittel-Items, Style Guide V2 verbindlich.
+8. **/qa SLC-645** + Browser-Smoke.
+9. **/qa Gesamt-V6.4 + /final-check + /go-live + /deploy als REL-026** nach allen 5 Slices.
+10. **(Spaeter, V6.4-Folge)** V6.5 Schema-Audit + AI-Engine-Konsolidierung (per DEC-148/149 deferred).
+11. **(Naechster Major-Schritt nach V6.4)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503).
+12. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
