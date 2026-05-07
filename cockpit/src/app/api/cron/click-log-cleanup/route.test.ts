@@ -114,13 +114,14 @@ const NOW = new Date("2026-05-07T03:00:00Z");
 const EXPECTED_CUTOFF = new Date(
   NOW.getTime() - 90 * 24 * 60 * 60 * 1000,
 ).toISOString();
+const FIXED_RUN_ID = "00000000-0000-4000-8000-000000000001";
 
 describe("runClickLogCleanup — Cutoff + DELETE", () => {
   it("berechnet Cutoff exakt 90 Tage vor now (UTC)", async () => {
     const state = makeState({ deleteCount: 5 });
     const supabase = makeMockSupabase(state);
 
-    const result = await runClickLogCleanup(supabase, NOW);
+    const result = await runClickLogCleanup(supabase, NOW, FIXED_RUN_ID);
 
     expect(result.cutoff).toBe(EXPECTED_CUTOFF);
     expect(result.cutoff).toBe("2026-02-06T03:00:00.000Z");
@@ -130,7 +131,7 @@ describe("runClickLogCleanup — Cutoff + DELETE", () => {
     const state = makeState({ deleteCount: 3 });
     const supabase = makeMockSupabase(state);
 
-    await runClickLogCleanup(supabase, NOW);
+    await runClickLogCleanup(supabase, NOW, FIXED_RUN_ID);
 
     expect(state.deleteCalls).toHaveLength(1);
     expect(state.deleteCalls[0].table).toBe("campaign_link_clicks");
@@ -141,23 +142,24 @@ describe("runClickLogCleanup — Cutoff + DELETE", () => {
 });
 
 describe("runClickLogCleanup — Audit-Log-Insert", () => {
-  it("insertet audit_log-Zeile mit action, entity_type, changes und context", async () => {
+  it("insertet audit_log-Zeile mit action, entity_type, entity_id=runId, changes und context", async () => {
     const state = makeState({
       deleteCount: 7,
       selectData: [{ clicked_at: "2026-02-08T12:00:00Z" }],
     });
     const supabase = makeMockSupabase(state);
 
-    await runClickLogCleanup(supabase, NOW);
+    const result = await runClickLogCleanup(supabase, NOW, FIXED_RUN_ID);
 
     expect(state.insertCalls).toHaveLength(1);
     expect(state.insertCalls[0].table).toBe("audit_log");
     expect(state.insertCalls[0].row.action).toBe("click_log_cleanup");
     expect(state.insertCalls[0].row.entity_type).toBe("campaign_link_clicks");
-    expect(state.insertCalls[0].row.entity_id).toBeNull();
+    expect(state.insertCalls[0].row.entity_id).toBe(FIXED_RUN_ID);
     expect(state.insertCalls[0].row.actor_id).toBeNull();
 
     const changes = state.insertCalls[0].row.changes as Record<string, unknown>;
+    expect(changes.run_id).toBe(FIXED_RUN_ID);
     expect(changes.deleted_count).toBe(7);
     expect(changes.oldest_kept).toBe("2026-02-08T12:00:00Z");
     expect(changes.cutoff).toBe(EXPECTED_CUTOFF);
@@ -166,6 +168,20 @@ describe("runClickLogCleanup — Audit-Log-Insert", () => {
     expect(typeof state.insertCalls[0].row.context).toBe("string");
     expect(state.insertCalls[0].row.context).toContain("DSGVO");
     expect(state.insertCalls[0].row.context).toContain("7");
+
+    expect(result.run_id).toBe(FIXED_RUN_ID);
+  });
+
+  it("generiert eine UUID als run_id wenn keine explizit gegeben ist", async () => {
+    const state = makeState({ deleteCount: 0 });
+    const supabase = makeMockSupabase(state);
+
+    const result = await runClickLogCleanup(supabase, NOW);
+
+    expect(result.run_id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    );
+    expect(state.insertCalls[0].row.entity_id).toBe(result.run_id);
   });
 });
 
@@ -177,26 +193,29 @@ describe("runClickLogCleanup — 0-Row-Fall (Idempotenz)", () => {
     });
     const supabase = makeMockSupabase(state);
 
-    const result = await runClickLogCleanup(supabase, NOW);
+    const result = await runClickLogCleanup(supabase, NOW, FIXED_RUN_ID);
 
     expect(result.success).toBe(true);
     expect(result.deleted).toBe(0);
     expect(result.oldest_kept).toBeNull();
     expect(result.cutoff).toBe(EXPECTED_CUTOFF);
     expect(result.run_at).toBe(NOW.toISOString());
+    expect(result.run_id).toBe(FIXED_RUN_ID);
 
     // 0-Row-Lauf schreibt trotzdem audit_log (Spur fuer Cron-Run-Aktivitaet).
     expect(state.insertCalls).toHaveLength(1);
+    expect(state.insertCalls[0].row.entity_id).toBe(FIXED_RUN_ID);
     const changes = state.insertCalls[0].row.changes as Record<string, unknown>;
     expect(changes.deleted_count).toBe(0);
     expect(changes.oldest_kept).toBeNull();
+    expect(changes.run_id).toBe(FIXED_RUN_ID);
   });
 
   it("behandelt count:null als deleted:0 (supabase-js Edge-Case)", async () => {
     const state = makeState({ deleteCount: null });
     const supabase = makeMockSupabase(state);
 
-    const result = await runClickLogCleanup(supabase, NOW);
+    const result = await runClickLogCleanup(supabase, NOW, FIXED_RUN_ID);
 
     expect(result.deleted).toBe(0);
   });

@@ -15,6 +15,7 @@
 // Pure-Function-Extraction (runClickLogCleanup) macht die Logik
 // in route.test.ts testbar mit Mock-Supabase + Mock-Now.
 
+import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCronSecret } from "../verify-cron-secret";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -30,6 +31,7 @@ export interface ClickLogCleanupResult {
   cutoff: string;
   oldest_kept: string | null;
   run_at: string;
+  run_id: string;
 }
 
 // Minimal supabase-shape we depend on. Lets the test inject a mock
@@ -63,6 +65,7 @@ type SupabaseLike = {
 export async function runClickLogCleanup(
   supabase: SupabaseLike,
   now: Date,
+  runId: string = randomUUID(),
 ): Promise<ClickLogCleanupResult> {
   const cutoff = new Date(now.getTime() - RETENTION_MS).toISOString();
   const runAt = now.toISOString();
@@ -99,8 +102,9 @@ export async function runClickLogCleanup(
     actor_id: null,
     action: "click_log_cleanup",
     entity_type: "campaign_link_clicks",
-    entity_id: null,
+    entity_id: runId,
     changes: {
+      run_id: runId,
       deleted_count: deleted,
       oldest_kept: oldestKept,
       cutoff,
@@ -121,6 +125,7 @@ export async function runClickLogCleanup(
     cutoff,
     oldest_kept: oldestKept,
     run_at: runAt,
+    run_id: runId,
   };
 }
 
