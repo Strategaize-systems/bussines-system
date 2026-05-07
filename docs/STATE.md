@@ -9,21 +9,17 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: **V6.4 HYGIENE-SPRINT — SLC-644 + SLC-645 done 2026-05-07.** Pfad-A signed off, alle 5 Klar-Items aus RPT-338 atomar umgesetzt: UA-010 Pipeline h1 text-3xl (Commit `b8fe654`), UA-003 Einwilligungstexte bg-rose-50 (`27e19f6`), UA-005 Sidebar Termine→Termine-Liste (`d82927b`), UA-006 Primary Green→Blue Pipeline+Proposals (`a4f399b`), UA-001 Settings auf PageHeader (`45906ed`). Build clean, Vitest 405/405 PASS, kein neuer Lint-Error (166 pre-existing unrelated unchanged). 8 Audit-Items deferred V6.5/V7 (UA-002/004/007/008/009 + UA-011/012/013 Theming-Gross). FEAT-643 done. V6.4 5/5 Slices done. Naechster Schritt = /qa SLC-645 + Gesamt-/qa V6.4 + /final-check + /go-live + /deploy als REL-026.
-- Current Phase: V6.4 Implementation-Phase abgeschlossen. 5/5 Slices done (SLC-641+642+643+644+645). FEAT-641+642+643 alle done. Bereit fuer Gesamt-V6.4-/qa.
+- High-Level State: stable
+- Current Focus: **V6.4 RELEASED 2026-05-07 als REL-026** (RPT-343). Live-Image-Tag `f99726b` deployed via Coolify-Redeploy 10:41 UTC. 5 Slices + 3 Features deployed, Vitest 405/405 PASS, Container healthy >2h, 3 V6.4-Audit-Patterns produzieren Daten in DB, 0 `proposals.value`-Errors. Naechster Schritt = /post-launch fuer 24h-Live-Beobachtung, danach /requirements V7 Multi-User + Teamlead.
+- Current Phase: V6.4 stable in Production (Internal-Test-Mode aktiv). Bereit fuer /post-launch + V7-Vorbereitung.
 
 ## Immediate Next Steps
-1. **/qa SLC-645** — UI-Cleanup verifizieren (5 Pages: Mein Tag, Pipeline, Kontakte, Settings, Proposals) nach Coolify-Redeploy.
-2. **(User-Aktion)** Coolify-Redeploy main bis Commit `45906ed` triggern.
-3. **(Optional)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335.
-4. **/qa Gesamt-V6.4** ueber alle 5 V6.4-Slices.
-5. **/final-check** + **/go-live** + **/deploy als REL-026**.
-6. **(Spaeter, V6.5)** Theming-Sprint — Brand-Tokens in tailwind.config.ts + Migration UA-011/012/013 + Settings-Inline-Sections-Page-Auslagerung UA-002.
-7. **(Naechster Major-Schritt nach V6.4)** /requirements V7 — Multi-User + Teamlead.
-4. **/qa SLC-645** + Browser-Smoke.
-5. **/qa Gesamt-V6.4 + /final-check + /go-live + /deploy als REL-026** nach allen 5 Slices.
-6. **(Spaeter, V6.4-Folge)** V6.5 Schema-Audit + AI-Engine-Konsolidierung (per DEC-148/149 deferred).
+1. **(Optional, 5 Min)** Visuelle User-Smoke ueber 5 V6.4-UI-Aenderungen (Pipeline h1 text-3xl + Pipeline+Proposals Buttons blau + Einwilligungstexte rosa + Sidebar "Termine-Liste" + Settings PageHeader). Live-Image bereits seit 10:41 UTC auf `f99726b`.
+2. **(Optional)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Nicht zeitkritisch (frueheste Wirkung 2026-08-04).
+3. **/final-check** — Hygiene + Dependencies + Security + ENV.
+4. **/go-live** — Release-Risk-Assessment.
+5. **/deploy als REL-026** — Coolify-Auto-Deploy bei Push, RELEASES.md-Eintrag, Image-Tag = aktueller Stand `f99726b` (oder neuer Records-Sync-Commit).
+6. **(Spaeter, V6.5)** Theming-Sprint per BL-441 — Brand-Tokens in tailwind.config.ts + Migration UA-011/012/013 + UA-002 Settings-Inline-Sections-Page-Auslagerung.
 7. **(Naechster Major-Schritt nach V6.4)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503).
 8. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
 
@@ -81,6 +77,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - aktuell keine
 
 ## Last Stable Version
+- V6.4 — 2026-05-07 — released auf Hetzner als REL-026 (Hygiene-Sprint: 5 Slices SLC-641..645, 3 Features FEAT-641..643 alle deployed. ISSUE-057 FollowupEngine-Bug resolved + BL-423 DSGVO Click-Log-Cleanup-Cron live + 6 Code-Cleanup-Items (~728 Zeilen) abgeraeumt + 5 UI-Cleanup-Items umgesetzt + 13 Audit-Items deferred V6.5/V7. Image-Tag `f99726b` Coolify-Redeploy 10:41 UTC. Keine Schema-Migration. Vitest 405/405 PASS, Container healthy >2h, audit_log-Trail aktiv. Internal-Test-Mode bleibt aktiv. RPT-335..343.)
 - V6.3 — 2026-05-06 — released auf Hetzner als REL-025 (Polish-Bündel: SLC-631 mit 7 MTs — BL-426 Sub-Items 1-3 + BL-422 RC-Drift-Fix + ISSUE-050 Audit-Log-Render-Fix + L4 trigger-sources-Doku + L5/MT-7 npm audit + Backlog-Hygiene. Image-Tag `f7fd231` Commit `f7fd2310...`. Internal-Test-Mode bleibt aktiv. Vitest 393/393 PASS, 5 Browser-Smokes Live-bestaetigt. RPT-326+327+328.)
 - V6.2 — 2026-05-06 — released auf Hetzner als REL-024 (Workflow-Automation + Kampagnen-Attribution: 5 Slices SLC-621..625, FEAT-621+622, MIG-029 alle 3 Phasen. Image-Tag `766e4ac` inkl. V6.2-Hotfix ISSUE-055 + ISSUE-056. Coolify-Cron `automation-runner` aktiv jede Minute. Internal-Test-Mode aktiv. RPT-321..324.)
 - V5.7 — 2026-05-05 — released auf Hetzner als REL-023 (NL+DE-VAT-Saetze + Reverse-Charge fuer EU-B2B-Cross-Border + Skonto-Toggle UI-State-Drift Bugfix mit 3 Follow-up-Fixes nach iterativen Live-Smoke-Runden. Image-Tag 908eb81, MIG-028 live, BTW-IDs in Branding+Companies, country-aware Steuersatz-Dropdown, bilingualer Reverse-Charge-PDF-Block, Validation-Gate vor Server-Save fuer Skonto-Edit. Internal-Test-Mode bleibt aktiv. RPT-298+301..306.)
