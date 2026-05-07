@@ -9,24 +9,18 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: **V6.3 RELEASED 2026-05-06 als REL-025**. /qa PASS (RPT-327), /final-check PASS (RPT-328), /go-live PASS — Code ist live seit 14:17 UTC auf Image-Tag `f7fd231`. Polish-Sprint: 7 MTs gebuendelt (BL-426 Workflow-Builder Lint+Sidebar+Page-Header, BL-422 RC-Drift-Fix Defense-in-Depth, ISSUE-050 Audit-Log-Render-Fix, L4 trigger-sources-Doku, L5/MT-7 npm audit fix non-breaking + Backlog-Dedup BL-427/428/429 + neuer BL-430 V6.4-Defer). Vitest 393/393 PASS, 5 Browser-Smokes Live-bestaetigt, Internal-Test-Mode aktiv. Naechster Schritt = /deploy als formaler Release-Marker (Code ist effektiv schon deployed) ODER /post-launch-Phase.
-- Current Phase: V6.3 released. Naechster Schritt = /deploy als REL-025-Marker oder /post-launch V6.2+V6.3-Beobachtung.
+- High-Level State: post-launch
+- Current Focus: **V6.2 + V6.3 POST-LAUNCH-Review durchlaufen 2026-05-07 (RPT-331)**. Live-System healthy seit 16h Uptime auf Image-Tag `f7fd231`, 9 Container Up + healthy, Endpoints TTFB <200ms. Cron-Aktivitaet sauber bis auf 1 Finding: ISSUE-057 (FollowupEngine.openProposals selektiert auf nicht-existenter Spalte `proposals.value`, latent seit V5.5/MIG-026). Aktueller User-Impact null (0 reale Kandidaten). Klassifikation: STABIL mit latenter Schwachstelle. Kein Hotfix-Druck. Naechster Major-Schritt = /requirements V7 oder Mini-Hotfix-Slice fuer ISSUE-057 vor V7.
+- Current Phase: V6.3 released + Post-Launch-Review abgeschlossen. Naechster Schritt = /requirements V7 (Multi-User + Teamlead) ODER Mini-Hotfix ISSUE-057.
 
 ## Immediate Next Steps
-1. **/deploy als REL-025** — formaler Release-Marker (User-Coolify-Status bestaetigen, Live-Smoke-Confirm, README-/Cockpit-Refresh).
-2. **/post-launch V6.2 + V6.3** — 1-2 Wochen passive Beobachtung (Live-Stability + erste echte User-Workflows).
-3. **(Naechster Major-Schritt)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503, reduzierter Scope nach V6.2-Auslagerung).
+1. **(Empfehlung A)** Mini-Hotfix-Slice fuer ISSUE-057 — `proposals.value` → `total_gross` in followup-engine.ts (~30min, schliesst latente Luecke vor erstem realem Sales-Flow).
+2. **(Empfehlung B, Major-Track)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503, reduzierter Scope nach V6.2-Auslagerung). ISSUE-057 als BL-431 mitnehmen, im V7-Backend-Slice mit-fixen.
+3. **(Routine, naechster Post-Launch ca. 2026-05-21)** /post-launch erneut nach 1-2 Wochen weiterer Beobachtung.
 4. **(Optional, empfohlen)** Workflow-Trigger-End-to-End-Smoke aus V6.2 (1 Test-Rule aktivieren → Stage-Change auf Test-Deal → automation_run-Insert + Activity-Insert verifizieren).
-5. **(Post-Launch-Phase, ~1-2 Wochen Beobachtung)** /post-launch V6.2 + V6.3 — Live-Stability + erste echte User-Workflows beobachten.
-6. **(Naechster Major-Schritt nach V6.3)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503, reduzierter Scope nach V6.2-Auslagerung).
-7. **(Spaeter)** BL-423 Cleanup-Cron, BL-424 Source-Migration-Tool, BL-425 Multi-Touch-Tab — eigene V6.3-Folge-Slices wenn relevant.
-8. **(Spaeter)** BL-397 GitHub-App Org-Anbindung, BL-420 VIES-Lookup, BL-421 DE-Reverse-Charge — separate Compliance-/Tax-Sprints.
-9. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (User-Direktive 2026-05-01 "kommt viel spaeter").
-4. **(Pre-Production-spaeter)** BL-427 Cleanup-Cron, BL-428 Source-Migration-Tool, BL-429 Multi-Touch-Tab.
-5. **(Parallel, kein Blocker)** ISSUE-050 Audit-Log-UI-Renderer-Bug als separates Slice spaeter fixen.
-6. **(V6.3-Polish)** L1 Lint-Cleanup rule-builder.tsx:57 + L2 Settings-Sub-Nav fuer Workflow-Automation + Kampagnen + L3 Primary-Button-Position vereinheitlichen + L4 trigger-sources.ts AC12-Wortlaut/dispatcher-Coverage Doku-Update + L5 STATE.md Active-Scope-Refresh nach V6.2-Release.
-7. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
+5. **(Spaeter)** BL-426 Sub-Items 4+5 Workflow-Polish, BL-427 Cleanup-Cron, BL-428 Source-Migration-Tool, BL-429 Multi-Touch-Tab.
+6. **(Spaeter)** BL-397 GitHub-App Org-Anbindung, BL-420 VIES-Lookup, BL-421 DE-Reverse-Charge — separate Compliance-/Tax-Sprints.
+7. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (User-Direktive 2026-05-01 "kommt viel spaeter").
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
