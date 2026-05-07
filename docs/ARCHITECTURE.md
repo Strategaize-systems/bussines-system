@@ -7670,3 +7670,314 @@ Pro Slice: `/backend|/frontend` -> `/qa` -> Coolify-Redeploy. Final-Check + Go-L
 ### V6.2 Recommended Next Step
 
 `/slice-planning V6.2` — die 5 Slices SLC-621..625 strukturiert ausdefinieren mit Acceptance Criteria pro Slice, Micro-Tasks-Liste mit Reihenfolge, QA-Fokus pro Slice. Insbesondere: Trigger-Source-Server-Action-Liste in SLC-621 Code-Konfig, Field-Whitelist-Liste mit Validators in SLC-621, Cron-Setup-Anleitung fuer REL-024-Notes in SLC-622, Trockenlauf-UI-Komponente in SLC-623, Stammdaten-Dropdown-Komponente (wiederverwendbar Contacts/Companies/Deals) in SLC-624, `/r/[token]`-Endpoint mit Click-Log-Tests in SLC-625, Read-API-Smoke-Test mit Bearer-Token in SLC-625.
+
+---
+
+## V6.4 — Hygiene-Sprint Architecture
+
+### V6.4 Summary
+
+V6.4 ist ein Hygiene-Sprint, kein Feature-Sprint. Die "Architektur" besteht aus 3 Bloecken:
+
+1. **FEAT-641 Stabilitaet & DSGVO** — 1 Cron-Endpoint + 1 Code-Fix. Reuse vollstaendig: Pattern, Auth, Audit-Log, Coolify-Cron-Mechanik = alles wie `expire-proposals` (V5.5).
+2. **FEAT-642 Code-Audit** — neue **Audit-Methodik** (Process), kein neuer Code-Pfad. Audit-Output ist ein RPT mit Per-Item-Format und Severity-Klassifikation.
+3. **FEAT-643 UI-Audit** — gleiche Methodik wie FEAT-642, fuer UI-Bereiche.
+
+KEINE neuen Container, KEINE neuen npm-Packages, KEINE Schema-Migration, KEIN neuer LLM-Pfad. Komplett additiv und entfernend (selektive Cleanups).
+
+### V6.4 Main Components
+
+```
+                ┌──────────────────────────────────────────────────┐
+                │            App-Layer (Next.js, bestehend)         │
+                │                                                    │
+  FEAT-641 Fix  │  cockpit/src/lib/ai/followup-engine.ts             │
+                │     proposals.value -> total_gross (2 Stellen)    │
+                │                                                    │
+  FEAT-641 Cron │  cockpit/src/app/api/cron/click-log-cleanup/      │
+                │     route.ts (NEU, analog expire-proposals)        │
+                │     POST + verifyCronSecret                        │
+                │     DELETE FROM campaign_link_clicks               │
+                │       WHERE created_at < NOW() - INTERVAL '90d'    │
+                │     INSERT audit_log (action='click_log_cleanup',  │
+                │       changes={deleted_count,oldest_kept,run_at})  │
+                │                                                    │
+                │  Coolify-Cron (NEU, taeglich 03:00 UTC)            │
+                │                                                    │
+  FEAT-642 + 643│  /reports/RPT-XXX-code-audit.md (NEU, Inventur)    │
+                │  /reports/RPT-XXX-ui-audit.md  (NEU, Inventur)     │
+                │     Per-Item-Format mit Severity + User-Sign-Off   │
+                │                                                    │
+                │  Cleanup-Implementation: Edits in bestehenden      │
+                │    Files, atomare Commits pro Item                 │
+                └──────────────────────────────────────────────────┘
+                              │
+                              ▼
+                ┌──────────────────────────────────────────────────┐
+                │      Postgres (bestehend, keine Schema-Aenderung) │
+                │                                                    │
+                │  campaign_link_clicks (DELETE pro 90d)             │
+                │  audit_log (INSERT pro Cleanup-Lauf)               │
+                │  proposals (kein Aenderung — Fix ist Code-side)    │
+                └──────────────────────────────────────────────────┘
+```
+
+### V6.4 Component-Detail — FEAT-641 System-Stabilitaet
+
+#### 1. ISSUE-057 FollowupEngine-Fix (DEC-142)
+
+**Problem:** `cockpit/src/lib/ai/followup-engine.ts:194-208` selektiert auf nicht-existenter Spalte `proposals.value`. Schema-Drift seit V5.5/MIG-026.
+
+**Fix:**
+- Zeile 199: `value` -> `total_gross` (Select-String)
+- Zeile 207: `.order("value", ...)` -> `.order("total_gross", ...)` (Sortier-Spalte)
+- Begleitend: Pure-Function-Test fuer den Query-Builder mit Mock-Supabase-Client.
+
+**Pattern-Hinweis:** Beim Vitest-Setup ist node-Env (kein React-Testing-Library) ausreichend, weil FollowupEngine reine Server-Logik ist.
+
+#### 2. Click-Log-Cleanup-Cron (DEC-143, DEC-144)
+
+**Pattern:** identisch zu `cockpit/src/app/api/cron/expire-proposals/route.ts` (V5.5, REL-020).
+
+**Endpoint:** `cockpit/src/app/api/cron/click-log-cleanup/route.ts`
+
+```
+POST /api/cron/click-log-cleanup
+Authorization: Bearer ${CRON_SECRET}
+
+Logic:
+1. verifyCronSecret(request) -> 401 if missing
+2. const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+3. DELETE FROM campaign_link_clicks WHERE created_at < cutoff (count exact)
+4. SELECT MIN(created_at) FROM campaign_link_clicks (oldest_kept)
+5. INSERT audit_log (action='click_log_cleanup',
+                      changes={deleted_count, oldest_kept, cutoff, run_at})
+6. return JSON { success: true, deleted, cutoff }
+```
+
+**Idempotent:** 0-Row-Lauf produziert kein Error. Audit-Log-Eintrag bei jedem Lauf.
+
+**Schedule:** Coolify-Cron taeglich 03:00 UTC (analog `expire-proposals` 02:00 UTC, +1h Offset um Konflikte zu vermeiden).
+
+**Hard-Delete:** kein Soft-Delete. Begruendung: Click-Logs sind anonymisiert (IP-Hash + Salt), 90-Tage-Retention ist DSGVO-konformes Maximum, kein Recovery-Pfad benoetigt. Konsistent mit V5.2 COMPLIANCE.md Email-Retention-Pattern.
+
+### V6.4 Component-Detail — FEAT-642 Code-Audit Methodik (DEC-145, DEC-147, DEC-148, DEC-149)
+
+#### Audit-Scope (DEC-148): Code only, KEIN Schema-Audit in V6.4
+
+Schema-Audit (ungenutzte Spalten/Indizes) wird auf V6.5 vertagt. V6.4 inspiziert nur Code-Konsumenten.
+
+#### 5 Hot-Spots:
+
+1. **Cron-Jobs (19 Endpoints in `cockpit/src/app/api/cron/`)** — pro Cron: 24h Container-Log-Stichprobe + Coolify-Cron-Status + Code-Konsumenten-Suche.
+2. **AI-Engines (`cockpit/src/lib/ai/`)** — FollowupEngine, Briefing-Engine, Signal-Extract, Bedrock-Adapter, Whisper-Adapter. Pro Engine: Trigger-Source + Eingabe/Ausgabe + Logik-Ueberlappungs-Suche. **Konsolidierungs-Refactor explizit deferred (DEC-149).**
+3. **Source-Schema-Inkonsistenzen** — `contacts.source/source_detail/campaign_id`, `companies.source_type/source_detail/campaign_id`, `deals.campaign_id`. Pro Feld: Reader/Writer-Suche im Code. **Migration-Tool BL-424 deferred (unassigned).**
+4. **Tote Server-Actions** — `cockpit/src/**/actions.ts` durchgehen. Pro exportierter Action: grep auf Aufrufer.
+5. **Tote API-Routes** — `cockpit/src/app/api/**/route.ts` durchgehen. Pro Route: grep auf fetch-Aufrufer + Coolify-Cron-Liste.
+
+#### Audit-Methodik (DEC-145):
+
+**Stichprobe Cron-Jobs:** 24h Container-Logs reicht. Bei Verdacht-Faellen kann man im naechsten Schritt 7-Tage-Sample nachziehen.
+
+**Per-Item-Format:**
+```
+## CA-001 — [Titel]
+- Typ: cron-job | ai-engine | server-action | api-route | schema-inkonsistenz
+- Pfad: cockpit/src/...
+- Severity: Klar-obsolet | Verdacht | Behalten
+- Beobachtung: [konkrete Beweise]
+- Cleanup-Vorschlag: [delete | soft-disable | refactor | keep]
+- Risiko: [was schief gehen kann]
+- User-Entscheidung: [ ] loeschen [ ] umsetzen [ ] spaeter [ ] nicht
+```
+
+**Severity-Definitionen:**
+- **Klar-obsolet** — Code hat 0 Aufrufer, kein Cron-Trigger, keine Funktion
+- **Verdacht** — Code wird nicht aktiv genutzt (picked=0 ueber Sample-Window), aber theoretisch erreichbar
+- **Behalten** — Code ist aktiv ODER sicherheits-/compliance-relevant (z.B. audit_log-Schreiber)
+
+#### Cleanup-Strategie (DEC-146): Soft-Disable + 30 Tage Beobachtung
+
+**Cron-Jobs:** Bei Cleanup-Decision "loeschen" passiert in 2 Stufen:
+1. **Stufe 1 (V6.4):** Coolify-Cron deaktivieren. Code bleibt unberuehrt. Warten 30 Tage.
+2. **Stufe 2 (V6.5+ falls keine User-Beanstandung):** Code + Endpoint geloescht.
+
+**Andere Code-Pfade (Server-Actions, API-Routes, AI-Engine-Methoden):** Kann in V6.4 hart geloescht werden, weil Tests + Live-Smoke direkt zeigen ob etwas bricht. Soft-Disable-Pattern lohnt sich nur fuer Scheduler-getriebene Pfade.
+
+#### Tooling (DEC-147): /doctor erweitern, kein neuer Mechanismus
+
+Bestehender `/doctor`-Skill ist eher fuer "Diagnose unstabiler Releases" gedacht. Wir nutzen ihn trotzdem als Vehikel fuer den V6.4-Audit, ergaenzen die Methodik durch ein neues IMP-Pattern in `strategaize-dev-system/docs/SKILL_IMPROVEMENTS.md`.
+
+### V6.4 Component-Detail — FEAT-643 UI-Audit Methodik (DEC-150)
+
+#### Audit-Scope: Eng — 5 Bereiche, KEINE ganzen Page-Redesigns
+
+1. **Settings-Landing-Page** — 5 Link-Karten + Inline-Sections (ImapStatus, PipelineConfig, TemplatesConfig). Hierarchie + Konsolidierung pruefen.
+2. **Sidebar-Navigation** — Eintraege gegen Nutzung. Doppel-Pfade identifizieren.
+3. **Button-Konsistenz** — Primary-/Secondary-/Destructive-Verteilung, Position, Label-Stil cross-page.
+4. **Pipeline-Stages** — Anzahl + Beschriftung pro Pipeline (Multiplikatoren 10, Endkunden 12) gegen Deal-Count pro Stage.
+5. **Page-Header-Pattern** — Header-Hoehe, Title+Subtitle+Actions-Konsistenz.
+
+**Out-of-Scope:** komplette Page-Redesigns, Mobile-Audit, Accessibility, Color-Palette-Wechsel (Style Guide V2 ist verbindlich).
+
+#### Tooling: Bestehender `/ui-update`-Skill
+
+Kein neuer Mechanismus. Audit-Output: strukturierter RPT mit Per-Item-Vorher/Nachher.
+
+#### Per-Item-Format:
+```
+## UA-001 — [Titel]
+- Bereich: settings-landing | sidebar | button-konsistenz | pipeline-stages | page-header
+- Aktuell: [Status quo]
+- Beobachtung: [warum Cleanup-Kandidat]
+- Vorschlag: [konkreter Vorher/Nachher]
+- Aufwand: klein <1h | mittel 1-3h | gross 3+h
+- Risiko: [was kann brechen]
+- User-Entscheidung: [ ] umsetzen [ ] spaeter [ ] nicht
+```
+
+#### UI-Polish-Tiefe (DEC-150): Klein in V6.4, Gross-Items deferren
+
+**Klein/Mittel-Items (<3h)** sind V6.4-Cleanup-Kandidaten.
+**Gross-Items (>3h, z.B. komplette Settings-Page-Restrukturierung)** werden als BL fuer V6.5 angelegt mit Begruendung.
+
+### V6.4 Data Flow
+
+#### FEAT-641 Click-Log-Cleanup-Cron Flow:
+
+```
+Coolify-Cron (03:00 UTC)
+       │
+       ▼
+POST /api/cron/click-log-cleanup
+   Authorization: Bearer $CRON_SECRET
+       │
+       ▼
+verifyCronSecret() -> ok | 401
+       │
+       ▼
+DELETE FROM campaign_link_clicks
+   WHERE created_at < NOW() - INTERVAL '90 days'
+       │
+       ▼
+SELECT MIN(created_at) FROM campaign_link_clicks
+   (oldest_kept fuer audit_log)
+       │
+       ▼
+INSERT audit_log (action='click_log_cleanup', changes=...)
+       │
+       ▼
+return JSON { success, deleted, cutoff }
+```
+
+#### FEAT-642/643 Audit Flow:
+
+```
+SLC-642 Inventur (Code-Audit)
+       │
+       ▼ (Tools: ripgrep, Container-Log-Stichprobe, Coolify-Cron-List)
+RPT-XXX (Per-Item-Liste, alle Items "User-Entscheidung: [ ]")
+       │
+       ▼ User-Pause: signed-off pro Item
+RPT-XXX (gleicher Report, Sign-Off-Status pro Item ergaenzt)
+       │
+       ▼
+SLC-643 Cleanup-Implementation (nur signed-off Items)
+       │
+       ▼
+Atomare Commits pro Item (Pattern aus .claude/rules/git-release.md)
+       │
+       ▼
+Vitest + Live-Smoke
+```
+
+(Gleicher Flow fuer SLC-644 + SLC-645 mit UI-Audit.)
+
+### V6.4 External Dependencies
+
+**Keine neuen Dependencies.** V6.4 nutzt:
+- Bestehende Supabase-Client-Lib (admin-Client fuer Cleanup-Cron)
+- Bestehender `verifyCronSecret`-Helper (V5.5 SLC-554)
+- Bestehende `audit_log`-Tabelle (V5.7+)
+- Bestehender Coolify-Cron-Mechanismus
+- Bestehender Vitest-Setup
+
+### V6.4 Security & Privacy Considerations
+
+- **Click-Log-Cleanup ist DSGVO-relevant.** Hard-Delete nach 90 Tagen ist konform mit COMPLIANCE.md V5.2. Kein Recovery-Pfad. Audit-Log-Eintrag fuer Compliance-Nachweis bleibt persistent.
+- **Cron-Endpoint Bearer-Auth-Schutz.** `verifyCronSecret` prueft `Authorization: Bearer $CRON_SECRET`. Pattern wie alle anderen Cron-Endpoints.
+- **Audit-Log-Pfade explizit als "Behalten" klassifiziert.** Cleanup-Items duerfen audit_log-Schreiber NIEMALS loeschen, auch wenn sie wenig genutzt scheinen.
+- **Soft-Disable-Strategie reduziert Risiko von versehentlichem Datenverlust.** Cron deaktivieren ist reversibel; Code loeschen erst nach 30 Tagen Beobachtung.
+
+### V6.4 Constraints & Tradeoffs
+
+- **Audit-getriebener Sprint:** Vorab nicht vollstaendig planbar wieviele Cleanup-Items entstehen. **Tradeoff:** Mindest-Quote (>=3 Code, >=2 UI) statt Maximum-Quote. Audit-Scope-Explosion durch User-Sign-Off pro Item begrenzt.
+- **Hard-Delete vs. Soft-Disable Asymmetrie:** Click-Logs Hard-Delete (DSGVO-Pflicht), Cron-Jobs Soft-Disable (Reversibilitaet). **Tradeoff:** Konsistenz vs. Compliance vs. Risiko. Begruendet pro Pfad.
+- **/doctor-Reuse statt neuer Audit-Mechanismus:** Spart Zeit, aber /doctor passt nur "halb" zum Audit-Use-Case. **Tradeoff:** schneller Sprint vs. perfektes Tooling. IMP fuer Dev-System dokumentiert die Erweiterung.
+- **Schema-Audit auf V6.5 deferred:** Schema-Inkonsistenzen werden in V6.4 nur auf Code-Ebene angeschaut, nicht DB-strukturell. **Tradeoff:** kleinerer V6.4-Scope vs. unvollstaendige Hygiene.
+
+### V6.4 Risk Matrix
+
+| Risiko | Wahrscheinlichkeit | Impact | Mitigation |
+|---|---|---|---|
+| Falsch-Positiv "obsolet": Edge-Case-Code wird geloescht | Mittel | Mittel | Soft-Disable-Strategie fuer Cron, Live-Smoke nach jedem Cleanup-Commit, atomare Commits fuer Rollback |
+| Audit-Scope-Explosion: 50+ Items, Sprint zu gross | Hoch | Mittel | User-Sign-Off pro Item, Mindest-Quoten als Floor (nicht Maximum), Rest als BL fuer V6.5 |
+| Compliance-Drift: Audit-Log-Schreiber versehentlich entfernt | Niedrig | Hoch | Audit-Log-Pfade explizit als "Behalten" klassifizieren, Style-Guide-Pruefung pro Cleanup-Item |
+| UI-Audit fuehrt zu Stilbruechen mit V5.3-V6.3 | Mittel | Niedrig | Style Guide V2 verbindlich, /ui-update folgt visuellem Pattern |
+| Click-Log-Cleanup-Cron loescht zu wenig (Date-Logik falsch) | Niedrig | Niedrig | Vitest fuer Cron-Logik (Mock-Now), Live-Smoke nach Deploy |
+| Click-Log-Cleanup-Cron loescht zu viel | Niedrig | Hoch | Cutoff-Berechnung server-side (NOW()-INTERVAL), nicht client-side, audit_log persistent |
+
+### V6.4 Empfohlene Slice-Reihenfolge (DEC-151)
+
+| Slice | Feature | Scope | Schaetzung | QA-Fokus | User-Sign-Off-Pause |
+|---|---|---|---|---|---|
+| **SLC-641** | FEAT-641 | ISSUE-057 followup-engine.ts Fix + Click-Log-Cleanup-Cron + Vitest + Audit-Log-Eintrag + Coolify-Cron-Setup | 3-4h | Vitest gruen, Live-Cron-Smoke 1 Lauf, Audit-Log-Insert verifiziert | Nein |
+| **SLC-642** | FEAT-642 | Code-Audit Inventur ueber 5 Hot-Spots, RPT-XXX-code-audit erzeugen, KEIN Code-Cleanup | 2-3h Inventur | Audit-Liste komplett, Severity nachvollziehbar | **JA** (User klassifiziert pro Item) |
+| **SLC-643** | FEAT-642 | Code-Cleanup-Implementation der >=3 signed-off Items + atomare Commits + Vitest + Live-Smoke | 2-4h je Items | Vitest gruen, kein Regression in 5 Haupt-Pages | Nein |
+| **SLC-644** | FEAT-643 | UI-Audit Inventur ueber 5 UI-Bereiche, RPT-XXX-ui-audit erzeugen, KEIN UI-Cleanup | 2h Inventur | Vorher/Nachher pro Item konkret, Aufwand-Schaetzung plausibel | **JA** (User entscheidet pro Item) |
+| **SLC-645** | FEAT-643 | UI-Cleanup-Implementation der >=2 signed-off Items + Style Guide V2 + Live-Smoke | 2-4h je Items | Style Guide V2 ohne neue Color-Klassen, kein Regression in 5 Haupt-Pages, Browser-Smoke OK | Nein |
+
+**Gesamt ~14-21h.** Reihenfolge zwingend seriell:
+1. SLC-641 — Stabilitaets-Fundament zuerst, klein und bekannt.
+2. SLC-642 — Code-Audit
+3. **Pause** — User signed-off pro Item.
+4. SLC-643 — Code-Cleanup
+5. SLC-644 — UI-Audit
+6. **Pause** — User signed-off pro Item.
+7. SLC-645 — UI-Cleanup
+
+Pro Slice: `/backend|/frontend` -> `/qa` -> Coolify-Redeploy. Final-Check + Go-Live + Deploy als REL-026 nach SLC-645.
+
+### V6.4 Release-Gate (DEC-151)
+
+V6.4 gilt als releaseable wenn alle 5 Bedingungen erfuellt:
+- ISSUE-057 resolved (Live-Smoke gegen Followup-Cron PASS, kein "column proposals.value"-Error mehr in Container-Log)
+- BL-423 Cleanup-Cron live (Coolify-Cron aktiv, mind. 1 erfolgreicher Lauf in audit_log oder Container-Log sichtbar)
+- mindestens 3 Code-Cleanup-Items in V6.4 implementiert (FEAT-642 Mindest-Quote)
+- mindestens 2 UI-Cleanup-Items in V6.4 implementiert (FEAT-643 Mindest-Quote)
+- Vitest 393/393 (oder mehr) PASS + Live-Smoke ueber 5 Haupt-Pages (Mein Tag, Pipeline, Kontakte, Settings-Landing, Proposals) ohne Regression
+
+Wenn die Mindest-Quoten unterschritten werden (z.B. der Audit findet kaum Cleanup-Kandidaten), gilt V6.4 nicht als gescheitert — der Sprint kann mit angepasster Quote releaseable sein wenn der User explizit signed-off, dass der Audit-Output ausreichend ist (auch wenn nur 2 Code- + 1 UI-Item entstehen). Die Quoten sind defensive Floor, kein Lock.
+
+### V6.4 Open Technical Questions (fuer /slice-planning)
+
+1. **Tatsaechliche Cron-Job-Liste fuer Audit:** 19 Endpoints in `cockpit/src/app/api/cron/`. Welche davon haben einen Coolify-Cron-Eintrag, welche werden nur per externem Trigger aufgerufen, welche sind Dead Code? Empfehlung: in SLC-642 als ersten Schritt Coolify-Cron-Liste vom Server pullen, gegen `cockpit/src/app/api/cron/` matchen.
+
+2. **Audit-Log-Schreiber-Inventur:** Wo schreibt das System ueberall in `audit_log`? Pattern-Liste fuer "Klar Behalten" als Vorab-Check. Empfehlung: `grep -r "audit_log" cockpit/src/` als ersten SLC-642-Schritt.
+
+3. **AI-Engine-Konsolidierung-Markierung:** Wenn der Code-Audit Logik-Ueberlappung zwischen FollowupEngine + Briefing-Engine + Signal-Extract findet — Item wird als "spaeter (V6.5)" markiert, nicht "umsetzen" in V6.4 (DEC-149).
+
+4. **Pipeline-Stage-Daten-Quelle:** Pipeline-Stage-Konsolidierung benoetigt Deal-Count pro Stage. SQL gegen `deals.stage_id` GROUP BY in SLC-644.
+
+5. **Coolify-Cron-Anlage Click-Log-Cleanup:** User legt den Cron-Eintrag manuell an. Cron-Anleitung muss in REL-026-Notes mit konkretem `node -e fetch()`-Snippet inkl. CRON_SECRET. Empfehlung: in SLC-641 vorbereiten, REL-026-Notes-Draft am Slice-Ende.
+
+6. **Audit-RPT-Naming-Convention:** Dateiname strikt `RPT-XXX.md`, aber `title:`-Frontmatter klar mit "V6.4 Code-Audit Inventur" oder "V6.4 UI-Audit Inventur".
+
+### V6.4 Recommended Next Step
+
+`/slice-planning V6.4` — die 5 Slices SLC-641..645 strukturiert ausdefinieren mit Acceptance Criteria pro Slice, Micro-Tasks-Liste mit Reihenfolge, QA-Fokus pro Slice. Insbesondere:
+- SLC-641: Cron-Endpoint-Spec mit Vitest-Mock-Pattern + REL-026-Cron-Setup-Anleitung
+- SLC-642: Hot-Spot-Schema mit ripgrep-Patterns + 24h-Container-Log-Sample-Methodik
+- SLC-643: Atomare-Commit-Strategie pro Cleanup-Item
+- SLC-644: UI-Page-Stichproben-Liste (Settings, Sidebar, Pipeline) mit Screenshot-Anleitung
+- SLC-645: Style-Guide-V2-Verifikations-Checkliste pro Cleanup-Item

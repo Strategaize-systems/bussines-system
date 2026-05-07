@@ -9,19 +9,22 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: requirements
-- Current Focus: **V6.4 HYGIENE-SPRINT gestartet 2026-05-07** als Klammer vor V7-Multi-User. Ziel: arbeitsfaehiges System ohne latente Bugs und ohne UI-/Code-Wildwuchs aus V2..V6.3-Wachstum. Inhalt: ISSUE-057 FollowupEngine-Fix + BL-423 DSGVO Click-Log-Cleanup-Cron + /doctor-Audit (doppelte Logik, obsolete Pfade, ungenutzte Cron-Jobs) + /ui-update Audit (Settings-Landing, Sidebar, Button-Konsistenz). V6.3 selbst ist released (REL-025), Post-Launch-Review (RPT-331) bestaetigt: STABIL mit ISSUE-057 als einziger latenter Schwachstelle. Backlog-Hygiene 2026-05-07: BL-423 auf V6.4 umgelabelt, BL-424/425 zu unassigned (Komfort-Features ohne Druck). Naechster Schritt = /requirements V6.4.
-- Current Phase: V6.4 Hygiene-Sprint Requirements-Phase. V6.3 released + Post-Launch durchlaufen.
+- High-Level State: slice-planning
+- Current Focus: **V6.4 HYGIENE-SPRINT — /requirements + /architecture done 2026-05-07** (RPT-332 + RPT-333). 3 Features (FEAT-641 Stabilitaet+DSGVO, FEAT-642 Code-Audit, FEAT-643 UI-Audit), 10 DECs (DEC-142..151), 4 Backlog-Items (BL-431..434), 5 Slices SLC-641..645 ueber ~14-21h geplant. User hat 5 Empfehlungen aus Open Questions bestaetigt (Audit-Tiefe, Audit-Breite, UI-Eng, Soft-Disable+30d, AI-Konsolidierung-defer-V6.5). Architektur konsolidiert auf Reuse-Pattern: Click-Log-Cleanup analog expire-proposals, /doctor + /ui-update als Audit-Vehikel, keine neuen Container/npm/Schema. Pause-Punkte zwischen Inventur (SLC-642+SLC-644) und Cleanup-Implementation (SLC-643+SLC-645) sind Pflicht. Naechster Schritt = /slice-planning V6.4.
+- Current Phase: V6.4 Hygiene-Sprint Slice-Planning-Phase. V6.3 released + Post-Launch durchlaufen + V6.4 Requirements + Architecture komplett.
 
 ## Immediate Next Steps
-1. **/requirements V6.4 Hygiene-Sprint** — User-Sign-Off auf Scope (ISSUE-057 + BL-423 + Code-Audit + UI-Audit), Open Questions klaeren.
-2. **/architecture V6.4** — kleine Architektur-Note (groesstenteils additiv: 1 Cron-Endpoint, 1 Fix, 1 Audit-Lauf), DECs falls noetig.
-3. **/slice-planning V6.4** — Hygiene-Sprint in 3-4 Slices aufteilen (Bug-Fix + Cron + Code-Audit + UI-Audit).
-4. **/backend + /qa pro Slice** wie ueblich.
-5. **(Spaeter, V6.4-Folge)** BL-424 Source-Migration-Tool (on-demand), BL-425 Multi-Touch-Tab (Komfort-Feature).
-6. **(Naechster Major-Schritt nach V6.4)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503).
-7. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (User-Direktive 2026-05-01 "kommt viel spaeter").
-8. **(Spaeter)** BL-397 GitHub-App Org-Anbindung, BL-420 VIES-Lookup, BL-421 DE-Reverse-Charge, BL-430 npm audit --force — separate Sprints.
+1. **/slice-planning V6.4** — 5 Slices SLC-641..645 strukturiert ausdefinieren mit ACs + Micro-Tasks + QA-Fokus + User-Sign-Off-Pause-Definition.
+2. **/backend SLC-641** (FEAT-641) — ISSUE-057 fix + Click-Log-Cleanup-Cron + Vitest + Coolify-Cron-Setup. ~3-4h.
+3. **/qa SLC-641** + Live-Cron-Smoke.
+4. **/doctor V6.4-code-audit (SLC-642)** — Inventur 5 Hot-Spots, RPT-XXX-code-audit erzeugen. User-Sign-Off-Pause.
+5. **/backend SLC-643** — Code-Cleanup-Implementation der signed-off Items. Atomare Commits.
+6. **/ui-update V6.4-ui-audit (SLC-644)** — Inventur 5 UI-Bereiche. User-Sign-Off-Pause.
+7. **/frontend SLC-645** — UI-Cleanup-Implementation der signed-off Items.
+8. **/qa Gesamt-V6.4 + /final-check + /go-live + /deploy als REL-026** nach allen 5 Slices.
+9. **(Spaeter, V6.4-Folge)** BL-424 Source-Migration-Tool, BL-425 Multi-Touch-Tab, V6.5 Schema-Audit + AI-Engine-Konsolidierung.
+10. **(Naechster Major-Schritt nach V6.4)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503).
+11. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
