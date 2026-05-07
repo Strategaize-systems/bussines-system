@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.4 HYGIENE-SPRINT — SLC-641 done 2026-05-07.** ISSUE-057 (proposals.value → total_gross) und BL-423 (DSGVO Click-Log-Cleanup-Cron) sind code-side gefixt UND live verifiziert: 3 Stellen in followup-engine.ts gefixt, neuer Cron /api/cron/click-log-cleanup mit Pure-Function-Extraction, Vitest 404/404 PASS (+11 neue Tests), 3 Commits gepusht (f1af68b + fff4116 + 2b7a986 Hotfix audit_log.entity_id NOT NULL). Live-Smoke gegen Hetzner: Followups-Cron success/failed=0 ohne column-Error, Click-Log-Cleanup-Cron success:true mit 2 Audit-Log-Rows DB-verifiziert. Coolify-Cron-Setup fuer click-log-cleanup ist User-Action mit dokumentiertem Snippet. Naechster Schritt = /doctor SLC-642 (Code-Audit Inventur, 5 Hot-Spots).
-- Current Phase: V6.4 Implementation-Phase. 1/5 Slices done. SLC-642 als naechster Inventur-Schritt mit User-Pause am Ende.
+- Current Focus: **V6.4 HYGIENE-SPRINT — SLC-642 Audit-Inventur durch (RPT-336), USER-SIGN-OFF-PAUSE aktiv.** 18 Items in 5 Hot-Spots klassifiziert (3 Klar-obsolet + 10 Verdacht + 4 Behalten + 1 Compliance-Schutz). Mindestquote 15 erfuellt. Drei sichere Klar-obsolet-Items als SLC-643-Vorschau benannt: CA-002 calcom-sync, CA-015 getForecastValue, CA-017 getUnassignedEmailCount. User klassifiziert pro Item via Checkbox-Edit. Vor SLC-642: SLC-641 ISSUE-057 + BL-423 done + live verifiziert (RPT-335).
+- Current Phase: V6.4 Implementation-Phase. 1/5 Slices done (SLC-641), 1 in `pending-signoff` (SLC-642). SLC-643 Cleanup-Implementation startet erst nach User-Sign-Off auf RPT-336.
 
 ## Immediate Next Steps
-1. **(Optional, User-Aktion)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe SLC-641-Completion-Report.
-2. **/doctor V6.4-code-audit (SLC-642)** — Inventur 5 Hot-Spots, RPT-XXX-code-audit erzeugen. **USER-PAUSE** danach (Item-Klassifikation).
-3. **/backend SLC-643** — Code-Cleanup-Implementation der signed-off Items, atomare Commits, Soft-Disable-Pattern fuer Crons.
+1. **USER-AKTION:** Item-Klassifikation in RPT-336 (18 Items, Checkboxen pro Item, default-Empfehlung im Cleanup-Vorschlag).
+2. **(Optional, User-Aktion)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335.
+3. **/backend SLC-643** — Code-Cleanup-Implementation der signed-off Items (mindestens 3, empfohlen 4), atomare Commits, Soft-Disable-Pattern fuer Crons.
 4. **/qa SLC-643** + Live-Smoke.
 5. **/ui-update V6.4-ui-audit (SLC-644)** — Inventur 5 UI-Bereiche. **USER-PAUSE** danach.
 6. **/frontend SLC-645** — UI-Cleanup-Implementation der signed-off klein/mittel-Items, Style Guide V2 verbindlich.
