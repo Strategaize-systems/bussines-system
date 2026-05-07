@@ -10,13 +10,17 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.4 HYGIENE-SPRINT — SLC-644 UI-Audit Inventur done 2026-05-07, USER-SIGN-OFF-PAUSE aktiv.** RPT-338 enthaelt 13 UI-Items klassifiziert in 6 Bereichen (5 Pflicht + Style-Guide-Drift extra): 3 Settings-Landing, 2 Sidebar, 2 Button-Konsistenz, 1 Pipeline-Stages, 2 Page-Header, 3 Style-Guide-V2-Drift. 5 Klar-Drift-Items (UA-001/003/005/006/010) als Pfad-A-Default vorgeschlagen, 3 Drift-mittel als optional, 5 Defer-Items (V7-Konflikt oder gross). SQL Live-Daten: 20/22 Pipeline-Stages haben 0 Deals (Cleanup-Kandidat per DEC-133). Style-Guide-V2-Drift systemisch: 73 arbitrary `[#xxxxxx]` Color-Klassen, 41 arbitrary Spacing, 64 arbitrary Gradients in 30 Files — `tailwind.config.ts` hat keine Brand-Tokens, defer V6.5 Theming-Sprint. Naechster Schritt = User-Pfad-Entscheidung A oder B, dann /frontend SLC-645.
-- Current Phase: V6.4 Implementation-Phase. 3/5 Slices "tatsaechlich-fertig" (SLC-641 + SLC-643 + SLC-644-Inventur). FEAT-642 done. FEAT-643 in_progress (Inventur done, Cleanup-Implementation als SLC-645 wartet auf Sign-Off).
+- Current Focus: **V6.4 HYGIENE-SPRINT — SLC-644 + SLC-645 done 2026-05-07.** Pfad-A signed off, alle 5 Klar-Items aus RPT-338 atomar umgesetzt: UA-010 Pipeline h1 text-3xl (Commit `b8fe654`), UA-003 Einwilligungstexte bg-rose-50 (`27e19f6`), UA-005 Sidebar Termine→Termine-Liste (`d82927b`), UA-006 Primary Green→Blue Pipeline+Proposals (`a4f399b`), UA-001 Settings auf PageHeader (`45906ed`). Build clean, Vitest 405/405 PASS, kein neuer Lint-Error (166 pre-existing unrelated unchanged). 8 Audit-Items deferred V6.5/V7 (UA-002/004/007/008/009 + UA-011/012/013 Theming-Gross). FEAT-643 done. V6.4 5/5 Slices done. Naechster Schritt = /qa SLC-645 + Gesamt-/qa V6.4 + /final-check + /go-live + /deploy als REL-026.
+- Current Phase: V6.4 Implementation-Phase abgeschlossen. 5/5 Slices done (SLC-641+642+643+644+645). FEAT-641+642+643 alle done. Bereit fuer Gesamt-V6.4-/qa.
 
 ## Immediate Next Steps
-1. **(USER-SIGN-OFF-PAUSE — primaer)** Pfad A oder Pfad B fuer SLC-644 entscheiden. Pfad A = pauschal "alle 5 Klar-Items umsetzen" (UA-001/003/005/006/010, ~2-3h Cleanup, alle Risiko-frei). Pfad B = pro UA-XXX einzeln Checkbox in `reports/RPT-338.md`.
-2. **(Optional, User-Aktion)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335.
-3. **/frontend SLC-645** — UI-Cleanup-Implementation der signed-off Items mit atomaren Commits + Browser-Smoke pro Item, Style Guide V2 verbindlich.
+1. **/qa SLC-645** — UI-Cleanup verifizieren (5 Pages: Mein Tag, Pipeline, Kontakte, Settings, Proposals) nach Coolify-Redeploy.
+2. **(User-Aktion)** Coolify-Redeploy main bis Commit `45906ed` triggern.
+3. **(Optional)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335.
+4. **/qa Gesamt-V6.4** ueber alle 5 V6.4-Slices.
+5. **/final-check** + **/go-live** + **/deploy als REL-026**.
+6. **(Spaeter, V6.5)** Theming-Sprint — Brand-Tokens in tailwind.config.ts + Migration UA-011/012/013 + Settings-Inline-Sections-Page-Auslagerung UA-002.
+7. **(Naechster Major-Schritt nach V6.4)** /requirements V7 — Multi-User + Teamlead.
 4. **/qa SLC-645** + Browser-Smoke.
 5. **/qa Gesamt-V6.4 + /final-check + /go-live + /deploy als REL-026** nach allen 5 Slices.
 6. **(Spaeter, V6.4-Folge)** V6.5 Schema-Audit + AI-Engine-Konsolidierung (per DEC-148/149 deferred).
