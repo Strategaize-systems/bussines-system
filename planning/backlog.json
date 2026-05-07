@@ -1931,6 +1931,16 @@
       "version": "V6.4",
       "description": "FEAT-643: Strukturierter UI-Audit ueber Settings-Landing, Sidebar, Button-Konsistenz, Pipeline-Stages, Page-Header. Output Audit-Report mit Vorher/Nachher pro Item + User-Sign-Off. Mindest-Quote 2 umgesetzte Items in V6.4.",
       "createdAt": "2026-05-07"
+    },
+    {
+      "id": "BL-435",
+      "title": "Natural-Language-Regel-Builder (Mein Tag) — User formuliert Automation-Regeln in Klarsprache",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": null,
+      "description": "Inspiriert von Clay 'Sculptor': User legt im Mein-Tag-Bereich eigene Automation-Regeln durch Sprache/Voice an. Beispiel: 'Wenn ein Deal in Phase Angebot mehr als 5 Tage unbeantwortet ist, schreib mir das morgens in Mein Tag und schlag eine Follow-up-Mail vor.' Bedrock-LLM extrahiert in strukturiertes Schema (trigger+condition+action), User sieht Regel als editierbare Karte mit Klarsprache, persistiert in automation_rules-Tabelle, bestehender Cron evaluiert sie. Strategaize-Position: einziger relevanter Bereich der NL-Workflow-UI-Welle, in dem heute Luecke besteht (NL-Eingabe und NL-Suche sind bereits stark abgedeckt). Differenzierungs-Hebel gegenueber Microsoft-Copilot-Pfad: nicht autonomes Handeln, sondern gemeinsames Programmieren von Regeln zwischen Berater und Klient. Geplanter Aufwand: Phase 1 (1 Trigger-Klasse 'deal_stage_idle' + 3-5 Aktionen + Editor-UI) ~2 Slices, Phase 2 (mehr Trigger) ~2 Slices, Phase 3 (Inspektions-Log + Trockenlauf) ~2 Slices. Gesamt ~6 Slices fuer eigenes V-Release-Kandidat (V7+). Quelle: KI-Assistenten-Markt-Check 2026-05-07.",
+      "createdAt": "2026-05-07"
     }
   ]
 }
