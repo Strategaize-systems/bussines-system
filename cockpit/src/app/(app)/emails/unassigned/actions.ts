@@ -71,18 +71,3 @@ export async function getContactsForAssignment() {
   }));
 }
 
-/**
- * Get unassigned email count for badge display
- */
-export async function getUnassignedEmailCount() {
-  const supabase = await createClient();
-
-  const { count, error } = await supabase
-    .from("email_messages")
-    .select("id", { count: "exact", head: true })
-    .is("contact_id", null)
-    .not("classification", "in", '("spam","newsletter","auto_reply")');
-
-  if (error) return 0;
-  return count ?? 0;
-}
