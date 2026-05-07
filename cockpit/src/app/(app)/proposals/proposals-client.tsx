@@ -43,7 +43,7 @@ export function ProposalsClient({ proposals, deals, contacts, companies }: Propo
   return (
     <div className="min-h-screen">
       <PageHeader title="Angebote" subtitle={`${proposals.length} Angebote gesamt`}>
-        <button onClick={() => setShowNew(true)} className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2">
+        <button onClick={() => setShowNew(true)} className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#120774] to-[#4454b8] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2">
           <Plus size={16} strokeWidth={2.5} /> Neues Angebot
         </button>
       </PageHeader>

@@ -237,7 +237,7 @@ export function PipelineView({
 
               <button
                 onClick={() => setShowNewDeal(true)}
-                className="px-5 py-2 rounded-lg bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2"
+                className="px-5 py-2 rounded-lg bg-gradient-to-r from-[#120774] to-[#4454b8] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2"
               >
                 <Plus size={16} strokeWidth={2.5} />
                 Neuer Deal
