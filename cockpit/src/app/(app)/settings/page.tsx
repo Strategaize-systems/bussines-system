@@ -130,8 +130,8 @@ export default async function SettingsPage() {
       <Link href="/settings/compliance" className="block">
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:bg-slate-50">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50">
-              <FileText className="h-4 w-4 text-emerald-700" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-50">
+              <FileText className="h-4 w-4 text-rose-700" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-900">Einwilligungstexte</p>
