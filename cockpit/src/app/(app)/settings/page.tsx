@@ -7,6 +7,7 @@ import { ImapStatus } from "./imap-status";
 import { getCurrentUserRole } from "@/lib/audit";
 import { Shield, Bell, FileText, Palette, Receipt, Zap, Megaphone } from "lucide-react";
 import Link from "next/link";
+import { PageHeader } from "@/components/ui/page-header";
 import type { PipelineStage } from "../pipeline/actions";
 
 export default async function SettingsPage() {
@@ -30,14 +31,13 @@ export default async function SettingsPage() {
   const roleLabel = role === "admin" ? "Administrator" : "Operator";
 
   return (
-    <main className="px-8 py-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Einstellungen</h1>
-        <p className="text-sm text-muted-foreground">
-          Pipelines, Stages und Templates konfigurieren
-        </p>
-      </div>
-
+    <div className="min-h-screen">
+      <PageHeader
+        title="Einstellungen"
+        subtitle="Pipelines, Stages und Templates konfigurieren"
+      />
+      <main className="px-8 py-8">
+        <div className="max-w-[1800px] mx-auto space-y-6">
       {/* Role display */}
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center gap-3">
@@ -146,6 +146,8 @@ export default async function SettingsPage() {
       <PipelineConfig pipelines={pipelines} stagesByPipeline={stagesByPipeline} />
 
       <TemplatesConfig templates={templates} />
-    </main>
+        </div>
+      </main>
+    </div>
   );
 }
