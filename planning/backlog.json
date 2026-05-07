@@ -1917,9 +1917,9 @@
       "title": "Code-Hygiene-Audit (Inventur 5 Hot-Spots + selektives Cleanup)",
       "type": "improvement",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V6.4",
-      "description": "FEAT-642: Strukturierter Audit ueber Cron-Jobs (19), AI-Engines, Source-Schema-Inkonsistenzen, tote Server-Actions, tote API-Routes. Output Audit-Report mit Severity-Klassifikation + User-Sign-Off pro Item. Mindest-Quote 3 umgesetzte Items in V6.4.",
+      "description": "FEAT-642: Strukturierter Audit ueber Cron-Jobs (19), AI-Engines, Source-Schema-Inkonsistenzen, tote Server-Actions, tote API-Routes. Output Audit-Report mit Severity-Klassifikation + User-Sign-Off pro Item. Mindest-Quote 3 umgesetzte Items in V6.4. Done 2026-05-07: SLC-642 Inventur (RPT-336, 18 Items klassifiziert) + SLC-643 Cleanup (6 Items abgearbeitet, Mindestquote 3 uebererfuellt) — CA-001 backfill+lib geloescht, CA-002 calcom-sync+sync.ts+api-client.ts geloescht, CA-015 getForecastValue geloescht, CA-016 getReferralsByReferrer geloescht, CA-017 getUnassignedEmailCount geloescht, CA-008 audit_log fuer FollowupEngine + Signal-Extract ergaenzt. Live-Smoke verifiziert: 4 deletion-Endpoints HTTP 404, 2 audit_log-Rows in DB, Vitest 405/405 PASS. ~728 Zeilen tote Code geloescht.",
       "createdAt": "2026-05-07"
     },
     {

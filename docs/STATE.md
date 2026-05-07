@@ -10,21 +10,18 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.4 HYGIENE-SPRINT — SLC-642 Audit-Inventur durch (RPT-336), USER-SIGN-OFF-PAUSE aktiv.** 18 Items in 5 Hot-Spots klassifiziert (3 Klar-obsolet + 10 Verdacht + 4 Behalten + 1 Compliance-Schutz). Mindestquote 15 erfuellt. Drei sichere Klar-obsolet-Items als SLC-643-Vorschau benannt: CA-002 calcom-sync, CA-015 getForecastValue, CA-017 getUnassignedEmailCount. User klassifiziert pro Item via Checkbox-Edit. Vor SLC-642: SLC-641 ISSUE-057 + BL-423 done + live verifiziert (RPT-335).
-- Current Phase: V6.4 Implementation-Phase. 1/5 Slices done (SLC-641), 1 in `pending-signoff` (SLC-642). SLC-643 Cleanup-Implementation startet erst nach User-Sign-Off auf RPT-336.
+- Current Focus: **V6.4 HYGIENE-SPRINT — SLC-643 Code-Cleanup done 2026-05-07.** 6 Items aus RPT-336 abgearbeitet (Mindestquote 3 uebererfuellt): CA-001 backfill+lib geloescht, CA-002 calcom-sync+sync.ts+api-client.ts geloescht, CA-008 audit_log fuer FollowupEngine + Signal-Extract ergaenzt, CA-015 getForecastValue + CA-016 getReferralsByReferrer + CA-017 getUnassignedEmailCount geloescht. ~728 Zeilen tote Code geloescht. Live-Smoke verifiziert: 4 deletion-Endpoints HTTP 404, 2 audit_log-Rows pro Engine in DB. Vitest 405/405 PASS. 7 Commits gepusht. FEAT-642 done. 12 Items aus RPT-336 bewusst nicht angefasst (Verdacht/Spaeter-V6.5/Compliance-Behalten). Naechster Schritt = /ui-update SLC-644 (UI-Audit Inventur).
+- Current Phase: V6.4 Implementation-Phase. 2/5 Slices done (SLC-641 + SLC-643). FEAT-642 vollstaendig done. SLC-644 UI-Audit als naechster Inventur-Schritt mit User-Pause am Ende.
 
 ## Immediate Next Steps
-1. **USER-AKTION:** Item-Klassifikation in RPT-336 (18 Items, Checkboxen pro Item, default-Empfehlung im Cleanup-Vorschlag).
-2. **(Optional, User-Aktion)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335.
-3. **/backend SLC-643** — Code-Cleanup-Implementation der signed-off Items (mindestens 3, empfohlen 4), atomare Commits, Soft-Disable-Pattern fuer Crons.
-4. **/qa SLC-643** + Live-Smoke.
-5. **/ui-update V6.4-ui-audit (SLC-644)** — Inventur 5 UI-Bereiche. **USER-PAUSE** danach.
-6. **/frontend SLC-645** — UI-Cleanup-Implementation der signed-off klein/mittel-Items, Style Guide V2 verbindlich.
-7. **/qa SLC-645** + Browser-Smoke.
-8. **/qa Gesamt-V6.4 + /final-check + /go-live + /deploy als REL-026** nach allen 5 Slices.
-9. **(Spaeter, V6.4-Folge)** V6.5 Schema-Audit + AI-Engine-Konsolidierung (per DEC-148/149 deferred).
-10. **(Naechster Major-Schritt nach V6.4)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503).
-11. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
+1. **(Optional, User-Aktion)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335.
+2. **/ui-update V6.4-ui-audit (SLC-644)** — Inventur 5 UI-Bereiche, RPT-XXX-ui-audit erzeugen. **USER-PAUSE** danach (Item-Klassifikation analog SLC-642).
+3. **/frontend SLC-645** — UI-Cleanup-Implementation der signed-off klein/mittel-Items, Style Guide V2 verbindlich.
+4. **/qa SLC-645** + Browser-Smoke.
+5. **/qa Gesamt-V6.4 + /final-check + /go-live + /deploy als REL-026** nach allen 5 Slices.
+6. **(Spaeter, V6.4-Folge)** V6.5 Schema-Audit + AI-Engine-Konsolidierung (per DEC-148/149 deferred).
+7. **(Naechster Major-Schritt nach V6.4)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503).
+8. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
