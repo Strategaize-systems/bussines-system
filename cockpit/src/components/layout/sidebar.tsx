@@ -79,7 +79,7 @@ const navGroups: NavGroup[] = [
     defaultCollapsed: true,
     items: [
       { name: "Aufgaben", href: "/aufgaben", icon: CheckSquare },
-      { name: "Termine", href: "/termine", icon: Calendar },
+      { name: "Termine-Liste", href: "/termine", icon: Calendar },
       { name: "E-Mails", href: "/emails", icon: Mail },
       { name: "Proposals", href: "/proposals", icon: FileText },
       { name: "Handoffs", href: "/handoffs", icon: ArrowRightLeft },
