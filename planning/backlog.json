@@ -1989,7 +1989,7 @@
       "priority": "medium",
       "status": "in_progress",
       "version": "V6.5",
-      "description": "Aus RPT-338 V6.4 UI-Audit (UA-011 + UA-012 + UA-013). Style-Guide-V2-Drift systemisch: 73 arbitrary [#xxxxxx] Color-Klassen + 41 arbitrary Spacing + 64 arbitrary Gradient-Hex ueber 30 Files. 2-Phasen-Plan: **Phase A done 2026-05-08 (SLC-651)** — Brand-Tokens als CSS-Vars `--color-brand-*` im `@theme inline`-Block in globals.css (Tailwind v4-konform; urspruengliche Spec-Annahme tailwind.config.ts war v3-basiert). 6 Tokens (brand-primary, brand-primary-dark, brand-success, brand-success-dark, brand-warning, brand-warning-light). 8 Drift-Stellen in mein-tag-client.tsx beweisbar migriert. Phase B (gross 8-15h, SLC-652+) 30 Files inkrementell migrieren. Risiko niedrig (rein semantisch).",
+      "description": "Aus RPT-338 V6.4 UI-Audit (UA-011 + UA-012 + UA-013). Style-Guide-V2-Drift systemisch: 73 arbitrary [#xxxxxx] Color-Klassen + 41 arbitrary Spacing + 64 arbitrary Gradient-Hex ueber 30 Files. 2-Phasen-Plan: **Phase A done 2026-05-08 (SLC-651)** — Brand-Tokens als CSS-Vars `--color-brand-*` im `@theme inline`-Block in globals.css (Tailwind v4-konform). 6 Tokens. 8 Drift-Stellen in mein-tag-client.tsx migriert. **Phase B Tranche 1 done code-side 2026-05-08 (SLC-652)** — Pipeline (5 Files / 17 Stellen) + Proposals (9 Files / 10 Stellen) auf Tokens migriert; 3 hover:bg-[#0d055c] Hover-Shades als begruendete Ausnahme belassen (kein passendes Token, AC-7 visuell unveraendert). Build/Vitest/Lint clean. Wartet auf Coolify-Redeploy + Live-Smoke. Naechste Tranchen (SLC-653+) decken Settings, Mein Tag, Kontakte, Dashboard etc. ab.",
       "createdAt": "2026-05-07"
     },
     {

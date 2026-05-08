@@ -10,16 +10,17 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.5 SLC-651 fully done 2026-05-08** (RPT-347 backend + RPT-348 /qa PASS). Brand-Tokens als CSS-Vars `--color-brand-*` im `@theme inline`-Block in `cockpit/src/app/globals.css` (Tailwind v4-Adapt vs. urspruenglicher v3-Spec, IMP-382). 6 Tokens deployed. 8 Drift-Stellen in `mein-tag-client.tsx` migriert. Production-CSS-Bundle bestaetigt 4 Brand-Utilities mit korrekten Hex-Werten. Build clean, Vitest 405/405 PASS, Lint 166/55 (V5.7-Baseline unveraendert). Container `app-...075340796519` healthy auf Image `8c5d0fe`. BL-441 Phase A abgeschlossen. Naechster Schritt = /backend SLC-652.
-- Current Phase: V6.5 in Umsetzung. 1/7 Slices fully done (SLC-651). Bereit fuer SLC-652 Theming-Migration Tranche 1.
+- Current Focus: **V6.5 SLC-652 done code-side 2026-05-08** (RPT-349). Theming-Migration Tranche 1 Pipeline+Proposals: 27 Drift-Stellen ueber 14 Files auf `--color-brand-*` Tokens migriert (Pipeline 17 in 5 Files + Proposals 10 in 9 Files). 3 `hover:bg-[#0d055c]` Hover-Shades als begruendete Ausnahme belassen (kein Token, AC-7 visuell unveraendert per SLC-651-Precedent). 2 Atomic Commits `27c91a4` (pipeline) + `d9929aa` (proposals). Build clean, Vitest 405/405 PASS, Lint 166/55 (V5.7-Baseline unveraendert). Wartet auf Coolify-Redeploy + Live-Smoke (3 Pages: /pipeline/multiplikatoren + /proposals + 1 Proposal-Detail). Naechster Schritt nach Smoke = /qa SLC-652.
+- Current Phase: V6.5 in Umsetzung. 2/7 Slices done code-side (SLC-651 deployed + SLC-652 wartet auf Redeploy). Tranche 1 von Phase B abgeschlossen.
 
 ## Immediate Next Steps
-1. **/backend SLC-652 Theming-Migration Tranche 1 (Pipeline+Proposals)** — naechster V6.5-Slice. Token-Verfuegbarkeit ist erfuellt; Pipeline+Proposals-Pages koennen jetzt auf `text-brand-*`/`bg-brand-*` migriert werden.
-2. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
-3. **(Optional, 5 Min)** Visuelle User-Smoke ueber 5 V6.4-UI-Aenderungen (Pipeline h1 text-3xl + Pipeline+Proposals Buttons blau + Einwilligungstexte rosa + Sidebar "Termine-Liste" + Settings PageHeader).
-4. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
-5. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
-6. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (per User-Direktive 2026-05-01 "kommt viel spaeter").
+1. **User: Coolify-Redeploy** auf Commit `d9929aa`. Image baut, Container restart, Browser-Smoke `/pipeline/multiplikatoren` + `/proposals` + 1 Proposal-Detail-Page: visuell unveraendert (Tab-Active-State, Insight-Header, Pipeline-Tabs Blue-Gradient, Stage-Headers, Cards, Editor-V-Badge, Reverse-Charge-Toggle, Tax-Rate-Dropdown).
+2. **/qa SLC-652** nach Live-Smoke-PASS — Final-Quality-Gate.
+3. **/backend SLC-653 Theming-Migration Tranche 2** — naechster Page-Bereich (Kandidaten: Settings, Mein Tag, Kontakte, Dashboard).
+4. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
+5. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
+6. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
+7. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (per User-Direktive 2026-05-01 "kommt viel spaeter").
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
