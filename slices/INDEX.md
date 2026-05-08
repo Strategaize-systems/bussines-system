@@ -252,7 +252,7 @@
 |----|-------|---------|--------|----------|---------|
 | SLC-631 | [V6.3 Polish-Bündel (BL-426 + BL-422 + ISSUE-050 + L4 + L5 + BL-Dedup)](SLC-631-v63-polish-bundle.md) | BL-426 + BL-422 + ISSUE-050 | done | Medium | 2026-05-06 |
 
-## V6.4 Slices (Hygiene-Sprint)
+## V6.4 Slices (Hygiene-Sprint — released REL-026 2026-05-07)
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|

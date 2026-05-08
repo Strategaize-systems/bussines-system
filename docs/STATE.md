@@ -14,14 +14,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - Current Phase: V6.4 stable in Production (Internal-Test-Mode aktiv). Bereit fuer /post-launch + V7-Vorbereitung.
 
 ## Immediate Next Steps
-1. **(Optional, 5 Min)** Visuelle User-Smoke ueber 5 V6.4-UI-Aenderungen (Pipeline h1 text-3xl + Pipeline+Proposals Buttons blau + Einwilligungstexte rosa + Sidebar "Termine-Liste" + Settings PageHeader). Live-Image bereits seit 10:41 UTC auf `f99726b`.
-2. **(Optional)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Nicht zeitkritisch (frueheste Wirkung 2026-08-04).
-3. **/final-check** — Hygiene + Dependencies + Security + ENV.
-4. **/go-live** — Release-Risk-Assessment.
-5. **/deploy als REL-026** — Coolify-Auto-Deploy bei Push, RELEASES.md-Eintrag, Image-Tag = aktueller Stand `f99726b` (oder neuer Records-Sync-Commit).
-6. **(Spaeter, V6.5)** Theming-Sprint per BL-441 — Brand-Tokens in tailwind.config.ts + Migration UA-011/012/013 + UA-002 Settings-Inline-Sections-Page-Auslagerung.
-7. **(Naechster Major-Schritt nach V6.4)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503).
-8. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
+1. **/post-launch V6.4** — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run-Frequenz ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
+2. **(Optional, 5 Min)** Visuelle User-Smoke ueber 5 V6.4-UI-Aenderungen (Pipeline h1 text-3xl + Pipeline+Proposals Buttons blau + Einwilligungstexte rosa + Sidebar "Termine-Liste" + Settings PageHeader).
+3. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
+4. **(Naechster Major-Schritt)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503).
+5. **(Spaeter, V6.5)** Theming-Sprint per BL-441 — Brand-Tokens in tailwind.config.ts + Migration UA-011/012/013 + UA-002 Settings-Inline-Sections-Page-Auslagerung.
+6. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (per User-Direktive 2026-05-01 "kommt viel spaeter").
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
@@ -29,6 +27,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - V7 — reduziert auf Multi-User + Teamlead (FEAT-502/503)
 
 ## Active Scope
+**V6.4 — Hygiene-Sprint (RELEASED 2026-05-07 als REL-026, Image-Tag `f99726b`):**
+- FEAT-641 System-Stabilitaet & DSGVO-Hygiene (deployed 2026-05-07): ISSUE-057 FollowupEngine `proposals.value -> total_gross` Fix (3 Stellen, Spec sagte 2). BL-423 DSGVO 90-Tage-Retention `/api/cron/click-log-cleanup` neu (Pure-Function `runClickLogCleanup` + verifyCronSecret + audit_log-Trail mit run_id-as-entity_id). Vitest +12 Tests. SLC-641.
+- FEAT-642 Code-Hygiene-Audit (deployed 2026-05-07): RPT-336 Audit mit 18 Items klassifiziert ueber 5 Hot-Spots. SLC-643 Cleanup: 6 Items abgeraeumt (~728 Zeilen toter Code) — CA-001/002 obsolete Crons (backfill, calcom-sync), CA-008 audit_log-Insert in FollowupEngine + Signal-Extract (DSGVO-Trail-Symmetrie), CA-015/016/017 tote Server-Actions. 12 Items als V6.5/V7-Defer dokumentiert.
+- FEAT-643 UI-Hygiene-Audit (deployed 2026-05-07): RPT-338 Audit mit 13 Items klassifiziert ueber 5 UI-Bereiche + 178 Style-Guide-V2-Drift-Stellen. SLC-645 Cleanup: 5 Klar-Items umgesetzt — UA-010 Pipeline h1 text-3xl, UA-003 Einwilligungstexte rosa, UA-005 Sidebar "Termine-Liste", UA-006 Primary-CTA Green→Blue Gradient (Pipeline + Proposals), UA-001 Settings auf PageHeader. 8 Items deferred V6.5 (UA-011/012/013 Theming-Sprint via BL-441).
+- 5 Slices SLC-641..645 done. 7 V6.4-DECs (DEC-145..151). Reports-Trail RPT-335..343. Vitest 405/405 PASS, Container healthy, audit_log-Trail aktiv. Internal-Test-Mode bleibt aktiv.
+
 **V6.2 — Workflow-Automation + Kampagnen-Attribution (RELEASED 2026-05-06 als REL-024, Image-Tag `766e4ac`):**
 - FEAT-621 Workflow-Automation Rule Builder (deployed 2026-05-06, FEAT-621, BL-135): 3 Trigger (deal.stage_changed, deal.created, activity.created), 4 Actions (create_task, send_email_template, create_activity, update_field), Recursion-Guard (DEC-129), Stage-Soft-Disable (DEC-133), Cron-Fallback /api/cron/automation-runner (Coolify-Cron jede Minute, picked=0 in Smoke). Builder-UI Listing + 4-Step-Wizard + Trockenlauf-Modul (DEC-132 read-only). Audit-Log-Side-Effect mit triggered_by_user_id (DEC-131). 4 dispatcher-Pfade verdrahtet (pipeline.moveDealToStage/moveDealToPipeline/createDeal + activity-actions.createActivity).
 - FEAT-622 Kampagnen-Attribution + UTM-Tracking (deployed 2026-05-06, FEAT-622, BL-139): campaigns-Tabelle + 3 ALTER campaign_id auf contacts/companies/deals (ON DELETE SET NULL). 5 KPI-Cards + 3 Tabs auf Detail-Seite. Tracking-Links via /r/[token]-Redirector mit DSGVO IP-Hash (SHA-256+Salt). UTM→Campaign-Mapper hybrid (DEC-135 external_ref primary + LOWER(name)-ilike fallback). Lead-Intake POST /api/leads/intake mit Bearer EXPORT_API_KEY + First-Touch-Lock COALESCE (DEC-138). Read-API GET /api/campaigns/[id]/performance mit 12-Felder-JSON (DEC-140). Funnel-Filter Campaign-Dropdown im /pipeline-Filter-Bar (DEC-139). CSV-Export Leads + Deals.
@@ -64,14 +68,15 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 **Architektur-Entscheidungen V5.5:** DEC-105 pdfmake, DEC-106 HTML-Live-Preview, DEC-107 Snapshot inkl. price_at_creation, DEC-108 Status-Sent automatisch+manuell, DEC-109 V1-Status unangetastet, DEC-110 Cron 02:00 Berlin, DEC-111 Pfad-Schema, DEC-112 alle Status zeigen+Warning, DEC-113 Footer+Suffix-Watermark, DEC-114 5 Slices 1:1 zu Features.
 
 **Released (deployed):**
-- V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V5.5, V5.5.1, V5.6, V5.7, V6, V6.1, V6.2
+- V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V5.5, V5.5.1, V5.6, V5.7, V6, V6.1, V6.2, V6.3, V6.4
 
 **Active:**
-- V6.4 — Hygiene-Sprint (Requirements-Phase, naechster Schritt = /requirements V6.4)
+- (none — V6.4 released 2026-05-07, /post-launch ausstehend)
 
 **Planned (Reihenfolge):**
 - V7 — Multi-User + Teamlead (Routing/Territories + Teamlead-Rolle, reduzierter Scope)
-- Pre-Production-Compliance-Gate (irgendwann vor V7) — Anwaltspruefung + Azure-EU-Whisper + ISSUE-042 — laut User 2026-05-01 NICHT prioritaer
+- V6.5 — Theming-Sprint + AI-Engine-Konsolidierung (BL-436..441 + DEC-148/149) — Hintergrund-Sprint, kann parallel zu V7-Vorbereitung laufen
+- Pre-Production-Compliance-Gate (irgendwann vor erstem Kunden-Live-Call) — Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042 — laut User 2026-05-01 NICHT prioritaer
 
 ## Blockers
 - aktuell keine
@@ -91,4 +96,4 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - V6.1 — 2026-04-21 — released auf Hetzner als REL-014 (Performance Premium UI)
 
 ## Notes
-20 Releases deployed (REL-001..REL-020). Technologie-Stack: Next.js + Supabase (self-hosted) + Bedrock Claude Sonnet (Frankfurt) + Jitsi/Jibri (shared Infra) + pgvector RAG + Asterisk PBX + Whisper-Adapter (openai-Default, Azure-EU Code-Ready ab V5.2) + E-Mail Composing Studio (V5.3) + E-Mail-Anhaenge (V5.4) + Angebot-Erstellung mit pdfmake (V5.5). Hosting: Hetzner CPX32 via Coolify. V5.5 (REL-020) bringt /proposals/[id]/edit mit native React-State + dnd-kit, pdfmake-Renderer mit Branding-Adapter + Server-Proxy-Pattern, Status-Lifecycle (draft/sent/accepted/rejected/expired) + lineare Versionierung + Auto-Expire-Cron, Composing-Studio-Hookup mit ProposalAttachmentPicker + idempotentem Auto-Sent-Trigger. Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung COMPLIANCE.md + Switch auf Azure-EU-Whisper. ISSUE-042 (OpenAI-Key in untrackter Datei, NIE committed) ist Pre-Pflicht vor erstem produktivem Whisper-Call.
+26 Releases deployed (REL-001..REL-026). Technologie-Stack: Next.js + Supabase (self-hosted) + Bedrock Claude Sonnet (Frankfurt) + Jitsi/Jibri (shared Infra) + pgvector RAG + Asterisk PBX + Whisper-Adapter (openai-Default, Azure-EU Code-Ready ab V5.2) + E-Mail Composing Studio (V5.3) + E-Mail-Anhaenge (V5.4) + Angebot-Erstellung mit pdfmake (V5.5) + Workflow-Automation + Kampagnen-Attribution (V6.2) + Hygiene-Sprint (V6.4). Hosting: Hetzner CPX32 via Coolify. V6.4 (REL-026) bringt System-Stabilitaet (ISSUE-057-Fix), DSGVO Click-Log-Retention-Cron, ~728 Zeilen Code-Cleanup, 5 UI-Cleanup-Items, audit_log-Symmetrie ueber alle AI-Engines. Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung COMPLIANCE.md + Switch auf Azure-EU-Whisper. ISSUE-042 (OpenAI-Key in untrackter Datei, NIE committed) ist Pre-Pflicht vor erstem produktivem Whisper-Call.
