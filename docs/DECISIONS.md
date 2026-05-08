@@ -873,5 +873,13 @@
 
 ## DEC-163 — V6.5 FEAT-653 bleibt 1 Feature, kein Split in Schema-Hygiene + Dep-Hygiene (V6.5)
 - Status: accepted
+- Reason: V6.5-Slice-Planning RPT-346.
+- Consequence: SLC-657 traegt beide Sub-Topics in einem Slice.
+
+## DEC-164 — V6.5 Brand-Tokens unter `--color-brand-*`-Namespace, nicht `--color-primary` (V6.5)
+- Status: accepted
+- Reason: shadcn (existing Stack) belegt `--color-primary` im `@theme inline`-Block fuer eine oklch-Greyscale-Foundation. Ein Brand-Override wuerde alle shadcn-Buttons/Links sofort visuell brechen. Slice-Spec SLC-651 nennt diesen Konflikt explizit als Fallback-Pfad. `brand-*`-Namespace haelt beide Systeme nebeneinander, kostet nur 6 Zeichen mehr pro Utility-Klasse (`text-brand-primary` vs `text-primary`).
+- Consequence: Alle V6.5+ Theming-Slices (SLC-652..) MUESSEN `text-brand-*`/`bg-brand-*`/`hover:text-brand-*` nutzen. shadcn-Tokens (`--color-primary` etc.) bleiben unangetastet. Tailwind v4-Adaption per CSS-Variablen im `@theme inline`-Block in `cockpit/src/app/globals.css`. Migration aller bestehenden `text-[#XXX]` Drift-Stellen ueber 30 Files lebt in SLC-652+.
+- Status: accepted
 - Reason: BL-424 (Schema-Hygiene) und BL-430 (Dep-Hygiene) sind thematisch unverwandt. Trotzdem Bundle in 1 Feature: (a) beide sind Hintergrund-Sprint-Char, kein Release-Theme; (b) beide sind klein (jeweils 1-2 Slices); (c) Cockpit-Lesbarkeit bevorzugt 3 Features ueber 4 Features fuer einen Hintergrund-Sprint; (d) Slice-Plan kann beide trotzdem in separaten Slices abbilden (SLC-656 Source-Migration, SLC-657 npm audit). Splitting waere ueber-engineered.
 - Consequence: V6.5 hat 3 Features (FEAT-651/652/653). FEAT-653 enthaelt 2 BLs (BL-424, BL-430), die als 2 separate Slices implementiert werden duerfen oder als 1 buendle-Slice — Slice-Planning entscheidet. Cockpit zeigt FEAT-653 als 1 Feature mit 2 BLs.
