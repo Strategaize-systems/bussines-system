@@ -9,10 +9,15 @@ import { Separator } from "@/components/ui/separator";
 import { DuplicateWarning, useDuplicateCheck } from "@/components/ui/duplicate-warning";
 import { PlzCityAutocomplete } from "@/components/ui/plz-city-autocomplete";
 import { checkCompanyDuplicate } from "@/lib/duplicate-check";
-import { useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { CampaignPicker } from "@/components/campaigns/campaign-picker";
 import type { Company } from "./actions";
 import { validateEuVatId } from "@/lib/validation/vat-id";
+import { lookupVatIdAction } from "@/lib/validation/vies-actions";
+import {
+  VatIdStatusBadge,
+  type VatIdBadgeState,
+} from "@/components/forms/vat-id-status-badge";
 
 const selectClass = "select-premium";
 
@@ -38,6 +43,53 @@ export function CompanyForm({ company, onSubmit, isPending }: CompanyFormProps) 
     const result = validateEuVatId(trimmed);
     return result.valid ? null : result.error;
   }, [vatId]);
+
+  const [viesState, setViesState] = useState<VatIdBadgeState>("idle");
+  const [viesName, setViesName] = useState<string | null>(null);
+  const [viesMessage, setViesMessage] = useState<string | undefined>();
+
+  useEffect(() => {
+    const trimmed = vatId.trim();
+    if (!trimmed) {
+      setViesState("idle");
+      setViesName(null);
+      setViesMessage(undefined);
+      return;
+    }
+    if (vatIdInlineError) {
+      setViesState("format-invalid");
+      setViesName(null);
+      setViesMessage(vatIdInlineError);
+      return;
+    }
+    let cancelled = false;
+    setViesState("checking");
+    const handle = setTimeout(async () => {
+      const result = await lookupVatIdAction(trimmed);
+      if (cancelled) return;
+      if (result.source === "format_only" && !result.is_valid) {
+        setViesState("format-invalid");
+        setViesMessage(result.format_error ?? undefined);
+      } else if (result.source === "format_only") {
+        setViesState("format-ok");
+        setViesMessage(undefined);
+      } else if (result.source === "vies_unavailable") {
+        setViesState("vies-unavailable");
+        setViesMessage(undefined);
+      } else if (result.source === "vies" && result.is_valid) {
+        setViesState("vies-ok");
+        setViesName(result.vies_name);
+        setViesMessage(undefined);
+      } else {
+        setViesState("vies-invalid");
+        setViesMessage("VIES meldet diese VAT-ID als ungueltig");
+      }
+    }, 800);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
+  }, [vatId, vatIdInlineError]);
 
   return (
     <form action={onSubmit} className="space-y-4">
@@ -128,9 +180,8 @@ export function CompanyForm({ company, onSubmit, isPending }: CompanyFormProps) 
           onChange={(e) => setVatId(e.target.value)}
           placeholder="DE123456789, NL123456789B01, ATU12345678 ..."
         />
-        {vatIdInlineError ? (
-          <p className="text-xs text-destructive">{vatIdInlineError}</p>
-        ) : (
+        <VatIdStatusBadge state={viesState} message={viesMessage} viesName={viesName} />
+        {!vatIdInlineError && viesState === "idle" && (
           <p className="text-xs text-slate-400">
             EU-VAT-ID des Empfaengers. Voraussetzung fuer Reverse-Charge-Angebote.
           </p>
