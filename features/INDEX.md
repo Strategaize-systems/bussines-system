@@ -195,13 +195,13 @@
 | FEAT-642 | Code-Hygiene-Audit (Inventur + selektives Cleanup) | deployed | [Spec](FEAT-642-code-audit.md) | 2026-05-07 |
 | FEAT-643 | UI-Hygiene-Audit (Inventur + selektives Cleanup) | deployed | [Spec](FEAT-643-ui-audit.md) | 2026-05-07 |
 
-## V6.5 Features (Hintergrund-Sprint parallel zu V7-Vorbereitung — planned)
+## V6.5 Features (Hintergrund-Sprint parallel zu V7-Vorbereitung — code-side done, deploy pending)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-651 | Theming-Foundation + UI-Polish (BL-441 + BL-436 + BL-438 + BL-440) | planned | [Spec](FEAT-651-theming-ui-polish.md) | 2026-05-08 |
-| FEAT-652 | Compliance-Erweiterung NL→DE-Symmetrie (BL-420 + BL-421) | planned | [Spec](FEAT-652-compliance-de-symmetrie.md) | 2026-05-08 |
-| FEAT-653 | Schema + Dependency Hygiene (BL-424 + BL-430) | planned | [Spec](FEAT-653-hygiene.md) | 2026-05-08 |
+| FEAT-651 | Theming-Foundation + UI-Polish (BL-441 + BL-436 + BL-438 + BL-440) | done | [Spec](FEAT-651-theming-ui-polish.md) | 2026-05-08 |
+| FEAT-652 | Compliance-Erweiterung NL→DE-Symmetrie (BL-420 + BL-421) | done | [Spec](FEAT-652-compliance-de-symmetrie.md) | 2026-05-08 |
+| FEAT-653 | Schema + Dependency Hygiene (BL-424 + BL-430) | done | [Spec](FEAT-653-hygiene.md) | 2026-05-08 |
 
 ## V7 Features (Multi-User + Teamlead — planned)
 
