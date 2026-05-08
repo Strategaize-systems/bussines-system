@@ -152,7 +152,7 @@ export function WinLossReport({ deals }: WinLossReportProps) {
           </div>
           <div className="bg-white rounded-xl border-2 border-slate-200 p-4 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#120774] to-[#4454b8] flex items-center justify-center">
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-primary-dark to-brand-primary flex items-center justify-center">
                 <TrendingUp size={18} className="text-white" strokeWidth={2.5} />
               </div>
               <div>

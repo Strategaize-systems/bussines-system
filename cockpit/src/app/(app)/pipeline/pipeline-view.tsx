@@ -173,8 +173,8 @@ export function PipelineView({
                     className={cn(
                       "px-5 py-2 rounded-xl text-sm font-bold transition-all border-2",
                       isActive
-                        ? "bg-gradient-to-r from-[#120774] to-[#4454b8] text-white border-transparent shadow-lg shadow-[#4454b8]/20"
-                        : "bg-white text-slate-600 border-slate-200 hover:border-[#4454b8]/30 hover:text-slate-800 hover:shadow-sm"
+                        ? "bg-gradient-to-r from-brand-primary-dark to-brand-primary text-white border-transparent shadow-lg shadow-brand-primary/20"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-brand-primary/30 hover:text-slate-800 hover:shadow-sm"
                     )}
                   >
                     {p.name}
@@ -237,7 +237,7 @@ export function PipelineView({
 
               <button
                 onClick={() => setShowNewDeal(true)}
-                className="px-5 py-2 rounded-lg bg-gradient-to-r from-[#120774] to-[#4454b8] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2"
+                className="px-5 py-2 rounded-lg bg-gradient-to-r from-brand-primary-dark to-brand-primary text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2"
               >
                 <Plus size={16} strokeWidth={2.5} />
                 Neuer Deal
@@ -269,7 +269,7 @@ export function PipelineView({
               <select
                 value={stageFilter}
                 onChange={(e) => setStageFilter(e.target.value)}
-                className="px-3 py-2 rounded-lg border-2 border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#4454b8] cursor-pointer shrink-0"
+                className="px-3 py-2 rounded-lg border-2 border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:border-brand-primary cursor-pointer shrink-0"
               >
                 <option value="all">Alle Stages</option>
                 {stages.map((s) => (
@@ -288,7 +288,7 @@ export function PipelineView({
                     const qs = params.toString();
                     router.push(`${window.location.pathname}${qs ? `?${qs}` : ""}`);
                   }}
-                  className="px-3 py-2 rounded-lg border-2 border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#4454b8] cursor-pointer shrink-0 max-w-[200px]"
+                  className="px-3 py-2 rounded-lg border-2 border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:border-brand-primary cursor-pointer shrink-0 max-w-[200px]"
                   title="Auf Kampagne filtern"
                 >
                   <option value="all">Alle Kampagnen</option>

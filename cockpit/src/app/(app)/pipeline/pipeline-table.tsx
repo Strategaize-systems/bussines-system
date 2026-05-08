@@ -72,8 +72,8 @@ export function PipelineTable({ deals, stages, onDealClick }: PipelineTableProps
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown size={12} className="text-slate-300" />;
     return sortDir === "asc"
-      ? <ArrowUp size={12} className="text-[#4454b8]" />
-      : <ArrowDown size={12} className="text-[#4454b8]" />;
+      ? <ArrowUp size={12} className="text-brand-primary" />
+      : <ArrowDown size={12} className="text-brand-primary" />;
   };
 
   return (

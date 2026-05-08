@@ -136,7 +136,7 @@ export function DealDetailSheet({
               onClick={() => setTab(t)}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
                 tab === t
-                  ? "bg-[#4454b8] text-white shadow-sm"
+                  ? "bg-brand-primary text-white shadow-sm"
                   : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
               }`}
             >
@@ -171,7 +171,7 @@ export function DealDetailSheet({
               {/* Insight Button for won/lost deals */}
               {deal && (d?.status === "won" || d?.status === "lost" || deal.status === "won" || deal.status === "lost") && (
                 <div className="border-t pt-4 space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#f2b705]">Insight</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-brand-warning">Insight</p>
                   <InsightSheet
                     sourceType="deal"
                     sourceId={deal.id}
@@ -183,7 +183,7 @@ export function DealDetailSheet({
               {/* Move to Pipeline */}
               {allPipelines.filter((p) => p.id !== pipelineId).length > 0 && (
                 <div className="border-t pt-4 space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#4454b8]">In andere Pipeline verschieben</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-brand-primary">In andere Pipeline verschieben</p>
                   <div className="flex gap-2">
                     {allPipelines
                       .filter((p) => p.id !== pipelineId)
@@ -233,7 +233,7 @@ function DetailsTab({ deal, relations, stageName }: { deal: any; relations: any;
       <div className="grid grid-cols-2 gap-4">
         {deal.contacts && (
           <div className="rounded-xl border border-slate-200 p-4 space-y-2">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-[#4454b8]">Kontakt</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-brand-primary">Kontakt</div>
             <Link href={`/contacts/${deal.contacts.id}`} className="text-sm font-semibold text-slate-900 hover:underline">
               {deal.contacts.first_name} {deal.contacts.last_name}
             </Link>
@@ -256,7 +256,7 @@ function DetailsTab({ deal, relations, stageName }: { deal: any; relations: any;
         )}
         {deal.companies && (
           <div className="rounded-xl border border-slate-200 p-4 space-y-2">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-[#4454b8]">Firma</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-brand-primary">Firma</div>
             <Link href={`/companies/${deal.companies.id}`} className="text-sm font-semibold text-slate-900 hover:underline">
               {deal.companies.name}
             </Link>
@@ -276,7 +276,7 @@ function DetailsTab({ deal, relations, stageName }: { deal: any; relations: any;
 
       {/* Deal Info */}
       <div className="rounded-xl border border-slate-200 p-4 space-y-3">
-        <div className="text-[10px] font-bold uppercase tracking-wider text-[#4454b8]">Deal-Details</div>
+        <div className="text-[10px] font-bold uppercase tracking-wider text-brand-primary">Deal-Details</div>
         <div className="grid grid-cols-2 gap-y-2 text-sm">
           <span className="text-slate-500">Stage</span>
           <span className="font-medium">{stageName}</span>
@@ -316,7 +316,7 @@ function DetailsTab({ deal, relations, stageName }: { deal: any; relations: any;
       {/* Signals */}
       {relations?.signals?.length > 0 && (
         <div className="space-y-2">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-[#4454b8]">Signale</div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-brand-primary">Signale</div>
           <div className="flex flex-wrap gap-1.5">
             {relations.signals.map((s: any) => (
               <Badge key={s.id} variant="secondary" className="text-xs">
@@ -408,7 +408,7 @@ function ProposalsTab({ proposals }: { proposals: any[] }) {
 
   return (
     <div className="space-y-2">
-      <div className="text-[10px] font-bold uppercase tracking-wider text-[#4454b8]">Angebote</div>
+      <div className="text-[10px] font-bold uppercase tracking-wider text-brand-primary">Angebote</div>
       {proposals.length > 0 ? (
         proposals.map((p: any) => (
           <div key={p.id} className="flex items-center justify-between rounded-xl border border-slate-200 p-3">
