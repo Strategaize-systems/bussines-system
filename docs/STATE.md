@@ -10,13 +10,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.5 SLC-657 /backend done code-side 2026-05-08** (RPT-359). Source-Migration + npm audit + ISSUE-058. Pre-Audit zeigte 0 Legacy-Source-Daten in Production-DB → MIG-031 ist Ready-when-needed (Pfad A): Mapping-JSON + Bulk-UPDATE-SQL als Repo-Artefakt vorbereitet, kein Production-Apply ohne Daten. contact-form + company-form: Legacy-source/source_type/source_detail entfernt, conditional read-only-Display + hidden-input-Preserve. CSV-Export `/api/campaigns/[id]/export` campaign_name statt source_detail (LEFT JOIN auf campaigns). npm audit reduziert von 5 auf 2 moderate (postcss + next bleiben als ISSUE-058). Build clean, Vitest 444/444 PASS, Lint 168/55 = baseline. V6.5 7/7 Slices code-side done. Wartet auf User-Coolify-Redeploy + Live-Smoke (Form-Render).
-- Current Phase: V6.5 in Umsetzung. 7/7 Slices code-side done (SLC-651..657). Naechster Schritt: User-Redeploy + /qa SLC-657 + Gesamt-/qa V6.5 + /final-check + /go-live + /deploy als REL-027.
+- Current Focus: **V6.5 SLC-657 /qa PASS 2026-05-08** (RPT-360, reviewOf RPT-359). Source-Migration + npm audit + ISSUE-058 voll qa-verifiziert. 9/9 ACs erfuellt (8 voll + AC-9 partial-by-design wegen 0 Legacy-Daten + 0 campaigns). Image `cb491ca` healthy auf Hetzner, /login HTTP 200 + V2-Style-Guide-Gradient. 0 Stubs, Wiring-Chain (Form→hidden-inputs→actions.ts→DB) intakt, Build clean, Vitest 444/444, Lint 168/55 = SLC-656-Baseline (kein neuer Error). V6.5 7/7 Slices code-side + qa-side done. Ready fuer Gesamt-/qa V6.5.
+- Current Phase: V6.5 in Umsetzung. 7/7 Slices done + qa-side bestaetigt (SLC-651..657). Naechster Schritt: Gesamt-/qa V6.5 + /final-check + /go-live + /deploy als REL-027.
 
 ## Immediate Next Steps
-1. **User: Coolify-Redeploy** auf naechsten Image-Tag + Browser-Smoke contact-form + company-form (Legacy-Felder NICHT angezeigt da keine Legacy-Daten existieren — read-only-Display ist nur conditional, das ist erwartet).
-2. **/qa SLC-657** — Final-Quality-Gate fuer Source-Migration + npm audit + Forms.
-3. **Nach /qa SLC-657:** Gesamt-/qa V6.5 → /final-check → /go-live → /deploy als REL-027.
+1. **Gesamt-/qa V6.5** — Bundle-Verifikation aller 7 Slices SLC-651..657 als End-to-End-QA.
+2. **Nach Gesamt-/qa V6.5:** /final-check + /go-live + /deploy als REL-027.
 4. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
 4. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
 5. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
