@@ -1,32 +1,15 @@
-import { getPipelines, getPipelineStages } from "../pipeline/actions";
-import { PipelineConfig } from "./pipeline-config";
-import { TemplatesConfig } from "./templates-config";
-import { getEmailTemplates } from "./template-actions";
 import { getImapSyncStatus } from "./imap-actions";
 import { ImapStatus } from "./imap-status";
 import { getCurrentUserRole } from "@/lib/audit";
-import { Shield, Bell, FileText, Palette, Receipt, Zap, Megaphone } from "lucide-react";
+import { Shield, Bell, FileText, Palette, Receipt, Zap, Megaphone, GitBranch, Mail } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
-import type { PipelineStage } from "../pipeline/actions";
 
 export default async function SettingsPage() {
-  const [pipelines, role, templates, imapSync] = await Promise.all([
-    getPipelines(),
+  const [role, imapSync] = await Promise.all([
     getCurrentUserRole(),
-    getEmailTemplates(),
     getImapSyncStatus(),
   ]);
-
-  // Load stages for all pipelines
-  const stagesResults = await Promise.all(
-    pipelines.map((p) => getPipelineStages(p.id))
-  );
-
-  const stagesByPipeline: Record<string, PipelineStage[]> = {};
-  pipelines.forEach((p, i) => {
-    stagesByPipeline[p.id] = stagesResults[i];
-  });
 
   const roleLabel = role === "admin" ? "Administrator" : "Operator";
 
@@ -141,11 +124,37 @@ export default async function SettingsPage() {
         </div>
       </Link>
 
+      {/* Pipelines & Stages link (V6.5 SLC-653 UA-002) */}
+      <Link href="/settings/pipelines" className="block">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:bg-slate-50">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50">
+              <GitBranch className="h-4 w-4 text-indigo-700" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-900">Pipelines & Stages</p>
+              <p className="text-sm text-slate-500">Pipelines anlegen, Stages konfigurieren und Reihenfolge festlegen</p>
+            </div>
+          </div>
+        </div>
+      </Link>
+
+      {/* E-Mail-Templates link (V6.5 SLC-653 UA-002) */}
+      <Link href="/settings/templates" className="block">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:bg-slate-50">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-50">
+              <Mail className="h-4 w-4 text-cyan-700" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-900">E-Mail-Templates</p>
+              <p className="text-sm text-slate-500">Mehrsprachige Vorlagen fuer ausgehende E-Mails (DE / NL / EN)</p>
+            </div>
+          </div>
+        </div>
+      </Link>
+
       <ImapStatus syncState={imapSync} />
-
-      <PipelineConfig pipelines={pipelines} stagesByPipeline={stagesByPipeline} />
-
-      <TemplatesConfig templates={templates} />
         </div>
       </main>
     </div>
