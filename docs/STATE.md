@@ -9,16 +9,16 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: stable
-- Current Focus: **V6.4 RELEASED 2026-05-07 als REL-026** (RPT-343). Live-Image-Tag `f99726b` deployed via Coolify-Redeploy 10:41 UTC. 5 Slices + 3 Features deployed, Vitest 405/405 PASS, Container healthy >2h, 3 V6.4-Audit-Patterns produzieren Daten in DB, 0 `proposals.value`-Errors. Naechster Schritt = /post-launch fuer 24h-Live-Beobachtung, danach /requirements V7 Multi-User + Teamlead.
-- Current Phase: V6.4 stable in Production (Internal-Test-Mode aktiv). Bereit fuer /post-launch + V7-Vorbereitung.
+- High-Level State: requirements
+- Current Focus: **V6.5 REQUIREMENTS 2026-05-08** (RPT-344). Hintergrund-Sprint parallel zu V7-Vorbereitung mit 3 Features + 8 BLs: FEAT-651 Theming-Foundation + UI-Polish (BL-441 + BL-436 + BL-438 + BL-440), FEAT-652 Compliance-Erweiterung NL→DE-Symmetrie (BL-420 VIES + BL-421 DE-§13b), FEAT-653 Schema + Dependency Hygiene (BL-424 Source-Migration + BL-430 npm audit). Naechster Schritt = /architecture V6.5.
+- Current Phase: V6.5 Requirements done. V6.4 released REL-026 (Last Stable Version, /post-launch ausstehend). Bereit fuer /architecture V6.5.
 
 ## Immediate Next Steps
-1. **/post-launch V6.4** — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run-Frequenz ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
-2. **(Optional, 5 Min)** Visuelle User-Smoke ueber 5 V6.4-UI-Aenderungen (Pipeline h1 text-3xl + Pipeline+Proposals Buttons blau + Einwilligungstexte rosa + Sidebar "Termine-Liste" + Settings PageHeader).
-3. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
-4. **(Naechster Major-Schritt)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503).
-5. **(Spaeter, V6.5)** Theming-Sprint per BL-441 — Brand-Tokens in tailwind.config.ts + Migration UA-011/012/013 + UA-002 Settings-Inline-Sections-Page-Auslagerung.
+1. **/architecture V6.5** — Architektur fuer 3 Features (FEAT-651 Theming + FEAT-652 Compliance + FEAT-653 Hygiene) klaeren. Open Questions aus FEAT-Specs adressieren (Theming-Phase-Split, VIES-Caching-Layer, Source-Migration-Strategie).
+2. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
+3. **(Optional, 5 Min)** Visuelle User-Smoke ueber 5 V6.4-UI-Aenderungen (Pipeline h1 text-3xl + Pipeline+Proposals Buttons blau + Einwilligungstexte rosa + Sidebar "Termine-Liste" + Settings PageHeader).
+4. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
+5. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
 6. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (per User-Direktive 2026-05-01 "kommt viel spaeter").
 
 ## Spaeter (nicht jetzt)
