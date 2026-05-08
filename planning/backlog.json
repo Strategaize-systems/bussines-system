@@ -1984,13 +1984,33 @@
     },
     {
       "id": "BL-441",
-      "title": "V6.5 Theming-Sprint — Brand-Tokens in globals.css @theme + Migration UA-011/012/013",
+      "title": "V6.5 Theming-Sprint — Master (Tracker fuer alle Tranchen)",
       "type": "improvement",
       "priority": "medium",
       "status": "in_progress",
       "version": "V6.5",
-      "description": "Aus RPT-338 V6.4 UI-Audit (UA-011 + UA-012 + UA-013). Style-Guide-V2-Drift systemisch: 73 arbitrary [#xxxxxx] Color-Klassen + 41 arbitrary Spacing + 64 arbitrary Gradient-Hex ueber 30 Files. 2-Phasen-Plan: **Phase A done 2026-05-08 (SLC-651)** — Brand-Tokens als CSS-Vars `--color-brand-*` im `@theme inline`-Block in globals.css (Tailwind v4-konform). 6 Tokens. 8 Drift-Stellen in mein-tag-client.tsx migriert. **Phase B Tranche 1 done code-side 2026-05-08 (SLC-652)** — Pipeline (5 Files / 17 Stellen) + Proposals (9 Files / 10 Stellen) auf Tokens migriert; 3 hover:bg-[#0d055c] Hover-Shades als begruendete Ausnahme belassen (kein passendes Token, AC-7 visuell unveraendert). Build/Vitest/Lint clean. Wartet auf Coolify-Redeploy + Live-Smoke. Naechste Tranchen (SLC-653+) decken Settings, Mein Tag, Kontakte, Dashboard etc. ab.",
+      "description": "Aus RPT-338 V6.4 UI-Audit (UA-011 + UA-012 + UA-013). Style-Guide-V2-Drift systemisch: 73 arbitrary [#xxxxxx] Color-Klassen + 41 arbitrary Spacing + 64 arbitrary Gradient-Hex ueber 30 Files. **Sub-Items zur Sichtbarkeit:** BL-442 Phase A done (SLC-651), BL-443 Phase B Tranche 1 done (SLC-652). Folgende Tranchen werden bei Bedarf als BL-444+ angelegt. Master schliesst wenn alle Tranchen done sind.",
       "createdAt": "2026-05-07"
+    },
+    {
+      "id": "BL-442",
+      "title": "V6.5 Theming Phase A — Brand-Tokens in globals.css @theme inline (SLC-651)",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "done",
+      "version": "V6.5",
+      "description": "Phase A done 2026-05-08 als SLC-651 (RPT-347 backend + RPT-348 /qa PASS). 6 Brand-Tokens als CSS-Vars `--color-brand-*` im `@theme inline`-Block in cockpit/src/app/globals.css (Tailwind v4-Adapt vs. urspruenglicher v3-Spec, IMP-382). Tokens: brand-primary (#4454b8), brand-primary-dark (#120774), brand-success (#4dcb8b), brand-success-dark (#00a84f), brand-warning (#f2b705), brand-warning-light (#ffd54f). 8 Drift-Stellen in mein-tag-client.tsx als Beweis migriert. DEC-164 dokumentiert Brand-Namespace-Wahl. Foundation steht fuer alle Phase-B-Tranchen.",
+      "createdAt": "2026-05-08"
+    },
+    {
+      "id": "BL-443",
+      "title": "V6.5 Theming Phase B Tranche 1 — Pipeline + Proposals (SLC-652)",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "done",
+      "version": "V6.5",
+      "description": "Phase B Tranche 1 done 2026-05-08 als SLC-652 (RPT-349 backend + RPT-350 /qa PASS). 27/30 Drift-Stellen ueber 14 Files auf brand-Tokens migriert: Pipeline 17/17 (pipeline-view, deal-detail-sheet, pipeline-table, funnel-report, win-loss-report) + Proposals 10/13 (proposals-client, proposal-form, proposal-editor, proposal-workspace, position-list, milestone-row, preview-panel, reverse-charge-section, tax-rate-dropdown). 3 hover:bg-[#0d055c] Hover-Shades als begruendete Ausnahme belassen (kein passendes Token, AC-7 visuell unveraendert per SLC-651-Precedent). Build/Vitest 405/405/Lint clean. Production-CSS-Bundle bestaetigt 13+ Brand-Utilities mit korrekten Hex-Werten 1:1 zu Pre-Migration. 2 Atomic Commits 27c91a4+d9929aa. IMP-384 zu Slice-Spec-File-Listing-Validation.",
+      "createdAt": "2026-05-08"
     },
     {
       "id": "BL-435",
