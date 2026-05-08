@@ -258,7 +258,7 @@
 |----|-------|---------|--------|----------|---------|
 | SLC-651 | [Theming-Tokens-Setup (BL-441 Phase A)](SLC-651-theming-tokens-setup.md) | FEAT-651 | done | High | 2026-05-08 |
 | SLC-652 | [Theming-Migration Tranche 1 — Pipeline+Proposals (BL-441 Phase B)](SLC-652-theming-migration-tranche-1.md) | FEAT-651 | done | High | 2026-05-08 |
-| SLC-653 | [Settings inline-Sections in eigene Pages (BL-436 UA-002)](SLC-653-settings-pages-auslagern.md) | FEAT-651 | planned | Medium | 2026-05-08 |
+| SLC-653 | [Settings inline-Sections in eigene Pages (BL-436 UA-002)](SLC-653-settings-pages-auslagern.md) | FEAT-651 | done | Medium | 2026-05-08 |
 | SLC-654 | [ViewToggle Generic + Pipeline-PageHeader-Slot (BL-438 + BL-440)](SLC-654-viewtoggle-pageheader.md) | FEAT-651 | planned | Medium | 2026-05-08 |
 | SLC-655 | [VIES-Cache + Adapter (BL-420)](SLC-655-vies-cache-adapter.md) | FEAT-652 | planned | Medium | 2026-05-08 |
 | SLC-656 | [DE-§13b Reverse-Charge-Block (BL-421)](SLC-656-de-reverse-charge.md) | FEAT-652 | planned | Medium | 2026-05-08 |

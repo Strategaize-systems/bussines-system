@@ -1937,9 +1937,9 @@
       "title": "UA-002 Settings inline-Sections in eigene Pages auslagern",
       "type": "improvement",
       "priority": "low",
-      "status": "open",
+      "status": "done",
       "version": "V6.5",
-      "description": "Aus RPT-338 V6.4 UI-Audit (UA-002). Settings-Landing rendert PipelineConfig + TemplatesConfig inline trotz eigener Page /settings/products + Sidebar-Eintrag Produkte. Mix von Karten-Klicks und always-visible Inline-Bloecken ist hierarchisch unklar. Vorschlag: PipelineConfig nach /settings/pipelines + TemplatesConfig nach /settings/templates als eigene Pages, mit Karten-Eintrag auf Settings-Landing. ImapStatus bleibt inline (Status-Banner-Charakter). Aufwand mittel 1-3h.",
+      "description": "Aus RPT-338 V6.4 UI-Audit (UA-002). **Done 2026-05-08 als SLC-653 (RPT-351 backend).** PipelineConfig + TemplatesConfig in eigene Pages /settings/pipelines + /settings/templates ausgelagert. Settings-Landing zeigt 2 neue Link-Karten (GitBranch/Indigo + Mail/Cyan). ImapStatus + Role-Card bleiben inline. Component-Logik 1:1 verschoben. Build/Vitest/Lint clean.",
       "createdAt": "2026-05-07"
     },
     {

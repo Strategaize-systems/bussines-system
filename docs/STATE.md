@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.5 SLC-652 fully done 2026-05-08** (RPT-349 backend + RPT-350 /qa PASS). Theming-Migration Tranche 1 Pipeline+Proposals: 27/30 Drift-Stellen ueber 14 Files auf `--color-brand-*` Tokens migriert (Pipeline 17/17, Proposals 10/13). 3 `hover:bg-[#0d055c]` Hover-Shades als begruendete Ausnahme belassen (kein Token, AC-7 visuell unveraendert per SLC-651-Precedent). 2 Atomic Commits `27c91a4` + `d9929aa` + Records-Sync `2005c03`. Coolify-Redeploy aktiv auf Image `2005c03`, Container `app-...084249536318` healthy. Production-CSS-Bundle bestaetigt 13+ Brand-Utilities mit korrekten Hex-Werten (1:1 zu Pre-Migration, Visual-Regression mathematisch ausgeschlossen). Build/Vitest 405/405/Lint 166/55 V5.7-Baseline. BL-441 Phase B Tranche 1 abgeschlossen.
-- Current Phase: V6.5 in Umsetzung. 2/7 Slices fully done (SLC-651 + SLC-652). Bereit fuer SLC-653 Theming-Migration Tranche 2.
+- Current Focus: **V6.5 SLC-653 done code-side 2026-05-08** (RPT-351). Settings-Refactor (BL-436 UA-002): PipelineConfig + TemplatesConfig in eigene Pages /settings/pipelines + /settings/templates ausgelagert. Settings-Landing zeigt 2 neue Link-Karten (GitBranch/Indigo + Mail/Cyan) zwischen Compliance + ImapStatus. ImapStatus + Role-Card bleiben inline. Component-Logik 1:1 verschoben. Commit `12fcb40`. Build/Vitest 405/405/Lint 166/55 V5.7-Baseline clean. Wartet auf User-Coolify-Redeploy + Browser-Smoke 3 Pages (`/settings`, `/settings/pipelines` mit CRUD, `/settings/templates`).
+- Current Phase: V6.5 in Umsetzung. 3/7 Slices code-side done (SLC-651 + SLC-652 deployed + SLC-653 wartet auf Redeploy). Theming-Foundation steht; UI-Refactor begonnen.
 
 ## Immediate Next Steps
-1. **/backend SLC-653 Theming-Migration Tranche 2** — Empfehlung: Settings-Bereich (BL-436 UA-002), alternativ Mein Tag (UA-007 ViewToggle BL-438) oder Kontakte/Dashboard. RPT-338 V6.4 UI-Audit listet die offenen Bereiche.
-2. **(Optional, 5 Min)** Visuelle User-Smoke ueber 3 SLC-652-Pages (`/pipeline/multiplikatoren` Tabs/Stage-Headers/Sort-Icons + `/proposals` Listing-Bearbeiten/Neuer-Angebot-Button + 1 Proposal-Detail Editor-V-Badge/Tax-Rate-Focus/Reverse-Charge-Toggle).
-3. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
+1. **User: Coolify-Redeploy** auf Commit `12fcb40` (oder Records-Sync-Commit folgt). Container restart, Browser-Smoke `/settings` (2 neue Karten zwischen Compliance + ImapStatus + keine Inline-Bloecke mehr) + `/settings/pipelines` (CRUD-Smoke 1 Stage hinzufuegen+entfernen) + `/settings/templates` (1 Template anzeigen).
+2. **/qa SLC-653** nach Live-Smoke-PASS — Final-Quality-Gate.
+3. **/backend SLC-654 ViewToggle Generic + Pipeline-PageHeader-Slot** — naechster V6.5-Slice (BL-438 + BL-440).
 4. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
 5. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
 6. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
