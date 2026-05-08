@@ -4,6 +4,7 @@ import {
   formatMilestoneTriggerLabel,
 } from "./proposal-renderer";
 import { REVERSE_CHARGE_HEADER } from "./reverse-charge-block";
+import { DE_REVERSE_CHARGE_HEADER } from "./de-reverse-charge-block";
 import type {
   Proposal,
   ProposalItem,
@@ -494,15 +495,32 @@ describe("buildProposalDocDefinition — Reverse-Charge + Strategaize-vat_id (DE
     expect(stringified).not.toMatch(/Reverse Charge/);
   });
 
+  it("AC22 Edge-Case: Reverse-Charge=true ohne Branding rendert defensiv keinen Block (V6.5 SLC-656)", () => {
+    const proposal = makeProposal({
+      reverse_charge: true,
+      tax_rate: 0,
+    });
+    // V6.5 SLC-656 — branding=null bedeutet kein business_country, also kein
+    // Block. Server-Action validateReverseCharge soll diesen Fall blocken;
+    // der Renderer raet nicht mehr zur NL-Variante, sondern rendert nichts.
+    const content = getContentSnapshot(proposal, [], {
+      branding: null,
+      company: makeCompany({ vat_id: null, address_country: "DE" }),
+    });
+    const stringified = JSON.stringify(content);
+    expect(stringified).not.toContain(REVERSE_CHARGE_HEADER);
+    expect(stringified).not.toContain(DE_REVERSE_CHARGE_HEADER);
+  });
+
   it("AC22 Edge-Case: Reverse-Charge=true ohne Strategaize-vat_id rendert defensiv mit '—' Platzhalter", () => {
     const proposal = makeProposal({
       reverse_charge: true,
       tax_rate: 0,
     });
-    // branding=null UND company.vat_id fehlt — Renderer darf nicht crashen,
-    // aber der Block soll sichtbar gerendert werden mit Platzhalter "—".
+    // V6.5 SLC-656 — Wenn business_country=NL gesetzt ist aber vat_id fehlt,
+    // rendert der NL-Block mit Platzhaltern (defensives V5.7-Verhalten).
     const content = getContentSnapshot(proposal, [], {
-      branding: null,
+      branding: makeBranding({ vat_id: null, business_country: "NL" }),
       company: makeCompany({ vat_id: null, address_country: "DE" }),
     });
     const stringified = JSON.stringify(content);
@@ -542,6 +560,117 @@ describe("buildProposalDocDefinition — Reverse-Charge + Strategaize-vat_id (DE
         business_country: "NL",
       }),
     });
+    expect(content).toMatchSnapshot();
+  });
+});
+
+// V6.5 SLC-656 MT-3 — DE-Reverse-Charge-Block (DEC-162). Pendant zu V5.7-NL-
+// Block. Renderer waehlt zwischen DE/NL/none basierend auf
+// branding.business_country.
+describe("buildProposalDocDefinition — DE-Reverse-Charge-Block (DEC-162, SLC-656)", () => {
+  it("DE-Branding + Reverse-Charge=true rendert § 13b UStG-Block mit USt-IdNr.", () => {
+    const proposal = makeProposal({
+      reverse_charge: true,
+      tax_rate: 0,
+    });
+    const content = getContentSnapshot(proposal, [], {
+      branding: makeBranding({
+        vat_id: "DE123456789",
+        business_country: "DE",
+      }),
+      company: makeCompany({
+        vat_id: "ATU12345678",
+        address_country: "AT",
+      }),
+    });
+    const stringified = JSON.stringify(content);
+    expect(stringified).toContain(DE_REVERSE_CHARGE_HEADER);
+    expect(stringified).toMatch(/Steuerschuldnerschaft des Leistungsempfaengers/);
+    expect(stringified).toMatch(/§ 13b UStG/);
+    expect(stringified).toMatch(/Article 196 VAT Directive 2006\/112\/EC/);
+    expect(stringified).toMatch(/USt-IdNr\. DE123456789 — USt-IdNr\. ATU12345678/);
+    // NL-Phrase darf NICHT erscheinen.
+    expect(stringified).not.toMatch(/BTW verlegd/);
+    expect(stringified).not.toContain(REVERSE_CHARGE_HEADER);
+  });
+
+  it("DE-Branding + Reverse-Charge=true ohne Strategaize-vat_id rendert mit '—' Platzhalter", () => {
+    const proposal = makeProposal({
+      reverse_charge: true,
+      tax_rate: 0,
+    });
+    const content = getContentSnapshot(proposal, [], {
+      branding: makeBranding({ vat_id: null, business_country: "DE" }),
+      company: makeCompany({ vat_id: null, address_country: "FR" }),
+    });
+    const stringified = JSON.stringify(content);
+    expect(stringified).toContain(DE_REVERSE_CHARGE_HEADER);
+    expect(stringified).toMatch(/USt-IdNr\. — — USt-IdNr\. —/);
+  });
+
+  it("DE-Reverse-Charge-Block sitzt direkt unter Tax-Row vor Total-Brutto-Linie", () => {
+    const proposal = makeProposal({
+      reverse_charge: true,
+      tax_rate: 0,
+    });
+    const content = getContentSnapshot(proposal, [], {
+      branding: makeBranding({
+        vat_id: "DE123456789",
+        business_country: "DE",
+      }),
+      company: makeCompany({
+        vat_id: "ATU12345678",
+        address_country: "AT",
+      }),
+    });
+    const stringified = JSON.stringify(content);
+    const taxIdx = stringified.indexOf("Steuer (0%)");
+    const rcIdx = stringified.indexOf(DE_REVERSE_CHARGE_HEADER);
+    const totalIdx = stringified.indexOf("Total Brutto");
+    expect(taxIdx).toBeGreaterThan(-1);
+    expect(rcIdx).toBeGreaterThan(taxIdx);
+    expect(totalIdx).toBeGreaterThan(rcIdx);
+  });
+
+  it("Snapshot: DE-Reverse-Charge=true mit beiden vat_ids deterministisch", () => {
+    const proposal = makeProposal({
+      reverse_charge: true,
+      tax_rate: 0,
+      skonto_percent: null,
+      skonto_days: null,
+    });
+    const content = getContentSnapshot(proposal, [], {
+      branding: makeBranding({
+        vat_id: "DE123456789",
+        business_country: "DE",
+      }),
+      company: makeCompany({
+        vat_id: "ATU12345678",
+        address_country: "AT",
+      }),
+    });
+    expect(content).toMatchSnapshot();
+  });
+
+  it("NL-Snapshot regression-frei (V5.7 unveraendert nach SLC-656)", () => {
+    const proposal = makeProposal({
+      reverse_charge: true,
+      tax_rate: 0,
+      skonto_percent: null,
+      skonto_days: null,
+    });
+    const content = getContentSnapshot(proposal, [], {
+      branding: makeBranding({
+        vat_id: "NL859123456B01",
+        business_country: "NL",
+      }),
+      company: makeCompany({
+        vat_id: "DE123456789",
+        address_country: "DE",
+      }),
+    });
+    // Identisch zur AC22-Snapshot ("Reverse-Charge=true mit beiden vat_ids
+    // deterministisch") — V5.7 NL-Pfad bleibt bit-identisch.
     expect(content).toMatchSnapshot();
   });
 });

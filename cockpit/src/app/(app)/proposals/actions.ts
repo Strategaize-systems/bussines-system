@@ -567,7 +567,7 @@ export async function updateProposal(
     const [{ data: brandingRow }, { data: companyRow }] = await Promise.all([
       supabase
         .from("branding_settings")
-        .select("vat_id")
+        .select("vat_id, business_country")
         .limit(1)
         .maybeSingle(),
       (before as { company_id: string | null }).company_id
@@ -579,9 +579,18 @@ export async function updateProposal(
         : Promise.resolve({ data: null, error: null }),
     ]);
 
+    const businessCountryRaw =
+      (brandingRow as { business_country: string | null } | null)
+        ?.business_country ?? null;
+    const businessCountry: "DE" | "NL" | null =
+      businessCountryRaw === "DE" || businessCountryRaw === "NL"
+        ? businessCountryRaw
+        : null;
+
     const rcCheck = validateReverseCharge({
       reverseCharge: nextRC,
       taxRate: nextTaxRate,
+      businessCountry,
       brandingVatId: (brandingRow as { vat_id: string | null } | null)?.vat_id ?? null,
       companyVatId:
         (companyRow as { vat_id: string | null } | null)?.vat_id ?? null,

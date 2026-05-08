@@ -4,6 +4,7 @@ import { validateReverseCharge } from "./reverse-charge-validation";
 const ELIGIBLE = {
   reverseCharge: true,
   taxRate: 0,
+  businessCountry: "NL" as const,
   brandingVatId: "NL859123456B01",
   companyVatId: "DE123456789",
   companyCountry: "Deutschland",
@@ -15,6 +16,7 @@ describe("validateReverseCharge", () => {
       validateReverseCharge({
         reverseCharge: false,
         taxRate: 21,
+        businessCountry: null,
         brandingVatId: null,
         companyVatId: null,
         companyCountry: null,
@@ -25,6 +27,7 @@ describe("validateReverseCharge", () => {
       validateReverseCharge({
         reverseCharge: false,
         taxRate: 0,
+        businessCountry: "NL",
         brandingVatId: "NL859123456B01",
         companyVatId: "DE123456789",
         companyCountry: "Deutschland",
@@ -122,11 +125,79 @@ describe("validateReverseCharge", () => {
     const r = validateReverseCharge({
       reverseCharge: true,
       taxRate: 21,
+      businessCountry: null,
       brandingVatId: null,
       companyVatId: null,
       companyCountry: null,
     });
     expect(r.ok).toBe(false);
     expect(r.ok === false && r.error).toMatch(/Steuersatz 0%/);
+  });
+
+  // V6.5 SLC-656 — DE-Mode-Tests (DEC-162). businessCountry=DE erlaubt
+  // § 13b UStG-Reverse-Charge fuer EU-Empfaenger != DE.
+  it("V6.5 DE: blockt RC=true wenn businessCountry fehlt", () => {
+    const r = validateReverseCharge({ ...ELIGIBLE, businessCountry: null });
+    expect(r.ok).toBe(false);
+    expect(r.ok === false && r.error).toMatch(/Branding-Land/);
+  });
+
+  it("V6.5 DE: akzeptiert RC=true bei DE-Mode + AT-Empfaenger", () => {
+    const r = validateReverseCharge({
+      reverseCharge: true,
+      taxRate: 0,
+      businessCountry: "DE",
+      brandingVatId: "DE123456789",
+      companyVatId: "ATU12345678",
+      companyCountry: "Österreich",
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  it("V6.5 DE: akzeptiert RC=true bei DE-Mode + NL-Empfaenger (DE→NL Cross-Border)", () => {
+    const r = validateReverseCharge({
+      reverseCharge: true,
+      taxRate: 0,
+      businessCountry: "DE",
+      brandingVatId: "DE123456789",
+      companyVatId: "NL859123456B01",
+      companyCountry: "Niederlande",
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  it("V6.5 DE: blockt RC=true bei DE-Mode + DE-Empfaenger (Same-Country)", () => {
+    const r = validateReverseCharge({
+      reverseCharge: true,
+      taxRate: 0,
+      businessCountry: "DE",
+      brandingVatId: "DE123456789",
+      companyVatId: "DE987654321",
+      companyCountry: "Deutschland",
+    });
+    expect(r.ok).toBe(false);
+    expect(r.ok === false && r.error).toMatch(/Empfaenger sitzt in DE/);
+  });
+
+  it("V6.5 DE: blockt RC=true bei DE-Mode + Drittland (Schweiz)", () => {
+    const r = validateReverseCharge({
+      reverseCharge: true,
+      taxRate: 0,
+      businessCountry: "DE",
+      brandingVatId: "DE123456789",
+      companyVatId: "CHE123456789",
+      companyCountry: "Schweiz",
+    });
+    expect(r.ok).toBe(false);
+    expect(r.ok === false && r.error).toMatch(/EU-Empfaenger|CH.*kein EU-Mitglied/);
+  });
+
+  it("V6.5 NL: regression — Empfaenger-NL-Block-Meldung enthaelt jetzt 'NL'", () => {
+    const r = validateReverseCharge({
+      ...ELIGIBLE,
+      companyCountry: "Niederlande",
+    });
+    expect(r.ok).toBe(false);
+    expect(r.ok === false && r.error).toMatch(/Empfaenger sitzt in NL/);
   });
 });

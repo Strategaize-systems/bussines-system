@@ -77,10 +77,28 @@ describe("checkReverseChargeEligibility", () => {
     expect(result.missing).toEqual([]);
   });
 
-  it("DE-Mode -> eligible=false (V5.7-out-of-scope)", () => {
+  it("DE-Mode + DE-Empfaenger -> eligible=false (Same-Country, kein Cross-Border) [V6.5 SLC-656]", () => {
     const result = checkReverseChargeEligibility(DE_BRANDING, DE_COMPANY);
     expect(result.eligible).toBe(false);
-    expect(result.missing).toEqual(["DE_MODE_OUT_OF_SCOPE"]);
+    expect(result.missing).toEqual(["COMPANY_COUNTRY_DE"]);
+  });
+
+  it("DE-Mode + AT-Empfaenger + alle vat_ids -> eligible=true (Cross-Border via § 13b UStG) [V6.5 SLC-656]", () => {
+    const result = checkReverseChargeEligibility(DE_BRANDING, {
+      vat_id: "ATU12345678",
+      address_country: "Österreich",
+    });
+    expect(result.eligible).toBe(true);
+    expect(result.missing).toEqual([]);
+  });
+
+  it("DE-Mode + NL-Empfaenger + alle vat_ids -> eligible=true (Cross-Border DE→NL) [V6.5 SLC-656]", () => {
+    const result = checkReverseChargeEligibility(DE_BRANDING, {
+      vat_id: "NL859123456B01",
+      address_country: "Niederlande",
+    });
+    expect(result.eligible).toBe(true);
+    expect(result.missing).toEqual([]);
   });
 
   it("Branding-vat_id fehlt -> eligible=false", () => {
@@ -169,10 +187,10 @@ describe("checkReverseChargeEligibility", () => {
     expect(result.eligible).toBe(true);
   });
 
-  it("Branding null -> eligible=false (DE_MODE_OUT_OF_SCOPE als Fallback)", () => {
+  it("Branding null -> eligible=false (BRANDING_MISSING) [V6.5 SLC-656]", () => {
     const result = checkReverseChargeEligibility(null, DE_COMPANY);
     expect(result.eligible).toBe(false);
-    expect(result.missing).toEqual(["DE_MODE_OUT_OF_SCOPE"]);
+    expect(result.missing).toEqual(["BRANDING_MISSING"]);
   });
 
   it("mehrere fehlende Voraussetzungen werden gleichzeitig gemeldet", () => {

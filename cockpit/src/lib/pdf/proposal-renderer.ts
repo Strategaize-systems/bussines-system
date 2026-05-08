@@ -14,6 +14,7 @@ import vfsFonts from "pdfmake/build/vfs_fonts";
 import { calculateLineTotal, calculateTotals } from "@/lib/proposal/calc";
 import { sanitizeProposalFilename } from "@/lib/pdf/filename-helper";
 import { buildReverseChargeBlock } from "@/lib/pdf/reverse-charge-block";
+import { buildDeReverseChargeBlock } from "@/lib/pdf/de-reverse-charge-block";
 import type {
   Proposal,
   ProposalItem,
@@ -308,12 +309,27 @@ export function buildProposalDocDefinition(
   ];
 
   if (proposal.reverse_charge) {
-    summaryStack.push(
-      buildReverseChargeBlock(
-        branding?.vat_id ?? null,
-        company?.vat_id ?? null,
-      ),
-    );
+    // V6.5 SLC-656 MT-2 (DEC-162) — Branding-Country-abhaengiger Block.
+    // DE → § 13b UStG-Block (PRELIMINARY), NL → bilingualer NL-Block, sonst
+    // → kein Block. Server-Action validateReverseCharge soll RC=true ohne
+    // gesetzte branding.business_country verhindern; der Renderer ist
+    // defensiv und rendert in dem Fall einfach nichts statt zu raten.
+    const businessCountry = branding?.business_country ?? null;
+    if (businessCountry === "DE") {
+      summaryStack.push(
+        buildDeReverseChargeBlock(
+          branding?.vat_id ?? null,
+          company?.vat_id ?? null,
+        ),
+      );
+    } else if (businessCountry === "NL") {
+      summaryStack.push(
+        buildReverseChargeBlock(
+          branding?.vat_id ?? null,
+          company?.vat_id ?? null,
+        ),
+      );
+    }
   }
 
   summaryStack.push(

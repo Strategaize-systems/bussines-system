@@ -261,7 +261,7 @@
 | SLC-653 | [Settings inline-Sections in eigene Pages (BL-436 UA-002)](SLC-653-settings-pages-auslagern.md) | FEAT-651 | done | Medium | 2026-05-08 |
 | SLC-654 | [ViewToggle Generic + Pipeline-PageHeader-Slot (BL-438 + BL-440)](SLC-654-viewtoggle-pageheader.md) | FEAT-651 | done | Medium | 2026-05-08 |
 | SLC-655 | [VIES-Cache + Adapter (BL-420)](SLC-655-vies-cache-adapter.md) | FEAT-652 | done | Medium | 2026-05-08 |
-| SLC-656 | [DE-§13b Reverse-Charge-Block (BL-421)](SLC-656-de-reverse-charge.md) | FEAT-652 | planned | Medium | 2026-05-08 |
+| SLC-656 | [DE-§13b Reverse-Charge-Block (BL-421)](SLC-656-de-reverse-charge.md) | FEAT-652 | done | Medium | 2026-05-08 |
 | SLC-657 | [Source-Migration + npm audit + ISSUE-058 (BL-424 + BL-430)](SLC-657-source-migration-npm-audit.md) | FEAT-653 | planned | Medium | 2026-05-08 |
 
 ## V6.4 Slices (Hygiene-Sprint — released REL-026 2026-05-07)

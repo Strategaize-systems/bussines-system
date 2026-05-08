@@ -10,13 +10,15 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.5 SLC-655 fully done 2026-05-08** (RPT-355 backend + RPT-356 /qa PASS). VIES-Online-Lookup-Adapter mit DB-Cache + UI-Status-Badge live. Container `app-...100749527805` healthy auf Image `90ba2f7`. MIG-030 verifiziert (8 Spalten + 3 Indexes + RLS aktiv, 0 rows clean state). **VIES-API-Connectivity vom App-Container Live-bestaetigt** (wget gegen ec.europa.eu/taxation_customs/vies/rest-api liefert valides JSON mit erwarteten Feldern). Wiring beide Forms verifiziert. Build/Vitest 430/430/Lint 168/55 (+2 documented). 9/10 ACs voll erfuellt; AC-9 partial (Browser-CRUD-Flow nicht direkt, aber Connectivity + Wiring bestaetigt).
-- Current Phase: V6.5 in Umsetzung. 5/7 Slices fully done (SLC-651 + SLC-652 + SLC-653 + SLC-654 + SLC-655). Theming + UI-Refactor + 1. Compliance-Slice abgeschlossen.
+- Current Focus: **V6.5 SLC-656 backend done code-side 2026-05-08** (RPT-357). DE-§13b-Reverse-Charge-Pendant zur V5.7-NL-Variante. Neue Pure-Function `buildDeReverseChargeBlock` in `cockpit/src/lib/pdf/de-reverse-charge-block.ts` mit DE-Pflichtformulierung "Steuerschuldnerschaft des Leistungsempfaengers" (PRELIMINARY per DEC-162). `proposal-renderer.ts` waehlt DE/NL/none basierend auf `branding.business_country`. `useReverseChargeEligibility`-Hook + `validateReverseCharge`-Server-Validator generalisiert um `businessCountry`-Parameter (Same-Country-Block kontextabhaengig DE/NL, V6.5-Spec-Drift dokumentiert). `reverse-charge-section.tsx` zeigt kontextabhaengige Labels + ZM-Pflicht-Hinweis im DE-Mode. Build clean, Vitest 444/444 PASS (+14 SLC-656-Tests, 2 neue Snapshots), Lint 168/55 unveraendert zur SLC-655-Baseline. Wartet auf Coolify-Redeploy + Live-Smoke (NL+DE-PDF).
+- Current Phase: V6.5 in Umsetzung. 6/7 Slices done code-side (SLC-651 + SLC-652 + SLC-653 + SLC-654 + SLC-655 + SLC-656). Letzter V6.5-Slice ist SLC-657 Source-Migration + npm audit + ISSUE-058.
 
 ## Immediate Next Steps
-1. **/backend SLC-656 DE-§13b Reverse-Charge** (BL-421) — naechster V6.5-Slice. EU-Empfaenger im DE-Branding-Mode mit § 13b UStG Reverse-Charge-Block in PDF.
-2. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
-3. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503).
+1. **User: Coolify-Redeploy** der naechsten Image-Version + **Live-Smoke 2 PDFs** (NL-Branding mit Reverse-Charge-Proposal + DE-Branding mit Reverse-Charge-Proposal — visuell verifizieren dass DE-Phrase erscheint).
+2. **/qa SLC-656** — Final-Quality-Gate fuer DE-Pfad nach Live-Smoke.
+3. **/backend SLC-657** Source-Migration + npm audit + ISSUE-058 (BL-424 + BL-430) — letzter V6.5-Slice.
+4. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
+5. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503).
 4. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
 5. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
 6. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).

@@ -1,14 +1,17 @@
 /**
- * Reverse-Charge-Eligibility (V5.7 SLC-571 MT-5, DEC-126 + DEC-128).
+ * Reverse-Charge-Eligibility (V5.7 SLC-571 MT-5, DEC-126 + DEC-128;
+ * V6.5 SLC-656 MT-4, DEC-162 erweitert um DE-Mode).
  *
  * Drei Voraussetzungen muessen erfuellt sein, damit der Reverse-Charge-Toggle
  * im Editor enabled werden darf:
- * 1. branding.vatId NOT NULL/empty (Strategaize-eigene BTW)
+ * 1. branding.vatId NOT NULL/empty (Strategaize-eigene VAT-ID)
  * 2. company.vat_id NOT NULL/empty (Empfaenger-VAT)
- * 3. company.address_country mappt auf einen EU-Country-Code AND != 'NL'
+ * 3. company.address_country mappt auf einen EU-Country-Code AND
+ *    != branding.businessCountry (Cross-Border erforderlich; Inland-Reverse-
+ *    Charge ist nicht Article-196- bzw. § 13b-UStG-Scope dieses Slices).
  *
- * DE-Mode ist in V5.7 generell nicht eligible — Reverse-Charge nach
- * § 13b UStG ist nach BL-421 ausgelagert.
+ * DE-Mode ist seit V6.5 SLC-656 zugelassen (DE→EU-non-DE Cross-Border via
+ * § 13b UStG). NL-Mode unveraendert (NL→EU-non-NL Cross-Border via Art. 196).
  *
  * Pure Function — kein React-State, keine Side-Effects. Hook ist nur
  * ein duenner Wrapper damit Editor das Pattern nutzen kann.
@@ -27,10 +30,11 @@ export type EligibilityCompany = {
 };
 
 export type MissingPrerequisite =
-  | "DE_MODE_OUT_OF_SCOPE"
+  | "BRANDING_MISSING"
   | "BRANDING_VAT_ID"
   | "COMPANY_VAT_ID"
   | "COMPANY_COUNTRY_NL"
+  | "COMPANY_COUNTRY_DE"
   | "COMPANY_COUNTRY_NON_EU"
   | "COMPANY_COUNTRY_MISSING";
 
@@ -155,8 +159,11 @@ export function checkReverseChargeEligibility(
 ): EligibilityResult {
   const missing: MissingPrerequisite[] = [];
 
-  if (!branding || branding.businessCountry === "DE") {
-    missing.push("DE_MODE_OUT_OF_SCOPE");
+  // V6.5 SLC-656 — branding=null bedeutet kein business_country, also kein
+  // Cross-Border-Routing entscheidbar. Frueher Exit; UI kann Quick-Link auf
+  // /settings/branding rendern.
+  if (!branding) {
+    missing.push("BRANDING_MISSING");
     return { eligible: false, missing };
   }
 
@@ -171,8 +178,16 @@ export function checkReverseChargeEligibility(
   const code = countryNameToCode(company?.address_country ?? null);
   if (code === null) {
     missing.push("COMPANY_COUNTRY_MISSING");
-  } else if (code === "NL") {
-    missing.push("COMPANY_COUNTRY_NL");
+  } else if (code === branding.businessCountry) {
+    // V6.5 SLC-656 — generischer Same-Country-Check. Empfaenger im selben
+    // Markt wie Strategaize → kein Cross-Border, Reverse-Charge nicht
+    // anwendbar. Code haengt vom Markt ab fuer kontextspezifische Tooltip-
+    // Texte (NL: "Empfaenger sitzt in NL ..." / DE: "... in DE ...").
+    missing.push(
+      branding.businessCountry === "DE"
+        ? "COMPANY_COUNTRY_DE"
+        : "COMPANY_COUNTRY_NL",
+    );
   } else if (!(EU_COUNTRY_CODES as readonly string[]).includes(code)) {
     missing.push("COMPANY_COUNTRY_NON_EU");
   }

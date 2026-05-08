@@ -1,24 +1,24 @@
 "use client";
 
 /**
- * Reverse-Charge-Section (V5.7 SLC-571 MT-6, DEC-126 + DEC-128).
+ * Reverse-Charge-Section (V5.7 SLC-571 MT-6, DEC-126 + DEC-128;
+ * V6.5 SLC-656 MT-5, DEC-162 erweitert um DE-Mode + ZM-Hinweis).
  *
  * Toggle-Section mit dreifacher Voraussetzungs-Pruefung
  * (siehe useReverseChargeEligibility):
  * - branding.vatId NOT NULL
  * - company.vat_id NOT NULL
- * - company.address_country in EU != 'NL'
+ * - company.address_country in EU != branding.businessCountry
  *
  * Toggle-OFF (eligible=false): Switch disabled + Tooltip-Liste der
  * fehlenden Voraussetzungen + Quick-Links auf /settings/branding und
- * Company-Edit. Damit der User die Luecke selbststaendig schliessen kann.
+ * Company-Edit.
  *
  * Toggle-ON: Eltern-Editor setzt tax_rate=0 simultan (DB-CHECK
  * proposals_reverse_charge_consistency erzwingt das).
  *
- * DE-Mode (`branding.businessCountry='DE'`): Section komplett ausgeblendet
- * (V5.7 unterstuetzt nur NL-Reverse-Charge nach Article 196 EU-VAT-Directive,
- * § 13b UStG ist BL-421-Backlog).
+ * NL-Mode: bilingualer "BTW verlegd / Reverse Charge"-Block im PDF.
+ * DE-Mode: § 13b UStG-Block im PDF (PRELIMINARY) + ZM-Pflicht-Hinweis.
  */
 
 import Link from "next/link";
@@ -31,21 +31,27 @@ import type {
 import type { BusinessCountry } from "@/types/branding";
 
 const MISSING_LABEL: Record<MissingPrerequisite, string> = {
-  DE_MODE_OUT_OF_SCOPE:
-    "Reverse-Charge ist im DE-Mode nicht verfuegbar (V5.7-Out-of-Scope, BL-421).",
+  BRANDING_MISSING:
+    "Branding-Land fehlt — bitte unter Branding-Einstellungen DE oder NL waehlen.",
   BRANDING_VAT_ID:
-    "BTW-Nummer Strategaize fehlt — bitte in Branding-Einstellungen pflegen.",
+    "VAT-ID Strategaize fehlt — bitte in Branding-Einstellungen pflegen.",
   COMPANY_VAT_ID:
-    "BTW-Nummer Empfaenger fehlt — bitte in Company-Stammdaten pflegen.",
+    "VAT-ID Empfaenger fehlt — bitte in Empfaenger-Stammdaten pflegen.",
   COMPANY_COUNTRY_NL:
     "Empfaenger sitzt in NL — Reverse-Charge ist nur fuer EU-B2B-Cross-Border anwendbar.",
+  COMPANY_COUNTRY_DE:
+    "Empfaenger sitzt in DE — Reverse-Charge ist nur fuer EU-B2B-Cross-Border anwendbar.",
   COMPANY_COUNTRY_NON_EU:
     "Empfaenger sitzt ausserhalb der EU — Reverse-Charge ist nur fuer EU-B2B anwendbar.",
   COMPANY_COUNTRY_MISSING:
-    "Land des Empfaengers fehlt oder ist nicht erkannt — bitte in Company-Stammdaten pflegen.",
+    "Land des Empfaengers fehlt oder ist nicht erkannt — bitte in Empfaenger-Stammdaten pflegen.",
 };
 
 const QUICK_LINK: Partial<Record<MissingPrerequisite, { href: string; label: string }>> = {
+  BRANDING_MISSING: {
+    href: "/settings/branding",
+    label: "Zu Branding-Einstellungen",
+  },
   BRANDING_VAT_ID: {
     href: "/settings/branding",
     label: "Zu Branding-Einstellungen",
@@ -70,24 +76,27 @@ export function ReverseChargeSection({
   disabled = false,
   companyEditHref = null,
 }: ReverseChargeSectionProps) {
-  // DE-Mode: Section komplett ausgeblendet (kein Toggle, kein Hinweis).
-  // BL-421 zieht das nach.
-  if (businessCountry === "DE") {
-    return null;
-  }
-
   const isEligible = eligibility.eligible;
   const isDisabled = disabled || !isEligible;
+
+  // V6.5 SLC-656 — Kontextabhaengige Labels und PDF-Block-Beschreibung.
+  const isDe = businessCountry === "DE";
+  const sectionLabel = isDe
+    ? "Reverse-Charge (§ 13b UStG)"
+    : "Reverse-Charge (BTW verlegd)";
+  const sectionDescription = isDe
+    ? "Steuerschuldnerschaft des Leistungsempfaengers fuer EU-B2B-Empfaenger gemaess § 13b UStG / Art. 196 EU-VAT-Directive 2006/112/EG. Setzt den Steuersatz auf 0%."
+    : "Steuerschuldumkehr fuer EU-B2B-Empfaenger gemaess Artikel 196 EU-VAT-Directive 2006/112/EG. Setzt den Steuersatz auf 0%.";
+  const pdfBlockLabel = isDe
+    ? "deutschen § 13b UStG-Block"
+    : "bilingualen \"BTW verlegd / Reverse Charge\"-Block";
 
   return (
     <div className="space-y-2 rounded-lg border-2 border-slate-200 bg-slate-50 p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-0.5">
-          <Label>Reverse-Charge (BTW verlegd)</Label>
-          <p className="text-[11px] text-slate-500">
-            Steuerschuldumkehr fuer EU-B2B-Empfaenger gemaess Artikel 196
-            EU-VAT-Directive 2006/112/EG. Setzt den Steuersatz auf 0%.
-          </p>
+          <Label>{sectionLabel}</Label>
+          <p className="text-[11px] text-slate-500">{sectionDescription}</p>
         </div>
         <ToggleSwitch
           checked={enabled}
@@ -133,10 +142,21 @@ export function ReverseChargeSection({
       )}
 
       {enabled && isEligible && (
-        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-semibold text-emerald-800">
-          Reverse-Charge aktiv — Steuersatz auf 0% gesperrt. Der PDF-Renderer
-          fuegt den bilingualen &quot;BTW verlegd / Reverse Charge&quot;-Block hinzu.
-        </p>
+        <div className="space-y-1 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2">
+          <p className="text-[11px] font-semibold text-emerald-800">
+            Reverse-Charge aktiv — Steuersatz auf 0% gesperrt. Der PDF-Renderer
+            fuegt den {pdfBlockLabel} hinzu.
+          </p>
+          {isDe && (
+            <p
+              className="text-[11px] text-emerald-700"
+              title="Aequivalent zur NL-ICP. Monatlich oder quartalsweise an das Bundeszentralamt fuer Steuern. Nicht im PDF, nur User-Reminder."
+            >
+              Hinweis: Beachte die Zusammenfassende Meldung-Pflicht (ZM) bei
+              EU-B2B-Cross-Border.
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
