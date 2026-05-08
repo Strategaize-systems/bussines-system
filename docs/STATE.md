@@ -74,8 +74,9 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - (none — V6.4 released 2026-05-07, /post-launch ausstehend)
 
 **Planned (Reihenfolge):**
-- V7 — Multi-User + Teamlead (Routing/Territories + Teamlead-Rolle, reduzierter Scope)
-- V6.5 — Theming-Sprint + AI-Engine-Konsolidierung (BL-436..441 + DEC-148/149) — Hintergrund-Sprint, kann parallel zu V7-Vorbereitung laufen
+- V6.5 — Hintergrund-Sprint parallel zu V7-Vorbereitung (8 BLs): BL-441 Theming-Sprint (Brand-Tokens + UA-011/012/013), BL-436 UA-002 Settings-Pages, BL-438 UA-007 ViewToggle generisch, BL-440 UA-009 Pipeline-PageHeader, BL-420 VIES-VAT-Lookup, BL-421 DE-§13b-Reverse-Charge, BL-424 Source-zu-Kampagne Bulk-Migration, BL-430 npm audit --force.
+- V7 — Multi-User + Teamlead (Routing/Territories + Teamlead-Rolle, reduzierter Scope) (3 BLs aus V6.4-Audit-Defer): BL-437 Sidebar-VERWALTUNG-Split (Multi-User-Sidebar baut um), BL-439 Pipeline-Stages Soft-Disable (Pipeline-Owner-Filter touched Stages), BL-425 Multi-Touch-Journey-Tab.
+- Ungeplant (parkiert): BL-397 GitHub-App Org-Anbindung (Infra-Hygiene), BL-435 Natural-Language-Regel-Builder (zu gross fuer naechsten Sprint).
 - Pre-Production-Compliance-Gate (irgendwann vor erstem Kunden-Live-Call) — Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042 — laut User 2026-05-01 NICHT prioritaer
 
 ## Blockers

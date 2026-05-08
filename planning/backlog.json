@@ -1818,7 +1818,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": null,
+      "version": "V6.5",
       "description": "V5.7 (DEC-124) hat die VAT-ID-Validierung bewusst auf Format-only beschraenkt (Regex + EU-Country-Code-Whitelist). VIES-Online-Lookup (https://ec.europa.eu/taxation_customs/vies/) wuerde echte Pruefung der Existenz und Aktualitaet einer BTW/USt-IdNr ermoeglichen. Implementierungs-Aufwand: SOAP/REST-Adapter mit Caching (24h-TTL ueblich), Error-Handling fuer VIES-Down-Faelle (graceful degradation auf Format-only), UI-Indikator fuer Validierungs-Status (live-checked vs format-only). Aufwand ~3-5h. Pre-Production-relevant. Spaeter angehen — Format-only reicht fuer Internal-Test-Mode.",
       "createdAt": "2026-05-04"
     },
@@ -1828,7 +1828,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": null,
+      "version": "V6.5",
       "description": "V5.7 (DEC-128) implementiert den Country-Switch DE/NL und filtert Editor-Steuersaetze (DE: 0/7/19, NL: 0/9/21), aber Reverse-Charge bleibt NL-spezifisch. DE-Variante (Steuerschuldnerschaft des Leistungsempfaengers, § 13b UStG, EU-B2B-Cross-Border) hat eigene Pflichtformulierung ('Steuerschuldnerschaft des Leistungsempfaengers' + Verweis auf § 13b UStG / Art. 196 VAT Directive 2006/112/EC) und eigene Reporting-Pflicht (Zusammenfassende Meldung, Aequivalent zur NL-ICP). Im DE-Mode ist der Reverse-Charge-Toggle in V5.7 disabled mit Tooltip-Hinweis. BL-421 liefert: (1) DE-Phrase-Constant + pdfmake-Block-Builder, (2) Editor-Toggle in DE-Mode aktivierbar mit gleicher 3-Voraussetzungen-Logik, (3) PDF-Block-Insert kontextabhaengig, (4) ggf. ICP-Equivalent-Hinweis als User-Reminder. Aufwand ~3-5h.",
       "createdAt": "2026-05-04"
     },
@@ -1858,7 +1858,7 @@
       "type": "feature",
       "priority": "low",
       "status": "open",
-      "version": null,
+      "version": "V6.5",
       "description": "Aus V6.2 Slice-Planning RPT-310 (DEC-136 keine V1-Source-Migration): contacts.source/source_detail + companies.source_type/source_detail bleiben in V6.2 backward-compatible unangetastet. Bei Bedarf kommt ein Settings-Tool das alte Freitext-Werte auf campaign_id mappt: User definiert Mapping 'LinkedIn April' -> campaign-id-X, Tool macht UPDATE WHERE source ILIKE 'LinkedIn April'. Out-of-V6.2-Scope weil Migration einmalig + manuell + niedrige Prioritaet. V6.3+ wenn historische Reporting-Wuensche kommen. Aufwand ~3-5h UI + Mapping-Logic + Bulk-UPDATE.",
       "createdAt": "2026-05-05"
     },
@@ -1868,7 +1868,7 @@
       "type": "feature",
       "priority": "low",
       "status": "open",
-      "version": null,
+      "version": "V7",
       "description": "Aus V6.2 Slice-Planning RPT-310 (DEC-138 First-Touch-Lock): V6.2 ist First-Touch-only (campaign_id wird beim Lead-Create einmalig gesetzt). Click-Log enthaelt aber Multi-Touch-Daten (welcher Lead hat wann welche Tracking-Links geklickt). V6.3+ ergaenzt einen 'Customer-Journey'-Tab auf der Contact-Detail-Page der Click-Log-Eintrage des Contacts (via ip_hash-Match? oder via Future-Cookie-Tracking) chronologisch zeigt. Optional Conversion-Path-Visualisierung. Out-of-V6.2-Scope. Aufwand ~5-8h UI + Query + ggf. neuer ip_hash-zu-contact_id-Lookup.",
       "createdAt": "2026-05-05"
     },
@@ -1948,7 +1948,7 @@
       "type": "improvement",
       "priority": "low",
       "status": "open",
-      "version": null,
+      "version": "V7",
       "description": "Aus RPT-338 V6.4 UI-Audit (UA-004). VERWALTUNG-Sidebar-Gruppe hat 11 Eintraege, Settings ist Position 10 von 11 — sehr tief vergraben. Vorschlag: Split in 2 Sub-Gruppen 'Meine Daten' + 'Setup' oder Settings als prominenten Footer-Eintrag. Aufwand mittel 1-3h. Deferred wegen V7-Multi-User-Sprint (FEAT-502) Sidebar-Umbau mit Team-Switcher.",
       "createdAt": "2026-05-07"
     },
@@ -1968,7 +1968,7 @@
       "type": "improvement",
       "priority": "low",
       "status": "open",
-      "version": null,
+      "version": "V7",
       "description": "Aus RPT-338 V6.4 UI-Audit (UA-008). SQL-Live-Daten 2026-05-07: 20 von 22 Pipeline-Stages haben deal_count=0, kein Deal hat je Stage-Position > 1 erreicht. 'Gewonnen/Verloren/Geparkt'-Stages funktional doppelt mit deals.status (V2.1 SLC-201). Vorschlag: DEC-133 Stage-Soft-Disable nutzen oder Stages auf 4-5 echte Schritte reduzieren. Aufwand mittel 1-3h. Deferred wegen V7-Pipeline-Owner-Filter (FEAT-502) Konflikt.",
       "createdAt": "2026-05-07"
     },
