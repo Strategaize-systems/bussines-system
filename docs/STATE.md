@@ -9,17 +9,19 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: **V6.5 SLICE-PLANNING 2026-05-08** (RPT-346). 7 Slices ausgeplant mit 5-9 Mikrotasks pro Slice (50 MTs total): SLC-651 Theming-Tokens-Setup, SLC-652 Theming-Migration Tranche 1 (Pipeline+Proposals), SLC-653 Settings inline-Sections raus, SLC-654 ViewToggle Generic + Pipeline-PageHeader-Slot, SLC-655 VIES-Cache + Adapter, SLC-656 DE-§13b Reverse-Charge-Block, SLC-657 Source-Migration + npm audit. Sequenz: SLC-651 zuerst (Pre-Req fuer UI-Slices), danach beliebig opportunistisch zwischen V7-Slices. Worktree-Isolation fuer SLC-655 (externer Service) + SLC-657 (destructive Datenmigration). Naechster Schritt = /backend SLC-651 (oder parallel /post-launch V6.4).
-- Current Phase: V6.5 Slice-Planning done. 7 Slices ready-to-implement. Bereit fuer /backend SLC-651.
+- High-Level State: implementing
+- Current Focus: **V6.5 SLC-651 done 2026-05-08** — Brand-Tokens als CSS-Vars `--color-brand-*` im `@theme inline`-Block in `cockpit/src/app/globals.css` (Tailwind v4-Adapt vs. urspruenglicher v3-Spec). 6 Tokens (brand-primary, brand-primary-dark, brand-success, brand-success-dark, brand-warning, brand-warning-light). 8 Drift-Stellen in `mein-tag-client.tsx` migriert als Funktions-Beweis. Build clean, Vitest 405/405 PASS, Lint 166/55 (V5.7-Baseline unveraendert). Wartet auf Coolify-Redeploy + Live-Smoke MT-5. Naechster Schritt nach Live-Smoke = /qa SLC-651 oder direkt /backend SLC-652.
+- Current Phase: V6.5 in Umsetzung. 1/7 Slices done (SLC-651 code-side). Wartet auf Coolify-Redeploy + Live-Smoke.
 
 ## Immediate Next Steps
-1. **/backend SLC-651 Theming-Tokens-Setup** — Pre-Req fuer alle weiteren V6.5-UI-Slices. Klein <1h, low-risk, 5 MTs (Tailwind-Tokens + Gradient-Utility + 1 Test-File-Migration + Build-Gate + Live-Smoke). Atomic-commit-revertable, kein Worktree noetig.
-2. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
-3. **(Optional, 5 Min)** Visuelle User-Smoke ueber 5 V6.4-UI-Aenderungen (Pipeline h1 text-3xl + Pipeline+Proposals Buttons blau + Einwilligungstexte rosa + Sidebar "Termine-Liste" + Settings PageHeader).
-4. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
-5. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
-6. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (per User-Direktive 2026-05-01 "kommt viel spaeter").
+1. **Coolify-Redeploy SLC-651** auf Hetzner gegen Image-Tag SLC-651-Commit + Live-Smoke `/mein-tag` (kein Visual-Regression der 8 migrierten Stellen).
+2. **/qa SLC-651** nach Live-Smoke-PASS (Build/Vitest/Lint sind code-side bereits clean).
+3. **/backend SLC-652 Theming-Migration Tranche 1 (Pipeline+Proposals)** — naechster V6.5-Slice nach SLC-651 close. Token-Verfuegbarkeit ist nun erfuellt.
+4. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
+5. **(Optional, 5 Min)** Visuelle User-Smoke ueber 5 V6.4-UI-Aenderungen (Pipeline h1 text-3xl + Pipeline+Proposals Buttons blau + Einwilligungstexte rosa + Sidebar "Termine-Liste" + Settings PageHeader).
+6. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
+7. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
+8. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (per User-Direktive 2026-05-01 "kommt viel spaeter").
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"

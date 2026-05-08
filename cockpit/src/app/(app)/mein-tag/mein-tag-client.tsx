@@ -60,9 +60,9 @@ const typeConfig: Record<TodayItemType, { icon: typeof ListTodo; bg: string }> =
   overdue_task: { icon: AlertTriangle, bg: "bg-red-50 text-red-600" },
   overdue_follow_up: { icon: AlertTriangle, bg: "bg-red-50 text-red-600" },
   overdue_deal: { icon: AlertTriangle, bg: "bg-red-50 text-red-600" },
-  task: { icon: ListTodo, bg: "bg-blue-50 text-[#4454b8]" },
+  task: { icon: ListTodo, bg: "bg-blue-50 text-brand-primary" },
   follow_up: { icon: CalendarClock, bg: "bg-purple-50 text-purple-600" },
-  deal_action: { icon: Kanban, bg: "bg-emerald-50 text-[#00a84f]" },
+  deal_action: { icon: Kanban, bg: "bg-emerald-50 text-brand-success-dark" },
 };
 
 const priorityColors: Record<string, { bg: string; label: string }> = {
@@ -230,21 +230,21 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                       {hasMore && !showAll ? (
                         <button
                           onClick={() => setShowAll(true)}
-                          className="text-sm font-semibold text-[#4454b8] hover:text-[#120774] transition-colors"
+                          className="text-sm font-semibold text-brand-primary hover:text-brand-primary-dark transition-colors"
                         >
                           Alle {smartSorted.length} Aufgaben anzeigen
                         </button>
                       ) : hasMore && showAll ? (
                         <button
                           onClick={() => setShowAll(false)}
-                          className="text-sm font-semibold text-[#4454b8] hover:text-[#120774] transition-colors"
+                          className="text-sm font-semibold text-brand-primary hover:text-brand-primary-dark transition-colors"
                         >
                           Nur Top-5 anzeigen
                         </button>
                       ) : (
                         <Link
                           href="/aufgaben"
-                          className="text-sm font-semibold text-[#4454b8] hover:text-[#120774] flex items-center gap-1 transition-colors"
+                          className="text-sm font-semibold text-brand-primary hover:text-brand-primary-dark flex items-center gap-1 transition-colors"
                         >
                           Alle Aufgaben <ChevronRight size={14} />
                         </Link>
@@ -330,7 +330,7 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                     <div className="px-4 py-2.5 border-t border-slate-100">
                       <Link
                         href="/pipeline/unternehmer"
-                        className="text-xs font-semibold text-[#00a84f] hover:text-emerald-700 flex items-center gap-1 transition-colors"
+                        className="text-xs font-semibold text-brand-success-dark hover:text-emerald-700 flex items-center gap-1 transition-colors"
                       >
                         Alle Deals <ChevronRight size={12} />
                       </Link>
@@ -467,7 +467,7 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                   <div className="px-5 py-3 border-t border-slate-100">
                     <Link
                       href="/kalender"
-                      className="text-sm font-semibold text-[#00a84f] hover:text-emerald-700 flex items-center gap-1 transition-colors"
+                      className="text-sm font-semibold text-brand-success-dark hover:text-emerald-700 flex items-center gap-1 transition-colors"
                     >
                       Alle Termine <ChevronRight size={14} />
                     </Link>
@@ -639,7 +639,7 @@ function MeetingPrepCard({ meeting }: { meeting: NonNullable<NextMeetingPrep> })
           <button
             onClick={handleStartMeeting}
             disabled={isStarting}
-            className="flex items-center gap-1.5 rounded-lg bg-[#4454b8] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#3a4aa0] disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg bg-brand-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-[#3a4aa0] disabled:opacity-50"
           >
             {isStarting ? "Wird gestartet..." : "Meeting starten"}
           </button>
