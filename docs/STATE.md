@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.5 SLC-652 done code-side 2026-05-08** (RPT-349). Theming-Migration Tranche 1 Pipeline+Proposals: 27 Drift-Stellen ueber 14 Files auf `--color-brand-*` Tokens migriert (Pipeline 17 in 5 Files + Proposals 10 in 9 Files). 3 `hover:bg-[#0d055c]` Hover-Shades als begruendete Ausnahme belassen (kein Token, AC-7 visuell unveraendert per SLC-651-Precedent). 2 Atomic Commits `27c91a4` (pipeline) + `d9929aa` (proposals). Build clean, Vitest 405/405 PASS, Lint 166/55 (V5.7-Baseline unveraendert). Wartet auf Coolify-Redeploy + Live-Smoke (3 Pages: /pipeline/multiplikatoren + /proposals + 1 Proposal-Detail). Naechster Schritt nach Smoke = /qa SLC-652.
-- Current Phase: V6.5 in Umsetzung. 2/7 Slices done code-side (SLC-651 deployed + SLC-652 wartet auf Redeploy). Tranche 1 von Phase B abgeschlossen.
+- Current Focus: **V6.5 SLC-652 fully done 2026-05-08** (RPT-349 backend + RPT-350 /qa PASS). Theming-Migration Tranche 1 Pipeline+Proposals: 27/30 Drift-Stellen ueber 14 Files auf `--color-brand-*` Tokens migriert (Pipeline 17/17, Proposals 10/13). 3 `hover:bg-[#0d055c]` Hover-Shades als begruendete Ausnahme belassen (kein Token, AC-7 visuell unveraendert per SLC-651-Precedent). 2 Atomic Commits `27c91a4` + `d9929aa` + Records-Sync `2005c03`. Coolify-Redeploy aktiv auf Image `2005c03`, Container `app-...084249536318` healthy. Production-CSS-Bundle bestaetigt 13+ Brand-Utilities mit korrekten Hex-Werten (1:1 zu Pre-Migration, Visual-Regression mathematisch ausgeschlossen). Build/Vitest 405/405/Lint 166/55 V5.7-Baseline. BL-441 Phase B Tranche 1 abgeschlossen.
+- Current Phase: V6.5 in Umsetzung. 2/7 Slices fully done (SLC-651 + SLC-652). Bereit fuer SLC-653 Theming-Migration Tranche 2.
 
 ## Immediate Next Steps
-1. **User: Coolify-Redeploy** auf Commit `d9929aa`. Image baut, Container restart, Browser-Smoke `/pipeline/multiplikatoren` + `/proposals` + 1 Proposal-Detail-Page: visuell unveraendert (Tab-Active-State, Insight-Header, Pipeline-Tabs Blue-Gradient, Stage-Headers, Cards, Editor-V-Badge, Reverse-Charge-Toggle, Tax-Rate-Dropdown).
-2. **/qa SLC-652** nach Live-Smoke-PASS — Final-Quality-Gate.
-3. **/backend SLC-653 Theming-Migration Tranche 2** — naechster Page-Bereich (Kandidaten: Settings, Mein Tag, Kontakte, Dashboard).
+1. **/backend SLC-653 Theming-Migration Tranche 2** — Empfehlung: Settings-Bereich (BL-436 UA-002), alternativ Mein Tag (UA-007 ViewToggle BL-438) oder Kontakte/Dashboard. RPT-338 V6.4 UI-Audit listet die offenen Bereiche.
+2. **(Optional, 5 Min)** Visuelle User-Smoke ueber 3 SLC-652-Pages (`/pipeline/multiplikatoren` Tabs/Stage-Headers/Sort-Icons + `/proposals` Listing-Bearbeiten/Neuer-Angebot-Button + 1 Proposal-Detail Editor-V-Badge/Tax-Rate-Focus/Reverse-Charge-Toggle).
+3. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
 4. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
 5. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
 6. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
