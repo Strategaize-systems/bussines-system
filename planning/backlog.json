@@ -1957,9 +1957,9 @@
       "title": "UA-007 Pipeline ViewToggle generisch refactorn",
       "type": "improvement",
       "priority": "low",
-      "status": "open",
+      "status": "done",
       "version": "V6.5",
-      "description": "Aus RPT-338 V6.4 UI-Audit (UA-007). pipeline-view.tsx hat 4 ViewToggle-Buttons (Kanban, Liste, Funnel, Win/Loss) mit identischem cn(...)-Pattern viermal kopiert. ViewToggle-Component existiert (components/ui/view-toggle.tsx) generisch nur fuer 2 Modi. Vorschlag: ViewToggle generisches Mode-Type-Generic, Pipeline einsetzen. Aufwand mittel 1-3h, niedriger ROI.",
+      "description": "Aus RPT-338 V6.4 UI-Audit (UA-007). **Done 2026-05-08 als SLC-654 (RPT-353 backend).** ViewToggle generic-typed mit Mode-Type-Generic + modes/active/onSelect-Props (Breaking API). Alle 4 Caller migriert (contacts/companies/multiplikatoren/pipeline). 11 neue Vitest-Tests fuer 2-Modi/3-Modi/4-Modi-Patterns. Pipeline-View 4-Mode-Inline-Block (~50 Zeilen) entfernt.",
       "createdAt": "2026-05-07"
     },
     {
@@ -1977,9 +1977,9 @@
       "title": "UA-009 Pipeline-View auf PageHeader-Component umstellen",
       "type": "improvement",
       "priority": "low",
-      "status": "open",
+      "status": "done",
       "version": "V6.5",
-      "description": "Aus RPT-338 V6.4 UI-Audit (UA-009). Pipeline-View nutzt native h1-Header statt PageHeader-Component. Settings wurde in SLC-645 umgestellt (UA-001), Pipeline blieb wegen 2-Layer-Header (h1+Tabs+KPIs als Sticky-Sandwich) komplexer. Vorschlag: H1+Subtitle in PageHeader-Slot, Tabs+KPIs darunter eigene shrink-0-Section. Aufwand mittel 1-3h. Layer-Risiko mittel — kanbanRef + sticky-Layer-Management muss erhalten bleiben.",
+      "description": "Aus RPT-338 V6.4 UI-Audit (UA-009). **Done 2026-05-08 als SLC-654 (RPT-353 backend).** PageHeader-Component um optionalen belowHeader-Prop erweitert (additive, backward-kompatibel). Pipeline-View custom h1+p Block durch <PageHeader title subtitle /> ersetzt. Tabs+KPIs+Search bleiben als zweiter shrink-0 Block (volle belowHeader-Migration nicht moeglich wegen max-w-Konflikt zwischen PageHeader-Wrapper 1800px und Pipeline-Tabs-Container 1200px — konservative Decision dokumentiert in RPT-353).",
       "createdAt": "2026-05-07"
     },
     {

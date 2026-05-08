@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.5 SLC-653 fully done 2026-05-08** (RPT-351 backend + RPT-352 /qa PASS). Settings-Refactor (BL-436 UA-002): PipelineConfig + TemplatesConfig in eigene Pages /settings/pipelines + /settings/templates ausgelagert. Settings-Landing zeigt 2 neue Link-Karten (GitBranch/Indigo + Mail/Cyan) zwischen Compliance + ImapStatus. ImapStatus + Role-Card bleiben inline. Component-Logik 1:1 verschoben. Container `app-...090748529647` healthy auf Image `365bede`. Alle 3 Pages liefern erwartete 307→/login (Routes registriert + Auth aktiv). Build/Vitest 405/405/Lint 166/55 V5.7-Baseline clean.
-- Current Phase: V6.5 in Umsetzung. 3/7 Slices fully done (SLC-651 + SLC-652 + SLC-653). Theming-Foundation steht + UI-Refactor begonnen.
+- Current Focus: **V6.5 SLC-654 done code-side 2026-05-08** (RPT-353). ViewToggle generic-typed (Breaking API zur alten 3-Mode-hardcoded-Variante) + alle 4 Caller migriert (contacts/companies/multiplikatoren/pipeline) + 11 neue Vitest-Tests. PageHeader belowHeader-Prop additiv ergaenzt (backward-kompatibel). Pipeline-View custom h1+p Block durch <PageHeader /> ersetzt; Tabs+KPIs+Search bleiben als zweiter shrink-0 Block (konservative Decision wegen max-w-Konflikt). Commit `251e83d`. Build/Vitest 416/416/Lint 166/55 V5.7-Baseline clean. Wartet auf User-Coolify-Redeploy + Browser-Smoke 2 Pages (`/pipeline/multiplikatoren` 4-Modi-Switch, `/contacts` 3-Modi-Switch).
+- Current Phase: V6.5 in Umsetzung. 4/7 Slices code-side done (SLC-651 + SLC-652 + SLC-653 deployed + SLC-654 wartet auf Redeploy).
 
 ## Immediate Next Steps
-1. **/backend SLC-654 ViewToggle Generic + Pipeline-PageHeader-Slot** (BL-438 + BL-440) — naechster V6.5-Slice. UI-Refactor analog zu SLC-653.
-2. **(Optional, 5 Min)** Visuelle User-CRUD-Smoke auf `/settings/pipelines` (1 Stage hinzufuegen+entfernen) + `/settings/templates` (1 Template anzeigen).
-3. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
+1. **User: Coolify-Redeploy** auf Commit `251e83d` (oder Records-Sync-Commit folgt). Browser-Smoke `/pipeline/multiplikatoren` (4 Modi-Switch + Header sticky bleibt) + `/contacts` (3 Modi-Switch funktional) + optional `/companies` + `/multiplikatoren` (analog zu Kontakte).
+2. **/qa SLC-654** nach Live-Smoke-PASS — Final-Quality-Gate.
+3. **/backend SLC-655 VIES-Cache + Adapter** (BL-420) — naechster V6.5-Slice.
 4. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
 5. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
 6. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
