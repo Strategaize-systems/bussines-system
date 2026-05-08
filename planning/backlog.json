@@ -1817,9 +1817,9 @@
       "title": "VIES-Online-Lookup-Integration fuer VAT-ID-Validierung",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V6.5",
-      "description": "V5.7 (DEC-124) hat die VAT-ID-Validierung bewusst auf Format-only beschraenkt (Regex + EU-Country-Code-Whitelist). VIES-Online-Lookup (https://ec.europa.eu/taxation_customs/vies/) wuerde echte Pruefung der Existenz und Aktualitaet einer BTW/USt-IdNr ermoeglichen. Implementierungs-Aufwand: SOAP/REST-Adapter mit Caching (24h-TTL ueblich), Error-Handling fuer VIES-Down-Faelle (graceful degradation auf Format-only), UI-Indikator fuer Validierungs-Status (live-checked vs format-only). Aufwand ~3-5h. Pre-Production-relevant. Spaeter angehen — Format-only reicht fuer Internal-Test-Mode.",
+      "description": "**Done 2026-05-08 als SLC-655 (RPT-355 backend).** MIG-030 vat_id_validations Cache-Tabelle live + vies-client.ts Adapter mit graceful-degradation (4-Pfad-Logik: format-invalid skip / cache-hit / cache-miss+VIES-success / cache-miss+VIES-down). 14 Vitest-Tests. ENV VIES_ENABLED-Toggle. Server-Action lookupVatIdAction + 7-State-Badge-Component. Branding-Form + Company-Form mit debounced 800ms VIES-Lookup. 24h Cache-TTL.",
       "createdAt": "2026-05-04"
     },
     {

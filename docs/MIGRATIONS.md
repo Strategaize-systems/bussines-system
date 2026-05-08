@@ -1,7 +1,7 @@
 # Migrations
 
 ### MIG-030 — V6.5 VIES-Cache Tabelle (FEAT-652)
-- Date: 2026-05-08 (planned, apply in SLC-653 Implementation)
+- Date: 2026-05-08 (applied via SSH+base64 in SLC-655 Implementation)
 - Scope: 1 additive Aenderung — neue Tabelle `vat_id_validations` als Cache-Layer fuer VIES-Online-Lookup-Resultate.
   ```sql
   CREATE TABLE vat_id_validations (
