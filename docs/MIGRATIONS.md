@@ -1,5 +1,66 @@
 # Migrations
 
+### MIG-030 — V6.5 VIES-Cache Tabelle (FEAT-652)
+- Date: 2026-05-08 (planned, apply in SLC-653 Implementation)
+- Scope: 1 additive Aenderung — neue Tabelle `vat_id_validations` als Cache-Layer fuer VIES-Online-Lookup-Resultate.
+  ```sql
+  CREATE TABLE vat_id_validations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    country VARCHAR(2) NOT NULL,
+    number VARCHAR(50) NOT NULL,
+    is_valid BOOLEAN NOT NULL,
+    vies_response JSONB,
+    source TEXT NOT NULL CHECK (source IN ('vies', 'vies_unavailable', 'format_only')),
+    validated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    expires_at TIMESTAMPTZ NOT NULL,
+    UNIQUE(country, number)
+  );
+  CREATE INDEX idx_vat_id_validations_lookup ON vat_id_validations(country, number, expires_at);
+  ALTER TABLE vat_id_validations ENABLE ROW LEVEL SECURITY;
+  CREATE POLICY authenticated_full_access ON vat_id_validations FOR ALL TO authenticated USING (true) WITH CHECK (true);
+  GRANT ALL ON vat_id_validations TO authenticated;
+  GRANT ALL ON vat_id_validations TO service_role;
+  ```
+- Reason: V6.5 FEAT-652 implementiert VIES-Online-Lookup mit 24h-TTL-Caching (DEC-157). Cache-Layer als DB-Tabelle survives Container-Restart (vs. In-Memory) und liefert Audit-Trail. UNIQUE(country, number) schuetzt vor Duplikaten, expires_at-Index erlaubt schnelle Cache-Pruefung. RLS-Pattern konsistent zu V5.7 vat-id-Schema.
+- Affected Areas:
+  - Neue Tabelle `vat_id_validations` (5 Spalten, 1 UNIQUE-Index, 1 Lookup-Index, RLS aktiv)
+  - Neue Server-Action / Lib `cockpit/src/lib/vat/vies-client.ts` (Lookup-Funktion mit Cache-Layer)
+  - Erweiterung `cockpit/src/lib/vat/vat-id.ts` um VIES-Tier (Format-Layer bleibt unveraendert)
+  - UI-Indikator in Branding-Form + Company-Form (3 Status-Badges per DEC-158)
+- Risk: Niedrig. Rein additiv. Keine bestehenden Tabellen geaendert. VIES-Adapter ist optional — wenn ENV `VIES_ENABLED=false`, faellt System auf Format-only zurueck (DEC-158 graceful-degradation).
+- Rollback Notes:
+  - `DROP TABLE vat_id_validations CASCADE;`
+  - V5.7-Format-only-Validierung funktioniert weiter unveraendert
+  - Branding-Form + Company-Form fallback auf Format-only-Display
+
+### MIG-031 — V6.5 Source-zu-Kampagne Bulk-Migration (FEAT-653 BL-424)
+- Date: 2026-05-08 (planned, apply in SLC-656 Implementation)
+- Scope: Datenmigration ohne Schema-Aenderung. Quell-Felder bleiben als read-only-Backup erhalten (DEC-160).
+  - Pre-Migration-Audit-Query (User-Sign-Off-Pause): `SELECT source, source_detail, COUNT(*) FROM contacts WHERE source IS NOT NULL GROUP BY 1,2 ORDER BY 3 DESC; SELECT source_type, source_detail, COUNT(*) FROM companies WHERE source_type IS NOT NULL GROUP BY 1,2 ORDER BY 3 DESC;`
+  - User-pflegt Mapping-File: `sql/migrations/031_v65_source_to_campaign_mapping.json` mit Struktur `[{"entity":"contact","source_value":"LinkedIn April","source_detail_value":null,"campaign_id":"<uuid>"}, ...]`
+  - Bulk-UPDATE-SQL (idempotent via campaign_id IS NULL Filter):
+    ```sql
+    UPDATE contacts SET campaign_id = m.campaign_id::uuid
+    FROM jsonb_to_recordset($1::jsonb) AS m(entity TEXT, source_value TEXT, source_detail_value TEXT, campaign_id TEXT)
+    WHERE m.entity = 'contact'
+      AND contacts.campaign_id IS NULL
+      AND contacts.source = m.source_value
+      AND contacts.source_detail IS NOT DISTINCT FROM m.source_detail_value;
+    -- analog fuer companies mit source_type/source_detail
+    ```
+  - Audit-Log-Insert pro Migration-Run mit Stats (action='source_migration_v65', changes={migrated_contacts, migrated_companies, mapping_used, run_at})
+  - KEINE Schema-Aenderung: source/source_detail/source_type bleiben in DB als read-only-Backup
+- Reason: V6.4-Audit hat 4 Source-Schema-Drift-Items klassifiziert (CA-011..014). V6.5 raeumt Drift via einmalige Bulk-Migration auf, behaelt aber Backup-Felder fuer 6+ Monate Rollback-Pfad.
+- Affected Areas:
+  - Bestehende `contacts` / `companies` rows mit non-null `source*`-Feldern bekommen `campaign_id` gesetzt wenn Mapping existiert
+  - Form-Inputs (`contact-form.tsx`, `company-form.tsx`) zeigen `source*`-Felder nur read-only-display wenn nicht-leer (Hinweis "Legacy-Quelle, neue Eingaben via Kampagne")
+  - CSV-Export-Spalten-Schema in `/api/campaigns/[id]/export/route.ts` von `source_detail` auf `campaign_name` umstellen
+- Risk: Niedrig wegen idempotenter UPDATE-Filter (campaign_id IS NULL). Risiko: User-Mapping-File enthaelt Tippfehler oder fehlerhafte Mappings → Pre-Migration-Audit + User-Sign-Off-Pause + ggf. Re-Run-Strategie. Falls falsche Mapping live: campaign_id = NULL UPDATE per source-Filter rollback-able, da Source-Felder als Backup erhalten bleiben.
+- Rollback Notes:
+  - Per-Item: `UPDATE contacts SET campaign_id = NULL WHERE source = 'LinkedIn April' AND campaign_id = '<falsche-uuid>'::uuid;`
+  - Total: `UPDATE contacts SET campaign_id = NULL WHERE id IN (SELECT entity_id FROM audit_log WHERE action='source_migration_v65');` — falls audit_log-Trail die UUIDs enthaelt
+  - Backup-Felder (source/source_detail/source_type) bleiben unveraendert — vollstaendige Re-Migration moeglich
+
 ### MIG-029 — V6.2 Workflow-Automation + Kampagnen-Attribution Schema
 - Date: 2026-05-06 (alle 3 Phasen applied auf Hetzner)
 - Apply-History:

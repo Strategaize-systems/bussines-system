@@ -9,12 +9,12 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: requirements
-- Current Focus: **V6.5 REQUIREMENTS 2026-05-08** (RPT-344). Hintergrund-Sprint parallel zu V7-Vorbereitung mit 3 Features + 8 BLs: FEAT-651 Theming-Foundation + UI-Polish (BL-441 + BL-436 + BL-438 + BL-440), FEAT-652 Compliance-Erweiterung NL→DE-Symmetrie (BL-420 VIES + BL-421 DE-§13b), FEAT-653 Schema + Dependency Hygiene (BL-424 Source-Migration + BL-430 npm audit). Naechster Schritt = /architecture V6.5.
-- Current Phase: V6.5 Requirements done. V6.4 released REL-026 (Last Stable Version, /post-launch ausstehend). Bereit fuer /architecture V6.5.
+- High-Level State: architecture
+- Current Focus: **V6.5 ARCHITECTURE 2026-05-08** (RPT-345). 12 Open Questions aus RPT-344 adressiert via 12 neue DECs (DEC-152..163). 2 neue MIGs (MIG-030 vat_id_validations Cache + MIG-031 Source-Migration mit Backup). 1 neue ISSUE-058 (postcss-CVE-Akzeptanz). Schluesselentscheidungen: BL-441 in 2 Phasen (Tokens-Setup + Migration iterativ), VIES-Cache als DB-Tabelle, BL-424 Source-Felder als read-only-Backup behalten (kein DROP COLUMN), DE-§13b PRELIMINARY (Anwaltspruefung deferred). Slice-Plan-Vorschau: 7 Slices SLC-651..657. Naechster Schritt = /slice-planning V6.5.
+- Current Phase: V6.5 Architecture done. Bereit fuer /slice-planning V6.5.
 
 ## Immediate Next Steps
-1. **/architecture V6.5** — Architektur fuer 3 Features (FEAT-651 Theming + FEAT-652 Compliance + FEAT-653 Hygiene) klaeren. Open Questions aus FEAT-Specs adressieren (Theming-Phase-Split, VIES-Caching-Layer, Source-Migration-Strategie).
+1. **/slice-planning V6.5** — 7 Slices SLC-651..657 ausplanen mit Mikrotasks + ACs. Slice-Schnitt-Kandidat: SLC-651 Tokens-Setup + SLC-652 Migration-Tranche-1 + SLC-653 Settings-Refactor + SLC-654 ViewToggle-Generic + SLC-655 Pipeline-PageHeader-Slot + SLC-656 Source-Migration + SLC-657 npm audit + ISSUE-058 + Compliance-Slices fuer FEAT-652 (VIES + DE-§13b).
 2. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
 3. **(Optional, 5 Min)** Visuelle User-Smoke ueber 5 V6.4-UI-Aenderungen (Pipeline h1 text-3xl + Pipeline+Proposals Buttons blau + Einwilligungstexte rosa + Sidebar "Termine-Liste" + Settings PageHeader).
 4. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).

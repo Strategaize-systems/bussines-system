@@ -1,5 +1,15 @@
 # Known Issues
 
+### ISSUE-058 — postcss <8.5.10 Vulnerability (Patch-Path catastrophic, akzeptiert bis Upstream-Next-Release)
+- Status: open
+- Severity: Low
+- Area: Dependencies / Build-Toolchain
+- Summary: postcss <8.5.10 hat eine moderate XSS-Vulnerability via Unescaped `</style>` in CSS-Stringify-Output (https://github.com/advisories/GHSA-qx2v-qp2m-jg93). Sub-Dependency von Next.js. `npm audit fix --force` wuerde Next 9.3.3 installieren — catastrophic-Breaking-Downgrade von Next 14+ auf Next 9 (mehrere Major-Versionen, keine App-Kompatibilitaet, keine Server-Components, kein App-Router).
+- Impact: Niedrig fuer Internal-Test-Mode. Build-Time-only Vulnerability — postcss prozessiert nur autorisierte CSS aus dem eigenen Repo (keine User-CSS-Inputs zur Laufzeit). XSS-Vector erfordert untrusted-CSS-Input, was im aktuellen Single-User-Setup nicht gegeben ist.
+- Workaround: Keiner — auf Upstream-Next-Release mit gepatcher postcss-Version warten. Periodisch `npm audit` pruefen (~alle 4-8 Wochen oder bei Toolchain-Updates).
+- Next Action: Bei naechstem Next.js-Major-Update (Next 15+ Release) erneut `npm audit` laufen. Falls postcss-Patch dann verfuegbar: `npm audit fix` (non-force) anwenden + Build+Test+Live-Smoke-Cycle.
+- Resolution: V6.5 BL-430 / SLC-657 dokumentiert ISSUE-058 in KNOWN_ISSUES als akzeptiert. Per DEC-161: kein Force-Fix, kein eigenes SECURITY.md (zu schwer fuer 1 CVE). Ist Pre-Production-relevant aber nicht-blockierend fuer Internal-Test-Mode.
+
 ### ISSUE-057 — FollowupEngine.openProposals query bricht auf nicht-existenter Spalte `proposals.value`
 - Status: resolved
 - Severity: Medium
