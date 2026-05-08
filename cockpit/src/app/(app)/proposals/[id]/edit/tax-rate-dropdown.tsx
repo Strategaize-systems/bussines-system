@@ -84,7 +84,7 @@ export function TaxRateDropdown({
           ? "Steuersatz ist gesperrt — Reverse-Charge ist aktiv (0%)"
           : undefined
       }
-      className="h-10 w-full rounded-lg border-2 border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus:outline-none focus:border-[#4454b8] focus:ring-2 focus:ring-[#4454b8]/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+      className="h-10 w-full rounded-lg border-2 border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
     >
       {options.map((opt) => (
         <option key={opt.rate} value={opt.rate}>

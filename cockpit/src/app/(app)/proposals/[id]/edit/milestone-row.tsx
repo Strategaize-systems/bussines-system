@@ -170,7 +170,7 @@ export function MilestoneRow({
             patchTrigger(e.target.value as PaymentMilestoneTrigger)
           }
           disabled={disabled}
-          className="hidden md:block h-9 w-full rounded-lg border-2 border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#4454b8] focus:ring-2 focus:ring-[#4454b8]/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+          className="hidden md:block h-9 w-full rounded-lg border-2 border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {TRIGGER_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -217,7 +217,7 @@ export function MilestoneRow({
               patchTrigger(e.target.value as PaymentMilestoneTrigger)
             }
             disabled={disabled}
-            className="h-9 w-full rounded-lg border-2 border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#4454b8] focus:ring-2 focus:ring-[#4454b8]/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            className="h-9 w-full rounded-lg border-2 border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {TRIGGER_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>

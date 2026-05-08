@@ -346,7 +346,7 @@ export function ProposalWorkspace({
               onClick={() => setMobileTab(opt.key)}
               className={
                 mobileTab === opt.key
-                  ? "flex-1 rounded-md bg-white px-3 py-2 text-[#120774] shadow-sm transition-all"
+                  ? "flex-1 rounded-md bg-white px-3 py-2 text-brand-primary-dark shadow-sm transition-all"
                   : "flex-1 rounded-md px-3 py-2 text-slate-500 transition-all hover:text-slate-900"
               }
             >
@@ -390,7 +390,7 @@ export function ProposalWorkspace({
               type="button"
               onClick={confirmTransition}
               disabled={isTransitioning}
-              className="bg-[#120774] text-white hover:bg-[#0d055c]"
+              className="bg-brand-primary-dark text-white hover:bg-[#0d055c]"
             >
               {isTransitioning ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

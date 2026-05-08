@@ -43,7 +43,7 @@ export function ProposalsClient({ proposals, deals, contacts, companies }: Propo
   return (
     <div className="min-h-screen">
       <PageHeader title="Angebote" subtitle={`${proposals.length} Angebote gesamt`}>
-        <button onClick={() => setShowNew(true)} className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#120774] to-[#4454b8] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2">
+        <button onClick={() => setShowNew(true)} className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-brand-primary-dark to-brand-primary text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2">
           <Plus size={16} strokeWidth={2.5} /> Neues Angebot
         </button>
       </PageHeader>
@@ -104,7 +104,7 @@ function ProposalRow({ proposal, deals, contacts, companies }: { proposal: Propo
         {isDraft ? (
           <Link
             href={`/proposals/${proposal.id}/edit`}
-            className="px-2.5 py-1 rounded-md bg-[#120774] text-white text-[11px] font-bold hover:bg-[#0d055c] transition-colors flex items-center gap-1.5"
+            className="px-2.5 py-1 rounded-md bg-brand-primary-dark text-white text-[11px] font-bold hover:bg-[#0d055c] transition-colors flex items-center gap-1.5"
             title="Angebot im Workspace bearbeiten"
           >
             <Pencil size={12} />

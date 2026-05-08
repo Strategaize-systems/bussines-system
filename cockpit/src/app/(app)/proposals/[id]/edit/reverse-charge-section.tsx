@@ -172,7 +172,7 @@ function ToggleSwitch({
       className={
         "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 transition-colors " +
         (checked
-          ? "border-[#120774] bg-[#120774]"
+          ? "border-brand-primary-dark bg-brand-primary-dark"
           : "border-slate-300 bg-slate-200") +
         " disabled:cursor-not-allowed disabled:opacity-60"
       }

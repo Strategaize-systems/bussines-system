@@ -129,7 +129,7 @@ export function ProposalPositionList({
           type="button"
           onClick={() => setPickerOpen(true)}
           disabled={readonly}
-          className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#120774] to-[#4454b8] px-3 py-2 text-xs font-bold text-white shadow-sm transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm"
+          className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-brand-primary-dark to-brand-primary px-3 py-2 text-xs font-bold text-white shadow-sm transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm"
         >
           <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
           Produkt

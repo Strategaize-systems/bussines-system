@@ -258,14 +258,14 @@ export function ProposalEditor({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-base font-bold text-slate-900">Editor</h3>
-              <span className="inline-flex items-center rounded-md bg-gradient-to-r from-[#120774] to-[#4454b8] px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+              <span className="inline-flex items-center rounded-md bg-gradient-to-r from-brand-primary-dark to-brand-primary px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
                 V{proposal.version}
               </span>
             </div>
             {proposal.parent_proposal_id && (
               <Link
                 href={`/proposals/${proposal.parent_proposal_id}/edit`}
-                className="text-[11px] font-medium text-[#4454b8] hover:underline"
+                className="text-[11px] font-medium text-brand-primary hover:underline"
               >
                 Vorgaenger ansehen
               </Link>

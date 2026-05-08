@@ -269,7 +269,7 @@ export function ProposalPreviewPanel({
               type="button"
               onClick={handleConfirmNewVersion}
               disabled={isVersionPending}
-              className="bg-[#120774] text-white hover:bg-[#0d055c]"
+              className="bg-brand-primary-dark text-white hover:bg-[#0d055c]"
             >
               {isVersionPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
