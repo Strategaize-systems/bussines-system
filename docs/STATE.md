@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.5 SLC-654 done code-side 2026-05-08** (RPT-353). ViewToggle generic-typed (Breaking API zur alten 3-Mode-hardcoded-Variante) + alle 4 Caller migriert (contacts/companies/multiplikatoren/pipeline) + 11 neue Vitest-Tests. PageHeader belowHeader-Prop additiv ergaenzt (backward-kompatibel). Pipeline-View custom h1+p Block durch <PageHeader /> ersetzt; Tabs+KPIs+Search bleiben als zweiter shrink-0 Block (konservative Decision wegen max-w-Konflikt). Commit `251e83d`. Build/Vitest 416/416/Lint 166/55 V5.7-Baseline clean. Wartet auf User-Coolify-Redeploy + Browser-Smoke 2 Pages (`/pipeline/multiplikatoren` 4-Modi-Switch, `/contacts` 3-Modi-Switch).
-- Current Phase: V6.5 in Umsetzung. 4/7 Slices code-side done (SLC-651 + SLC-652 + SLC-653 deployed + SLC-654 wartet auf Redeploy).
+- Current Focus: **V6.5 SLC-654 fully done 2026-05-08** (RPT-353 backend + RPT-354 /qa PASS). ViewToggle generic-typed (Breaking API) + alle 4 Caller migriert + 11 neue Vitest-Tests + PageHeader belowHeader-Prop additiv. Pipeline-View custom h1+p Block durch <PageHeader /> ersetzt (konservative Decision: belowHeader-Slot fuer Pipeline ungenutzt wegen max-w-Konflikt). Container `app-...094648071063` healthy auf Image `4fc82c7`. Alle 4 protected Pages 307→/login (Auth aktiv). Build/Vitest 416/416/Lint 166/55 V5.7-Baseline clean. AC 7/8 voll erfuellt, AC-5 partial (dokumentiert).
+- Current Phase: V6.5 in Umsetzung. 4/7 Slices fully done (SLC-651 + SLC-652 + SLC-653 + SLC-654). Theming + UI-Refactor abgeschlossen. Bereit fuer Compliance-Slices.
 
 ## Immediate Next Steps
-1. **User: Coolify-Redeploy** auf Commit `251e83d` (oder Records-Sync-Commit folgt). Browser-Smoke `/pipeline/multiplikatoren` (4 Modi-Switch + Header sticky bleibt) + `/contacts` (3 Modi-Switch funktional) + optional `/companies` + `/multiplikatoren` (analog zu Kontakte).
-2. **/qa SLC-654** nach Live-Smoke-PASS — Final-Quality-Gate.
-3. **/backend SLC-655 VIES-Cache + Adapter** (BL-420) — naechster V6.5-Slice.
+1. **/backend SLC-655 VIES-Cache + Adapter** (BL-420) — naechster V6.5-Slice. Compliance-Erweiterung fuer EU-VAT-ID-Validierung (Cache-Schema + Adapter-Pattern).
+2. **(Optional, 5 Min)** Visuelle User-Smoke `/pipeline/multiplikatoren` (4-Modi-Switch) + `/contacts`+`/companies`+`/multiplikatoren` (3-Modi-Switch) zur Bestaetigung des ViewToggle-Refactors.
+3. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503).
 4. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
 5. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
 6. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
