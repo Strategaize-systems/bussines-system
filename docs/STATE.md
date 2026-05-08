@@ -10,18 +10,16 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.5 SLC-656 backend done code-side 2026-05-08** (RPT-357). DE-§13b-Reverse-Charge-Pendant zur V5.7-NL-Variante. Neue Pure-Function `buildDeReverseChargeBlock` in `cockpit/src/lib/pdf/de-reverse-charge-block.ts` mit DE-Pflichtformulierung "Steuerschuldnerschaft des Leistungsempfaengers" (PRELIMINARY per DEC-162). `proposal-renderer.ts` waehlt DE/NL/none basierend auf `branding.business_country`. `useReverseChargeEligibility`-Hook + `validateReverseCharge`-Server-Validator generalisiert um `businessCountry`-Parameter (Same-Country-Block kontextabhaengig DE/NL, V6.5-Spec-Drift dokumentiert). `reverse-charge-section.tsx` zeigt kontextabhaengige Labels + ZM-Pflicht-Hinweis im DE-Mode. Build clean, Vitest 444/444 PASS (+14 SLC-656-Tests, 2 neue Snapshots), Lint 168/55 unveraendert zur SLC-655-Baseline. Wartet auf Coolify-Redeploy + Live-Smoke (NL+DE-PDF).
-- Current Phase: V6.5 in Umsetzung. 6/7 Slices done code-side (SLC-651 + SLC-652 + SLC-653 + SLC-654 + SLC-655 + SLC-656). Letzter V6.5-Slice ist SLC-657 Source-Migration + npm audit + ISSUE-058.
+- Current Focus: **V6.5 SLC-656 /qa PASS 2026-05-08** (RPT-358). DE-§13b-Reverse-Charge done + deployed + Live-Smoke 2 PDFs (NL + DE) PASS. Container `06f64a4` healthy auf Hetzner. Build clean, Vitest 444/444 PASS, Wiring durchgaengig threaded ueber `business_country`/`businessCountry`, Stub-Scan clean, alle 8 ACs erfuellt. Pre-Production-Compliance-Gate (Anwaltspruefung DE-Phrase, DEC-162) bleibt deferred laut User-Direktive 2026-05-01. V6.5 6/7 Slices vollstaendig done. Letzter Slice SLC-657 Source-Migration + npm audit + ISSUE-058.
+- Current Phase: V6.5 in Umsetzung. 6/7 Slices done (SLC-651 + SLC-652 + SLC-653 + SLC-654 + SLC-655 + SLC-656). Letzter V6.5-Slice ist SLC-657 Source-Migration + npm audit + ISSUE-058.
 
 ## Immediate Next Steps
-1. **User: Coolify-Redeploy** der naechsten Image-Version + **Live-Smoke 2 PDFs** (NL-Branding mit Reverse-Charge-Proposal + DE-Branding mit Reverse-Charge-Proposal — visuell verifizieren dass DE-Phrase erscheint).
-2. **/qa SLC-656** — Final-Quality-Gate fuer DE-Pfad nach Live-Smoke.
-3. **/backend SLC-657** Source-Migration + npm audit + ISSUE-058 (BL-424 + BL-430) — letzter V6.5-Slice.
-4. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
-5. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503).
+1. **/backend SLC-657** Source-Migration + npm audit + ISSUE-058 (BL-424 + BL-430) — letzter V6.5-Slice.
+2. **Nach SLC-657:** Gesamt-/qa V6.5 → /final-check → /go-live → /deploy als REL-027.
+3. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
 4. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
-5. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
-6. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
+5. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
+6. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
 7. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (per User-Direktive 2026-05-01 "kommt viel spaeter").
 
 ## Spaeter (nicht jetzt)
