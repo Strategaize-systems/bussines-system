@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.5 SLC-655 done code-side 2026-05-08** (RPT-355). VIES-Online-Lookup-Adapter mit DB-Cache + UI-Status-Badge. MIG-030 live auf Hetzner (vat_id_validations: 8 Spalten, RLS aktiv, GRANTS authenticated+service_role). vies-client.ts mit 4-Pfad-Logik + graceful-degradation + 5s Timeout + 24h TTL. 14 Vitest-Tests gegen Mock-Supabase + Mock-Fetcher. Server-Action lookupVatIdAction + 7-State-Badge-Component (Brand-Tokens). Branding-Form + Company-Form mit debounced 800ms VIES-Lookup. ENV VIES_ENABLED-Toggle. Commit `095fb1a`. Build clean, Vitest 430/430 PASS, Lint 168/55 (+2 Errors gleiches react-hooks/set-state-in-effect Pattern wie pre-existing duplicate-warning). Wartet auf Coolify-Redeploy + Live-Smoke (echter VIES-Lookup gegen Production NL-VAT-ID).
-- Current Phase: V6.5 in Umsetzung. 5/7 Slices code-side done (SLC-651..654 deployed + SLC-655 wartet auf Redeploy).
+- Current Focus: **V6.5 SLC-655 fully done 2026-05-08** (RPT-355 backend + RPT-356 /qa PASS). VIES-Online-Lookup-Adapter mit DB-Cache + UI-Status-Badge live. Container `app-...100749527805` healthy auf Image `90ba2f7`. MIG-030 verifiziert (8 Spalten + 3 Indexes + RLS aktiv, 0 rows clean state). **VIES-API-Connectivity vom App-Container Live-bestaetigt** (wget gegen ec.europa.eu/taxation_customs/vies/rest-api liefert valides JSON mit erwarteten Feldern). Wiring beide Forms verifiziert. Build/Vitest 430/430/Lint 168/55 (+2 documented). 9/10 ACs voll erfuellt; AC-9 partial (Browser-CRUD-Flow nicht direkt, aber Connectivity + Wiring bestaetigt).
+- Current Phase: V6.5 in Umsetzung. 5/7 Slices fully done (SLC-651 + SLC-652 + SLC-653 + SLC-654 + SLC-655). Theming + UI-Refactor + 1. Compliance-Slice abgeschlossen.
 
 ## Immediate Next Steps
-1. **User: Coolify-Redeploy** auf Commit `095fb1a` (oder Records-Sync-Commit folgt). Browser-Smoke `/settings/branding` (echte NL-BTW eintragen → Badge "VIES bestaetigt" + Firmenname; danach 2. Reload: cache-hit, kein 2. audit_log) + `/companies` Form (irgendeine EU-VAT-ID).
-2. **/qa SLC-655** nach Live-Smoke-PASS — Final-Quality-Gate.
-3. **/backend SLC-656 DE-§13b Reverse-Charge** (BL-421) — naechster V6.5-Slice.
+1. **/backend SLC-656 DE-§13b Reverse-Charge** (BL-421) — naechster V6.5-Slice. EU-Empfaenger im DE-Branding-Mode mit § 13b UStG Reverse-Charge-Block in PDF.
+2. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
+3. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503).
 4. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
 5. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
 6. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
