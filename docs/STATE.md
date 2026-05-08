@@ -10,12 +10,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.5 SLC-657 /qa PASS 2026-05-08** (RPT-360, reviewOf RPT-359). Source-Migration + npm audit + ISSUE-058 voll qa-verifiziert. 9/9 ACs erfuellt (8 voll + AC-9 partial-by-design wegen 0 Legacy-Daten + 0 campaigns). Image `cb491ca` healthy auf Hetzner, /login HTTP 200 + V2-Style-Guide-Gradient. 0 Stubs, Wiring-Chain (Form→hidden-inputs→actions.ts→DB) intakt, Build clean, Vitest 444/444, Lint 168/55 = SLC-656-Baseline (kein neuer Error). V6.5 7/7 Slices code-side + qa-side done. Ready fuer Gesamt-/qa V6.5.
-- Current Phase: V6.5 in Umsetzung. 7/7 Slices done + qa-side bestaetigt (SLC-651..657). Naechster Schritt: Gesamt-/qa V6.5 + /final-check + /go-live + /deploy als REL-027.
+- Current Focus: **Gesamt-/qa V6.5 PASS 2026-05-08** (RPT-361, reviewOf RPT-360). Bundle-Verifikation aller 7 Slices SLC-651..657 mit 58 ACs durchgaengig: 54 voll PASS + 4 partial-by-design dokumentiert. 0 Blocker, 0 High, 1 Medium Bundle-Finding (SLC-655 audit_log-Insert spec'd aber nicht implementiert — Pre-Production-Compliance-Gate-Item, nicht Internal-Test-Mode-blocking), 5 Low Findings alle bekannt+dokumentiert. Quality-Gates clean (Build 11.8s, Vitest 444/444, Lint 168/55=V6.5-Baseline, npm audit 0 high/0 critical/2 moderate=ISSUE-058). Stub-frei, alle 5 Cross-Slice-Wiring-Chains intakt. Live-Image `cb491ca` healthy. MIG-030 vat_id_validations live mit 1 echtem VIES-Cache-Eintrag (NL859123456B01 source='vies' = Live-Smoke nachweis). MIG-031 No-Op-by-design (0 Legacy-Daten + 0 campaigns). Ready fuer /final-check + /go-live + /deploy als REL-027.
+- Current Phase: V6.5 in Umsetzung, Gesamt-/qa abgeschlossen. 7/7 Slices done + Bundle-/qa PASS. Naechster Schritt: /final-check + /go-live + /deploy als REL-027.
 
 ## Immediate Next Steps
-1. **Gesamt-/qa V6.5** — Bundle-Verifikation aller 7 Slices SLC-651..657 als End-to-End-QA.
-2. **Nach Gesamt-/qa V6.5:** /final-check + /go-live + /deploy als REL-027.
+1. **/final-check V6.5 + /go-live V6.5 + /deploy V6.5 als REL-027** (1-Session-Variante moeglich, Gesamt-/qa keine Blocker).
+2. **(Nach REL-027)** Cockpit-Records-Sync: V6.5-Slices auf `deployed`-Status, FEAT-651..653 auf `deployed`, RELEASES.md REL-027.
 4. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
 4. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
 5. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
