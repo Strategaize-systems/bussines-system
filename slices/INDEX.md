@@ -252,6 +252,18 @@
 |----|-------|---------|--------|----------|---------|
 | SLC-631 | [V6.3 Polish-Bündel (BL-426 + BL-422 + ISSUE-050 + L4 + L5 + BL-Dedup)](SLC-631-v63-polish-bundle.md) | BL-426 + BL-422 + ISSUE-050 | done | Medium | 2026-05-06 |
 
+## V6.5 Slices (Hintergrund-Sprint parallel zu V7-Vorbereitung — planned)
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-651 | [Theming-Tokens-Setup (BL-441 Phase A)](SLC-651-theming-tokens-setup.md) | FEAT-651 | planned | High | 2026-05-08 |
+| SLC-652 | [Theming-Migration Tranche 1 — Pipeline+Proposals (BL-441 Phase B)](SLC-652-theming-migration-tranche-1.md) | FEAT-651 | planned | High | 2026-05-08 |
+| SLC-653 | [Settings inline-Sections in eigene Pages (BL-436 UA-002)](SLC-653-settings-pages-auslagern.md) | FEAT-651 | planned | Medium | 2026-05-08 |
+| SLC-654 | [ViewToggle Generic + Pipeline-PageHeader-Slot (BL-438 + BL-440)](SLC-654-viewtoggle-pageheader.md) | FEAT-651 | planned | Medium | 2026-05-08 |
+| SLC-655 | [VIES-Cache + Adapter (BL-420)](SLC-655-vies-cache-adapter.md) | FEAT-652 | planned | Medium | 2026-05-08 |
+| SLC-656 | [DE-§13b Reverse-Charge-Block (BL-421)](SLC-656-de-reverse-charge.md) | FEAT-652 | planned | Medium | 2026-05-08 |
+| SLC-657 | [Source-Migration + npm audit + ISSUE-058 (BL-424 + BL-430)](SLC-657-source-migration-npm-audit.md) | FEAT-653 | planned | Medium | 2026-05-08 |
+
 ## V6.4 Slices (Hygiene-Sprint — released REL-026 2026-05-07)
 
 | ID | Slice | Feature | Status | Priority | Created |

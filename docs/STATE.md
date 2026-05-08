@@ -9,12 +9,12 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: architecture
-- Current Focus: **V6.5 ARCHITECTURE 2026-05-08** (RPT-345). 12 Open Questions aus RPT-344 adressiert via 12 neue DECs (DEC-152..163). 2 neue MIGs (MIG-030 vat_id_validations Cache + MIG-031 Source-Migration mit Backup). 1 neue ISSUE-058 (postcss-CVE-Akzeptanz). Schluesselentscheidungen: BL-441 in 2 Phasen (Tokens-Setup + Migration iterativ), VIES-Cache als DB-Tabelle, BL-424 Source-Felder als read-only-Backup behalten (kein DROP COLUMN), DE-§13b PRELIMINARY (Anwaltspruefung deferred). Slice-Plan-Vorschau: 7 Slices SLC-651..657. Naechster Schritt = /slice-planning V6.5.
-- Current Phase: V6.5 Architecture done. Bereit fuer /slice-planning V6.5.
+- High-Level State: slice-planning
+- Current Focus: **V6.5 SLICE-PLANNING 2026-05-08** (RPT-346). 7 Slices ausgeplant mit 5-9 Mikrotasks pro Slice (50 MTs total): SLC-651 Theming-Tokens-Setup, SLC-652 Theming-Migration Tranche 1 (Pipeline+Proposals), SLC-653 Settings inline-Sections raus, SLC-654 ViewToggle Generic + Pipeline-PageHeader-Slot, SLC-655 VIES-Cache + Adapter, SLC-656 DE-§13b Reverse-Charge-Block, SLC-657 Source-Migration + npm audit. Sequenz: SLC-651 zuerst (Pre-Req fuer UI-Slices), danach beliebig opportunistisch zwischen V7-Slices. Worktree-Isolation fuer SLC-655 (externer Service) + SLC-657 (destructive Datenmigration). Naechster Schritt = /backend SLC-651 (oder parallel /post-launch V6.4).
+- Current Phase: V6.5 Slice-Planning done. 7 Slices ready-to-implement. Bereit fuer /backend SLC-651.
 
 ## Immediate Next Steps
-1. **/slice-planning V6.5** — 7 Slices SLC-651..657 ausplanen mit Mikrotasks + ACs. Slice-Schnitt-Kandidat: SLC-651 Tokens-Setup + SLC-652 Migration-Tranche-1 + SLC-653 Settings-Refactor + SLC-654 ViewToggle-Generic + SLC-655 Pipeline-PageHeader-Slot + SLC-656 Source-Migration + SLC-657 npm audit + ISSUE-058 + Compliance-Slices fuer FEAT-652 (VIES + DE-§13b).
+1. **/backend SLC-651 Theming-Tokens-Setup** — Pre-Req fuer alle weiteren V6.5-UI-Slices. Klein <1h, low-risk, 5 MTs (Tailwind-Tokens + Gradient-Utility + 1 Test-File-Migration + Build-Gate + Live-Smoke). Atomic-commit-revertable, kein Worktree noetig.
 2. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
 3. **(Optional, 5 Min)** Visuelle User-Smoke ueber 5 V6.4-UI-Aenderungen (Pipeline h1 text-3xl + Pipeline+Proposals Buttons blau + Einwilligungstexte rosa + Sidebar "Termine-Liste" + Settings PageHeader).
 4. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
