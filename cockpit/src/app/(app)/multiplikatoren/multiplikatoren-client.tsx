@@ -2,12 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
-import { Handshake, Users, Shield, Star, MapPin, UserPlus } from "lucide-react";
+import { Handshake, Users, Shield, Star, MapPin, UserPlus, LayoutGrid, List } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
-import { ViewToggle } from "@/components/ui/view-toggle";
-import type { ViewMode } from "@/components/ui/view-toggle";
+import { ViewToggle, type ViewToggleMode } from "@/components/ui/view-toggle";
+
+type MultiplikatorenViewMode = "grid" | "list" | "karte";
+
+const MULTIPLIKATOREN_VIEW_MODES: ReadonlyArray<ViewToggleMode<MultiplikatorenViewMode>> = [
+  { value: "grid", icon: LayoutGrid, label: "Karten-Ansicht" },
+  { value: "list", icon: List, label: "Listen-Ansicht" },
+  { value: "karte", icon: MapPin, label: "Karten-Ansicht (Map)" },
+];
 import { EntityMapDynamic } from "@/components/map/entity-map-dynamic";
 import { PlzSearch } from "@/components/map/plz-search";
 import { getCoordinatesForPlz, getEntitiesInRadius, radiusToZoom } from "@/lib/geo/plz-lookup";
@@ -50,7 +57,7 @@ interface MultiplikatorenClientProps {
 
 export function MultiplikatorenClient({ multipliers, companies }: MultiplikatorenClientProps) {
   const router = useRouter();
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewMode] = useState<MultiplikatorenViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [trustFilter, setTrustFilter] = useState("");
@@ -135,7 +142,7 @@ export function MultiplikatorenClient({ multipliers, companies }: Multiplikatore
   return (
     <div className="min-h-screen">
       <PageHeader title="Multiplikatoren" subtitle="Beziehungsmanagement · Steuerberater, Banker, Verbände">
-        <ViewToggle mode={viewMode} onChange={setViewMode} />
+        <ViewToggle modes={MULTIPLIKATOREN_VIEW_MODES} active={viewMode} onSelect={setViewMode} />
       </PageHeader>
 
       <main className="px-8 py-8">

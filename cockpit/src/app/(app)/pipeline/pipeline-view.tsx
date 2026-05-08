@@ -13,7 +13,18 @@ import type { Deal, Pipeline, PipelineStage } from "./actions";
 import { TrendingUp, ClipboardList, Target, Percent, Plus, ChevronLeft, ChevronRight, LayoutList, Kanban, List, BarChart3, PieChart } from "lucide-react";
 import { PipelineSearchBar } from "@/components/pipeline/pipeline-search-bar";
 import type { PipelineSearchFilter } from "@/lib/ai/types";
+import { ViewToggle, type ViewToggleMode } from "@/components/ui/view-toggle";
+import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
+
+type PipelineViewMode = "kanban" | "list" | "funnel" | "winloss";
+
+const PIPELINE_VIEW_MODES: ReadonlyArray<ViewToggleMode<PipelineViewMode>> = [
+  { value: "kanban", icon: Kanban, label: "Kanban-Ansicht" },
+  { value: "list", icon: List, label: "Listen-Ansicht" },
+  { value: "funnel", icon: BarChart3, label: "Funnel-Report" },
+  { value: "winloss", icon: PieChart, label: "Win/Loss-Analyse" },
+];
 
 const fmt = new Intl.NumberFormat("de-DE", {
   style: "currency",
@@ -64,7 +75,7 @@ export function PipelineView({
   const [stageFilter, setStageFilter] = useState("all");
   const [showNewDeal, setShowNewDeal] = useState(false);
   const [aiFilter, setAiFilter] = useState<PipelineSearchFilter | null>(null);
-  const [viewMode, setViewMode] = useState<"kanban" | "list" | "funnel" | "winloss">("kanban");
+  const [viewMode, setViewMode] = useState<PipelineViewMode>("kanban");
 
   const stageNames = useMemo(() => stages.map((s) => s.name), [stages]);
 
@@ -151,10 +162,8 @@ export function PipelineView({
 
   return (
     <div style={{ width: 'calc(100vw - 16rem)', height: '100vh' }} className="flex flex-col overflow-hidden">
-      {/* Header — left-aligned */}
-      <div className="shrink-0 bg-white/95 backdrop-blur-xl border-b border-slate-200/60 px-8 py-4 shadow-sm z-20">
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Pipeline</h1>
-        <p className="text-sm text-slate-500">Sales Pipeline · Deals & Opportunities Management</p>
+      <div className="shrink-0">
+        <PageHeader title="Pipeline" subtitle="Sales Pipeline · Deals & Opportunities Management" />
       </div>
 
       {/* Fixed upper section — Tabs + KPIs + Search */}
@@ -183,57 +192,7 @@ export function PipelineView({
               })}
             </div>
             <div className="flex items-center gap-2">
-              {/* View Toggle: Kanban ↔ Liste */}
-              <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode("kanban")}
-                  className={cn(
-                    "px-3 py-2 rounded-md text-sm font-semibold transition-all",
-                    viewMode === "kanban"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
-                  )}
-                  title="Kanban-Ansicht"
-                >
-                  <Kanban size={16} strokeWidth={2.5} />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={cn(
-                    "px-3 py-2 rounded-md text-sm font-semibold transition-all",
-                    viewMode === "list"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
-                  )}
-                  title="Listen-Ansicht"
-                >
-                  <List size={16} strokeWidth={2.5} />
-                </button>
-                <button
-                  onClick={() => setViewMode("funnel")}
-                  className={cn(
-                    "px-3 py-2 rounded-md text-sm font-semibold transition-all",
-                    viewMode === "funnel"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
-                  )}
-                  title="Funnel-Report"
-                >
-                  <BarChart3 size={16} strokeWidth={2.5} />
-                </button>
-                <button
-                  onClick={() => setViewMode("winloss")}
-                  className={cn(
-                    "px-3 py-2 rounded-md text-sm font-semibold transition-all",
-                    viewMode === "winloss"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
-                  )}
-                  title="Win/Loss-Analyse"
-                >
-                  <PieChart size={16} strokeWidth={2.5} />
-                </button>
-              </div>
+              <ViewToggle modes={PIPELINE_VIEW_MODES} active={viewMode} onSelect={setViewMode} />
 
               <button
                 onClick={() => setShowNewDeal(true)}

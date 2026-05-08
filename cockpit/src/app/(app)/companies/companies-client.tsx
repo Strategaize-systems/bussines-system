@@ -2,12 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
-import { Building2, Smile, Euro, TrendingUp, MapPin } from "lucide-react";
+import { Building2, Smile, Euro, TrendingUp, MapPin, LayoutGrid, List } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
-import { ViewToggle } from "@/components/ui/view-toggle";
-import type { ViewMode } from "@/components/ui/view-toggle";
+import { ViewToggle, type ViewToggleMode } from "@/components/ui/view-toggle";
+
+type CompaniesViewMode = "grid" | "list" | "karte";
+
+const COMPANIES_VIEW_MODES: ReadonlyArray<ViewToggleMode<CompaniesViewMode>> = [
+  { value: "grid", icon: LayoutGrid, label: "Karten-Ansicht" },
+  { value: "list", icon: List, label: "Listen-Ansicht" },
+  { value: "karte", icon: MapPin, label: "Karten-Ansicht (Map)" },
+];
 import { EntityMapDynamic } from "@/components/map/entity-map-dynamic";
 import { PlzSearch } from "@/components/map/plz-search";
 import { getCoordinatesForPlz, getEntitiesInRadius, radiusToZoom } from "@/lib/geo/plz-lookup";
@@ -54,7 +61,7 @@ interface CompaniesClientProps {
 
 export function CompaniesClient({ companies, stats }: CompaniesClientProps) {
   const router = useRouter();
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewMode] = useState<CompaniesViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [regionFilter, setRegionFilter] = useState("");
@@ -134,7 +141,7 @@ export function CompaniesClient({ companies, stats }: CompaniesClientProps) {
   return (
     <div className="min-h-screen">
       <PageHeader title="Firmen" subtitle="Unternehmensmanagement · Leads, Pipeline & Kunden">
-        <ViewToggle mode={viewMode} onChange={setViewMode} />
+        <ViewToggle modes={COMPANIES_VIEW_MODES} active={viewMode} onSelect={setViewMode} />
       </PageHeader>
 
       <main className="px-8 py-8">

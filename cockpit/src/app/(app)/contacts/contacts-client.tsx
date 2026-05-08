@@ -2,12 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
-import { Users, UserPlus, Handshake, Target, MapPin } from "lucide-react";
+import { Users, UserPlus, Handshake, Target, MapPin, LayoutGrid, List } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import { FilterBar, FilterSelect } from "@/components/ui/filter-bar";
-import { ViewToggle } from "@/components/ui/view-toggle";
-import type { ViewMode } from "@/components/ui/view-toggle";
+import { ViewToggle, type ViewToggleMode } from "@/components/ui/view-toggle";
+
+type ContactsViewMode = "grid" | "list" | "karte";
+
+const CONTACTS_VIEW_MODES: ReadonlyArray<ViewToggleMode<ContactsViewMode>> = [
+  { value: "grid", icon: LayoutGrid, label: "Karten-Ansicht" },
+  { value: "list", icon: List, label: "Listen-Ansicht" },
+  { value: "karte", icon: MapPin, label: "Karten-Ansicht (Map)" },
+];
 import { EntityMapDynamic } from "@/components/map/entity-map-dynamic";
 import { PlzSearch } from "@/components/map/plz-search";
 import { getCoordinatesForPlz, getEntitiesInRadius, radiusToZoom } from "@/lib/geo/plz-lookup";
@@ -40,7 +47,7 @@ interface ContactsClientProps {
 
 export function ContactsClient({ contacts, companies }: ContactsClientProps) {
   const router = useRouter();
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewMode] = useState<ContactsViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [regionFilter, setRegionFilter] = useState("");
@@ -124,7 +131,7 @@ export function ContactsClient({ contacts, companies }: ContactsClientProps) {
   return (
     <div className="min-h-screen">
       <PageHeader title="Kontakte" subtitle="Beziehungsmanagement · Kontakte & Netzwerk">
-        <ViewToggle mode={viewMode} onChange={setViewMode} />
+        <ViewToggle modes={CONTACTS_VIEW_MODES} active={viewMode} onSelect={setViewMode} />
       </PageHeader>
 
       <main className="px-8 py-8">
