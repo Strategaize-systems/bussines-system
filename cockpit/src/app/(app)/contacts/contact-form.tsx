@@ -165,36 +165,43 @@ export function ContactForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="source">Quelle</Label>
-          <select
-            id="source"
-            name="source"
-            defaultValue={contact?.source ?? ""}
-            className={selectClass}
-          >
-            <option value="">— Keine Angabe —</option>
-            <option value="empfehlung">Empfehlung</option>
-            <option value="linkedin">LinkedIn</option>
-            <option value="event">Event</option>
-            <option value="kaltakquise">Kaltakquise</option>
-            <option value="inbound">Inbound</option>
-            <option value="kampagne">Kampagne</option>
-            <option value="netzwerk">Netzwerk</option>
-            <option value="sonstige">Sonstige</option>
-          </select>
+      {/*
+        V6.5 SLC-657 MT-4 (DEC-159 / DEC-160) — Legacy-Source-Felder.
+        Neue Eingaben laufen nur noch ueber CampaignPicker. Bestehende source/
+        source_detail-Werte bleiben in der DB als Backup erhalten und werden
+        hier read-only angezeigt. Hidden Inputs preserven die Werte beim
+        Update damit der Server-Action sie nicht versehentlich auf NULL setzt.
+      */}
+      {(contact?.source || contact?.source_detail) && (
+        <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+            Legacy-Quelle (read-only)
+          </p>
+          <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-xs text-slate-700">
+            {contact.source && (
+              <>
+                <dt className="font-medium text-slate-500">Quelle</dt>
+                <dd>{contact.source}</dd>
+              </>
+            )}
+            {contact.source_detail && (
+              <>
+                <dt className="font-medium text-slate-500">Quell-Detail</dt>
+                <dd>{contact.source_detail}</dd>
+              </>
+            )}
+          </dl>
+          <p className="text-[11px] text-slate-500">
+            Legacy-Quelle, neue Eingaben via Kampagne.
+          </p>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="source_detail">Quell-Detail</Label>
-          <Input
-            id="source_detail"
-            name="source_detail"
-            placeholder="z.B. Name des Empfehlers, Kampagne"
-            defaultValue={contact?.source_detail ?? ""}
-          />
-        </div>
-      </div>
+      )}
+      <input type="hidden" name="source" value={contact?.source ?? ""} />
+      <input
+        type="hidden"
+        name="source_detail"
+        value={contact?.source_detail ?? ""}
+      />
 
       <CampaignPicker
         value={campaignId}

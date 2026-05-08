@@ -1857,9 +1857,9 @@
       "title": "Source-zu-Kampagne Bulk-Migration-Tool (alte source*-Freitext-Felder zu campaign_id)",
       "type": "feature",
       "priority": "low",
-      "status": "open",
+      "status": "done",
       "version": "V6.5",
-      "description": "Aus V6.2 Slice-Planning RPT-310 (DEC-136 keine V1-Source-Migration): contacts.source/source_detail + companies.source_type/source_detail bleiben in V6.2 backward-compatible unangetastet. Bei Bedarf kommt ein Settings-Tool das alte Freitext-Werte auf campaign_id mappt: User definiert Mapping 'LinkedIn April' -> campaign-id-X, Tool macht UPDATE WHERE source ILIKE 'LinkedIn April'. Out-of-V6.2-Scope weil Migration einmalig + manuell + niedrige Prioritaet. V6.3+ wenn historische Reporting-Wuensche kommen. Aufwand ~3-5h UI + Mapping-Logic + Bulk-UPDATE.",
+      "description": "**Done 2026-05-08 als SLC-657 (RPT-359 backend).** SQL-Skript-Ansatz statt UI-Tool (DEC-159). Pre-Audit `031_v65_pre_audit.sql` zeigte 0 Legacy-Source-Daten in Production-DB → MIG-031 ist Ready-when-needed (Pfad A): Mapping-JSON-Template + Bulk-UPDATE-SQL existieren als Repo-Artefakt fuer spaetere Anwendung sobald Daten anfallen, kein Production-Apply. contact-form + company-form: Legacy-Felder entfernt, conditional read-only-Display + hidden-input-Preserve damit Updates Werte nicht versehentlich auf NULL setzen (DEC-160). CSV-Export route campaign_name statt source_detail (LEFT JOIN auf campaigns).",
       "createdAt": "2026-05-05"
     },
     {
@@ -1887,9 +1887,9 @@
       "title": "npm audit --force Cleanup (6 moderate Vulnerabilities, Breaking-Change-Path)",
       "type": "improvement",
       "priority": "low",
-      "status": "open",
+      "status": "done",
       "version": "V6.5",
-      "description": "Aus SLC-631 MT-7 (V6.3 Polish-Sprint, 2026-05-06) als V6.4-Carryover dokumentiert, in V6.4 RPT-341 Final-Check als V6.5-Defer-Kandidat M4 bestaetigt (postcss-Patch wuerde Next 9.3.3-Downgrade erfordern, catastrophic). npm audit fix (non-force) hat 9 → 6 Vulnerabilities reduziert (1 high + 2 moderate resolved: @xmldom/xmldom 0.8.12→0.8.13, fast-xml-parser 5.5.8→5.7.2, @aws-sdk/xml-builder, next 16.2.3→16.2.4 patch, shadcn 4.1.1→4.7.0, express-rate-limit 8.3.1→8.5.0, @modelcontextprotocol/sdk 1.28.0→1.29.0). Verbleiben 6 moderate: @modelcontextprotocol/sdk + express-rate-limit + ip-address (Chain via shadcn), postcss <8.5.10 (sub-dep von next, fix verlangt next@9.3.3 Downgrade — Breaking), shadcn-Defekt durch SDK-Chain. hono + ip-address haben sicheren autofix-Path (kein --force noetig), postcss erfordert Upstream-Next-Release. Aufwand ~1-2h plus Regression-Risiko bei Breaking-Change-Path. KEINE produktive Exposure: shadcn ist Build-Time-only, ip-address-XSS nur in HTML-Address6-Methode (von uns nicht genutzt), postcss-XSS nur bei untrusted-CSS-Input (alle CSS bei uns autorisiert). Verschoben von V6.4 auf V6.5 am 2026-05-08.",
+      "description": "**Done 2026-05-08 als SLC-657 (RPT-359 backend).** Re-Audit zeigte 5 moderate (0 high/0 critical), npm audit fix non-force reduzierte auf 2 moderate: postcss + next bleiben (ISSUE-058, fix wuerde catastrophic Next 9.3.3-Downgrade verlangen). 3 reduziert: hono + ip-address + express-rate-limit. Build clean + Vitest 444/444 nach Fix. ISSUE-058 in KNOWN_ISSUES als open dokumentiert mit Workaround=Upstream-warten + Next-Action=alle 4-8 Wochen re-audit. Per DEC-161: kein --force, kein eigenes SECURITY.md.",
       "createdAt": "2026-05-06"
     },
     {

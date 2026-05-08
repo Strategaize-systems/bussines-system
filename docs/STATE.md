@@ -10,13 +10,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.5 SLC-656 /qa PASS 2026-05-08** (RPT-358). DE-§13b-Reverse-Charge done + deployed + Live-Smoke 2 PDFs (NL + DE) PASS. Container `06f64a4` healthy auf Hetzner. Build clean, Vitest 444/444 PASS, Wiring durchgaengig threaded ueber `business_country`/`businessCountry`, Stub-Scan clean, alle 8 ACs erfuellt. Pre-Production-Compliance-Gate (Anwaltspruefung DE-Phrase, DEC-162) bleibt deferred laut User-Direktive 2026-05-01. V6.5 6/7 Slices vollstaendig done. Letzter Slice SLC-657 Source-Migration + npm audit + ISSUE-058.
-- Current Phase: V6.5 in Umsetzung. 6/7 Slices done (SLC-651 + SLC-652 + SLC-653 + SLC-654 + SLC-655 + SLC-656). Letzter V6.5-Slice ist SLC-657 Source-Migration + npm audit + ISSUE-058.
+- Current Focus: **V6.5 SLC-657 /backend done code-side 2026-05-08** (RPT-359). Source-Migration + npm audit + ISSUE-058. Pre-Audit zeigte 0 Legacy-Source-Daten in Production-DB → MIG-031 ist Ready-when-needed (Pfad A): Mapping-JSON + Bulk-UPDATE-SQL als Repo-Artefakt vorbereitet, kein Production-Apply ohne Daten. contact-form + company-form: Legacy-source/source_type/source_detail entfernt, conditional read-only-Display + hidden-input-Preserve. CSV-Export `/api/campaigns/[id]/export` campaign_name statt source_detail (LEFT JOIN auf campaigns). npm audit reduziert von 5 auf 2 moderate (postcss + next bleiben als ISSUE-058). Build clean, Vitest 444/444 PASS, Lint 168/55 = baseline. V6.5 7/7 Slices code-side done. Wartet auf User-Coolify-Redeploy + Live-Smoke (Form-Render).
+- Current Phase: V6.5 in Umsetzung. 7/7 Slices code-side done (SLC-651..657). Naechster Schritt: User-Redeploy + /qa SLC-657 + Gesamt-/qa V6.5 + /final-check + /go-live + /deploy als REL-027.
 
 ## Immediate Next Steps
-1. **/backend SLC-657** Source-Migration + npm audit + ISSUE-058 (BL-424 + BL-430) — letzter V6.5-Slice.
-2. **Nach SLC-657:** Gesamt-/qa V6.5 → /final-check → /go-live → /deploy als REL-027.
-3. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
+1. **User: Coolify-Redeploy** auf naechsten Image-Tag + Browser-Smoke contact-form + company-form (Legacy-Felder NICHT angezeigt da keine Legacy-Daten existieren — read-only-Display ist nur conditional, das ist erwartet).
+2. **/qa SLC-657** — Final-Quality-Gate fuer Source-Migration + npm audit + Forms.
+3. **Nach /qa SLC-657:** Gesamt-/qa V6.5 → /final-check → /go-live → /deploy als REL-027.
+4. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
 4. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
 5. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
 6. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).

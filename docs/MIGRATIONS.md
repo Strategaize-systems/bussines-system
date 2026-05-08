@@ -34,7 +34,12 @@
   - Branding-Form + Company-Form fallback auf Format-only-Display
 
 ### MIG-031 — V6.5 Source-zu-Kampagne Bulk-Migration (FEAT-653 BL-424)
-- Date: 2026-05-08 (planned, apply in SLC-656 Implementation)
+- Date: 2026-05-08 (Skripte ready, Apply als No-Op deferred bis Daten anfallen)
+- Status: ready-when-needed (kein Production-Apply, Pre-Audit zeigte 0 Legacy-Daten)
+- Apply-History:
+  - Pre-Audit ausgefuehrt 2026-05-08 in SLC-657 MT-1: 0 contacts mit `source`/`source_detail`, 0 companies mit `source_type`/`source_detail`, 0 Kampagnen in DB. Bulk-UPDATE-Skript ist No-Op fuer aktuellen Daten-Stand.
+  - Skripte commited als Repo-Artefakt: `sql/migrations/031_v65_pre_audit.sql` (read-only Audit), `sql/migrations/031_v65_source_to_campaign_mapping.json` (User-Mapping-Template, leer), `sql/migrations/031_v65_bulk_update.sql` (idempotenter UPDATE), `sql/migrations/031_v65_source_to_campaign_mapping.README.md` (Schema-Doku + Apply-Anweisung).
+  - Re-Apply-Pfad: bei produktivem Daten-Anfall Pre-Audit erneut + Mapping-JSON pflegen + Bulk-UPDATE ausfuehren.
 - Scope: Datenmigration ohne Schema-Aenderung. Quell-Felder bleiben als read-only-Backup erhalten (DEC-160).
   - Pre-Migration-Audit-Query (User-Sign-Off-Pause): `SELECT source, source_detail, COUNT(*) FROM contacts WHERE source IS NOT NULL GROUP BY 1,2 ORDER BY 3 DESC; SELECT source_type, source_detail, COUNT(*) FROM companies WHERE source_type IS NOT NULL GROUP BY 1,2 ORDER BY 3 DESC;`
   - User-pflegt Mapping-File: `sql/migrations/031_v65_source_to_campaign_mapping.json` mit Struktur `[{"entity":"contact","source_value":"LinkedIn April","source_detail_value":null,"campaign_id":"<uuid>"}, ...]`

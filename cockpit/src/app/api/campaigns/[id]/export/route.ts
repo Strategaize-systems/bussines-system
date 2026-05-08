@@ -29,7 +29,10 @@ interface ContactExportRow {
   phone: string | null;
   position: string | null;
   source: string | null;
-  source_detail: string | null;
+  // V6.5 SLC-657 MT-5 (DEC-159) — campaign_name ersetzt source_detail in der
+  // CSV-Spalten-Auswahl. source_detail bleibt im DB-Schema als Backup
+  // (DEC-160), wird aber nicht mehr exportiert.
+  campaigns: { name: string } | null;
   created_at: string;
   companies: { name: string } | null;
 }
@@ -74,9 +77,13 @@ export async function GET(
   let filename: string;
 
   if (type === "leads") {
+    // V6.5 SLC-657 MT-5 — LEFT JOIN auf campaigns + Spalten-Schema-Switch.
+    // Bisher: position, company, source, source_detail. Neu: position, company,
+    // source, campaign_name. Externe CSV-Konsumenten werden im Slice-Bericht
+    // dokumentiert — Header-Row-Diff: source_detail → campaign_name.
     const { data, error } = await supabase
       .from("contacts")
-      .select("first_name, last_name, email, phone, position, source, source_detail, created_at, companies(name)")
+      .select("first_name, last_name, email, phone, position, source, created_at, companies(name), campaigns(name)")
       .eq("campaign_id", id)
       .order("created_at", { ascending: false });
     if (error) return new Response(error.message, { status: 500 });
@@ -91,7 +98,7 @@ export async function GET(
         "position",
         "company",
         "source",
-        "source_detail",
+        "campaign_name",
         "created_at",
       ],
       rows.map((r) => [
@@ -102,7 +109,7 @@ export async function GET(
         r.position,
         r.companies?.name ?? "",
         r.source,
-        r.source_detail,
+        r.campaigns?.name ?? "",
         r.created_at,
       ])
     );
