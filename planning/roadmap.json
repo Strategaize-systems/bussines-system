@@ -176,11 +176,18 @@
       "order": 25
     },
     {
+      "id": "v6-6",
+      "name": "V6.6",
+      "status": "planned",
+      "summary": "Pre-V7-Audit-Sprint (User-Direktive 2026-05-08): Discovery-getrieben vor V7. Schwerpunkte: KI-Inventur (alle Bedrock+Whisper+Embedding-Touch-Points), Sidebar-VERWALTUNG-Restruktur (BL-437 vorgezogen), Pipeline-Stages-Cleanup (BL-439 vorgezogen), Settings-Hierarchie. Method: User-Discovery + Funktion-Erklaerungen pro Item. Parallel: BL-441 Theming-Sprint Master (uebernommen aus V6.5, weitere Tranchen ueber 28 Drift-Files hinweg).",
+      "order": 26
+    },
+    {
       "id": "v7",
       "name": "V7",
       "status": "planned",
       "summary": "Multi-User + Teamlead: Routing/Territories (FEAT-502), Teamlead-Rolle mit Teamsicht (FEAT-503). Reduziert auf Multi-User-Themen — Workflow-Automation und Kampagnen-Attribution nach V6.2 ausgelagert. V6.4-Audit-Defer-Items mit V7-Touch-Konflikt: BL-437 UA-004 Sidebar-VERWALTUNG-Split (Multi-User-Sprint baut Sidebar sowieso um), BL-439 UA-008 Pipeline-Stages Soft-Disable (Pipeline-Owner-Filter touched Stages), BL-425 Multi-Touch-Journey-Tab (Reporting-Erweiterung passt zu Multi-User-Insights).",
-      "order": 26
+      "order": 27
     }
   ]
 }
