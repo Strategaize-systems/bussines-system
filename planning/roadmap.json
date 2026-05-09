@@ -171,7 +171,7 @@
     {
       "id": "v6-5",
       "name": "V6.5",
-      "status": "active",
+      "status": "released",
       "summary": "Hintergrund-Sprint parallel zu V7-Vorbereitung: Theming-Sprint (Brand-Tokens in globals.css @theme inline (Tailwind v4) + Migration UA-011/012/013, BL-441 — SLC-651 Phase A Tokens-Setup deployed, SLC-652 Phase B Tranche 1 Pipeline+Proposals deployed), 3 UI-Refactor-Items aus V6.4-Audit (UA-002 Settings-Pages BL-436 + UA-007 ViewToggle generisch BL-438 + UA-009 Pipeline-PageHeader BL-440), Compliance-Erweiterungen (BL-420 VIES-VAT-Lookup + BL-421 DE-§13b-Reverse-Charge), Schema-Hygiene (BL-424 Source-zu-Kampagne Bulk-Migration), Dependency-Hygiene (BL-430 npm audit --force).",
       "order": 25
     },

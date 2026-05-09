@@ -9,14 +9,13 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: **V6.5 /go-live GO 2026-05-08** (RPT-363, reviewOf RPT-362). Release-Decision: GO als REL-027 auf Hetzner Production. Image cb491ca bereits live + healthy (Container Up healthy, 5/5 Health-Probes 200 OK). Self-hosted-Stack-Readiness 7/7 PASS (Container, ENV, Internal-Connectivity, Auth-Layer, Hairpin-NAT, Health-Checks, Reverse-Proxy). 0 Blocker, 0 High, 1 Medium (audit_log-Wiring SLC-655 als Pre-Production-Compliance-Gate-Item akzeptiert), 4 Low Findings akzeptiert. Required Fixes: keine. Rollback-Pfad klar zu REL-026 f99726b. Bereit fuer /deploy V6.5 als REL-027 (Records-Sync, keine weitere Coolify-User-Action noetig).
-- Current Phase: V6.5 in Umsetzung, Go-Live abgeschlossen. 7/7 Slices done + Gesamt-/qa PASS + Final-Check CONDITIONALLY READY + /go-live GO. Naechster Schritt: /deploy V6.5 als REL-027.
+- High-Level State: stable
+- Current Focus: **V6.5 RELEASED als REL-027 2026-05-08** (RPT-364, reviewOf RPT-363). Image cb491ca live + healthy auf Hetzner mit 17h Burn-In ohne Container-Restart. Records-Sync vollstaendig: roadmap.json V6.5 → `released`, slices/INDEX.md alle 7 Slices → `deployed`, features/INDEX.md FEAT-651..653 → `deployed`, RELEASES.md REL-027-Eintrag mit vollstaendigen Rollback-Notes. Bundle-/qa PASS (RPT-361 58/58 ACs), Final-Check CONDITIONALLY READY (RPT-362), Go-Live GO (RPT-363), Deploy DONE (RPT-364). Internal-Test-Mode bleibt aktiv. Naechster Schritt: V6.6 Pre-V7-Audit-Sprint (KI-Inventur + Sidebar/Settings-Reorg + Pipeline-Stages-Cleanup) per User-Direktive 2026-05-08.
+- Current Phase: V6.5 RELEASED. Naechster Sprint = V6.6 Pre-V7-Audit-Sprint, dann V7 Multi-User + Teamlead.
 
 ## Immediate Next Steps
-1. **/deploy V6.5 als REL-027** (gleiche Session). Image cb491ca bereits live + healthy; /deploy = REL-027-Eintrag in RELEASES.md + Cockpit-Records-Sync (slices/INDEX.md + features/INDEX.md auf `deployed`, planning/roadmap.json + planning/backlog.json, STATE.md last-stable). Keine weitere Coolify-User-Action noetig.
-2. **(Nach REL-027)** Cockpit-Refresh durch User zur visuellen Sync-Verifikation.
-4. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
+1. **(naechste Session) Discovery-Phase V6.6 Pre-V7-Audit-Sprint** — User explizit angefragt 2026-05-08: Discovery wo User sagt was er ueberpruefen will und vielleicht sofort schon aendern moechte. Schwerpunkte: (a) **KI-Inventur** (alle Bedrock+Whisper+Embedding-Touch-Points auflisten + bewerten ob sinnvoll/doppelt/falsch-platziert), (b) **Sidebar-VERWALTUNG-Restruktur** (BL-437 vorgezogen aus V7-Defer), (c) **Pipeline-Stages-Cleanup** (BL-439 vorgezogen aus V7-Defer), (d) **Settings-Hierarchie**. Methodik: User stellt Funktion-Erklaerungs-Fragen, dann Entscheidung pro Item.
+2. **(nach V6.6)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) auf bereinigter Basis. BL-425 Multi-Touch-Journey-Tab + verbleibende V7-Audit-Defer-Items werden in V7-Scope integriert.
 4. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
 5. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
 6. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
@@ -69,13 +68,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 **Architektur-Entscheidungen V5.5:** DEC-105 pdfmake, DEC-106 HTML-Live-Preview, DEC-107 Snapshot inkl. price_at_creation, DEC-108 Status-Sent automatisch+manuell, DEC-109 V1-Status unangetastet, DEC-110 Cron 02:00 Berlin, DEC-111 Pfad-Schema, DEC-112 alle Status zeigen+Warning, DEC-113 Footer+Suffix-Watermark, DEC-114 5 Slices 1:1 zu Features.
 
 **Released (deployed):**
-- V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V5.5, V5.5.1, V5.6, V5.7, V6, V6.1, V6.2, V6.3, V6.4
+- V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V5.5, V5.5.1, V5.6, V5.7, V6, V6.1, V6.2, V6.3, V6.4, **V6.5**
 
 **Active:**
-- (none — V6.4 released 2026-05-07, /post-launch ausstehend)
+- (none — V6.5 released 2026-05-08 als REL-027, /post-launch V6.4 + V6.5 ausstehend)
 
 **Planned (Reihenfolge):**
-- V6.5 — Hintergrund-Sprint parallel zu V7-Vorbereitung (8 BLs): BL-441 Theming-Sprint (Brand-Tokens + UA-011/012/013), BL-436 UA-002 Settings-Pages, BL-438 UA-007 ViewToggle generisch, BL-440 UA-009 Pipeline-PageHeader, BL-420 VIES-VAT-Lookup, BL-421 DE-§13b-Reverse-Charge, BL-424 Source-zu-Kampagne Bulk-Migration, BL-430 npm audit --force.
+- **V6.6 Pre-V7-Audit-Sprint** (User-Direktive 2026-05-08): Discovery-getriebene Sprint vor V7. Schwerpunkte: KI-Inventur (alle Bedrock+Whisper+Embedding-Touch-Points), Sidebar-VERWALTUNG-Restruktur (BL-437 vorgezogen), Pipeline-Stages-Cleanup (BL-439 vorgezogen), Settings-Hierarchie. Method: User-Discovery + Funktion-Erklaerungen pro Item, dann Entscheidung. Ziel: V7 auf bereinigter Basis bauen statt Multi-User auf Clutter.
+- ~~V6.5 — Hintergrund-Sprint parallel zu V7-Vorbereitung~~ (RELEASED REL-027 2026-05-08): BL-441 Theming-Sprint (Brand-Tokens + UA-011/012/013), BL-436 UA-002 Settings-Pages, BL-438 UA-007 ViewToggle generisch, BL-440 UA-009 Pipeline-PageHeader, BL-420 VIES-VAT-Lookup, BL-421 DE-§13b-Reverse-Charge, BL-424 Source-zu-Kampagne Bulk-Migration, BL-430 npm audit --force.
 - V7 — Multi-User + Teamlead (Routing/Territories + Teamlead-Rolle, reduzierter Scope) (3 BLs aus V6.4-Audit-Defer): BL-437 Sidebar-VERWALTUNG-Split (Multi-User-Sidebar baut um), BL-439 Pipeline-Stages Soft-Disable (Pipeline-Owner-Filter touched Stages), BL-425 Multi-Touch-Journey-Tab.
 - Ungeplant (parkiert): BL-397 GitHub-App Org-Anbindung (Infra-Hygiene), BL-435 Natural-Language-Regel-Builder (zu gross fuer naechsten Sprint).
 - Pre-Production-Compliance-Gate (irgendwann vor erstem Kunden-Live-Call) — Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042 — laut User 2026-05-01 NICHT prioritaer
@@ -84,6 +84,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - aktuell keine
 
 ## Last Stable Version
+- V6.5 — 2026-05-08 — released auf Hetzner als REL-027 (Hintergrund-Sprint: 7 Slices SLC-651..657, 3 Features FEAT-651..653 alle deployed. Theming-Foundation (Brand-Tokens + Pipeline+Proposals-Migration) + UI-Polish (Settings-Pages-Auslagern + ViewToggle-Generic + PageHeader-Slot) + Compliance-Erweiterung NL→DE-Symmetrie (VIES-Adapter + DE-§13b PRELIMINARY) + Hygiene (Source-Migration ready-when-needed + npm audit + ISSUE-058). MIG-030 vat_id_validations live (1 echter VIES-Cache-Eintrag). MIG-031 by-design No-Op. 12 V6.5-DECs (DEC-152..163). Image-Tag `cb491ca` Pre-Live-Burn-In 17h ohne Container-Restart. Vitest 444/444 (+39 V6.5). Lint 168/55 = V5.7-Baseline +2 (SLC-655 by-design). npm audit 0 high/0 critical/2 moderate=ISSUE-058. RPT-345..364. Internal-Test-Mode bleibt aktiv bis Compliance-Sprint.)
 - V6.4 — 2026-05-07 — released auf Hetzner als REL-026 (Hygiene-Sprint: 5 Slices SLC-641..645, 3 Features FEAT-641..643 alle deployed. ISSUE-057 FollowupEngine-Bug resolved + BL-423 DSGVO Click-Log-Cleanup-Cron live + 6 Code-Cleanup-Items (~728 Zeilen) abgeraeumt + 5 UI-Cleanup-Items umgesetzt + 13 Audit-Items deferred V6.5/V7. Image-Tag `f99726b` Coolify-Redeploy 10:41 UTC. Keine Schema-Migration. Vitest 405/405 PASS, Container healthy >2h, audit_log-Trail aktiv. Internal-Test-Mode bleibt aktiv. RPT-335..343.)
 - V6.3 — 2026-05-06 — released auf Hetzner als REL-025 (Polish-Bündel: SLC-631 mit 7 MTs — BL-426 Sub-Items 1-3 + BL-422 RC-Drift-Fix + ISSUE-050 Audit-Log-Render-Fix + L4 trigger-sources-Doku + L5/MT-7 npm audit + Backlog-Hygiene. Image-Tag `f7fd231` Commit `f7fd2310...`. Internal-Test-Mode bleibt aktiv. Vitest 393/393 PASS, 5 Browser-Smokes Live-bestaetigt. RPT-326+327+328.)
 - V6.2 — 2026-05-06 — released auf Hetzner als REL-024 (Workflow-Automation + Kampagnen-Attribution: 5 Slices SLC-621..625, FEAT-621+622, MIG-029 alle 3 Phasen. Image-Tag `766e4ac` inkl. V6.2-Hotfix ISSUE-055 + ISSUE-056. Coolify-Cron `automation-runner` aktiv jede Minute. Internal-Test-Mode aktiv. RPT-321..324.)
