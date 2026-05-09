@@ -7981,3 +7981,675 @@ Wenn die Mindest-Quoten unterschritten werden (z.B. der Audit findet kaum Cleanu
 - SLC-643: Atomare-Commit-Strategie pro Cleanup-Item
 - SLC-644: UI-Page-Stichproben-Liste (Settings, Sidebar, Pipeline) mit Screenshot-Anleitung
 - SLC-645: Style-Guide-V2-Verifikations-Checkliste pro Cleanup-Item
+
+## V6.6 — Pre-V7-Audit-Sprint Architecture (UI-Konsolidierung + KI-Workspace-Hybrid)
+
+### V6.6 Summary
+
+V6.6 ist ein UI-Konsolidierungs-Sprint, der **vor V7 (Multi-User)** ein einheitliches Bedienmodell auf den drei Hauptarbeitsplaetzen (Mein Tag, Deal-Detail, Dashboard) etabliert. Die Architektur-Arbeit besteht aus 4 Bloecken:
+
+1. **Eine reusable `<KIWorkspace>`-Component** (Frontend-Foundation) — gleiche Component, drei kontextualisierte Caller. Fundament fuer alle weiteren V6.6-Slices.
+2. **Layout-Restruktur** auf 3 Pages (Mein Tag, Deal-Detail, Dashboard) + eine neue Deals-Listen-Seite (Top-10 + Karten-Grid). Frontend-only.
+3. **Backend-Mini-Touch** — Win/Loss-Auto-Trigger als V6.2-Workflow-Action + 1 additive Schema-Migration (working_hours-Cols + auto_winloss_runs-Tabelle).
+4. **Hygiene** — Sparkles-Cards entfernen, NL-Suche durch Type-Ahead ersetzen, "KI-Reife" zu "AI-Bereitschaft" umbenennen, Sidebar-Reorder ohne VERWALTUNG-Touch.
+
+KEINE neuen Container, KEINE neuen npm-Packages, KEIN neuer LLM-Provider, KEIN neuer Cron-Job-Typ (Auto-Trigger laeuft synchron im Stage-Wechsel-Pfad ueber V6.2-Workflow-Engine).
+
+V7-Multi-User-Kompatibilitaet ist Pflicht — alle Layout-Entscheidungen erlauben spaetere Rollen-Sichtbarkeits-Filter, ohne V6.6-Caller zu brechen.
+
+### V6.6 Main Components
+
+```
+                   ┌────────────────────────────────────────────────────────┐
+                   │                  App-Layer (Next.js, bestehend)         │
+                   │                                                          │
+  V6.6 Foundation  │   cockpit/src/components/ki-workspace/                  │
+                   │      KIWorkspace.tsx (NEU, reusable)                     │
+                   │      types.ts (Reports, scopeIds, Context-Discriminator) │
+                   │      hooks/useReportRun.ts (NEU, Bedrock-Call-Wrapper)   │
+                   │      hooks/useVoiceCapture.ts (NEU, extrahiert aus       │
+                   │         pipeline-suche, Whisper-Adapter)                 │
+                   │      reports/registry.ts (NEU, pro Workspace-Typ)        │
+                   │      AnswerPane.tsx (Markdown-Renderer + Spinner)        │
+                   │                                                          │
+  V6.6 Caller 1    │   cockpit/src/app/(app)/mein-tag/page.tsx                │
+                   │      Reuse: <KIWorkspace context="mein-tag" />           │
+                   │      Removed: 4-Hinweise-Pill, 4-offene-Punkte-Zeile,    │
+                   │         Tagesanalyse-starten-Button                       │
+                   │                                                          │
+  V6.6 Caller 2    │   cockpit/src/app/(app)/deals/[id]/page.tsx              │
+                   │      Reuse: <KIWorkspace context="deal-detail" />        │
+                   │      Reuse: <ItemSheet> (extrahierte Task-Sheet aus      │
+                   │         FEAT-302) fuer Activity-Detail-Sheet              │
+                   │      Removed: Briefing-Sidebar, Wissen-Tab, Signale-     │
+                   │         Action, Edit-Tab                                  │
+                   │                                                          │
+  V6.6 Caller 3    │   cockpit/src/app/(app)/dashboard/page.tsx               │
+                   │      Reuse: <KIWorkspace context="cockpit" />            │
+                   │      Reuse: KalenderClient (FEAT-309)                    │
+                   │      Removed: KPI-Cards, Top-Chancen-Tabelle,            │
+                   │         DashboardSearch                                   │
+                   │                                                          │
+  V6.6 New Page    │   cockpit/src/app/(app)/deals/page.tsx (RESTRUCTURED)    │
+                   │      Top-10-Block + Karten-Grid + Won/Lost-Sektionen +   │
+                   │         Type-Ahead-Suche + Pipeline-Switcher              │
+                   │                                                          │
+  V6.6 Backend     │   cockpit/src/lib/automation/actions/                    │
+                   │      auto_winloss_extract.ts (NEU, V6.2-Workflow-Action) │
+                   │   cockpit/src/lib/winloss/                               │
+                   │      runWinLossExtract.ts (NEU, Bedrock-Wrapper)         │
+                   │   cockpit/src/app/api/winloss/[deal_id]/route.ts (NEU,   │
+                   │      Read-API-Pattern wie FEAT-622-Campaign-Read)        │
+                   │                                                          │
+  V6.6 Hygiene     │   cockpit/src/app/(app)/firmen/[id]/* (Sparkles-Card     │
+                   │      entfernt)                                            │
+                   │   cockpit/src/app/(app)/kontakte/[id]/* (Sparkles-Card   │
+                   │      entfernt)                                            │
+                   │   cockpit/src/lib/labels/ki-readiness.ts (NEU, zentrale  │
+                   │      Label-Map "AI-Bereitschaft")                         │
+                   │   cockpit/src/components/sidebar.tsx (Reorder ANALYSE/   │
+                   │      OPERATIV/ARBEITSBEREICHE, "Meine Performance" raus, │
+                   │      VERWALTUNG unangetastet)                             │
+                   │   cockpit/src/components/kalender-client.tsx (Range      │
+                   │      06:00-21:00 + Working-Hours-Lookup + Toggle)        │
+                   │   cockpit/src/app/(app)/settings/working-hours/* (NEU,   │
+                   │      Settings-Sektion fuer working_hours_start/end)      │
+                   │                                                          │
+  V6.6 Removal     │   cockpit/src/app/(app)/performance/page.tsx →           │
+                   │      Redirect-Page mit Toast (1 Sprint), spaeter geloescht│
+                   └────────────────────────────────────────────────────────┘
+                                              │
+                                              ▼
+                   ┌────────────────────────────────────────────────────────┐
+                   │     Postgres (additive Migration MIG-032)                │
+                   │                                                          │
+                   │   ALTER user_settings ADD working_hours_start TIME NULL  │
+                   │   ALTER user_settings ADD working_hours_end TIME NULL    │
+                   │   CHECK (start IS NULL AND end IS NULL OR start < end)   │
+                   │                                                          │
+                   │   CREATE TABLE auto_winloss_runs (                       │
+                   │     id, deal_id FK, target_status (won|lost),            │
+                   │     triggered_at, triggered_by_user_id,                  │
+                   │     bedrock_output TEXT, status pending|succeeded|failed │
+                   │   )                                                      │
+                   │                                                          │
+                   │   INDEX idx_auto_winloss_runs_recent                     │
+                   │     (deal_id, target_status, triggered_at DESC)          │
+                   │                                                          │
+                   │   audit_log (INSERT pro Auto-Trigger-Run, Pattern aus    │
+                   │     V6.2 automation_runs)                                │
+                   │                                                          │
+                   │   automation_rules (Auto-Trigger ist System-Rule mit     │
+                   │     trigger=deal.stage_changed +                         │
+                   │     action_type=auto_winloss_extract, kein Custom-       │
+                   │     Builder-Item)                                        │
+                   └────────────────────────────────────────────────────────┘
+```
+
+### V6.6 Component-Detail — KI-Workspace (Foundation, SLC-661, DEC-165..168)
+
+#### Reuse-Strategie (DEC-165)
+
+EINE Component `<KIWorkspace>` mit Konfig-Prop, NICHT drei Implementierungen mit Pattern. Begruendung: visuelles Layout (Berichts-Buttons-Reihe + Frage-Eingabe + Antwort-Fenster) ist auf allen drei Hauptarbeitsplaetzen identisch. Unterschiede sind reine Daten-Konfiguration (Berichts-Liste, Kontext-Quelle, Voice-Routing-Pfad). Drift-Risiko bei drei Implementierungen ueber V7+ ist hoch — eine Component mit klarem Konfig-Surface bleibt wartbar.
+
+**Component-Surface:**
+
+```typescript
+// cockpit/src/components/ki-workspace/types.ts
+export type KIWorkspaceContext = "mein-tag" | "deal-detail" | "cockpit";
+
+export interface KIWorkspaceReport {
+  id: string;                       // z.B. "tagesanalyse", "briefing"
+  label: string;                    // UI-Label, z.B. "Tagesanalyse"
+  serverActionPath: string;         // Server-Action-Import-Pfad, z.B. "@/lib/ki-workspace/reports/tagesanalyse"
+  cacheable: boolean;               // 5-min-Cache aktiv (DEC-166)
+  // V7-Erweiterung: role_filter?: ("admin"|"employee"|"chef")[] (DEC-174)
+}
+
+export interface KIWorkspaceScope {
+  userId: string;                   // immer gesetzt (V7-Multi-User-Kompatibilitaet)
+  dealId?: string;                  // nur context="deal-detail"
+  dateRange?: { start: Date; end: Date }; // optional cockpit-Forecast-Override
+}
+
+export interface KIWorkspaceProps {
+  context: KIWorkspaceContext;
+  reports: KIWorkspaceReport[];     // pro Aufruf, aus reports/registry.ts
+  scope: KIWorkspaceScope;
+  voiceEnabled: boolean;            // true in V6.6, in V7 evtl. role-conditional
+}
+```
+
+**Reports-Registry pro Workspace-Typ:**
+
+```typescript
+// cockpit/src/components/ki-workspace/reports/registry.ts
+export const MEIN_TAG_REPORTS: KIWorkspaceReport[] = [
+  { id: "tagesanalyse", label: "Tagesanalyse", serverActionPath: ".../tagesanalyse", cacheable: true },
+  { id: "gestern", label: "Gestern", serverActionPath: ".../gestern", cacheable: true },
+  { id: "seit-login", label: "Seit Login", serverActionPath: ".../seit-login", cacheable: false },
+  { id: "wochen-performance", label: "Wochen-Performance", serverActionPath: ".../wochen-performance", cacheable: true },
+  { id: "pipeline-risiko", label: "Pipeline-Risiko", serverActionPath: ".../pipeline-risiko", cacheable: true },
+];
+
+export const DEAL_DETAIL_REPORTS: KIWorkspaceReport[] = [
+  { id: "briefing", label: "Briefing", serverActionPath: ".../briefing", cacheable: true },
+  { id: "signale", label: "Signale extrahieren", serverActionPath: ".../signale", cacheable: true },
+  { id: "risiken", label: "Risiken & Einwaende", serverActionPath: ".../risiken", cacheable: true },
+  { id: "naechster-schritt", label: "Naechster sinnvoller Schritt", serverActionPath: ".../naechster-schritt", cacheable: true },
+  { id: "winloss", label: "Win/Loss-Analyse", serverActionPath: ".../winloss", cacheable: true },
+];
+
+export const COCKPIT_REPORTS: KIWorkspaceReport[] = [
+  { id: "pipeline-snapshot", label: "Pipeline-Snapshot", ... },
+  { id: "top-chancen", label: "Top-Chancen", ... },
+  { id: "conversion-rate", label: "Conversion-Rate", ... },
+  { id: "forecast", label: "Forecast", ... },
+  { id: "winloss-aggregate", label: "Win/Loss-Analyse", ... },
+  { id: "stagnierende-deals", label: "Stagnierende Deals", ... },
+];
+```
+
+#### Bedrock-Call-Pattern (DEC-166)
+
+**Synchroner Spinner+Result, KEIN SSE-Streaming in V6.6.** Begruendung: bestehende Bedrock-Pfade (FEAT-301 briefing, FEAT-412 signal-extract, FEAT-403 cockpit-LLM, FEAT-114 loss-analysis) liefern alle synchron. SSE-Streaming-UI (Token-Append + Partial-State-Error-Handling + Cancel-Pattern) ist eigener Slice — V6.6.x-Backlog (BL anlegen).
+
+**Per-Berichts-Button-Flow:**
+```
+User-Klick auf [Berichts-Button-X]
+       │
+       ▼
+KIWorkspace.handleReportClick(report)
+       │
+       ▼
+useReportRun(reportId, scope) Hook
+       │  - Cache-Check: getCached(reportId, hashScope, userId, 5min)
+       │  - Bei Cache-Hit: render direkt
+       ▼
+Server-Action runReport(reportId, scope)
+       │  - Lade Kontext (Deal-Activities ODER Tages-Aggregate ODER Account-Aggregate)
+       │  - Build Bedrock-Prompt (Reuse FEAT-301/412/403/114)
+       │  - Bedrock-Call (eu-central-1, audit_log-Insert)
+       │  - Save Cache (in-Memory pro Server-Process, 5min TTL, scope-hash-key)
+       ▼
+return { markdown, completedAt, model, refreshable: true }
+       │
+       ▼
+AnswerPane.tsx rendert Markdown + "Aktualisieren"-Button (cache-bypass)
+```
+
+**Cache-Strategie (DEC-180-Cockpit):** In-Memory pro Server-Process (Node-Module-Level Map), 5-min TTL, Key = `hash(report_id + JSON.stringify(scope) + user_id)`. Kein Redis, kein DB-Cache — Cockpit ist Single-User, in-Memory reicht. "Aktualisieren"-Button im Answer-Pane bypassed Cache.
+
+#### Voice-Eingabe (DEC-167)
+
+**Whisper-Adapter (existierend, EU-konform via Azure-Code-Ready aus V5.2) wird genutzt.** WebRTC-Audio-Capture-Logik wird aus `pipeline-suche` als neuer Hook `useVoiceCapture` extrahiert — keine duplizierte Implementierung.
+
+```typescript
+// cockpit/src/components/ki-workspace/hooks/useVoiceCapture.ts (NEU, extrahiert)
+export function useVoiceCapture(): {
+  isRecording: boolean;
+  start: () => Promise<void>;
+  stop: () => Promise<string>; // returns transcribed text via Whisper
+  error: string | null;
+}
+```
+
+`pipeline-suche` wird in SLC-667 (KI-Inventur) entfernt — der Hook bleibt aber als gemeinsame Voice-Foundation. Bedrock-Stress-Test-Plan (R6) ist im Architecture-Risk-Mitigation-Block dokumentiert: V6.6-Internal-Test-Mode-Single-User hat ohnehin <5 Concurrent-Bedrock-Calls; Rate-Limit-Fallback ueber bestehenden Bedrock-Adapter-Retry-Pattern (V4.2 RAG).
+
+#### Kontext-Scope (DEC-168)
+
+Pro Berichts-Button laedt die Server-Action **explizit** den benoetigten Kontext. Kein impliziter "alles laden was gefunden werden kann"-Pfad. Quelle pro Workspace-Typ:
+
+| Workspace | Kontext-Tabellen |
+|---|---|
+| Mein Tag | `deals` (eigene), `activities` (heute des Users), `tasks` (heute offen), `meetings` (heute) |
+| Deal-Detail | `deals.[id]`, `activities` (deal_id), `tasks` (deal_id), `proposals` (deal_id), `companies/contacts` (via FK) |
+| Cockpit | `deals` (account-weit), `pipeline_snapshots` (aktuell), `automation_runs` (last 30d, fuer Conversion-Rate), `auto_winloss_runs` (fuer Win/Loss-Aggregate) |
+
+Server-Action-Naming-Convention: `cockpit/src/lib/ki-workspace/reports/<reportId>.ts` exportiert `runReport(scope: KIWorkspaceScope): Promise<ReportResult>`.
+
+### V6.6 Component-Detail — Mein Tag (SLC-662, DEC-169)
+
+#### /performance-Migration (R2 Mitigation)
+
+Vorab-Inventur als Pflicht-Output von SLC-662, **bevor** /performance-Code-Loeschung erfolgt:
+
+| /performance-Funktion | Mapping in V6.6 |
+|---|---|
+| Goal-Cards (Wochenziel + Forecast) | `[Wochen-Performance]`-Bericht im Mein-Tag-KI-Workspace |
+| Wochen-Check (Soll-Ist Pipeline-Bewegung pro Tag) | `[Wochen-Performance]`-Bericht (gleicher Bericht, andere Sektion) |
+| Tagesaufloesung (Stunden-Aktivitaet) | `[Tagesanalyse]`-Bericht (Sektion Aktivitaeten-Soll-Ist) |
+| Forecast-Chart | `[Forecast]`-Bericht im Cockpit (FEAT-665), NICHT Mein Tag — User-Direktive: Forecast ist account-weite Sicht |
+| KI-Empfehlungen pro Goal | Sektion 3 ("KI-Kommentar") des Tagesanalyse-Berichts |
+
+**Migration-Pfad:** `/performance/page.tsx` wird zu Redirect-Page (1 Sprint Toast "Performance ist jetzt im Mein-Tag-KI-Workspace verfuegbar" → redirect /mein-tag). Nach REL-028 wird die Datei (V6.7+ als Cleanup-BL) komplett geloescht.
+
+**KEINE Funktion darf wortlos verschwinden.** Mapping-Tabelle ist Teil der SLC-662-Acceptance-Criteria.
+
+#### Layout-Erhaltung
+
+4-Block-Layout bleibt: Aufgaben (links oben) + Top-Deals (rechts oben) + Kalender (rechts unten) + KI-Workspace (links unten). KI-Workspace-Block waechst von "Tagesanalyse-Button + Hint" zu Hybrid-Block.
+
+Removed im DOM:
+- "4 Hinweise"-Pill oben rechts (Wiedervorlagen sind Teil des Tagesanalyse-Berichts)
+- "4 offene Punkte"-Zeile unter Kalender
+- "Tagesanalyse starten"-Button mitten im Workspace (jetzt durch Berichts-Buttons + Antwort-Fenster ersetzt)
+- Sidebar-Eintrag "Meine Performance"
+
+### V6.6 Component-Detail — Deals-Listen-Seite (SLC-663, DEC-178)
+
+Restructured Page mit 4 sichtbaren Bloecken:
+1. **Type-Ahead-Suche** (Stammdaten: deals.title + companies.name + contacts.full_name, ILIKE-basiert in V6.6 — DEC-178; trigram-Index als BL falls Performance-Probleme bei >1000 Deals).
+2. **Pipeline-Switcher** (Tabs/Dropdown, filtert alle drei darunter).
+3. **Top-10-Block** (gewichtet: `value × probability DESC LIMIT 10`, server-side sortiert, Stages won/lost/parked ausgeschlossen).
+4. **Karten-Grid** (aktive Deals, kompakt: Title + Wert + Firma + Stage-Badge + Naechste-Aktion mit relativem Datum + Wahrscheinlichkeit-Pill, KEIN Avatar/Foto).
+5. **Einklappbare Sektionen** "Gewonnen" (last 90 Tage default + "Mehr anzeigen") und "Verloren" (gleiche Logik).
+
+Klick auf Karte → `/deals/[id]` (Deal-Detail).
+
+### V6.6 Component-Detail — Deal-Detail (SLC-664+665, DEC-170, DEC-179)
+
+#### Layout-Swap (R3 Mitigation)
+
+Konsolidierung von 3 KI-Modulen + 2 statischen Tabs zu **1 KI-Workspace + 4 Tabs**. Risk-Mitigation gegen Regression: SLC-664 inspiziert mind. 6 Components (DealBriefing, DealKnowledgeTab, SignalExtractAction, DealEditTab, DealTimeline, DealActivitySheet) und entfernt sie additiv mit Live-Smoke pro Sub-Block (Header → Action-Bar → KI-Workspace → Tabs). NICHT alles in einem Commit.
+
+**Header (oben):**
+- Title + Stage-Dropdown (direkter Wechsel ohne Confirm — DEC-179, Auto-Trigger laeuft im Hintergrund) + Wert (inline editable) + Prozess-Check-Pill (Click → Popover) + Edit-Pencil-Icon (oeffnet Drawer rechts — DEC-179, konsistent mit Sheet-Pattern) + Mein-Tag-Quick-Switch-Button.
+
+**Action-Bar (Desktop):** 7 sichtbare Buttons (Task / E-Mail / Meeting-Dropdown / Anruf / Notiz / Angebot / Mehr-Menue). **Mobile (≤768px):** 5 Hauptbuttons sichtbar (Task/Mail/Meeting/Anruf/Notiz), Angebot+Mehr ins Dropdown — DEC-179.
+
+**Hauptbereich (2/3 + 1/3):**
+- **LINKS 2/3** = `<KIWorkspace context="deal-detail" reports={DEAL_DETAIL_REPORTS} scope={{userId, dealId}} />`
+- **RECHTS 1/3** = Tabs (Timeline / Tasks / Proposals / Documents)
+
+#### Activity-Sheet (DEC-170)
+
+**Reuse Task-Sheet aus FEAT-302 (Mein Tag) mit Type-Erweiterung.** Task-Sheet wird zu generischem `<ItemSheet>` extrahiert (Refactor in SLC-665, gemeinsame Component).
+
+```typescript
+// cockpit/src/components/item-sheet/types.ts
+export type ItemSheetData =
+  | { kind: "task"; task: Task; ... }
+  | { kind: "activity"; activity: Activity; bedrockSummary?: BedrockSummary; ... };
+
+interface BedrockSummary {
+  risiken?: string;
+  einwaende?: string;
+  naechsteSchritte?: string;
+  teilnehmer?: string[];
+  zusammenfassung?: string;
+}
+```
+
+Sheet oeffnet immer (auch ohne Bedrock-Summary), zeigt kompakte Basis-Daten als Fallback (DEC-170). Sektionen Risiken/Einwaende/Naechste-Schritte/Teilnehmer/Zusammenfassung rendern conditional pro Activity-Type:
+
+| Activity-Type | Bedrock-Summary | Sheet-Inhalt |
+|---|---|---|
+| meeting | ja (V4.3 FEAT-412 Signal-Extract + V5.6 Briefing) | volle Sektionen |
+| email (lang) | ja (V4.3 Signal-Extract) | volle Sektionen |
+| email (kurz / out-of-office) | nein | kompakte Basis-Daten + Auto-Reply-Hint |
+| call | optional (Asterisk-Recording-Pipeline V5.1) | conditional |
+| note | nein | kompakte Basis-Daten |
+
+Sheet-Schliessen: X-Button + Klick ausserhalb + ESC-Key (Reuse Task-Sheet-Logik).
+
+### V6.6 Component-Detail — Win/Loss-Auto-Trigger (SLC-665 Backend, DEC-171)
+
+#### Trigger-Position (R4 Mitigation)
+
+**Auto-Trigger ist neuer V6.2-Workflow-Action `auto_winloss_extract`**, NICHT direkter Hook in `pipeline.moveDealToStage`. Begruendung:
+- V6.2-Workflow-Engine hat bereits Trigger `deal.stage_changed` + Action-Dispatch + Audit-Log-Symmetrie + Recursion-Guard (V6.2 DEC-129).
+- System-Workflow-Rules (vom System angelegt, nicht via Builder) sind im Schema bereits moeglich. Win/Loss-Auto-Trigger wird als System-Rule angelegt:
+  ```
+  trigger:    deal.stage_changed
+  filter:     new_stage_id IN (won_stage_id, lost_stage_id)
+  action:     auto_winloss_extract
+  is_system:  true (kein Builder-UI-Edit)
+  ```
+- Konsistente Audit-Sicht: alle Auto-Aktionen erscheinen als `automation_runs`-Eintrag im selben Cockpit-Bereich.
+
+#### Idempotenz (DEC-171, R4 Mitigation)
+
+Doppelter Schutz gegen Duplicate-Runs bei Stage-Toggling won → lost → won:
+
+1. **Time-Window-Throttle 5 Min (App-Level):** Vor Insert in `auto_winloss_runs` SELECT auf:
+   ```sql
+   SELECT 1 FROM auto_winloss_runs
+    WHERE deal_id = $1 AND target_status = $2
+      AND triggered_at > NOW() - INTERVAL '5 minutes'
+   ```
+   Bei Hit → No-Op (skip Bedrock-Call).
+
+2. **Recursion-Guard (V6.2-Pattern):** Auto-Trigger setzt `triggered_by_user_id=NULL + triggered_by_system=true` Flag. Workflow-Engine erkennt Self-Trigger und stoppt — keine Ketten-Kaskade.
+
+Stage-Toggling won → lost → won innerhalb 5 Min triggert genau **2 Auto-Runs** (won + lost), nicht 3 (zweiter won wird durch Time-Window-Throttle geblockt).
+
+#### Schema (siehe MIG-032)
+
+Neue Tabelle `auto_winloss_runs` speichert:
+- Identifikation: `id`, `deal_id` (FK CASCADE), `target_status` (CHECK won|lost), `triggered_at`, `triggered_by_user_id` (NULL fuer Auto)
+- Bedrock-Output: `bedrock_output TEXT` (Markdown-Antwort), `bedrock_model TEXT`, `bedrock_completed_at TIMESTAMPTZ`
+- Status: `status TEXT CHECK (status IN ('pending','succeeded','failed'))`, `error_message TEXT`
+
+Indizes: `(deal_id)` Standard + `(deal_id, target_status, triggered_at DESC)` fuer Time-Window-Lookup.
+
+KEIN UNIQUE-Constraint auf (deal_id, target_status) — Stage-Toggling-Edge-Cases ueber lange Zeit erlauben mehrere echte Runs (z.B. won 2026-05 → reopened lost 2026-06 → won 2026-07). Idempotenz nur ueber 5-Min-Window.
+
+#### Read-API-Pattern (DEC-171, F11)
+
+Konsistent mit V6.2 FEAT-622 (Campaign-Read-API):
+
+```
+GET /api/winloss/[deal_id]
+Authorization: bearer $EXPORT_API_KEY (oder Cookie-Session, je nach Caller)
+
+Response (latest run):
+{
+  "deal_id": "...",
+  "target_status": "won|lost",
+  "triggered_at": "ISO",
+  "bedrock_output": "<markdown>",
+  "model": "claude-sonnet-...",
+  "completed_at": "ISO",
+  "status": "succeeded"
+}
+```
+
+Intelligence-Studio pollt diese API. Auto-Trigger schreibt nur lokal — Studio fragt aktiv ab.
+
+#### Manueller Re-Run (DEC-171, F32)
+
+Berichts-Button `[Win/Loss-Analyse]` im Deal-KI-Workspace (FEAT-664) triggert dieselbe Bedrock-Pipeline wie Auto-Trigger — gleicher Prompt, gleicher Output-Pfad. Manueller Re-Run nur, wenn letzter Run aelter als 24h (cache-hit sonst). "Erneut analysieren"-Button im Antwort-Fenster overrided 24h-Cache.
+
+### V6.6 Component-Detail — Cockpit (SLC-666, DEC-180)
+
+#### Layout (Mein-Tag-Pattern)
+
+- Title: "KI-Analyse-Cockpit" (war: "Dashboard")
+- Action-Bar oben (kontextlos): Task / E-Mail / Meeting / Anruf / Notiz
+  - **Anruf-Button kontextlos (DEC-180):** oeffnet Kontakt-Picker-Dialog → User waehlt Kontakt → Click-to-Call (V5.1-Pfad)
+- Hauptbereich 2/3 + 1/3:
+  - **LINKS 2/3** = `<KIWorkspace context="cockpit" reports={COCKPIT_REPORTS} scope={{userId}} />`
+  - **RECHTS 1/3** = Kalender (Reuse `<KalenderClient>`, Default-Range 06:00–21:00 aus FEAT-662)
+
+#### Removed im DOM
+
+- KPI-Cards (Pipeline-Wert / Conversion / Forecast etc.)
+- Top-Chancen-Tabelle (server-side gerendert)
+- DashboardSearch-Component
+
+#### Pipeline-Switcher im Top-Chancen-Bericht (DEC-180, F27)
+
+Pipeline-Switcher ist **Tab im Antwort-Fenster** (in-place innerhalb Bedrock-Antwort), kein neuer Bedrock-Call wenn Daten gecached:
+- Bedrock-Antwort enthaelt Daten fuer alle Pipelines
+- Tab-Wechsel rendert nur die jeweilige Sektion (clientseitig)
+- Kein Re-Bedrock-Call bei Tab-Wechsel
+
+### V6.6 Component-Detail — KI-Inventur (SLC-667, DEC-175, DEC-176-Sidebar)
+
+#### Sparkles-Cards entfernen
+- Firmen-Detail-Page: `<SparklesCard>` entfernt (Placeholder seit V3.1, leerer KI-Block)
+- Kontakte-Detail-Page: `<SparklesCard>` entfernt
+- Code-Cleanup: ungenutzte Server-Actions identifizieren + entfernen
+
+#### "KI-Reife" → "AI-Bereitschaft" (DEC-175)
+
+UI-Label-Map zentral:
+```typescript
+// cockpit/src/lib/labels/ki-readiness.ts (NEU)
+export const KI_READINESS_LABEL = "AI-Bereitschaft";
+export const KI_READINESS_OPTIONS = {
+  high: "Hoch",
+  medium: "Mittel",
+  low: "Niedrig",
+} as const;
+```
+
+**Schema-kompatibel** — DB-Spaltenname `ai_readiness` (oder vorhandener Name) bleibt. E-Mail-Template-Variablen-Tag bleibt schema-kompatibel; falls "ki-reife" als Variable-Tag genutzt wird, wird sie als Alias zu `ai_readiness` gehalten (Reverse-Lookup im Template-Renderer). Keine Migration noetig.
+
+#### Pipeline-NL-Suche → Type-Ahead
+
+`/pipeline-suche` (oder Pipeline-Search-Block mit NL-Adapter) → ersetzt durch Type-Ahead-Pattern aus FEAT-663. Such-Quellen: deals.title + companies.name + contacts.full_name. NL-Frage-Eingabe lebt nur noch im KI-Workspace.
+
+`useVoiceCapture`-Hook bleibt (extrahiert in SLC-661), `pipeline-suche`-Component wird entfernt.
+
+#### Sidebar-Reorder (DEC-176, R5 Mitigation)
+
+```
+ANALYSE                       (NEU als Sektion-Header, subtle text-muted-foreground caps)
+- Dashboard
+
+OPERATIV                      (NEU als Sektion-Header)
+- Mein Tag
+- Focus
+- Kalender
+
+ARBEITSBEREICHE               (NEU als Sektion-Header)
+- Deals
+- Pipeline
+- Firmen
+- Kontakte
+- Multiplikatoren
+
+VERWALTUNG                    (UNVERAENDERT, bleibt bestehend, V7-Item)
+- ... (bestehende Eintraege)
+```
+
+R5-Mitigation: nur Reorder + 1 Eintrag-Removal (Performance), KEINE Eintrag-Umbenennungen, KEINE Icon-Wechsel. User-Mental-Model bleibt durch identische Labels stabil.
+
+#### Working-Hours-Setting (DEC-172)
+
+`user_settings`-Tabelle (V4.1 + V5.6-Briefing) wird additiv erweitert um:
+- `working_hours_start TIME NULL`
+- `working_hours_end TIME NULL`
+- CHECK: `(working_hours_start IS NULL AND working_hours_end IS NULL) OR (working_hours_start < working_hours_end)`
+
+Settings-Sektion `/settings/working-hours` mit zwei TimePicker-Inputs + Save-Server-Action.
+
+Toggle "Voller Tag / Nur Arbeitstag" persistiert in **localStorage pro User** (DEC-172): `localStorage.setItem('cockpit:kalender:working-hours-toggle:' + userId, 'full'|'work')`. Default "Voller Tag" wenn keine Working-Hours gesetzt. Toggle disabled mit Hint, wenn DB-Werte fehlen.
+
+`kalender-client.tsx` Hartkodierung 07:00–20:00 → Konstante `DEFAULT_HOUR_RANGE = { start: 6, end: 21 }` (DEC-172). Bei gesetzten Working-Hours zeigt Kalender den Arbeits-Bereich; Termine ausserhalb bleiben sichtbar als gestauchter Pre/Post-Bereich (UX: 1px-Linien-Trenner + reduzierte Hoehe).
+
+### V6.6 Data Flow
+
+#### Berichts-Button-Click-Flow (alle 3 Workspaces)
+
+```
+User-Klick [Berichts-Button-X]
+       │
+       ▼
+KIWorkspace.handleReportClick(reportId, scope)
+       │
+       ▼
+useReportRun Hook
+   ├─ Cache-Hit (<5min)? -> render direkt
+   └─ Cache-Miss
+       │
+       ▼
+Server-Action runReport(reportId, scope)
+       │
+       ▼
+Kontext laden (deals/activities/tasks/proposals je nach Workspace-Typ)
+       │
+       ▼
+Bedrock-Prompt bauen (Reuse FEAT-301/412/403/114-Logik)
+       │
+       ▼
+Bedrock-Call (eu-central-1) + audit_log INSERT
+       │
+       ▼
+Cache speichern (in-Memory, 5min TTL, key=hash(reportId, scope, userId))
+       │
+       ▼
+return { markdown, completedAt, model }
+       │
+       ▼
+AnswerPane rendert Markdown + "Aktualisieren"-Button
+```
+
+#### Win/Loss-Auto-Trigger-Flow (SLC-665)
+
+```
+User wechselt Stage auf won (oder lost)
+       │
+       ▼
+pipeline.moveDealToStage(dealId, newStageId)
+       │
+       ▼ (V6.2-Workflow-Dispatcher, bestehend)
+automation-engine fires trigger=deal.stage_changed
+       │
+       ▼
+matchRules() findet System-Rule "auto_winloss_extract"
+       │
+       ▼
+auto_winloss_extract.run(dealId, target_status='won'|'lost')
+       │
+       ▼
+Time-Window-Check (5min)
+   ├─ recent run vorhanden? -> No-Op + audit_log "skipped:recent_run"
+   └─ kein recent run
+       │
+       ▼
+INSERT auto_winloss_runs (status='pending')
+       │
+       ▼
+Bedrock-Call (FEAT-114-Loss-Analysis-Logic, gleicher Prompt fuer won/lost)
+       │
+       ▼
+UPDATE auto_winloss_runs SET bedrock_output=..., status='succeeded'
+       │
+       ▼
+INSERT automation_runs + audit_log (event_type='auto_winloss_triggered')
+       │
+       ▼ (Read-API verfuegbar fuer Intelligence-Studio)
+GET /api/winloss/[dealId] (jederzeit pollbar)
+```
+
+#### Activity-Sheet-Open-Flow (Deal-Detail, SLC-665)
+
+```
+User klickt auf Activity in Timeline (Deal-Detail Tabs > Timeline)
+       │
+       ▼
+ItemSheet.open({ kind: "activity", activityId })
+       │
+       ▼
+Server-Action loadActivityWithBedrockSummary(activityId)
+       │  (lookup activity + ggf. signal-extract-output + meeting-briefing-output)
+       ▼
+return ActivitySheetData mit BedrockSummary?
+       │
+       ▼
+ItemSheet rendert Sektionen conditional:
+   - Risiken (wenn vorhanden)
+   - Einwaende (wenn vorhanden)
+   - Naechste Schritte (wenn vorhanden)
+   - Teilnehmer (immer fuer Meetings, optional sonst)
+   - Zusammenfassung (Bedrock-Output, wenn vorhanden)
+   - Basis-Daten (immer)
+```
+
+### V6.6 External Dependencies
+
+**KEINE neuen Dependencies.** V6.6 nutzt:
+- Bestehende Bedrock-Adapter (eu-central-1, FEAT-301/412/403/114-Pfade)
+- Bestehender Whisper-Adapter (V5.2, EU-konform Code-Ready)
+- Bestehende V6.2-Workflow-Engine (FEAT-621 automation_rules + automation_runs + dispatcher)
+- Bestehende `audit_log`-Tabelle
+- Bestehende Postgres + Supabase + Coolify-Infra
+- Bestehende Style Guide V2 Brand-Tokens (V6.5)
+- Bestehende `<KalenderClient>`-Component (V3 + V6.1 Premium-UI)
+
+### V6.6 Security & Privacy Considerations
+
+- **Voice-Eingabe in 3 Hauptarbeitsplaetzen.** Whisper-Adapter (Azure-EU-Code-Ready aus V5.2) ist vorgeschrieben. Production-Switch auf Azure-EU bleibt Pre-Production-Compliance-Gate (User-Direktive 2026-05-01).
+- **Bedrock-Calls steigen.** Pro User-Tag potenziell 5-10 Berichts-Buttons × 3 Workspaces × Mehrfach-Klicks. 5-min-Cache reduziert Last. Audit-Log persistent pro Bedrock-Call.
+- **Win/Loss-Auto-Trigger schreibt in audit_log + auto_winloss_runs.** Intelligence-Studio liest via Read-API mit Bearer-Auth (EXPORT_API_KEY-Pattern aus V6.2). Kein PII-Leak ueber API-Boundary — Bedrock-Output ist Deal-spezifisch + zugriffsbeschraenkt.
+- **Working-Hours-Setting ist user_id-scoped.** V7-Multi-User-kompatibel. Keine globalen Konfig-Flags.
+- **Activity-Sheet zeigt Bedrock-Output (Risiken/Einwaende/Zusammenfassung).** Output ist already audit-loggable (V4.3 + V5.6). Sheet liest, schreibt nicht.
+- **Internal-Test-Mode bleibt aktiv.** Compliance-Sprint kommt separat spaeter.
+
+### V6.6 Constraints & Tradeoffs
+
+- **Eine Component vs drei Implementierungen (DEC-165):** Eine Component mit Konfig zentralisiert Wartung, kostet aber initial mehr Engineering-Zeit fuer Prop-Surface-Design. **Tradeoff:** kurzfristig +30min vs langfristig drift-frei.
+- **Synchroner Bedrock-Call vs SSE-Streaming (DEC-166):** Sync ist Reuse aller bestehenden Pfade, einfacher zu testen. **Tradeoff:** UX gefuehlt langsamer (Spinner statt Token-Stream), aber fuer V6.6-Internal-Test-Mode-Single-User akzeptabel.
+- **Activity-Sheet als Reuse von Task-Sheet (DEC-170):** Type-Erweiterung statt neue Component. **Tradeoff:** Type-Discriminator-Komplexitaet vs Component-Drift-Vermeidung.
+- **Auto-Trigger als Workflow-Action (DEC-171):** Konsistent mit V6.2-Audit-Sicht. **Tradeoff:** mehr Indirektion vs Audit-Symmetrie.
+- **5-Min-Time-Window vs UNIQUE-Constraint (DEC-171):** Time-Window erlaubt sinnvolle Re-Runs ueber lange Zeit, UNIQUE waere zu hart. **Tradeoff:** App-Level-Check noetig vs DB-Garantie.
+- **/performance-Redirect statt sofortige Loeschung (DEC-169):** 1-Sprint Toast als Migration-Bruecke. **Tradeoff:** zusaetzlicher Code in V6.6 vs sauberer User-Migrations-Pfad.
+- **localStorage-Toggle vs DB-Setting (DEC-172):** localStorage ist roundtrip-frei aber per-Browser. **Tradeoff:** UX vs Multi-Device-Konsistenz. Single-User-Mode entscheidet pro localStorage.
+- **In-Memory-Cache vs Redis (DEC-180):** Module-Level-Map ist trivial, ueberlebt aber Container-Restart nicht. **Tradeoff:** Setup-Aufwand vs Single-User-Last-Profil. Akzeptabel.
+
+### V6.6 Risk Mitigation Plans
+
+**R1 — KI-Workspace-Reuse-Komplexitaet:** **Mitigation:** Eine Component mit klar definierter Konfig-Surface (siehe DEC-165 + Component-Surface-Block oben). Slice-Reihenfolge SLC-661 zuerst — Component-Foundation isoliert ohne Caller getestet. SLC-662/664/666 nutzen die Component. Drift-Risiko reduziert auf ein Refactor-Punkt.
+
+**R2 — /performance-Migration-Datenverlust:** **Mitigation:** Vorab-Mapping-Tabelle (siehe Component-Detail Mein Tag). SLC-662-Acceptance-Criteria enthalten den Mapping-Check. Redirect-Toast (1 Sprint) als User-Migrations-Bruecke. KEINE Funktion wortlos verschwunden.
+
+**R3 — Deal-Detail-Layout-Swap-Regression:** **Mitigation:** Slice-Schnitt feiner — SLC-664 macht Layout-Swap (Header + Action-Bar + KI-Workspace + Tabs + 4 KI-Module-Removal), SLC-665 macht Activity-Sheet + Win/Loss-Auto-Trigger separat. Live-Smoke nach jedem Sub-Block. Atomic Commits pro Sub-Block.
+
+**R4 — Win/Loss-Auto-Trigger duplicate runs:** **Mitigation:** Doppelter Schutz — Time-Window-Throttle (5 Min App-Level) + V6.2-Workflow-Recursion-Guard. Idempotenz-Test in Vitest mit Time-Mock + Live-Smoke (Stage-Toggling won → lost → won → audit_log zaehlen).
+
+**R5 — Sidebar-Reorder bricht User-Mental-Model:** **Mitigation:** Nur Reorder + 1 Removal (Performance). KEINE Eintrag-Umbenennungen, KEINE Icon-Wechsel. VERWALTUNG bleibt 1:1. User sieht dieselben Labels und Icons, nur in neuer Sektion.
+
+**R6 — Voice-Eingabe ohne Bedrock-Stress-Test:** **Mitigation:** Internal-Test-Mode-Single-User hat <5 Concurrent-Bedrock-Calls. Bestehende Bedrock-Adapter-Retry-Logic (V4.2 RAG) faengt Rate-Limits. Voice-Pfad nutzt bestehenden Whisper-Adapter (kein neuer Provider). Stress-Test-Plan: Live-Smoke mit 3 schnell-aufeinanderfolgenden Voice-Eingaben (<10s Abstand) zeigt Adapter-Verhalten.
+
+### V6.6 Empfohlene Slice-Reihenfolge (DEC-176)
+
+| Slice | Feature | Scope | Schaetzung | QA-Fokus | Reihenfolge-Pflicht |
+|---|---|---|---|---|---|
+| **SLC-661** | FEAT-661 (Foundation) | `<KIWorkspace>` Component + types + reports/registry + useReportRun + useVoiceCapture + AnswerPane (KEINE Caller, isoliert getestet) | 3-4h | Component-rendert mit Mock-Reports, Vitest fuer Hook-Logic, kein Bedrock-Live-Call noetig | **MUSS zuerst** (Foundation) |
+| **SLC-662** | FEAT-661 (Mein Tag) | Mein-Tag-Page nutzt `<KIWorkspace context="mein-tag">` + 5 Berichts-Buttons + Performance-Migration (Mapping-Doc + Redirect-Page) + 4-Hinweise/Punkte/Tagesanalyse-Button-Removal + Sidebar-"Performance"-Eintrag-Removal | 3-4h | Live-Smoke 5 Berichts-Buttons, /performance-Redirect verifiziert, DOM-Removal-Asserts | nach SLC-661 |
+| **SLC-663** | FEAT-663 (Deals-Liste) | Top-10-Block + Karten-Grid + 2 Sektionen + Type-Ahead + Pipeline-Switcher | 2-3h | Live-Smoke 1 Pipeline-Wechsel + 1 Type-Ahead-Suche, Mobile-Responsive | parallel zu SLC-664 OK (kein KI-Workspace) |
+| **SLC-664** | FEAT-664 (Deal-Detail) | Header-Restruktur + Action-Bar + 2/3-1/3-Layout + `<KIWorkspace context="deal-detail">` + 3-KI-Module-Removal (Briefing-Sidebar + Wissen-Tab + Signale-Action) + Edit-Tab-Removal (Pencil-Drawer) | 3-4h | Live-Smoke 5 Berichts-Buttons + Pencil-Drawer + Stage-Wechsel + Mein-Tag-Quick-Switch | nach SLC-661 |
+| **SLC-665** | FEAT-664 (Sheet) + FEAT-666 (Auto-Trigger) | Activity-Sheet (Reuse Task-Sheet als `<ItemSheet>`) + Win/Loss-Auto-Trigger (Workflow-Action + auto_winloss_runs-Tabelle + Read-API) | 3-4h | Vitest fuer Idempotenz-Time-Window + Live-Smoke Stage-Toggling won → lost → won + Activity-Sheet rendert Risiken/Einwaende | nach SLC-664 |
+| **SLC-666** | FEAT-665 (Cockpit) | Dashboard zu KI-Analyse-Cockpit mit `<KIWorkspace context="cockpit">` + Action-Bar + Kalender-rechts + KPI-Cards/Top-Chancen-Tabelle/DashboardSearch-Removal + Anruf-Kontakt-Picker | 2h | Live-Smoke 6 Berichts-Buttons + Pipeline-Switcher-Tab im Top-Chancen-Bericht + Anruf-Picker | nach SLC-661, parallel zu SLC-664/665 OK |
+| **SLC-667** | FEAT-666 (Hygiene) + FEAT-662 (Kalender) | Sparkles-Cards-Removal + AI-Bereitschaft-Rename (UI-Label-Map) + NL-Suche zu Type-Ahead + Sidebar-Reorder + Kalender-Range 06:00-21:00 + Working-Hours-Setting + Toggle | 2-3h | DOM-Removal-Asserts + Sidebar-Reorder-Visual + Working-Hours-Save+Read in Settings | nach SLC-666 (letzter Slice) |
+
+**Gesamt ~17-24h** (16-26h Spannweite). Reihenfolge zwingend:
+1. **SLC-661** (Foundation, MUSS zuerst — alle anderen bauen drauf auf)
+2. **SLC-662** (Mein Tag, erster Caller — verifiziert Component im Live-Einsatz)
+3. **SLC-663** (Deals-Liste, parallelisierbar — kein KI-Workspace-Touch)
+4. **SLC-664** (Deal-Detail, zweiter Caller)
+5. **SLC-665** (Activity-Sheet + Auto-Trigger, MUSS nach SLC-664 — braucht neuen Deal-Detail-Layout)
+6. **SLC-666** (Cockpit, dritter Caller)
+7. **SLC-667** (Hygiene + Kalender, letzter Slice — danach Gesamt-QA)
+
+Pro Slice: `/backend|/frontend` -> `/qa` -> Coolify-Redeploy (User-deploy). Nach SLC-667: Gesamt-`/qa` V6.6 -> `/final-check` -> `/go-live` -> `/deploy` als REL-028.
+
+### V6.6 Release-Gate (DEC-176)
+
+V6.6 gilt als releaseable wenn alle 7 Bedingungen erfuellt:
+- `<KIWorkspace>` Component im Einsatz auf Mein Tag, Deal-Detail, Dashboard (drei Caller, gleiche Component)
+- /performance-Page entfernt oder Redirect aktiv, Sidebar-Eintrag "Meine Performance" weg
+- Deal-Detail hat 1 KI-Workspace statt 3 KI-Modulen + Edit-Pencil-Drawer + Activity-Sheet (Reuse Task-Sheet)
+- Win/Loss-Auto-Trigger feuert bei Stage-Wechsel won/lost, Idempotenz-Test (Stage-Toggling-Smoke) PASS
+- Sidebar-Reorder live (ANALYSE/OPERATIV/ARBEITSBEREICHE), VERWALTUNG unangetastet
+- Kalender-Range 06:00-21:00 + Working-Hours-Setting + Toggle live
+- Vitest gruen + Live-Smoke 7 Pages PASS (Mein Tag, /deals, /pipeline, ein Deal-Detail mit Activity-Sheet, Dashboard, Kalender, ein Won-Stage-Wechsel mit Auto-Trigger-Verifikation in audit_log)
+- 0 neue Regressions auf V6.0..V6.5-Funktionalitaet
+
+### V6.6 Open Technical Questions (fuer /slice-planning)
+
+1. **Bestehende Bedrock-Pfade pro Berichts-Button verifizieren:** Welche Server-Action existiert schon, welche muss neu gebaut werden? Mein-Tag-Tagesanalyse + Deal-Briefing + Signal-Extract + Loss-Analysis sind bestaetigt vorhanden — Wochen-Performance, Pipeline-Risiko, Top-Chancen, Conversion-Rate, Forecast, Stagnierende Deals brauchen Pfad-Verifikation. Empfehlung: in SLC-661 Mock-Server-Actions als Stubs anlegen, in SLC-662/664/666 verdrahten.
+
+2. **Task-Sheet → ItemSheet-Refactor-Scope:** Aktuelles Task-Sheet (FEAT-302) hat eigene Component-Datei. SLC-665 muss das in `<ItemSheet>` mit Type-Discriminator extrahieren. Empfehlung: in SLC-665 als ersten Schritt Refactor-Commit (Reine Extraktion, keine Verhaltens-Aenderung), danach Activity-Sheet-Variante hinzufuegen.
+
+3. **V6.2-Workflow-Engine System-Rule-Anlage:** auto_winloss_extract-Action ist neuer Action-Type. Slice-Planning klaert: wird Action-Type in Code-Konstante registriert (`automation/actions.ts`) oder via Migration in Tabelle gespeichert? Empfehlung: Code-Konstante, da System-Rule (kein Builder-UI-Zugriff).
+
+4. **Pencil-Drawer vs Modal Spezifikation:** DEC-179 sagt Drawer (rechts ausfahrend). Slice-Planning klaert: bestehende Drawer-Component (von Tasks-Sheet) reusable oder neue? Empfehlung: gleiche `<Sheet>`-Library wie Task-Sheet (Vaul oder shadcn-Sheet, je nach aktuellem Stack).
+
+5. **Cache-Invalidierung bei /performance-Bericht-Aenderung:** Wenn User in Settings Working-Hours aendert, muss Wochen-Performance-Bericht-Cache invalidiert werden? Empfehlung: nein, 5-min-Cache laeuft ohnehin ab. Bei expliziter Wartung "Aktualisieren"-Button.
+
+6. **Sidebar-Sektion-Header-Visual:** subtle font-medium text-muted-foreground caps oder schmalere Variante? Style-Guide-V2-Konsistenz. Empfehlung: bestehende Sidebar-Headers-Pattern aus Onboarding-Plattform-Referenz pruefen.
+
+7. **Coolify-Deploy-Sequenz:** Slices SLC-661..667 sind 7 separate Deploys. User-Direktive: pro Slice deploy + smoke. SLC-665 ist einziger Backend-Slice (MIG-032 muss vor SLC-665 angewendet werden). Empfehlung: MIG-032 als ersten SLC-665-Schritt anwenden, vor Workflow-Action-Code-Deploy.
+
+### V6.6 Recommended Next Step
+
+`/slice-planning V6.6` — die 7 Slices SLC-661..667 strukturiert ausdefinieren mit Acceptance Criteria pro Slice, Micro-Tasks-Liste mit Reihenfolge, QA-Fokus pro Slice. Insbesondere:
+- SLC-661: Component-API-Surface + Reports-Registry-Stubs + Hook-Vitest-Setup
+- SLC-662: /performance-Mapping-Tabelle als Pflicht-Output, Redirect-Toast-Implementierung
+- SLC-664: 4 Sub-Block-Reihenfolge (Header → Action-Bar → KI-Workspace → 3-KI-Module-Removal) mit Live-Smoke pro Sub-Block
+- SLC-665: ItemSheet-Refactor-First-Commit + auto_winloss_runs-MIG-032-Apply-First + Vitest fuer Time-Window-Idempotenz
+- SLC-667: Sparkles-Removal-Liste exakt benennen (Pages + Component-Imports), AI-Bereitschaft-Label-Map-Pfad, kalender-client.tsx-Range-Konstante

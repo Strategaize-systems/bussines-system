@@ -1,5 +1,63 @@
 # Migrations
 
+### MIG-032 — V6.6 Working-Hours-Setting + Win/Loss-Auto-Trigger Schema
+- Date: planned (apply als ersten SLC-665-Schritt vor Workflow-Action-Code-Deploy)
+- Scope: 2 additive Aenderungen in einer Migration `032_v66_working_hours_and_winloss.sql`:
+  1. Erweiterung `user_settings` um 2 nullable TIME-Spalten (DEC-172):
+     ```sql
+     ALTER TABLE user_settings
+       ADD COLUMN IF NOT EXISTS working_hours_start TIME NULL,
+       ADD COLUMN IF NOT EXISTS working_hours_end TIME NULL;
+     ALTER TABLE user_settings
+       ADD CONSTRAINT user_settings_working_hours_check
+       CHECK (
+         (working_hours_start IS NULL AND working_hours_end IS NULL)
+         OR (working_hours_start IS NOT NULL AND working_hours_end IS NOT NULL AND working_hours_start < working_hours_end)
+       );
+     ```
+  2. Neue Tabelle `auto_winloss_runs` (DEC-171):
+     ```sql
+     CREATE TABLE IF NOT EXISTS auto_winloss_runs (
+       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+       deal_id UUID NOT NULL REFERENCES deals(id) ON DELETE CASCADE,
+       target_status TEXT NOT NULL CHECK (target_status IN ('won', 'lost')),
+       triggered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+       triggered_by_user_id UUID NULL,
+       triggered_by_system BOOLEAN NOT NULL DEFAULT true,
+       bedrock_output TEXT NULL,
+       bedrock_model TEXT NULL,
+       bedrock_completed_at TIMESTAMPTZ NULL,
+       status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'succeeded', 'failed')),
+       error_message TEXT NULL,
+       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+     );
+     CREATE INDEX IF NOT EXISTS idx_auto_winloss_runs_deal ON auto_winloss_runs(deal_id);
+     CREATE INDEX IF NOT EXISTS idx_auto_winloss_runs_recent
+       ON auto_winloss_runs(deal_id, target_status, triggered_at DESC);
+     ALTER TABLE auto_winloss_runs ENABLE ROW LEVEL SECURITY;
+     CREATE POLICY authenticated_full_access ON auto_winloss_runs FOR ALL TO authenticated USING (true) WITH CHECK (true);
+     GRANT ALL ON auto_winloss_runs TO authenticated;
+     GRANT ALL ON auto_winloss_runs TO service_role;
+     ```
+- Reason: V6.6 FEAT-662 (Kalender-Polish + Working-Hours-Setting) und FEAT-666 (Win/Loss-Auto-Trigger) brauchen das gemeinsame Schema in einer Migration. DEC-171 + DEC-172 haben die Strategie festgelegt. Bestehende `user_settings`-Rows bleiben funktional ohne Working-Hours-Wert (nullable). `auto_winloss_runs` ist eine eigene, neue Tabelle ohne Touch auf bestehende V4.3/V5.x AI-Run-Strukturen — additive Migration ohne Regression-Risiko. CHECK-Constraint auf working_hours sichert Daten-Integritaet (Both-NULL-or-Both-Set + Start<End). RLS-Pattern konsistent zu MIG-027/030.
+- Affected Areas:
+  - Settings-Page `/settings/working-hours` (NEU, SLC-667) mit Server Actions `getWorkingHoursSettings`, `updateWorkingHoursSettings`
+  - `cockpit/src/components/kalender-client.tsx` (SLC-667) — Hartkodierung 07:00-20:00 zu `DEFAULT_HOUR_RANGE` Konstante 06:00-21:00, Working-Hours-Lookup, Toggle-Logik
+  - `cockpit/src/lib/automation/actions/auto_winloss_extract.ts` (NEU, SLC-665) — Workflow-Action-Implementation
+  - `cockpit/src/lib/winloss/runWinLossExtract.ts` (NEU, SLC-665) — Bedrock-Wrapper-Pfad mit Reuse FEAT-114 Loss-Analysis-Logik
+  - `cockpit/src/app/api/winloss/[deal_id]/route.ts` (NEU, SLC-665) — Read-API-Endpoint im FEAT-622-Pattern mit Bearer-Auth EXPORT_API_KEY
+  - System-Workflow-Rule-Anlage (SLC-665) — Code-konstante registriert `auto_winloss_extract` als Action-Type, einmaliger INSERT in `automation_rules` mit `is_system=true`, `trigger=deal.stage_changed`
+  - audit_log (INSERT pro Auto-Trigger-Run + INSERT pro skipped-recent-Run + INSERT pro manueller Re-Run-Klick mit triggered_by_user_id)
+  - automation_runs (INSERT pro auto_winloss_extract-Run, V6.2-Pattern)
+- Risk: Niedrig — rein additive Aenderungen. Beide Aenderungen sind nullable/neu, kein Daten-Migration-Schritt noetig. UNIQUE-Constraints fehlen bewusst (DEC-171: Time-Window-Throttle erlaubt sinnvolle Re-Runs ueber lange Zeit). CHECK-Constraints auf working_hours_start<working_hours_end + target_status-Whitelist + status-Whitelist blockieren ungueltige Inputs am DB-Level. Indizes optimiert fuer Time-Window-Lookup-Pattern (5-Min-Throttle-Query). RLS authenticated_full_access konsistent mit V5.7+/V6.x-Pattern fuer Single-User-Mode (V7-Multi-User-Erweiterung folgt). KEIN Lock-Wait beim Apply (ALTER ADD COLUMN nullable + CREATE TABLE sind beide Postgres-Standard ohne Table-Lock).
+- Rollback Notes:
+  - `DROP TABLE IF EXISTS auto_winloss_runs CASCADE;`
+  - `ALTER TABLE user_settings DROP CONSTRAINT IF EXISTS user_settings_working_hours_check;`
+  - `ALTER TABLE user_settings DROP COLUMN IF EXISTS working_hours_start;`
+  - `ALTER TABLE user_settings DROP COLUMN IF EXISTS working_hours_end;`
+  - V6.5-Code funktioniert nach Rollback unveraendert weiter — `kalender-client.tsx` muss auf 07:00-20:00-Hartkodierung zurueckgesetzt werden (Code-Rollback), Workflow-Action-Code muss aus automation/actions-Registry entfernt werden, System-Workflow-Rule muss aus automation_rules geloescht werden (DELETE WHERE is_system=true AND action_type='auto_winloss_extract'). Read-API-Route /api/winloss/[deal_id] gibt 404 zurueck nach DROP TABLE.
+
 ### MIG-030 — V6.5 VIES-Cache Tabelle (FEAT-652)
 - Date: 2026-05-08 (applied via SSH+base64 in SLC-655 Implementation)
 - Scope: 1 additive Aenderung — neue Tabelle `vat_id_validations` als Cache-Layer fuer VIES-Online-Lookup-Resultate.
