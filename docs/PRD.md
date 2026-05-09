@@ -3293,3 +3293,230 @@ Ergebnis: Stabile Basis fuer V7-Multi-User-Sprint und erste produktive Sales-Flo
 **Internal-Tool, Hygiene-Sprint.** Klein, additiv (1 Cron + 1 Bug-Fix + 2 Audits + selektive Cleanups), risikoarm. Internal-Test-Mode bleibt aktiv. Kein Compliance-Sprint, kein neuer Provider, kein neues Backend-Module. Pre-Production-Compliance-Gate kommt separat spaeter.
 
 **V6.4 Requirements ready for `/architecture`.**
+
+## V6.6 — Pre-V7-Audit-Sprint (UI-Konsolidierung + KI-Workspace-Hybrid)
+
+### V6.6 Problem Statement
+
+Nach V6.5 (Theming-Foundation + Compliance-DE-Symmetrie) ist das System visuell konsistent und compliance-stabil, aber das **Bedienmodell** ist ueber V3..V6.5 organisch gewachsen und zeigt 5 strukturelle Probleme:
+
+1. **KI-Inseln statt KI-Workspace:** Briefing-Sidebar, Wissen-Tab, Signale-Action, Tagesanalyse-Button, NL-Suche, DashboardSearch — sechs verschiedene KI-Eingangspunkte mit eigenem Look, eigener Frage-Logik, ohne gemeinsames mentales Modell.
+2. **Klassische Widget-Sammlung statt Hauptarbeitsplatz:** Mein Tag haeuft KPI-Cards + 4-Hinweise-Pill + 4-offene-Punkte-Zeile + Performance-Migration-Trigger + Tagesanalyse-Button nebeneinander, ohne dass der User eine klare Prioritaet erkennt.
+3. **/performance-Seite als isolierte Sicht:** Performance-Daten leben getrennt vom Tagesgeschaeft auf einer eigenen Seite, obwohl sie im Tagesgeschaeft kontextualisiert gehoeren — User muss zwischen Mein Tag und Performance hin-und-her-springen.
+4. **Dashboard wirkt wie altes BI-Cockpit:** KPI-Cards + Top-Chancen-Tabelle + DashboardSearch wirken wie ein Reporting-Tool, nicht wie ein KI-Cockpit. Wieso ist das nicht das Mein-Tag-Pattern?
+5. **Deal-Detail mit 3 KI-Modulen + 2 statischen Tabs:** Briefing-Sidebar (links) + Wissen-Tab (rechts) + Signale-Action (Toolbar) sind drei Antworten auf dieselbe Frage "Was ist hier los?". User muss in 3 verschiedenen Bereichen suchen, statt einen KI-Workspace anzusprechen.
+
+V6.6 konsolidiert diese 5 Probleme **vor V7 (Multi-User)**, damit V7 nicht Multi-User-Differenzierung auf einem inkonsistenten Bedienmodell aufsetzen muss.
+
+### V6.6 Goal / Intended Outcome
+
+Ein einheitliches **KI-Workspace-Hybrid-Pattern** auf den drei Hauptarbeitsplaetzen (Mein Tag, Deal-Detail, Dashboard) — Berichts-Buttons (Standard-Reports) + Frage-Eingabe (Text/Sprache) + Antwort-Fenster — sodass der User auf jedem Hauptarbeitsplatz dasselbe mentale Modell hat: "Entweder Standard-Bericht abrufen ODER freie Frage stellen."
+
+Pipeline-Progress (Deals-durch-Stages-zur-Entscheidung) wird zum impliziten Leitstern fuer Berichts-Inhalte und Layout-Priorisierung. Aktivitaeten (Anrufe/Meetings/E-Mails) sind Mittel zum Zweck, nicht Selbstzweck.
+
+Ergebnis: Saubere Bedienmodell-Basis fuer V7 (Multi-User + Rollen-Sichtbarkeit), V7.5 (NL-Automation), V7.6 (Custom-Reports). Keine Drill-Downs in V6.6 — Mitarbeiter sollen mit KI arbeiten lernen, Drill-Downs kommen erst mit Chef-Sicht in V7.
+
+### V6.6 Primary User
+
+- **Richard (initialer Berater)** — einziger aktiver User in Internal-Test-Mode, baut die Admin-Sicht. Will alle Daten in einem konsistenten Bedien-Pattern erreichen, ohne zwischen Tabs/Pages/Sidebars zu wechseln.
+- **(V7+) Mitarbeiter** — wird Mein Tag als Hauptseite haben, kein Dashboard-Eintrag in Sidebar, keine Drill-Downs.
+- **(V7+) Chef** — wird Drill-Downs nutzen koennen (weil nicht im Tagesgeschaeft drin).
+- V6.6 baut **ausschliesslich fuer Admin-Sicht** — keine Sichtbarkeits-Toggles, keine Multi-User-Logik, aber **alle Layout-Entscheidungen muessen V7-Multi-User-Differenzierung ermoeglichen** (z.B. keine User-Daten hardcoden, keine globalen Sicht-Flags ohne User-Scope).
+
+### V6.6 V1 Scope
+
+**FEAT-661 — Mein Tag (KI-Workspace-Hybrid + Performance-Migration)** *(gross, Frontend-Hauptarbeit)*
+- 4-Block-Layout bleibt: Aufgaben + Top-Deals + Kalender + KI-Workspace
+- KI-Workspace wird zu Hybrid: Standard-Berichts-Buttons oben + Frage-Eingabe (Text/Sprache) in Mitte + Antwort-Fenster unten
+- Standard-Berichte: `[Tagesanalyse]` `[Gestern]` `[Seit Login]` `[Wochen-Performance]` `[Pipeline-Risiko]`
+- Tagesanalyse-Inhalt-Reihenfolge: 1. Pipeline-Bewegung heute (Haupt), 2. Aktivitaeten-Soll-Ist (untergeordnet), 3. KI-Kommentar
+- "Tagesanalyse starten"-Button mitten drin → WEG (ersetzt durch Hybrid-Antwort-Fenster)
+- "4 Hinweise"-Pill oben rechts → WEG (Wiedervorlagen sind Teil des Tagesanalyse-Berichts)
+- "4 offene Punkte"-Zeile unter Kalender → WEG
+- /performance-Seite + Sidebar-Eintrag "Meine Performance" verschwinden komplett (Performance-Daten kommen ueber Wochen-Performance-Bericht im KI-Workspace)
+- KI-Workspace-Component muss **wiederverwendbar** sein (gleiche Component fuer Mein Tag + Deal-Detail + Dashboard)
+
+**FEAT-662 — Kalender-Polish (Working-Hours-Setting)** *(klein, Frontend + 1 Profil-Setting)*
+- Stunden-Range default auf 06:00–21:00 ausweiten (aktuell hartkodiert 07:00–20:00 in `kalender-client.tsx`)
+- Working-Hours-Setting pro User-Profil (Arbeitstag definieren, z.B. 09:00–18:00) — gespeichert in `user_profiles` oder `users.preferences`
+- Toggle "Voller Tag" / "Nur Arbeitstag" in Kalender-UI
+- Feiertag-Logik = NICHT V6.6 (Backlog BL-444)
+
+**FEAT-663 — Deals-Listen-Seite** *(mittel, Frontend-Restruktur)*
+- Top-10-Block oben (gewichteter Wert: `value × probability` server-seitig sortiert)
+- **Pipeline-Switcher** filtert beides (Top-10 UND Karten-Grid darunter)
+- Aktive Deals als Karten-Grid (kompakt: Title + Wert + Firma + Stage-Badge + Naechste Aktion + Wahrscheinlichkeit-Pill)
+- 2 einklappbare Sektionen darunter: "Gewonnen" / "Verloren"
+- **Type-Ahead-Suche** oben (Stammdaten: Title + Firma + Kontakt-Name, KEIN Volltext / KEIN NL)
+- Karten kompakt OHNE Foto/Avatar/Hauptkontakt (Details beim Click)
+
+**FEAT-664 — Deal-Detail (Layout-Swap auf Mein-Tag-Pattern)** *(gross, Frontend-Hauptarbeit + Activity-Sheet)*
+- Header: Title + Stage-Dropdown + Wert + Prozess-Check-Pill (Click → Popover) + Edit-Pencil-Icon + Mein-Tag-Quick-Switch-Button
+- Action-Bar oben (Mein-Tag-Style, bunt+rund): Task / E-Mail / Meeting (planen+sofort starten als Dropdown) / Anruf / Notiz / Angebot / **... Mehr-Menue** (enthaelt Cadence)
+- Hauptbereich 2/3 + 1/3:
+  - LINKS 2/3 = KI-Workspace gross (Hybrid mit Berichts-Buttons `[Briefing]` `[Signale extrahieren]` `[Risiken & Einwaende]` `[Naechster sinnvoller Schritt]` `[Win/Loss-Analyse]` + Frage-Eingabe + Antwort-Fenster)
+  - RECHTS 1/3 = Tabs (Timeline / Tasks / Proposals / Documents)
+- 3 KI-Module → 1 KI-Workspace: Briefing-Sidebar weg, Wissen-Tab weg, Signale-Action weg
+- Wissen-Tab faellt (Q&A jetzt im KI-Workspace)
+- Edit-Tab faellt (Pencil-Icon im Header)
+- **Activities-Hybrid**: Timeline kompakt + Klick auf Activity oeffnet Detail-Sheet rechts mit Risiken/Einwaende/Naechste Schritte/Teilnehmer/Zusammenfassung — analog Task-Sheet auf Mein Tag
+
+**FEAT-665 — Dashboard zu KI-Analyse-Cockpit** *(mittel, Frontend-Restyling auf Mein-Tag-Pattern)*
+- Title: "KI-Analyse-Cockpit" (war: Dashboard)
+- Action-Bar oben (Task / E-Mail / Meeting / Anruf / Notiz — kontextlos, da kein Deal-Kontext)
+- LINKS 2/3 = KI-Workspace (Hybrid wie Mein Tag) — Berichts-Buttons: `[Pipeline-Snapshot]` `[Top-Chancen]` `[Conversion-Rate]` `[Forecast]` `[Win/Loss-Analyse]` `[Stagnierende Deals]`
+- RECHTS 1/3 = Kalender (wie Mein Tag — auch Termine/Mails fuer GF/VL setzen)
+- KPI-Cards raus
+- Top-Chancen-Tabelle raus (jetzt Berichts-Button "Top-Chancen" im KI-Workspace, mit Pipeline-Switcher)
+- DashboardSearch geht im KI-Workspace auf
+
+**FEAT-666 — KI-Inventur (Aufraeumen + Win/Loss-Auto-Trigger + Sidebar-Restruktur)** *(mittel, gemischt Frontend + 1 Backend-Trigger)*
+- **Firmen + Kontakte Sparkles-Cards** (Placeholder seit V3.1) → ERSATZLOS WEG
+- **"KI-Reife"-Feld umbenennen → "AI-Bereitschaft"** (war kein KI-Feature, nur Bewertungs-Dropdown — schema-kompatibel, nur Label)
+- **Pipeline-NL-Suche → klassische Type-Ahead-Suche** (analog `/deals` neu)
+- Pipeline-Kanban-Visualisierung bleibt unangetastet (klassische Stage-Ansicht ist OK)
+- Auto-Reply-Extractor auf Kontakten bleibt (echte Hilfe — Alert-Box mit Out-of-Office-Datum)
+- **Win/Loss-Insight: Auto-Trigger + Berichts-Button** (einziger Backend-Touch in V6.6):
+  - Bei Stage-Wechsel auf won/lost → automatischer KI-Call → Pflicht-Datenfluss zu Intelligence Studio (unabhaengig vom User-Klick)
+  - PLUS Berichts-Button "Win/Loss-Analyse" im Deal-KI-Workspace fuer manuellen Zugriff/Erweitern
+- Multiplikatoren KI-frei (heute schon, bleibt so) — V8+/Strategie-Item
+- Kein KI-Workspace auf Firmen/Kontakte/Multiplikatoren — Mein Tag + Deal-Detail reichen
+- **Sidebar V6.6 (Admin-Sicht):**
+  1. ANALYSE (rauf nach oben): Dashboard
+  2. OPERATIV: Mein Tag, Focus, Kalender
+  3. ARBEITSBEREICHE: Deals, Pipeline, Firmen, Kontakte, Multiplikatoren
+  4. VERWALTUNG bleibt unveraendert (V7-Item)
+  - "Meine Performance" raus (in Mein-Tag-KI-Workspace migriert)
+
+### V6.6 Out of Scope
+
+**NICHT in V6.6:**
+- **Drill-Down-Bauen** — Mitarbeiter sollen mit KI arbeiten lernen, nicht Drill-Downs nachgebaut bekommen (User-Direktive 2026-05-09)
+- **Chef-Sicht-Drill-Downs** — kommen mit V7 (Multi-User + Rollen-Sichtbarkeit)
+- **Mitarbeiter-Sicht-Differenzierung** — kommt mit V7
+- **Pipeline-Stages-Cleanup (BL-439)** — User macht selbst in Settings (user-self-served, V6.6-Defer zurueckgezogen)
+- **Firmen/Kontakte/Proposals/Multiplikatoren-Detail-Seiten** — bleiben klassisch in V6.6 (kein KI-Workspace, "spaeter mal wenn Bedarf entsteht")
+- **Settings-Hierarchie** — erst nach V7 (wenn Rollenverteilung steht)
+- **Verwaltungs-Bereich-Restruktur** — kommt mit V7
+- **Inhouse-Chat-Loesung** — NICHT bauen (externe Tools per API in V8+, BL-443)
+- **NL-Automation-Regeln (Sculptor-Pattern)** — V7.5 (BL-435)
+- **Custom-Reports** — V7.6 (BL-442, folgt zwingend nach V7.5 wegen Architektur-Abhaengigkeit)
+- **Externe Kommunikations-API (Slack/Teams/WhatsApp)** — V8+ (BL-443)
+- **Externe Kunden-Kommunikation (z.B. WhatsApp-Channel)** — V8+, separates Business-Thema
+- **Feiertag-Logik (DE/NL)** — Backlog (BL-444), eigener Slice nach V7
+- **Multiplikatoren-KI-Erweiterung oder ersatzloser Wegfall** — V8+/Strategie-Item
+
+### V6.6 Constraints
+
+- **Internal-Test-Mode bleibt aktiv** — kein Wechsel zu Production-Compliance (User-Direktive 2026-05-01).
+- **KEINE neuen npm-Packages** — V6.6 nutzt nur Bestehendes (Bedrock + RAG + Whisper-Adapter + pdfmake + @dnd-kit + bestehende UI-Components).
+- **KEINE neuen Container** — kein Asterisk/Whisper/Bedrock-Anbieter-Wechsel im UI-Sprint.
+- **KEINE Schema-Migration ausser additiv** — Win/Loss-Auto-Trigger schreibt in bestehendes audit_log + bestehende ai_signal_extract_run-Tabellen, optional eine Spalte fuer working_hours-Setting in user_profiles.
+- **V7-Multi-User-Kompatibilitaet** — alle Layout-Entscheidungen muessen V7-Differenzierung (Admin/Mitarbeiter/Chef) erlauben. Keine User-Daten hardcoden, keine globalen Sicht-Flags ohne User-Scope.
+- **KI-Workspace-Component muss reusable sein** — gleiche Component fuer 3 Hauptarbeitsplaetze (Mein Tag, Deal-Detail, Dashboard).
+- **Style Guide V2 verbindlich** fuer alle UI-Aenderungen (Brand-Tokens aus V6.5).
+- **V2-Sidebar-Layout (Onboarding-Pattern) + deutsche UI-Begriffe Pflicht** (per User-Memory `feedback_v2_sidebar_pflicht`).
+- **Atomic Commits per Slice** — pro Slice ein Commit, damit Rollback einzelner Slices moeglich.
+- **Pipeline-Progress als impliziter Leitstern** — KEIN Text in der UI ("wir werden nicht die Aufgabe des Vertrieblichen irgendwo hinschreiben"), aber Layout-Priorisierung folgt: Pipeline-Bewegung > Aktivitaeten-Counts.
+
+### V6.6 Risks & Assumptions
+
+**Risiken:**
+- **R1 — KI-Workspace-Reuse-Komplexitaet:** Drei Hauptarbeitsplaetze haben unterschiedliche Berichts-Listen + Kontext-Daten. Wenn die Component zu generisch wird, leidet Performance / Code-Klarheit. **Mitigation:** /architecture entscheidet zwischen "ein Component mit Konfig" vs "ein Pattern mit drei spezifischen Implementierungen". Erste Schaetzung: ein Component mit kontextualisierten Berichts-Listen pro Arbeitsplatz-Typ.
+- **R2 — /performance-Migration-Datenverlust:** /performance hat heute Goal-Cards + Wochen-Check + Tagesaufloesung. Wenn nur Tagesanalyse-Bericht den Inhalt traegt, gehen ggf. Funktionen unter (z.B. Tages-Drill-Auf-Wochen). **Mitigation:** /architecture erstellt Mapping-Tabelle "Was war auf /performance, wo ist es jetzt?". Keine Funktion darf wortlos verschwinden.
+- **R3 — Deal-Detail-Layout-Swap-Regression:** 3 KI-Module + 2 Tabs zu konsolidieren beruehrt mind. 6 Components (DealBriefing, DealKnowledgeTab, SignalExtractAction, DealEditTab, DealTimeline, DealActivitySheet). Hoher Regress-Risiko. **Mitigation:** Slice-Schnitt feiner (3-4 Slices fuer FEAT-664), Live-Smoke pro Slice, nicht alles in einem Schritt.
+- **R4 — Win/Loss-Auto-Trigger duplicate runs:** Stage-Wechsel kann mehrfach hintereinander passieren (won → lost → won). Wenn Auto-Trigger jeden Wechsel feuert, entstehen Duplicate-Runs in Intelligence-Studio. **Mitigation:** Idempotenz via `(deal_id, target_status)` UNIQUE-Konstraint oder Time-Window-Throttle (kein neuer Run innerhalb 5 Min). /architecture entscheidet.
+- **R5 — Sidebar-Reorder bricht User-Mental-Model:** Sidebar-Reorder kann User irritieren (alle alten Eintragspunkte verschoben). **Mitigation:** Style Guide V2 bleibt, nur Reorder + 1 Eintrag-Removal (Performance), keine Eintrag-Umbenennungen, keine Icon-Wechsel.
+- **R6 — Voice-Eingabe im KI-Workspace ohne Bedrock-Stress-Test:** Frage-Eingabe via Sprache ist neu (heute nur isolierte Voice-Pages wie /pipeline-suche). KI-Workspace bekommt Voice-Stream → Bedrock-Call mehrfach taeglich pro User. **Mitigation:** Nutzt bestehende Whisper-Adapter-Infra, aber /architecture muss Stress-Test-Plan definieren (Concurrency, Rate-Limit, Fallback bei Bedrock-Error).
+
+**Annahmen:**
+- A1: KI-Workspace-Component ist neu, aber Bedrock-Pfade fuer Tagesanalyse, Briefing, Signale, Win/Loss existieren bereits — V6.6 ist UI-Konsolidierung, keine neue KI-Logik.
+- A2: 5 Berichts-Buttons pro Arbeitsplatz sind ausreichend in V6.6 — Custom-Reports kommen erst in V7.6.
+- A3: /performance-Migration ist additiv ueber den Tagesanalyse-Bericht moeglich — kein User braucht heute eine Funktion, die in der Tagesanalyse nicht erscheint.
+- A4: Win/Loss-Auto-Trigger nutzt bestehende ai_signal_extract_run-Infra, kein neuer Background-Job-Typ noetig.
+- A5: Working-Hours-Setting kann in user_profiles (oder users.preferences JSONB) ohne neue Tabelle gespeichert werden.
+- A6: V7-Multi-User-Kompatibilitaet ist mit user_id-Scope auf allen neuen Settings gewaehrleistet — keine globalen Konfig-Flags.
+
+### V6.6 Success Criteria
+
+- KI-Workspace-Component ist auf 3 Hauptarbeitsplaetzen (Mein Tag, Deal-Detail, Dashboard) im Einsatz — gleiches Pattern (Berichts-Buttons + Frage-Eingabe + Antwort-Fenster), unterschiedliche kontextualisierte Berichts-Listen
+- /performance-Seite und Sidebar-Eintrag "Meine Performance" verschwunden
+- "4 Hinweise"-Pill und "4 offene Punkte"-Zeile auf Mein Tag verschwunden
+- Deal-Detail hat 1 KI-Workspace statt 3 KI-Modulen (Briefing-Sidebar weg, Wissen-Tab weg, Signale-Action weg, Edit-Tab weg)
+- Activity-Sheet auf Deal-Detail zeigt Risiken/Einwaende/Naechste Schritte/Teilnehmer/Zusammenfassung beim Klick auf Timeline-Item
+- Dashboard heisst "KI-Analyse-Cockpit", hat KI-Workspace links + Kalender rechts, keine KPI-Cards / keine Top-Chancen-Tabelle
+- Sparkles-Cards auf Firmen/Kontakte sind weg
+- "KI-Reife"-Feld heisst jetzt "AI-Bereitschaft" (nur Label, kein Schema-Bruch)
+- Pipeline-NL-Suche durch Type-Ahead ersetzt
+- Win/Loss-Auto-Trigger feuert bei Stage-Wechsel auf won/lost und schreibt in ai_signal_extract_run + audit_log
+- Sidebar-Reorder live (ANALYSE → OPERATIV → ARBEITSBEREICHE → VERWALTUNG)
+- Kalender-Range default 06:00–21:00, Working-Hours-Setting pro User funktioniert, "Voller Tag/Nur Arbeitstag"-Toggle live
+- Deals-Listen-Seite hat Top-10 + Karten-Grid + 2 Sektionen + Type-Ahead, Pipeline-Switcher filtert alles
+- Vitest gruen (kein Regress auf bestehende Suite), Lint clean
+- Live-Smoke 7 Pages PASS: Mein Tag, /deals (Liste), /pipeline, ein Deal-Detail (mit Activity-Sheet-Klick), Dashboard, Kalender, ein Won/Lost-Stage-Wechsel mit Auto-Trigger-Verifikation in audit_log
+- 0 neue Regressions auf V6.0..V6.5-Funktionalitaet
+- V7-Multi-User-Kompatibilitaet sichtbar in Code: alle neuen Settings haben user_id-Scope
+
+### V6.6 Open Questions (fuer /architecture)
+
+**KI-Workspace-Component-Architektur:**
+- F1: **Component-Wiederverwendung** — Eine generische `<KIWorkspace>` Component mit Konfig-Prop (Berichts-Liste + Context-Source) ODER ein Pattern (Hook/Layout) und drei spezifische Implementierungen? Empfehlung: Component mit Konfig, da Berichts-Buttons-Layout + Frage-Eingabe + Antwort-Fenster identisch sind.
+- F2: **Berichts-Button-Streaming vs Polling** — Bedrock-Antworten fuer Tagesanalyse koennen mehrere Sekunden brauchen. UI-Pattern: Streaming-Tokens (wie Claude-UI), Polling auf done-Flag, oder synchroner Spinner+Result? Empfehlung: Streaming wenn Bedrock-Pfad es unterstuetzt, sonst Polling.
+- F3: **Voice-Input-Architektur** — Voice-Stream geht durch Whisper-Adapter (bestehend) → Text → Bedrock-Call. Oder direkt durch Bedrock-Voice-Endpoint? Empfehlung: Whisper-Pfad nutzen (bestehend, EU-konform via Azure-Whisper-Code-Ready aus V5.2).
+- F4: **Kontext-Scope pro Arbeitsplatz** — KI-Workspace auf Mein Tag braucht Tages-Kontext (alle Deals + Activities heute), auf Deal-Detail braucht Deal-Kontext (Timeline + Tasks + Proposals). Wie wird der Kontext pro Berichts-Button definiert/dokumentiert? Empfehlung: Konfig-Prop mit Server-Action-Pfad pro Berichts-Button.
+
+**Performance-Migration:**
+- F5: **Funktions-Mapping** — Welche /performance-Funktionen gehen wo hin? (Goal-Cards, Wochen-Check, Tagesaufloesung, Forecast). Empfehlung: /architecture erstellt explizites Mapping-Dokument bevor /performance geloescht wird.
+- F6: **/performance-Route deletion oder redirect** — Komplett loeschen ODER redirect zu /mein-tag? Empfehlung: redirect mit deprecation-toast fuer 1 Sprint, dann loeschen.
+
+**Deal-Detail Activity-Sheet:**
+- F7: **Activity-Sheet-Variante** — Neuer Sheet-Component oder Reuse des Mein-Tag Task-Sheet (`task-sheet.tsx` aus V3.1)? Empfehlung: Reuse mit Type-Erweiterung, da Task-Sheet bereits Risiken/Einwaende rendert.
+- F8: **Activity-Sheet-Inhalt-Quellen** — Risiken/Einwaende/Naechste Schritte sind heute nur fuer Meetings via Bedrock-Summary verfuegbar. Soll der Sheet auch fuer E-Mails / Anrufe / Notizen entsprechende Sektionen zeigen, oder nur fuer Meeting-Activity? Empfehlung: nur fuer Activities mit Bedrock-Output (Meetings, lange E-Mails), bei anderen Sheet kompakt mit Basis-Daten.
+
+**Win/Loss-Auto-Trigger:**
+- F9: **Trigger-Hook-Position** — In `pipeline.moveDealToStage` (existiert seit V6.2 Workflow-Engine) als zusaetzlicher Hook, oder als separater workflow_action vom Typ `auto_winloss_extract`? Empfehlung: separater workflow_action, sodass das System konsistent ueber V6.2-Workflow-Engine laeuft und im Audit-Log mit anderen Actions erscheint.
+- F10: **Idempotenz-Strategie** — UNIQUE auf (deal_id, target_status, run_type) ODER Time-Window-Throttle? Empfehlung: UNIQUE auf (deal_id, target_status) + ON CONFLICT DO NOTHING fuer Idempotenz, plus 5-Min-Time-Window fuer Stage-Toggling-Edge-Cases.
+- F11: **Intelligence-Studio-Datenfluss** — Direct-Insert in `intelligence_studio.win_loss_runs` (oder aequivalente Tabelle), oder wieder ueber Read-API wie V6.2 Campaign-Read-API? Empfehlung: Read-API-Pattern beibehalten (FEAT-622 etabliert) — Auto-Trigger schreibt nur lokal, Studio pollt.
+
+**Kalender-Polish:**
+- F12: **Working-Hours-Setting-Speicherung** — `users.preferences` JSONB, `user_profiles.working_hours_start/end`, oder neue `user_calendar_preferences` Tabelle? Empfehlung: `user_profiles.working_hours_start/end` als TIME-Spalten (additive Migration).
+- F13: **"Voller Tag/Nur Arbeitstag"-Toggle-Persistenz** — Session (verliert sich) oder Setting? Empfehlung: localStorage pro User (kein DB-Roundtrip), default "Voller Tag" wenn keine Working-Hours gesetzt.
+
+**Sidebar:**
+- F14: **Sidebar-Reorder ohne Component-Bruch** — Sidebar-Component ist zentral (`cockpit/src/components/sidebar.tsx`). Reorder kann VERWALTUNG-Bereich nicht beruehren (V7-Item). Empfehlung: Reorder nur in NAVIGATION-Section (ANALYSE/OPERATIV/ARBEITSBEREICHE), VERWALTUNG bleibt unangetastet.
+
+**Slice-Schnitt:**
+- F15: **Slice-Anzahl** — Empfehlung: 7 Slices
+  - SLC-661: KI-Workspace-Component (reusable, ohne kontextualisierte Berichts-Implementierungen)
+  - SLC-662: Mein Tag — Hybrid-Workspace + 4-Hinweise+Punkte raus + /performance-Migration + Sidebar-Eintrag raus + Tagesanalyse-Bericht im neuen Pattern
+  - SLC-663: Deals-Listen-Seite — Top-10 + Karten-Grid + Type-Ahead + 2 Sektionen + Pipeline-Switcher
+  - SLC-664: Deal-Detail-Layout-Swap — Header + Action-Bar + KI-Workspace 2/3 + Tabs 1/3 + 3 KI-Module konsolidieren
+  - SLC-665: Activity-Sheet-Hybrid + Win/Loss-Auto-Trigger (Backend-Touch)
+  - SLC-666: Dashboard zu KI-Analyse-Cockpit
+  - SLC-667: KI-Inventur (Sparkles weg, NL-Suche zu Type-Ahead, AI-Bereitschaft-Rename, Sidebar-Reorder, Kalender-Polish)
+- F16: **Reihenfolge-Disziplin** — KI-Workspace-Component (SLC-661) MUSS zuerst, da SLC-662/664/666 darauf aufbauen. Activity-Sheet (SLC-665) MUSS nach SLC-664. Empfehlung: F15-Reihenfolge zwingend.
+
+**V7-Kompatibilitaet:**
+- F17: **Berichts-Listen pro User-Rolle** — V6.6 baut Admin-Sicht. Wie wird die Berichts-Listen-Konfig V7-erweiterbar? (z.B. Mitarbeiter-Sicht hat weniger Berichte, Chef-Sicht hat Drill-Downs). Empfehlung: Berichts-Liste pro Workspace-Typ + role_filter im V7-Schritt. V6.6 nimmt nur user_id-Scope vor, role_filter ist Y6.6-out-of-scope.
+
+### V6.6 Slicing-Vorschlag (zur /architecture-Entscheidung)
+
+7 Slices, ~15-25h Schaetzung:
+
+- **SLC-661** (~3-4h) — KI-Workspace-Component (reusable Frontend-Component mit Berichts-Buttons-Layout + Frage-Eingabe + Antwort-Fenster, ohne kontextualisierte Implementierungen). Frontend-only.
+- **SLC-662** (~3-4h) — Mein Tag Hybrid-Workspace + Performance-Migration. Frontend-Hauptarbeit. Tagesanalyse-Bericht im neuen Pattern, /performance-Loeschung+Redirect.
+- **SLC-663** (~2-3h) — Deals-Listen-Seite Restruktur. Frontend.
+- **SLC-664** (~3-4h) — Deal-Detail-Layout-Swap. Frontend-Hauptarbeit, 3 KI-Module konsolidieren.
+- **SLC-665** (~2-3h) — Activity-Sheet-Hybrid + Win/Loss-Auto-Trigger. Frontend (Sheet) + Backend (Trigger via V6.2-Workflow-Engine + audit_log).
+- **SLC-666** (~2h) — Dashboard zu KI-Analyse-Cockpit-Restyling. Frontend.
+- **SLC-667** (~2-3h) — KI-Inventur (Sparkles weg + NL-Suche zu Type-Ahead + AI-Bereitschaft-Rename + Sidebar-Reorder + Kalender-Polish + Working-Hours-Setting). Gemischt.
+
+(7 Slices als erste Schaetzung, /architecture konsolidiert auf finale Anzahl. Reuse-Disziplin: SLC-661 zwingend zuerst, da SLC-662/664/666 die Component voraussetzen.)
+
+### V6.6 Delivery Mode
+
+**Internal-Tool, UI-Konsolidierung-Sprint.** UI-dominiert mit 1 Mini-Backend-Touch (Win/Loss-Auto-Trigger via V6.2-Workflow-Engine). Risikoarm aber breit (3 Hauptarbeitsplaetze + Sidebar + Kalender + Deals-Liste). Internal-Test-Mode bleibt aktiv. Kein Compliance-Sprint, kein neuer Provider, kein neues Backend-Module.
+
+V7-Vorbereitung: alle Layout-Entscheidungen muessen V7-Multi-User-Differenzierung (Admin/Mitarbeiter/Chef) erlauben. Pre-Production-Compliance-Gate kommt separat spaeter.
+
+**V6.6 Requirements ready for `/architecture`.**
