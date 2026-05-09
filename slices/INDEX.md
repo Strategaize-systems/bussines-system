@@ -252,6 +252,20 @@
 |----|-------|---------|--------|----------|---------|
 | SLC-631 | [V6.3 Polish-Bündel (BL-426 + BL-422 + ISSUE-050 + L4 + L5 + BL-Dedup)](SLC-631-v63-polish-bundle.md) | BL-426 + BL-422 + ISSUE-050 | done | Medium | 2026-05-06 |
 
+## V6.6 Slices (Pre-V7-Audit-Sprint — UI-Konsolidierung + KI-Workspace-Hybrid)
+
+Reihenfolge zwingend (DEC-176): SLC-661 (Foundation) → SLC-662 (Mein Tag, erster Caller) → SLC-663 (Deals-Liste, parallelisierbar) → SLC-664 (Deal-Detail-Layout-Swap, zweiter Caller) → SLC-665 (Activity-Sheet + Win/Loss-Auto-Trigger, einziger Backend) → SLC-666 (Cockpit, dritter Caller) → SLC-667 (Hygiene + Kalender + Sidebar-Reorder, letzter Slice). Pro Slice: backend|frontend → /qa → User-Coolify-Deploy → Live-Smoke. Gesamt-/qa nach SLC-667. Final-Check + Go-Live + Deploy als REL-028. Gesamt ~17-24h.
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-661 | [KI-Workspace Foundation Component](SLC-661-ki-workspace-foundation.md) | FEAT-661 | planned | Blocker | 2026-05-09 |
+| SLC-662 | [Mein Tag KI-Workspace + Performance-Migration](SLC-662-mein-tag-ki-workspace.md) | FEAT-661 | planned | Blocker | 2026-05-09 |
+| SLC-663 | [Deals-Listen-Seite (Top-10 + Karten-Grid + Type-Ahead)](SLC-663-deals-listen-seite.md) | FEAT-663 | planned | High | 2026-05-09 |
+| SLC-664 | [Deal-Detail Layout-Swap](SLC-664-deal-detail-layout-swap.md) | FEAT-664 | planned | Blocker | 2026-05-09 |
+| SLC-665 | [Activity-Sheet + Win/Loss-Auto-Trigger (MIG-032)](SLC-665-activity-sheet-winloss-trigger.md) | FEAT-664 + FEAT-666 | planned | Blocker | 2026-05-09 |
+| SLC-666 | [Dashboard zu KI-Analyse-Cockpit](SLC-666-ki-analyse-cockpit.md) | FEAT-665 | planned | High | 2026-05-09 |
+| SLC-667 | [KI-Inventur + Kalender-Polish + Sidebar-Reorder](SLC-667-ki-inventur-kalender-polish.md) | FEAT-666 + FEAT-662 | planned | Medium | 2026-05-09 |
+
 ## V6.5 Slices (Hintergrund-Sprint parallel zu V7-Vorbereitung — released REL-027 2026-05-08)
 
 | ID | Slice | Feature | Status | Priority | Created |

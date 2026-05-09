@@ -2057,9 +2057,9 @@
       "title": "FEAT-661 Mein Tag (KI-Workspace-Hybrid + Performance-Migration)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V6.6",
-      "description": "Mein Tag wird zum konsolidierten Tages-Cockpit mit KI-Workspace-Hybrid-Pattern (Berichts-Buttons + Frage-Eingabe Text/Sprache + Antwort-Fenster). Standard-Berichte: Tagesanalyse, Gestern, Seit Login, Wochen-Performance, Pipeline-Risiko. /performance-Seite und Sidebar-Eintrag verschwinden komplett. 4-Hinweise-Pill und 4-offene-Punkte-Zeile raus. Tagesanalyse-Button mitten drin raus. KI-Workspace-Component muss reusable fuer FEAT-664 + FEAT-665 sein. Tagesanalyse-Inhalt-Reihenfolge: 1. Pipeline-Bewegung (Haupt), 2. Aktivitaeten-Soll-Ist, 3. KI-Kommentar.",
+      "description": "Mein Tag wird zum konsolidierten Tages-Cockpit mit KI-Workspace-Hybrid-Pattern (Berichts-Buttons + Frage-Eingabe Text/Sprache + Antwort-Fenster). Standard-Berichte: Tagesanalyse, Gestern, Seit Login, Wochen-Performance, Pipeline-Risiko. /performance-Seite und Sidebar-Eintrag verschwinden komplett. 4-Hinweise-Pill und 4-offene-Punkte-Zeile raus. Tagesanalyse-Button mitten drin raus. KI-Workspace-Component muss reusable fuer FEAT-664 + FEAT-665 sein. Tagesanalyse-Inhalt-Reihenfolge: 1. Pipeline-Bewegung (Haupt), 2. Aktivitaeten-Soll-Ist, 3. KI-Kommentar. Slice-Planning DONE 2026-05-09 (RPT-368): SLC-661 (Foundation Component) + SLC-662 (Mein-Tag-Caller).",
       "createdAt": "2026-05-09"
     },
     {
@@ -2067,9 +2067,9 @@
       "title": "FEAT-662 Kalender-Polish (Working-Hours-Setting + Range 06:00-21:00)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "in_progress",
       "version": "V6.6",
-      "description": "Kalender-Stunden-Range default 06:00-21:00 (von hartkodiert 07:00-20:00 in kalender-client.tsx). Working-Hours-Setting pro User-Profil (start/end TIME-Spalten in user_profiles). Toggle 'Voller Tag / Nur Arbeitstag' in Kalender-Header mit localStorage-Persistenz. V7-Multi-User-kompatibel (user_id-scoped). Feiertag-Logik = NICHT V6.6 (BL-444).",
+      "description": "Kalender-Stunden-Range default 06:00-21:00 (von hartkodiert 07:00-20:00 in kalender-client.tsx). Working-Hours-Setting pro User (start/end TIME-Spalten in user_settings, MIG-032). Toggle 'Voller Tag / Nur Arbeitstag' in Kalender-Header mit localStorage-Persistenz. V7-Multi-User-kompatibel (user_id-scoped). Feiertag-Logik = NICHT V6.6 (BL-444). Slice-Planning DONE 2026-05-09: Implementation in SLC-667. MIG-032 Schema-Apply in SLC-665.",
       "createdAt": "2026-05-09"
     },
     {
@@ -2077,9 +2077,9 @@
       "title": "FEAT-663 Deals-Listen-Seite (Top-10 + Karten-Grid + Type-Ahead)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V6.6",
-      "description": "Deals-Listen-Seite Restruktur: Top-10-Block oben (server-side sortiert nach value*probability DESC), Pipeline-Switcher filtert Top-10 UND Karten-Grid, aktive Deals als Karten-Grid (kompakt, OHNE Foto/Avatar/Hauptkontakt), 2 einklappbare Sektionen 'Gewonnen' / 'Verloren', Type-Ahead-Suche (Stammdaten: deals.title + companies.name + contacts.full_name, KEIN Volltext / KEIN NL).",
+      "description": "Deals-Listen-Seite Restruktur: Top-10-Block oben (server-side sortiert nach value*probability DESC), Pipeline-Switcher filtert Top-10 UND Karten-Grid, aktive Deals als Karten-Grid (kompakt, OHNE Foto/Avatar/Hauptkontakt), 2 einklappbare Sektionen 'Gewonnen' / 'Verloren', Type-Ahead-Suche (Stammdaten: deals.title + companies.name + contacts.full_name, KEIN Volltext / KEIN NL). Slice-Planning DONE 2026-05-09: SLC-663 (parallelisierbar, kein KI-Workspace-Touch).",
       "createdAt": "2026-05-09"
     },
     {
@@ -2087,9 +2087,9 @@
       "title": "FEAT-664 Deal-Detail (Layout-Swap auf Mein-Tag-Pattern + Activity-Sheet)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V6.6",
-      "description": "Deal-Detail Layout-Konsolidierung. Header: Title + Stage-Dropdown + Wert + Prozess-Check-Pill + Edit-Pencil + Mein-Tag-Quick-Switch. Action-Bar oben (Mein-Tag-Style bunt+rund): Task/E-Mail/Meeting-Dropdown(plan+sofort)/Anruf/Notiz/Angebot/Mehr-Menue mit Cadence. Hauptbereich 2/3+1/3: links KI-Workspace mit Berichts-Buttons (Briefing + Signale extrahieren + Risiken & Einwaende + Naechster Schritt + Win/Loss-Analyse), rechts Tabs (Timeline/Tasks/Proposals/Documents). 3 KI-Module konsolidiert auf 1 KI-Workspace (Briefing-Sidebar weg, Wissen-Tab weg, Signale-Action weg). Edit-Tab faellt (Pencil im Header). Activity-Sheet beim Klick auf Timeline-Item (Reuse Mein-Tag Task-Sheet) mit Risiken/Einwaende/Naechste Schritte/Teilnehmer/Zusammenfassung.",
+      "description": "Deal-Detail Layout-Konsolidierung. Header: Title + Stage-Dropdown + Wert + Prozess-Check-Pill + Edit-Pencil + Mein-Tag-Quick-Switch. Action-Bar oben (Mein-Tag-Style bunt+rund): Task/E-Mail/Meeting-Dropdown(plan+sofort)/Anruf/Notiz/Angebot/Mehr-Menue mit Cadence. Hauptbereich 2/3+1/3: links KI-Workspace mit Berichts-Buttons (Briefing + Signale extrahieren + Risiken & Einwaende + Naechster Schritt + Win/Loss-Analyse), rechts Tabs (Timeline/Tasks/Proposals/Documents). 3 KI-Module konsolidiert auf 1 KI-Workspace (Briefing-Sidebar weg, Wissen-Tab weg, Signale-Action weg). Edit-Tab faellt (Pencil im Header). Activity-Sheet beim Klick auf Timeline-Item (Reuse Mein-Tag Task-Sheet) mit Risiken/Einwaende/Naechste Schritte/Teilnehmer/Zusammenfassung. Slice-Planning DONE 2026-05-09: SLC-664 (Layout-Swap, 4 Sub-Block-Commits) + SLC-665 (Activity-Sheet als Reuse Task-Sheet via ItemSheet-Refactor).",
       "createdAt": "2026-05-09"
     },
     {
@@ -2097,9 +2097,9 @@
       "title": "FEAT-665 Dashboard zu KI-Analyse-Cockpit (Mein-Tag-Pattern)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "in_progress",
       "version": "V6.6",
-      "description": "Dashboard wird zu 'KI-Analyse-Cockpit'. Action-Bar oben (Task/E-Mail/Meeting/Anruf/Notiz, kontextlos). Hauptbereich 2/3+1/3: links KI-Workspace (Reuse FEAT-661 Component) mit Berichts-Buttons (Pipeline-Snapshot + Top-Chancen + Conversion-Rate + Forecast + Win/Loss-Analyse + Stagnierende Deals), rechts Kalender (Reuse mit FEAT-662). KPI-Cards raus, Top-Chancen-Tabelle raus, DashboardSearch geht im KI-Workspace auf.",
+      "description": "Dashboard wird zu 'KI-Analyse-Cockpit'. Action-Bar oben (Task/E-Mail/Meeting/Anruf/Notiz, kontextlos). Hauptbereich 2/3+1/3: links KI-Workspace (Reuse FEAT-661 Component) mit Berichts-Buttons (Pipeline-Snapshot + Top-Chancen + Conversion-Rate + Forecast + Win/Loss-Analyse + Stagnierende Deals), rechts Kalender (Reuse mit FEAT-662). KPI-Cards raus, Top-Chancen-Tabelle raus, DashboardSearch geht im KI-Workspace auf. Slice-Planning DONE 2026-05-09: SLC-666 (dritter Caller, parallel zu SLC-664/665 OK).",
       "createdAt": "2026-05-09"
     },
     {
@@ -2107,9 +2107,39 @@
       "title": "FEAT-666 KI-Inventur (Sparkles weg + Win/Loss-Auto-Trigger + Sidebar-Restruktur)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V6.6",
-      "description": "Aufraeumen + Auto-Trigger + Sidebar. Firmen+Kontakte Sparkles-Cards (Placeholder seit V3.1) ERSATZLOS WEG. KI-Reife-Field umbenennen auf AI-Bereitschaft (schema-kompatibel, nur UI-Label). Pipeline-NL-Suche durch Type-Ahead ersetzt (analog FEAT-663). Pipeline-Kanban bleibt unangetastet. Win/Loss-Auto-Trigger bei Stage-Wechsel auf won/lost (einziger Backend-Touch, ueber V6.2-Workflow-Engine als auto_winloss_extract action, Idempotenz UNIQUE(deal_id,target_status) + 5-Min-Throttle, Pflicht-Datenfluss zu Intelligence Studio via Read-API-Pattern wie FEAT-622). Berichts-Button Win/Loss-Analyse im Deal-KI-Workspace (FEAT-664). Multiplikatoren bleiben KI-frei. Sidebar V6.6 (Admin-Sicht): ANALYSE [Dashboard] | OPERATIV [Mein Tag, Focus, Kalender] | ARBEITSBEREICHE [Deals, Pipeline, Firmen, Kontakte, Multiplikatoren] | VERWALTUNG [V7-Item, unveraendert]. 'Meine Performance' raus.",
+      "description": "Aufraeumen + Auto-Trigger + Sidebar. Firmen+Kontakte Sparkles-Cards (Placeholder seit V3.1) ERSATZLOS WEG. KI-Reife-Field umbenennen auf AI-Bereitschaft (schema-kompatibel, nur UI-Label). Pipeline-NL-Suche durch Type-Ahead ersetzt (analog FEAT-663). Pipeline-Kanban bleibt unangetastet. Win/Loss-Auto-Trigger bei Stage-Wechsel auf won/lost (einziger Backend-Touch, ueber V6.2-Workflow-Engine als auto_winloss_extract action, Idempotenz UNIQUE(deal_id,target_status) + 5-Min-Throttle, Pflicht-Datenfluss zu Intelligence Studio via Read-API-Pattern wie FEAT-622). Berichts-Button Win/Loss-Analyse im Deal-KI-Workspace (FEAT-664). Multiplikatoren bleiben KI-frei. Sidebar V6.6 (Admin-Sicht): ANALYSE [Dashboard] | OPERATIV [Mein Tag, Focus, Kalender] | ARBEITSBEREICHE [Deals, Pipeline, Firmen, Kontakte, Multiplikatoren] | VERWALTUNG [V7-Item, unveraendert]. 'Meine Performance' raus. Slice-Planning DONE 2026-05-09 (RPT-368): Auto-Trigger in SLC-665, Hygiene-Items in SLC-667.",
+      "createdAt": "2026-05-09"
+    },
+    {
+      "id": "BL-451",
+      "title": "SSE-Streaming-UI fuer KI-Workspace-Antwort-Fenster (V6.6.x oder spaeter)",
+      "type": "improvement",
+      "priority": "low",
+      "status": "open",
+      "version": null,
+      "description": "DEC-166 (V6.6): synchrones Spinner+Result-Pattern bevorzugt fuer V6.6, da bestehende Bedrock-Pfade alle synchron liefern und SSE-UI-Komplexitaet (Token-Append + Partial-State-Error-Handling + Cancel-Pattern + Connection-Drop-Recovery) eigener Slice. Bei UX-Bedarf nach V6.6 als V6.6.x oder spaeter implementieren. Vorlage: AnswerPane.tsx Streaming-Branch + Bedrock-Adapter-SSE-Variant + UseEffect-Cleanup-Pattern.",
+      "createdAt": "2026-05-09"
+    },
+    {
+      "id": "BL-452",
+      "title": "Postgres pg_trgm-Index fuer Deals-Type-Ahead bei >1000 Deals",
+      "type": "improvement",
+      "priority": "low",
+      "status": "open",
+      "version": null,
+      "description": "DEC-178 (V6.6): ILIKE-Suche im Deals-Type-Ahead (SLC-663) ist akzeptabel bei <500 aktiven Deals (User-Stand 2026-05-09). Bei Wachstum >1000 Deals + spuerbarer Latenz: Postgres-Extension `pg_trgm` aktivieren + GIN-Indizes auf deals.title, companies.name, contacts.full_name. Migration-Pattern wie MIG-029. Pre-Step Performance-Messung mit `EXPLAIN ANALYZE` zur Verifikation des Index-Plans.",
+      "createdAt": "2026-05-09"
+    },
+    {
+      "id": "BL-453",
+      "title": "/performance-Page komplette Loeschung (Cleanup nach REL-028 1-Sprint-Toast)",
+      "type": "improvement",
+      "priority": "low",
+      "status": "open",
+      "version": null,
+      "description": "DEC-169 (V6.6): SLC-662 macht /performance zur Redirect-Page mit Toast (1 Sprint Bruecke). Nach REL-028 (V6.6-Release) ist die Toast-Bruecke aktiv — User-Migrations-Pfad sichtbar. Nach 1 Sprint (V6.7+) /performance-Datei + Redirect-Logik komplett loeschen. Voraussetzung: Audit dass keine Bookmarks/Verweise mehr auf /performance gehen (audit_log + access-log-Inspection).",
       "createdAt": "2026-05-09"
     }
   ]
