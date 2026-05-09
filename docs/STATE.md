@@ -10,12 +10,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.5 /final-check CONDITIONALLY READY 2026-05-08** (RPT-362, reviewOf RPT-361). 7-Dimensions-Audit abgeschlossen: Code-Quality clean (V6.5-Files 39-473 Zeilen), Security clean (0 Secrets, RLS aktiv), Compliance dokumentiert (audit_log-Gap als Pre-Production-Compliance-Gate-Item), Tests 444/444 PASS (Coverage-Tool fehlt = Low), Deployment intakt (Image cb491ca app+db identisch, 5/5 Health-Probes 200 OK), Observability aktiv (audit_log mit 8 Action-Typen ueber 7 Tage), Rollback-Pfad klar (Coolify zu REL-026 f99726b). 0 Blocker, 0 High, 1 Medium (carry-over RPT-361), 4 Low Findings. Bundle-Image cb491ca bereits live + healthy. Ready fuer /go-live + /deploy als REL-027.
-- Current Phase: V6.5 in Umsetzung, Final-Check abgeschlossen. 7/7 Slices done + Gesamt-/qa PASS + Final-Check CONDITIONALLY READY. Naechster Schritt: /go-live + /deploy als REL-027.
+- Current Focus: **V6.5 /go-live GO 2026-05-08** (RPT-363, reviewOf RPT-362). Release-Decision: GO als REL-027 auf Hetzner Production. Image cb491ca bereits live + healthy (Container Up healthy, 5/5 Health-Probes 200 OK). Self-hosted-Stack-Readiness 7/7 PASS (Container, ENV, Internal-Connectivity, Auth-Layer, Hairpin-NAT, Health-Checks, Reverse-Proxy). 0 Blocker, 0 High, 1 Medium (audit_log-Wiring SLC-655 als Pre-Production-Compliance-Gate-Item akzeptiert), 4 Low Findings akzeptiert. Required Fixes: keine. Rollback-Pfad klar zu REL-026 f99726b. Bereit fuer /deploy V6.5 als REL-027 (Records-Sync, keine weitere Coolify-User-Action noetig).
+- Current Phase: V6.5 in Umsetzung, Go-Live abgeschlossen. 7/7 Slices done + Gesamt-/qa PASS + Final-Check CONDITIONALLY READY + /go-live GO. Naechster Schritt: /deploy V6.5 als REL-027.
 
 ## Immediate Next Steps
-1. **/go-live V6.5 + /deploy V6.5 als REL-027** in einer Session (Final-Check keine Required-Fixes, Internal-Test-Mode-Release-Ready). Image cb491ca bereits live; /deploy = REL-027-Eintrag + Cockpit-Records-Sync.
-2. **(Nach REL-027)** Cockpit-Records-Sync: V6.5-Slices auf `deployed`-Status, FEAT-651..653 auf `deployed`, RELEASES.md REL-027.
+1. **/deploy V6.5 als REL-027** (gleiche Session). Image cb491ca bereits live + healthy; /deploy = REL-027-Eintrag in RELEASES.md + Cockpit-Records-Sync (slices/INDEX.md + features/INDEX.md auf `deployed`, planning/roadmap.json + planning/backlog.json, STATE.md last-stable). Keine weitere Coolify-User-Action noetig.
+2. **(Nach REL-027)** Cockpit-Refresh durch User zur visuellen Sync-Verifikation.
 4. **(Naechster Major-Schritt nach V6.5)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) plus 3 V7-Audit-Defer-Items (BL-425 + BL-437 + BL-439).
 4. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
 5. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
