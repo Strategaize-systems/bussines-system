@@ -178,16 +178,37 @@
     {
       "id": "v6-6",
       "name": "V6.6",
-      "status": "planned",
-      "summary": "Pre-V7-Audit-Sprint (User-Direktive 2026-05-08): Discovery-getrieben vor V7. Schwerpunkte: KI-Inventur (alle Bedrock+Whisper+Embedding-Touch-Points), Sidebar-VERWALTUNG-Restruktur (BL-437 vorgezogen), Pipeline-Stages-Cleanup (BL-439 vorgezogen), Settings-Hierarchie. Method: User-Discovery + Funktion-Erklaerungen pro Item. Parallel: BL-441 Theming-Sprint Master (uebernommen aus V6.5, weitere Tranchen ueber 28 Drift-Files hinweg).",
+      "status": "active",
+      "summary": "Pre-V7-Audit-Sprint Discovery DONE 2026-05-09 (DISCOVERY-V6.6.md). UI-Cleanup-Sprint mit konsolidiertem KI-Workspace-Hybrid-Pattern (Berichts-Buttons + Frage-Eingabe + Antwort-Fenster) als wiederverwendbares Bedienmodell auf 3 Hauptarbeitsplaetzen (Mein Tag, Deal-Detail, Dashboard). Pipeline-Progress als Haupt-KPI. /performance-Seite faellt komplett (Daten in Tagesanalyse-Bericht). Deal-Detail Layout-Swap (3 KI-Module → 1 Workspace, Activity-Hybrid-Sheet). Dashboard zu KI-Analyse-Cockpit. KI-Inventur (Sparkles-Cards weg, NL-Suche zu Type-Ahead, AI-Bereitschaft-Rename). Win/Loss Auto-Trigger bei Stage-Wechsel (einziger Backend-Touch). Kalender-Polish (Working-Hours-Setting + Range 06:00-21:00). Sidebar-Restruktur Admin-Sicht. ~6-10 Slices erwartet. Naechste = /requirements V6.6.",
       "order": 26
     },
     {
       "id": "v7",
       "name": "V7",
       "status": "planned",
-      "summary": "Multi-User + Teamlead: Routing/Territories (FEAT-502), Teamlead-Rolle mit Teamsicht (FEAT-503). Reduziert auf Multi-User-Themen — Workflow-Automation und Kampagnen-Attribution nach V6.2 ausgelagert. V6.4-Audit-Defer-Items mit V7-Touch-Konflikt: BL-437 UA-004 Sidebar-VERWALTUNG-Split (Multi-User-Sprint baut Sidebar sowieso um), BL-439 UA-008 Pipeline-Stages Soft-Disable (Pipeline-Owner-Filter touched Stages), BL-425 Multi-Touch-Journey-Tab (Reporting-Erweiterung passt zu Multi-User-Insights).",
+      "summary": "Multi-User + Teamlead: Routing/Territories (FEAT-502), Teamlead-Rolle mit Teamsicht (FEAT-503). Reduziert auf Multi-User-Themen — Workflow-Automation und Kampagnen-Attribution nach V6.2 ausgelagert. V6.4-Audit-Defer-Items mit V7-Touch-Konflikt: BL-437 UA-004 Sidebar-VERWALTUNG-Split (Multi-User-Sprint baut Sidebar sowieso um), BL-425 Multi-Touch-Journey-Tab (Reporting-Erweiterung passt zu Multi-User-Insights). Mitarbeiter/Chef-Drill-Downs + Rollen-Sichtbarkeit kommen hier dazu. BL-439 user-self-served (kein V7-Slice).",
       "order": 27
+    },
+    {
+      "id": "v7-5",
+      "name": "V7.5",
+      "status": "planned",
+      "summary": "NL-Automation (BL-435 hochgesetzt von medium auf high, V6.6-Discovery 2026-05-09). Natural-Language-Regel-Builder analog Clay 'Sculptor': User formuliert Automation-Regeln in Klarsprache (Voice/Text), Bedrock extrahiert in trigger+condition+action-Schema, persistiert in automation_rules-Tabelle. Read-Only-Migration des V6.2-Click-Builders. Phase 1 = 1 Trigger-Klasse (deal_stage_idle) + 3-5 Aktionen + Editor-UI, Phase 2 = mehr Trigger, Phase 3 = Inspektions-Log + Trockenlauf. ~6 Slices. Differenzierungs-Hebel gegenueber Microsoft-Copilot: gemeinsames Programmieren von Regeln zwischen Berater und Klient, nicht autonomes Handeln.",
+      "order": 28
+    },
+    {
+      "id": "v7-6",
+      "name": "V7.6",
+      "status": "planned",
+      "summary": "Custom-Reports (V6.6-Discovery 2026-05-09). User kann KI-Antworten als wiederverwendbare Berichts-Vorlagen speichern und im KI-Workspace abrufen. Nutzt V7.5-Architektur (NL-Schema-Extraktion). KEINE Button-Inflation — neue Reports erscheinen NICHT als zusaetzliche Standard-Buttons, sondern in einem 'Meine Berichte'-Auswahlfeld (Type-Ahead/Dropdown) rechts neben den Standard-Buttons. ~1-2 Slices. Folgt zwingend nach V7.5.",
+      "order": 29
+    },
+    {
+      "id": "v8",
+      "name": "V8+",
+      "status": "planned",
+      "summary": "API-Integration mit externen Kommunikations-Tools statt eigener Inhouse-Chat-Loesung (V6.6-Discovery 2026-05-09 Out-of-Scope-Verschiebung). Slack/Teams/WhatsApp als Channels fuer Notifications, Activity-Updates, Berichts-Versand. Externe Kunden-Kommunikation (z.B. WhatsApp) ist separates Business-Thema. Multiplikatoren-Bereich-Strategie-Item (KI-Erweiterung oder ersatzloser Wegfall, geschaeftsmodell-abhaengig). Konkreter Cut wird vor Implementierung in eigener Discovery festgelegt.",
+      "order": 30
     }
   ]
 }

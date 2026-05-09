@@ -9,17 +9,19 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: stable
-- Current Focus: **V6.5 RELEASED als REL-027 2026-05-08** (RPT-364, reviewOf RPT-363). Image cb491ca live + healthy auf Hetzner mit 17h Burn-In ohne Container-Restart. Records-Sync vollstaendig: roadmap.json V6.5 → `released`, slices/INDEX.md alle 7 Slices → `deployed`, features/INDEX.md FEAT-651..653 → `deployed`, RELEASES.md REL-027-Eintrag mit vollstaendigen Rollback-Notes. Bundle-/qa PASS (RPT-361 58/58 ACs), Final-Check CONDITIONALLY READY (RPT-362), Go-Live GO (RPT-363), Deploy DONE (RPT-364). Internal-Test-Mode bleibt aktiv. Naechster Schritt: V6.6 Pre-V7-Audit-Sprint (KI-Inventur + Sidebar/Settings-Reorg + Pipeline-Stages-Cleanup) per User-Direktive 2026-05-08.
-- Current Phase: V6.5 RELEASED. Naechster Sprint = V6.6 Pre-V7-Audit-Sprint, dann V7 Multi-User + Teamlead.
+- High-Level State: requirements
+- Current Focus: **V6.6 DISCOVERY DONE 2026-05-09** (DISCOVERY-V6.6.md, RPT-365). Alle 7 Discovery-Bloecke entschieden in Konversations-Session 2026-05-09 (~15 Iterationen mit AskUserQuestion + Preview-Mockups). Konsolidiertes KI-Workspace-Hybrid-Pattern (Berichts-Buttons + Frage-Eingabe + Antwort-Fenster) als wiederverwendbares Bedienmodell auf 3 Hauptarbeitsplaetzen (Mein Tag, Deal-Detail, Dashboard). Pipeline-Progress als Haupt-KPI. /performance-Seite faellt komplett. Win/Loss Auto-Trigger als einziger Backend-Touch. Sidebar-Restruktur Admin-Sicht. Records-Updates: roadmap.json (V6.6 active + V7.5/V7.6/V8 neu), backlog.json (BL-435 high+V7.5, BL-442 V7.6 Custom-Reports neu, BL-443 V8 externe API neu, BL-444 Feiertag-Logik neu, BL-439 deferred user-self-served). Schaetzung 6-10 Slices. Naechster Schritt: /requirements V6.6 auf Basis DISCOVERY-V6.6.md.
+- Current Phase: V6.6 Pre-V7-Audit-Sprint — Discovery DONE, Requirements aktiv.
 
 ## Immediate Next Steps
-1. **(naechste Session) Discovery-Phase V6.6 Pre-V7-Audit-Sprint** — User explizit angefragt 2026-05-08: Discovery wo User sagt was er ueberpruefen will und vielleicht sofort schon aendern moechte. Schwerpunkte: (a) **KI-Inventur** (alle Bedrock+Whisper+Embedding-Touch-Points auflisten + bewerten ob sinnvoll/doppelt/falsch-platziert), (b) **Sidebar-VERWALTUNG-Restruktur** (BL-437 vorgezogen aus V7-Defer), (c) **Pipeline-Stages-Cleanup** (BL-439 vorgezogen aus V7-Defer), (d) **Settings-Hierarchie**. Methodik: User stellt Funktion-Erklaerungs-Fragen, dann Entscheidung pro Item.
-2. **(nach V6.6)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) auf bereinigter Basis. BL-425 Multi-Touch-Journey-Tab + verbleibende V7-Audit-Defer-Items werden in V7-Scope integriert.
-4. **(Parallel optional)** /post-launch V6.4 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
-5. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
-6. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
-7. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (per User-Direktive 2026-05-01 "kommt viel spaeter").
+1. **(naechste Session) /requirements V6.6** auf Basis DISCOVERY-V6.6.md — Features + ACs ableiten. Erwarteter Schnitt: FEAT-661 Mein-Tag-KI-Workspace + Performance-Migration, FEAT-662 Kalender-Polish (Working-Hours+Range), FEAT-663 Deals-Listen-Seite (Top-10 + Karten-Grid + Type-Ahead), FEAT-664 Deal-Detail-Layout-Swap + Activity-Sheet, FEAT-665 Dashboard zu KI-Analyse-Cockpit, FEAT-666 KI-Inventur (Sparkles weg + NL-Suche zu Type-Ahead + AI-Bereitschaft + Win/Loss-Auto-Trigger + Sidebar). Tatsaechlicher Schnitt in /requirements.
+2. **(nach V6.6 done)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) auf bereinigter Basis. BL-425 Multi-Touch-Journey-Tab + verbleibende V7-Audit-Defer-Items werden in V7-Scope integriert. Mitarbeiter-/Chef-Drill-Downs + Rollen-Sichtbarkeit kommen mit V7.
+3. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
+4. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).
+5. **(Parallel optional)** /post-launch V6.4+V6.5 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
+6. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
+7. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
+8. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (per User-Direktive 2026-05-01 "kommt viel spaeter").
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
@@ -71,13 +73,15 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V5.5, V5.5.1, V5.6, V5.7, V6, V6.1, V6.2, V6.3, V6.4, **V6.5**
 
 **Active:**
-- (none — V6.5 released 2026-05-08 als REL-027, /post-launch V6.4 + V6.5 ausstehend)
+- **V6.6 Pre-V7-Audit-Sprint** (Discovery DONE 2026-05-09, RPT-365, DISCOVERY-V6.6.md): Konsolidiertes KI-Workspace-Hybrid-Pattern auf Mein Tag + Deal-Detail + Dashboard. Pipeline-Progress als Haupt-KPI. /performance-Seite faellt komplett. Erwartete Features: FEAT-661 Mein-Tag-Restruktur, FEAT-662 Kalender-Polish, FEAT-663 Deals-Listen-Seite, FEAT-664 Deal-Detail-Layout-Swap, FEAT-665 KI-Analyse-Cockpit, FEAT-666 KI-Inventur. Naechster Schritt: /requirements V6.6.
 
 **Planned (Reihenfolge):**
-- **V6.6 Pre-V7-Audit-Sprint** (User-Direktive 2026-05-08): Discovery-getriebene Sprint vor V7. Schwerpunkte: KI-Inventur (alle Bedrock+Whisper+Embedding-Touch-Points), Sidebar-VERWALTUNG-Restruktur (BL-437 vorgezogen), Pipeline-Stages-Cleanup (BL-439 vorgezogen), Settings-Hierarchie. Method: User-Discovery + Funktion-Erklaerungen pro Item, dann Entscheidung. Ziel: V7 auf bereinigter Basis bauen statt Multi-User auf Clutter.
 - ~~V6.5 — Hintergrund-Sprint parallel zu V7-Vorbereitung~~ (RELEASED REL-027 2026-05-08): BL-441 Theming-Sprint (Brand-Tokens + UA-011/012/013), BL-436 UA-002 Settings-Pages, BL-438 UA-007 ViewToggle generisch, BL-440 UA-009 Pipeline-PageHeader, BL-420 VIES-VAT-Lookup, BL-421 DE-§13b-Reverse-Charge, BL-424 Source-zu-Kampagne Bulk-Migration, BL-430 npm audit --force.
-- V7 — Multi-User + Teamlead (Routing/Territories + Teamlead-Rolle, reduzierter Scope) (3 BLs aus V6.4-Audit-Defer): BL-437 Sidebar-VERWALTUNG-Split (Multi-User-Sidebar baut um), BL-439 Pipeline-Stages Soft-Disable (Pipeline-Owner-Filter touched Stages), BL-425 Multi-Touch-Journey-Tab.
-- Ungeplant (parkiert): BL-397 GitHub-App Org-Anbindung (Infra-Hygiene), BL-435 Natural-Language-Regel-Builder (zu gross fuer naechsten Sprint).
+- V7 — Multi-User + Teamlead (Routing/Territories + Teamlead-Rolle, reduzierter Scope): BL-437 Sidebar-VERWALTUNG-Split (Multi-User-Sidebar baut um), BL-425 Multi-Touch-Journey-Tab. Mitarbeiter-/Chef-Drill-Downs + Rollen-Sichtbarkeit kommen hier dazu.
+- **V7.5** Natural-Language-Automation (BL-435, hochgesetzt von medium auf high in V6.6-Discovery): Sculptor-Pattern, ~6 Slices in 3 Phasen.
+- **V7.6** Custom-Reports (BL-442 neu): User legt eigene Berichts-Vorlagen an, "Meine Berichte"-Auswahlfeld neben Standard-Buttons. ~1-2 Slices, folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).
+- **V8+** Externe Kommunikations-API-Integration (BL-443 neu, Slack/Teams/WhatsApp). Plus Multiplikatoren-Strategie-Item.
+- Backlog (kein V-Slot): BL-444 Feiertag-Logik DE/NL, BL-397 GitHub-App Org-Anbindung (Infra-Hygiene). BL-439 Pipeline-Stages-Cleanup zurueckgezogen — user-self-served in Settings.
 - Pre-Production-Compliance-Gate (irgendwann vor erstem Kunden-Live-Call) — Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042 — laut User 2026-05-01 NICHT prioritaer
 
 ## Blockers
