@@ -10,9 +10,12 @@ import type { CadenceWithSteps } from "@/types/cadence";
 export function EnrollButton({
   dealId,
   contactId,
+  trigger,
 }: {
   dealId?: string;
   contactId?: string;
+  /** SLC-664/MT-4: optional Custom-Trigger (z.B. DropdownMenuItem im Action-Bar Mehr-Menue). */
+  trigger?: React.ReactNode;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -57,15 +60,19 @@ export function EnrollButton({
 
   return (
     <>
-      <button
-        onClick={() => setShowDialog(true)}
-        className="flex items-center gap-2.5 h-10 px-4 rounded-lg border-2 border-slate-200 bg-white text-sm font-bold text-slate-700 hover:border-violet-300 hover:bg-violet-50 hover:shadow-md transition-all cursor-pointer"
-      >
-        <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-sm">
-          <Zap className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
-        </span>
-        Automatisierung
-      </button>
+      {trigger ? (
+        <span onClick={() => setShowDialog(true)}>{trigger}</span>
+      ) : (
+        <button
+          onClick={() => setShowDialog(true)}
+          className="flex items-center gap-2.5 h-10 px-4 rounded-lg border-2 border-slate-200 bg-white text-sm font-bold text-slate-700 hover:border-violet-300 hover:bg-violet-50 hover:shadow-md transition-all cursor-pointer"
+        >
+          <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-sm">
+            <Zap className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+          </span>
+          Automatisierung
+        </button>
+      )}
 
       {/* Dialog */}
       {showDialog && (

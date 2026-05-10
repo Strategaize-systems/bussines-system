@@ -7,7 +7,7 @@ import { DealTasks } from "./deal-tasks";
 import { DealProposals } from "./deal-proposals";
 import { DealDocuments } from "./deal-documents";
 import { DealEdit } from "./deal-edit";
-import { DealActions } from "./deal-actions";
+import { DealActionBar } from "./deal-action-bar";
 import { KnowledgeQueryPanel } from "@/components/knowledge/KnowledgeQueryPanel";
 import { ProcessCheckPanel } from "./process-check-panel";
 import { AIBriefingPanel } from "./ai-briefing-panel";
@@ -146,9 +146,8 @@ export function DealWorkspace({
         activeProducts={activeProducts}
       />
 
-      <DealActions
+      <DealActionBar
         deal={deal}
-        stages={stages}
         contacts={contacts}
         companies={companies}
         dealsForSelect={dealsForSelect}
