@@ -10,7 +10,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { TaskSheet } from "@/app/(app)/aufgaben/task-sheet";
@@ -183,7 +182,6 @@ export function DealActionBar({ deal, contacts, companies, dealsForSelect }: Dea
             }
           />
           <DropdownMenuContent side="bottom" align="center" sideOffset={6} className="min-w-48">
-            <DropdownMenuLabel>Meeting</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => setShowMeetingSheet(true)}>
               <Calendar className="h-4 w-4 text-purple-500" />
               Termin planen
@@ -241,8 +239,6 @@ export function DealActionBar({ deal, contacts, companies, dealsForSelect }: Dea
             }
           />
           <DropdownMenuContent side="bottom" align="end" sideOffset={6} className="min-w-56">
-            <DropdownMenuLabel>Mehr Aktionen</DropdownMenuLabel>
-
             {/* Mobile: Angebot zusaetzlich hier */}
             <DropdownMenuItem className="md:hidden" onClick={handleCreateProposal} disabled={isCreatingProposal}>
               <FileText className="h-4 w-4 text-emerald-500" />
