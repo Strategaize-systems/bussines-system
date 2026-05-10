@@ -131,15 +131,15 @@ export function MeinTagClient({ userId, data, stages, contacts, companies, deals
         </span>
       </PageHeader>
 
-      <main className="px-8 py-8">
+      <main className="px-4 lg:px-8 py-6 lg:py-8">
         <div className="max-w-[1800px] mx-auto">
-          {/* Top-level 8+4 split: left content flows independently from right sidebar */}
-          <div className="grid grid-cols-12 gap-5">
+          {/* Top-level 8+4 split on lg+; stacks on smaller viewports (AC11) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
 
-            {/* LEFT MAIN AREA (8 cols): KI-Suchfeld, Aufgaben + Deals, KI-Workspace */}
-            <div className="col-span-8 space-y-4">
+            {/* LEFT MAIN AREA (8 cols on lg+): Aufgaben + Deals, KI-Workspace */}
+            <div className="col-span-1 lg:col-span-8 space-y-4">
               {/* Aufgaben + Deals row */}
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* LEFT: Work Actions + Aufgaben */}
                 <div className="space-y-4">
                   {/* Work Quick Actions */}
@@ -331,9 +331,9 @@ export function MeinTagClient({ userId, data, stages, contacts, companies, deals
               <MeinTagKIWorkspace userId={userId} />
             </div>
 
-            {/* RIGHT COLUMN (4): Entities + Zeit + Kalender + Meeting-Prep + Exceptions */}
-            <div className="col-span-4">
-              <div className="sticky top-32 space-y-4">
+            {/* RIGHT COLUMN (4 cols on lg+): Entities + Zeit + Kalender + Meeting-Prep + Focus-Badges */}
+            <div className="col-span-1 lg:col-span-4">
+              <div className="lg:sticky lg:top-32 space-y-4">
                 {/* Entity Quick Actions */}
                 <div className="flex items-center justify-center gap-3">
                   <ContactSheet
