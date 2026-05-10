@@ -11,11 +11,11 @@ export const MEIN_TAG_REPORTS: KIWorkspaceReport[] = [
 ];
 
 export const DEAL_DETAIL_REPORTS: KIWorkspaceReport[] = [
-  { id: "briefing", label: "Briefing", serverActionPath: MOCK_PATH, cacheable: true },
-  { id: "signale-extrahieren", label: "Signale extrahieren", serverActionPath: MOCK_PATH, cacheable: true },
-  { id: "risiken-einwaende", label: "Risiken & Einwaende", serverActionPath: MOCK_PATH, cacheable: true },
-  { id: "naechster-schritt", label: "Naechster sinnvoller Schritt", serverActionPath: MOCK_PATH, cacheable: true },
-  { id: "winloss-analyse", label: "Win/Loss-Analyse", serverActionPath: MOCK_PATH, cacheable: true },
+  { id: "briefing", label: "Briefing", serverActionPath: "@/lib/ki-workspace/reports/briefing", cacheable: true },
+  { id: "signale-extrahieren", label: "Signale extrahieren", serverActionPath: "@/lib/ki-workspace/reports/signale", cacheable: true },
+  { id: "risiken-einwaende", label: "Risiken & Einwaende", serverActionPath: "@/lib/ki-workspace/reports/risiken", cacheable: true },
+  { id: "naechster-schritt", label: "Naechster sinnvoller Schritt", serverActionPath: "@/lib/ki-workspace/reports/naechster-schritt", cacheable: true },
+  { id: "winloss-analyse", label: "Win/Loss-Analyse", serverActionPath: "@/lib/ki-workspace/reports/winloss", cacheable: true },
 ];
 
 export const COCKPIT_REPORTS: KIWorkspaceReport[] = [
