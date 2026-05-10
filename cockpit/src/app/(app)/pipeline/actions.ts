@@ -334,6 +334,50 @@ const STAGE_REQUIRED_FIELDS: Record<string, { fields: string[]; labels: Record<s
   },
 };
 
+// SLC-664/MT-3: Inline-editable Deal-Wert im Header (AC1).
+// Eigenstaendige Action statt Form-FormData-Roundtrip — Header-Inline-Edit
+// braucht nur einen Wert + minimalen Audit-Trail.
+export async function updateDealValue(dealId: string, value: number | null) {
+  const supabase = await createClient();
+
+  const { data: oldDeal } = await supabase
+    .from("deals")
+    .select("title, value, contact_id, company_id")
+    .eq("id", dealId)
+    .single();
+
+  const { error } = await supabase
+    .from("deals")
+    .update({ value, updated_at: new Date().toISOString() })
+    .eq("id", dealId);
+
+  if (error) return { error: error.message };
+
+  await supabase.from("activities").insert({
+    contact_id: oldDeal?.contact_id ?? null,
+    company_id: oldDeal?.company_id ?? null,
+    deal_id: dealId,
+    type: "note",
+    title: `Deal-Wert geaendert: ${oldDeal?.value ?? "—"} → ${value ?? "—"} EUR`,
+  });
+
+  logAudit({
+    action: "update",
+    entityType: "deal",
+    entityId: dealId,
+    changes: {
+      before: { value: oldDeal?.value ?? null },
+      after: { value },
+    },
+    context: "Deal-Wert (Header-Inline-Edit)",
+  }).catch(() => {});
+
+  revalidatePath("/pipeline");
+  revalidatePath("/deals");
+  revalidatePath(`/deals/${dealId}`);
+  return { error: "" };
+}
+
 export async function moveDealToStage(dealId: string, newStageId: string, stageName: string) {
   const supabase = await createClient();
 
