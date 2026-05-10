@@ -11,6 +11,7 @@ import { DealActionBar } from "./deal-action-bar";
 import { KnowledgeQueryPanel } from "@/components/knowledge/KnowledgeQueryPanel";
 import { ProcessCheckPanel } from "./process-check-panel";
 import { AIBriefingPanel } from "./ai-briefing-panel";
+import { DealKIWorkspace } from "./deal-ki-workspace-wrapper";
 import { EnrollmentBadge } from "@/components/cadences/enrollment-badge";
 import { getProcessChecks } from "@/lib/process-check";
 import {
@@ -21,6 +22,7 @@ import {
   BookOpen,
   Settings,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { PipelineStage, Pipeline } from "@/app/(app)/pipeline/actions";
 import type { Task } from "@/app/(app)/aufgaben/actions";
 import type { Meeting } from "@/app/(app)/meetings/actions";
@@ -43,6 +45,7 @@ const tabs: { id: TabId; label: string; icon: typeof Clock }[] = [
 ];
 
 interface DealWorkspaceProps {
+  userId: string;
   deal: any;
   activities: any[];
   proposals: any[];
@@ -66,6 +69,7 @@ interface DealWorkspaceProps {
 }
 
 export function DealWorkspace({
+  userId,
   deal,
   activities,
   proposals,
@@ -158,11 +162,16 @@ export function DealWorkspace({
         <EnrollmentBadge enrollments={enrollments} />
       )}
 
-      {/* Two-column layout: Main content + Sidebar */}
+      {/* SLC-664/MT-5 Sub-Block 3 (AC8): 2/3 + 1/3 Layout. Mobile: vertikal staffeln. */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main: Tabs + Content */}
+        {/* LINKS (lg:2/3): KI-Workspace */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="flex gap-1 bg-white rounded-xl border-2 border-slate-200 shadow-lg p-1.5">
+          <DealKIWorkspace userId={userId} dealId={deal.id} />
+        </div>
+
+        {/* RECHTS (lg:1/3): Tabs (Timeline / Tasks / Proposals / Documents / Wissen / Edit) */}
+        <div className="lg:col-span-1 space-y-4">
+          <div className="flex gap-1 bg-white rounded-xl border-2 border-slate-200 shadow-lg p-1.5 overflow-x-auto">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -170,14 +179,15 @@ export function DealWorkspace({
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                  className={cn(
+                    "flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-bold transition-all shrink-0",
                     isActive
                       ? "bg-gradient-to-r from-[#120774] to-[#4454b8] text-white shadow-lg"
-                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-                  }`}
+                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-50",
+                  )}
                 >
-                  <Icon className="h-4 w-4" />
-                  {tab.label}
+                  <Icon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{tab.label}</span>
                 </button>
               );
             })}
@@ -220,10 +230,9 @@ export function DealWorkspace({
               />
             )}
           </div>
-        </div>
 
-        {/* Sidebar: Process Check + AI Briefing (Sticky) */}
-        <div className="lg:sticky lg:top-32 space-y-6 self-start">
+          {/* Process-Check + Legacy AI-Briefing voruebergehend hier behalten,
+              werden in MT-6 (Sub-Block 4) entfernt. */}
           <ProcessCheckPanel checks={processChecks} />
           <AIBriefingPanel context={briefingContext} />
         </div>

@@ -11,7 +11,8 @@ import { getInboxEmailsForDeal } from "@/app/(app)/emails/imap-actions";
 import { getTrackingSummaries } from "@/lib/email/tracking-queries";
 import { getCallsByDeal } from "@/app/(app)/calls/actions";
 import { DealWorkspace } from "@/components/deals/deal-workspace";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function DealPage({
   params,
@@ -19,6 +20,12 @@ export default async function DealPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
   let relations;
   try {
@@ -51,6 +58,7 @@ export default async function DealPage({
   return (
     <div className="px-8 py-6">
     <DealWorkspace
+      userId={user.id}
       deal={deal}
       activities={relations.activities}
       proposals={relations.proposals}
