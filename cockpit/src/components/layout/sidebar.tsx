@@ -24,7 +24,6 @@ import {
   Target,
   Package,
   LogOut,
-  BarChart3,
   Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -70,7 +69,6 @@ const navGroups: NavGroup[] = [
     label: "ANALYSE",
     items: [
       { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { name: "Meine Performance", href: "/performance", icon: BarChart3 },
     ],
   },
   {
