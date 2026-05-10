@@ -259,7 +259,7 @@ Reihenfolge zwingend (DEC-176): SLC-661 (Foundation) → SLC-662 (Mein Tag, erst
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-661 | [KI-Workspace Foundation Component](SLC-661-ki-workspace-foundation.md) | FEAT-661 | done | Blocker | 2026-05-09 |
-| SLC-662 | [Mein Tag KI-Workspace + Performance-Migration](SLC-662-mein-tag-ki-workspace.md) | FEAT-661 | planned | Blocker | 2026-05-09 |
+| SLC-662 | [Mein Tag KI-Workspace + Performance-Migration](SLC-662-mein-tag-ki-workspace.md) | FEAT-661 | done | Blocker | 2026-05-09 |
 | SLC-663 | [Deals-Listen-Seite (Top-10 + Karten-Grid + Type-Ahead)](SLC-663-deals-listen-seite.md) | FEAT-663 | planned | High | 2026-05-09 |
 | SLC-664 | [Deal-Detail Layout-Swap](SLC-664-deal-detail-layout-swap.md) | FEAT-664 | planned | Blocker | 2026-05-09 |
 | SLC-665 | [Activity-Sheet + Win/Loss-Auto-Trigger (MIG-032)](SLC-665-activity-sheet-winloss-trigger.md) | FEAT-664 + FEAT-666 | planned | Blocker | 2026-05-09 |

@@ -2057,7 +2057,7 @@
       "title": "FEAT-661 Mein Tag (KI-Workspace-Hybrid + Performance-Migration)",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V6.6",
       "description": "Mein Tag wird zum konsolidierten Tages-Cockpit mit KI-Workspace-Hybrid-Pattern (Berichts-Buttons + Frage-Eingabe Text/Sprache + Antwort-Fenster). Standard-Berichte: Tagesanalyse, Gestern, Seit Login, Wochen-Performance, Pipeline-Risiko. /performance-Seite und Sidebar-Eintrag verschwinden komplett. 4-Hinweise-Pill und 4-offene-Punkte-Zeile raus. Tagesanalyse-Button mitten drin raus. KI-Workspace-Component muss reusable fuer FEAT-664 + FEAT-665 sein. Tagesanalyse-Inhalt-Reihenfolge: 1. Pipeline-Bewegung (Haupt), 2. Aktivitaeten-Soll-Ist, 3. KI-Kommentar. Slice-Planning DONE 2026-05-09 (RPT-368): SLC-661 (Foundation Component) + SLC-662 (Mein-Tag-Caller).",
       "createdAt": "2026-05-09"
