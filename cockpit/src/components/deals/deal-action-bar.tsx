@@ -88,9 +88,11 @@ export function DealActionBar({ deal, contacts, companies, dealsForSelect }: Dea
   const [isCreatingProposal, setIsCreatingProposal] = useState(false);
   const [proposalError, setProposalError] = useState<string | null>(null);
   const [showStartMeeting, setShowStartMeeting] = useState(false);
+  const [showMeetingSheet, setShowMeetingSheet] = useState(false);
   const [showCallWidget, setShowCallWidget] = useState(false);
   const [showNoteSheet, setShowNoteSheet] = useState(false);
   const [showActivityFullSheet, setShowActivityFullSheet] = useState(false);
+  const [showEnrollDialog, setShowEnrollDialog] = useState(false);
 
   const prefill = getContextPrefill({
     deal: {
@@ -182,22 +184,10 @@ export function DealActionBar({ deal, contacts, companies, dealsForSelect }: Dea
           />
           <DropdownMenuContent side="bottom" align="center" sideOffset={6} className="min-w-48">
             <DropdownMenuLabel>Meeting</DropdownMenuLabel>
-            <MeetingSheet
-              contacts={contacts}
-              companies={companies}
-              deals={dealsForSelect}
-              defaultDealId={deal.id}
-              defaultContactId={deal.contact_id ?? undefined}
-              defaultCompanyId={deal.company_id ?? undefined}
-              defaultParticipants={prefill.suggestedParticipants}
-              defaultAgenda={prefill.suggestedAgenda}
-              trigger={
-                <DropdownMenuItem closeOnClick={false}>
-                  <Calendar className="h-4 w-4 text-purple-500" />
-                  Termin planen
-                </DropdownMenuItem>
-              }
-            />
+            <DropdownMenuItem onClick={() => setShowMeetingSheet(true)}>
+              <Calendar className="h-4 w-4 text-purple-500" />
+              Termin planen
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setShowStartMeeting(true)}>
               <Video className="h-4 w-4 text-emerald-500" />
               Sofort starten
@@ -254,24 +244,16 @@ export function DealActionBar({ deal, contacts, companies, dealsForSelect }: Dea
             <DropdownMenuLabel>Mehr Aktionen</DropdownMenuLabel>
 
             {/* Mobile: Angebot zusaetzlich hier */}
-            <div className="md:hidden">
-              <DropdownMenuItem onClick={handleCreateProposal} disabled={isCreatingProposal}>
-                <FileText className="h-4 w-4 text-emerald-500" />
-                Angebot erstellen
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-            </div>
+            <DropdownMenuItem className="md:hidden" onClick={handleCreateProposal} disabled={isCreatingProposal}>
+              <FileText className="h-4 w-4 text-emerald-500" />
+              Angebot erstellen
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="md:hidden" />
 
-            <EnrollButton
-              dealId={deal.id}
-              contactId={deal.contact_id ?? undefined}
-              trigger={
-                <DropdownMenuItem closeOnClick={false}>
-                  <Zap className="h-4 w-4 text-amber-500" />
-                  In Cadence einbuchen
-                </DropdownMenuItem>
-              }
-            />
+            <DropdownMenuItem onClick={() => setShowEnrollDialog(true)}>
+              <Zap className="h-4 w-4 text-amber-500" />
+              In Cadence einbuchen
+            </DropdownMenuItem>
 
             <DropdownMenuItem onClick={() => setShowActivityFullSheet(true)}>
               <FileEdit className="h-4 w-4 text-purple-500" />
@@ -296,6 +278,28 @@ export function DealActionBar({ deal, contacts, companies, dealsForSelect }: Dea
       </div>
 
       {/* Modals (controlled, ausserhalb der Buttons-Reihe) */}
+      {showMeetingSheet && (
+        <MeetingSheet
+          contacts={contacts}
+          companies={companies}
+          deals={dealsForSelect}
+          defaultDealId={deal.id}
+          defaultContactId={deal.contact_id ?? undefined}
+          defaultCompanyId={deal.company_id ?? undefined}
+          defaultParticipants={prefill.suggestedParticipants}
+          defaultAgenda={prefill.suggestedAgenda}
+          defaultOpen={true}
+          onOpenChange={(v) => { if (!v) setShowMeetingSheet(false); }}
+        />
+      )}
+
+      <EnrollButton
+        dealId={deal.id}
+        contactId={deal.contact_id ?? undefined}
+        open={showEnrollDialog}
+        onOpenChange={setShowEnrollDialog}
+      />
+
       {showStartMeeting && (
         <StartMeetingModal
           dealId={deal.id}

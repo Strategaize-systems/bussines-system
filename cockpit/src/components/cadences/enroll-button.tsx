@@ -11,15 +11,26 @@ export function EnrollButton({
   dealId,
   contactId,
   trigger,
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange,
 }: {
   dealId?: string;
   contactId?: string;
   /** SLC-664/MT-4: optional Custom-Trigger (z.B. DropdownMenuItem im Action-Bar Mehr-Menue). */
   trigger?: React.ReactNode;
+  /** ISSUE-060 Hotfix: externer Open-State, damit der Dialog ausserhalb eines DropdownMenuContent gerendert werden kann. */
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [showDialog, setShowDialog] = useState(false);
+  const isExternallyControlled = externalOpen !== undefined && externalOnOpenChange !== undefined;
+  const [internalShowDialog, setInternalShowDialog] = useState(false);
+  const showDialog = isExternallyControlled ? externalOpen! : internalShowDialog;
+  const setShowDialog = (v: boolean) => {
+    if (isExternallyControlled) externalOnOpenChange!(v);
+    else setInternalShowDialog(v);
+  };
   const [cadences, setCadences] = useState<CadenceWithSteps[]>([]);
   const [selectedCadenceId, setSelectedCadenceId] = useState("");
   const [error, setError] = useState("");
@@ -60,18 +71,20 @@ export function EnrollButton({
 
   return (
     <>
-      {trigger ? (
-        <span onClick={() => setShowDialog(true)}>{trigger}</span>
-      ) : (
-        <button
-          onClick={() => setShowDialog(true)}
-          className="flex items-center gap-2.5 h-10 px-4 rounded-lg border-2 border-slate-200 bg-white text-sm font-bold text-slate-700 hover:border-violet-300 hover:bg-violet-50 hover:shadow-md transition-all cursor-pointer"
-        >
-          <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-sm">
-            <Zap className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
-          </span>
-          Automatisierung
-        </button>
+      {!isExternallyControlled && (
+        trigger ? (
+          <span onClick={() => setShowDialog(true)}>{trigger}</span>
+        ) : (
+          <button
+            onClick={() => setShowDialog(true)}
+            className="flex items-center gap-2.5 h-10 px-4 rounded-lg border-2 border-slate-200 bg-white text-sm font-bold text-slate-700 hover:border-violet-300 hover:bg-violet-50 hover:shadow-md transition-all cursor-pointer"
+          >
+            <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-sm">
+              <Zap className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+            </span>
+            Automatisierung
+          </button>
+        )
       )}
 
       {/* Dialog */}
