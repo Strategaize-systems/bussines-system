@@ -1,5 +1,23 @@
 # Known Issues
 
+### ISSUE-060 — Mehr-Aktionen-Dropdown crasht Deal-Detail-Page beim Click (Base UI #31)
+- Status: open
+- Severity: Blocker
+- Area: Frontend / SLC-664 / Action-Bar / Base UI Dropdown
+- Summary: `cockpit/src/components/deals/deal-action-bar.tsx:240-295` rendert mehrere unzulaessige direkte Kinder von `<DropdownMenuContent>`: 1. `<div className="md:hidden">` Wrapper um DropdownMenuItem + DropdownMenuSeparator (Z. 257-263). 2. `<EnrollButton trigger={<DropdownMenuItem>}>` (Z. 265) wrappt extern in `<span onClick>` was Base UI als invalid Menu-Child interpretiert. Resultat: Click crasht ganze Page mit `Base UI error #31` + `React Minified error #418` (Hydration-Cascade).
+- Impact: AC4 (Mehr-Menue: Cadence + Workflow + Activity + Mobile-Angebot) ist UNERREICHBAR. User-Workaround: separate Pages besuchen (/settings/automation, /cadences/new, /aufgaben/new). Live-verifiziert auf Production 2026-05-10 11:50 UTC+2.
+- Workaround: Separate Pages aufrufen statt Three-Dots zu nutzen.
+- Next Action: Hotfix vor SLC-665. EnrollButton-Trigger durch state-controlled Pattern ersetzen (DropdownMenuItem onClick + EnrollDialog ausserhalb DropdownMenuContent). md:hidden direkt auf DropdownMenuItem-Children setzen statt Wrapper-Div.
+
+### ISSUE-059 — Meeting-Dropdown crasht Deal-Detail-Page beim Click (Base UI #31)
+- Status: open
+- Severity: Blocker
+- Area: Frontend / SLC-664 / Action-Bar / Base UI Dropdown
+- Summary: `cockpit/src/components/deals/deal-action-bar.tsx:169-206` rendert `<MeetingSheet trigger={<DropdownMenuItem>}>` als direktes Kind von `<DropdownMenuContent>`. MeetingSheet returnt intern eine `<Sheet>` mit `<SheetTrigger>{trigger}</SheetTrigger>`, was `<Sheet>` zum direkten Kind von `<DropdownMenuContent>` macht. Base UI akzeptiert nur DropdownMenuItem/Label/Separator als direkte Children. Resultat: Click crasht ganze Page mit `Base UI error #31` + `React Minified error #418`.
+- Impact: AC3 (Meeting-Dropdown mit "Termin planen" + "Sofort starten") ist UNERREICHBAR. User kann vom Deal-Detail aus weder Meeting planen noch sofort starten — nur ueber separate Page erreichbar. Live-verifiziert auf Production 2026-05-10 11:46 + 11:48 UTC+2 (zwei unabhaengige Reproductions).
+- Workaround: User muss /termine besuchen oder MeetingSheet von anderer Page (z.B. Mein Tag) ausloesen.
+- Next Action: Hotfix vor SLC-665. MeetingSheet aus DropdownMenuContent ausziehen — Pattern wie StartMeetingModal: state-controlled Modal/Sheet ausserhalb Dropdown, DropdownMenuItem onClick={() => setShowMeetingSheet(true)}.
+
 ### ISSUE-058 — postcss <8.5.10 Vulnerability (Patch-Path catastrophic, akzeptiert bis Upstream-Next-Release)
 - Status: open
 - Severity: Low
