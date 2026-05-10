@@ -3,11 +3,11 @@ import type { KIWorkspaceReport } from "../types";
 const MOCK_PATH = "@/lib/ki-workspace/reports/_mock";
 
 export const MEIN_TAG_REPORTS: KIWorkspaceReport[] = [
-  { id: "tagesanalyse", label: "Tagesanalyse", serverActionPath: MOCK_PATH, cacheable: true },
-  { id: "gestern", label: "Gestern", serverActionPath: MOCK_PATH, cacheable: true },
-  { id: "seit-login", label: "Seit Login", serverActionPath: MOCK_PATH, cacheable: true },
-  { id: "wochen-performance", label: "Wochen-Performance", serverActionPath: MOCK_PATH, cacheable: true },
-  { id: "pipeline-risiko", label: "Pipeline-Risiko", serverActionPath: MOCK_PATH, cacheable: true },
+  { id: "tagesanalyse", label: "Tagesanalyse", serverActionPath: "@/lib/ki-workspace/reports/tagesanalyse", cacheable: true },
+  { id: "gestern", label: "Gestern", serverActionPath: "@/lib/ki-workspace/reports/gestern", cacheable: true },
+  { id: "seit-login", label: "Seit Login", serverActionPath: "@/lib/ki-workspace/reports/seit-login", cacheable: false },
+  { id: "wochen-performance", label: "Wochen-Performance", serverActionPath: "@/lib/ki-workspace/reports/wochen-performance", cacheable: true },
+  { id: "pipeline-risiko", label: "Pipeline-Risiko", serverActionPath: "@/lib/ki-workspace/reports/pipeline-risiko", cacheable: true },
 ];
 
 export const DEAL_DETAIL_REPORTS: KIWorkspaceReport[] = [

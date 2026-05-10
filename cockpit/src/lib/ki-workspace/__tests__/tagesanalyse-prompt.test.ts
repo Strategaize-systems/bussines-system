@@ -101,7 +101,7 @@ describe("buildTagesanalysePrompt — populated data", () => {
       ...EMPTY_INPUT,
       activityKpis: [
         {
-          kpiKey: "calls_made",
+          kpiKey: "calls",
           label: "Telefonate",
           dailyTarget: 10,
           todayActual: 4,

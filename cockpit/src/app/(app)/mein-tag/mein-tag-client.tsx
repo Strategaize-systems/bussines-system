@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle,
   ListTodo,
   Kanban,
   ChevronRight,
@@ -21,12 +20,13 @@ import {
   MapPin,
   FileText,
   Briefcase,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { DealDetailSheet } from "../pipeline/deal-detail-sheet";
 import { completeTaskFromMeinTag, completeDealActionFromMeinTag } from "./actions";
-import type { TodayData, TodayItem, TodayItemType, CalendarSlot, ExceptionData, NextMeetingPrep, TopDeal, GatekeeperSummary } from "./actions";
+import type { TodayData, TodayItem, TodayItemType, CalendarSlot, NextMeetingPrep, TopDeal, GatekeeperSummary } from "./actions";
 import type { Deal, PipelineStage } from "../pipeline/actions";
 import { TaskSheet } from "../aufgaben/task-sheet";
 import { MeetingSheet } from "@/components/meetings/meeting-sheet";
@@ -35,11 +35,11 @@ import { DealSheet } from "../pipeline/deal-sheet";
 import { ContactSheet } from "../contacts/contact-sheet";
 import { CompanySheet } from "../companies/company-sheet";
 import { CallSheet } from "./call-sheet";
-import { KIWorkspace } from "./ki-workspace";
+import { MeinTagKIWorkspace } from "./ki-workspace-wrapper";
 import { startMeeting } from "@/app/actions/meetings";
-import type { AIActionQueueItem } from "@/types/ai-queue";
 
 interface MeinTagClientProps {
+  userId: string;
   data: TodayData;
   stages: PipelineStage[];
   contacts: { id: string; first_name: string; last_name: string; phone?: string | null; company_id?: string | null }[];
@@ -47,12 +47,9 @@ interface MeinTagClientProps {
   deals: { id: string; title: string }[];
   pipelines: { id: string; name: string }[];
   calendarSlots: CalendarSlot[];
-  exceptions: ExceptionData;
   nextMeeting: NextMeetingPrep;
   topDeals: TopDeal[];
   gatekeeperSummary: GatekeeperSummary;
-  followupSuggestions: AIActionQueueItem[];
-  insightSuggestions: AIActionQueueItem[];
   dateLabel: string;
 }
 
@@ -78,7 +75,7 @@ const statusStyles: Record<string, string> = {
 
 const WORKDAY_MINUTES = 480; // 8h workday
 
-export function MeinTagClient({ data, stages, contacts, companies, deals, pipelines, calendarSlots, exceptions, nextMeeting, topDeals, gatekeeperSummary, followupSuggestions, insightSuggestions, dateLabel }: MeinTagClientProps) {
+export function MeinTagClient({ userId, data, stages, contacts, companies, deals, pipelines, calendarSlots, nextMeeting, topDeals, gatekeeperSummary, dateLabel }: MeinTagClientProps) {
   const totalItems = data.stats.overdueCount + data.stats.todayCount + data.stats.upcomingCount;
   const completedItems = 0;
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
@@ -88,9 +85,6 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
   const freeMinutes = Math.max(0, WORKDAY_MINUTES - scheduledMinutes);
   const freeHours = Math.floor(freeMinutes / 60);
   const freeRestMinutes = freeMinutes % 60;
-
-  // Exception counts
-  const exceptionCount = exceptions.stagnantDeals.length + exceptions.overdueTasks.length + exceptions.overdueDeals.length;
 
   const allItems = [...data.overdue, ...data.today, ...data.upcoming];
 
@@ -135,12 +129,6 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
           <Clock size={14} />
           {freeHours}h {freeRestMinutes > 0 ? `${freeRestMinutes}m` : ""} frei
         </span>
-        {exceptionCount > 0 && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-red-200 bg-red-50 text-xs font-bold text-red-700">
-            <AlertTriangle size={14} />
-            {exceptionCount} Hinweis{exceptionCount !== 1 ? "e" : ""}
-          </span>
-        )}
       </PageHeader>
 
       <main className="px-8 py-8">
@@ -340,47 +328,7 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
               </div>
 
               {/* KI-WORKSPACE — flows directly after Aufgaben + Deals */}
-              <KIWorkspace
-                data={data}
-                calendarSlots={calendarSlots}
-                exceptions={exceptions}
-                contacts={contacts}
-                companies={companies}
-                deals={deals}
-                followupSuggestions={followupSuggestions}
-                insightSuggestions={insightSuggestions}
-                searchContext={{
-                  todaysTasks: allItems.map((item) => ({
-                    title: item.title,
-                    priority: item.priority ?? undefined,
-                    dueDate: item.dueDate ?? undefined,
-                    contactName: item.contactName ?? undefined,
-                    companyName: item.companyName ?? undefined,
-                  })),
-                  topDeals: topDeals.map((d) => ({
-                    title: d.title,
-                    value: d.value ?? undefined,
-                    stage: d.stage ?? undefined,
-                    companyName: d.companyName ?? undefined,
-                    nextAction: d.nextAction ?? undefined,
-                  })),
-                  calendarSlots: calendarSlots.map((s) => ({
-                    time: s.time,
-                    title: s.title,
-                    type: s.type,
-                  })),
-                  stagnantDeals: exceptions.stagnantDeals.map((d) => ({
-                    title: d.title,
-                    daysSinceUpdate: d.daysSinceUpdate,
-                    value: d.value ?? undefined,
-                    stage: d.stage ?? undefined,
-                  })),
-                  overdueTasks: exceptions.overdueTasks.map((t) => ({
-                    title: t.title,
-                    dueDate: t.dueDate,
-                  })),
-                }}
-              />
+              <MeinTagKIWorkspace userId={userId} />
             </div>
 
             {/* RIGHT COLUMN (4): Entities + Zeit + Kalender + Meeting-Prep + Exceptions */}
@@ -477,33 +425,19 @@ export function MeinTagClient({ data, stages, contacts, companies, deals, pipeli
                 {/* MEETING-PREP */}
                 {nextMeeting && <MeetingPrepCard meeting={nextMeeting} />}
 
-                {/* FOCUS-BADGES — compact links to /focus when there are open items */}
-                {(gatekeeperSummary.unclassified > 0 || exceptionCount > 0) && (
+                {/* FOCUS-BADGES — only ungeordnete-E-Mails bleibt; Pipeline-Risiko ist im KI-Workspace-Bericht */}
+                {gatekeeperSummary.unclassified > 0 && (
                   <div className="space-y-1.5">
-                    {gatekeeperSummary.unclassified > 0 && (
-                      <Link
-                        href="/focus"
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 transition-colors"
-                      >
-                        <Mail size={14} className="text-amber-600" />
-                        <span className="text-xs font-semibold text-amber-700 flex-1">
-                          {gatekeeperSummary.unclassified} nicht zugeordnete E-Mails
-                        </span>
-                        <ChevronRight size={12} className="text-amber-400" />
-                      </Link>
-                    )}
-                    {exceptionCount > 0 && (
-                      <Link
-                        href="/focus"
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 transition-colors"
-                      >
-                        <AlertTriangle size={14} className="text-red-500" />
-                        <span className="text-xs font-semibold text-red-700 flex-1">
-                          {exceptionCount} offene Punkte
-                        </span>
-                        <ChevronRight size={12} className="text-red-400" />
-                      </Link>
-                    )}
+                    <Link
+                      href="/focus"
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 transition-colors"
+                    >
+                      <Mail size={14} className="text-amber-600" />
+                      <span className="text-xs font-semibold text-amber-700 flex-1">
+                        {gatekeeperSummary.unclassified} nicht zugeordnete E-Mails
+                      </span>
+                      <ChevronRight size={12} className="text-amber-400" />
+                    </Link>
                   </div>
                 )}
 
@@ -705,6 +639,4 @@ function QuickActionButton({ icon: Icon, label, color }: { icon: typeof ListTodo
   );
 }
 
-// KIWorkspace is now in ./ki-workspace.tsx
-// Old YesterdayPanel, UnseenEventsPanel, and KIDailyPanel code removed.
 

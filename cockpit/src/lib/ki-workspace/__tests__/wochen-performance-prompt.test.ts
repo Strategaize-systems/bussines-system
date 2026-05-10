@@ -23,6 +23,7 @@ const REVENUE_GOAL: GoalWithProgress = {
   progress: {
     goalId: "g1",
     goalType: "revenue",
+    productId: null,
     targetValue: 100000,
     currentValue: 60000,
     progressPercent: 60,
@@ -46,7 +47,7 @@ const PRODUCT_GOAL: GoalWithProgress = {
   product_id: "p1",
   product_name: "Workshop",
   target_value: 5,
-  progress: { ...REVENUE_GOAL.progress, goalId: "g2", goalType: "deal_count", targetValue: 5, currentValue: 3, progressPercent: 60, pipelineForecast: 5, historicForecast: 4, combinedForecast: 4, delta: -2, dealsNeeded: 2 },
+  progress: { ...REVENUE_GOAL.progress, goalId: "g2", goalType: "deal_count", productId: "p1", targetValue: 5, currentValue: 3, progressPercent: 60, pipelineForecast: 5, historicForecast: 4, combinedForecast: 4, delta: -2, dealsNeeded: 2 },
 };
 
 const EMPTY_INPUT: WochenPerformanceInput = {
@@ -119,7 +120,7 @@ describe("buildWochenPerformancePrompt", () => {
       goalsWithProgress: [REVENUE_GOAL],
       weeklyActivityKpis: [
         {
-          kpiKey: "calls_made",
+          kpiKey: "calls",
           label: "Telefonate",
           dailyTarget: 10,
           days: [
