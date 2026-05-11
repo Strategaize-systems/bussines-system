@@ -11,7 +11,7 @@ import {
   Edit3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Action, ActionType } from "@/types/automation";
+import type { Action, ActionType, UserActionType } from "@/types/automation";
 import { CreateTaskForm } from "./actions/create-task-form";
 import { CreateActivityForm } from "./actions/create-activity-form";
 import { UpdateFieldForm } from "./actions/update-field-form";
@@ -20,7 +20,7 @@ import {
   type EmailTemplateOption,
 } from "./actions/send-email-template-form";
 
-const ACTION_DEFAULTS: Record<ActionType, Action> = {
+const ACTION_DEFAULTS: Record<UserActionType, Action> = {
   create_task: {
     type: "create_task",
     params: { title: "" },
@@ -40,7 +40,7 @@ const ACTION_DEFAULTS: Record<ActionType, Action> = {
 };
 
 const ACTION_META: Record<
-  ActionType,
+  UserActionType,
   { label: string; Icon: typeof CheckSquare; bg: string; text: string }
 > = {
   create_task: {
@@ -78,7 +78,7 @@ export function StepActions({
   emailTemplates: EmailTemplateOption[];
   onChange: (a: Action[]) => void;
 }) {
-  function addAction(type: ActionType) {
+  function addAction(type: UserActionType) {
     onChange([...actions, ACTION_DEFAULTS[type]]);
   }
   function removeAction(idx: number) {
@@ -115,7 +115,9 @@ export function StepActions({
           </div>
         ) : null}
         {actions.map((action, i) => {
-          const meta = ACTION_META[action.type];
+          // System-Actions sind nicht im Builder-UI editierbar — defensive.
+          const meta = ACTION_META[action.type as UserActionType];
+          if (!meta) return null;
           const Icon = meta.Icon;
           return (
             <div
@@ -202,7 +204,7 @@ export function StepActions({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {(Object.keys(ACTION_META) as ActionType[]).map((t) => {
+        {(Object.keys(ACTION_META) as UserActionType[]).map((t) => {
           const meta = ACTION_META[t];
           const Icon = meta.Icon;
           return (

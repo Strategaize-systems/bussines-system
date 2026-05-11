@@ -1,8 +1,8 @@
 # Migrations
 
 ### MIG-032 — V6.6 Working-Hours-Setting + Win/Loss-Auto-Trigger Schema
-- Date: planned (apply als ersten SLC-665-Schritt vor Workflow-Action-Code-Deploy)
-- Scope: 2 additive Aenderungen in einer Migration `032_v66_working_hours_and_winloss.sql`:
+- Date: 2026-05-11 (applied via SSH+base64 in SLC-665 MT-1, plus MIG-032b system-rule INSERT)
+- Scope: 3 additive Aenderungen in `032_v66_working_hours_and_winloss.sql` + `032b_v66_system_winloss_rule.sql`:
   1. Erweiterung `user_settings` um 2 nullable TIME-Spalten (DEC-172):
      ```sql
      ALTER TABLE user_settings
@@ -40,7 +40,14 @@
      GRANT ALL ON auto_winloss_runs TO authenticated;
      GRANT ALL ON auto_winloss_runs TO service_role;
      ```
-- Reason: V6.6 FEAT-662 (Kalender-Polish + Working-Hours-Setting) und FEAT-666 (Win/Loss-Auto-Trigger) brauchen das gemeinsame Schema in einer Migration. DEC-171 + DEC-172 haben die Strategie festgelegt. Bestehende `user_settings`-Rows bleiben funktional ohne Working-Hours-Wert (nullable). `auto_winloss_runs` ist eine eigene, neue Tabelle ohne Touch auf bestehende V4.3/V5.x AI-Run-Strukturen — additive Migration ohne Regression-Risiko. CHECK-Constraint auf working_hours sichert Daten-Integritaet (Both-NULL-or-Both-Set + Start<End). RLS-Pattern konsistent zu MIG-027/030.
+  3. Neue Spalte `automation_rules.is_system` (DEC-171, schuetzt System-Rule vor Builder-UI-Listing):
+     ```sql
+     ALTER TABLE automation_rules
+       ADD COLUMN IF NOT EXISTS is_system BOOLEAN NOT NULL DEFAULT false;
+     CREATE INDEX IF NOT EXISTS idx_automation_rules_is_system
+       ON automation_rules(is_system) WHERE is_system = true;
+     ```
+- Reason: V6.6 FEAT-662 (Kalender-Polish + Working-Hours-Setting) und FEAT-666 (Win/Loss-Auto-Trigger) brauchen das gemeinsame Schema in einer Migration. DEC-171 + DEC-172 haben die Strategie festgelegt. `is_system` als dritte additive Aenderung notwendig damit die System-Rule nicht im Builder-UI auftaucht und nicht versehentlich von Usern editiert wird (per `is_system=false`-Filter in `listAutomationRules`). Bestehende `user_settings`-Rows bleiben funktional ohne Working-Hours-Wert (nullable). `auto_winloss_runs` ist eine eigene, neue Tabelle ohne Touch auf bestehende V4.3/V5.x AI-Run-Strukturen — additive Migration ohne Regression-Risiko. CHECK-Constraint auf working_hours sichert Daten-Integritaet (Both-NULL-or-Both-Set + Start<End). RLS-Pattern konsistent zu MIG-027/030.
 - Affected Areas:
   - Settings-Page `/settings/working-hours` (NEU, SLC-667) mit Server Actions `getWorkingHoursSettings`, `updateWorkingHoursSettings`
   - `cockpit/src/components/kalender-client.tsx` (SLC-667) — Hartkodierung 07:00-20:00 zu `DEFAULT_HOUR_RANGE` Konstante 06:00-21:00, Working-Hours-Lookup, Toggle-Logik

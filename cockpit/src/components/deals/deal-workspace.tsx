@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { DealHeader } from "./deal-header";
 import { DealTimeline } from "./deal-timeline";
 import { DealTasks } from "./deal-tasks";
@@ -9,6 +9,9 @@ import { DealDocuments } from "./deal-documents";
 import { DealActionBar } from "./deal-action-bar";
 import { DealKIWorkspace } from "./deal-ki-workspace-wrapper";
 import { EnrollmentBadge } from "@/components/cadences/enrollment-badge";
+import { ItemSheet } from "@/components/item-sheet/ItemSheet";
+import type { ItemSheetData } from "@/components/item-sheet/types";
+import { loadActivityWithBedrockSummary } from "@/lib/activity/loadActivityWithBedrockSummary";
 import { Clock, ListTodo, FileText, FolderOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PipelineStage, Pipeline } from "@/app/(app)/pipeline/actions";
@@ -77,6 +80,29 @@ export function DealWorkspace({
   calls = [],
 }: DealWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<TabId>("timeline");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetData, setSheetData] = useState<ItemSheetData | null>(null);
+  const [, startSheetLoad] = useTransition();
+
+  // SLC-665 MT-5 (DEC-170 AC4): Click auf Activity-Item -> Server-Action
+  // laedt Activity + Bedrock-Summary -> ItemSheet oeffnet.
+  const handleActivityClick = (activityId: string) => {
+    setSheetOpen(true);
+    setSheetData(null); // loading state
+    startSheetLoad(async () => {
+      const result = await loadActivityWithBedrockSummary(activityId);
+      if (!result) {
+        setSheetOpen(false);
+        return;
+      }
+      setSheetData({
+        kind: "activity",
+        activity: result.activity,
+        bedrockSummary: result.bedrockSummary,
+        autoReplyHint: result.autoReplyHint,
+      });
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -142,6 +168,7 @@ export function DealWorkspace({
                 trackingSummaries={trackingSummaries}
                 inboxEmails={inboxEmails}
                 calls={calls}
+                onActivityClick={handleActivityClick}
               />
             )}
             {activeTab === "tasks" && (
@@ -156,6 +183,15 @@ export function DealWorkspace({
           </div>
         </div>
       </div>
+
+      <ItemSheet
+        open={sheetOpen}
+        onOpenChange={(v) => {
+          setSheetOpen(v);
+          if (!v) setSheetData(null);
+        }}
+        data={sheetData}
+      />
     </div>
   );
 }

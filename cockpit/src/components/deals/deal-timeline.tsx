@@ -71,6 +71,8 @@ interface TimelineItem {
   summary?: string;
   date: string;
   emailId?: string;
+  /** Raw activity row id, set fuer Activities die im ItemSheet oeffnen sollen. */
+  activityId?: string;
   call?: Call;
   meeting?: Meeting;
   briefingActivity?: {
@@ -89,6 +91,13 @@ interface DealTimelineProps {
   trackingSummaries?: Record<string, TrackingSummary>;
   inboxEmails?: any[];
   calls?: Call[];
+  /**
+   * SLC-665 MT-5: Click-Handler fuer Activity-Items oeffnet ItemSheet
+   * mit Bedrock-Summary. Wird nur fuer "echte" Activity-Rows verdrahtet
+   * (also nicht fuer Meeting/Call/Briefing-Karten, die eigene
+   * Sub-Components mit eigenem Detail-Pfad besitzen).
+   */
+  onActivityClick?: (activityId: string) => void;
 }
 
 export function DealTimeline({
@@ -99,6 +108,7 @@ export function DealTimeline({
   trackingSummaries = {},
   inboxEmails = [],
   calls = [],
+  onActivityClick,
 }: DealTimelineProps) {
   // Calls werden aus der calls-Tabelle gerendert (mit Summary + Transcript expandable).
   // Daher activity-Eintraege mit source_type='call' herausfiltern, damit keine Duplikate erscheinen.
@@ -115,6 +125,7 @@ export function DealTimeline({
         title: a.title || a.type,
         summary: isBriefing ? undefined : a.summary || a.description,
         date: a.created_at,
+        activityId: isBriefing ? undefined : (a.id as string),
         briefingActivity: isBriefing
           ? {
               id: a.id,
@@ -204,10 +215,28 @@ export function DealTimeline({
         const tracking = item.emailId
           ? trackingSummaries[item.emailId]
           : undefined;
+        const clickable = Boolean(item.activityId && onActivityClick);
         return (
           <div
             key={item.id}
-            className="bg-white rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-md transition-all group"
+            className={`bg-white rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-md transition-all group${clickable ? " cursor-pointer" : ""}`}
+            onClick={
+              clickable
+                ? () => onActivityClick?.(item.activityId as string)
+                : undefined
+            }
+            role={clickable ? "button" : undefined}
+            tabIndex={clickable ? 0 : undefined}
+            onKeyDown={
+              clickable
+                ? (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onActivityClick?.(item.activityId as string);
+                    }
+                  }
+                : undefined
+            }
           >
             <div className="flex gap-3">
               <div

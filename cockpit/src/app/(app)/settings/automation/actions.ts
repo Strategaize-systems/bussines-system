@@ -109,9 +109,12 @@ function collectStageIds(
 export async function listAutomationRules(): Promise<AutomationRuleListItem[]> {
   const { supabase } = await requireUser();
 
+  // SLC-665 (DEC-171): System-Rules (z.B. auto_winloss_extract) sind kein
+  // User-facing Eintrag. Builder-UI listet nur User-Rules.
   const { data: rules, error } = await supabase
     .from(TABLE)
     .select("*")
+    .eq("is_system", false)
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);

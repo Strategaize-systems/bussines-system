@@ -64,6 +64,11 @@ function previewAction(action: Action): ActionPreview {
         type: "update_field",
         summary: `${action.params.entity}.${action.params.field} = ${JSON.stringify(action.params.value)}`,
       };
+    case "auto_winloss_extract":
+      return {
+        type: "auto_winloss_extract",
+        summary: "Win/Loss-Analyse (System-Action, kein User-Edit)",
+      };
     default:
       return { type: (action as Action).type, summary: "(unbekannte Action)" };
   }

@@ -10,11 +10,11 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.6 SLC-664 done 2026-05-11 nach 2 Hotfixes (RPT-375 PASS)**. ISSUE-059+060 resolved durch Commits `26a4627` (Hotfix-1: MeetingSheet/EnrollButton state-controlled + md:hidden direkt) und `aec7147` (Hotfix-2: DropdownMenuLabel = Base UI Menu.GroupLabel raus, war root-cause des Crashs). AC3+AC4 Live-Smoke PASS — beide Action-Bar-Dropdowns oeffnen sauber, MeetingSheet + EnrollDialog oeffnen via state-controlled Pattern. V6.6 jetzt 3/7 Slices vollstaendig done (SLC-661 + SLC-662 + SLC-664). Naechster Schritt: /backend SLC-665 (Activity-Sheet + Win/Loss-Auto-Trigger + MIG-032), optional vorher SLC-663 Deals-Listen-Seite (parallelisierbar).
-- Current Phase: V6.6 Pre-V7-Audit-Sprint — Implementation aktiv (3/7 Slices done).
+- Current Focus: **V6.6 SLC-665 /backend code-side DONE 2026-05-11 (RPT-376)** — MIG-032 + MIG-032b auf Hetzner applied (3 additive Aenderungen inkl. `automation_rules.is_system` + System-Rule `[SYSTEM] Auto Win/Loss Extract`). ItemSheet-Generic + Activity-Variant + Bedrock-Summary-Loader + DealTimeline-Click-Handler live. V6.2-Workflow-Action `auto_winloss_extract` mit 5-Min-Time-Window-Throttle + Bedrock-Wrapper + audit_log-Trail. Read-API `/api/winloss/[deal_id]` (Bearer EXPORT_API_KEY). Manueller Win/Loss-Berichts-Pfad mit 24h-Auto-Run-Cache + bypassCache-Override. TSC + Vitest 546/546 + Build + Lint clean. V6.6 jetzt 3/7 Slices vollstaendig done + SLC-665 code-side ready. Naechster Schritt: User-Coolify-Deploy + /qa SLC-665 (Live-Smoke: 3-fach Stage-Toggling + Activity-Sheet + Read-API curl + Manueller Re-Run).
+- Current Phase: V6.6 Pre-V7-Audit-Sprint — Implementation aktiv (3/7 Slices vollstaendig done + SLC-665 code-side complete).
 
 ## Immediate Next Steps
-1. **(naechster Schritt) /backend SLC-665** — Activity-Sheet + Win/Loss-Auto-Trigger (einziger V6.6-Slice mit MIG-032 + automation-Engine-Erweiterung). FEAT-664 wird erst nach SLC-665 done.
+1. **(naechster Schritt) User-Coolify-Deploy** des SLC-665-Codes + **/qa SLC-665** mit Live-Smoke (3-fach Stage-Toggling + Activity-Sheet 2-fach + Read-API curl + Manueller Re-Run-Button).
 2. **(Optional parallel)** /backend SLC-663 — Deals-Listen-Seite (Top-10 + Karten-Grid + Type-Ahead), eigenstaendig, kein KI-Workspace-Caller.
 2. **(nach V6.6 done)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) auf bereinigter Basis. BL-425 Multi-Touch-Journey-Tab + verbleibende V7-Audit-Defer-Items werden in V7-Scope integriert. Mitarbeiter-/Chef-Drill-Downs + Rollen-Sichtbarkeit kommen mit V7.
 3. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.

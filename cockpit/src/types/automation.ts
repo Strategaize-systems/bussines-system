@@ -22,7 +22,15 @@ export type ActionType =
   | "create_task"
   | "send_email_template"
   | "create_activity"
-  | "update_field";
+  | "update_field"
+  | "auto_winloss_extract";
+
+/**
+ * Subset von ActionType, der im Builder-UI sichtbar ist. System-Only-Actions
+ * (auto_winloss_extract) werden nur ueber System-Rules verwendet und sind
+ * keine User-Auswahl. SLC-665 (DEC-171).
+ */
+export type UserActionType = Exclude<ActionType, "auto_winloss_extract">;
 
 export type ConditionOp =
   | "eq"
@@ -92,11 +100,17 @@ export interface UpdateFieldParams {
   value: unknown;
 }
 
+// SLC-665 (DEC-171) — System-only-Action, KEIN Builder-UI-Eintrag. Wird
+// ausschliesslich durch die System-Rule "[SYSTEM] Auto Win/Loss Extract"
+// instanziiert (siehe MIG-032b).
+export type AutoWinLossExtractParams = Record<string, never>;
+
 export type Action =
   | { type: "create_task"; params: CreateTaskParams }
   | { type: "send_email_template"; params: SendEmailTemplateParams }
   | { type: "create_activity"; params: CreateActivityParams }
-  | { type: "update_field"; params: UpdateFieldParams };
+  | { type: "update_field"; params: UpdateFieldParams }
+  | { type: "auto_winloss_extract"; params: AutoWinLossExtractParams };
 
 // DB-Row-Shapes
 export interface AutomationRule {

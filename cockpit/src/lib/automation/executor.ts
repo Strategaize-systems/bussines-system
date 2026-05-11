@@ -27,6 +27,7 @@ import { executeCreateTask } from "./actions/create_task";
 import { executeCreateActivity } from "./actions/create_activity";
 import { executeUpdateField } from "./actions/update_field";
 import { executeSendEmailTemplate } from "./actions/send_email_template";
+import { executeAutoWinLossExtract } from "./actions/auto_winloss_extract";
 import type {
   ActionEntityContext,
   ActionExecutionContext,
@@ -178,6 +179,8 @@ export async function executeAutomationRun(runId: string): Promise<void> {
           result = await executeUpdateField(baseContext, action.params);
         } else if (action.type === "send_email_template") {
           result = await executeSendEmailTemplate(baseContext, action.params);
+        } else if (action.type === "auto_winloss_extract") {
+          result = await executeAutoWinLossExtract(baseContext, action.params);
         } else {
           // exhaustive-check: TS sollte das fangen, aber defensiv:
           const unknown = action as { type?: string };

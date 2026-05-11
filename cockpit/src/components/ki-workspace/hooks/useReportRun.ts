@@ -63,7 +63,11 @@ export function useReportRun(options: UseReportRunOptions = {}): UseReportRunRes
       setIsLoading(true);
       try {
         const runner = await loadRunner(report.serverActionPath);
-        const fresh = await runner({ reportId: report.id, scope });
+        const fresh = await runner({
+          reportId: report.id,
+          scope,
+          bypassCache: opts?.bypassCache,
+        });
         if (report.cacheable) {
           setCached(key, fresh);
         }

@@ -29,6 +29,12 @@ export interface ReportResult {
 export interface RunReportArgs {
   reportId: string;
   scope: KIWorkspaceScope;
+  /**
+   * SLC-665 (DEC-171): manueller "Erneut analysieren"-Klick im AnswerPane
+   * uebersteuert nicht nur den 5-Min-In-Memory-Cache (per useReportRun),
+   * sondern auch DB-Caches wie den 24h-Win/Loss-Auto-Run-Cache.
+   */
+  bypassCache?: boolean;
 }
 
 export type ReportRunner = (args: RunReportArgs) => Promise<ReportResult>;
