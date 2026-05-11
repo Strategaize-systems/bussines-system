@@ -9,13 +9,13 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: final-check
-- Current Focus: **V6.6 /final-check DONE 2026-05-11 (RPT-387) — PASS conditional**. Alle 7 Audit-Dimensionen PASS: ESLint 142e/54w (-24/-3 vs V5.7-Baseline, 0 in SLC-66X-Files), Vitest 650/650 lokal, Container app Up 45min healthy auf Image `360c6ec`, supabase-db+kong+meta+coolify-proxy healthy, MIG-032 + System-Workflow-Rule active, Audit-Trail letzte 24h aktiv (ai_signal_extract_run 286x matched RPT-342-Schwelle, ki_workspace_report 3x V6.6-neu, auto_winloss_triggered 2x + skipped_recent_run 1x V6.6-neu), 0 Container-5xx letzte 1h, Cron-Logs errors=0. ISSUE-061 resolved, ISSUE-058+042 als bekannt-akzeptiert. 1 neu erfasstes Low-Finding L-1: 4 V6.6-Files mit Hex-Hardcodes statt Brand-Tokens → BL-460 V6.7-Polish. Keine V6.6-Release-Blocker, keine Required-Fixes. **V6.6 ready fuer /go-live**.
-- Current Phase: V6.6 Pre-V7-Audit-Sprint — Final-Check abgeschlossen, vor Go-Live.
+- High-Level State: go-live
+- Current Focus: **V6.6 /go-live DONE 2026-05-11 (RPT-388) — GO**. Alle Pre-Conditions PASS: Vitest 650/650, ESLint -24e/-3w vs V5.7-Baseline, Container app healthy auf Image `360c6ec` (Up 1h+), supabase-db+kong+meta+coolify-proxy healthy, MIG-032 + System-Workflow-Rule live, Audit-Trail letzte 24h aktiv (ai_signal_extract_run 286x matched RPT-342-Schwelle, ki_workspace_report 3x V6.6-neu, auto_winloss_triggered 2x + skipped_recent_run 1x V6.6-neu), 0 Container-5xx letzte 30min, Cron-Logs errors=0. ISSUE-061 resolved, ISSUE-058+042 als bekannt-akzeptiert. REL-028-Eintrag in RELEASES.md vorbereitet. Image-Tag-Pinning auf `360c6ec` (Code-Stand bereits live deployed, HEAD `4b202dc` enthaelt nur Docs-only Commits seit). **V6.6 ready fuer /deploy als REL-028**.
+- Current Phase: V6.6 Pre-V7-Audit-Sprint — Go-Live PASS, vor Records-Sync-/deploy.
 
 ## Immediate Next Steps
-1. **(naechster Schritt) /go-live V6.6** — finale Release-Bestaetigung + Image-Tag-Pinning + RELEASES.md-Eintrag REL-028 vorbereiten.
-2. **(danach)** User-Coolify-Redeploy + Post-Deploy-Smoke + /deploy als REL-028.
+1. **(naechster Schritt) /deploy V6.6 als REL-028** — Records-Sync: features/INDEX.md FEAT-661..666 done→deployed, slices/INDEX.md SLC-661..667 done→deployed, planning/roadmap.json V6.6 active→released, planning/backlog.json relevante V6.6-Items, docs/STATE.md "Last Stable Version" + High-Level-State=stable, RPT-389 als /deploy-Report.
+2. **(optional vor /deploy)** User-Coolify-Redeploy von HEAD `4b202dc` — NICHT zwingend, da nur Docs-only Commits seit Image `360c6ec`. Sinnvoll wenn Docs/Backlog-Stand ins Image gebaut werden soll.
 3. **(nach V6.6 done)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) auf bereinigter Basis. BL-425 Multi-Touch-Journey-Tab + verbleibende V7-Audit-Defer-Items werden in V7-Scope integriert. Mitarbeiter-/Chef-Drill-Downs + Rollen-Sichtbarkeit kommen mit V7.
 4. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
 5. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).
