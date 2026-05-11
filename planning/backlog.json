@@ -2087,7 +2087,7 @@
       "title": "FEAT-664 Deal-Detail (Layout-Swap auf Mein-Tag-Pattern + Activity-Sheet)",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V6.6",
       "description": "Deal-Detail Layout-Konsolidierung. Header: Title + Stage-Dropdown + Wert + Prozess-Check-Pill + Edit-Pencil + Mein-Tag-Quick-Switch. Action-Bar oben (Mein-Tag-Style bunt+rund): Task/E-Mail/Meeting-Dropdown(plan+sofort)/Anruf/Notiz/Angebot/Mehr-Menue mit Cadence. Hauptbereich 2/3+1/3: links KI-Workspace mit Berichts-Buttons (Briefing + Signale extrahieren + Risiken & Einwaende + Naechster Schritt + Win/Loss-Analyse), rechts Tabs (Timeline/Tasks/Proposals/Documents). 3 KI-Module konsolidiert auf 1 KI-Workspace (Briefing-Sidebar weg, Wissen-Tab weg, Signale-Action weg). Edit-Tab faellt (Pencil im Header). Activity-Sheet beim Klick auf Timeline-Item (Reuse Mein-Tag Task-Sheet) mit Risiken/Einwaende/Naechste Schritte/Teilnehmer/Zusammenfassung. Slice-Planning DONE 2026-05-09: SLC-664 (Layout-Swap, 4 Sub-Block-Commits) + SLC-665 (Activity-Sheet als Reuse Task-Sheet via ItemSheet-Refactor).",
       "createdAt": "2026-05-09"
@@ -2150,6 +2150,26 @@
       "status": "open",
       "version": null,
       "description": "Aktuell ist WON_STAGE_NAMES=['Gewonnen'] und LOST_STAGE_NAMES=['Verloren', 'Inaktiv / disqualifiziert'] (cockpit/src/app/(app)/pipeline/actions.ts:49-50). Die Multiplikatoren-Pipeline hat by design kein 'Gewonnen' (Beziehungspflege-Lebenszyklus, kein Deal-Closing) — der semantische Win-State ist 'Strategischer Multiplikator' (probability=95). Konsequenz: Beim Wechsel auf 'Strategischer Multiplikator' feuert auto_winloss_extract NICHT, obwohl es fachlich sinnvoll waere (Multiplikator hat etablierte Beziehung, ggf. erste Empfehlung gegeben — Win/Loss-Bedrock-Analyse waere wertvoll fuer das Wissensmanagement). Lost-Pfad funktioniert bereits (ueber 'Inaktiv / disqualifiziert'). Loesungs-Optionen: (a) WON_STAGE_NAMES erweitern um 'Strategischer Multiplikator', (b) pipeline-spezifisches Mapping Record<pipeline_name, {won_stages, lost_stages}>, (c) Stage-Flag-Feld auf pipeline_stages (is_won, is_lost) + Migration. Bedrock-Prompt FEAT-114 muesste fuer Multiplikatoren-Kontext ggf. angepasst werden (anderer Win/Loss-Begriff). Discovery-Fund aus SLC-665 /qa 2026-05-11. V7-Diskussion empfohlen.",
+      "createdAt": "2026-05-11"
+    },
+    {
+      "id": "BL-455",
+      "title": "Pflichtfelder-Modal beim Stage-Move (Verlustgrund / Deal-Wert) statt Edit-Pencil-Umweg",
+      "type": "improvement",
+      "priority": "high",
+      "status": "open",
+      "version": null,
+      "description": "Aktuell: User dragged Deal auf 'Verloren', moveDealToStage (cockpit/src/app/(app)/pipeline/actions.ts:381-490) prueft STAGE_REQUIRED_FIELDS und blockiert mit error 'Pflichtfelder fuer Verloren: Verlustgrund'. User muss den Move abbrechen, ueber Bearbeitungs-Pencil ins Deal, Verlustgrund eintragen, dann erneut draggen. Hohe Friction, jedes Mal. Gleiche Logik fuer 'Gewonnen' (Deal-Wert), 'Angebot vorbereitet'/'Angebot offen' (Deal-Wert), 'Verhandlung / Einwaende' (Deal-Wert + Kontakt). Loesung: Inline-Modal direkt beim Drop, das die Pflichtfelder abfragt + transaktional speichert + den Move ausfuehrt. UX-Pattern: shadcn Dialog + Form-Felder generisch aus STAGE_REQUIRED_FIELDS gerendert. Beim Cancel: kein Move. Beim Save: Pflichtfelder + Stage-Update in einer Server-Action. Discovery aus SLC-665 /qa 2026-05-11. Voraussetzung fuer BL-456 (KI-Vorschlag fuer Verlustgrund) — die KI-Logik haengt im gleichen Modal.",
+      "createdAt": "2026-05-11"
+    },
+    {
+      "id": "BL-456",
+      "title": "KI-Vorschlag fuer Verlustgrund aus Activity-History (Bedrock + Aktivitaeten-Snapshot)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": null,
+      "description": "Beim Stage-Move auf 'Verloren' (oder 'Geparkt') haengt der User-Verlustgrund-Eingabe oft an: Was war der konkrete Ausloeser? Meist liegt das in der Activity-History (E-Mail mit Absage, Meeting-Notiz 'will nicht', Call-Recording mit Einwand, Notiz). Idee: Beim Oeffnen des Verlust-Modals (BL-455) laedt eine Server-Action die letzten ~5 Activities (emails, meetings, notes, calls) + macht einen Bedrock-Call (FEAT-114-Pattern, EU-Region Frankfurt) mit Prompt 'Analysiere diese letzten Interaktionen und schlage einen Verlustgrund vor'. Antwort wird im Modal als vorausgefuelltes Textfeld + Button 'Uebernehmen' oder 'Eigenen Grund eingeben' angezeigt. User editierbar, dann Speichern. Audit-Trail: ki_suggested vs user_typed in auto_winloss_runs oder Audit-Log. Voraussetzung: BL-455 (Modal-Container) ist done. Bedrock-Adapter aus FEAT-114/SLC-665 wiederverwendbar — nur Prompt anders. Datenschutz: gleicher Pfad wie Win/Loss-Extract, EU-Region, keine US-Endpoints. Discovery aus SLC-665 /qa 2026-05-11.",
       "createdAt": "2026-05-11"
     }
   ]
