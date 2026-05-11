@@ -1,7 +1,5 @@
 import type { KIWorkspaceReport } from "../types";
 
-const MOCK_PATH = "@/lib/ki-workspace/reports/_mock";
-
 export const MEIN_TAG_REPORTS: KIWorkspaceReport[] = [
   { id: "tagesanalyse", label: "Tagesanalyse", serverActionPath: "@/lib/ki-workspace/reports/tagesanalyse", cacheable: true },
   { id: "gestern", label: "Gestern", serverActionPath: "@/lib/ki-workspace/reports/gestern", cacheable: true },
@@ -19,10 +17,10 @@ export const DEAL_DETAIL_REPORTS: KIWorkspaceReport[] = [
 ];
 
 export const COCKPIT_REPORTS: KIWorkspaceReport[] = [
-  { id: "pipeline-snapshot", label: "Pipeline-Snapshot", serverActionPath: MOCK_PATH, cacheable: true },
-  { id: "top-chancen", label: "Top-Chancen", serverActionPath: MOCK_PATH, cacheable: true },
-  { id: "conversion-rate", label: "Conversion-Rate", serverActionPath: MOCK_PATH, cacheable: true },
-  { id: "forecast", label: "Forecast", serverActionPath: MOCK_PATH, cacheable: true },
-  { id: "winloss-analyse", label: "Win/Loss-Analyse", serverActionPath: MOCK_PATH, cacheable: true },
-  { id: "stagnierende-deals", label: "Stagnierende Deals", serverActionPath: MOCK_PATH, cacheable: true },
+  { id: "pipeline-snapshot", label: "Pipeline-Snapshot", serverActionPath: "@/lib/ki-workspace/reports/pipeline-snapshot", cacheable: true },
+  { id: "top-chancen", label: "Top-Chancen", serverActionPath: "@/lib/ki-workspace/reports/top-chancen", cacheable: true },
+  { id: "conversion-rate", label: "Conversion-Rate", serverActionPath: "@/lib/ki-workspace/reports/conversion-rate", cacheable: true },
+  { id: "forecast", label: "Forecast", serverActionPath: "@/lib/ki-workspace/reports/forecast", cacheable: true },
+  { id: "winloss-analyse", label: "Win/Loss-Analyse", serverActionPath: "@/lib/ki-workspace/reports/winloss-aggregate", cacheable: true },
+  { id: "stagnierende-deals", label: "Stagnierende Deals", serverActionPath: "@/lib/ki-workspace/reports/stagnierende-deals", cacheable: true },
 ];

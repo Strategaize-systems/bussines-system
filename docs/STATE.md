@@ -10,11 +10,11 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.6 SLC-663 vollstaendig DONE 2026-05-11 (RPT-381)** — alle 12 ACs Live-Browser-Smoke gruen. Type-Ahead 3-Quellen-Match (Firma "Strategaize Transition" findet "Test 3", zeigt zusaetzlich Kontakt "Richard Bellaerts"), Pipeline-Switch synchron 4-fach (Multiplikatoren ↔ Unternehmer-Chancen), Karten-Klick → Deal-Detail, Won-Sektion expandiert, Mobile-Viewport 375px mit Select + 1-Spalten-Grid bestaetigt, localStorage `cockpit:deals:last-pipeline` Auto-Redirect verifiziert. 0 Console-Errors. Vitest 590/590 PASS. V6.6: 5/7 Slices vollstaendig done (SLC-661, SLC-662, SLC-663, SLC-664, SLC-665), FEAT-663+664 done, FEAT-666 in_progress (SLC-667 offen). Naechster Schritt: /backend + /frontend SLC-666 (Dashboard zu KI-Analyse-Cockpit, dritter KI-Workspace-Caller).
-- Current Phase: V6.6 Pre-V7-Audit-Sprint — Implementation aktiv (5/7 Slices vollstaendig done).
+- Current Focus: **V6.6 SLC-666 code-side DONE 2026-05-11** — Dashboard zu KI-Analyse-Cockpit. 6 neue Bedrock-Server-Actions (pipeline-snapshot, top-chancen, conversion-rate, forecast, winloss-aggregate, stagnierende-deals) ueber gemeinsamen `loadCockpitContext`-Loader + Pure-Function-Prompt-Builders. CockpitActionBar (5 Buttons kontextlos: Task/Mail/Meeting/Anruf/Notiz) + ContactPickerDialog (Search + tel:-Links). AnswerPane PipelineTabsRenderer parst `## Pipeline: X`-Sektionen aus top-chancen-Bedrock-Output und rendert clientseitige Tabs (kein Re-Bedrock). Layout 2/3+1/3 mit KIWorkspace + Tages-Kalender. Alte ki-analysis.tsx + dashboard-search.tsx + pipeline-summary.tsx + recent-activities.tsx + upcoming-actions.tsx + actions.ts entfernt (~700 Zeilen). Vitest +39 (629/629). Build + Lint clean. V6.6: 6/7 Slices code-side done. Naechster Schritt: User-Coolify-Deploy + /qa SLC-666 mit Live-Smoke (3 Berichts-Buttons + Tab-Wechsel + Anruf-Picker + DOM-Removal-Asserts).
+- Current Phase: V6.6 Pre-V7-Audit-Sprint — Implementation aktiv (6/7 Slices code-side done).
 
 ## Immediate Next Steps
-1. **(naechster Schritt) /backend + /frontend SLC-666** — Dashboard zu KI-Analyse-Cockpit (dritter KI-Workspace-Caller).
+1. **(naechster Schritt) User-Coolify-Deploy SLC-666** + /qa SLC-666 mit Live-Smoke (3 Berichts-Buttons + Top-Chancen-Tab-Wechsel + Anruf-Picker + DOM-Removal-Asserts).
 2. **(am Schluss V6.6) /frontend SLC-667** — KI-Inventur (Sparkles weg) + Kalender-Polish + Sidebar-Reorder. Schliesst FEAT-666 ab.
 3. **(nach allen Slices) Gesamt-/qa V6.6** → /final-check → /go-live → /deploy als REL-028.
 4. **(nach V6.6 done)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) auf bereinigter Basis. BL-425 Multi-Touch-Journey-Tab + verbleibende V7-Audit-Defer-Items werden in V7-Scope integriert. Mitarbeiter-/Chef-Drill-Downs + Rollen-Sichtbarkeit kommen mit V7.

@@ -158,6 +158,7 @@ export function KIWorkspace({
         error={reportRun.error}
         result={reportRun.result}
         onRefresh={selectedReport ? handleRefresh : undefined}
+        reportId={selectedReport?.id}
       />
     </div>
   );

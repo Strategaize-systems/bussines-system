@@ -2097,7 +2097,7 @@
       "title": "FEAT-665 Dashboard zu KI-Analyse-Cockpit (Mein-Tag-Pattern)",
       "type": "feature",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V6.6",
       "description": "Dashboard wird zu 'KI-Analyse-Cockpit'. Action-Bar oben (Task/E-Mail/Meeting/Anruf/Notiz, kontextlos). Hauptbereich 2/3+1/3: links KI-Workspace (Reuse FEAT-661 Component) mit Berichts-Buttons (Pipeline-Snapshot + Top-Chancen + Conversion-Rate + Forecast + Win/Loss-Analyse + Stagnierende Deals), rechts Kalender (Reuse mit FEAT-662). KPI-Cards raus, Top-Chancen-Tabelle raus, DashboardSearch geht im KI-Workspace auf. Slice-Planning DONE 2026-05-09: SLC-666 (dritter Caller, parallel zu SLC-664/665 OK).",
       "createdAt": "2026-05-09"

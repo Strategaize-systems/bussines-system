@@ -211,7 +211,7 @@
 | FEAT-662 | Kalender-Polish (Working-Hours-Setting + Range 06:00-21:00) | planned | [Spec](FEAT-662-kalender-polish.md) | 2026-05-09 |
 | FEAT-663 | Deals-Listen-Seite (Top-10 + Karten-Grid + Type-Ahead) | done | [Spec](FEAT-663-deals-listen-seite.md) | 2026-05-09 |
 | FEAT-664 | Deal-Detail (Layout-Swap auf Mein-Tag-Pattern + Activity-Sheet) | done | [Spec](FEAT-664-deal-detail-layout-swap.md) | 2026-05-09 |
-| FEAT-665 | Dashboard zu KI-Analyse-Cockpit | planned | [Spec](FEAT-665-ki-analyse-cockpit.md) | 2026-05-09 |
+| FEAT-665 | Dashboard zu KI-Analyse-Cockpit | done | [Spec](FEAT-665-ki-analyse-cockpit.md) | 2026-05-09 |
 | FEAT-666 | KI-Inventur (Sparkles weg + Win/Loss-Auto-Trigger + Sidebar-Restruktur) | in_progress | [Spec](FEAT-666-ki-inventur.md) | 2026-05-09 |
 
 ## V7 Features (Multi-User + Teamlead — planned)

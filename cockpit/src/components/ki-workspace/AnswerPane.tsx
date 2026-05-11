@@ -1,9 +1,13 @@
 "use client";
 
 import { Loader2, RefreshCw, AlertCircle } from "lucide-react";
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import type { ReportResult } from "./types";
 import { cn } from "@/lib/utils";
+import {
+  parsePipelineSections,
+  extractTrailingBlock,
+} from "./pipeline-tabs-view";
 
 interface AnswerPaneProps {
   result?: ReportResult | null;
@@ -11,6 +15,12 @@ interface AnswerPaneProps {
   error?: string | null;
   onRefresh?: () => void;
   className?: string;
+  /**
+   * SLC-666 MT-7: wenn reportId === "top-chancen" UND der Markdown
+   * "## Pipeline: ..."-Header enthaelt, rendert AnswerPane Tabs statt
+   * MarkdownView. Tab-Wechsel ist clientseitig, kein neuer Bedrock-Call.
+   */
+  reportId?: string;
 }
 
 export function AnswerPane({
@@ -19,6 +29,7 @@ export function AnswerPane({
   error,
   onRefresh,
   className,
+  reportId,
 }: AnswerPaneProps) {
   return (
     <div
@@ -71,7 +82,11 @@ export function AnswerPane({
           className="text-sm leading-relaxed text-foreground overflow-x-auto"
           data-testid="ki-workspace-result"
         >
-          <MarkdownView source={result.markdown} />
+          {reportId === "top-chancen" ? (
+            <PipelineTabsRenderer markdown={result.markdown} />
+          ) : (
+            <MarkdownView source={result.markdown} />
+          )}
         </div>
       )}
 
@@ -185,6 +200,60 @@ function renderInline(text: string): ReactNode[] {
     rest = rest.slice(match.index + match[0].length);
   }
   return nodes;
+}
+
+function PipelineTabsRenderer({ markdown }: { markdown: string }) {
+  const sections = parsePipelineSections(markdown);
+  const trailing = extractTrailingBlock(markdown);
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  // Fallback: keine Pipeline-Sektionen erkannt → normaler Markdown-Render.
+  if (sections.length === 0) {
+    return <MarkdownView source={markdown} />;
+  }
+
+  const active = sections[Math.min(activeIdx, sections.length - 1)];
+
+  return (
+    <div data-testid="pipeline-tabs-renderer">
+      <div
+        className="flex gap-1 border-b border-border mb-3 overflow-x-auto"
+        role="tablist"
+      >
+        {sections.map((section, idx) => {
+          const isActive = idx === activeIdx;
+          return (
+            <button
+              key={section.name}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActiveIdx(idx)}
+              data-testid={`pipeline-tab-${idx}`}
+              className={cn(
+                "shrink-0 px-3 py-1.5 text-xs font-semibold border-b-2 -mb-px",
+                isActive
+                  ? "border-brand-primary text-brand-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {section.name}
+            </button>
+          );
+        })}
+      </div>
+
+      <div data-testid="pipeline-tab-content">
+        <MarkdownView source={active.body} />
+      </div>
+
+      {trailing && (
+        <div className="mt-4 pt-3 border-t border-border" data-testid="pipeline-tabs-trailing">
+          <MarkdownView source={trailing} />
+        </div>
+      )}
+    </div>
+  );
 }
 
 function MarkdownView({ source }: { source: string }) {
