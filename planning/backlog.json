@@ -2077,7 +2077,7 @@
       "title": "FEAT-663 Deals-Listen-Seite (Top-10 + Karten-Grid + Type-Ahead)",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V6.6",
       "description": "Deals-Listen-Seite Restruktur: Top-10-Block oben (server-side sortiert nach value*probability DESC), Pipeline-Switcher filtert Top-10 UND Karten-Grid, aktive Deals als Karten-Grid (kompakt, OHNE Foto/Avatar/Hauptkontakt), 2 einklappbare Sektionen 'Gewonnen' / 'Verloren', Type-Ahead-Suche (Stammdaten: deals.title + companies.name + contacts.full_name, KEIN Volltext / KEIN NL). Slice-Planning DONE 2026-05-09: SLC-663 (parallelisierbar, kein KI-Workspace-Touch).",
       "createdAt": "2026-05-09"

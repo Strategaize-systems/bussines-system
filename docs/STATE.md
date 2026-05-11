@@ -10,11 +10,11 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.6 SLC-665 vollstaendig DONE 2026-05-11 (RPT-379)** — alle 15 ACs PASS. Live-Smoke 5-fach: Activity-Sheet 2x (Meeting + Notiz) + Auto-Trigger 3-fach Stage-Toggling (audit_log: 2x `auto_winloss_triggered` + 1x `auto_winloss_skipped_recent_run`, `auto_winloss_runs`: 2 Rows succeeded) + Read-API curl 4/4 (401/401/404/200) + Manueller Re-Run (3. Row mit `triggered_by_system=false`). Discovery aus QA: BL-454 (Win/Loss-Trigger fuer Multiplikatoren-Pipeline), BL-455 (Pflichtfelder-Modal beim Stage-Move), BL-456 (KI-Vorschlag fuer Verlustgrund). V6.6: 4/7 Slices done (SLC-661, SLC-662, SLC-664, SLC-665), FEAT-664 done, FEAT-666 in_progress (SLC-667 offen). Naechster Schritt: /backend SLC-663 (Deals-Listen-Seite, eigenstaendig).
-- Current Phase: V6.6 Pre-V7-Audit-Sprint — Implementation aktiv (4/7 Slices vollstaendig done).
+- Current Focus: **V6.6 SLC-663 /backend code-side DONE 2026-05-11** — Deals-Listen-Seite mit 5 Bloecken (Type-Ahead + Pipeline-Switcher + Top-10 + Karten-Grid + Won/Lost-Sektionen) implementiert. Pure-Function-Sort (value*probability), 3-Quellen-Type-Ahead (deals.title + companies.name + contacts.full_name) mit Dedupe, DealCard ohne Avatar, ClosedSection mit 90-Tage-Pagination via Server-Action. Vitest +44 Tests (590/590 PASS). Build clean, Lint clean. V6.6: 5/7 Slices code-side done (SLC-661, SLC-662, SLC-663, SLC-664, SLC-665), FEAT-663+664 done, FEAT-666 in_progress (SLC-667 offen). Naechster Schritt: User-Coolify-Deploy + /qa SLC-663 mit Live-Smoke (Type-Ahead + Pipeline-Switcher + Karten-Klick + Won-Expand).
+- Current Phase: V6.6 Pre-V7-Audit-Sprint — Implementation aktiv (5/7 Slices code-side done).
 
 ## Immediate Next Steps
-1. **(naechster Schritt) /backend SLC-663** — Deals-Listen-Seite (Top-10 + Karten-Grid + Type-Ahead). Eigenstaendig, kein KI-Workspace-Caller. ~3-4h.
+1. **(naechster Schritt) User-Coolify-Deploy SLC-663** + /qa SLC-663 mit Live-Smoke aller 12 ACs (Top-10 sichtbar, Pipeline-Switcher synchron, Karten-Klick → Detail, Type-Ahead findet, Won-Sektion expandiert, Mobile-Viewport).
 2. **(danach) /backend + /frontend SLC-666** — Dashboard zu KI-Analyse-Cockpit (dritter KI-Workspace-Caller).
 3. **(am Schluss V6.6) /frontend SLC-667** — KI-Inventur (Sparkles weg) + Kalender-Polish + Sidebar-Reorder. Schliesst FEAT-666 ab.
 4. **(nach allen Slices) Gesamt-/qa V6.6** → /final-check → /go-live → /deploy als REL-028.
