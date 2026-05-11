@@ -1988,8 +1988,8 @@
       "type": "improvement",
       "priority": "medium",
       "status": "in_progress",
-      "version": "V6.6",
-      "description": "Aus RPT-338 V6.4 UI-Audit (UA-011 + UA-012 + UA-013). Style-Guide-V2-Drift systemisch: 73 arbitrary [#xxxxxx] Color-Klassen + 41 arbitrary Spacing + 64 arbitrary Gradient-Hex ueber 30 Files. **Sub-Items zur Sichtbarkeit:** BL-442 Phase A done (SLC-651, V6.5), BL-443 Phase B Tranche 1 done (SLC-652, V6.5). Folgende Tranchen werden bei Bedarf als BL-444+ angelegt. **Per User-Direktive 2026-05-09 nach V6.6 verschoben** — V6.5 wurde als Sprint mit 2 Tranchen released, weitere Tranchen laufen parallel zum V6.6 Pre-V7-Audit-Sprint. Master schliesst wenn alle Tranchen done sind.",
+      "version": null,
+      "description": "Aus RPT-338 V6.4 UI-Audit (UA-011 + UA-012 + UA-013). Style-Guide-V2-Drift systemisch: 73 arbitrary [#xxxxxx] Color-Klassen + 41 arbitrary Spacing + 64 arbitrary Gradient-Hex ueber 30 Files. **Sub-Items zur Sichtbarkeit:** BL-442 Phase A done (SLC-651, V6.5), BL-443 Phase B Tranche 1 done (SLC-652, V6.5). Naechste Tranche = BL-460 V6.7-Polish (4 V6.6-Files mit Hex-Hardcodes). **Update 2026-05-11**: Version auf null gesetzt (war faelschlich V6.6, hat V6.6-Cockpit-Counter blockiert). Master ist Cross-Version-Tracker ohne festen V-Slot, schliesst wenn alle Tranchen done sind.",
       "createdAt": "2026-05-07"
     },
     {
