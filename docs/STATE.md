@@ -10,19 +10,18 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.6 SLC-663 /backend code-side DONE 2026-05-11** — Deals-Listen-Seite mit 5 Bloecken (Type-Ahead + Pipeline-Switcher + Top-10 + Karten-Grid + Won/Lost-Sektionen) implementiert. Pure-Function-Sort (value*probability), 3-Quellen-Type-Ahead (deals.title + companies.name + contacts.full_name) mit Dedupe, DealCard ohne Avatar, ClosedSection mit 90-Tage-Pagination via Server-Action. Vitest +44 Tests (590/590 PASS). Build clean, Lint clean. V6.6: 5/7 Slices code-side done (SLC-661, SLC-662, SLC-663, SLC-664, SLC-665), FEAT-663+664 done, FEAT-666 in_progress (SLC-667 offen). Naechster Schritt: User-Coolify-Deploy + /qa SLC-663 mit Live-Smoke (Type-Ahead + Pipeline-Switcher + Karten-Klick + Won-Expand).
-- Current Phase: V6.6 Pre-V7-Audit-Sprint — Implementation aktiv (5/7 Slices code-side done).
+- Current Focus: **V6.6 SLC-663 vollstaendig DONE 2026-05-11 (RPT-381)** — alle 12 ACs Live-Browser-Smoke gruen. Type-Ahead 3-Quellen-Match (Firma "Strategaize Transition" findet "Test 3", zeigt zusaetzlich Kontakt "Richard Bellaerts"), Pipeline-Switch synchron 4-fach (Multiplikatoren ↔ Unternehmer-Chancen), Karten-Klick → Deal-Detail, Won-Sektion expandiert, Mobile-Viewport 375px mit Select + 1-Spalten-Grid bestaetigt, localStorage `cockpit:deals:last-pipeline` Auto-Redirect verifiziert. 0 Console-Errors. Vitest 590/590 PASS. V6.6: 5/7 Slices vollstaendig done (SLC-661, SLC-662, SLC-663, SLC-664, SLC-665), FEAT-663+664 done, FEAT-666 in_progress (SLC-667 offen). Naechster Schritt: /backend + /frontend SLC-666 (Dashboard zu KI-Analyse-Cockpit, dritter KI-Workspace-Caller).
+- Current Phase: V6.6 Pre-V7-Audit-Sprint — Implementation aktiv (5/7 Slices vollstaendig done).
 
 ## Immediate Next Steps
-1. **(naechster Schritt) User-Coolify-Deploy SLC-663** + /qa SLC-663 mit Live-Smoke aller 12 ACs (Top-10 sichtbar, Pipeline-Switcher synchron, Karten-Klick → Detail, Type-Ahead findet, Won-Sektion expandiert, Mobile-Viewport).
-2. **(danach) /backend + /frontend SLC-666** — Dashboard zu KI-Analyse-Cockpit (dritter KI-Workspace-Caller).
-3. **(am Schluss V6.6) /frontend SLC-667** — KI-Inventur (Sparkles weg) + Kalender-Polish + Sidebar-Reorder. Schliesst FEAT-666 ab.
-4. **(nach allen Slices) Gesamt-/qa V6.6** → /final-check → /go-live → /deploy als REL-028.
-2. **(nach V6.6 done)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) auf bereinigter Basis. BL-425 Multi-Touch-Journey-Tab + verbleibende V7-Audit-Defer-Items werden in V7-Scope integriert. Mitarbeiter-/Chef-Drill-Downs + Rollen-Sichtbarkeit kommen mit V7.
-3. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
-4. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).
-5. **(Parallel optional)** /post-launch V6.4+V6.5 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
-6. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
+1. **(naechster Schritt) /backend + /frontend SLC-666** — Dashboard zu KI-Analyse-Cockpit (dritter KI-Workspace-Caller).
+2. **(am Schluss V6.6) /frontend SLC-667** — KI-Inventur (Sparkles weg) + Kalender-Polish + Sidebar-Reorder. Schliesst FEAT-666 ab.
+3. **(nach allen Slices) Gesamt-/qa V6.6** → /final-check → /go-live → /deploy als REL-028.
+4. **(nach V6.6 done)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) auf bereinigter Basis. BL-425 Multi-Touch-Journey-Tab + verbleibende V7-Audit-Defer-Items werden in V7-Scope integriert. Mitarbeiter-/Chef-Drill-Downs + Rollen-Sichtbarkeit kommen mit V7.
+5. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
+6. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).
+7. **(Parallel optional)** /post-launch V6.4+V6.5 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
+8. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
 7. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
 8. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (per User-Direktive 2026-05-01 "kommt viel spaeter").
 
