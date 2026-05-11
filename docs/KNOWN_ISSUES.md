@@ -1,22 +1,22 @@
 # Known Issues
 
 ### ISSUE-060 — Mehr-Aktionen-Dropdown crasht Deal-Detail-Page beim Click (Base UI #31)
-- Status: open
+- Status: resolved
 - Severity: Blocker
 - Area: Frontend / SLC-664 / Action-Bar / Base UI Dropdown
-- Summary: `cockpit/src/components/deals/deal-action-bar.tsx:240-295` rendert mehrere unzulaessige direkte Kinder von `<DropdownMenuContent>`: 1. `<div className="md:hidden">` Wrapper um DropdownMenuItem + DropdownMenuSeparator (Z. 257-263). 2. `<EnrollButton trigger={<DropdownMenuItem>}>` (Z. 265) wrappt extern in `<span onClick>` was Base UI als invalid Menu-Child interpretiert. Resultat: Click crasht ganze Page mit `Base UI error #31` + `React Minified error #418` (Hydration-Cascade).
-- Impact: AC4 (Mehr-Menue: Cadence + Workflow + Activity + Mobile-Angebot) ist UNERREICHBAR. User-Workaround: separate Pages besuchen (/settings/automation, /cadences/new, /aufgaben/new). Live-verifiziert auf Production 2026-05-10 11:50 UTC+2.
-- Workaround: Separate Pages aufrufen statt Three-Dots zu nutzen.
-- Next Action: Hotfix vor SLC-665. EnrollButton-Trigger durch state-controlled Pattern ersetzen (DropdownMenuItem onClick + EnrollDialog ausserhalb DropdownMenuContent). md:hidden direkt auf DropdownMenuItem-Children setzen statt Wrapper-Div.
+- Summary: `cockpit/src/components/deals/deal-action-bar.tsx:240-295` rendert mehrere unzulaessige direkte Kinder von `<DropdownMenuContent>`. Root-Cause war NICHT primaer EnrollButton/md:hidden, sondern `<DropdownMenuLabel>Mehr Aktionen</DropdownMenuLabel>` (= Base UI `Menu.GroupLabel`) als direkter Child von `Menu.Popup` ohne `Menu.Group`-Wrapper. Hotfix-1 (`26a4627`) hat EnrollButton/md:hidden korrigiert, blieb aber wirkungslos. Hotfix-2 (`aec7147`) hat DropdownMenuLabel entfernt — Crash weg.
+- Impact: AC4 war UNERREICHBAR bis Hotfix-2.
+- Resolution: aec7147 — DropdownMenuLabel rausgenommen, Import bereinigt. RPT-375 PASS.
+- Resolved: 2026-05-11
 
 ### ISSUE-059 — Meeting-Dropdown crasht Deal-Detail-Page beim Click (Base UI #31)
-- Status: open
+- Status: resolved
 - Severity: Blocker
 - Area: Frontend / SLC-664 / Action-Bar / Base UI Dropdown
-- Summary: `cockpit/src/components/deals/deal-action-bar.tsx:169-206` rendert `<MeetingSheet trigger={<DropdownMenuItem>}>` als direktes Kind von `<DropdownMenuContent>`. MeetingSheet returnt intern eine `<Sheet>` mit `<SheetTrigger>{trigger}</SheetTrigger>`, was `<Sheet>` zum direkten Kind von `<DropdownMenuContent>` macht. Base UI akzeptiert nur DropdownMenuItem/Label/Separator als direkte Children. Resultat: Click crasht ganze Page mit `Base UI error #31` + `React Minified error #418`.
-- Impact: AC3 (Meeting-Dropdown mit "Termin planen" + "Sofort starten") ist UNERREICHBAR. User kann vom Deal-Detail aus weder Meeting planen noch sofort starten — nur ueber separate Page erreichbar. Live-verifiziert auf Production 2026-05-10 11:46 + 11:48 UTC+2 (zwei unabhaengige Reproductions).
-- Workaround: User muss /termine besuchen oder MeetingSheet von anderer Page (z.B. Mein Tag) ausloesen.
-- Next Action: Hotfix vor SLC-665. MeetingSheet aus DropdownMenuContent ausziehen — Pattern wie StartMeetingModal: state-controlled Modal/Sheet ausserhalb Dropdown, DropdownMenuItem onClick={() => setShowMeetingSheet(true)}.
+- Summary: `cockpit/src/components/deals/deal-action-bar.tsx:169-206` rendert mehrere problematische Patterns. Root-Cause analog ISSUE-060: nicht primaer MeetingSheet-as-direct-child (Hotfix-1 wirkungslos), sondern `<DropdownMenuLabel>Meeting</DropdownMenuLabel>` ohne `Menu.Group`-Wrapper. Hotfix-2 (`aec7147`) hat den Label entfernt — Crash weg. MeetingSheet wird jetzt korrekt state-controlled ausserhalb DropdownMenuContent gerendert (Hotfix-1).
+- Impact: AC3 war UNERREICHBAR bis Hotfix-2.
+- Resolution: aec7147 — DropdownMenuLabel rausgenommen + Hotfix-1 (26a4627) state-controlled Pattern. RPT-375 PASS, MeetingSheet-Open via Click verifiziert.
+- Resolved: 2026-05-11
 
 ### ISSUE-058 — postcss <8.5.10 Vulnerability (Patch-Path catastrophic, akzeptiert bis Upstream-Next-Release)
 - Status: open
