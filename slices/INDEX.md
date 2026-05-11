@@ -258,13 +258,13 @@ Reihenfolge zwingend (DEC-176): SLC-661 (Foundation) → SLC-662 (Mein Tag, erst
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-661 | [KI-Workspace Foundation Component](SLC-661-ki-workspace-foundation.md) | FEAT-661 | done | Blocker | 2026-05-09 |
-| SLC-662 | [Mein Tag KI-Workspace + Performance-Migration](SLC-662-mein-tag-ki-workspace.md) | FEAT-661 | done | Blocker | 2026-05-09 |
-| SLC-663 | [Deals-Listen-Seite (Top-10 + Karten-Grid + Type-Ahead)](SLC-663-deals-listen-seite.md) | FEAT-663 | done | High | 2026-05-09 |
-| SLC-664 | [Deal-Detail Layout-Swap](SLC-664-deal-detail-layout-swap.md) | FEAT-664 | done | Blocker | 2026-05-09 |
-| SLC-665 | [Activity-Sheet + Win/Loss-Auto-Trigger (MIG-032)](SLC-665-activity-sheet-winloss-trigger.md) | FEAT-664 + FEAT-666 | done | Blocker | 2026-05-09 |
-| SLC-666 | [Dashboard zu KI-Analyse-Cockpit](SLC-666-ki-analyse-cockpit.md) | FEAT-665 | done | High | 2026-05-09 |
-| SLC-667 | [KI-Inventur + Kalender-Polish + Sidebar-Reorder](SLC-667-ki-inventur-kalender-polish.md) | FEAT-666 + FEAT-662 | done | Medium | 2026-05-09 |
+| SLC-661 | [KI-Workspace Foundation Component](SLC-661-ki-workspace-foundation.md) | FEAT-661 | deployed | Blocker | 2026-05-09 |
+| SLC-662 | [Mein Tag KI-Workspace + Performance-Migration](SLC-662-mein-tag-ki-workspace.md) | FEAT-661 | deployed | Blocker | 2026-05-09 |
+| SLC-663 | [Deals-Listen-Seite (Top-10 + Karten-Grid + Type-Ahead)](SLC-663-deals-listen-seite.md) | FEAT-663 | deployed | High | 2026-05-09 |
+| SLC-664 | [Deal-Detail Layout-Swap](SLC-664-deal-detail-layout-swap.md) | FEAT-664 | deployed | Blocker | 2026-05-09 |
+| SLC-665 | [Activity-Sheet + Win/Loss-Auto-Trigger (MIG-032)](SLC-665-activity-sheet-winloss-trigger.md) | FEAT-664 + FEAT-666 | deployed | Blocker | 2026-05-09 |
+| SLC-666 | [Dashboard zu KI-Analyse-Cockpit](SLC-666-ki-analyse-cockpit.md) | FEAT-665 | deployed | High | 2026-05-09 |
+| SLC-667 | [KI-Inventur + Kalender-Polish + Sidebar-Reorder](SLC-667-ki-inventur-kalender-polish.md) | FEAT-666 + FEAT-662 | deployed | Medium | 2026-05-09 |
 
 ## V6.5 Slices (Hintergrund-Sprint parallel zu V7-Vorbereitung — released REL-027 2026-05-08)
 

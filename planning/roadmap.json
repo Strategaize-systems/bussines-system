@@ -178,8 +178,8 @@
     {
       "id": "v6-6",
       "name": "V6.6",
-      "status": "active",
-      "summary": "Pre-V7-Audit-Sprint Slice-Planning DONE 2026-05-09 (RPT-368). UI-Konsolidierungs-Sprint: 7 Slices SLC-661..667 (~17-24h) mit zwingender Reihenfolge (DEC-176). SLC-661 reusable `<KIWorkspace>`-Foundation-Component → SLC-662 Mein Tag (erster Caller + /performance-Migration) → SLC-663 Deals-Listen-Seite (parallelisierbar) → SLC-664 Deal-Detail Layout-Swap (zweiter Caller, 4 Sub-Block-Commits) → SLC-665 Activity-Sheet + Win/Loss-Auto-Trigger (einziger Backend, MIG-032 first) → SLC-666 KI-Analyse-Cockpit (dritter Caller) → SLC-667 KI-Inventur + Kalender-Polish + Sidebar-Reorder. Pro Slice: backend|frontend → /qa → User-Coolify-Deploy → Live-Smoke. Gesamt-/qa nach SLC-667 → /final-check → /go-live → /deploy als REL-028. 16 DECs (DEC-165..180) + MIG-032 (additiv user_settings working_hours-Cols + auto_winloss_runs-Tabelle). Naechster Schritt: /backend SLC-661.",
+      "status": "released",
+      "summary": "Pre-V7-Audit-Sprint released 2026-05-11 als REL-028 (Image-Tag 360c6ec). 7 Slices SLC-661..667 vollstaendig deployed, 6 Features FEAT-661..666 alle deployed. UI-Konsolidierungs-Sprint: KI-Workspace-Hybrid-Pattern auf 3 Pages (Mein Tag + Deal-Detail + Cockpit) via Foundation + 3 Wrapper, Deals-Listen-Restruktur (Top-10 + Type-Ahead + Pipeline-Switcher + Won/Lost-Sektionen), Dashboard zu KI-Analyse-Cockpit (6 Berichts-Buttons + 5 Quick-Actions), Win/Loss-Auto-Trigger via System-Workflow-Rule + MIG-032 (auto_winloss_runs + 5-Min-Throttle + ISSUE-061-Fix Read-API), Kalender-Polish (06:00-21:00 Default + Working-Hours-Setting). Hygiene: SparklesCard cross-page entfernt, Sidebar-Reorder ANALYSE→OPERATIV→ARBEITSBEREICHE→VERWALTUNG, /performance-Seite faellt, AI-Bereitschaft-Rename. 16 DECs (DEC-165..180). MIG-032 angewendet. Vitest 650/650 (+168 V6.6-Tests). ESLint 142e/54w (-24/-3 vs V5.7-Baseline). Audit-Trail aktiv: V6.6-neu ki_workspace_report + auto_winloss_triggered. RPT-366..389. Internal-Test-Mode bleibt aktiv bis Pre-Production-Compliance-Gate.",
       "order": 26
     },
     {

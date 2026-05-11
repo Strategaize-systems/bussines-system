@@ -203,16 +203,16 @@
 | FEAT-652 | Compliance-Erweiterung NL→DE-Symmetrie (BL-420 + BL-421) | deployed | [Spec](FEAT-652-compliance-de-symmetrie.md) | 2026-05-08 |
 | FEAT-653 | Schema + Dependency Hygiene (BL-424 + BL-430) | deployed | [Spec](FEAT-653-hygiene.md) | 2026-05-08 |
 
-## V6.6 Features (Pre-V7-Audit-Sprint — UI-Konsolidierung + KI-Workspace-Hybrid — planned)
+## V6.6 Features (Pre-V7-Audit-Sprint — UI-Konsolidierung + KI-Workspace-Hybrid — released REL-028 2026-05-11)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-661 | Mein Tag (KI-Workspace-Hybrid + Performance-Migration) | done | [Spec](FEAT-661-mein-tag-ki-workspace.md) | 2026-05-09 |
-| FEAT-662 | Kalender-Polish (Working-Hours-Setting + Range 06:00-21:00) | done | [Spec](FEAT-662-kalender-polish.md) | 2026-05-09 |
-| FEAT-663 | Deals-Listen-Seite (Top-10 + Karten-Grid + Type-Ahead) | done | [Spec](FEAT-663-deals-listen-seite.md) | 2026-05-09 |
-| FEAT-664 | Deal-Detail (Layout-Swap auf Mein-Tag-Pattern + Activity-Sheet) | done | [Spec](FEAT-664-deal-detail-layout-swap.md) | 2026-05-09 |
-| FEAT-665 | Dashboard zu KI-Analyse-Cockpit | done | [Spec](FEAT-665-ki-analyse-cockpit.md) | 2026-05-09 |
-| FEAT-666 | KI-Inventur (Sparkles weg + Win/Loss-Auto-Trigger + Sidebar-Restruktur) | done | [Spec](FEAT-666-ki-inventur.md) | 2026-05-09 |
+| FEAT-661 | Mein Tag (KI-Workspace-Hybrid + Performance-Migration) | deployed | [Spec](FEAT-661-mein-tag-ki-workspace.md) | 2026-05-09 |
+| FEAT-662 | Kalender-Polish (Working-Hours-Setting + Range 06:00-21:00) | deployed | [Spec](FEAT-662-kalender-polish.md) | 2026-05-09 |
+| FEAT-663 | Deals-Listen-Seite (Top-10 + Karten-Grid + Type-Ahead) | deployed | [Spec](FEAT-663-deals-listen-seite.md) | 2026-05-09 |
+| FEAT-664 | Deal-Detail (Layout-Swap auf Mein-Tag-Pattern + Activity-Sheet) | deployed | [Spec](FEAT-664-deal-detail-layout-swap.md) | 2026-05-09 |
+| FEAT-665 | Dashboard zu KI-Analyse-Cockpit | deployed | [Spec](FEAT-665-ki-analyse-cockpit.md) | 2026-05-09 |
+| FEAT-666 | KI-Inventur (Sparkles weg + Win/Loss-Auto-Trigger + Sidebar-Restruktur) | deployed | [Spec](FEAT-666-ki-inventur.md) | 2026-05-09 |
 
 ## V7 Features (Multi-User + Teamlead — planned)
 
