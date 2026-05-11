@@ -2141,6 +2141,16 @@
       "version": null,
       "description": "DEC-169 (V6.6): SLC-662 macht /performance zur Redirect-Page mit Toast (1 Sprint Bruecke). Nach REL-028 (V6.6-Release) ist die Toast-Bruecke aktiv — User-Migrations-Pfad sichtbar. Nach 1 Sprint (V6.7+) /performance-Datei + Redirect-Logik komplett loeschen. Voraussetzung: Audit dass keine Bookmarks/Verweise mehr auf /performance gehen (audit_log + access-log-Inspection).",
       "createdAt": "2026-05-09"
+    },
+    {
+      "id": "BL-454",
+      "title": "Win/Loss-Auto-Trigger auch fuer Multiplikatoren-Pipeline-End-Stages (Strategischer Multiplikator)",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": null,
+      "description": "Aktuell ist WON_STAGE_NAMES=['Gewonnen'] und LOST_STAGE_NAMES=['Verloren', 'Inaktiv / disqualifiziert'] (cockpit/src/app/(app)/pipeline/actions.ts:49-50). Die Multiplikatoren-Pipeline hat by design kein 'Gewonnen' (Beziehungspflege-Lebenszyklus, kein Deal-Closing) — der semantische Win-State ist 'Strategischer Multiplikator' (probability=95). Konsequenz: Beim Wechsel auf 'Strategischer Multiplikator' feuert auto_winloss_extract NICHT, obwohl es fachlich sinnvoll waere (Multiplikator hat etablierte Beziehung, ggf. erste Empfehlung gegeben — Win/Loss-Bedrock-Analyse waere wertvoll fuer das Wissensmanagement). Lost-Pfad funktioniert bereits (ueber 'Inaktiv / disqualifiziert'). Loesungs-Optionen: (a) WON_STAGE_NAMES erweitern um 'Strategischer Multiplikator', (b) pipeline-spezifisches Mapping Record<pipeline_name, {won_stages, lost_stages}>, (c) Stage-Flag-Feld auf pipeline_stages (is_won, is_lost) + Migration. Bedrock-Prompt FEAT-114 muesste fuer Multiplikatoren-Kontext ggf. angepasst werden (anderer Win/Loss-Begriff). Discovery-Fund aus SLC-665 /qa 2026-05-11. V7-Diskussion empfohlen.",
+      "createdAt": "2026-05-11"
     }
   ]
 }
