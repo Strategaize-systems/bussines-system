@@ -2171,6 +2171,26 @@
       "version": null,
       "description": "Beim Stage-Move auf 'Verloren' (oder 'Geparkt') haengt der User-Verlustgrund-Eingabe oft an: Was war der konkrete Ausloeser? Meist liegt das in der Activity-History (E-Mail mit Absage, Meeting-Notiz 'will nicht', Call-Recording mit Einwand, Notiz). Idee: Beim Oeffnen des Verlust-Modals (BL-455) laedt eine Server-Action die letzten ~5 Activities (emails, meetings, notes, calls) + macht einen Bedrock-Call (FEAT-114-Pattern, EU-Region Frankfurt) mit Prompt 'Analysiere diese letzten Interaktionen und schlage einen Verlustgrund vor'. Antwort wird im Modal als vorausgefuelltes Textfeld + Button 'Uebernehmen' oder 'Eigenen Grund eingeben' angezeigt. User editierbar, dann Speichern. Audit-Trail: ki_suggested vs user_typed in auto_winloss_runs oder Audit-Log. Voraussetzung: BL-455 (Modal-Container) ist done. Bedrock-Adapter aus FEAT-114/SLC-665 wiederverwendbar — nur Prompt anders. Datenschutz: gleicher Pfad wie Win/Loss-Extract, EU-Region, keine US-Endpoints. Discovery aus SLC-665 /qa 2026-05-11.",
       "createdAt": "2026-05-11"
+    },
+    {
+      "id": "BL-457",
+      "title": "Mobile-Hamburger-Sidebar mit Sektion-Headern (Cockpit-Layout-Mobile-Gap)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V7",
+      "description": "SLC-667 AC13-Gap aus QA RPT-385: Die Sidebar ist auf Viewports ≤768px komplett via `max-md:hidden` ausgeblendet, kein Hamburger-Toggle-Button. Aktuelle Mobile-User haben keinen Sidebar-Zugang — sie navigieren nur via URL oder Action-Buttons in Pages. Pre-existing-Limitation des gesamten Cockpit-Layouts (nicht SLC-667-induziert). V7-Backlog: Hamburger-Button im PageHeader-Bereich (oder eigene mobile top-bar), Sidebar als Sheet/Drawer auf Klick. Sektion-Header (ANALYSE/OPERATIV/ARBEITSBEREICHE/VERWALTUNG) bleiben in Mobile-Drawer sichtbar. Voraussetzung: V6.6 released. Discovery aus SLC-667 /qa 2026-05-11.",
+      "createdAt": "2026-05-11"
+    },
+    {
+      "id": "BL-458",
+      "title": "Kalender Working-Hours-Mode: Pre/Post-Stauchung fuer ueberhaengende Termine",
+      "type": "improvement",
+      "priority": "low",
+      "status": "open",
+      "version": null,
+      "description": "SLC-667 AC17-Open-Point aus QA RPT-385: Kalender-Mode 'work' rendert aktuell NUR die Working-Hours-Stunden (z.B. 09:00-18:00). Termine ausserhalb (z.B. 07:30 Fruehmeeting, 19:00 Abendkurs) sind ausgeblendet oder verschoben — der User sieht sie nicht. Spec verlangt 'gestauchter Pre/Post-Bereich (1px-Linien-Trenner + reduzierte Hoehe)'. Implementation: kalender-client.tsx DayView/WeekView braucht 3 Render-Bereiche statt 1: Pre-Working-Hours (Stauchung), Working-Hours (normal), Post-Working-Hours (Stauchung). topOffset-Math entsprechend anpassen. Pragmatischer Workaround heute: User wechselt manuell via Toggle auf 'Voller Tag'. Discovery aus SLC-667 /qa 2026-05-11.",
+      "createdAt": "2026-05-11"
     }
   ]
 }
