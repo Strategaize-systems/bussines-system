@@ -10,20 +10,19 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.6 SLC-666 code-side DONE 2026-05-11** — Dashboard zu KI-Analyse-Cockpit. 6 neue Bedrock-Server-Actions (pipeline-snapshot, top-chancen, conversion-rate, forecast, winloss-aggregate, stagnierende-deals) ueber gemeinsamen `loadCockpitContext`-Loader + Pure-Function-Prompt-Builders. CockpitActionBar (5 Buttons kontextlos: Task/Mail/Meeting/Anruf/Notiz) + ContactPickerDialog (Search + tel:-Links). AnswerPane PipelineTabsRenderer parst `## Pipeline: X`-Sektionen aus top-chancen-Bedrock-Output und rendert clientseitige Tabs (kein Re-Bedrock). Layout 2/3+1/3 mit KIWorkspace + Tages-Kalender. Alte ki-analysis.tsx + dashboard-search.tsx + pipeline-summary.tsx + recent-activities.tsx + upcoming-actions.tsx + actions.ts entfernt (~700 Zeilen). Vitest +39 (629/629). Build + Lint clean. V6.6: 6/7 Slices code-side done. Naechster Schritt: User-Coolify-Deploy + /qa SLC-666 mit Live-Smoke (3 Berichts-Buttons + Tab-Wechsel + Anruf-Picker + DOM-Removal-Asserts).
-- Current Phase: V6.6 Pre-V7-Audit-Sprint — Implementation aktiv (6/7 Slices code-side done).
+- Current Focus: **V6.6 SLC-666 vollstaendig DONE 2026-05-11 (RPT-383)** — alle 22 ACs Live-Browser-Smoke gruen. 3 Bedrock-Reports rendern: Pipeline-Snapshot (6.042 EUR Stage-Aggregation), Top-Chancen (2 clientseitige Tabs, kein Refetch bei Tab-Wechsel verifiziert via Network-Requests-Diff), Forecast Q2 2026 (302 EUR gewichtet). Anruf-Picker oeffnet mit tel:-Link, Search-Filter funktional. Mobile 375px staffelt vertikal, 5 Action-Buttons sichtbar. AC17/18/19 KPI-Cards/Top-Chancen-Tabelle/DashboardSearch nicht im DOM. 0 Console-Errors. Iter-1-Blocker (Unknown report path) gefixt mit CockpitKIWorkspace-Wrapper (Commit `ab3ca54`, IMP-434 erfasst). V6.6: 6/7 Slices vollstaendig done (SLC-661, SLC-662, SLC-663, SLC-664, SLC-665, SLC-666), FEAT-661+663+664+665 done. Naechster Schritt: /frontend SLC-667 (letzter V6.6-Slice).
+- Current Phase: V6.6 Pre-V7-Audit-Sprint — Implementation aktiv (6/7 Slices vollstaendig done).
 
 ## Immediate Next Steps
-1. **(naechster Schritt) User-Coolify-Deploy SLC-666** + /qa SLC-666 mit Live-Smoke (3 Berichts-Buttons + Top-Chancen-Tab-Wechsel + Anruf-Picker + DOM-Removal-Asserts).
-2. **(am Schluss V6.6) /frontend SLC-667** — KI-Inventur (Sparkles weg) + Kalender-Polish + Sidebar-Reorder. Schliesst FEAT-666 ab.
-3. **(nach allen Slices) Gesamt-/qa V6.6** → /final-check → /go-live → /deploy als REL-028.
-4. **(nach V6.6 done)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) auf bereinigter Basis. BL-425 Multi-Touch-Journey-Tab + verbleibende V7-Audit-Defer-Items werden in V7-Scope integriert. Mitarbeiter-/Chef-Drill-Downs + Rollen-Sichtbarkeit kommen mit V7.
-5. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
-6. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).
-7. **(Parallel optional)** /post-launch V6.4+V6.5 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
-8. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
-7. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
-8. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (per User-Direktive 2026-05-01 "kommt viel spaeter").
+1. **(naechster Schritt) /frontend SLC-667** — KI-Inventur (Sparkles weg) + Kalender-Polish + Sidebar-Reorder. Schliesst FEAT-666 + FEAT-662 ab. Letzter V6.6-Slice.
+2. **(nach allen Slices) Gesamt-/qa V6.6** → /final-check → /go-live → /deploy als REL-028.
+3. **(nach V6.6 done)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) auf bereinigter Basis. BL-425 Multi-Touch-Journey-Tab + verbleibende V7-Audit-Defer-Items werden in V7-Scope integriert. Mitarbeiter-/Chef-Drill-Downs + Rollen-Sichtbarkeit kommen mit V7.
+4. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
+5. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).
+6. **(Parallel optional)** /post-launch V6.4+V6.5 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
+7. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
+8. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
+9. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (per User-Direktive 2026-05-01 "kommt viel spaeter").
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
