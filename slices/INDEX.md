@@ -258,25 +258,25 @@ Reihenfolge zwingend (DEC-176): SLC-661 (Foundation) → SLC-662 (Mein Tag, erst
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-661 | [KI-Workspace Foundation Component](SLC-661-ki-workspace-foundation.md) | FEAT-661 | deployed | Blocker | 2026-05-09 |
-| SLC-662 | [Mein Tag KI-Workspace + Performance-Migration](SLC-662-mein-tag-ki-workspace.md) | FEAT-661 | deployed | Blocker | 2026-05-09 |
-| SLC-663 | [Deals-Listen-Seite (Top-10 + Karten-Grid + Type-Ahead)](SLC-663-deals-listen-seite.md) | FEAT-663 | deployed | High | 2026-05-09 |
-| SLC-664 | [Deal-Detail Layout-Swap](SLC-664-deal-detail-layout-swap.md) | FEAT-664 | deployed | Blocker | 2026-05-09 |
-| SLC-665 | [Activity-Sheet + Win/Loss-Auto-Trigger (MIG-032)](SLC-665-activity-sheet-winloss-trigger.md) | FEAT-664 + FEAT-666 | deployed | Blocker | 2026-05-09 |
-| SLC-666 | [Dashboard zu KI-Analyse-Cockpit](SLC-666-ki-analyse-cockpit.md) | FEAT-665 | deployed | High | 2026-05-09 |
-| SLC-667 | [KI-Inventur + Kalender-Polish + Sidebar-Reorder](SLC-667-ki-inventur-kalender-polish.md) | FEAT-666 + FEAT-662 | deployed | Medium | 2026-05-09 |
+| SLC-661 | [KI-Workspace Foundation Component](SLC-661-ki-workspace-foundation.md) | FEAT-661 | done | Blocker | 2026-05-09 |
+| SLC-662 | [Mein Tag KI-Workspace + Performance-Migration](SLC-662-mein-tag-ki-workspace.md) | FEAT-661 | done | Blocker | 2026-05-09 |
+| SLC-663 | [Deals-Listen-Seite (Top-10 + Karten-Grid + Type-Ahead)](SLC-663-deals-listen-seite.md) | FEAT-663 | done | High | 2026-05-09 |
+| SLC-664 | [Deal-Detail Layout-Swap](SLC-664-deal-detail-layout-swap.md) | FEAT-664 | done | Blocker | 2026-05-09 |
+| SLC-665 | [Activity-Sheet + Win/Loss-Auto-Trigger (MIG-032)](SLC-665-activity-sheet-winloss-trigger.md) | FEAT-664 + FEAT-666 | done | Blocker | 2026-05-09 |
+| SLC-666 | [Dashboard zu KI-Analyse-Cockpit](SLC-666-ki-analyse-cockpit.md) | FEAT-665 | done | High | 2026-05-09 |
+| SLC-667 | [KI-Inventur + Kalender-Polish + Sidebar-Reorder](SLC-667-ki-inventur-kalender-polish.md) | FEAT-666 + FEAT-662 | done | Medium | 2026-05-09 |
 
 ## V6.5 Slices (Hintergrund-Sprint parallel zu V7-Vorbereitung — released REL-027 2026-05-08)
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-651 | [Theming-Tokens-Setup (BL-441 Phase A)](SLC-651-theming-tokens-setup.md) | FEAT-651 | deployed | High | 2026-05-08 |
-| SLC-652 | [Theming-Migration Tranche 1 — Pipeline+Proposals (BL-441 Phase B)](SLC-652-theming-migration-tranche-1.md) | FEAT-651 | deployed | High | 2026-05-08 |
-| SLC-653 | [Settings inline-Sections in eigene Pages (BL-436 UA-002)](SLC-653-settings-pages-auslagern.md) | FEAT-651 | deployed | Medium | 2026-05-08 |
-| SLC-654 | [ViewToggle Generic + Pipeline-PageHeader-Slot (BL-438 + BL-440)](SLC-654-viewtoggle-pageheader.md) | FEAT-651 | deployed | Medium | 2026-05-08 |
-| SLC-655 | [VIES-Cache + Adapter (BL-420)](SLC-655-vies-cache-adapter.md) | FEAT-652 | deployed | Medium | 2026-05-08 |
-| SLC-656 | [DE-§13b Reverse-Charge-Block (BL-421)](SLC-656-de-reverse-charge.md) | FEAT-652 | deployed | Medium | 2026-05-08 |
-| SLC-657 | [Source-Migration + npm audit + ISSUE-058 (BL-424 + BL-430)](SLC-657-source-migration-npm-audit.md) | FEAT-653 | deployed | Medium | 2026-05-08 |
+| SLC-651 | [Theming-Tokens-Setup (BL-441 Phase A)](SLC-651-theming-tokens-setup.md) | FEAT-651 | done | High | 2026-05-08 |
+| SLC-652 | [Theming-Migration Tranche 1 — Pipeline+Proposals (BL-441 Phase B)](SLC-652-theming-migration-tranche-1.md) | FEAT-651 | done | High | 2026-05-08 |
+| SLC-653 | [Settings inline-Sections in eigene Pages (BL-436 UA-002)](SLC-653-settings-pages-auslagern.md) | FEAT-651 | done | Medium | 2026-05-08 |
+| SLC-654 | [ViewToggle Generic + Pipeline-PageHeader-Slot (BL-438 + BL-440)](SLC-654-viewtoggle-pageheader.md) | FEAT-651 | done | Medium | 2026-05-08 |
+| SLC-655 | [VIES-Cache + Adapter (BL-420)](SLC-655-vies-cache-adapter.md) | FEAT-652 | done | Medium | 2026-05-08 |
+| SLC-656 | [DE-§13b Reverse-Charge-Block (BL-421)](SLC-656-de-reverse-charge.md) | FEAT-652 | done | Medium | 2026-05-08 |
+| SLC-657 | [Source-Migration + npm audit + ISSUE-058 (BL-424 + BL-430)](SLC-657-source-migration-npm-audit.md) | FEAT-653 | done | Medium | 2026-05-08 |
 
 ## V6.4 Slices (Hygiene-Sprint — released REL-026 2026-05-07)
 
