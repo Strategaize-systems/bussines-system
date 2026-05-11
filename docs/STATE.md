@@ -9,13 +9,13 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: qa
-- Current Focus: **V6.6 Gesamt-/qa DONE 2026-05-11 (RPT-386) — PASS**. Alle 7 Slices SLC-661..667 als Einheit live verifiziert gegen Production-Coolify-Deploy `360c6ec` + Hotfixes `ab3ca54`+`8f5e739`. 5 Live-Pages (Mein Tag / Deals / Deal-Detail / Cockpit / Kalender) plus Mobile-Smoke 375px alle PASS. Cross-Slice-Konsistenz bestaetigt: 3 KI-Workspace-Caller (mein-tag/deal-detail/cockpit) funktional unabhaengig, Sparkles cross-page weg, Sidebar-Reorder konsistent (ANALYSE→OPERATIV→ARBEITSBEREICHE→VERWALTUNG), Win/Loss-Auto-Trigger live (3-fach Toggle aus RPT-379), Working-Hours-Save+Reset DB-Roundtrip (RPT-385). Vitest 650/650 PASS lokal verifiziert. 4 Low-Findings (Pre-existing/Folge-Items): L-1 Label-Drift "Task" (Mein-Tag/Deal-Detail) vs "Aufgabe" (Cockpit), L-2 React #418 (BL-418), L-3 Mobile-Hamburger (BL-457), L-4 Pre/Post-Stauchung (BL-458). Keine V6.6-Release-Blocker. **V6.6 ready fuer /final-check**.
-- Current Phase: V6.6 Pre-V7-Audit-Sprint — Gesamt-/qa abgeschlossen, alle 7/7 Slices done, alle FEAT-661..666 done, vor Final-Check.
+- High-Level State: final-check
+- Current Focus: **V6.6 /final-check DONE 2026-05-11 (RPT-387) — PASS conditional**. Alle 7 Audit-Dimensionen PASS: ESLint 142e/54w (-24/-3 vs V5.7-Baseline, 0 in SLC-66X-Files), Vitest 650/650 lokal, Container app Up 45min healthy auf Image `360c6ec`, supabase-db+kong+meta+coolify-proxy healthy, MIG-032 + System-Workflow-Rule active, Audit-Trail letzte 24h aktiv (ai_signal_extract_run 286x matched RPT-342-Schwelle, ki_workspace_report 3x V6.6-neu, auto_winloss_triggered 2x + skipped_recent_run 1x V6.6-neu), 0 Container-5xx letzte 1h, Cron-Logs errors=0. ISSUE-061 resolved, ISSUE-058+042 als bekannt-akzeptiert. 1 neu erfasstes Low-Finding L-1: 4 V6.6-Files mit Hex-Hardcodes statt Brand-Tokens → BL-460 V6.7-Polish. Keine V6.6-Release-Blocker, keine Required-Fixes. **V6.6 ready fuer /go-live**.
+- Current Phase: V6.6 Pre-V7-Audit-Sprint — Final-Check abgeschlossen, vor Go-Live.
 
 ## Immediate Next Steps
-1. **(naechster Schritt) /final-check V6.6** — pre-release Hygiene-Pass: Lint-Baseline, TSC-Carryovers, npm audit, Container-Health-Check, Style-Guide-V2-Compliance auf SLC-66X-Files, Records-Konsistenz-Sweep.
-2. **(danach)** /go-live V6.6 → /deploy als REL-028.
+1. **(naechster Schritt) /go-live V6.6** — finale Release-Bestaetigung + Image-Tag-Pinning + RELEASES.md-Eintrag REL-028 vorbereiten.
+2. **(danach)** User-Coolify-Redeploy + Post-Deploy-Smoke + /deploy als REL-028.
 3. **(nach V6.6 done)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) auf bereinigter Basis. BL-425 Multi-Touch-Journey-Tab + verbleibende V7-Audit-Defer-Items werden in V7-Scope integriert. Mitarbeiter-/Chef-Drill-Downs + Rollen-Sichtbarkeit kommen mit V7.
 4. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
 5. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).

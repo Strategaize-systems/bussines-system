@@ -2201,6 +2201,16 @@
       "version": null,
       "description": "Gesamt-/qa V6.6 RPT-386 Low-Finding L-1: Cockpit (SLC-666) verwendet 'Aufgabe' als Label fuer den Task-Button, Mein-Tag (SLC-662) und Deal-Detail (SLC-664) verwenden 'Task'. Funktional identisch, aber UI-Wording-Drift zwischen den drei KI-Workspace-Callern. Empfehlung fuer V6.7-Polish: kanonische Variante festlegen (deutsch konsequent: 'Aufgabe' empfohlen, da andere Quick-Actions auch deutsch sind: E-Mail, Meeting, Anruf, Notiz, Angebot) und auf Mein-Tag + Deal-Detail einheitlich anwenden. Pre-existing Label aus V3-Cockpit-Pattern (Mein-Tag). Nicht V6.6-Release-blockierend. Discovery aus Gesamt-/qa V6.6 2026-05-11.",
       "createdAt": "2026-05-11"
+    },
+    {
+      "id": "BL-460",
+      "title": "Style-Guide-V2 Hex-Hardcodes in 4 V6.6-Files durch Brand-Tokens ersetzen",
+      "type": "improvement",
+      "priority": "low",
+      "status": "open",
+      "version": null,
+      "description": "Final-Check V6.6 RPT-387 Low-Finding L-1: 4 V6.6-Files nutzen Hex-Werte #4454b8/#120774 direkt statt der bereits in globals.css definierten Brand-Tokens (--brand-primary=#4454b8, --brand-primary-dark=#120774). Konkret: (a) cockpit/src/app/(app)/mein-tag/ki-workspace-wrapper.tsx:58 Header-Icon-Gradient, (b) cockpit/src/components/deals/deal-action-bar.tsx:404 DealNoteSheet-Input focus-border + :420 Save-Button-Gradient, (c) cockpit/src/components/deals/deal-ki-workspace-wrapper.tsx:59 Header-Icon-Gradient. Funktional identisch (Hex-Werte matchen Tokens), aber nicht 100% Style-Guide-V2-konform. Umstellung: bg-brand-primary / from-brand-primary-dark / to-brand-primary etc. Pattern wie in SLC-652 V6.5-Theming-Migration Tranche 1. Pre-existing Sidebar (cockpit/src/components/layout/sidebar.tsx) nutzt gleiches Hex-Pattern und ist als BL-441-Carryover (UA-011/012/013) bereits dokumentiert. V6.7-Polish zusammen mit Sidebar-Migration. Nicht V6.6-Release-blockierend. Discovery aus /final-check V6.6 2026-05-11.",
+      "createdAt": "2026-05-11"
     }
   ]
 }
