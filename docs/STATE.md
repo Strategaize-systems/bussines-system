@@ -10,12 +10,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V6.6 SLC-665 /backend code-side DONE 2026-05-11 (RPT-376)** — MIG-032 + MIG-032b auf Hetzner applied (3 additive Aenderungen inkl. `automation_rules.is_system` + System-Rule `[SYSTEM] Auto Win/Loss Extract`). ItemSheet-Generic + Activity-Variant + Bedrock-Summary-Loader + DealTimeline-Click-Handler live. V6.2-Workflow-Action `auto_winloss_extract` mit 5-Min-Time-Window-Throttle + Bedrock-Wrapper + audit_log-Trail. Read-API `/api/winloss/[deal_id]` (Bearer EXPORT_API_KEY). Manueller Win/Loss-Berichts-Pfad mit 24h-Auto-Run-Cache + bypassCache-Override. TSC + Vitest 546/546 + Build + Lint clean. V6.6 jetzt 3/7 Slices vollstaendig done + SLC-665 code-side ready. Naechster Schritt: User-Coolify-Deploy + /qa SLC-665 (Live-Smoke: 3-fach Stage-Toggling + Activity-Sheet + Read-API curl + Manueller Re-Run).
-- Current Phase: V6.6 Pre-V7-Audit-Sprint — Implementation aktiv (3/7 Slices vollstaendig done + SLC-665 code-side complete).
+- Current Focus: **V6.6 SLC-665 /qa 2026-05-11 MIXED (RPT-377)** — Static (Vitest 546/546, Build) + DB-Schema (MIG-032 alle 3 Aenderungen + System-Rule `[SYSTEM] Auto Win/Loss Extract` aktiv) + Code-Wiring (Dispatcher -> Executor -> Action -> Bedrock-Wrapper) PASS. **Blocker ISSUE-061**: `/api/winloss/[deal_id]` ist hinter Auth-Middleware geblockt — Live-curl liefert 307 -> /login auch mit gueltigem Bearer-Token, sowohl extern als auch container-intern. Wurzel: `cockpit/src/lib/supabase/middleware.ts:33` publicPaths fehlt `/api/winloss`. Fix: 1-Zeilen-Ergaenzung. UI-Smokes Blocks A/B/D (Activity-Sheet + 3-fach Stage-Toggling + Manueller Re-Run) erfordern User-Browser-Login und sind bis Bugfix offen. SLC-665 bleibt `in_progress`. Naechster Schritt: `/doctor` ISSUE-061 → Commit+Push → User-Coolify-Redeploy → Read-API-curl 3 Faelle (AC12) → User-Browser-Smoke A/B/D (AC4..AC11+AC13).
+- Current Phase: V6.6 Pre-V7-Audit-Sprint — Implementation aktiv (3/7 Slices vollstaendig done + SLC-665 code-side complete + Blocker offen).
 
 ## Immediate Next Steps
-1. **(naechster Schritt) User-Coolify-Deploy** des SLC-665-Codes + **/qa SLC-665** mit Live-Smoke (3-fach Stage-Toggling + Activity-Sheet 2-fach + Read-API curl + Manueller Re-Run-Button).
-2. **(Optional parallel)** /backend SLC-663 — Deals-Listen-Seite (Top-10 + Karten-Grid + Type-Ahead), eigenstaendig, kein KI-Workspace-Caller.
+1. **(naechster Schritt) /doctor ISSUE-061** — Middleware-publicPaths-Ergaenzung `"/api/winloss"`. Commit+Push, User-Coolify-Redeploy.
+2. **(direkt danach) Read-API-curl-Smoke AC12** — no-auth -> 401, wrong-auth -> 401, valid-auth + bestehender Run -> 200, valid-auth + kein-Run -> 404.
+3. **(direkt danach) User-Browser-Smoke SLC-665** — AC4..AC11+AC13 (Activity-Sheet 2x + Auto-Trigger 3-fach Stage-Toggling + audit_log-Pruefung + Manueller Re-Run-Button + Cache-Override). Nach PASS: SLC-665 done, BL-448+BL-450 done.
+4. **(Optional parallel)** /backend SLC-663 — Deals-Listen-Seite (Top-10 + Karten-Grid + Type-Ahead), eigenstaendig, kein KI-Workspace-Caller.
 2. **(nach V6.6 done)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) auf bereinigter Basis. BL-425 Multi-Touch-Journey-Tab + verbleibende V7-Audit-Defer-Items werden in V7-Scope integriert. Mitarbeiter-/Chef-Drill-Downs + Rollen-Sichtbarkeit kommen mit V7.
 3. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
 4. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).
@@ -86,7 +88,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - Pre-Production-Compliance-Gate (irgendwann vor erstem Kunden-Live-Call) — Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042 — laut User 2026-05-01 NICHT prioritaer
 
 ## Blockers
-- aktuell keine
+- **ISSUE-061** — Read-API `/api/winloss/[deal_id]` durch Middleware-Auth-Wall geblockt (publicPaths-Liste fehlt `/api/winloss`). Blocker fuer SLC-665 AC12 und V6.6-Intelligence-Studio-Integration. Fix: 1-Zeilen-Edit in `cockpit/src/lib/supabase/middleware.ts:33`.
 
 ## Last Stable Version
 - V6.5 — 2026-05-08 — released auf Hetzner als REL-027 (Hintergrund-Sprint: 7 Slices SLC-651..657, 3 Features FEAT-651..653 alle deployed. Theming-Foundation (Brand-Tokens + Pipeline+Proposals-Migration) + UI-Polish (Settings-Pages-Auslagern + ViewToggle-Generic + PageHeader-Slot) + Compliance-Erweiterung NL→DE-Symmetrie (VIES-Adapter + DE-§13b PRELIMINARY) + Hygiene (Source-Migration ready-when-needed + npm audit + ISSUE-058). MIG-030 vat_id_validations live (1 echter VIES-Cache-Eintrag). MIG-031 by-design No-Op. 12 V6.5-DECs (DEC-152..163). Image-Tag `cb491ca` Pre-Live-Burn-In 17h ohne Container-Restart. Vitest 444/444 (+39 V6.5). Lint 168/55 = V5.7-Baseline +2 (SLC-655 by-design). npm audit 0 high/0 critical/2 moderate=ISSUE-058. RPT-345..364. Internal-Test-Mode bleibt aktiv bis Compliance-Sprint.)

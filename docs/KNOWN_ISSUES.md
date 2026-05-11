@@ -1,5 +1,14 @@
 # Known Issues
 
+### ISSUE-061 — Read-API /api/winloss/[deal_id] vom Middleware-Auth-Wall geblockt (Bearer-Auth nie erreicht)
+- Status: open
+- Severity: Blocker
+- Area: Backend / SLC-665 / Middleware / Read-API
+- Summary: `cockpit/src/lib/supabase/middleware.ts:33` definiert `publicPaths` ohne `/api/winloss`. Jeder Request auf `/api/winloss/[deal_id]` wird vor dem Route-Handler auf `/login` (HTTP 307) redirected — auch mit korrektem Bearer-Token. Live-curl gegen `https://business.strategaizetransition.com/api/winloss/<deal_id>` mit gueltigem `EXPORT_API_KEY` liefert `307 -> /login`; gleicher Effekt bei container-internem `localhost:3000`-Call. AC12 ist damit nicht erfuellbar.
+- Impact: Intelligence-Studio-Integration (V6.6-Pull-Pfad) ist blockiert. Auch Routine-curl-Smokes oder externe Tools haben keinen Zugriff. Fix ist eine 1-Zeilen-Aenderung — gleicher Pattern wie `/api/export`, `/api/campaigns`, `/api/branding` (alle bereits in publicPaths).
+- Workaround: keiner — Verifikation der Read-API-Logik selbst (Bearer-Check + 200/404-Mapping) gelingt nur via direkten Function-Test (Vitest deckt die 5 Auth-Faelle ab). Live-Smoke ist ohne Middleware-Fix unmoeglich.
+- Next Action: `/doctor`-Fix: `publicPaths`-Array ergaenzen um `"/api/winloss"`. Anschliessend Redeploy, Live-curl-Smoke (3 Faelle: no-auth -> 401, wrong-auth -> 401, valid-auth + bestehender Run -> 200, valid-auth + kein-Run -> 404).
+
 ### ISSUE-060 — Mehr-Aktionen-Dropdown crasht Deal-Detail-Page beim Click (Base UI #31)
 - Status: resolved
 - Severity: Blocker
