@@ -18,6 +18,7 @@ import {
   VatIdStatusBadge,
   type VatIdBadgeState,
 } from "@/components/forms/vat-id-status-badge";
+import { KI_READINESS_LABEL } from "@/lib/labels/ki-readiness";
 
 const selectClass = "select-premium";
 
@@ -271,7 +272,7 @@ export function CompanyForm({ company, onSubmit, isPending }: CompanyFormProps) 
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="ai_readiness">KI-Reife</Label>
+          <Label htmlFor="ai_readiness">{KI_READINESS_LABEL}</Label>
           <select
             id="ai_readiness"
             name="ai_readiness"

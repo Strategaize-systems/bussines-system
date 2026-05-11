@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { KI_READINESS_LABEL } from "@/lib/labels/ki-readiness";
 
 const blueprintFitColors: Record<string, string> = {
   ideal: "bg-green-500",
@@ -250,7 +251,7 @@ export default async function CompanyDetailPage({
               <span className="text-muted-foreground">Exit-Relevanz</span>
               <LevelBadge value={company.exit_relevance} />
 
-              <span className="text-muted-foreground">KI-Reife</span>
+              <span className="text-muted-foreground">{KI_READINESS_LABEL}</span>
               <LevelBadge value={company.ai_readiness} />
 
               <span className="text-muted-foreground">Budget-Potential</span>

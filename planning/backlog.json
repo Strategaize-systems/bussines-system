@@ -2067,7 +2067,7 @@
       "title": "FEAT-662 Kalender-Polish (Working-Hours-Setting + Range 06:00-21:00)",
       "type": "feature",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V6.6",
       "description": "Kalender-Stunden-Range default 06:00-21:00 (von hartkodiert 07:00-20:00 in kalender-client.tsx). Working-Hours-Setting pro User (start/end TIME-Spalten in user_settings, MIG-032). Toggle 'Voller Tag / Nur Arbeitstag' in Kalender-Header mit localStorage-Persistenz. V7-Multi-User-kompatibel (user_id-scoped). Feiertag-Logik = NICHT V6.6 (BL-444). Slice-Planning DONE 2026-05-09: Implementation in SLC-667. MIG-032 Schema-Apply in SLC-665.",
       "createdAt": "2026-05-09"
@@ -2107,7 +2107,7 @@
       "title": "FEAT-666 KI-Inventur (Sparkles weg + Win/Loss-Auto-Trigger + Sidebar-Restruktur)",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V6.6",
       "description": "Aufraeumen + Auto-Trigger + Sidebar. Firmen+Kontakte Sparkles-Cards (Placeholder seit V3.1) ERSATZLOS WEG. KI-Reife-Field umbenennen auf AI-Bereitschaft (schema-kompatibel, nur UI-Label). Pipeline-NL-Suche durch Type-Ahead ersetzt (analog FEAT-663). Pipeline-Kanban bleibt unangetastet. Win/Loss-Auto-Trigger bei Stage-Wechsel auf won/lost (einziger Backend-Touch, ueber V6.2-Workflow-Engine als auto_winloss_extract action, Idempotenz UNIQUE(deal_id,target_status) + 5-Min-Throttle, Pflicht-Datenfluss zu Intelligence Studio via Read-API-Pattern wie FEAT-622). Berichts-Button Win/Loss-Analyse im Deal-KI-Workspace (FEAT-664). Multiplikatoren bleiben KI-frei. Sidebar V6.6 (Admin-Sicht): ANALYSE [Dashboard] | OPERATIV [Mein Tag, Focus, Kalender] | ARBEITSBEREICHE [Deals, Pipeline, Firmen, Kontakte, Multiplikatoren] | VERWALTUNG [V7-Item, unveraendert]. 'Meine Performance' raus. Slice-Planning DONE 2026-05-09 (RPT-368): Auto-Trigger in SLC-665, Hygiene-Items in SLC-667.",
       "createdAt": "2026-05-09"

@@ -264,7 +264,7 @@ Reihenfolge zwingend (DEC-176): SLC-661 (Foundation) → SLC-662 (Mein Tag, erst
 | SLC-664 | [Deal-Detail Layout-Swap](SLC-664-deal-detail-layout-swap.md) | FEAT-664 | done | Blocker | 2026-05-09 |
 | SLC-665 | [Activity-Sheet + Win/Loss-Auto-Trigger (MIG-032)](SLC-665-activity-sheet-winloss-trigger.md) | FEAT-664 + FEAT-666 | done | Blocker | 2026-05-09 |
 | SLC-666 | [Dashboard zu KI-Analyse-Cockpit](SLC-666-ki-analyse-cockpit.md) | FEAT-665 | done | High | 2026-05-09 |
-| SLC-667 | [KI-Inventur + Kalender-Polish + Sidebar-Reorder](SLC-667-ki-inventur-kalender-polish.md) | FEAT-666 + FEAT-662 | planned | Medium | 2026-05-09 |
+| SLC-667 | [KI-Inventur + Kalender-Polish + Sidebar-Reorder](SLC-667-ki-inventur-kalender-polish.md) | FEAT-666 + FEAT-662 | done | Medium | 2026-05-09 |
 
 ## V6.5 Slices (Hintergrund-Sprint parallel zu V7-Vorbereitung — released REL-027 2026-05-08)
 

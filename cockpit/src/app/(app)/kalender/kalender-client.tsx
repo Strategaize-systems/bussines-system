@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Calendar,
   ChevronLeft,
@@ -14,6 +14,11 @@ import {
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import type { CalendarEventRow } from "./actions";
+import type { WorkingHoursSettings } from "@/lib/settings/working-hours-actions";
+import {
+  computeHourRange,
+  type HourRangeMode,
+} from "./hour-range";
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -22,11 +27,12 @@ type ViewMode = "day" | "week" | "month";
 interface KalenderClientProps {
   initialEvents: CalendarEventRow[];
   initialDate: string; // ISO date string (YYYY-MM-DD)
+  workingHours?: WorkingHoursSettings;
 }
 
 // ── Helpers ──────────────────────────────────────────────────
 
-const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 07:00–20:00
+// SLC-667 MT-6/8 — Hour-Range-Logik in ./hour-range.ts ausgelagert (Pure-Function).
 
 const TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   meeting: { bg: "bg-blue-100", border: "border-blue-300", text: "text-blue-800" },
@@ -173,10 +179,12 @@ function DayView({
   date,
   events,
   onEventClick,
+  hours,
 }: {
   date: Date;
   events: CalendarEventRow[];
   onEventClick: (e: CalendarEventRow) => void;
+  hours: number[];
 }) {
   const dayEvents = events.filter((e) => isSameDay(new Date(e.start_time), date));
 
@@ -199,7 +207,7 @@ function DayView({
 
       {/* Time grid */}
       <div className="relative">
-        {HOURS.map((hour) => (
+        {hours.map((hour) => (
           <div key={hour} className="flex border-b border-slate-100" style={{ height: 64 }}>
             <div className="w-16 shrink-0 text-right pr-3 pt-1 text-[11px] font-medium text-slate-400">
               {String(hour).padStart(2, "0")}:00
@@ -216,7 +224,7 @@ function DayView({
             const startMinutes = start.getHours() * 60 + start.getMinutes();
             const endMinutes = end.getHours() * 60 + end.getMinutes();
             const duration = Math.max(endMinutes - startMinutes, 15);
-            const topOffset = (startMinutes - HOURS[0] * 60) * (64 / 60);
+            const topOffset = (startMinutes - hours[0] * 60) * (64 / 60);
             const height = duration * (64 / 60);
             const style = getTypeStyle(event.type);
 
@@ -257,11 +265,13 @@ function WeekView({
   events,
   onEventClick,
   onDayClick,
+  hours,
 }: {
   weekStart: Date;
   events: CalendarEventRow[];
   onEventClick: (e: CalendarEventRow) => void;
   onDayClick: (d: Date) => void;
+  hours: number[];
 }) {
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
@@ -305,7 +315,7 @@ function WeekView({
 
       {/* Time grid */}
       <div className="relative">
-        {HOURS.map((hour) => (
+        {hours.map((hour) => (
           <div key={hour} className="flex border-b border-slate-100" style={{ height: 56 }}>
             <div className="w-16 shrink-0 text-right pr-3 pt-1 text-[10px] font-medium text-slate-400">
               {String(hour).padStart(2, "0")}:00
@@ -329,7 +339,7 @@ function WeekView({
                   const startMinutes = start.getHours() * 60 + start.getMinutes();
                   const endMinutes = end.getHours() * 60 + end.getMinutes();
                   const duration = Math.max(endMinutes - startMinutes, 15);
-                  const topOffset = (startMinutes - HOURS[0] * 60) * (56 / 60);
+                  const topOffset = (startMinutes - hours[0] * 60) * (56 / 60);
                   const height = duration * (56 / 60);
                   const style = getTypeStyle(event.type);
 
@@ -483,11 +493,51 @@ function MonthView({
 
 // ── Main Client Component ────────────────────────────────────
 
-export function KalenderClient({ initialEvents, initialDate }: KalenderClientProps) {
+const TOGGLE_STORAGE_KEY = "cockpit:kalender:working-hours-toggle";
+
+export function KalenderClient({
+  initialEvents,
+  initialDate,
+  workingHours,
+}: KalenderClientProps) {
   const [view, setView] = useState<ViewMode>("week");
   const [currentDate, setCurrentDate] = useState(() => new Date(initialDate));
   const [events] = useState(initialEvents);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEventRow | null>(null);
+
+  // SLC-667 MT-8: Working-Hours-Toggle (localStorage persisted).
+  const workingHoursConfigured = useMemo(
+    () => !!workingHours?.start && !!workingHours?.end,
+    [workingHours],
+  );
+  const [hourMode, setHourMode] = useState<HourRangeMode>("full");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    Promise.resolve().then(() => {
+      try {
+        const stored = window.localStorage.getItem(TOGGLE_STORAGE_KEY);
+        setHourMode(stored === "work" && workingHoursConfigured ? "work" : "full");
+      } catch {
+        // localStorage may be unavailable (Safari private mode etc.)
+      }
+    });
+  }, [workingHoursConfigured]);
+
+  function toggleHourMode() {
+    const next: HourRangeMode = hourMode === "full" ? "work" : "full";
+    setHourMode(next);
+    try {
+      window.localStorage.setItem(TOGGLE_STORAGE_KEY, next);
+    } catch {
+      // ignore
+    }
+  }
+
+  const hourRange = useMemo(
+    () => computeHourRange(hourMode, workingHours),
+    [hourMode, workingHours],
+  );
 
   // Computed dates
   const weekStart = useMemo(() => getMonday(currentDate), [currentDate]);
@@ -603,6 +653,31 @@ export function KalenderClient({ initialEvents, initialDate }: KalenderClientPro
           </div>
 
           <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+
+          {/* SLC-667 MT-8 — Working-Hours-Toggle */}
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleHourMode}
+              disabled={!workingHoursConfigured}
+              data-testid="kalender-working-hours-toggle"
+              title={
+                workingHoursConfigured
+                  ? "Wechsle zwischen voller Tag (06:00-21:00) und Arbeitstag"
+                  : "Working-Hours in Einstellungen setzen"
+              }
+              className={cn(
+                "px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors",
+                workingHoursConfigured
+                  ? hourMode === "work"
+                    ? "border-[#4454b8] bg-[#4454b8]/10 text-[#4454b8]"
+                    : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                  : "border-slate-100 bg-slate-50 text-slate-400 cursor-not-allowed",
+              )}
+            >
+              {hourMode === "work" ? "Nur Arbeitstag" : "Voller Tag"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -613,6 +688,7 @@ export function KalenderClient({ initialEvents, initialDate }: KalenderClientPro
             date={currentDate}
             events={events}
             onEventClick={setSelectedEvent}
+            hours={hourRange.hours}
           />
         )}
         {view === "week" && (
@@ -621,6 +697,7 @@ export function KalenderClient({ initialEvents, initialDate }: KalenderClientPro
             events={events}
             onEventClick={setSelectedEvent}
             onDayClick={switchToDay}
+            hours={hourRange.hours}
           />
         )}
         {view === "month" && (

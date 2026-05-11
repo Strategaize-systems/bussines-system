@@ -11,8 +11,7 @@ import { DealSheet } from "./deal-sheet";
 import { KPICard, KPIGrid } from "@/components/ui/kpi-card";
 import type { Deal, Pipeline, PipelineStage } from "./actions";
 import { TrendingUp, ClipboardList, Target, Percent, Plus, ChevronLeft, ChevronRight, LayoutList, Kanban, List, BarChart3, PieChart } from "lucide-react";
-import { PipelineSearchBar } from "@/components/pipeline/pipeline-search-bar";
-import type { PipelineSearchFilter } from "@/lib/ai/types";
+import { TypeAheadSearch } from "@/app/(app)/deals/type-ahead-search";
 import { ViewToggle, type ViewToggleMode } from "@/components/ui/view-toggle";
 import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
@@ -71,62 +70,17 @@ export function PipelineView({
   selectedCampaignId = null,
 }: PipelineViewProps) {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
   const [stageFilter, setStageFilter] = useState("all");
   const [showNewDeal, setShowNewDeal] = useState(false);
-  const [aiFilter, setAiFilter] = useState<PipelineSearchFilter | null>(null);
   const [viewMode, setViewMode] = useState<PipelineViewMode>("kanban");
-
-  const stageNames = useMemo(() => stages.map((s) => s.name), [stages]);
 
   const filteredDeals = useMemo(() => {
     return deals.filter((d) => {
-      const targetStatus = aiFilter?.status || "active";
-      if (d.status !== targetStatus) return false;
+      if (d.status !== "active") return false;
       if (stageFilter !== "all" && d.stage_id !== stageFilter) return false;
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        const matchTitle = d.title?.toLowerCase().includes(q);
-        const matchCompany = (d.companies as any)?.name?.toLowerCase().includes(q);
-        const matchContact = d.contacts
-          ? `${(d.contacts as any).first_name} ${(d.contacts as any).last_name}`.toLowerCase().includes(q)
-          : false;
-        if (!matchTitle && !matchCompany && !matchContact) return false;
-      }
-      if (aiFilter) {
-        if (aiFilter.stage) {
-          const matchStage = stages.find(
-            (s) => s.name.toLowerCase() === aiFilter.stage!.toLowerCase()
-          );
-          if (matchStage && d.stage_id !== matchStage.id) return false;
-        }
-        if (aiFilter.minValue != null && (d.value ?? 0) < aiFilter.minValue) return false;
-        if (aiFilter.maxValue != null && (d.value ?? 0) > aiFilter.maxValue) return false;
-        if (aiFilter.contactName) {
-          const name = d.contacts
-            ? `${(d.contacts as any).first_name} ${(d.contacts as any).last_name}`.toLowerCase()
-            : "";
-          if (!name.includes(aiFilter.contactName.toLowerCase())) return false;
-        }
-        if (aiFilter.companyName) {
-          const company = ((d.companies as any)?.name ?? "").toLowerCase();
-          if (!company.includes(aiFilter.companyName.toLowerCase())) return false;
-        }
-        if (aiFilter.titleSearch) {
-          if (!d.title?.toLowerCase().includes(aiFilter.titleSearch.toLowerCase())) return false;
-        }
-        if (aiFilter.hasNextAction === true && !d.next_action) return false;
-        if (aiFilter.hasNextAction === false && d.next_action) return false;
-        if (aiFilter.isStagnant === true) {
-          const daysSince = d.updated_at
-            ? Math.floor((Date.now() - new Date(d.updated_at).getTime()) / 86400000)
-            : 999;
-          if (daysSince < 7) return false;
-        }
-      }
       return true;
     });
-  }, [deals, searchQuery, stageFilter, aiFilter, stages]);
+  }, [deals, stageFilter]);
 
   const activeDeals = deals.filter((d) => d.status === "active");
   const totalValue = activeDeals.reduce((sum, d) => sum + (d.value ?? 0), 0);
@@ -216,14 +170,7 @@ export function PipelineView({
           <div className="bg-white rounded-xl border-2 border-slate-200 shadow-sm p-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex-1 min-w-0">
-                <PipelineSearchBar
-                  pipelineName={pipeline.name}
-                  stageNames={stageNames}
-                  onFilter={(filter) => setAiFilter(filter)}
-                  onReset={() => { setAiFilter(null); setSearchQuery(""); }}
-                  onTextSearch={setSearchQuery}
-                  textQuery={searchQuery}
-                />
+                <TypeAheadSearch />
               </div>
               <select
                 value={stageFilter}

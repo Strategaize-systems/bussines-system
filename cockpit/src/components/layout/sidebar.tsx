@@ -44,7 +44,14 @@ type NavGroup = {
   items: NavItem[];
 };
 
+// SLC-667 MT-5 — Sidebar-Reorder: ANALYSE first, dann OPERATIV, ARBEITSBEREICHE, VERWALTUNG.
 const navGroups: NavGroup[] = [
+  {
+    label: "ANALYSE",
+    items: [
+      { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    ],
+  },
   {
     label: "OPERATIV",
     items: [
@@ -63,12 +70,6 @@ const navGroups: NavGroup[] = [
       { name: "Firmen", href: "/companies", icon: Building2 },
       { name: "Kontakte", href: "/contacts", icon: Users },
       { name: "Multiplikatoren", href: "/multiplikatoren", icon: Handshake },
-    ],
-  },
-  {
-    label: "ANALYSE",
-    items: [
-      { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     ],
   },
   {
