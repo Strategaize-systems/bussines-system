@@ -6,8 +6,7 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { CockpitActionBar } from "@/components/dashboard/cockpit-action-bar";
-import { KIWorkspace } from "@/components/ki-workspace/KIWorkspace";
-import { COCKPIT_REPORTS } from "@/components/ki-workspace/reports/registry";
+import { CockpitKIWorkspace } from "@/components/dashboard/cockpit-ki-workspace";
 import { Calendar, ChevronRight } from "lucide-react";
 import type { CalendarSlot } from "@/app/(app)/mein-tag/actions";
 
@@ -46,12 +45,7 @@ export function DashboardClient({
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2" data-testid="cockpit-ki-workspace-column">
-              <KIWorkspace
-                context="cockpit"
-                reports={COCKPIT_REPORTS}
-                scope={{ userId }}
-                voiceEnabled={true}
-              />
+              <CockpitKIWorkspace userId={userId} />
             </div>
 
             <aside className="lg:col-span-1" data-testid="cockpit-calendar-column">
