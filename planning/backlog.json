@@ -2191,6 +2191,16 @@
       "version": null,
       "description": "SLC-667 AC17-Open-Point aus QA RPT-385: Kalender-Mode 'work' rendert aktuell NUR die Working-Hours-Stunden (z.B. 09:00-18:00). Termine ausserhalb (z.B. 07:30 Fruehmeeting, 19:00 Abendkurs) sind ausgeblendet oder verschoben — der User sieht sie nicht. Spec verlangt 'gestauchter Pre/Post-Bereich (1px-Linien-Trenner + reduzierte Hoehe)'. Implementation: kalender-client.tsx DayView/WeekView braucht 3 Render-Bereiche statt 1: Pre-Working-Hours (Stauchung), Working-Hours (normal), Post-Working-Hours (Stauchung). topOffset-Math entsprechend anpassen. Pragmatischer Workaround heute: User wechselt manuell via Toggle auf 'Voller Tag'. Discovery aus SLC-667 /qa 2026-05-11.",
       "createdAt": "2026-05-11"
+    },
+    {
+      "id": "BL-459",
+      "title": "Quick-Action-Label-Konsistenz: 'Task' (Mein-Tag/Deal-Detail) vs 'Aufgabe' (Cockpit) vereinheitlichen",
+      "type": "improvement",
+      "priority": "low",
+      "status": "open",
+      "version": null,
+      "description": "Gesamt-/qa V6.6 RPT-386 Low-Finding L-1: Cockpit (SLC-666) verwendet 'Aufgabe' als Label fuer den Task-Button, Mein-Tag (SLC-662) und Deal-Detail (SLC-664) verwenden 'Task'. Funktional identisch, aber UI-Wording-Drift zwischen den drei KI-Workspace-Callern. Empfehlung fuer V6.7-Polish: kanonische Variante festlegen (deutsch konsequent: 'Aufgabe' empfohlen, da andere Quick-Actions auch deutsch sind: E-Mail, Meeting, Anruf, Notiz, Angebot) und auf Mein-Tag + Deal-Detail einheitlich anwenden. Pre-existing Label aus V3-Cockpit-Pattern (Mein-Tag). Nicht V6.6-Release-blockierend. Discovery aus Gesamt-/qa V6.6 2026-05-11.",
+      "createdAt": "2026-05-11"
     }
   ]
 }

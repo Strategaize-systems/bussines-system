@@ -9,13 +9,13 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: **V6.6 SLC-667 vollstaendig DONE 2026-05-11 (RPT-385)** — 20/21 ACs Live-Browser PASS. SparklesCard-Removal verifiziert (DOM-Check). AI-Bereitschaft-Label live ("KI-Reife" nicht mehr im DOM, "AI-Bereitschaft" sichtbar). Pipeline-Type-Ahead funktional (4 Treffer auf "Test", NL-Suche-UI weg). Sidebar-Reorder bestaetigt: ANALYSE → OPERATIV → ARBEITSBEREICHE → VERWALTUNG. Kalender Default 06:00-21:00 (16 Stunden im DOM). Working-Hours-Save live DB-Roundtrip: 09:00-18:00 → Kalender zeigt 10h Range, Toggle "Voller Tag"↔"Nur Arbeitstag" mit localStorage `cockpit:kalender:working-hours-toggle="work"` bestaetigt. Reset auf null persistiert. 0 Console-Errors. AC13 Mobile-Hamburger als pre-existing-Gap (nicht SLC-667-Regression, V7-Backlog). AC17 Pre/Post-Stauchung als Folge-Slice. **V6.6: alle 7/7 Slices vollstaendig done** (SLC-661..667). Naechster Schritt: Gesamt-/qa V6.6 → /final-check → /go-live → /deploy als REL-028.
-- Current Phase: V6.6 Pre-V7-Audit-Sprint — Implementation komplett (7/7 Slices vollstaendig done, alle FEAT-661..666 done).
+- High-Level State: qa
+- Current Focus: **V6.6 Gesamt-/qa DONE 2026-05-11 (RPT-386) — PASS**. Alle 7 Slices SLC-661..667 als Einheit live verifiziert gegen Production-Coolify-Deploy `360c6ec` + Hotfixes `ab3ca54`+`8f5e739`. 5 Live-Pages (Mein Tag / Deals / Deal-Detail / Cockpit / Kalender) plus Mobile-Smoke 375px alle PASS. Cross-Slice-Konsistenz bestaetigt: 3 KI-Workspace-Caller (mein-tag/deal-detail/cockpit) funktional unabhaengig, Sparkles cross-page weg, Sidebar-Reorder konsistent (ANALYSE→OPERATIV→ARBEITSBEREICHE→VERWALTUNG), Win/Loss-Auto-Trigger live (3-fach Toggle aus RPT-379), Working-Hours-Save+Reset DB-Roundtrip (RPT-385). Vitest 650/650 PASS lokal verifiziert. 4 Low-Findings (Pre-existing/Folge-Items): L-1 Label-Drift "Task" (Mein-Tag/Deal-Detail) vs "Aufgabe" (Cockpit), L-2 React #418 (BL-418), L-3 Mobile-Hamburger (BL-457), L-4 Pre/Post-Stauchung (BL-458). Keine V6.6-Release-Blocker. **V6.6 ready fuer /final-check**.
+- Current Phase: V6.6 Pre-V7-Audit-Sprint — Gesamt-/qa abgeschlossen, alle 7/7 Slices done, alle FEAT-661..666 done, vor Final-Check.
 
 ## Immediate Next Steps
-1. **(naechster Schritt) Gesamt-/qa V6.6** ueber alle 7 Slices als Akzeptanz-Test gegen Live-Daten.
-2. **(danach)** /final-check V6.6 → /go-live V6.6 → /deploy als REL-028.
+1. **(naechster Schritt) /final-check V6.6** — pre-release Hygiene-Pass: Lint-Baseline, TSC-Carryovers, npm audit, Container-Health-Check, Style-Guide-V2-Compliance auf SLC-66X-Files, Records-Konsistenz-Sweep.
+2. **(danach)** /go-live V6.6 → /deploy als REL-028.
 3. **(nach V6.6 done)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) auf bereinigter Basis. BL-425 Multi-Touch-Journey-Tab + verbleibende V7-Audit-Defer-Items werden in V7-Scope integriert. Mitarbeiter-/Chef-Drill-Downs + Rollen-Sichtbarkeit kommen mit V7.
 4. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
 5. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).
