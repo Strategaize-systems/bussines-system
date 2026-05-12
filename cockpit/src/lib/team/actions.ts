@@ -21,20 +21,28 @@ import type { Role } from "@/lib/auth/types";
 
 const ROLE_VALUES: readonly [Role, ...Role[]] = ["admin", "teamlead", "member"];
 
+// Lax UUID-Format: pruefe nur Shape (8-4-4-4-12 hex), nicht v4-Version/Variant-Bits.
+// Real-DB hat geseedete Test-IDs wie '00000000-0000-0000-0000-000000000081' die kein
+// striktes RFC-4122 v4 sind, aber valide PostgreSQL-UUIDs. Defense-in-Depth bleibt
+// via DB-Column-Type erhalten.
+const UUID_LAX_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const uuidLax = (label: string) =>
+  z.string().regex(UUID_LAX_REGEX, `${label} muss eine UUID sein`);
+
 const inviteSchema = z.object({
   email: z.string().email("Ungueltige E-Mail-Adresse"),
   role: z.enum(ROLE_VALUES),
-  team_id: z.string().uuid("team_id muss eine UUID sein"),
+  team_id: uuidLax("team_id"),
   display_name: z.string().trim().min(1).max(120).nullable().optional(),
 });
 
 const changeRoleSchema = z.object({
-  user_id: z.string().uuid(),
+  user_id: uuidLax("user_id"),
   new_role: z.enum(ROLE_VALUES),
 });
 
 const deleteProfileSchema = z.object({
-  user_id: z.string().uuid(),
+  user_id: uuidLax("user_id"),
 });
 
 export type ActionResult<T = void> =

@@ -31,21 +31,22 @@ const { assertRole } = await import("@/lib/auth/assert-role");
 const { inviteUserAndCreateProfile } = await import("@/lib/auth/invite");
 const { createAdminClient } = await import("@/lib/supabase/admin");
 
-// v4-konforme UUIDs (Zod uuid() prueft RFC-4122 Variant-Bits).
-const TEAM_A_UUID = "11111111-1111-4111-8111-111111111111";
-const TEAM_B_UUID = "22222222-2222-4222-8222-222222222222";
-const VALID_UUID_A = "33333333-3333-4333-8333-333333333333";
-const VALID_UUID_B = "44444444-4444-4444-8444-444444444444";
+// UUID-Shape-Strings; Zod-Schema validiert lax-Format (8-4-4-4-12 hex)
+// inkl. Real-DB-Seed-Pattern '00000000-0000-0000-0000-000000000xxx'.
+const TEAM_A_UUID = "11111111-1111-1111-1111-111111111111";
+const TEAM_B_UUID = "22222222-2222-2222-2222-222222222222";
+const VALID_UUID_A = "00000000-0000-0000-0000-000000000081";  // Seed-Pattern, regression-test fuer lax UUID
+const VALID_UUID_B = "44444444-4444-4444-4444-444444444444";
 
 const ADMIN_PROFILE: Profile = {
-  user_id: "55555555-5555-4555-8555-555555555555",
+  user_id: "55555555-5555-5555-5555-555555555555",
   role: "admin",
   team_id: TEAM_A_UUID,
   display_name: "Admin",
 };
 
 const TEAMLEAD_PROFILE: Profile = {
-  user_id: "66666666-6666-4666-8666-666666666666",
+  user_id: "66666666-6666-6666-6666-666666666666",
   role: "teamlead",
   team_id: TEAM_A_UUID,
   display_name: "Teamlead A",
