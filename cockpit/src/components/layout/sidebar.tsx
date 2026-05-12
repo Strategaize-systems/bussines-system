@@ -3,196 +3,63 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  Users,
-  Building2,
-  Handshake,
-  TrendingUp,
-  CheckSquare,
-  Calendar,
   ChevronLeft,
   ChevronDown,
   ChevronRight,
-  Sparkles,
-  Mail,
-  FileText,
-  ArrowRightLeft,
-  Award,
-  Settings,
-  Shield,
-  Briefcase,
-  Target,
-  Package,
   LogOut,
-  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { signout } from "@/app/(auth)/login/actions";
+import type { Role } from "@/lib/auth/types";
+import {
+  filterByRole,
+  groupVisualMerged,
+  type SidebarItem,
+} from "@/lib/navigation/sidebar-config";
 
-type NavItem = {
-  name: string;
-  href: string;
-  icon: typeof LayoutDashboard;
-  children?: { name: string; href: string }[];
-};
+/**
+ * V7 Sidebar (SLC-702 MT-3).
+ *
+ * - Liest aus `SIDEBAR_CONFIG`, filtert per `role`-Prop (DEC-190).
+ * - Server-Side-Filter: `role` kommt aus dem (app)/layout.tsx das via
+ *   `await getProfile()` resolved wird. Kein Client-Flash, kein useEffect.
+ * - Gruppiert via `groupVisualMerged` damit VERWALTUNG_MEIN + _SETUP unter
+ *   einem "VERWALTUNG"-Header rendern (Split kommt in SLC-707).
+ * - Sections ohne sichtbare Items werden komplett ausgeblendet.
+ */
 
-type NavGroup = {
-  label: string;
-  collapsible?: boolean;
-  defaultCollapsed?: boolean;
-  items: NavItem[];
-};
+const COLLAPSIBLE_SECTIONS = new Set(["ARBEITSBEREICHE", "VERWALTUNG"]);
+const DEFAULT_COLLAPSED_SECTIONS = new Set(["VERWALTUNG"]);
 
-// SLC-667 MT-5 — Sidebar-Reorder: ANALYSE first, dann OPERATIV, ARBEITSBEREICHE, VERWALTUNG.
-const navGroups: NavGroup[] = [
-  {
-    label: "ANALYSE",
-    items: [
-      { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    ],
-  },
-  {
-    label: "OPERATIV",
-    items: [
-      { name: "Mein Tag", href: "/mein-tag", icon: Sparkles },
-      { name: "Focus", href: "/focus", icon: Target },
-      { name: "Kalender", href: "/kalender", icon: Calendar },
-    ],
-  },
-  {
-    label: "ARBEITSBEREICHE",
-    collapsible: true,
-    defaultCollapsed: false,
-    items: [
-      { name: "Deals", href: "/deals", icon: Briefcase },
-      { name: "Pipeline", href: "/pipeline/multiplikatoren", icon: TrendingUp },
-      { name: "Firmen", href: "/companies", icon: Building2 },
-      { name: "Kontakte", href: "/contacts", icon: Users },
-      { name: "Multiplikatoren", href: "/multiplikatoren", icon: Handshake },
-    ],
-  },
-  {
-    label: "VERWALTUNG",
-    collapsible: true,
-    defaultCollapsed: true,
-    items: [
-      { name: "Aufgaben", href: "/aufgaben", icon: CheckSquare },
-      { name: "Termine-Liste", href: "/termine", icon: Calendar },
-      { name: "E-Mails", href: "/emails", icon: Mail },
-      { name: "Proposals", href: "/proposals", icon: FileText },
-      { name: "Handoffs", href: "/handoffs", icon: ArrowRightLeft },
-      { name: "Referrals", href: "/referrals", icon: Award },
-      { name: "Ziele", href: "/performance/goals", icon: Target },
-      { name: "Automatisierung", href: "/cadences", icon: Zap },
-      { name: "Produkte", href: "/settings/products", icon: Package },
-      { name: "Settings", href: "/settings", icon: Settings },
-      { name: "Audit-Log", href: "/audit-log", icon: Shield },
-    ],
-  },
-];
-
-export function Sidebar() {
+export function Sidebar({ role }: { role: Role }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const [expandedPipeline, setExpandedPipeline] = useState(
-    () => pathname.startsWith("/pipeline")
-  );
+
+  const groups = useMemo(() => groupVisualMerged(filterByRole(role)), [role]);
+
   const [groupOpen, setGroupOpen] = useState<Record<string, boolean>>(() => {
     const state: Record<string, boolean> = {};
-    for (const group of navGroups) {
-      if (group.collapsible) {
-        const isActiveInGroup = group.items.some((item) => pathname.startsWith(item.href));
-        state[group.label] = isActiveInGroup || !group.defaultCollapsed;
+    for (const group of groups) {
+      if (COLLAPSIBLE_SECTIONS.has(group.label)) {
+        const isActiveInGroup = group.items.some((item) =>
+          isPathnameActive(pathname, item.href),
+        );
+        state[group.label] =
+          isActiveInGroup || !DEFAULT_COLLAPSED_SECTIONS.has(group.label);
       }
     }
     return state;
   });
 
-  const isItemActive = (item: NavItem) => {
-    if (item.children) {
-      return item.children.some((child) => pathname === child.href || pathname.startsWith(child.href));
-    }
-    if (pathname === item.href) return true;
-    if (item.href === "/dashboard") return false;
-    // Exact prefix match: /performance matches /performance but not /performance/goals
-    // unless the item href itself includes the sub-path
-    return pathname.startsWith(item.href + "/") || pathname.startsWith(item.href + "?");
+  const toggleGroup = (label: string) => {
+    setGroupOpen((prev) => ({ ...prev, [label]: !prev[label] }));
   };
 
-  const renderNavItem = (item: NavItem) => {
-    const isActive = isItemActive(item);
+  const renderItem = (item: SidebarItem) => {
+    const isActive = isItemActive(pathname, item.href);
+    const Icon = item.icon;
 
-    // Item with sub-navigation (Pipeline)
-    if (item.children && !collapsed) {
-      const isChildActive = item.children.some(
-        (child) => pathname === child.href || pathname.startsWith(child.href)
-      );
-
-      return (
-        <div key={item.href}>
-          <button
-            onClick={() => setExpandedPipeline(!expandedPipeline)}
-            className={cn(
-              "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
-              isChildActive
-                ? "bg-gradient-to-r from-[#4454b8] to-[#120774] text-white shadow-[0_10px_15px_-3px_rgba(68,84,184,0.25)]"
-                : "text-slate-400 hover:bg-white/[0.05] hover:text-white"
-            )}
-          >
-            <item.icon className="h-4 w-4 shrink-0" />
-            <span className="flex-1 text-left">{item.name}</span>
-            {expandedPipeline ? (
-              <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
-            ) : (
-              <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" />
-            )}
-          </button>
-          {expandedPipeline && (
-            <div className="ml-4 mt-0.5 space-y-0.5 border-l border-white/10 pl-3">
-              {item.children.map((child) => {
-                const childActive =
-                  pathname === child.href || pathname.startsWith(child.href);
-                return (
-                  <Link
-                    key={child.href}
-                    href={child.href}
-                    className={cn(
-                      "block rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-all duration-200",
-                      childActive
-                        ? "text-white bg-white/10"
-                        : "text-slate-500 hover:text-slate-300 hover:bg-white/[0.03]"
-                    )}
-                  >
-                    {child.name}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // Collapsed mode with children — just show icon linking to first child
-    if (item.children && collapsed) {
-      return (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={cn(
-            "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-200 justify-center px-2",
-            isActive
-              ? "bg-gradient-to-r from-[#4454b8] to-[#120774] text-white shadow-[0_10px_15px_-3px_rgba(68,84,184,0.25)]"
-              : "text-slate-400 hover:bg-white/[0.05] hover:text-white"
-          )}
-        >
-          <item.icon className="h-4 w-4 shrink-0" />
-        </Link>
-      );
-    }
-
-    // Standard nav item
     return (
       <Link
         key={item.href}
@@ -202,25 +69,23 @@ export function Sidebar() {
           isActive
             ? "bg-gradient-to-r from-[#4454b8] to-[#120774] text-white shadow-[0_10px_15px_-3px_rgba(68,84,184,0.25)]"
             : "text-slate-400 hover:bg-white/[0.05] hover:text-white",
-          collapsed && "justify-center px-2"
+          collapsed && "justify-center px-2",
         )}
       >
-        <item.icon className="h-4 w-4 shrink-0" />
-        {!collapsed && <span>{item.name}</span>}
+        <Icon className="h-4 w-4 shrink-0" />
+        {!collapsed && <span>{item.label}</span>}
       </Link>
     );
   };
 
-  const toggleGroup = (label: string) => {
-    setGroupOpen((prev) => ({ ...prev, [label]: !prev[label] }));
-  };
+  const renderGroup = (group: (typeof groups)[number]) => {
+    const isCollapsible = COLLAPSIBLE_SECTIONS.has(group.label);
 
-  const renderGroup = (group: NavGroup) => {
-    // Collapsible group
-    if (group.collapsible && !collapsed) {
-      const isOpen = groupOpen[group.label] ?? !group.defaultCollapsed;
+    if (isCollapsible && !collapsed) {
+      const isOpen =
+        groupOpen[group.label] ?? !DEFAULT_COLLAPSED_SECTIONS.has(group.label);
       return (
-        <div key={group.label}>
+        <div key={group.key}>
           <button
             onClick={() => toggleGroup(group.label)}
             className="flex w-full items-center gap-1 px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 hover:text-slate-400 transition-colors"
@@ -233,28 +98,21 @@ export function Sidebar() {
             <span>{group.label}</span>
           </button>
           {isOpen && (
-            <div className="space-y-0.5">
-              {group.items.map((item) => renderNavItem(item))}
-            </div>
+            <div className="space-y-0.5">{group.items.map(renderItem)}</div>
           )}
         </div>
       );
     }
 
-    // Standard group
     return (
-      <div key={group.label}>
+      <div key={group.key}>
         {!collapsed && (
           <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             {group.label}
           </div>
         )}
-        {collapsed && (
-          <div className="mx-auto my-2 h-px w-6 bg-white/10" />
-        )}
-        <div className="space-y-0.5">
-          {group.items.map((item) => renderNavItem(item))}
-        </div>
+        {collapsed && <div className="mx-auto my-2 h-px w-6 bg-white/10" />}
+        <div className="space-y-0.5">{group.items.map(renderItem)}</div>
       </div>
     );
   };
@@ -263,16 +121,24 @@ export function Sidebar() {
     <aside
       className={cn(
         "fixed left-0 top-0 z-30 flex h-screen flex-col transition-all duration-300 max-md:hidden",
-        collapsed ? "w-16" : "w-64"
+        collapsed ? "w-16" : "w-64",
       )}
-      style={{ background: "linear-gradient(to bottom, #0f172a, #0f172a, #020617)" }}
+      style={{
+        background: "linear-gradient(to bottom, #0f172a, #0f172a, #020617)",
+      }}
+      data-testid="sidebar"
+      data-role={role}
     >
       {/* Logo Block */}
       <div className={cn("mx-3 mt-4 mb-2", collapsed ? "px-1" : "px-3")}>
         {!collapsed ? (
           <div className="rounded-2xl bg-white p-4 flex items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/logo-full.png" alt="StrategAIze" className="h-10 w-auto" />
+            <img
+              src="/brand/logo-full.png"
+              alt="StrategAIze"
+              className="h-10 w-auto"
+            />
           </div>
         ) : (
           <div className="mx-auto w-fit rounded-xl bg-white p-2">
@@ -282,7 +148,7 @@ export function Sidebar() {
         )}
       </div>
 
-      {/* Collapse Toggle */}
+      {/* Collapse Toggle (collapsed mode shows expand button at top) */}
       {collapsed && (
         <button
           onClick={() => setCollapsed(false)}
@@ -294,14 +160,13 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
-        {navGroups.map((group) => renderGroup(group))}
+        {groups.map(renderGroup)}
       </nav>
 
-      {/* Footer: Version Badge + Logout + Collapse */}
+      {/* Footer */}
       <div className="px-3 pb-4 space-y-2">
         {!collapsed && (
           <>
-            {/* Logout Button */}
             <form action={signout}>
               <button
                 type="submit"
@@ -312,13 +177,14 @@ export function Sidebar() {
               </button>
             </form>
 
-            {/* Version Badge + Collapse */}
             <div className="flex items-center gap-3 rounded-xl bg-slate-800/50 border border-white/[0.06] px-3 py-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#120774] to-[#4454b8] text-white text-xs font-bold shadow-lg">
                 BD
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[12px] font-semibold text-white truncate">Business Dev CRM</div>
+                <div className="text-[12px] font-semibold text-white truncate">
+                  Business Dev CRM
+                </div>
                 <div className="text-[10px] text-slate-500">Version 1.0</div>
               </div>
               <button
@@ -344,4 +210,19 @@ export function Sidebar() {
       </div>
     </aside>
   );
+}
+
+/**
+ * Active-Highlight-Pruefung. Exact match plus Prefix-Variants.
+ * - /dashboard ist Sonderfall: nur Exact, da viele Routes /dashboard nicht
+ *   als Praefix nutzen (war im V6.6-Original auch so).
+ */
+export function isItemActive(pathname: string, href: string): boolean {
+  if (pathname === href) return true;
+  if (href === "/dashboard") return false;
+  return pathname.startsWith(href + "/") || pathname.startsWith(href + "?");
+}
+
+function isPathnameActive(pathname: string, href: string): boolean {
+  return isItemActive(pathname, href);
 }
