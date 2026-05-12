@@ -1,5 +1,23 @@
 # Known Issues
 
+### ISSUE-063 — Team-Dropdown in Invite-Dialog zeigt UUID statt Team-Name
+- Status: open
+- Severity: Medium
+- Area: Frontend / SLC-703 / Invite-Dialog
+- Summary: `cockpit/src/app/(app)/settings/team/invite-dialog.tsx` rendert `<SelectValue />` ohne expliziten Display-Resolver. base-ui-Select mappt den Value (UUID) NICHT automatisch auf das `<SelectItem>`-Kind. Resultat: User sieht `fa0ff2b6-6a12-4d5f-a9d0-54956c054728` statt z.B. "Standard-Team" im Team-Dropdown.
+- Impact: Funktional korrekt (Submit klappt), aber UX-Bug — User kann nicht erkennen welches Team gewaehlt ist. Bei mehreren Teams (Multi-Team-Setup spaeter) unbrauchbar.
+- Workaround: `<SelectValue>{teams.find(t => t.id === teamId)?.name ?? teamId}</SelectValue>` als Display-Override. ~5 Min Fix.
+- Next Action: Im V7-Polish-Slice SLC-707 oder als separater V6.7-BL.
+
+### ISSUE-062 — GOTRUE_SMTP_PASS in Coolify-ENV auf "unused" gesetzt — Mail-Versand blockiert
+- Status: open
+- Severity: High
+- Area: Infrastructure / Coolify / GoTrue / SMTP
+- Summary: GoTrue-Container hat ENV `GOTRUE_SMTP_PASS=unused` und `SMTP_PASS=unused`, waehrend `SMTP_PASSWORD=aithatworks-01!` korrekt ist. GoTrue liest die `GOTRUE_*`-prefixed Variante. Mail-Versand schlaegt mit `535 Authentication credentials invalid` fehl. Coolify-Supabase-ENV-Wrapper-Mapping-Bug (siehe Memory `reference_coolify_supabase_env_mapping`).
+- Impact: Blockiert ALLE Auth-Mails (Invite, Password-Reset, Email-Change-Confirmation). Betrifft SLC-703 AC3 (Invite-E-Mail-Flow live-untestbar), aber auch jeden zukuenftigen produktiven Use-Case. GoTrue rollt fehlgeschlagene Invites atomar zurueck → keine Datenintegritaets-Issues.
+- Workaround: Im Coolify-UI ENV-Konfiguration `GOTRUE_SMTP_PASS=aithatworks-01!` setzen + GoTrue-Container redeployen. Alternativ: `SMTP_PASS=aithatworks-01!` (GoTrue liest beide).
+- Next Action: User-Manual-Fix in Coolify-UI (Settings → Environment Variables → `GOTRUE_SMTP_PASS` setzen + Redeploy). Danach AC3 live-verifizierbar.
+
 ### ISSUE-061 — Read-API /api/winloss/[deal_id] vom Middleware-Auth-Wall geblockt (Bearer-Auth nie erreicht)
 - Status: resolved
 - Severity: Blocker
