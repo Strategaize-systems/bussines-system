@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { revalidatePath } from "next/cache";
 import { indexDocument } from "@/lib/knowledge/indexer";
 import { isExtractableFormat } from "@/lib/knowledge/chunker";
@@ -40,6 +41,7 @@ export async function getDocuments(params: {
 }
 
 export async function uploadDocument(formData: FormData) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const file = formData.get("file") as File;
@@ -92,6 +94,7 @@ export async function uploadDocument(formData: FormData) {
 }
 
 export async function deleteDocument(id: string, filePath: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   // Delete from storage

@@ -688,6 +688,79 @@ MIG-033/034/035 — Owner-Spalten + Backfill + RLS-Switch. Bereits in SLC-701 do
 - **Bulk-Reassign-UI** — SLC-707. Bis dahin muss Bulk-Reassign manuell per SQL durchgefuehrt werden, falls Mitarbeiter mit Bestandsdaten ausscheiden.
 - **Drilldown-Read-Only-View** auf Mitarbeiter-Cockpit — SLC-706. Bis dahin gibt es nur den Verwaltungs-Tab.
 
+## V7 — Owner-Wiring + System-Records (2026-05-12, SLC-704)
+
+V7 SLC-704 verbindet das in SLC-701 angelegte Datenmodell mit dem Anwendungs-Code: Jede INSERT-Operation in eine der 8 Kerntabellen (`companies`, `contacts`, `deals`, `activities`, `meetings`, `proposals`, `email_messages`, `calls`) setzt jetzt `owner_user_id` explizit. RLS-Policies aus MIG-035 erzwingen Daten-Trennung pro Owner/Team-Scope/Admin-Sicht.
+
+### Owner-Lifecycle pro Quelle
+
+| Insert-Pfad | Owner-Source | Begründung |
+|---|---|---|
+| User-Facing Server Action (`createDeal`, `createCompany`, `createContact`, `createCall`, `createMeeting`, `sendEmail`, `createProposal`, `createTask`-Variants) | `(await getProfile()).user_id` | Der einloggende User ist der Eigentuemer (DEC-182). DEC-186 fuer Meeting+Call: Host-User = `auth.uid()`. |
+| Cron-Job-Insert in Kerntabelle (`meeting-briefing-runner`, `meeting-summary-runner`, `call-processing-runner`) | Source-Record.owner_user_id (z.B. `meeting.owner_user_id`) | Cron erbt Owner vom ausloesenden Source-Record. Bei NULL: System-Record. |
+| Workflow-Engine-Action (`create_task`, `create_activity`) | `entity.ownerUserId` (= triggerSource.owner_user_id) | DEC-185: Workflow-Rules sind team-shared, aber erzeugte Records behalten den Owner der Trigger-Quelle. Fallback NULL erlaubt. |
+| IMAP-Inbound (`sync-service.ts`) | NULL (System-Record) | V7 hat keine per-User-IMAP-Config. Multi-User-IMAP kommt in spaeterer Migration. |
+| Voice-Agent-Webhook (`/api/webhooks/voice-agent`) | Deal-Owner (Fallback Deal.created_by, dann NULL) | SIP-User-Mapping fehlt — naehrungsweise Owner = Deal-Owner. |
+| Ad-hoc-Contacts (Meeting-Teilnehmer-Auto-Create) | Meeting-Owner | Host des Meetings ist der defacto-Owner der ad hoc angelegten Kontakte. |
+| Drittanbieter-Webhook (`calcom-webhook-handler`) | n/a (schreibt in `calendar_events`, non-core) | Kein Owner-Wiring erforderlich. |
+
+### System-Records (`owner_user_id IS NULL`)
+
+System-Records sind Eintraege in den 8 Kerntabellen, die durch einen automatisierten Pfad ohne User-Context erzeugt werden. Sichtbar nur fuer `admin`-Rollen (RLS-Policy in MIG-035). Beispiele:
+
+- **IMAP-Sync** synchronisiert eingehende E-Mails ohne User-Context (System-User-Config). `email_messages.owner_user_id = NULL`.
+- **Voice-Agent-Webhook** falls weder Deal-Owner noch SIP-User-Mapping aufloesbar. `calls.owner_user_id = NULL`.
+- **Workflow-Engine-Trigger** auf System-Records: erzeugte Activities erben NULL, da die Source-Quelle keinen Owner hat.
+- **Bedrock-Cost-Audit** (V3 audit_log, non-core, kein owner_user_id).
+
+System-Records sind ausdruecklich erlaubt und Teil des Designs (DEC-182). Admin kann sie sehen, Bulk-Reassign-Werkzeug (SLC-707) kann sie spaeter umverteilen.
+
+### Owner-Lifecycle bei Lifecycle-Ereignissen
+
+- **Profile-Delete (DEC-193, SLC-703)**: `ON DELETE SET NULL` setzt `owner_user_id` auf NULL fuer alle Eintraege. Records werden zu System-Records — Bulk-Reassign-Pflicht VOR Delete (Hard-Lock).
+- **Bulk-Reassign (SLC-707, DEC-184)**: `UPDATE <table> SET owner_user_id = $new_owner WHERE owner_user_id = $old_owner` mit `SET LOCAL ROLE postgres` (RLS-Bypass). Audit-Eintrag pro Tabelle.
+- **Read-Only-Drilldown (SLC-706, DEC-189)**: AsyncLocalStorage-basierter `runWithReadOnlyContext({ viewerUserId, targetUserId }, ...)`-Wrapper. Innerhalb des Drilldowns ruft jede Mutate-Server-Action `assertNotReadOnlyContext()` als First-Line; bei aktivem Context wird die Mutation mit Error blockiert.
+
+### Mutate-Lockdown-Garantie (DEC-189)
+
+Alle ~75 Mutate-Server-Actions (Insert/Update/Delete) im Repo rufen `await assertNotReadOnlyContext()` als FIRST LINE. Damit gilt:
+
+- Top-Level-User-Server-Actions in `cockpit/src/app/(app)/<domain>/actions.ts` (27 Dateien, ~55 Funktionen) — alle gegated.
+- Service-Level-Actions in `cockpit/src/app/actions/*.ts` (8 Dateien, ~14 Mutate-Funktionen) — alle gegated.
+- Lib-Actions in `cockpit/src/lib/actions/*.ts` (3 Dateien, ~6 Mutate-Funktionen) — alle gegated.
+- Settings-Actions in `cockpit/src/app/(app)/settings/*/actions.ts` (6 Dateien, 17 Mutate-Funktionen) — alle gegated.
+- Team-Actions in `cockpit/src/lib/team/actions.ts` (3 Funktionen, SLC-703-Pattern) — alle gegated.
+
+Auth-Pfade (`/login/actions.ts`) sind ausgenommen — Profile ist dort noch nicht geladen.
+
+Crons + Workflow-Engine + Service-Internal-Inserts sind ausgenommen — kein User-Request-Context vorhanden, keine Drilldown-Bedrohung.
+
+### Audit-Trail (Defense-in-Depth)
+
+Wenn eine Mutate-Action im Read-Only-Context blockiert wird, wirft der Helper:
+```
+Error: Mutation blocked: read-only context active (viewer=<id>, target=<id>).
+       Drilldown-View darf keine Server-Action-Mutation ausloesen.
+```
+
+Diese Errors werden serverseitig geloggt (Next.js error-handler). Persistente Drilldown-Audit-Eintraege schreibt der Page-Render-Pfad (SLC-706 Server Component) ueber `audit_log` mit `action = 'view_as'` und `view_as_target_user_id = $target` (DEC-195).
+
+### Architektur-Entscheidungen V7-Owner-Wiring
+
+- DEC-182 — `owner_user_id` auf 8 Kerntabellen, NULL = System-Record.
+- DEC-184 — Bulk-Reassign mit audit_log-Trail, kein `previous_owner_user_id`-Feld (DSGVO via Audit-Retention).
+- DEC-185 — Workflow-Rules + RAG + Auto-Winloss bleiben team-shared in V7. Owner-Filter optional in V7.5.
+- DEC-186 — Meeting/Call-Owner = Host-User (Click-to-Call-User bei Calls).
+- DEC-189 — Mutate-Lockdown via `assertNotReadOnlyContext()` First-Line in jeder Mutate-Action.
+
+### Bekannte Schema-Diskrepanzen (Code-Realitaet)
+
+- **`emails` vs. `email_messages` Tabellen-Split**: Outbound-Mails landen in der V2-Legacy-Tabelle `emails` (kein `owner_user_id`-Feld, kein DEC-182-Core-Table). Inbound-Mails landen in `email_messages` (DEC-182-Core-Table, Owner per IMAP-Config-User oder NULL). Konsequenz: V7-Multi-User-Sichtbarkeit greift nur fuer inbound. Outbound-Migration auf `email_messages` ist nach V7-Hauptpfad eingeplant.
+- **`tasks`-Tabelle (V2-Legacy)** existiert separat von `activities`. Cadence-Engine + Voice-Agent insertTask schreiben in `tasks` — kein owner_user_id-Wiring. Migration nach V7-Hauptpfad eingeplant.
+- **`calendar_events`** ist non-core; Cal.com-Webhook + Termine-Server-Action setzen `owner_user_id` nicht. RLS-Filter laeuft via FK-Beziehung zur Meeting-Tabelle.
+
+Diese Diskrepanzen sind im AUDIT-Spreadsheet `docs/AUDIT_SERVER_ACTIONS_V7.md` Section 6 dokumentiert und nicht V7-blockierend, da die 8 V7-Kerntabellen vollstaendig wired sind.
+
 ---
 
 ## Disclaimer
@@ -704,5 +777,5 @@ Vor produktivem Einsatz mit echten Kunden- oder Interessentendaten sind diese Pu
 
 ---
 
-**Letzte Aktualisierung:** 2026-05-12 (V7-Section ergaenzt — Multi-User Profile-Lifecycle, Invite/Role-Change/Delete-Audit-Trail, Hard-Lock-Pattern fuer DSGVO-konforme Profil-Loeschung)
+**Letzte Aktualisierung:** 2026-05-12 (V7-Section ergaenzt — Multi-User Profile-Lifecycle, Invite/Role-Change/Delete-Audit-Trail, Hard-Lock-Pattern fuer DSGVO-konforme Profil-Loeschung + V7-Owner-Wiring-Section: Insert-Owner-Defaults auf 8 Kerntabellen, Cron-Inheritance, Workflow-Engine-Owner-Pass, Mutate-Lockdown via assertNotReadOnlyContext fuer SLC-706-Drilldown)
 **Naechste empfohlene Pruefung:** Pre-Production-Compliance-Gate vor V7 — Anwalts-Pruefung gesamte COMPLIANCE.md, NL-Steuerberatung-Pruefung der V5.7-Section, Switch auf Azure-OpenAI-EU-Whisper, ISSUE-042-Schliessung

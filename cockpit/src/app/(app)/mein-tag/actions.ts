@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getProfile } from "@/lib/auth/get-profile";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 export type TodayItemType = "task" | "follow_up" | "deal_action" | "overdue_task" | "overdue_follow_up" | "overdue_deal";
 
@@ -137,6 +139,7 @@ export async function getTodayItems(): Promise<TodayData> {
 // ── Actions for completing items from "Mein Tag" ────────────
 
 export async function completeTaskFromMeinTag(taskId: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -153,6 +156,8 @@ export async function completeTaskFromMeinTag(taskId: string) {
 }
 
 export async function completeDealActionFromMeinTag(dealId: string) {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
   const supabase = await createClient();
 
   // Get current deal info for activity log
@@ -177,6 +182,7 @@ export async function completeDealActionFromMeinTag(dealId: string) {
   // Log as activity
   if (deal) {
     await supabase.from("activities").insert({
+      owner_user_id: profile.user_id,
       contact_id: deal.contact_id,
       company_id: deal.company_id,
       deal_id: dealId,
@@ -779,6 +785,7 @@ export async function getUnseenEvents(): Promise<UnseenEvents> {
 
 /** Update last_login_at for the current user */
 export async function updateLastLogin() {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 

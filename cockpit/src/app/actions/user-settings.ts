@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { revalidatePath } from "next/cache";
 
 // ── Types ──────────────────────────────────────────────────────
@@ -98,6 +99,7 @@ export async function getUserSettings(): Promise<UserSettings | null> {
 export async function saveUserSettings(
   input: SaveUserSettingsInput
 ): Promise<{ error: string }> {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },

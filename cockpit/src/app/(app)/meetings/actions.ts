@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getProfile } from "@/lib/auth/get-profile";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 export type RecordingStatus =
   | "not_recording"
@@ -161,6 +163,8 @@ export async function getUpcomingMeetings(limit: number = 5) {
 // ── Mutations ───────────────────────────────────────────────────────
 
 export async function createMeeting(formData: FormData) {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
   const supabase = await createClient();
 
   const {
@@ -184,6 +188,7 @@ export async function createMeeting(formData: FormData) {
   const { data: newMeeting, error } = await supabase
     .from("meetings")
     .insert({
+      owner_user_id: profile.user_id,
       title,
       scheduled_at: scheduledAt,
       duration_minutes: durationMinutes,
@@ -204,6 +209,7 @@ export async function createMeeting(formData: FormData) {
   // 2. Auto-create Activity (source_type = 'meeting')
   if (newMeeting) {
     await supabase.from("activities").insert({
+      owner_user_id: profile.user_id,
       type: "meeting",
       title,
       description: agenda,
@@ -241,6 +247,7 @@ export async function createMeeting(formData: FormData) {
 }
 
 export async function updateMeeting(id: string, formData: FormData) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const title = formData.get("title") as string;
@@ -304,6 +311,7 @@ export async function updateMeeting(id: string, formData: FormData) {
 }
 
 export async function updateTranscript(meetingId: string, transcript: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -319,6 +327,7 @@ export async function updateTranscript(meetingId: string, transcript: string) {
 }
 
 export async function deleteMeeting(id: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   // Delete linked calendar event first (no cascade)

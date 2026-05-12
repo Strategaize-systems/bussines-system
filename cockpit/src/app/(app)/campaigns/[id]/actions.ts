@@ -5,6 +5,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { generateCampaignToken } from "@/lib/campaigns/token";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import type {
   CampaignLink,
   CreateCampaignLinkInput,
@@ -65,6 +66,7 @@ export async function listCampaignLinks(
 export async function createCampaignLink(
   input: CreateCampaignLinkInput
 ): Promise<{ ok: true; link: CampaignLink } | { ok: false; error: string }> {
+  await assertNotReadOnlyContext();
   const { supabase } = await requireUser();
 
   const validationError = validateLinkInput(input);
@@ -114,6 +116,7 @@ export async function deleteCampaignLink(
   linkId: string,
   campaignId: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  await assertNotReadOnlyContext();
   const { supabase } = await requireUser();
   const { error } = await supabase.from(TABLE).delete().eq("id", linkId);
   if (error) return { ok: false, error: error.message };

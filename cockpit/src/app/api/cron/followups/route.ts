@@ -1,3 +1,10 @@
+// V7 SLC-704 MT-5: Dieser Cron schreibt ausschliesslich in non-core
+// Tabellen (`ai_action_queue` via createAction(), `audit_log`). Die
+// resultierende Aktivitaet wird erst spaeter beim User-Approval-Pfad
+// (lib/actions/insight-actions.ts → activities) angelegt — dort wird
+// owner_user_id auf den approver gesetzt. Daher hier kein Owner-Wiring
+// noetig.
+
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCronSecret } from "../verify-cron-secret";
 import { processFollowupCandidates } from "@/lib/ai/followup-engine";

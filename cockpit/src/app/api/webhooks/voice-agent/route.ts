@@ -74,6 +74,10 @@ export async function POST(request: NextRequest) {
   const ids = await resolveContactAndDeal(admin, result.callerNumber);
 
   // Create inbound call record.
+  // V7 SLC-704 MT-6: owner_user_id wird aus dem matched Deal-Owner gelesen
+  // (DEC-182). NULL = System-Record (kein Owner-Mapping ueber SIP-User
+  // verfuegbar in V7; bei spaeterem Multi-Tenant-SIP koennte hier ein
+  // explizites SIP-User-Mapping greifen).
   const now = new Date();
   const startedAt = new Date(now.getTime() - result.durationSeconds * 1000);
   const { data: call, error: callError } = await admin
@@ -96,6 +100,7 @@ export async function POST(request: NextRequest) {
       voice_agent_transcript: result.transcript || null,
       contact_id: ids.contactId,
       deal_id: ids.dealId,
+      owner_user_id: ids.dealOwnerId,
     })
     .select("id")
     .single();
@@ -154,9 +159,11 @@ async function resolveContactAndDeal(
   }
 
   // Most recently updated active deal for this contact.
+  // V7 SLC-704 MT-6: dealOwnerId wird aus deal.owner_user_id gelesen (DEC-182),
+  // mit Fallback auf created_by fuer Backwaerts-Kompatibilitaet.
   const { data: deal } = await admin
     .from("deals")
-    .select("id, created_by")
+    .select("id, created_by, owner_user_id")
     .eq("contact_id", contactMatch.id)
     .eq("status", "active")
     .order("updated_at", { ascending: false })
@@ -166,7 +173,10 @@ async function resolveContactAndDeal(
   return {
     contactId: contactMatch.id,
     dealId: deal?.id ?? null,
-    dealOwnerId: deal?.created_by ?? null,
+    dealOwnerId:
+      (deal as { owner_user_id?: string | null } | null)?.owner_user_id ??
+      deal?.created_by ??
+      null,
   };
 }
 
@@ -253,6 +263,8 @@ async function insertActivity(
   body: { title: string; description: string },
 ): Promise<string | undefined> {
   const { admin, ids } = args;
+  // V7 SLC-704 MT-6: owner_user_id erbt vom matched Deal (ids.dealOwnerId).
+  // NULL erlaubt fuer System-Records (kein Deal-Match).
   const { data, error } = await admin
     .from("activities")
     .insert({
@@ -262,6 +274,7 @@ async function insertActivity(
       contact_id: ids.contactId,
       deal_id: ids.dealId,
       ai_generated: true,
+      owner_user_id: ids.dealOwnerId,
     })
     .select("id")
     .single();

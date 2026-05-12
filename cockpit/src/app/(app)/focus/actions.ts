@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getProfile } from "@/lib/auth/get-profile";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 export type FocusItem = {
   id: string;
@@ -122,6 +124,7 @@ export async function getFocusQueue(limit: number = 10): Promise<FocusItem[]> {
 }
 
 export async function completeTaskFromFocus(taskId: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const { error } = await supabase
     .from("tasks")
@@ -136,6 +139,8 @@ export async function completeTaskFromFocus(taskId: string) {
 }
 
 export async function completeDealActionFromFocus(dealId: string) {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
   const supabase = await createClient();
 
   const { data: deal } = await supabase
@@ -153,6 +158,7 @@ export async function completeDealActionFromFocus(dealId: string) {
 
   if (deal) {
     await supabase.from("activities").insert({
+      owner_user_id: profile.user_id,
       contact_id: deal.contact_id,
       company_id: deal.company_id,
       deal_id: dealId,

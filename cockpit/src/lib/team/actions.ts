@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { assertRole } from "@/lib/auth/assert-role";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { inviteUserAndCreateProfile } from "@/lib/auth/invite";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Role } from "@/lib/auth/types";
@@ -73,6 +74,7 @@ export async function inviteMember(input: {
   display_name?: string | null;
 }): Promise<ActionResult<{ user_id: string }>> {
   const profile = await assertRole(["admin", "teamlead"]);
+  await assertNotReadOnlyContext();
 
   const parsed = inviteSchema.safeParse(input);
   if (!parsed.success) {
@@ -119,6 +121,7 @@ export async function changeRole(input: {
   new_role: Role;
 }): Promise<ActionResult> {
   const profile = await assertRole(["admin"]);
+  await assertNotReadOnlyContext();
 
   const parsed = changeRoleSchema.safeParse(input);
   if (!parsed.success) {
@@ -171,6 +174,7 @@ export async function deleteProfile(input: {
   user_id: string;
 }): Promise<ActionResult> {
   const profile = await assertRole(["admin"]);
+  await assertNotReadOnlyContext();
 
   const parsed = deleteProfileSchema.safeParse(input);
   if (!parsed.success) {

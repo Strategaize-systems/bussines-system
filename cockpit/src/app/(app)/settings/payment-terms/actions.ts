@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import type { PaymentTermsTemplate } from "@/types/proposal-payment";
 
 const TABLE = "payment_terms_templates";
@@ -47,6 +48,7 @@ export async function createPaymentTermsTemplate(input: {
   label: string;
   body: string;
 }): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  await assertNotReadOnlyContext();
   const { supabase } = await requireUser();
   const validationError = validateInput(input.label, input.body);
   if (validationError) return { ok: false, error: validationError };
@@ -79,6 +81,7 @@ export async function updatePaymentTermsTemplate(input: {
   label: string;
   body: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
+  await assertNotReadOnlyContext();
   const { supabase } = await requireUser();
   const validationError = validateInput(input.label, input.body);
   if (validationError) return { ok: false, error: validationError };
@@ -120,6 +123,7 @@ export async function updatePaymentTermsTemplate(input: {
 export async function deletePaymentTermsTemplate(input: {
   id: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
+  await assertNotReadOnlyContext();
   const { supabase } = await requireUser();
 
   const { data: row, error: readError } = await supabase
@@ -160,6 +164,7 @@ export async function deletePaymentTermsTemplate(input: {
 export async function setDefaultPaymentTermsTemplate(input: {
   id: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
+  await assertNotReadOnlyContext();
   const { supabase } = await requireUser();
 
   const { data: target, error: readError } = await supabase

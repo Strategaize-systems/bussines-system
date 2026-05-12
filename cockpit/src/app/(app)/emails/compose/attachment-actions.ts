@@ -26,6 +26,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sanitizeProposalFilename } from "@/lib/pdf/filename-helper";
 import { parseProposalPdfPath } from "@/lib/pdf/proposal-pdf-path";
 import type { AttachmentMeta } from "@/lib/email/attachments-whitelist";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 export type AttachProposalInput = {
   composeSessionId: string;
@@ -39,6 +40,11 @@ export type AttachProposalResult =
 export async function attachProposalToCompose(
   input: AttachProposalInput,
 ): Promise<AttachProposalResult> {
+  // V7 SLC-704: Read-only-Context darf keinen Proposal-Anhang an die
+  // laufende Compose-Session pinnen (Side-Effect: wuerde im Send-Pfad zum
+  // Mail-Versand durch den Viewer-User fuehren).
+  await assertNotReadOnlyContext();
+
   const composeSessionId = (input.composeSessionId ?? "").trim();
   const proposalId = (input.proposalId ?? "").trim();
 

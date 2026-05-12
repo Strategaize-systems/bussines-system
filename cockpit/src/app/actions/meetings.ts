@@ -93,6 +93,7 @@ export async function startMeeting(
   const scheduledAt = new Date();
 
   // Create meeting row
+  // V7 SLC-704 MT-6: owner_user_id = Host-User (DEC-186, DEC-182).
   const { data: meeting, error: meetingError } = await admin
     .from("meetings")
     .insert({
@@ -104,6 +105,7 @@ export async function startMeeting(
       jitsi_room_name: roomName,
       recording_status: "not_recording",
       created_by: user.id,
+      owner_user_id: user.id,
     })
     .select("id")
     .single();
@@ -212,6 +214,7 @@ export async function startMeeting(
   });
 
   // Create activity for timeline
+  // V7 SLC-704 MT-6: owner_user_id erbt vom Meeting (Host = user.id) (DEC-182).
   await admin.from("activities").insert({
     type: "meeting",
     title,
@@ -222,6 +225,7 @@ export async function startMeeting(
     source_type: "meeting",
     source_id: meeting.id,
     created_by: user.id,
+    owner_user_id: user.id,
   });
 
   revalidatePath("/meetings");

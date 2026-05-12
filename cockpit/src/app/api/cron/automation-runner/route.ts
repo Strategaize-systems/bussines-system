@@ -7,6 +7,11 @@
 //
 // Pattern: x-cron-secret-Header-Auth (verifyCronSecret), createAdminClient,
 // JSON-Response. Pattern uebernommen von expire-proposals/route.ts.
+//
+// V7 SLC-704 MT-5/MT-6: Owner-Wiring fuer Workflow-Actions ist in der
+// Action-Layer implementiert (lib/automation/executor.ts laedt
+// entity.ownerUserId, lib/automation/actions/* lesen ihn beim Insert).
+// Dieser Cron-Endpoint selbst macht keine direkten Inserts.
 
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCronSecret } from "../verify-cron-secret";

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { revalidatePath } from "next/cache";
 import type { ActivityKpiKey, ActivityKpiTarget, ActivityKpiStatus, WeekDayKpiStatus } from "@/types/activity-kpis";
 import { ACTIVITY_KPI_LABELS } from "@/types/activity-kpis";
@@ -32,6 +33,7 @@ export async function upsertActivityKpiTarget(
   kpiKey: ActivityKpiKey,
   dailyTarget: number,
 ): Promise<{ error?: string }> {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },
@@ -75,6 +77,7 @@ export async function toggleActivityKpiTarget(
   kpiKey: ActivityKpiKey,
   active: boolean,
 ): Promise<{ error?: string }> {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },

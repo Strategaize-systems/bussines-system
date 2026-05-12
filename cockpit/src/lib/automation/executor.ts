@@ -285,6 +285,9 @@ async function loadEntity(
       contactId: (data as { contact_id?: string | null }).contact_id ?? null,
       companyId: (data as { company_id?: string | null }).company_id ?? null,
       dealId: entityId,
+      // V7 SLC-704 MT-6: Owner-Source = deal.owner_user_id (DEC-182).
+      ownerUserId:
+        (data as { owner_user_id?: string | null }).owner_user_id ?? null,
     };
   }
 
@@ -302,6 +305,9 @@ async function loadEntity(
     contactId: (data as { contact_id?: string | null }).contact_id ?? null,
     companyId: (data as { company_id?: string | null }).company_id ?? null,
     dealId: (data as { deal_id?: string | null }).deal_id ?? null,
+    // V7 SLC-704 MT-6: Owner-Source = activity.owner_user_id (DEC-182).
+    ownerUserId:
+      (data as { owner_user_id?: string | null }).owner_user_id ?? null,
   };
 }
 

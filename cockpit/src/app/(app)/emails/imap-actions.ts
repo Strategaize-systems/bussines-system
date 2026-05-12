@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { EmailMessage, EmailThread, EmailClassification, EmailPriority } from "@/types/email";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 // ------------------------------------------------------------------
 // Types for UI
@@ -114,6 +115,7 @@ export async function getEmailThread(threadId: string) {
 // ------------------------------------------------------------------
 
 export async function assignEmailToContact(emailId: string, contactId: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const { error } = await supabase
     .from("email_messages")
@@ -141,6 +143,7 @@ export async function assignEmailToContact(emailId: string, contactId: string) {
 }
 
 export async function assignEmailToCompany(emailId: string, companyId: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const { error } = await supabase
     .from("email_messages")
@@ -153,6 +156,7 @@ export async function assignEmailToCompany(emailId: string, companyId: string) {
 }
 
 export async function assignEmailToDeal(emailId: string, dealId: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const { error } = await supabase
     .from("email_messages")
@@ -169,6 +173,7 @@ export async function assignEmailToDeal(emailId: string, dealId: string) {
 // ------------------------------------------------------------------
 
 export async function markEmailRead(emailId: string, isRead: boolean) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const { error } = await supabase
     .from("email_messages")
@@ -259,6 +264,7 @@ export async function reclassifyEmail(
   classification: EmailClassification,
   priority: EmailPriority
 ) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const { error } = await supabase
     .from("email_messages")

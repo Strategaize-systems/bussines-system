@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getProfile } from "@/lib/auth/get-profile";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 export type Contact = {
   id: string;
@@ -75,6 +77,8 @@ export async function getContact(id: string) {
 }
 
 export async function createContact(formData: FormData) {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
   const supabase = await createClient();
 
   const tags = (formData.get("tags") as string)
@@ -83,6 +87,7 @@ export async function createContact(formData: FormData) {
     .filter(Boolean) ?? [];
 
   const { error } = await supabase.from("contacts").insert({
+    owner_user_id: profile.user_id,
     first_name: formData.get("first_name") as string,
     last_name: formData.get("last_name") as string,
     email: (formData.get("email") as string) || null,
@@ -113,6 +118,7 @@ export async function createContact(formData: FormData) {
 }
 
 export async function updateContact(id: string, formData: FormData) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const tags = (formData.get("tags") as string)
@@ -175,6 +181,7 @@ export async function getContactCampaignId(
 }
 
 export async function deleteContact(id: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const { error } = await supabase.from("contacts").delete().eq("id", id);
 

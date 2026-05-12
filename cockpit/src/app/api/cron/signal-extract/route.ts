@@ -7,6 +7,11 @@
 // with signal_status='pending', loads deal context, calls the
 // signal extractor, and updates status to completed/no_signals.
 // Max 3 items per run to respect Bedrock rate limits.
+//
+// V7 SLC-704 MT-5: Dieser Cron schreibt ausschliesslich in non-core
+// Tabellen (`ai_action_queue`, `audit_log`, UPDATEs auf meetings/email_messages
+// signal_status). Keine Inserts in die 8 Kerntabellen (DEC-182) — daher
+// kein Owner-Wiring noetig.
 
 import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";

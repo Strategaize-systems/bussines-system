@@ -5,6 +5,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import {
   CAMPAIGN_STATUSES,
   CAMPAIGN_TYPES,
@@ -219,6 +220,7 @@ export async function getCampaign(
 export async function saveCampaign(
   input: SaveCampaignInput
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  await assertNotReadOnlyContext();
   const { supabase, user } = await requireUser();
 
   const validationError = validateInput(input);
@@ -286,6 +288,7 @@ export async function saveCampaign(
 export async function archiveCampaign(
   id: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  await assertNotReadOnlyContext();
   const { supabase } = await requireUser();
   const { error } = await supabase
     .from(TABLE)
@@ -314,6 +317,7 @@ export async function archiveCampaign(
 export async function deleteCampaign(
   id: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  await assertNotReadOnlyContext();
   const { supabase } = await requireUser();
   const { error } = await supabase.from(TABLE).delete().eq("id", id);
   if (error) return { ok: false, error: error.message };

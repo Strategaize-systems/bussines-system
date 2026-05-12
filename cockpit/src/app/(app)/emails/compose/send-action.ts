@@ -28,6 +28,8 @@ import {
   type AttachmentMeta,
 } from "@/lib/email/attachments-whitelist";
 import { transitionProposalStatus } from "@/app/(app)/proposals/actions";
+import { getProfile } from "@/lib/auth/get-profile";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 export type SendComposedEmailInput = {
   to: string;
@@ -83,6 +85,9 @@ async function loadVarsForDeal(dealId: string) {
 export async function sendComposedEmail(
   input: SendComposedEmailInput,
 ): Promise<SendComposedEmailResult> {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
+
   const to = input.to?.trim() ?? "";
   const subject = input.subject?.trim() ?? "";
   const body = input.body ?? "";
@@ -156,6 +161,8 @@ export async function sendComposedEmail(
     followUpDate: input.followUpDate ?? null,
     templateUsed: input.templateId ?? null,
     trackingEnabled: true,
+    // V7 SLC-704: Owner = aktueller Composing-User (DEC-182).
+    ownerUserId: profile.user_id,
     attachments: safeAttachments.length > 0
       ? safeAttachments.map((a) => ({
           storagePath: a.storagePath,

@@ -47,6 +47,8 @@ export async function executeCreateActivity(
       };
     }
 
+    // V7 SLC-704 MT-6: owner_user_id wird vom Trigger-Source (entity.ownerUserId)
+    // geerbt (DEC-182). NULL erlaubt fuer System-Records.
     const { data: inserted, error } = await supabase
       .from("activities")
       .insert({
@@ -56,6 +58,7 @@ export async function executeCreateActivity(
         type: params.type,
         title: title.slice(0, 500),
         description: description ? description.slice(0, 2000) : null,
+        owner_user_id: entity.ownerUserId ?? null,
       })
       .select("id")
       .single();

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 export type Handoff = {
   id: string;
@@ -32,6 +33,7 @@ export async function getHandoffs() {
 }
 
 export async function createHandoff(formData: FormData) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const { error } = await supabase.from("handoffs").insert({
@@ -53,6 +55,7 @@ export async function createHandoff(formData: FormData) {
 }
 
 export async function updateHandoffStatus(id: string, status: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const update: Record<string, unknown> = { status };
@@ -70,6 +73,7 @@ export async function updateHandoffStatus(id: string, status: string) {
 }
 
 export async function deleteHandoff(id: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const { error } = await supabase.from("handoffs").delete().eq("id", id);
 

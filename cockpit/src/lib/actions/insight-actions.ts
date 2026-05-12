@@ -115,6 +115,7 @@ export async function approveInsightAction(
     .eq("id", id);
 
   // 4. Create audit activity if applied successfully
+  // V7 SLC-704 MT-6: owner_user_id = approver user (User-Approval-Pfad, DEC-182).
   if (applyResult.success && queueItem.target_entity_id) {
     await admin.from("activities").insert({
       deal_id: queueItem.target_entity_type === "deal"
@@ -129,6 +130,7 @@ export async function approveInsightAction(
       ai_generated: true,
       source_type: "signal",
       source_id: id,
+      owner_user_id: userId,
     });
   }
 

@@ -2,6 +2,12 @@
  * Cal.com Webhook Handler
  * Processes incoming Cal.com webhook events → calendar_events table.
  * SLC-407 / FEAT-406
+ *
+ * V7 SLC-704 MT-6: Dieser Handler schreibt ausschliesslich in
+ * `calendar_events` (non-core, nicht in den 8 Kerntabellen DEC-182).
+ * Keine Inserts in `meetings` — die werden ggf. separat ueber
+ * app/actions/meetings.ts (createMeetingFromSlot etc.) angelegt mit
+ * owner_user_id = caller. Hier kein Owner-Wiring noetig.
  */
 
 import { createAdminClient } from "@/lib/supabase/admin";

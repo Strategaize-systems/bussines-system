@@ -2,11 +2,13 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 /**
  * Manually assign an inbound email to a contact (FEAT-505, Stufe 3)
  */
 export async function assignEmailToContact(emailId: string, contactId: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   // Get contact's company_id for co-assignment
@@ -36,6 +38,7 @@ export async function assignEmailToContact(emailId: string, contactId: string) {
  * Dismiss an unassigned email (mark as spam/newsletter to remove from queue)
  */
 export async function dismissUnassignedEmail(emailId: string, classification: "spam" | "newsletter") {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const { error } = await supabase

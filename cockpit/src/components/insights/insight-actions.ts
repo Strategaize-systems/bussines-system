@@ -17,6 +17,9 @@ interface InsightData {
 export async function saveInsight(data: InsightData) {
   const supabase = await createClient();
 
+  // V7 SLC-704 MT-6: owner_user_id = caller (User-Request-Pfad, DEC-182).
+  const { data: { user } } = await supabase.auth.getUser();
+
   // Build insight object
   const insight = {
     id: `INS-${Date.now()}`,
@@ -59,6 +62,7 @@ export async function saveInsight(data: InsightData) {
           deal_id: data.sourceId,
           type: "note",
           title: `Insight gesendet: "${data.sourceTitle}" → ${data.category}`,
+          owner_user_id: user?.id ?? null,
         });
       }
     }

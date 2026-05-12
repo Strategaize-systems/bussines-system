@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { revalidatePath } from "next/cache";
 import type { Goal, GoalType, GoalPeriod, GoalStatus } from "@/types/goals";
 
@@ -70,6 +71,7 @@ export async function listGoals(filters?: {
 export async function createGoal(
   input: CreateGoalInput,
 ): Promise<{ error?: string; goal?: Goal }> {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },
@@ -114,6 +116,7 @@ export async function createGoal(
 export async function updateGoal(
   input: UpdateGoalInput,
 ): Promise<{ error?: string; goal?: Goal }> {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },
@@ -162,6 +165,7 @@ export async function updateGoal(
 export async function cancelGoal(
   goalId: string,
 ): Promise<{ error?: string }> {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },
@@ -199,6 +203,7 @@ export type GoalImportRow = {
 export async function importGoalsFromCSV(
   rows: GoalImportRow[],
 ): Promise<{ imported: number; errors: string[] }> {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },

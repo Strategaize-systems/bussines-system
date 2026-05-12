@@ -6,6 +6,13 @@
 // Detects CRM items that need followup attention, generates
 // reasoning via Bedrock, and creates action queue entries for
 // human-in-the-loop approval.
+//
+// V7 SLC-704 MT-5: Diese Engine schreibt ausschliesslich in non-core
+// Tabellen (`ai_action_queue` via createAction(), `audit_log`). Erst beim
+// User-Approval-Schritt (lib/actions/insight-actions.ts) wird ein
+// Activity-Insert in `activities` durchgefuehrt — owner_user_id setzt
+// sich dort aus dem approver zusammen. Daher hier kein Owner-Wiring
+// erforderlich.
 
 import { randomUUID } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";

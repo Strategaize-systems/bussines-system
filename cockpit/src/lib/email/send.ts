@@ -51,6 +51,15 @@ export type SendEmailParams = {
    * und an Nodemailer als Buffer-Attachments uebergeben.
    */
   attachments?: SendEmailAttachment[];
+  /**
+   * V7 SLC-704: Owner-Wiring (DEC-182). Wenn gesetzt, wird der Wert beim
+   * INSERT in `emails` als `owner_user_id` persistiert. Caller aus User-
+   * facing Server Actions (sendEmail, sendComposedEmail) reichen die User-ID
+   * aus `getProfile()` durch. Caller aus Cron-/Cadence-Pfaden setzen ihn
+   * aus dem Source-Owner (cadence.owner_user_id). Default `null` =
+   * V6-Verhalten (kein owner_user_id im Insert-Object).
+   */
+  ownerUserId?: string | null;
 };
 
 export type SendEmailResult = {
@@ -106,6 +115,10 @@ export async function sendEmailWithTracking(params: SendEmailParams): Promise<Se
   // Check SMTP config — save as draft if not configured
   if (!smtp.host || !smtp.user || !smtp.pass) {
     const { data, error } = await supabase.from("emails").insert({
+      // V7 SLC-704: owner_user_id wird aus dem Caller (Server Action /
+      // Cron-Pfad) durchgereicht. `null` bei Legacy-Callern, die noch nicht
+      // migriert sind — Default-Verhalten bleibt unveraendert.
+      ...(params.ownerUserId ? { owner_user_id: params.ownerUserId } : {}),
       contact_id: params.contactId || null,
       company_id: params.companyId || null,
       deal_id: params.dealId || null,
@@ -202,6 +215,9 @@ export async function sendEmailWithTracking(params: SendEmailParams): Promise<Se
 
   // Log sent email in DB
   const { data, error } = await supabase.from("emails").insert({
+    // V7 SLC-704: owner_user_id wird aus dem Caller (Server Action /
+    // Cron-Pfad) durchgereicht. Siehe Draft-INSERT-Block oben fuer Details.
+    ...(params.ownerUserId ? { owner_user_id: params.ownerUserId } : {}),
     contact_id: params.contactId || null,
     company_id: params.companyId || null,
     deal_id: params.dealId || null,

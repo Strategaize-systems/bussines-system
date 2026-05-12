@@ -134,6 +134,11 @@ export async function syncEmails(): Promise<SyncResult> {
           const retentionDate = new Date(
             Date.now() + RETENTION_DAYS * 24 * 60 * 60 * 1000
           );
+          // V7 SLC-704 MT-5: owner_user_id = NULL als System-Record (DEC-182).
+          // Die IMAP-Konfiguration ist ENV-basiert (IMAP_HOST/USER/PASSWORD),
+          // kein per-User imap_config. Im Single-User-V7 ist NULL korrekt;
+          // bei Multi-IMAP-Konfigurationen (V8+) muesste hier user_imap_config
+          // gelesen werden und der owner aus config.user_id stammen.
           const { data: insertedEmail } = await supabase.from("email_messages").insert({
             message_id: parsed.messageId,
             in_reply_to: parsed.inReplyTo,
@@ -154,6 +159,7 @@ export async function syncEmails(): Promise<SyncResult> {
             attachments: parsed.attachments,
             headers_json: parsed.headersJson,
             retention_expires_at: retentionDate.toISOString(),
+            owner_user_id: null,
           }).select("id").single();
 
           // Auto-embed email into knowledge base (fire-and-forget)

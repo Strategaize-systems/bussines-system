@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import {
   BRANDING_FONT_FAMILIES,
   BUSINESS_COUNTRIES,
@@ -184,6 +185,7 @@ function sanitizeVatId(
 export async function updateBranding(
   formData: FormData,
 ): Promise<{ error: string }> {
+  await assertNotReadOnlyContext();
   const { supabase, user } = await requireUser();
 
   const existing = await getBranding();
@@ -245,6 +247,7 @@ function extOf(mime: string): string {
 export async function uploadLogo(
   formData: FormData,
 ): Promise<{ error: string; logoUrl?: string }> {
+  await assertNotReadOnlyContext();
   await requireUser();
 
   const file = formData.get("file");

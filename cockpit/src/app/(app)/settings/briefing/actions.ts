@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 export type BriefingTriggerMinutes = 15 | 30 | 45 | 60;
 
@@ -60,6 +61,7 @@ export async function getBriefingSettings(): Promise<BriefingSettings> {
 export async function updateBriefingSettings(
   input: UpdateBriefingSettingsInput
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  await assertNotReadOnlyContext();
   if (!ALLOWED_MINUTES.includes(input.triggerMinutes)) {
     return {
       ok: false,

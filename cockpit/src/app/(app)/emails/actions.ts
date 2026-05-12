@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { sendEmailWithTracking } from "@/lib/email/send";
 import { createFollowUpTask } from "@/app/(app)/aufgaben/actions";
+import { getProfile } from "@/lib/auth/get-profile";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 export type Email = {
   id: string;
@@ -62,6 +64,8 @@ export async function getEmailsForCompany(companyId: string) {
 }
 
 export async function sendEmail(formData: FormData) {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
   const supabase = await createClient();
 
   const toAddress = formData.get("to_address") as string;
@@ -72,7 +76,9 @@ export async function sendEmail(formData: FormData) {
   const dealId = (formData.get("deal_id") as string) || null;
   const followUpDate = (formData.get("follow_up_date") as string) || null;
 
-  // Send via Shared Email-Send-Layer (DEC-069)
+  // Send via Shared Email-Send-Layer (DEC-069). V7 SLC-704: ownerUserId wird
+  // an die Send-Layer durchgereicht, damit der INSERT in emails/email_messages
+  // owner_user_id = aktueller Sender setzt.
   const result = await sendEmailWithTracking({
     to: toAddress,
     subject,
@@ -81,6 +87,7 @@ export async function sendEmail(formData: FormData) {
     companyId,
     dealId,
     followUpDate,
+    ownerUserId: profile.user_id,
   });
 
   if (!result.success) {
@@ -125,6 +132,7 @@ async function getContactName(supabase: any, contactId: string): Promise<string 
 }
 
 export async function updateFollowUpStatus(id: string, status: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -139,6 +147,7 @@ export async function updateFollowUpStatus(id: string, status: string) {
 }
 
 export async function deleteEmail(id: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const { error } = await supabase.from("emails").delete().eq("id", id);
 

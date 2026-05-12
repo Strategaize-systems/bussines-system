@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { extractClientIp, hashIp, hashUserAgent } from "@/lib/security/ip-hash";
 import { sendConsentRequestMail } from "@/lib/email/send-consent-mail";
@@ -74,6 +75,7 @@ async function logConsentAudit(params: {
 // ============================================================
 
 export async function createConsentRequest(contactId: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },
@@ -133,6 +135,7 @@ export async function createConsentRequest(contactId: string) {
 }
 
 export async function revokeConsentManual(contactId: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },
@@ -166,6 +169,7 @@ export async function revokeConsentManual(contactId: string) {
 }
 
 export async function setOptOutCommunication(contactId: string, optOut: boolean) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },
@@ -221,6 +225,7 @@ async function loadContactByToken(token: string) {
 }
 
 export async function grantConsent(token: string): Promise<PublicActionResult> {
+  await assertNotReadOnlyContext();
   const { ip_hash, user_agent_hash, ip_raw_for_rate_limit } = await captureRequestMetadata();
 
   const rl = checkRateLimit(`consent:${ip_raw_for_rate_limit ?? "unknown"}`);
@@ -261,6 +266,7 @@ export async function grantConsent(token: string): Promise<PublicActionResult> {
 }
 
 export async function declineConsent(token: string): Promise<PublicActionResult> {
+  await assertNotReadOnlyContext();
   const { ip_hash, user_agent_hash, ip_raw_for_rate_limit } = await captureRequestMetadata();
 
   const rl = checkRateLimit(`consent:${ip_raw_for_rate_limit ?? "unknown"}`);
@@ -301,6 +307,7 @@ export async function declineConsent(token: string): Promise<PublicActionResult>
 }
 
 export async function revokeConsentPublic(token: string): Promise<PublicActionResult> {
+  await assertNotReadOnlyContext();
   const { ip_hash, user_agent_hash, ip_raw_for_rate_limit } = await captureRequestMetadata();
 
   const rl = checkRateLimit(`consent:${ip_raw_for_rate_limit ?? "unknown"}`);

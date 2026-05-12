@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 export type TaskType = "manual" | "follow_up" | "proposal";
 
@@ -55,6 +56,7 @@ export async function getTasks(filter?: {
 }
 
 export async function createTask(formData: FormData) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const { error } = await supabase.from("tasks").insert({
@@ -88,6 +90,7 @@ export async function createFollowUpTask(params: {
   company_id?: string | null;
   deal_id?: string | null;
 }) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const { error } = await supabase.from("tasks").insert({
@@ -112,6 +115,7 @@ export async function createFollowUpTask(params: {
 }
 
 export async function updateTask(id: string, formData: FormData) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const status = (formData.get("status") as string) || undefined;
@@ -140,6 +144,7 @@ export async function updateTask(id: string, formData: FormData) {
 }
 
 export async function completeTask(id: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -159,6 +164,7 @@ export async function completeTask(id: string) {
 }
 
 export async function reopenTask(id: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -178,6 +184,7 @@ export async function reopenTask(id: string) {
 }
 
 export async function deleteTask(id: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const { error } = await supabase.from("tasks").delete().eq("id", id);
 

@@ -5,6 +5,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { isFieldWhitelisted } from "@/lib/automation/field-whitelist";
 import { dryRunRule, type DryRunResult } from "@/lib/automation/dry-run";
 import type {
@@ -155,6 +156,7 @@ export async function listAutomationRules(): Promise<AutomationRuleListItem[]> {
 export async function saveAutomationRule(
   input: SaveAutomationRuleInput
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  await assertNotReadOnlyContext();
   const { supabase, user } = await requireUser();
 
   const error = validateRuleInput(input);
@@ -213,6 +215,7 @@ export async function pauseAutomationRule(
   id: string,
   reason?: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  await assertNotReadOnlyContext();
   const { supabase } = await requireUser();
   const { error } = await supabase
     .from(TABLE)
@@ -236,6 +239,7 @@ export async function pauseAutomationRule(
 export async function activateAutomationRule(
   id: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  await assertNotReadOnlyContext();
   const { supabase } = await requireUser();
   const { error } = await supabase
     .from(TABLE)
@@ -259,6 +263,7 @@ export async function activateAutomationRule(
 export async function deleteAutomationRule(
   id: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  await assertNotReadOnlyContext();
   const { supabase } = await requireUser();
   // CASCADE entfernt automation_runs automatisch via FK
   const { error } = await supabase.from(TABLE).delete().eq("id", id);
@@ -285,6 +290,7 @@ export async function runDryRun(
   input: SaveAutomationRuleInput | { id: string },
   daysBack = 30
 ): Promise<{ ok: true; result: DryRunResult } | { ok: false; error: string }> {
+  await assertNotReadOnlyContext();
   const { supabase } = await requireUser();
 
   let rule: AutomationRule;

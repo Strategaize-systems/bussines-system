@@ -5,6 +5,10 @@
 // Reads proposed_changes JSONB from a queue item and executes
 // the corresponding UPDATE on the target entity (deal/contact).
 // Each signal type maps to a specific field update.
+//
+// V7 SLC-704 MT-6: Dieser Applier macht NUR UPDATEs (kein Insert in
+// Kerntabellen). Bestehende owner_user_id-Werte werden durch die UPDATEs
+// nicht ueberschrieben. Daher kein Owner-Wiring noetig.
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { ProposedChange, AIActionQueueItem } from "@/types/ai-queue";

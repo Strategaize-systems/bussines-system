@@ -358,6 +358,11 @@ async function executeTaskStep(
     companyId = contact?.company_id ?? null;
   }
 
+  // V7 SLC-704 MT-5: cadence-Engine schreibt in `tasks` (legacy V2-Tabelle),
+  // nicht in die 8 Kerntabelle `activities` (DEC-182). `tasks` ist non-core
+  // und hat keine `owner_user_id`-Spalte; `cadences` selbst hat ebenfalls
+  // keinen Owner (non-core). Daher kein Owner-Wiring noetig — als
+  // System-Record dokumentiert.
   const { data: task, error } = await supabase
     .from("tasks")
     .insert({

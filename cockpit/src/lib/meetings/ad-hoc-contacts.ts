@@ -21,9 +21,14 @@ interface AdHocContact {
  *   - consent_status = 'pending'
  *   - consent_source = 'ad_hoc'
  *   - display_name derived from email prefix
+ *
+ * V7 SLC-704 MT-6: `ownerUserId` setzt den Eigentuemer der neu angelegten
+ * Kontakte (DEC-182). Bei Meeting-Triggern = meeting.owner_user_id (Host).
+ * NULL = System-Record (z.B. anonymer Bulk-Sync).
  */
 export async function ensureContactsForEmails(
   emails: string[],
+  ownerUserId: string | null = null,
 ): Promise<AdHocContact[]> {
   if (emails.length === 0) return [];
 
@@ -58,6 +63,7 @@ export async function ensureContactsForEmails(
         last_name: "",
         consent_status: "pending",
         consent_source: "ad_hoc",
+        owner_user_id: ownerUserId,
       };
     });
 

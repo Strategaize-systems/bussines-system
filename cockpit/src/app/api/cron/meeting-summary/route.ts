@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const { data: meetings, error: queryError } = await admin
       .from("meetings")
       .select(
-        "id, title, transcript, deal_id, contact_id, company_id",
+        "id, title, transcript, deal_id, contact_id, company_id, owner_user_id",
       )
       .eq("transcript_status", "completed")
       .or("summary_status.is.null,summary_status.eq.pending")
@@ -132,6 +132,7 @@ export async function POST(request: NextRequest) {
             .maybeSingle();
 
           if (!existingActivity) {
+            // V7 SLC-704 MT-5: owner_user_id wird vom Source-Meeting geerbt (DEC-182).
             await admin.from("activities").insert({
               type: "meeting",
               title: `KI-Zusammenfassung: ${meeting.title || "Meeting"}`,
@@ -142,6 +143,8 @@ export async function POST(request: NextRequest) {
               source_type: "meeting",
               source_id: meeting.id,
               ai_generated: true,
+              owner_user_id:
+                (meeting as { owner_user_id?: string | null }).owner_user_id ?? null,
             });
           }
         }

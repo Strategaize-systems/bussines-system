@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 export type FitAssessment = {
   id: string;
@@ -63,6 +64,7 @@ function calcTrafficLight(avg: number): string {
 }
 
 export async function saveFitAssessment(formData: FormData) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const entityType = formData.get("entity_type") as string;

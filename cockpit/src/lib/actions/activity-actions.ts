@@ -52,6 +52,9 @@ export async function getActivities(params: {
 export async function createActivity(formData: FormData) {
   const supabase = await createClient();
 
+  // V7 SLC-704 MT-6: owner_user_id = caller (User-Request-Pfad, DEC-182).
+  const { data: { user } } = await supabase.auth.getUser();
+
   const contactId = (formData.get("contact_id") as string) || null;
   const companyId = (formData.get("company_id") as string) || null;
   const dealId = (formData.get("deal_id") as string) || null;
@@ -74,6 +77,7 @@ export async function createActivity(formData: FormData) {
     risks: (formData.get("risks") as string) || null,
     next_steps: (formData.get("next_steps") as string) || null,
     qualification_signals: (formData.get("qualification_signals") as string) || null,
+    owner_user_id: user?.id ?? null,
   }).select("id").single();
 
   if (error) return { error: error.message };

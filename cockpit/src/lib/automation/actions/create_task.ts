@@ -66,6 +66,8 @@ export async function executeCreateTask(
     }
 
     // 4. Activity-Insert
+    // V7 SLC-704 MT-6: owner_user_id wird vom Trigger-Source (entity.ownerUserId)
+    // geerbt (DEC-182). NULL erlaubt fuer System-Records.
     const { data: inserted, error } = await supabase
       .from("activities")
       .insert({
@@ -78,6 +80,7 @@ export async function executeCreateTask(
         // assignee in description als V1-Workaround (V2: dedizierte
         // task-Tabelle mit assignee_id-Spalte)
         description: `Assignee: ${assigneeId}\nAusgeloest durch Automation-Regel: ${rule.name}`,
+        owner_user_id: entity.ownerUserId ?? null,
       })
       .select("id")
       .single();

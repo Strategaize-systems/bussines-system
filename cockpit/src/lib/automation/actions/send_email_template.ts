@@ -110,7 +110,11 @@ export async function executeSendEmailTemplate(
     // V1: wir empfehlen draft-Mode (params.mode='draft'); 'direct' ist ein
     // bewusster Opt-in.
     if (params.mode === "draft") {
-      // Draft-Insert direkt in emails-Tabelle (umgeht SMTP-Send)
+      // Draft-Insert direkt in emails-Tabelle (umgeht SMTP-Send).
+      // V7 SLC-704 MT-6: Die `emails`-Tabelle (V2 Outbound-Drafts) ist
+      // NICHT in den 8 Kerntabellen (DEC-182) — die Kerntabelle fuer Mail
+      // ist `email_messages` (IMAP-synced). Daher kein owner_user_id
+      // hier; die Owner-Spalte existiert auf `emails` nicht.
       const { data: inserted, error: insErr } = await supabase
         .from("emails")
         .insert({

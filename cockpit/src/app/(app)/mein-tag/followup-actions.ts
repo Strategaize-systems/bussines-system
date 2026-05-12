@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import type { AIActionQueueItem } from "@/types/ai-queue";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 // ------------------------------------------------------------------
 // Get pending followup suggestions
@@ -29,6 +30,7 @@ export async function getPendingFollowups(): Promise<AIActionQueueItem[]> {
 // ------------------------------------------------------------------
 
 export async function approveFollowup(actionId: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const adminClient = createAdminClient();
 
@@ -138,6 +140,7 @@ export async function approveFollowup(actionId: string) {
 // ------------------------------------------------------------------
 
 export async function postponeFollowup(actionId: string, days: number = 3) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const adminClient = createAdminClient();
 
@@ -169,6 +172,7 @@ export async function postponeFollowup(actionId: string, days: number = 3) {
 // ------------------------------------------------------------------
 
 export async function rejectFollowup(actionId: string, reason?: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const adminClient = createAdminClient();
 

@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { validateEuVatId } from "@/lib/validation/vat-id";
+import { getProfile } from "@/lib/auth/get-profile";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 export type Company = {
   id: string;
@@ -99,6 +101,8 @@ function sanitizeCompanyVatId(
 }
 
 export async function createCompany(formData: FormData) {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
   const supabase = await createClient();
 
   const tags = (formData.get("tags") as string)
@@ -112,6 +116,7 @@ export async function createCompany(formData: FormData) {
   }
 
   const { error } = await supabase.from("companies").insert({
+    owner_user_id: profile.user_id,
     name: formData.get("name") as string,
     industry: (formData.get("industry") as string) || null,
     website: (formData.get("website") as string) || null,
@@ -148,6 +153,7 @@ export async function createCompany(formData: FormData) {
 }
 
 export async function updateCompany(id: string, formData: FormData) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const tags = (formData.get("tags") as string)
@@ -202,6 +208,7 @@ export async function updateCompany(id: string, formData: FormData) {
 }
 
 export async function deleteCompany(id: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const { error } = await supabase.from("companies").delete().eq("id", id);
 

@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
+import { getProfile } from "@/lib/auth/get-profile";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import {
   proposalEditSchema,
   proposalItemUpdateSchema,
@@ -191,6 +193,8 @@ export async function getProposalsForDeal(
 // V5.5 (MIG-026) hat nur additive Spalten dazugepackt; die V2-Logik (auto-increment
 // version pro Deal) funktioniert weiterhin gegen das erweiterte Schema.
 export async function createProposalLegacy(formData: FormData) {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
   const supabase = await createClient();
 
   const dealId = (formData.get("deal_id") as string) || null;
@@ -208,6 +212,7 @@ export async function createProposalLegacy(formData: FormData) {
   }
 
   const { error } = await supabase.from("proposals").insert({
+    owner_user_id: profile.user_id,
     deal_id: dealId,
     company_id: (formData.get("company_id") as string) || null,
     contact_id: (formData.get("contact_id") as string) || null,
@@ -242,6 +247,8 @@ export type CreateProposalResult =
 export async function createProposal(
   input: CreateProposalInput,
 ): Promise<CreateProposalResult> {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
   const supabase = await createClient();
 
   const { data: userData, error: userErr } = await supabase.auth.getUser();
@@ -287,6 +294,7 @@ export async function createProposal(
   const { data: inserted, error: insertErr } = await supabase
     .from("proposals")
     .insert({
+      owner_user_id: profile.user_id,
       deal_id: input.deal_id,
       contact_id: input.contact_id ?? null,
       company_id: input.company_id ?? null,
@@ -391,6 +399,7 @@ export async function getProposalForEdit(
 // im /proposals-Listing). V5.5 SLC-552 fuehrt updateProposal(id, patch) als
 // Workspace-Action ein — daher hier "Legacy"-Suffix analog createProposalLegacy.
 export async function updateProposalLegacy(id: string, formData: FormData) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const status = formData.get("status") as string;
@@ -420,6 +429,7 @@ export async function updateProposalLegacy(id: string, formData: FormData) {
 }
 
 export async function deleteProposal(id: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const { error } = await supabase.from("proposals").delete().eq("id", id);
 
@@ -503,6 +513,7 @@ export async function updateProposal(
   proposalId: string,
   patch: ProposalUpdatePatch,
 ): Promise<MutationResult> {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },
@@ -677,6 +688,7 @@ export async function addProposalItem(
   productId: string,
   quantity: number = 1,
 ): Promise<AddItemResult> {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },
@@ -745,6 +757,7 @@ export async function updateProposalItem(
   itemId: string,
   patch: ProposalItemUpdateInput,
 ): Promise<MutationResult> {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },
@@ -786,6 +799,7 @@ export async function updateProposalItem(
 }
 
 export async function removeProposalItem(itemId: string): Promise<MutationResult> {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },
@@ -830,6 +844,7 @@ export async function reorderProposalItems(
   proposalId: string,
   orderedItemIds: string[],
 ): Promise<MutationResult> {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },
@@ -907,6 +922,7 @@ export type SaveMilestonesInput = {
 export async function saveProposalPaymentMilestones(
   input: SaveMilestonesInput,
 ): Promise<MutationResult> {
+  await assertNotReadOnlyContext();
   const { proposalId, milestones, totalGross } = input;
 
   const supabase = await createClient();
@@ -1007,6 +1023,7 @@ export type GenerateProposalPdfResult =
 export async function generateProposalPdf(
   proposalId: string,
 ): Promise<GenerateProposalPdfResult> {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const {
@@ -1257,6 +1274,7 @@ export async function transitionProposalStatus(
   proposalId: string,
   newStatus: Exclude<ProposalStatus, "draft">,
 ): Promise<TransitionResult> {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },
@@ -1318,6 +1336,8 @@ export async function transitionProposalStatus(
 export async function createProposalVersion(
   parentProposalId: string,
 ): Promise<CreateVersionResult> {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
   const supabase = await createClient();
   const {
     data: { user },
@@ -1353,6 +1373,11 @@ export async function createProposalVersion(
   const { data: inserted, error: insErr } = await supabase
     .from("proposals")
     .insert({
+      // V7 SLC-704: owner_user_id wird vom Vorgaenger uebernommen (Snapshot-
+      // Versionierung pinnt Owner). Fallback auf profile.user_id falls die
+      // Parent-Zeile noch keinen Owner hat (Legacy-Daten pre-V7).
+      owner_user_id:
+        (parent as { owner_user_id?: string | null }).owner_user_id ?? profile.user_id,
       deal_id: parent.deal_id,
       contact_id: parent.contact_id,
       company_id: parent.company_id,
@@ -1494,6 +1519,8 @@ export async function getProposalVersionsChain(
 // Cron-only-Action. Wird vom POST /api/cron/expire-proposals mit Service-
 // Role-Client gerufen — kein Auth-Check, dafuer Whitelist-strikt: nur
 // `status='sent' AND valid_until < CURRENT_DATE` werden expirt.
+// V7 SLC-704: KEIN assertNotReadOnlyContext (Cron-Pfad, kein User-Request).
+// owner_user_id der existing rows bleibt unangetastet (UPDATE-only).
 export type ExpireOverdueResult = {
   expiredCount: number;
   expiredIds: string[];

@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { logAudit, logAuditWithId } from "@/lib/audit";
 import { dispatchAutomationTrigger } from "@/lib/automation/dispatcher";
+import { getProfile } from "@/lib/auth/get-profile";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 export type Pipeline = {
   id: string;
@@ -165,6 +167,8 @@ export async function getDealWithRelations(dealId: string) {
 // ── Deal mutations ───────────────────────────────────────────────────
 
 export async function createDeal(formData: FormData) {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
   const supabase = await createClient();
 
   const tags = (formData.get("tags") as string)
@@ -177,6 +181,7 @@ export async function createDeal(formData: FormData) {
   const title = formData.get("title") as string;
 
   const { data: newDeal, error } = await supabase.from("deals").insert({
+    owner_user_id: profile.user_id,
     pipeline_id: formData.get("pipeline_id") as string,
     stage_id: formData.get("stage_id") as string,
     contact_id: contactId,
@@ -199,6 +204,7 @@ export async function createDeal(formData: FormData) {
   // Log deal creation
   if (newDeal) {
     await supabase.from("activities").insert({
+      owner_user_id: profile.user_id,
       contact_id: contactId,
       company_id: companyId,
       deal_id: newDeal.id,
@@ -238,6 +244,8 @@ export async function createDeal(formData: FormData) {
 }
 
 export async function updateDeal(id: string, formData: FormData) {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
   const supabase = await createClient();
 
   // Fetch old deal data for audit trail before update
@@ -286,6 +294,7 @@ export async function updateDeal(id: string, formData: FormData) {
 
   // Log deal update
   await supabase.from("activities").insert({
+    owner_user_id: profile.user_id,
     contact_id: contactId,
     company_id: companyId,
     deal_id: id,
@@ -338,6 +347,8 @@ const STAGE_REQUIRED_FIELDS: Record<string, { fields: string[]; labels: Record<s
 // Eigenstaendige Action statt Form-FormData-Roundtrip — Header-Inline-Edit
 // braucht nur einen Wert + minimalen Audit-Trail.
 export async function updateDealValue(dealId: string, value: number | null) {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
   const supabase = await createClient();
 
   const { data: oldDeal } = await supabase
@@ -354,6 +365,7 @@ export async function updateDealValue(dealId: string, value: number | null) {
   if (error) return { error: error.message };
 
   await supabase.from("activities").insert({
+    owner_user_id: profile.user_id,
     contact_id: oldDeal?.contact_id ?? null,
     company_id: oldDeal?.company_id ?? null,
     deal_id: dealId,
@@ -379,6 +391,8 @@ export async function updateDealValue(dealId: string, value: number | null) {
 }
 
 export async function moveDealToStage(dealId: string, newStageId: string, stageName: string) {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
   const supabase = await createClient();
 
   // Fetch current deal state for validation + audit trail
@@ -437,6 +451,7 @@ export async function moveDealToStage(dealId: string, newStageId: string, stageN
   // Log stage change as activity
   if (currentDeal) {
     await supabase.from("activities").insert({
+      owner_user_id: profile.user_id,
       contact_id: currentDeal.contact_id,
       company_id: currentDeal.company_id,
       deal_id: dealId,
@@ -494,6 +509,8 @@ export async function moveDealToStage(dealId: string, newStageId: string, stageN
 }
 
 export async function moveDealToPipeline(dealId: string, targetPipelineId: string) {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
   const supabase = await createClient();
 
   // Get first stage of target pipeline
@@ -537,6 +554,7 @@ export async function moveDealToPipeline(dealId: string, targetPipelineId: strin
   // Log activity
   if (deal && pipeline) {
     await supabase.from("activities").insert({
+      owner_user_id: profile.user_id,
       contact_id: deal.contact_id,
       company_id: deal.company_id,
       deal_id: dealId,
@@ -585,6 +603,8 @@ export async function getDealsForSelect() {
 }
 
 export async function deleteDeal(id: string) {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
   const supabase = await createClient();
 
   // Get deal info for activity log + audit trail before deleting
@@ -601,6 +621,7 @@ export async function deleteDeal(id: string) {
   // Log deletion (without deal_id since deal is gone)
   if (deal) {
     await supabase.from("activities").insert({
+      owner_user_id: profile.user_id,
       contact_id: deal.contact_id,
       company_id: deal.company_id,
       type: "note",
@@ -656,6 +677,7 @@ const DEFAULT_STAGES = [
 ];
 
 export async function createPipeline(formData: FormData) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const name = (formData.get("name") as string)?.trim();
@@ -708,6 +730,7 @@ export async function createPipeline(formData: FormData) {
 }
 
 export async function updatePipeline(id: string, formData: FormData) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const name = (formData.get("name") as string)?.trim();
@@ -746,6 +769,7 @@ export async function updatePipeline(id: string, formData: FormData) {
 }
 
 export async function deletePipeline(id: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   // Check for deals in this pipeline
@@ -799,6 +823,7 @@ export async function getPipelineById(id: string) {
 // ── Stage mutations (Settings) ───────────────────────────────────────
 
 export async function createStage(formData: FormData) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const stageName = (formData.get("name") as string)?.trim();
@@ -832,6 +857,7 @@ export async function createStage(formData: FormData) {
 }
 
 export async function updateStage(id: string, formData: FormData) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -851,6 +877,7 @@ export async function updateStage(id: string, formData: FormData) {
 }
 
 export async function deleteStage(id: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   // V6.2 SLC-622 MT-8 (DEC-133): Stage-Delete-Soft-Disable.

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import type {
   Cadence,
   CadenceWithSteps,
@@ -75,6 +76,7 @@ export async function createCadence(params: {
   name: string;
   description?: string;
 }) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -97,6 +99,7 @@ export async function updateCadence(
   id: string,
   params: { name?: string; description?: string; status?: CadenceStatus }
 ) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -116,6 +119,7 @@ export async function updateCadence(
 }
 
 export async function deleteCadence(id: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   // Check for active enrollments
@@ -151,6 +155,7 @@ export async function addStep(
     task_description?: string;
   }
 ) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   // Get next step_order
@@ -201,6 +206,7 @@ export async function updateStep(
     task_description?: string;
   }
 ) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -222,6 +228,7 @@ export async function updateStep(
 }
 
 export async function removeStep(stepId: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   // Get the step to know cadence_id and step_order
@@ -262,6 +269,7 @@ export async function removeStep(stepId: string) {
 }
 
 export async function reorderSteps(cadenceId: string, stepIds: string[]) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   for (let i = 0; i < stepIds.length; i++) {

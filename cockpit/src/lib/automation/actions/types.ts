@@ -25,6 +25,12 @@ export interface ActionEntityContext {
   companyId: string | null;
   /** Bei Deal: deal.id; bei Activity: activity.deal_id. */
   dealId: string | null;
+  /**
+   * V7 SLC-704 MT-6: owner_user_id der Trigger-Source (DEC-182).
+   * Wird vom Workflow an alle Core-Table-Inserts (activities, email_messages)
+   * weitergegeben. NULL erlaubt fuer System-Records.
+   */
+  ownerUserId: string | null;
 }
 
 export interface ActionExecutionContext {

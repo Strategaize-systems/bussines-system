@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getProfile } from "@/lib/auth/get-profile";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -132,6 +134,8 @@ export async function createCall(params: {
   phoneNumber: string;
   direction?: CallDirection;
 }) {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
   const supabase = await createClient();
 
   const {
@@ -141,6 +145,7 @@ export async function createCall(params: {
   const { data, error } = await supabase
     .from("calls")
     .insert({
+      owner_user_id: profile.user_id,
       deal_id: params.dealId || null,
       contact_id: params.contactId || null,
       phone_number: params.phoneNumber,
@@ -169,6 +174,7 @@ export async function updateCallStatus(
     recordingStatus?: RecordingStatus;
   }
 ) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const updates: Record<string, unknown> = {
@@ -197,6 +203,8 @@ export async function updateCallStatus(
 }
 
 export async function createCallActivity(callId: string) {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
   const supabase = await createClient();
 
   const call = await getCallById(callId);
@@ -226,6 +234,7 @@ export async function createCallActivity(callId: string) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const { error } = await supabase.from("activities").insert({
+    owner_user_id: profile.user_id,
     type: "call",
     deal_id: call.deal_id,
     contact_id: call.contact_id,

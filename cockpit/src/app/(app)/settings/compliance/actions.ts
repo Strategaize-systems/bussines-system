@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import {
   COMPLIANCE_TEMPLATE_DEFAULTS,
   COMPLIANCE_TEMPLATE_KEYS,
@@ -101,6 +102,7 @@ export async function updateComplianceTemplate(
   key: ComplianceTemplateKey,
   body: string,
 ): Promise<{ error: string }> {
+  await assertNotReadOnlyContext();
   if (!isValidKey(key)) return { error: `Unbekannter Template-Key: ${key}` };
   if (typeof body !== "string") return { error: "Body muss ein String sein" };
 
@@ -130,6 +132,7 @@ export async function updateComplianceTemplate(
 export async function resetComplianceTemplate(
   key: ComplianceTemplateKey,
 ): Promise<{ error: string }> {
+  await assertNotReadOnlyContext();
   if (!isValidKey(key)) return { error: `Unbekannter Template-Key: ${key}` };
   const { supabase, user } = await requireUser();
 

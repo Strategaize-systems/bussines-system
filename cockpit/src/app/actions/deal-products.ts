@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { revalidatePath } from "next/cache";
 import type { DealProduct } from "@/types/products";
 
@@ -53,6 +54,7 @@ export async function assignProduct(
   price?: number,
   quantity?: number,
 ): Promise<{ error?: string }> {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },
@@ -85,6 +87,7 @@ export async function updateDealProduct(
   dealId: string,
   updates: { price?: number | null; quantity?: number; notes?: string | null },
 ): Promise<{ error?: string }> {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },
@@ -111,6 +114,7 @@ export async function removeProduct(
   dealProductId: string,
   dealId: string,
 ): Promise<{ error?: string }> {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const {
     data: { user },

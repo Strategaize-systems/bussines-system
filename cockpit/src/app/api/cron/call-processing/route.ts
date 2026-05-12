@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const { data: calls, error: queryError } = await admin
       .from("calls")
       .select(
-        "id, deal_id, contact_id, phone_number, direction, started_at, ended_at, duration_seconds, recording_status, transcript_status, summary_status, recording_url, transcript",
+        "id, deal_id, contact_id, phone_number, direction, started_at, ended_at, duration_seconds, recording_status, transcript_status, summary_status, recording_url, transcript, owner_user_id",
       )
       .is("recording_url", null)
       .eq("status", "completed")
@@ -230,6 +230,7 @@ export async function POST(request: NextRequest) {
               })
               .eq("id", existingActivity.id);
           } else {
+            // V7 SLC-704 MT-5: owner_user_id wird vom Source-Call geerbt (DEC-182).
             await admin.from("activities").insert({
               type: "call",
               title,
@@ -239,6 +240,8 @@ export async function POST(request: NextRequest) {
               source_type: "call",
               source_id: call.id,
               ai_generated: true,
+              owner_user_id:
+                (call as { owner_user_id?: string | null }).owner_user_id ?? null,
             });
           }
         }

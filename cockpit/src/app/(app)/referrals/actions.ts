@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 export type Referral = {
   id: string;
@@ -38,6 +39,7 @@ export async function getReferrals() {
 }
 
 export async function createReferral(formData: FormData) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const { error } = await supabase.from("referrals").insert({
@@ -59,6 +61,7 @@ export async function createReferral(formData: FormData) {
 }
 
 export async function deleteReferral(id: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const { error } = await supabase.from("referrals").delete().eq("id", id);
 

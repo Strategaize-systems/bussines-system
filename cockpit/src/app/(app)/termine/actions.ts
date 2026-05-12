@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 export type CalendarEvent = {
   id: string;
@@ -93,6 +94,7 @@ export async function getCalendarEventsForWeek(startDate: string) {
 // ── Mutations ───────────────────────────────────────────────────────
 
 export async function createCalendarEvent(formData: FormData) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const {
@@ -121,6 +123,7 @@ export async function createCalendarEvent(formData: FormData) {
 }
 
 export async function updateCalendarEvent(id: string, formData: FormData) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -147,6 +150,7 @@ export async function updateCalendarEvent(id: string, formData: FormData) {
 }
 
 export async function deleteCalendarEvent(id: string) {
+  await assertNotReadOnlyContext();
   const supabase = await createClient();
   const { error } = await supabase
     .from("calendar_events")

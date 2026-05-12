@@ -39,6 +39,7 @@ interface MeetingRow {
   scheduled_at: string;
   deal_id: string | null;
   created_by: string | null;
+  owner_user_id: string | null;
   briefing_generated_at: string | null;
 }
 
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
 
     const { data: meetings, error: mErr } = await admin
       .from("meetings")
-      .select("id, title, scheduled_at, deal_id, created_by, briefing_generated_at")
+      .select("id, title, scheduled_at, deal_id, created_by, owner_user_id, briefing_generated_at")
       .is("briefing_generated_at", null)
       .not("deal_id", "is", null)
       .gte("scheduled_at", now.toISOString())
@@ -195,6 +196,7 @@ export async function POST(request: NextRequest) {
         const briefing = parsed.data;
 
         // 3e. Persist activity (DEC-119: V3 source_type/source_id pattern + ai_generated flag)
+        // V7 SLC-704 MT-5: owner_user_id wird vom Source-Meeting geerbt (DEC-182).
         const { data: activity, error: insErr } = await admin
           .from("activities")
           .insert({
@@ -209,6 +211,7 @@ export async function POST(request: NextRequest) {
             source_id: meeting.id,
             ai_generated: true,
             created_by: null,
+            owner_user_id: meeting.owner_user_id ?? null,
           })
           .select("id")
           .single();
@@ -314,6 +317,7 @@ export async function POST(request: NextRequest) {
         const finalFailure = failureNum >= MAX_BRIEFING_RETRIES;
 
         // Always log the failure activity.
+        // V7 SLC-704 MT-5: owner_user_id wird vom Source-Meeting geerbt (DEC-182).
         await admin.from("activities").insert({
           type: "briefing_error",
           title: `Briefing-Generierung fehlgeschlagen (${failureNum}/${MAX_BRIEFING_RETRIES})`,
@@ -328,6 +332,7 @@ export async function POST(request: NextRequest) {
           source_id: meeting.id,
           ai_generated: true,
           created_by: null,
+          owner_user_id: meeting.owner_user_id ?? null,
         });
 
         if (finalFailure) {
