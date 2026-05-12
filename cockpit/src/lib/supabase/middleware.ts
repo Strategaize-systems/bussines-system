@@ -1,5 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { evaluateRouteGuard, ROLE_REDIRECT_TARGET } from "@/lib/auth/middleware-guards";
+import { isRole } from "@/lib/auth/types";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -45,6 +47,31 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
+  }
+
+  // V7 SLC-702: Rollen-Schutz fuer protected Routes (DEC-191). Wir laden
+  // die Rolle nur dann wenn der User authentifiziert ist und die Route nicht
+  // public ist — sonst kostet jede public-Navigation einen DB-Hit ohne
+  // Nutzen.
+  if (user && !isPublic) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile && isRole(profile.role)) {
+      const redirectPath = evaluateRouteGuard(pathname, profile.role);
+      if (redirectPath && pathname !== redirectPath) {
+        const url = request.nextUrl.clone();
+        url.pathname = redirectPath;
+        url.search = "";
+        return NextResponse.redirect(url);
+      }
+    }
+    // Wenn Profile fehlt oder Rolle ungueltig: kein middleware-Block. Die
+    // Server-Component-Layout-Pruefung (`assertRole`) faengt das spaeter
+    // mit besserer Fehler-Surface auf.
   }
 
   return supabaseResponse;
