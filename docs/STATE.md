@@ -10,21 +10,22 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V7 SLC-701 Backend-Foundation done + /qa PASS 2026-05-12** (RPT-394 backend + RPT-395 qa). MIG-033 + MIG-034 + MIG-035 alle 3 Phasen auf Hetzner appliedet, 8 owner_user_id-Spalten + 8 Indizes + 32 RLS-Policies + 4 SECURITY-DEFINER-Helper-Functions live. Seed-Script `npm run seed:multi-user` (877 Rows in 462ms idempotent) + 108/108 RLS-Tests (12 Helper + 96 Cross-Owner-Matrix) PASS gegen Coolify-DB via node:20-Container. PgBench Helper-Performance p95=59.68ms in QA-Re-Run (Limit 100ms, RPT-394 hatte 63.79ms). V6.6-Regression 650/650 PASS lokal. MT-8 Backout-Test auf `audit_log.view_as_target_user_id` PASS. /qa fand 1 Low-Drift (FEAT-502 Status `planned` → `in_progress` in features/INDEX.md gefixt). Naechster Schritt /backend + /frontend SLC-702. Kein Coolify-Redeploy noetig (Code aendert sich in SLC-701 nicht).
-- Current Phase: V7 Multi-User + Teamlead-Sprint — Backend-Foundation 1/7 Slices done + QA PASS, bereit fuer /backend + /frontend SLC-702.
+- Current Focus: **V7 SLC-702 Frontend-Foundation /frontend done 2026-05-12** (RPT-396). 7 MTs durch: MT-1 Auth-Helper-Layer (`/lib/auth/types.ts` + `get-profile.ts` mit React `cache()` + `assert-role.ts` mit `assertRole`/`requireRole` + `read-only-context.ts` mit AsyncLocalStorage + `read-only-context-client.tsx` Client-Provider, 24/24 Vitest PASS), MT-2 `SIDEBAR_CONFIG` Single-Source (22 Eintraege: V6.6-1:1 + 2 V7 TEAM-Stubs, Role-Matrix admin=22, teamlead=20, member=13, 15/15 Vitest mit Snapshot), MT-3 Sidebar-Refactor (component liest aus SIDEBAR_CONFIG, filtert per `role`-Prop, groupVisualMerged kollabiert VERWALTUNG-Sub-Sections, 14/14 Vitest PASS), MT-4 `(app)/layout.tsx` ruft `await getProfile()` + passt `role={profile.role}` an Sidebar, MT-5 `middleware-guards.ts` mit 14 Route-Patterns + Integration in supabase/middleware.ts (Pre-Server-Component-Render Block bei Mismatch → /mein-tag, 15/15 Vitest PASS), MT-6 Visual-Diff-Test-Recipe in `__tests__/playwright/sidebar-visual-diff.spec.ts` (MCP-Playwright-driven in /qa SLC-702, kein @playwright/test-Dep), MT-7 Slice-Close: TSC 8 pre-existing Errors (0 neu), `npm run test` 718/718 PASS (+68 V7-Tests), `npm run build` clean (Compiled successfully in 15.0s, 65 Routes), `npm run lint` 142/54 = V6.6-Baseline unveraendert. Naechster Schritt /qa SLC-702 (nach User-Coolify-Deploy).
+- Current Phase: V7 Multi-User + Teamlead-Sprint — Frontend-Foundation 2/7 Slices code-complete, bereit fuer User-Coolify-Deploy + /qa SLC-702 Live-Smoke + Visual-Diff via MCP-Playwright.
 
 ## Immediate Next Steps
-1. **(naechster Schritt) /backend + /frontend SLC-702** — Frontend-Foundation (Layout + Sidebar-Config + Server-Side-Guards). 4-6h, 7 MTs. Pflicht-Read: SLC-702-Spec + DEC-190..192.
-2. **(SLC-702..707 Reihenfolge zwingend)** Nach SLC-702: SLC-703 (Verwaltungs-UI) → SLC-704 (Owner-Wiring ~80 Server Actions + 5 Cron + Workflow-Engine) → SLC-705 (Team-Aggregat /team) → SLC-706 (Drilldown /team/[user_id]/... Read-Only) → SLC-707 (Polish + Bulk-Reassign + Mobile-Hamburger + VERWALTUNG-Split). Pro Slice: /backend|/frontend → /qa → User-Coolify-Deploy → Live-Smoke. Gesamt-/qa V7 nach SLC-707.
-3. **(optional Doku-Hygiene, ~5 Min)** M3 Architecture-V7-Section um Notiz erweitern dass Slice-Planning Bulk-Reassign vollstaendig in SLC-707 konsolidiert hat (statt SLC-703 wie urspruenglich empfohlen).
-4. **(nach V7 7 Slices done)** /final-check V7 → /go-live V7 → /deploy V7 als REL-029 → /post-launch V7 24h-Live-Beobachtung.
-5. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
-6. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5.
-7. **(optional vor/parallel V7)** V6.7-Polish — BL-460 (Style-Guide-V2 Hex-Drift) + BL-459 (Quick-Action-Label) + BL-418 (React #418 Hydration). 2-4h.
-8. **(Parallel optional)** /post-launch V6.6 — 24h-Live-Beobachtung (RPT-342 Schwellen).
-9. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit NL-BTW gegen Production-VIES.
-10. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04.
-11. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (User-Direktive 2026-05-01 "kommt viel spaeter").
+1. **(naechster Schritt) User-Coolify-Deploy SLC-702** — Code-Stand zum Pushen ist `main` Branch. Coolify-Redeploy noetig fuer Live-Smoke + Visual-Diff.
+2. **(nach Coolify-Deploy) /qa SLC-702** — verifiziert AC1..AC10 inkl. 3-Rollen-Visual-Diff (admin/teamlead/member via MCP-Playwright) + Direkt-URL-Probe (member→/dashboard → /mein-tag-Redirect). Vorbedingung: 3 Test-User in `auth.users` muessen mit Passwoertern existieren (admin = immo@bellaerts.de bestehend; teamlead+member-Test-User via supabase.auth.admin.createUser anlegen oder /qa-Session entscheidet alternativ Visual-Diff via simulierter Profile-Switch).
+3. **(nach /qa SLC-702 PASS) /backend + /frontend SLC-703** — Verwaltungs-UI (`/settings/team`: Liste, Invite, Rolle-aendern, Profile-Delete, Bulk-Reassign-Stub). Nutzt `assertRole(['admin','teamlead'])` aus MT-1.
+4. **(SLC-703..707 Reihenfolge zwingend)** SLC-703 → SLC-704 (Owner-Wiring ~80 Server Actions + 5 Cron + Workflow-Engine) → SLC-705 (Team-Aggregat /team) → SLC-706 (Drilldown /team/[user_id]/... Read-Only) → SLC-707 (Polish + Bulk-Reassign-UI + Mobile-Hamburger + VERWALTUNG-Split). Pro Slice: /backend|/frontend → /qa → User-Coolify-Deploy → Live-Smoke. Gesamt-/qa V7 nach SLC-707.
+5. **(nach V7 7 Slices done)** /final-check V7 → /go-live V7 → /deploy V7 als REL-029 → /post-launch V7 24h-Live-Beobachtung.
+6. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
+7. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5.
+8. **(optional vor/parallel V7)** V6.7-Polish — BL-460 (Style-Guide-V2 Hex-Drift) + BL-459 (Quick-Action-Label) + BL-418 (React #418 Hydration). 2-4h.
+9. **(Parallel optional)** /post-launch V6.6 — 24h-Live-Beobachtung (RPT-342 Schwellen).
+10. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit NL-BTW gegen Production-VIES.
+11. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04.
+12. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (User-Direktive 2026-05-01 "kommt viel spaeter").
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"

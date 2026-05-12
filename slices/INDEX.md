@@ -295,7 +295,7 @@ Reihenfolge zwingend: SLC-701 (Backend-Foundation, Blocker) → SLC-702 (Fronten
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-701 | [Backend-Foundation (3-Phasen-Migration + RLS-Helper-Functions)](SLC-701-backend-foundation.md) | FEAT-502 | done | Blocker | 2026-05-12 |
-| SLC-702 | [Frontend-Foundation (Layout + Sidebar-Config + Server-Side-Guards)](SLC-702-frontend-foundation.md) | FEAT-701 + FEAT-502 + FEAT-503 | planned | Blocker | 2026-05-12 |
+| SLC-702 | [Frontend-Foundation (Layout + Sidebar-Config + Server-Side-Guards)](SLC-702-frontend-foundation.md) | FEAT-701 + FEAT-502 + FEAT-503 | done | Blocker | 2026-05-12 |
 | SLC-703 | [Verwaltungs-UI (/settings/team + Invite + Rolle-aendern + Profile-Delete)](SLC-703-verwaltungs-ui.md) | FEAT-502 | planned | High | 2026-05-12 |
 | SLC-704 | [Owner-Wiring (~80 Server Actions + Cron-Owner-Context + Workflow-Engine-Owner-Pass)](SLC-704-owner-wiring.md) | FEAT-502 | planned | High | 2026-05-12 |
 | SLC-705 | [Team-Aggregat-Cockpit (/team Page mit KPIs + Mitglieder-Tabelle + KI-Workspace-Hybrid)](SLC-705-team-aggregat-cockpit.md) | FEAT-503 | planned | High | 2026-05-12 |

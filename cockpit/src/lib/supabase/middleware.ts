@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { evaluateRouteGuard, ROLE_REDIRECT_TARGET } from "@/lib/auth/middleware-guards";
+import { evaluateRouteGuard } from "@/lib/auth/middleware-guards";
 import { isRole } from "@/lib/auth/types";
 
 export async function updateSession(request: NextRequest) {
