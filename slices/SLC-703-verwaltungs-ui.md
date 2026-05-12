@@ -11,7 +11,7 @@
 - **Delivery Mode:** internal-tool
 - **Worktree-Isolation:** skipped
 - **Architecture:** DEC-193, DEC-194, plus FEAT-502 Verwaltungs-UI-Spec
-- **Reihenfolge-Pflicht:** **nach SLC-702** — nutzt `assertRole`, `getProfile`, `SIDEBAR_CONFIG`-Eintrag fuer /settings/team. Vor SLC-704 NICHT zwingend, aber sinnvoll fuer Bulk-Reassign-Preview-Tests.
+- **Reihenfolge-Pflicht:** **MUSS nach SLC-702** — nutzt `assertRole`, `getProfile`, `SIDEBAR_CONFIG`-Eintrag fuer /settings/team. **MUSS vor SLC-707** — SLC-707 bindet Bulk-Reassign-Dialog in `/settings/team` ein, dafuer muss die Verwaltungs-Page existieren.
 
 ## Goal
 

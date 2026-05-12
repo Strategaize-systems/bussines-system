@@ -43,7 +43,7 @@ Datenbank-Fundament fuer Multi-User auf Hetzner ausrollen: Schema-Erweiterung (M
 
 **AC2 (MIG-034 Backfill):** Nach Apply gibt es genau 1 Team-Row `Strategaize`, User Immo hat `team_id` gesetzt, `SELECT COUNT(*) FROM <table> WHERE owner_user_id IS NULL` returnt 0 fuer alle 8 Kerntabellen. Audit-Eintrag `v7_backfill_complete` mit `affected_rows`-Sum existiert.
 
-**AC3 (MIG-035 RLS-Switch):** Nach Apply existieren 4 SQL-Helper-Functions (is_admin, is_teamlead, get_my_team_id, can_see_owner) als STABLE-Functions. Pro Kerntabelle sind 4 neue Policies (SELECT/INSERT/UPDATE/DELETE) aktiv, alte `authenticated_full_access` ist gedropped. Verifikation via `\d+ <table>` zeigt Policies.
+**AC3 (MIG-035 RLS-Switch):** Nach Apply existieren 4 SQL-Helper-Functions (is_admin, is_teamlead, get_my_team_id, can_see_owner) als `LANGUAGE SQL STABLE SECURITY DEFINER`-Functions (Permission-Decoupling — Helper-Functions duerfen profiles lesen, ohne dass der aufrufende User direkte SELECT-Policy auf profiles braucht; siehe MIG-035-Snippet in MIGRATIONS.md Z.680-683). GRANT EXECUTE an `authenticated`. Pro Kerntabelle sind 4 neue Policies (SELECT/INSERT/UPDATE/DELETE) aktiv, alte `authenticated_full_access` ist gedropped. Verifikation via `\d+ <table>` zeigt Policies; `\df+ is_admin` zeigt `SECURITY DEFINER`-Marker.
 
 **AC4 (Backout pro Phase):** Jede MIG hat einen Rollback-Snippet in MIGRATIONS.md, der manuell auf Hetzner getestet wurde: Phase A rollback droppt teams + Spalten, Phase B rollback setzt owner_user_id zurueck auf NULL, Phase C rollback re-aktiviert `authenticated_full_access`-Policy. Mindestens 1 vollstaendiger Rollback-Test (Apply MIG-033 → Rollback → Re-Apply) ist dokumentiert.
 
