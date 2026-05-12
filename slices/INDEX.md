@@ -287,3 +287,17 @@ Reihenfolge zwingend (DEC-176): SLC-661 (Foundation) → SLC-662 (Mein Tag, erst
 | SLC-643 | [Code-Cleanup Implementation (signed-off Items, mindestens 3)](SLC-643-code-cleanup.md) | FEAT-642 | done | Medium | 2026-05-07 |
 | SLC-644 | [UI-Audit Inventur (5 UI-Bereiche, kein Cleanup)](SLC-644-ui-audit-inventur.md) | FEAT-643 | done | Medium | 2026-05-07 |
 | SLC-645 | [UI-Cleanup Implementation (signed-off Items, mindestens 2)](SLC-645-ui-cleanup.md) | FEAT-643 | done | Medium | 2026-05-07 |
+
+## V7 Slices (Multi-User + Teamlead-Sprint — Architecture+Slice-Planning done 2026-05-12)
+
+Reihenfolge zwingend: SLC-701 (Backend-Foundation, Blocker) → SLC-702 (Frontend-Foundation, Blocker) → SLC-703 (Verwaltungs-UI) → SLC-704 (Owner-Wiring ~80 Server Actions) → SLC-705 (Team-Aggregat-Cockpit) → SLC-706 (Drilldown-Routes) → SLC-707 (Polish + Bulk-Reassign + Mobile-Hamburger + VERWALTUNG-Split). Pro Slice: /backend|/frontend → /qa → User-Coolify-Deploy → Live-Smoke. Gesamt-/qa nach SLC-707. Final-Check + Go-Live + Deploy als REL-029. Gesamt geschaetzt ~33-45h.
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-701 | [Backend-Foundation (3-Phasen-Migration + RLS-Helper-Functions)](SLC-701-backend-foundation.md) | FEAT-502 | planned | Blocker | 2026-05-12 |
+| SLC-702 | [Frontend-Foundation (Layout + Sidebar-Config + Server-Side-Guards)](SLC-702-frontend-foundation.md) | FEAT-701 + FEAT-502 + FEAT-503 | planned | Blocker | 2026-05-12 |
+| SLC-703 | [Verwaltungs-UI (/settings/team + Invite + Rolle-aendern + Profile-Delete)](SLC-703-verwaltungs-ui.md) | FEAT-502 | planned | High | 2026-05-12 |
+| SLC-704 | [Owner-Wiring (~80 Server Actions + Cron-Owner-Context + Workflow-Engine-Owner-Pass)](SLC-704-owner-wiring.md) | FEAT-502 | planned | High | 2026-05-12 |
+| SLC-705 | [Team-Aggregat-Cockpit (/team Page mit KPIs + Mitglieder-Tabelle + KI-Workspace-Hybrid)](SLC-705-team-aggregat-cockpit.md) | FEAT-503 | planned | High | 2026-05-12 |
+| SLC-706 | [Drilldown-Routes (/team/[user_id]/... Read-Only-Sicht + view_as-Audit)](SLC-706-drilldown-routes.md) | FEAT-503 | planned | High | 2026-05-12 |
+| SLC-707 | [Polish + Bulk-Reassign-UI + Mobile-Hamburger + VERWALTUNG-Split](SLC-707-polish-bulk-reassign-mobile.md) | FEAT-502 + FEAT-701 | planned | Medium | 2026-05-12 |

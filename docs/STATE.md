@@ -9,26 +9,21 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: architecture
-- Current Focus: **V7 Architecture done 2026-05-12** (Multi-User + Teamlead-Sprint). 19 Open Questions aus /requirements geschlossen. 15 DECs erfasst (DEC-181..195): Rollen-Modell 3-flach + 1 User in 1 Team, owner_user_id auf 8 Kerntabellen, RLS-Helper-Functions (is_admin/is_teamlead/can_see_owner), Bulk-Reassign mit audit_log, Workflow+RAG+Auto-Winloss = team-shared, Meeting-Owner = Host-User, Aggregat via direktem JOIN (kein Materialized View V7-Start), Drilldown via URL-Path, Mutate-Lockdown via assertNotReadOnlyContext-Helper, Sidebar-Config als TS-Array, Server-Side assertRole, Mobile-Hamburger zentralisiert, Profile-Delete mit Re-Assign-Pflicht, Invite-Flow team_id-pflichtig, audit_log.view_as_target_user_id neue Spalte. 3 Migrations dokumentiert: MIG-033 Schema (Phase A) + MIG-034 Backfill (Phase B) + MIG-035 RLS Switch (Phase C). 7 Slices empfohlen (SLC-701..707). 10 Open Technical Questions fuer /slice-planning. Naechster Schritt: /slice-planning V7.
-- Current Phase: V7 Multi-User + Teamlead-Sprint — Architecture done.
+- High-Level State: slice-planning
+- Current Focus: **V7 Slice-Planning done 2026-05-12** (Multi-User + Teamlead-Sprint). 7 Slices SLC-701..707 vollstaendig ausplaniert mit Acceptance Criteria + Micro-Tasks + QA-Fokus pro Slice. 10 Open Technical Questions aus /architecture beantwortet (Seed-Script + 3-Phasen-Migration + Helper-Performance + Sidebar-Refactor + Workflow-Owner-Pass + RAG-Re-Embedding + Cron-Owner-Inheritance + 96 Cross-Owner-Leak-Tests + Profile-Delete-Hard-Lock + Mobile-Sidebar-Memory-State). Reihenfolge zwingend: SLC-701 (Backend-Foundation Blocker) → SLC-702 (Frontend-Foundation Blocker) → SLC-703 (Verwaltungs-UI) → SLC-704 (Owner-Wiring ~80 Server Actions + 5 Cron + Workflow-Engine) → SLC-705 (Team-Aggregat /team) → SLC-706 (Drilldown /team/[user_id]/... Read-Only) → SLC-707 (Polish + Bulk-Reassign + Mobile-Hamburger + VERWALTUNG-Split). Pro Slice: /backend|/frontend → /qa → User-Coolify-Deploy. Gesamt geschaetzt ~33-45h. Naechster Schritt: /backend SLC-701.
+- Current Phase: V7 Multi-User + Teamlead-Sprint — Slice-Planning done.
 
 ## Immediate Next Steps
-1. **(naechster Schritt) /slice-planning V7** — 7 Slices SLC-701..707 strukturiert ausdefinieren: SLC-701 Backend-Foundation (3-Phasen-Migration + Helper-Functions), SLC-702 Frontend-Foundation (Layout + Sidebar-Config + Server-Side-Guards), SLC-703 Verwaltungs-UI (/settings/team + Invite + Rolle-aendern), SLC-704 Owner-Wiring (~80 Server Actions), SLC-705 Team-Aggregat-Cockpit (/team), SLC-706 Drilldown-Routes (read-only), SLC-707 Polish + Bulk-Reassign + Mobile-Hamburger + VERWALTUNG-Split. Plus die 10 Open Technical Questions aus /architecture (Performance-Smoke, Migration-Reihenfolge, Helper-Function-Performance, Sidebar-Refactor-Risiko, Workflow-Engine-Owner-Pass, RAG-Re-Embedding, Cron-Owner-Context, Cross-Owner-Leak-Tests, Profile-Delete, Mobile-Sidebar-State).
-2. **(optional vor V7)** V6.7-Polish — Mini-Sprint mit BL-460 (Style-Guide-V2 Hex-Drift in 4 V6.6-Files → Brand-Tokens) + BL-459 (Quick-Action-Label "Task"/"Aufgabe"-Konsistenz) + BL-418 (React #418 Hydration auf Deal-Detail). Geschaetzt 2-4h, kann auch in V7 mitlaufen.
-3. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
-4. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).
-5. **(Parallel optional)** /post-launch V6.6 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ki_workspace_report-Rate, auto_winloss_triggered-Rate, Bedrock-Cost-Spike auf 16 neue V6.6-Bedrock-Pfade (AWS Cost-Explorer).
-6. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
-7. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
-8. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (per User-Direktive 2026-05-01 "kommt viel spaeter").
-3. **(nach V6.6 done)** /requirements V7 — Multi-User + Teamlead (FEAT-502+503) auf bereinigter Basis. BL-425 Multi-Touch-Journey-Tab + verbleibende V7-Audit-Defer-Items werden in V7-Scope integriert. Mitarbeiter-/Chef-Drill-Downs + Rollen-Sichtbarkeit kommen mit V7.
+1. **(naechster Schritt) /backend SLC-701** — Backend-Foundation: 3-Phasen-Migration (MIG-033 Schema + MIG-034 Backfill + MIG-035 RLS-Switch) + RLS-Helper-Functions + Seed-Script `npm run seed:multi-user` + 96 Cross-Owner-Leak-Tests + PgBench Helper-Performance-Smoke. ~6-8h. 8 Micro-Tasks. Pflicht-Read-Order: SLC-701-Spec, MIG-033/034/035, DEC-181..184 + DEC-193 + DEC-195.
+2. **(SLC-701..707 Reihenfolge zwingend)** Nach SLC-701: /qa SLC-701 → /backend|/frontend SLC-702 → /qa → User-Deploy. Pro Slice: /backend|/frontend → /qa → User-Coolify-Deploy → Live-Smoke. Gesamt-/qa V7 nach SLC-707.
+3. **(nach V7 7 Slices done)** /final-check V7 → /go-live V7 → /deploy V7 als REL-029 → /post-launch V7 24h-Live-Beobachtung.
 4. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
-5. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).
-6. **(Parallel optional)** /post-launch V6.4+V6.5 — 24h-Live-Beobachtung gegen Monitoring-Schwellen (RPT-342): Container-Restart-Count, 5xx-Errors, ai_signal_extract_run ~12/h, ai_followup_run ~4/Tag, 0 `proposals.value`-Errors.
-7. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit echter NL-BTW gegen Production-VIES (Badge-States visuell bestaetigen).
-8. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04 (90d nach V6.2-Deploy).
-9. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (per User-Direktive 2026-05-01 "kommt viel spaeter").
+5. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5.
+6. **(optional vor/parallel V7)** V6.7-Polish — BL-460 (Style-Guide-V2 Hex-Drift) + BL-459 (Quick-Action-Label) + BL-418 (React #418 Hydration). 2-4h.
+7. **(Parallel optional)** /post-launch V6.6 — 24h-Live-Beobachtung (RPT-342 Schwellen).
+8. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit NL-BTW gegen Production-VIES.
+9. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04.
+10. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (User-Direktive 2026-05-01 "kommt viel spaeter").
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
