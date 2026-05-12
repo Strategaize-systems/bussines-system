@@ -10,16 +10,15 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V7 SLC-701 Backend-Foundation done 2026-05-12** (RPT-394). MIG-033 + MIG-034 + MIG-035 alle 3 Phasen auf Hetzner appliedet, 8 owner_user_id-Spalten + 8 Indizes + 32 RLS-Policies + 4 SECURITY-DEFINER-Helper-Functions live. Seed-Script `npm run seed:multi-user` (877 Rows in 462ms idempotent) + 108/108 RLS-Tests (12 Helper + 96 Cross-Owner-Matrix) PASS gegen Coolify-DB via node:20-Container. PgBench Helper-Performance p95=63.79ms (Limit 100ms PASS). MT-8 Backout-Test auf `audit_log.view_as_target_user_id` PASS. Code-Stand uncommitted, naechster Schritt /qa SLC-701.
-- Current Phase: V7 Multi-User + Teamlead-Sprint — Backend-Foundation 1/7 Slices done, bereit fuer /qa SLC-701.
+- Current Focus: **V7 SLC-701 Backend-Foundation done + /qa PASS 2026-05-12** (RPT-394 backend + RPT-395 qa). MIG-033 + MIG-034 + MIG-035 alle 3 Phasen auf Hetzner appliedet, 8 owner_user_id-Spalten + 8 Indizes + 32 RLS-Policies + 4 SECURITY-DEFINER-Helper-Functions live. Seed-Script `npm run seed:multi-user` (877 Rows in 462ms idempotent) + 108/108 RLS-Tests (12 Helper + 96 Cross-Owner-Matrix) PASS gegen Coolify-DB via node:20-Container. PgBench Helper-Performance p95=59.68ms in QA-Re-Run (Limit 100ms, RPT-394 hatte 63.79ms). V6.6-Regression 650/650 PASS lokal. MT-8 Backout-Test auf `audit_log.view_as_target_user_id` PASS. /qa fand 1 Low-Drift (FEAT-502 Status `planned` → `in_progress` in features/INDEX.md gefixt). Naechster Schritt /backend + /frontend SLC-702. Kein Coolify-Redeploy noetig (Code aendert sich in SLC-701 nicht).
+- Current Phase: V7 Multi-User + Teamlead-Sprint — Backend-Foundation 1/7 Slices done + QA PASS, bereit fuer /backend + /frontend SLC-702.
 
 ## Immediate Next Steps
-1. **(naechster Schritt) /qa SLC-701** — verifiziert AC1..AC9, fuehrt Vitest gegen Coolify-DB, prueft \d-Definitionen, dokumentiert PgBench-Ergebnis im Bericht. Bei PASS: Coolify-Redeploy NICHT noetig (Code aendert sich nicht), direkt weiter mit /backend SLC-702.
-2. **(nach /qa SLC-701) /backend + /frontend SLC-702** — Frontend-Foundation (Layout + Sidebar-Config + Server-Side-Guards). 4-6h, 7 MTs. Pflicht-Read: SLC-702-Spec + DEC-190..192.
-3. **(SLC-701..707 Reihenfolge zwingend)** Nach SLC-702: SLC-703 (Verwaltungs-UI) → SLC-704 (Owner-Wiring ~80 Server Actions + 5 Cron + Workflow-Engine) → SLC-705 (Team-Aggregat /team) → SLC-706 (Drilldown /team/[user_id]/... Read-Only) → SLC-707 (Polish + Bulk-Reassign + Mobile-Hamburger + VERWALTUNG-Split). Pro Slice: /backend|/frontend → /qa → User-Coolify-Deploy → Live-Smoke. Gesamt-/qa V7 nach SLC-707.
-4. **(optional Doku-Hygiene, ~5 Min)** M3 Architecture-V7-Section um Notiz erweitern dass Slice-Planning Bulk-Reassign vollstaendig in SLC-707 konsolidiert hat (statt SLC-703 wie urspruenglich empfohlen).
-5. **(nach V7 7 Slices done)** /final-check V7 → /go-live V7 → /deploy V7 als REL-029 → /post-launch V7 24h-Live-Beobachtung.
-6. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
+1. **(naechster Schritt) /backend + /frontend SLC-702** — Frontend-Foundation (Layout + Sidebar-Config + Server-Side-Guards). 4-6h, 7 MTs. Pflicht-Read: SLC-702-Spec + DEC-190..192.
+2. **(SLC-702..707 Reihenfolge zwingend)** Nach SLC-702: SLC-703 (Verwaltungs-UI) → SLC-704 (Owner-Wiring ~80 Server Actions + 5 Cron + Workflow-Engine) → SLC-705 (Team-Aggregat /team) → SLC-706 (Drilldown /team/[user_id]/... Read-Only) → SLC-707 (Polish + Bulk-Reassign + Mobile-Hamburger + VERWALTUNG-Split). Pro Slice: /backend|/frontend → /qa → User-Coolify-Deploy → Live-Smoke. Gesamt-/qa V7 nach SLC-707.
+3. **(optional Doku-Hygiene, ~5 Min)** M3 Architecture-V7-Section um Notiz erweitern dass Slice-Planning Bulk-Reassign vollstaendig in SLC-707 konsolidiert hat (statt SLC-703 wie urspruenglich empfohlen).
+4. **(nach V7 7 Slices done)** /final-check V7 → /go-live V7 → /deploy V7 als REL-029 → /post-launch V7 24h-Live-Beobachtung.
+5. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
 6. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5.
 7. **(optional vor/parallel V7)** V6.7-Polish — BL-460 (Style-Guide-V2 Hex-Drift) + BL-459 (Quick-Action-Label) + BL-418 (React #418 Hydration). 2-4h.
 8. **(Parallel optional)** /post-launch V6.6 — 24h-Live-Beobachtung (RPT-342 Schwellen).
