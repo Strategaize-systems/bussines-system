@@ -8653,3 +8653,394 @@ V6.6 gilt als releaseable wenn alle 7 Bedingungen erfuellt:
 - SLC-664: 4 Sub-Block-Reihenfolge (Header → Action-Bar → KI-Workspace → 3-KI-Module-Removal) mit Live-Smoke pro Sub-Block
 - SLC-665: ItemSheet-Refactor-First-Commit + auto_winloss_runs-MIG-032-Apply-First + Vitest fuer Time-Window-Idempotenz
 - SLC-667: Sparkles-Removal-Liste exakt benennen (Pages + Component-Imports), AI-Bereitschaft-Label-Map-Pfad, kalender-client.tsx-Range-Konstante
+
+## V7 — Multi-User + Teamlead Architecture
+
+### V7 Strategy
+
+V7 hebt das System von Single-User-Admin (V1..V6.6) zu **Multi-User mit 3 flachen Rollen** (`admin` / `teamlead` / `member`) innerhalb einer Coolify-Instanz. Daten-Isolation per Owner + RLS, Aggregat-Sicht fuer Teamlead, rollen-konditionale Sidebar inkl. Mobile-Hamburger.
+
+Der Sprung ist Architektur-praegend: alle 8 Kerntabellen bekommen `owner_user_id`, alle Server Actions werden owner-aware, RLS-Policies erzwingen die Daten-Trennung hart. KI-Features (Workflow-Automation, RAG-Suche, Auto-Winloss) werden mit klar definierter Sichtbarkeits-Stufe versehen. Bestehende KI-Features bleiben funktional, werden aber im Team-Kontext "team-shared" (V7-Vereinfachung, siehe DEC-185).
+
+**V7-Leitprinzipien:**
+- **Hard Isolation:** Daten-Trennung passiert in RLS, nicht im Code. Code-Bugs duerfen nie zu Cross-Owner-Lecks fuehren.
+- **Manual-First:** Kein Auto-Routing in V7 (DEC-181). Owner wird beim Anlegen gesetzt oder per Bulk-Reassign neu zugewiesen.
+- **Single Team per Instance:** 1 Coolify-Deployment = 1 Steuerberater-Kanzlei = 1 Team. Multi-Tenancy (mehrere Teams pro Instanz) ist V8+ und bewusst out-of-scope.
+- **Aggregate Slice on top:** `/team`-Page laeuft mit normalen RLS-Queries (Teamlead sieht durch RLS bereits alle Team-Owner-Daten); kein separater Service noetig.
+- **Read-Only Drilldown:** Teamlead darf Member-Cockpit sehen, nie editieren — Server-Side-Guard `assertNotReadOnlyContext()`.
+
+### V7 Components Affected
+
+```
+Browser (HTTPS)
+  │
+  ├─ business.<tenant>.strategaizetransition.com
+  │
+Coolify / Caddy
+  │
+Next.js App (BD Cockpit)
+  │
+  ├── (authenticated)/layout.tsx (V7 erweitert)
+  │   ├── getProfile() → {role, team_id, user_id}                  ─── V7 NEU: role-aware
+  │   ├── <Sidebar role={role} /> (rollen-konditional, V7 NEU)
+  │   ├── <MobileTopBar /> (V7 NEU, <768px Hamburger)
+  │   └── assertRole([...]) Helper fuer Page-Layouts (V7 NEU)
+  │
+  ├── (authenticated)/team/page.tsx (V7 NEU — Aggregat-Cockpit)
+  ├── (authenticated)/team/[user_id]/...                            ─── V7 NEU: Drilldown read-only
+  │   ├── mein-tag/page.tsx (Read-Only-Variant)
+  │   ├── pipeline/page.tsx (Read-Only-Variant)
+  │   └── aktivitaeten/page.tsx (Read-Only-Variant)
+  │
+  ├── (authenticated)/settings/team/page.tsx (V7 NEU — Verwaltungs-UI)
+  │   ├── Mitglieder-Tabelle + Invite-Button
+  │   ├── Rolle-aendern (Admin-only)
+  │   └── Bulk-Reassign-Werkzeug
+  │
+  ├── /lib/auth/ (V7 NEU)
+  │   ├── get-profile.ts (resolved role + team_id + user_id server-side)
+  │   ├── assert-role.ts (role-Guard fuer Pages + Server Actions)
+  │   ├── read-only-context.ts (Drilldown-Marker + assertNotReadOnlyContext)
+  │   └── invite.ts (Supabase Auth-Invite + Profile-Insert)
+  │
+  ├── /lib/navigation/sidebar-config.ts (V7 NEU)
+  │   └── const SIDEBAR_CONFIG: SidebarItem[] mit visibleFor: Role[]
+  │
+  ├── /lib/team/ (V7 NEU)
+  │   ├── aggregate-queries.ts (Team-KPI + Mitglieder-Liste + Drilldown-Daten)
+  │   └── bulk-reassign.ts (Transaktion + Audit-Trail)
+  │
+  ├── Server Actions (V7 erweitert)
+  │   ├── ~80 bestehende Actions bekommen owner_user_id-Bewusstsein
+  │   ├── Insert: setzt owner_user_id = auth.uid() falls nicht uebergeben
+  │   ├── Update/Delete: RLS uebernimmt Owner-Check
+  │   └── In Drilldown-Modus: assertNotReadOnlyContext() blockiert Mutate
+  │
+  └── middleware.ts (V7 erweitert)
+      └── Rollen-konditionale Route-Schutz (z.B. /workflow nur admin/teamlead)
+
+Supabase Stack
+  │
+  ├── Postgres
+  │   ├── teams (V7 NEU)
+  │   ├── profiles + role-Check-Enum + team_id-FK (V7 erweitert)
+  │   ├── 8 Kerntabellen + owner_user_id (V7 erweitert)
+  │   ├── RLS-Policies neu (V7 ersetzt authenticated_full_access)
+  │   ├── Helper-SQL-Functions: is_admin(), is_teamlead(), get_my_team_id() (V7 NEU)
+  │   └── Indizes auf owner_user_id pro Kerntabelle
+  │
+  ├── GoTrue
+  │   ├── Auth-Invite via supabase.auth.admin.inviteUserByEmail() (V7 nutzt)
+  │   └── Session-Cookies (bestehend)
+  │
+  └── Storage (unveraendert)
+
+Docker Network: business-net (unveraendert)
+```
+
+### V7 Data Model
+
+Drei Migrationen, dreiphasig fuer sichere Apply-Reihenfolge:
+
+#### MIG-033 — Schema (Phase A)
+- `teams` Tabelle anlegen (`id UUID PK`, `name TEXT NOT NULL`, `created_at TIMESTAMPTZ DEFAULT now()`).
+- `profiles.role` bekommt CHECK-Constraint `CHECK (role IN ('admin','teamlead','member'))`. Default bleibt `'admin'` (Backwards-kompatibel fuer User Immo).
+- `profiles.team_id UUID REFERENCES teams(id) ON DELETE SET NULL` als neue Spalte (nullable; pre-Backfill).
+- `profiles.team TEXT` bleibt als deprecated-Spalte erhalten (Daten-Lese-Pfad in Code wird auf `team_id` umgestellt; physisches Drop in spaeterer V7.x-Cleanup-MIG, nicht V7).
+- `owner_user_id UUID REFERENCES profiles(id) ON DELETE SET NULL` als ADD COLUMN auf 8 Kerntabellen:
+  - `companies`, `contacts`, `deals`, `activities`, `meetings`, `proposals`, `email_messages`, `calls`.
+  - Nullable in MIG-033, NOT NULL nach MIG-034-Backfill in MIG-035 (mit `SET NULL`-Fallback fuer System-Records ohne User-Kontext).
+- Indizes pro Tabelle: `CREATE INDEX IF NOT EXISTS idx_<table>_owner_user_id ON <table>(owner_user_id);`.
+- `audit_log.view_as_target_user_id UUID` neue Spalte fuer Drilldown-Audit (nullable).
+
+#### MIG-034 — Backfill (Phase B)
+- `INSERT INTO teams (name) VALUES ('Strategaize') ON CONFLICT DO NOTHING;` — Default-Team fuer Bestands-Instanz Immo.
+- `UPDATE profiles SET team_id = (SELECT id FROM teams WHERE name='Strategaize') WHERE team_id IS NULL;`
+- `UPDATE profiles SET team_id = ... WHERE team = '...' AND team_id IS NULL;` — falls bestehende `team TEXT`-Werte existieren, gemappt auf neue `team_id`.
+- `UPDATE <table> SET owner_user_id = (SELECT id FROM profiles WHERE role='admin' LIMIT 1) WHERE owner_user_id IS NULL;` fuer alle 8 Kerntabellen.
+- Verifikation: `SELECT 'companies', COUNT(*) FROM companies WHERE owner_user_id IS NULL UNION ALL SELECT 'contacts', ...` MUSS 0 ueber alle 8 Tabellen liefern.
+- Audit-Eintrag: `INSERT INTO audit_log (event, payload) VALUES ('v7_backfill_complete', '{"affected_rows": <sum>}');`.
+
+#### MIG-035 — RLS Switch (Phase C)
+- Helper-SQL-Functions:
+  ```sql
+  CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN LANGUAGE SQL STABLE AS $$
+    SELECT role = 'admin' FROM profiles WHERE id = auth.uid();
+  $$;
+  CREATE OR REPLACE FUNCTION is_teamlead() RETURNS BOOLEAN LANGUAGE SQL STABLE AS $$
+    SELECT role = 'teamlead' FROM profiles WHERE id = auth.uid();
+  $$;
+  CREATE OR REPLACE FUNCTION get_my_team_id() RETURNS UUID LANGUAGE SQL STABLE AS $$
+    SELECT team_id FROM profiles WHERE id = auth.uid();
+  $$;
+  CREATE OR REPLACE FUNCTION can_see_owner(target_owner UUID) RETURNS BOOLEAN LANGUAGE SQL STABLE AS $$
+    SELECT is_admin()
+      OR target_owner = auth.uid()
+      OR (is_teamlead() AND EXISTS (
+            SELECT 1 FROM profiles
+            WHERE id = target_owner AND team_id = get_my_team_id()
+         ));
+  $$;
+  ```
+- Pro Kerntabelle ersetzt MIG-035 die alte `authenticated_full_access`-Policy durch 4 neue:
+  - `SELECT` USING `can_see_owner(owner_user_id) OR (is_admin() AND owner_user_id IS NULL)`.
+  - `INSERT` WITH CHECK `owner_user_id = auth.uid() OR is_admin() OR (is_teamlead() AND EXISTS ...)`.
+  - `UPDATE` USING `can_see_owner(owner_user_id)` WITH CHECK `can_see_owner(owner_user_id)`.
+  - `DELETE` USING `owner_user_id = auth.uid() OR is_admin() OR (is_teamlead() AND can_see_owner(owner_user_id))`.
+- Bulk-Reassign nutzt einen `SET LOCAL ROLE postgres`-Block in einer Server-Action-Transaktion, um RLS temporaer zu bypassen und `owner_user_id` ueberzusetzen. Audit-Eintrag pflichtig (siehe DEC-184).
+
+### V7 RLS-Strategy
+
+| Tabelle | admin SELECT | teamlead SELECT | member SELECT | Mutate-Regel |
+|---|---|---|---|---|
+| `companies` | alle | team-Scope | owned | RLS via `can_see_owner` |
+| `contacts` | alle | team-Scope | owned | RLS via `can_see_owner` |
+| `deals` | alle | team-Scope | owned | RLS via `can_see_owner` |
+| `activities` | alle | team-Scope | owned | RLS via `can_see_owner` |
+| `meetings` | alle | team-Scope | owned | Owner = Host-User (DEC-186) |
+| `proposals` | alle | team-Scope | owned | RLS via `can_see_owner` |
+| `email_messages` | alle | team-Scope | owned | RLS via `can_see_owner` |
+| `calls` | alle | team-Scope | owned | Owner = User der Click-to-Call ausloeste |
+
+**System-Records (`owner_user_id IS NULL`):** nur Admin sieht sie. Beispiele: Workflow-Engine-erzeugte Inserts ohne User-Context, Cron-Jobs (Followup, KI-Signal-Extraction, Briefing-Cron) die ohne `auth.uid()` laufen. Bedrock-Cost-Audit-Eintraege bekommen System-Owner.
+
+### V7 KI-Features im Multi-User-Kontext
+
+Per DEC-185 sind die folgenden Features **team-shared** in V7 (alle Team-Member sehen alle Team-Daten, nicht nur eigene):
+
+- **Workflow-Rules (V6.2 FEAT-621):** Trigger feuern fuer alle Owner im gleichen Team. Wer Rule erstellen darf: Admin + Teamlead (Member sieht Rules nur read-only). Rule-Execution-Context: Insert mit `owner_user_id` des betroffenen Records, nicht des Rule-Owners.
+- **RAG / Knowledge-Chunks (V4.2 FEAT-401):** RAG-Suche durchsucht alle Team-Daten ohne Owner-Filter. Begruendung: Beratungs-Team teilt Wissen ueber Kunden. Owner-Filter waere V7.5-Optionalitaet.
+- **Auto-Winloss-Trigger (V6.6 FEAT-666):** Feuert pro Owner-Deal (Owner-Context bleibt erhalten, nicht team-aware).
+- **Followup-Cron + Briefing-Cron:** laufen ueber alle Team-Records, pushen Notifications an den jeweiligen Owner.
+- **KI-Workspace-Hybrid (V6.6 FEAT-661/665):**
+  - Auf `/mein-tag`: rendert Berichte ueber owner_user_id = auth.uid()-Daten (eigene).
+  - Auf `/team`: rendert Berichte ueber team-scope (alle Team-Owner zusammen).
+  - Auf `/team/[user_id]/mein-tag`: rendert Berichte ueber spezifischen Member im Read-Only-Modus.
+
+### V7 Aggregat-Strategy
+
+Per DEC-187 nutzen Aggregat-Queries auf `/team` **direkten JOIN ueber `profiles.team_id`** ohne Materialized View. Performance-Annahme: <500ms fuer Teams bis 20 Member ist mit Index auf `owner_user_id` plus `profiles(team_id)` erreichbar.
+
+```sql
+SELECT
+  p.id AS user_id,
+  p.display_name,
+  p.role,
+  COUNT(d.id) FILTER (WHERE d.status = 'open') AS open_deals,
+  SUM(d.total_gross) FILTER (WHERE d.status = 'open') AS pipeline_sum,
+  COUNT(a.id) FILTER (WHERE a.due_at < now() AND a.status = 'open') AS overdue_activities
+FROM profiles p
+LEFT JOIN deals d ON d.owner_user_id = p.id
+LEFT JOIN activities a ON a.owner_user_id = p.id
+WHERE p.team_id = get_my_team_id()
+GROUP BY p.id, p.display_name, p.role
+ORDER BY p.display_name;
+```
+
+Fallback bei Performance-Smoke <500ms verletzt (Teams ≥30 Member): Materialized View `team_kpi_snapshot` mit Refresh nach Insert/Update auf `deals` und `activities` (analog V6.6 ki_workspace_report). Entscheidung erst in /qa-Phase nach Echtdaten-Measurement.
+
+### V7 Drilldown-Pattern
+
+Per DEC-188 wird Drilldown ueber **URL-Path** geloest, nicht ueber Session-Switching:
+
+- `/team/[user_id]/mein-tag` → Server-Component liest `user_id` aus `params`, validiert via `can_see_owner(user_id)` (RLS-Helper), rendert Mein-Tag mit `owner_user_id = user_id` als Query-Filter, setzt Read-Only-Context fuer Server Actions.
+- `<ReadOnlyContextProvider>` ueber den Page-Subtree markiert alle nested Server Actions als read-only.
+- Server Action liest Context via `getReadOnlyContext()` und ruft `assertNotReadOnlyContext()` als erste Zeile in jeder Mutate-Action.
+- Banner-Component `<DrilldownBanner viewerName=... targetName=... />` informiert Teamlead.
+- Audit-Trail: `INSERT INTO audit_log (event, user_id, view_as_target_user_id, payload) VALUES ('view_as', auth.uid(), $1, '{"path": ..."}');` bei jedem Drilldown-Page-Load.
+
+### V7 Sidebar-Config + Server-Side-Rollen-Guard
+
+Per DEC-190 + DEC-191:
+
+**`/lib/navigation/sidebar-config.ts`:**
+```typescript
+export type Role = 'admin' | 'teamlead' | 'member';
+
+export interface SidebarItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  section: 'ANALYSE' | 'TEAM' | 'OPERATIV' | 'ARBEITSBEREICHE' | 'VERWALTUNG_MEIN' | 'VERWALTUNG_SETUP';
+  visibleFor: Role[];
+}
+
+export const SIDEBAR_CONFIG: SidebarItem[] = [
+  // ANALYSE — admin + teamlead nur
+  { href: '/cockpit',  label: 'KI-Analyse-Cockpit', icon: Sparkles, section: 'ANALYSE', visibleFor: ['admin', 'teamlead'] },
+  // TEAM — teamlead + admin
+  { href: '/team',                label: 'Team-Cockpit',     icon: Users,  section: 'TEAM', visibleFor: ['admin', 'teamlead'] },
+  { href: '/settings/team',       label: 'Team-Verwaltung',  icon: UserCog, section: 'TEAM', visibleFor: ['admin', 'teamlead'] },
+  // OPERATIV — alle
+  { href: '/mein-tag',     label: 'Mein Tag',     icon: CalendarDays, section: 'OPERATIV', visibleFor: ['admin', 'teamlead', 'member'] },
+  // ...
+];
+```
+
+**Server-Side-Filter im Layout:**
+```typescript
+// app/(authenticated)/layout.tsx
+const profile = await getProfile();
+const visibleItems = SIDEBAR_CONFIG.filter(i => i.visibleFor.includes(profile.role));
+return <Layout sidebar={<Sidebar items={visibleItems} />}>{children}</Layout>;
+```
+
+**Page-Level Guard:**
+```typescript
+// app/(authenticated)/workflow/page.tsx
+await assertRole(['admin', 'teamlead']); // throws Redirect zu /mein-tag wenn member
+```
+
+**middleware.ts** ergaenzt die Layout-Guards um Route-Schutz vor Server Component Render (z.B. fuer `/api/team/*`-Routen).
+
+### V7 Mobile-Hamburger
+
+Per DEC-192 wird Mobile-Top-Bar in `(authenticated)/layout.tsx` zentralisiert:
+
+```typescript
+<div className="md:hidden">
+  <MobileTopBar onMenuOpen={() => setMobileSidebar(true)} />
+</div>
+<Sheet open={mobileSidebar} onOpenChange={setMobileSidebar}>
+  <SheetContent side="left" className="w-72 p-0">
+    <Sidebar items={visibleItems} mobileMode />
+  </SheetContent>
+</Sheet>
+```
+
+shadcn `<Sheet>`-Component wird mit Brand-Tokens (V6.5) ueberschrieben. Sektion-Header in Mobile-Drawer bleiben sichtbar.
+
+### V7 Bulk-Reassign Flow
+
+Per DEC-184 + DEC-189:
+
+1. Teamlead/Admin oeffnet `/settings/team` → Tab "Bulk-Reassign".
+2. Source-Owner-Dropdown (Team-Member) + Target-Owner-Dropdown + Filter (Pipeline, Status, Date-Range).
+3. "Preview"-Button zeigt Anzahl betroffener Records pro Tabelle (deals: 12, activities: 47, etc.).
+4. "Reassign starten"-Button feuert Server Action `bulkReassign({ from, to, filter })`.
+5. Server Action:
+   - `assertRole(['admin', 'teamlead'])` als Guard.
+   - `BEGIN; SET LOCAL ROLE postgres;` (Bypass RLS fuer Privileg-Aktion).
+   - Loop ueber 8 Tabellen: `UPDATE <table> SET owner_user_id = $to WHERE owner_user_id = $from AND <filter>;`.
+   - Per UPDATE: Audit-Eintrag mit altem + neuem Owner + Filter + triggered-by-User.
+   - `COMMIT;`.
+6. Toast + Redirect zu Team-Cockpit mit aktualisierten KPIs.
+
+Kein `previous_owner_user_id`-Feld auf Tabellen — Audit-Log reicht (DEC-184). DSGVO-konform durch Audit-Log-Retention-Policy (siehe COMPLIANCE.md).
+
+### V7 Profile-Delete
+
+Per DEC-193 ist Profile-Delete **gesperrt**, solange der User noch Owner aktiver Records ist:
+
+```typescript
+async function deleteProfile(userId: string) {
+  await assertRole(['admin']);
+  const counts = await db.query(`
+    SELECT 'deals' AS t, COUNT(*) FROM deals WHERE owner_user_id = $1
+    UNION ALL SELECT 'activities', COUNT(*) FROM activities WHERE owner_user_id = $1
+    UNION ALL ...
+  `, [userId]);
+  if (counts.some(c => c.count > 0)) {
+    throw new Error('Profile hat noch zugeordnete Records. Bitte vorher Bulk-Reassign auf anderen User.');
+  }
+  await supabase.auth.admin.deleteUser(userId);
+}
+```
+
+### V7 Invite-Flow
+
+Per DEC-194:
+
+1. Admin oeffnet `/settings/team` → "Mitglied einladen".
+2. Form: E-Mail + Initial-Rolle (Default `member`) + Team (Default = eigenes Team, Admin darf andere).
+3. Server Action:
+   - `assertRole(['admin', 'teamlead'])` (Teamlead nur eigenes Team).
+   - `supabase.auth.admin.inviteUserByEmail(email)` → liefert `user_id`.
+   - `INSERT INTO profiles (id, role, team_id) VALUES ($user_id, $role, $team_id);`.
+   - Audit-Eintrag.
+4. Invited User klickt E-Mail-Link → Set-Password → automatisch eingeloggt → Sidebar passt sich an Rolle an.
+
+Voraussetzung: GoTrue-Mailer ist auf Coolify-Supabase konfiguriert (Bestand bereits aktiv fuer Existing-Auth).
+
+### V7 Affected Existing Modules
+
+| Modul | Aenderung | Kommentar |
+|---|---|---|
+| Workflow-Engine (V6.2) | Owner-Context-Pass, Admin/Teamlead-only Editor | Rules feuern team-scope, Reader-UI fuer Member |
+| RAG-Search (V4.2) | Owner-Filter optional, default team-shared | DEC-185 |
+| Auto-Winloss (V6.6) | Owner bleibt, kein team-aware Aggregat | DEC-185 |
+| Followup-Cron (V4 FEAT-407) | Push an Owner, nicht Admin | Owner-Lookup pro Activity |
+| Briefing-Cron (V5.6 FEAT-562) | Push an Meeting-Owner (Host-User) | DEC-186 |
+| KI-Workspace-Hybrid (V6.6) | Owner-Context bei Bedrock-Call mitgeben | Prompt-Templates erweitern |
+| Composing-Studio (V5.3) | Sender = Owner, RLS auf email_messages | INSERT mit owner_user_id |
+| Proposal-Editor (V5.5) | Owner = Creator, Versionierung bleibt Owner-pinned | RLS auf proposals |
+
+### V7 Decisions Summary (DEC-181..195)
+
+| DEC | Titel | Zusammenfassung |
+|---|---|---|
+| DEC-181 | Rollen-Modell 3-flach + 1 User in 1 Team | admin/teamlead/member, kein Multi-Team |
+| DEC-182 | owner_user_id auf 8 Kerntabellen, NULL=System | Companies, Contacts, Deals, Activities, Meetings, Proposals, Email-Messages, Calls |
+| DEC-183 | RLS-Strategie: SQL-Helper-Functions + Policy-pro-Tabelle | is_admin / is_teamlead / can_see_owner |
+| DEC-184 | Bulk-Reassign mit audit_log-Trail, kein previous_owner_user_id-Feld | DSGVO-konform via Audit-Retention |
+| DEC-185 | Workflow-Rules + RAG + Auto-Winloss = team-shared in V7 | V7-Vereinfachung, Owner-Filter ggf. V7.5 |
+| DEC-186 | Meeting/Call Owner = Host-User | Teilnehmer-Sicht via audit_log |
+| DEC-187 | Aggregat: Direkter JOIN, keine Materialized View in V7-Start | Fallback bei Performance-Defekt |
+| DEC-188 | Drilldown via URL-Path `/team/[user_id]/...` | Server-side, kein Session-Switch |
+| DEC-189 | Mutate-Lockdown: shared `assertNotReadOnlyContext()` Helper | First Line in jeder Mutate-Action im Drilldown |
+| DEC-190 | Sidebar-Config: TS-Array mit `visibleFor: Role[]` | Single Source of Truth |
+| DEC-191 | Server-Side-Rollen-Guard via `assertRole()` Helper | Pro Page Server-Component am Anfang |
+| DEC-192 | Mobile-Hamburger zentralisiert in `(authenticated)/layout.tsx` | Sheet-Drawer mit Brand-Tokens |
+| DEC-193 | Profile-Delete: Hard-Lock bei offenen Owner-Eintraegen | Re-Assign-Pflicht vor Delete |
+| DEC-194 | Invite-Flow: team_id Pflicht beim Invite, Default-Rolle member | GoTrue Auth-Invite-Pfad |
+| DEC-195 | audit_log: bestehendes `user_id` beibehalten, kein neues Feld | Plus neue Spalte `view_as_target_user_id` |
+
+### V7 Slices (Empfehlung fuer /slice-planning V7)
+
+7 Slices, 1 Backend-Foundation + 1 Frontend-Foundation + 5 Feature-Slices:
+
+1. **SLC-701** — MIG-033 Schema + MIG-034 Backfill + MIG-035 RLS-Switch + Helper-SQL-Functions. **Backend-Foundation.** Nach SLC-701 sind alle Tabellen owner-aware, RLS aktiv, aber Code nutzt es noch nicht.
+2. **SLC-702** — `/lib/auth/` (get-profile + assert-role + read-only-context + invite) + `(authenticated)/layout.tsx` erweitern + Sidebar-Config + middleware.ts-Erweiterung. **Frontend-Foundation.** Nach SLC-702 sind alle Pages role-aware (admin sieht alles, member sieht nichts mehr ausser Mein Tag-Stub).
+3. **SLC-703** — `/settings/team` Verwaltungs-UI (Mitglieder-Tabelle + Invite + Rolle-aendern). Plus Server Actions invite + delete + change-role. **Verwaltung.**
+4. **SLC-704** — owner_user_id-Aware in allen ~80 bestehenden Server Actions (Insert setzt Owner). Plus bestehende Listing-/Detail-Queries mit Owner-Filter implizit via RLS, kein Code-Change noetig dort. **Owner-Wiring.**
+5. **SLC-705** — `/team`-Aggregat-Cockpit + Mitglieder-Tabelle + KI-Workspace-Hybrid auf Team-Scope. **Teamlead-Aggregat.**
+6. **SLC-706** — `/team/[user_id]/...`-Drilldown-Routes + Read-Only-Context + Banner + view_as-Audit + `assertNotReadOnlyContext()`-Guard in Mutate-Actions. **Drilldown.**
+7. **SLC-707** — VERWALTUNG-Split (Mein Profil + Setup) + Mobile-Hamburger + Style-Guide-Verifikation + Bulk-Reassign-Werkzeug-UI. **Polish + Bulk-Reassign.**
+
+Pro Slice: `/backend|/frontend` → `/qa` → Coolify-Redeploy (User-deploy). Nach SLC-707: Gesamt-`/qa` V7 → `/final-check` → `/go-live` → `/deploy` als REL-029.
+
+### V7 Release-Gate
+
+V7 gilt als releaseable wenn alle 8 Bedingungen erfuellt:
+- MIG-033/034/035 idempotent applied, 0 NULL-Owner in Bestandsdaten.
+- 3 Rollen-Sessions (admin/teamlead/member) zeigen drei verschiedene Sidebars (Visual Diff PASS).
+- Member-Session sieht NUR eigene Daten (RLS-Smoke ueber Test-Member + Cross-Owner-URL-Manipulation).
+- Teamlead `/team` zeigt Aggregat-KPIs <500ms fuer Test-Team mit 3 Member.
+- Drilldown `/team/[user_id]/mein-tag` zeigt Member-Sicht read-only, Mutate-Buttons disabled, view_as-Audit-Eintrag pflichtig.
+- Bulk-Reassign-Werkzeug funktioniert mit audit_log-Trail.
+- Mobile-Hamburger oeffnet rollen-korrekte Sidebar <768px.
+- Vitest gruen mit mind. 30 neuen RLS-Tests + 5 view_as-Audit-Tests + 10 role-Guard-Tests.
+
+### V7 Open Technical Questions (fuer /slice-planning)
+
+1. **Performance-Smoke ohne Production-Daten:** Wie testen wir <500ms Aggregat fuer Teams mit 20 Member, wenn Production-Daten nur fuer 1 User existieren? Empfehlung: Seed-Script `npm run seed:multi-user` erzeugt Test-Team mit 5 Member + 100 Deals + 500 Activities pro Member.
+2. **Migration-Reihenfolge auf Hetzner:** Phase A → Phase B → Phase C. Falls Phase C scheitert, Phase A+B sind ok (System bleibt im V6.6-Verhalten ohne RLS-Switch). Empfehlung: SLC-701 splittet in 3 Sub-MTs mit Backout-Test pro Phase.
+3. **RLS-Helper-Function-Performance:** `is_admin()` wird in jeder RLS-Policy aufgerufen. Postgres cached STABLE-Functions pro Statement, aber bei 1000-Row-Listing wird is_admin() 1000x evaluiert? Empfehlung: SECURITY DEFINER + STABLE markieren, plus PgBench-Smoke vor SLC-701-Release.
+4. **Sidebar-Refactor-Risiko:** Bestehende Sidebar-Component (cockpit/src/components/layout/sidebar.tsx) wird zentral umgebaut. Test-Plan: Browser-Smoke alle 4 Sektionen, alle 30+ Eintraege, fuer 3 Rollen = 90+ Combinations. Empfehlung: Visual-Diff via Playwright in /qa SLC-702.
+5. **Workflow-Engine-Owner-Pass:** Bestehende Rules feuern aktuell ohne owner-Context-Pass. Wenn Rule auf Deal-Stage-Change feuert, soll erzeugte Activity `owner_user_id = deal.owner_user_id` haben oder `NULL` (System-Record)? Empfehlung: deal.owner_user_id mit Fallback NULL, dokumentiert in DEC-185.
+6. **RAG-Re-Embedding bei Owner-Wechsel:** Knowledge-Chunks haben aktuell keinen Owner-Bezug. Wenn V7.5 Owner-Filter eingefuehrt wird, muessen alle Chunks re-embedded werden? Empfehlung: Owner-Spalte in MIG-033 mit NULL-Default, kein Re-Embedding noetig (Owner-Lookup ueber source_id).
+7. **Cron-Owner-Context:** Followup-Cron + Briefing-Cron + Auto-Winloss-Cron laufen mit `SET LOCAL ROLE postgres`. Inserts brauchen aber Owner. Empfehlung: Cron-Jobs lesen `source_record.owner_user_id` als Default-Owner fuer erzeugte Records (z.B. Briefing-Activity bekommt Owner = Meeting.owner_user_id).
+8. **Test-Strategie fuer Cross-Owner-Leaks:** Pro Tabelle pro Rolle pro Operation = 8×3×4 = 96 RLS-Tests. Empfehlung: parametrisierter Vitest-Generator, nicht 96 Einzeltests. Coolify-DB-Test-Pattern aus `coolify-test-setup.md` nutzen.
+9. **Profile-Delete bei lebendem Auth-User:** `supabase.auth.admin.deleteUser()` loescht GoTrue-Account; Profile-Row CASCADE-DELETE oder SET NULL? Empfehlung: SET NULL (Audit-Trail behaelt User-Daten via display_name-Backup in audit_log).
+10. **Mobile-Sidebar State:** Drawer-Open-State per localStorage oder Memory? Empfehlung: Memory (Drawer schliesst automatisch bei Route-Wechsel).
+
+### V7 Recommended Next Step
+
+`/slice-planning V7` — 7 Slices SLC-701..707 strukturiert ausdefinieren mit Acceptance Criteria pro Slice, Micro-Tasks-Liste mit Reihenfolge, QA-Fokus pro Slice. Insbesondere:
+- SLC-701: 3-Phasen-Migration mit Backout-Test pro Phase, RLS-Smoke fuer 8 Tabellen
+- SLC-702: assertRole-Pattern + Server-Side-Filter + Sidebar-Config + middleware.ts-Update + Visual-Diff
+- SLC-703: Verwaltungs-UI + Invite + Rolle-aendern + Bulk-Reassign-Preview
+- SLC-704: Owner-Wiring in allen Server Actions (audit-Liste der ~80 Actions)
+- SLC-705: Aggregat-Query-Performance-Smoke + Materialized-View-Fallback-Bedingung
+- SLC-706: Drilldown-Routes + Read-Only-Context + view_as-Audit-Eintraege
+- SLC-707: VERWALTUNG-Split + Mobile-Hamburger + Style-Guide-Verifikation + Bulk-Reassign-Live

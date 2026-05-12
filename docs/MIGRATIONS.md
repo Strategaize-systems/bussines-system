@@ -618,3 +618,88 @@
   - `ALTER TABLE meetings DROP COLUMN IF EXISTS briefing_generated_at;` (Partial-Index droppt automatisch)
   - `ALTER TABLE user_settings DROP COLUMN IF EXISTS briefing_trigger_minutes, DROP COLUMN IF EXISTS briefing_push_enabled, DROP COLUMN IF EXISTS briefing_email_enabled;`
   - V5.5-Proposals bleiben nach Rollback unveraendert nutzbar — bestehende `/proposals`-Pipeline + PDF-Render funktioniert wieder im V5.5-Zustand. Briefing-Activities (Type `briefing`) bleiben in `activities`-Tabelle bestehen — User kann diese behalten oder mit `DELETE FROM activities WHERE type='briefing'` manuell entfernen (nicht zwingend, da Type-String unbeachtet von alten UIs).
+
+### MIG-033 — V7 Multi-User Schema (Phase A)
+- Date: 2026-05-12
+- Scope: Strukturschicht fuer Multi-User-Modell. Drei Aenderungstypen:
+  1. Neue Tabelle `teams`:
+     - `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`
+     - `name TEXT NOT NULL`
+     - `created_at TIMESTAMPTZ DEFAULT now()`
+     - 1 UNIQUE: `(name)`
+     - RLS `authenticated_select_all` (alle Eingeloggten duerfen Team-Liste sehen — Verwaltungs-UI braucht das)
+  2. Erweiterung `profiles`:
+     - `ALTER TABLE profiles ADD CONSTRAINT profiles_role_check CHECK (role IN ('admin','teamlead','member'));` — V7-Enum-Strict (DEC-181)
+     - `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS team_id UUID REFERENCES teams(id) ON DELETE SET NULL;` — nullable bis MIG-034-Backfill
+     - 1 Index: `CREATE INDEX IF NOT EXISTS idx_profiles_team_id ON profiles(team_id);`
+     - Hinweis: `profiles.team TEXT` (V3 MIG-005) bleibt deprecated, wird NICHT in MIG-033 gedroppt — physisches Drop ist V7.x-Cleanup-Migration nach Code-Migration abgeschlossen
+  3. Erweiterung 8 Kerntabellen mit `owner_user_id` (DEC-182):
+     - `companies`, `contacts`, `deals`, `activities`, `meetings`, `proposals`, `email_messages`, `calls`
+     - Pro Tabelle: `ALTER TABLE <name> ADD COLUMN IF NOT EXISTS owner_user_id UUID REFERENCES profiles(id) ON DELETE SET NULL;` — nullable in MIG-033
+     - Pro Tabelle: `CREATE INDEX IF NOT EXISTS idx_<name>_owner_user_id ON <name>(owner_user_id);`
+  4. Erweiterung `audit_log` um Drilldown-Audit-Spalte:
+     - `ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS view_as_target_user_id UUID REFERENCES profiles(id) ON DELETE SET NULL;`
+     - 1 Partial-Index: `CREATE INDEX IF NOT EXISTS idx_audit_log_view_as ON audit_log(view_as_target_user_id) WHERE view_as_target_user_id IS NOT NULL;`
+- Reason: V7 Multi-User-Foundation FEAT-502 braucht ownership-tracking auf Kerntabellen + Team-Modell. Drei-Phasen-Migration (Schema vor Backfill vor RLS-Switch) erlaubt Backout bei jedem Schritt: nach Phase A laeuft Code im V6.6-Verhalten weiter (Spalten unbenutzt, alte RLS aktiv).
+- Affected Areas: profiles, teams, companies, contacts, deals, activities, meetings, proposals, email_messages, calls, audit_log
+- Risk: Niedrig — rein additive Aenderungen, keine Daten-Aenderung. CHECK-Constraint auf profiles.role darf nicht failen, weil V3 Bestand alle auf 'admin'. Sicherheits-Smoke vor Apply: `SELECT DISTINCT role FROM profiles;` muss Subset von {admin, teamlead, member} liefern (V6.6: nur 'admin').
+- Rollback Notes:
+  - `ALTER TABLE audit_log DROP COLUMN IF EXISTS view_as_target_user_id;`
+  - Pro Kerntabelle: `ALTER TABLE <name> DROP COLUMN IF EXISTS owner_user_id;`
+  - `ALTER TABLE profiles DROP COLUMN IF EXISTS team_id;`
+  - `ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_role_check;`
+  - `DROP TABLE IF EXISTS teams CASCADE;`
+  - V6.6-Verhalten vollstaendig wiederhergestellt; bestehende Datensaetze unveraendert.
+
+### MIG-034 — V7 Multi-User Backfill (Phase B)
+- Date: 2026-05-12
+- Scope: Daten-Migration fuer Multi-User-Foundation. Vier Operationen:
+  1. Default-Team anlegen:
+     - `INSERT INTO teams (name) VALUES ('Strategaize') ON CONFLICT (name) DO NOTHING;`
+  2. Profiles auf Default-Team mappen:
+     - `UPDATE profiles SET team_id = (SELECT id FROM teams WHERE name='Strategaize') WHERE team_id IS NULL;`
+     - Falls bestehende `team TEXT`-Werte existieren: `INSERT INTO teams (name) SELECT DISTINCT team FROM profiles WHERE team IS NOT NULL AND team != '' ON CONFLICT DO NOTHING;` plus Mapping-UPDATE
+  3. owner_user_id-Backfill auf 8 Kerntabellen:
+     - Pro Tabelle: `UPDATE <name> SET owner_user_id = (SELECT id FROM profiles WHERE role='admin' ORDER BY id LIMIT 1) WHERE owner_user_id IS NULL;`
+     - System-Records (Cron-Inserts ohne User-Context) bleiben bewusst NULL — Admin sieht sie ueber RLS-NULL-Policy in MIG-035
+  4. Verifikations-Audit-Eintrag:
+     - `INSERT INTO audit_log (event, user_id, payload) VALUES ('v7_backfill_complete', (SELECT id FROM profiles WHERE role='admin' LIMIT 1), jsonb_build_object('companies', (SELECT COUNT(*) FROM companies WHERE owner_user_id IS NOT NULL), 'contacts', (SELECT COUNT(*) FROM contacts WHERE owner_user_id IS NOT NULL), ...));`
+- Reason: V7 Multi-User-Foundation FEAT-502 braucht 100% Backfill, sonst werden Bestandsdaten nach RLS-Switch in MIG-035 unsichtbar fuer Teamlead/Member. Default-User = Admin Immo ist gerechtfertigt, weil V6.6-Daten ausschliesslich von Immo erzeugt wurden.
+- Affected Areas: teams (Insert), profiles (Update), companies/contacts/deals/activities/meetings/proposals/email_messages/calls (Update aller bestehenden Zeilen), audit_log (1 Verifikations-Eintrag)
+- Risk: Mittel — Backfill auf 8 Kerntabellen aendert alle bestehenden Zeilen. Idempotenz: WHERE owner_user_id IS NULL filtert wiederholte Apply. Verifikations-Query nach Apply: `SELECT 'companies', COUNT(*) FROM companies WHERE owner_user_id IS NULL UNION ALL SELECT 'contacts', ... UNION ALL ...` MUSS Counts gleich 0 fuer User-erzeugte Records liefern (System-Records mit NULL akzeptiert).
+- Rollback Notes:
+  - Pro Kerntabelle: `UPDATE <name> SET owner_user_id = NULL WHERE owner_user_id IS NOT NULL;`
+  - `UPDATE profiles SET team_id = NULL WHERE team_id IS NOT NULL;`
+  - `DELETE FROM teams WHERE name='Strategaize';`
+  - Vorsicht: nach Rollback haben Bestandsdaten KEINEN Owner mehr. Re-Apply MIG-034 als Recovery-Pfad.
+
+### MIG-035 — V7 Multi-User RLS Switch (Phase C)
+- Date: 2026-05-12
+- Scope: RLS-Aktivierung mit owner-aware Policies. Drei Schritte:
+  1. Helper-SQL-Functions (DEC-183):
+     - `CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN LANGUAGE SQL STABLE SECURITY DEFINER AS $$ SELECT role = 'admin' FROM profiles WHERE id = auth.uid(); $$;`
+     - `CREATE OR REPLACE FUNCTION is_teamlead() RETURNS BOOLEAN LANGUAGE SQL STABLE SECURITY DEFINER AS $$ SELECT role = 'teamlead' FROM profiles WHERE id = auth.uid(); $$;`
+     - `CREATE OR REPLACE FUNCTION get_my_team_id() RETURNS UUID LANGUAGE SQL STABLE SECURITY DEFINER AS $$ SELECT team_id FROM profiles WHERE id = auth.uid(); $$;`
+     - `CREATE OR REPLACE FUNCTION can_see_owner(target_owner UUID) RETURNS BOOLEAN LANGUAGE SQL STABLE SECURITY DEFINER AS $$ SELECT is_admin() OR target_owner = auth.uid() OR (is_teamlead() AND EXISTS (SELECT 1 FROM profiles WHERE id = target_owner AND team_id = get_my_team_id())); $$;`
+     - GRANT EXECUTE auf alle vier Functions an `authenticated`
+  2. Pro Kerntabelle (8x) alte Policies droppen + 4 neue setzen:
+     - `DROP POLICY IF EXISTS authenticated_full_access ON <name>;`
+     - `CREATE POLICY <name>_select ON <name> FOR SELECT USING (can_see_owner(owner_user_id) OR (is_admin() AND owner_user_id IS NULL));`
+     - `CREATE POLICY <name>_insert ON <name> FOR INSERT WITH CHECK (owner_user_id = auth.uid() OR is_admin() OR (is_teamlead() AND can_see_owner(owner_user_id)));`
+     - `CREATE POLICY <name>_update ON <name> FOR UPDATE USING (can_see_owner(owner_user_id)) WITH CHECK (can_see_owner(owner_user_id));`
+     - `CREATE POLICY <name>_delete ON <name> FOR DELETE USING (owner_user_id = auth.uid() OR is_admin() OR (is_teamlead() AND can_see_owner(owner_user_id)));`
+  3. profiles + teams Policies:
+     - profiles: SELECT (alle Team-Members sehen einander), UPDATE (Admin nur), DELETE (Admin nur)
+     - teams: SELECT (alle Eingeloggten), INSERT/UPDATE/DELETE (Admin nur)
+  4. owner_user_id NOT NULL Constraint (jetzt sicher, weil MIG-034 Backfill gelaufen ist):
+     - Pro Kerntabelle: `ALTER TABLE <name> ALTER COLUMN owner_user_id SET NOT NULL;` — ABER nicht setzen falls System-Records (NULL) bewusst erlaubt sind. ENTSCHEIDUNG: NULL bleibt erlaubt fuer System-Records (Cron-Inserts ohne User-Context, siehe DEC-182). NOT NULL wird NICHT gesetzt.
+- Reason: V7 Multi-User-Foundation FEAT-502 verlangt hardware-Daten-Isolation per RLS. Helper-Functions zentralisieren Logik. SECURITY DEFINER erlaubt is_admin/is_teamlead etc. auf profiles zu lesen, ohne dass User direkte SELECT-Policy auf profiles haben muss (Permission-Decoupling). STABLE markiert Postgres-Cache-Faehigkeit pro Statement.
+- Affected Areas: 8 Kerntabellen (RLS-Policies), profiles + teams (RLS-Policies), 4 neue SQL-Functions, audit_log.view_as_target_user_id (Index)
+- Risk: Hoch — RLS-Switch ist Verhalten-aendernd. Nach Apply sind alte Frontend-Queries die NICHT als RLS-aware-User laufen (z.B. Cron-Jobs ohne SET LOCAL ROLE) gebrochen. Pre-Apply-Smoke: `SELECT * FROM deals LIMIT 1;` als Admin-Session MUSS Daten zurueck-geben. Post-Apply-Smoke: gleiche Query mit RLS aktiv MUSS Daten zurueckgeben fuer Admin, KEINE Daten fuer ungueltige Session, Member-Scoped Daten fuer Member-Session. PgBench-Smoke fuer Helper-Function-Performance (10k SELECTs sequentially) MUSS unter 5s bleiben.
+- Rollback Notes:
+  - Pro Kerntabelle 4 Policies: `DROP POLICY IF EXISTS <name>_select ON <name>;` etc.
+  - Pro Kerntabelle: `CREATE POLICY authenticated_full_access ON <name> FOR ALL USING (auth.role() = 'authenticated');` (V6.6-Zustand)
+  - profiles + teams Policies reverten auf authenticated_full_access
+  - `DROP FUNCTION IF EXISTS is_admin(), is_teamlead(), get_my_team_id(), can_see_owner(UUID);`
+  - audit_log.view_as_target_user_id-Spalte bleibt (additive aus MIG-033, gehoert nicht zu RLS-Switch)
+  - Nach Rollback: V6.6-Verhalten aktiv, Multi-User-Daten-Isolation aufgehoben, alle Eingeloggten sehen alles wieder. Code-Pfade die assertRole/assertNotReadOnlyContext nutzen werfen evtl. trotzdem 403 — dafuer braucht es zusaetzlichen Code-Revert (assertRole wird Permissive in V6.6).

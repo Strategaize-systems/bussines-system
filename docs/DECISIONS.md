@@ -963,3 +963,78 @@
 - Status: accepted
 - Reason: BL-424 (Schema-Hygiene) und BL-430 (Dep-Hygiene) sind thematisch unverwandt. Trotzdem Bundle in 1 Feature: (a) beide sind Hintergrund-Sprint-Char, kein Release-Theme; (b) beide sind klein (jeweils 1-2 Slices); (c) Cockpit-Lesbarkeit bevorzugt 3 Features ueber 4 Features fuer einen Hintergrund-Sprint; (d) Slice-Plan kann beide trotzdem in separaten Slices abbilden (SLC-656 Source-Migration, SLC-657 npm audit). Splitting waere ueber-engineered.
 - Consequence: V6.5 hat 3 Features (FEAT-651/652/653). FEAT-653 enthaelt 2 BLs (BL-424, BL-430), die als 2 separate Slices implementiert werden duerfen oder als 1 buendle-Slice — Slice-Planning entscheidet. Cockpit zeigt FEAT-653 als 1 Feature mit 2 BLs.
+
+## DEC-181 — V7 Rollen-Modell: 3 flach (admin/teamlead/member), 1 User in 1 Team (V7)
+- Status: accepted
+- Reason: User-Direktive 2026-05-12 nach /requirements V7: "3-Rollen flach". Multi-Team-Membership (User in mehreren Teams) wuerde komplexes Many-to-Many-Membership-Pattern + Aktive-Team-Switching in der UI erfordern. Fuer das V7-Multi-User-Ziel (Steuerberater-Kanzlei mit 2-5 Beratern als Pilot) reicht 1:1. Manager-Rolle ueber Teamlead (Mehrstufen-Hierarchie) ist V8-Thema. Flachheit haelt RLS-Policies einfach und auditfaehig.
+- Consequence: profiles.role als CHECK-Enum mit drei Werten. profiles.team_id als nullable UUID FK auf teams (nicht Many-to-Many user_team-Tabelle). UI zeigt Rolle als Read-Only-Feld (Admin darf aendern); Team-Wechsel ist Admin-Operation, kein User-Self-Service. Migration MIG-033 setzt CHECK-Constraint.
+
+## DEC-182 — V7 owner_user_id auf 8 Kerntabellen, NULL = System-Record (V7)
+- Status: accepted
+- Reason: Daten-Isolation pro User braucht eine eindeutige Owner-Beziehung. Alternativen: (a) Shared-Owner via Many-to-Many-Tabelle (Owner-Liste) — komplex, RLS schwerer; (b) Owner als Computed-Field aus Activity-History — fragil und nicht-deterministisch. Eindeutiger Owner pro Record + Bulk-Reassign + audit_log fuer History bietet die richtige Balance fuer V7. NULL als System-Record erlaubt Cron-Jobs ohne `auth.uid()` Inserts ohne fragwuerdige Default-User-Hacks.
+- Consequence: ALTER TABLE auf 8 Tabellen (companies, contacts, deals, activities, meetings, proposals, email_messages, calls) mit `owner_user_id UUID REFERENCES profiles(id) ON DELETE SET NULL`. Bei Profile-Delete: SET NULL (Owner-Verlust akzeptiert, Admin sieht System-Records noch). MIG-033 erstellt Spalten + Index, MIG-034 backfilled auf User Immo, MIG-035 setzt RLS (NULL → only admin SELECT). System-Records sind nur ueber Admin/Service-Role schreibbar.
+
+## DEC-183 — V7 RLS-Strategie: SQL-Helper-Functions + Policy-pro-Tabelle (V7)
+- Status: accepted
+- Reason: Alternativen: (a) Policies inlinen ueber jede Tabelle die `profiles.role`-Check und Team-Lookup ausschreibt — viel Duplication, schwer wartbar; (b) Application-Level-Filter in Server Actions statt RLS — verletzt das "Hard Isolation"-Prinzip (Code-Bugs leaken Daten); (c) Helper-Functions zentralisieren die Logik (is_admin / is_teamlead / can_see_owner) und werden in pro-Tabelle-Policies aufgerufen. Postgres cached STABLE-Functions pro Statement → akzeptable Performance.
+- Consequence: MIG-035 erstellt 4 Helper-Functions (is_admin, is_teamlead, get_my_team_id, can_see_owner) als SQL STABLE. Pro Kerntabelle 4 Policies (SELECT/INSERT/UPDATE/DELETE) die die Helper aufrufen. Alte authenticated_full_access-Policies werden ersetzt. PgBench-Smoke vor SLC-701-Release verifiziert, dass is_admin()/is_teamlead() pro Statement gecached werden (kein N+1).
+
+## DEC-184 — V7 Bulk-Reassign mit audit_log-Trail, kein previous_owner_user_id-Feld auf Tabellen (V7)
+- Status: accepted
+- Reason: Owner-Wechsel-Historie ist auditrelevant, aber gehoert nicht in die Domain-Tabellen. Alternativen: (a) `previous_owner_user_id UUID`-Spalte pro Tabelle — nur 1 Schritt zurueck, kein vollstaendiger Trail, vermehrt Schema-Drift; (b) Separate `ownership_history`-Tabelle — neue Tabelle nur fuer Audit, redundant zu bestehendem audit_log; (c) audit_log mit event=`owner_change` + old + new + record_id + record_type — wiederverwendet bestehende Infrastruktur, DSGVO-konform durch Retention-Policy.
+- Consequence: Bulk-Reassign-Server-Action loggt pro betroffener Zeile einen audit_log-Eintrag (oder Batch mit `affected_rows`-Array). Keine Schema-Aenderung auf Domain-Tabellen ausser owner_user_id selbst. DSGVO-Auskunftspflicht ist via audit_log-Lookup abgedeckt. Bestehende COMPLIANCE.md-Section "Audit-Log-Retention" gilt unveraendert.
+
+## DEC-185 — V7 Workflow-Rules + RAG + Auto-Winloss = team-shared (V7-Vereinfachung) (V7)
+- Status: accepted
+- Reason: Bestehende KI-Features sind impliziter Admin-Context. Owner-Filterung auf alle drei wuerde V7-Scope verdoppeln. Beratungs-Team teilt typischerweise Wissen ueber Kunden (RAG-Sicht), gleiche Automatisierungs-Regeln (Workflow), gleiche Cockpit-Definition von "Won/Lost". Restriktive Owner-Filterung wuerde Team-Kollaboration behindern. Owner-Filter ist V7.5-Optionalitaet (z.B. fuer Multi-Tenancy V8).
+- Consequence: V7 implementiert KEIN Owner-Filter in RAG-Suche, KEINE Owner-Restriction auf Workflow-Rule-Evaluation, KEINE Owner-Restriction auf Auto-Winloss-Trigger. Member darf RAG-Suche im Team-Scope durchfuehren. Workflow-Rules sind admin/teamlead-edit + member-read-only. Auto-Winloss-Trigger feuert pro Owner-Deal (Owner-Context bleibt erhalten — Owner-Identitaet pro Trigger-Run bleibt im audit_log). KI-Workspace-Hybrid-Berichte respektieren Owner-Context bei `/mein-tag` und Team-Scope bei `/team`. /requirements V7.5 oder spaeter kann optional Owner-Filter nachruesten.
+
+## DEC-186 — V7 Meeting/Call Owner = Host-User, Teilnehmer ueber audit_log (V7)
+- Status: accepted
+- Reason: Meeting/Call kann mehrere Team-Member als Teilnehmer haben. Welche Sichtbarkeit? Alternativen: (a) Owner = erster Teilnehmer — fragil; (b) Many-to-Many participants-Tabelle mit Visibility-Lookup — komplex fuer V7; (c) Owner = Host-User (= Click-to-Call-Ausloeser bei Calls, Meeting-Creator bei Meetings) — eindeutig, einfach, RLS-kompatibel. Teilnehmer sehen das Meeting trotzdem ueber die Team-Sicht (Teamlead) oder ueber Cross-Reference (deal-Activity-Link).
+- Consequence: meetings.owner_user_id = meeting.created_by_user_id (= auth.uid() beim Create). calls.owner_user_id = User der Click-to-Call ausloest. Bei Multi-Teilnehmer-Meeting (z.B. Joint Meeting Berater A + B mit Kunde): Owner ist Host. Berater B sieht das Meeting NUR wenn beide im gleichen Team und Berater B = Teamlead (oder Admin). Falls Berater B als Member das Meeting sehen muss: Workaround ist Activity-Cross-Reference oder explizite Owner-Setzung auf B durch Admin. /requirements V8 kann Many-to-Many participants nachruesten.
+
+## DEC-187 — V7 Aggregat-Strategy: Direkter JOIN ueber profiles.team_id, keine Materialized View in V7-Start (V7)
+- Status: accepted
+- Reason: Materialized View `team_kpi_snapshot` waere optional. Vorab-Optimierung ohne Daten-Beleg. Direkter JOIN ueber `profiles.team_id` + Index auf `owner_user_id` skaliert vermutlich gut bis 20 Member (typische Steuerberater-Kanzlei). Performance-Smoke in /qa SLC-705 mit Test-Seed (5 Member × 100 Deals × 500 Activities) verifiziert <500ms-Target. Falls Smoke FAIL: Materialized View ist klar definierter Fallback (V6.6 ki_workspace_report-Pattern).
+- Consequence: `/team`-Aggregat-Query nutzt JOIN ueber `profiles` mit `WHERE team_id = get_my_team_id()` Filter. Indizes auf `deals.owner_user_id`, `activities.owner_user_id`, `profiles.team_id`. Falls Performance-Smoke FAIL (Hetzner echte Daten): MIG-036 als V7-Polish-Patch fuegt Materialized View hinzu mit Refresh-Trigger.
+
+## DEC-188 — V7 Drilldown via URL-Path `/team/[user_id]/...`, server-side mit Read-Only-Guard (V7)
+- Status: accepted
+- Reason: Alternativen: (a) Session-Switching ("View As Member X" im Header umschalten) — Cookie-Manipulation, RLS-Bypass-Risiko, schwer auditierbar; (b) Client-side via Context-Provider — Race-Conditions bei SSR, schwer mit RLS zu vereinbaren; (c) Server-side URL-Path-Routing — URL ist deklarativ, bookmark-faehig, audit-friendly, RLS pruefen Server-Side via `can_see_owner(user_id)`. Read-Only-Context-Provider ueber den Page-Subtree markiert Mutate-Actions als gesperrt.
+- Consequence: Routes `/team/[user_id]/mein-tag`, `/team/[user_id]/pipeline`, `/team/[user_id]/aktivitaeten` als parallele Read-Only-Variants. Server-Component validiert `can_see_owner(user_id)` als erste Aktion. `<ReadOnlyContextProvider>` markiert Subtree. `<DrilldownBanner>` informiert visuell. view_as-Audit-Eintrag pro Page-Load. Drilldown-Versuch durch Member liefert 403 (RLS verhindert SELECT). Server Actions in Drilldown-Subtree pruefen `getReadOnlyContext()` und werfen 403.
+
+## DEC-189 — V7 Mutate-Lockdown: shared assertNotReadOnlyContext()-Helper, kein zentraler Middleware-Guard (V7)
+- Status: accepted
+- Reason: Middleware-Guard waere global aber haette Schwierigkeit, Mutate-Server-Actions von Read-Server-Components zu unterscheiden. Pro-Action-Guard ist explizit und auditierbar. shared `assertNotReadOnlyContext()`-Helper als erste Zeile in jeder Mutate-Action (Insert/Update/Delete) macht Lockdown sichtbar im Code. Vergleichbares Pattern: bestehende `assertRole()`-Helper.
+- Consequence: `/lib/auth/read-only-context.ts` exportiert `assertNotReadOnlyContext()` + `<ReadOnlyContextProvider>`. Audit-Liste der ~80 bestehenden Server Actions wird in SLC-704 erstellt — pro Mutate-Action wird Guard ergaenzt. ESLint-Rule (custom) zu Refactor-Disziplin: Mutate-Server-Action MUSS `assertNotReadOnlyContext()` als ersten Aufruf haben. Test-Strategy: Vitest mit ReadOnlyContext-Mock, jede Mutate-Action muss 403 werfen.
+
+## DEC-190 — V7 Sidebar-Config als zentrale TS-Array mit visibleFor-Array (V7)
+- Status: accepted
+- Reason: Alternativen: (a) Sidebar-Logik im Sidebar-Component verstreut mit role-Conditions im JSX — schwer testbar, schwer auditierbar; (b) JSON-Datei (sidebar-config.json) — kein Type-Safety; (c) TypeScript-Array mit typsicheren Items inkl. `visibleFor: Role[]` — Single Source of Truth, lint-fest, test-fest. Layout-Server-Component filtert Items via `.filter(i => i.visibleFor.includes(role))`. Sektionen werden automatisch ausgeblendet, wenn keine sichtbaren Items uebrig.
+- Consequence: `cockpit/src/lib/navigation/sidebar-config.ts` mit `SIDEBAR_CONFIG: SidebarItem[]`. Sidebar-Component wird `<Sidebar items={SidebarItem[]} />` als props. `(authenticated)/layout.tsx` resolved Profile + filtert Config. Vitest-Tests pro Rolle zeigen erwartete Items + Sektionen. Visual-Diff in Playwright /qa SLC-702 (3 Rollen).
+
+## DEC-191 — V7 Server-Side-Rollen-Guard via assertRole()-Helper am Anfang jeder geschuetzten Page (V7)
+- Status: accepted
+- Reason: Alternativen: (a) middleware.ts allein — Middleware schuetzt Routes, aber Server-Component-Composition (Layouts) braucht eigenen Guard fuer Sub-Page-Logik; (b) `assertRole()`-Helper in Server-Component am Start jeder Page — explizit, lokal sichtbar, mit Redirect-Logik fuer falsche Rolle. middleware.ts uebernimmt grobe Route-Schutz (z.B. /api/team-Routen), Page-Layout uebernimmt feine Schutz (z.B. /cockpit-Page leitet member zu /mein-tag um).
+- Consequence: `/lib/auth/assert-role.ts` exportiert `assertRole(allowed: Role[])` als async-Server-Function die `redirect(...)` aufruft bei Mismatch. Pro Page in `(authenticated)/...` der nicht-fuer-alle-Rollen-zugaenglich ist (Cockpit, Workflow, Kampagnen, Team), erste Zeile = `await assertRole(['admin','teamlead']);`. middleware.ts schuetzt zusaetzlich API-Routes. ESLint-Custom-Rule pruft, dass jede Page-File in `(authenticated)/` einen assertRole-Aufruf oder eine getProfile-Verwendung hat.
+
+## DEC-192 — V7 Mobile-Hamburger zentralisiert in (authenticated)/layout.tsx via Sheet (V7)
+- Status: accepted
+- Reason: Alternativen: (a) Per Page eigene MobileTopBar — Duplikation, leichter zu vergessen; (b) Zentrale Layout-Position — alle Pages bekommen die gleiche Mobile-Erfahrung. shadcn `<Sheet>` als Drawer-Component ist Brand-Token-faehig via Override. Mobile-Toggle-State per useState (kein localStorage — Drawer soll bei jedem Route-Wechsel automatisch schliessen).
+- Consequence: `<MobileTopBar onMenuOpen={...} />` im Layout, nur `<md:hidden>` sichtbar. `<Sheet>`-Component mit `<SheetContent side="left" className="w-72 p-0">` rendert die gleiche Sidebar wie Desktop in Drawer-Format. Sektion-Header bleiben sichtbar. Brand-Token-Override im `components/ui/sheet.tsx` (bg-brand-background, text-brand-text). useState-Reset auf Route-Wechsel via `usePathname()`-Effect.
+
+## DEC-193 — V7 Profile-Delete: Hard-Lock bei offenen Owner-Eintraegen, Re-Assign-Pflicht (V7)
+- Status: accepted
+- Reason: Alternativen: (a) CASCADE DELETE — loescht alle User-Daten mit, Daten-Verlust; (b) SET NULL ohne Pre-Check — Records werden zu System-Records, Admin sieht sie, aber Teamlead/Member verlieren ploetzlich Sicht (Aggregat-Drift); (c) Hard-Lock mit Pre-Check + Re-Assign-Pflicht — sauber, vorhersagbar, DSGVO-konform (keine versehentliche Daten-Loeschung). Admin muss explizit ueber Bulk-Reassign alle offenen Records auf anderen User ueberfuehren, dann kann Profile geloescht werden.
+- Consequence: Server Action `deleteProfile(userId)` zaehlt offene Records ueber 8 Kerntabellen. Falls > 0: throws Error mit Liste der betroffenen Tabellen + Counts. UI im /settings/team zeigt vor Delete einen Warn-Dialog mit Re-Assign-Link. Erst nach Bulk-Reassign auf 0 offene Records darf Profile geloescht werden. supabase.auth.admin.deleteUser() + profile-Row DELETE (CASCADE NULL auf owner_user_id-Spalten sorgt fuer NULL-Setzung).
+
+## DEC-194 — V7 Invite-Flow: team_id pflichtig beim Invite, Default-Rolle = member (V7)
+- Status: accepted
+- Reason: Alternativen: (a) Invitee-Self-Service Team-Wahl bei First-Login — laesst Lecks zu (Invitee waehlt fremdes Team); (b) Pending-State ohne team_id und Admin assigned spaeter — zusaetzlicher Step; (c) team_id pflichtig im Invite-Form, Admin/Teamlead waehlt das Team — deterministisch, kein Race, Default = eigenes Team. Default-Rolle = member ist sicher (least privilege); Admin kann hochstufen.
+- Consequence: `/settings/team`-Invite-Form: E-Mail (pflicht) + Initial-Rolle (Dropdown, Default member) + Team (Dropdown, Default eigenes). Server Action `invite(email, role, teamId)` validiert assertRole (admin oder teamlead-eigenes-Team). supabase.auth.admin.inviteUserByEmail() liefert user_id. INSERT INTO profiles mit (id, role, team_id) als atomare Operation. GoTrue verschickt E-Mail mit Set-Password-Link.
+
+## DEC-195 — V7 audit_log.user_id beibehalten + neue Spalte view_as_target_user_id (V7)
+- Status: accepted
+- Reason: Bestehende audit_log-Architektur (V3 FEAT-307) hat `user_id` als triggering-User. Bei Drilldown-View-as ist Teamlead der "user" und Member der "target" — beides muss erfasst werden. Alternative: triggered_by_user_id-Spalte hinzufuegen + user_id-Semantik aendern — Drift-Risiko gegenueber Bestand. Sauberere Loesung: bestehendes user_id semantisch unveraendert (= triggering-User), neue optionale Spalte view_as_target_user_id fuer Drilldown.
+- Consequence: MIG-033 fuegt `audit_log.view_as_target_user_id UUID NULL` hinzu. Bei normalen Audit-Eintraegen bleibt diese Spalte NULL. Bei Drilldown-Page-Load: event=`view_as`, user_id=Teamlead, view_as_target_user_id=Member. Audit-Search-UI in /settings/compliance erweitert um Filter "View-as-Drilldowns". Audit-Lookup pro Member ueber `WHERE view_as_target_user_id = $1 OR user_id = $1`.
