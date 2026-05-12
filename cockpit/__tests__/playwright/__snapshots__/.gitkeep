@@ -1,0 +1,6 @@
+# Reference-Screenshots fuer SLC-702 MT-6 Visual-Diff.
+# Werden in /qa SLC-702 via MCP-Playwright erstellt und committed:
+#   - sidebar-admin.png
+#   - sidebar-teamlead.png
+#   - sidebar-member.png
+# Siehe ../sidebar-visual-diff.spec.ts fuer die Test-Recipe.
