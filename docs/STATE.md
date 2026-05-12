@@ -9,16 +9,17 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: **V7 Slice-Planning Spec-Quality-Gate PASS 2026-05-12** (RPT-393), M1 + M2 im selben Commit gefixt. 7 Slices SLC-701..707 sind umsetzbar, alle 15 DECs verlinkt, 10 OTQs adressiert. M3 + 4 Low Findings offen (Doku-Hygiene, nicht-blockierend). Reihenfolge zwingend: SLC-701 (Backend-Foundation Blocker) → SLC-702 (Frontend-Foundation Blocker) → SLC-703 (Verwaltungs-UI) → SLC-704 (Owner-Wiring ~80 Server Actions + 5 Cron + Workflow-Engine) → SLC-705 (Team-Aggregat /team) → SLC-706 (Drilldown /team/[user_id]/... Read-Only) → SLC-707 (Polish + Bulk-Reassign + Mobile-Hamburger + VERWALTUNG-Split). Pro Slice: /backend|/frontend → /qa → User-Coolify-Deploy. Gesamt geschaetzt ~33-45h. Naechster Schritt: /backend SLC-701.
-- Current Phase: V7 Multi-User + Teamlead-Sprint — Slice-Planning Spec-QA done + M1+M2 gefixt, bereit fuer /backend SLC-701.
+- High-Level State: implementing
+- Current Focus: **V7 SLC-701 Backend-Foundation done 2026-05-12** (RPT-394). MIG-033 + MIG-034 + MIG-035 alle 3 Phasen auf Hetzner appliedet, 8 owner_user_id-Spalten + 8 Indizes + 32 RLS-Policies + 4 SECURITY-DEFINER-Helper-Functions live. Seed-Script `npm run seed:multi-user` (877 Rows in 462ms idempotent) + 108/108 RLS-Tests (12 Helper + 96 Cross-Owner-Matrix) PASS gegen Coolify-DB via node:20-Container. PgBench Helper-Performance p95=63.79ms (Limit 100ms PASS). MT-8 Backout-Test auf `audit_log.view_as_target_user_id` PASS. Code-Stand uncommitted, naechster Schritt /qa SLC-701.
+- Current Phase: V7 Multi-User + Teamlead-Sprint — Backend-Foundation 1/7 Slices done, bereit fuer /qa SLC-701.
 
 ## Immediate Next Steps
-1. **(naechster Schritt) /backend SLC-701** — Backend-Foundation: 3-Phasen-Migration (MIG-033 Schema + MIG-034 Backfill + MIG-035 RLS-Switch) + RLS-Helper-Functions (jetzt mit `SECURITY DEFINER`-Korrektur in AC3) + Seed-Script `npm run seed:multi-user` + 96 Cross-Owner-Leak-Tests + PgBench Helper-Performance-Smoke. ~6-8h. 8 Micro-Tasks. Pflicht-Read-Order: SLC-701-Spec, MIG-033/034/035, DEC-181..184 + DEC-193 + DEC-195, RPT-393 (Findings-Liste).
-2. **(optional Doku-Hygiene, ~5 Min)** M3 Architecture-V7-Section um Notiz erweitern dass Slice-Planning Bulk-Reassign vollstaendig in SLC-707 konsolidiert hat (statt SLC-703 wie urspruenglich empfohlen).
-3. **(SLC-701..707 Reihenfolge zwingend)** Nach SLC-701: /qa SLC-701 → /backend|/frontend SLC-702 → /qa → User-Deploy. Pro Slice: /backend|/frontend → /qa → User-Coolify-Deploy → Live-Smoke. Gesamt-/qa V7 nach SLC-707.
-4. **(nach V7 7 Slices done)** /final-check V7 → /go-live V7 → /deploy V7 als REL-029 → /post-launch V7 24h-Live-Beobachtung.
-5. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
+1. **(naechster Schritt) /qa SLC-701** — verifiziert AC1..AC9, fuehrt Vitest gegen Coolify-DB, prueft \d-Definitionen, dokumentiert PgBench-Ergebnis im Bericht. Bei PASS: Coolify-Redeploy NICHT noetig (Code aendert sich nicht), direkt weiter mit /backend SLC-702.
+2. **(nach /qa SLC-701) /backend + /frontend SLC-702** — Frontend-Foundation (Layout + Sidebar-Config + Server-Side-Guards). 4-6h, 7 MTs. Pflicht-Read: SLC-702-Spec + DEC-190..192.
+3. **(SLC-701..707 Reihenfolge zwingend)** Nach SLC-702: SLC-703 (Verwaltungs-UI) → SLC-704 (Owner-Wiring ~80 Server Actions + 5 Cron + Workflow-Engine) → SLC-705 (Team-Aggregat /team) → SLC-706 (Drilldown /team/[user_id]/... Read-Only) → SLC-707 (Polish + Bulk-Reassign + Mobile-Hamburger + VERWALTUNG-Split). Pro Slice: /backend|/frontend → /qa → User-Coolify-Deploy → Live-Smoke. Gesamt-/qa V7 nach SLC-707.
+4. **(optional Doku-Hygiene, ~5 Min)** M3 Architecture-V7-Section um Notiz erweitern dass Slice-Planning Bulk-Reassign vollstaendig in SLC-707 konsolidiert hat (statt SLC-703 wie urspruenglich empfohlen).
+5. **(nach V7 7 Slices done)** /final-check V7 → /go-live V7 → /deploy V7 als REL-029 → /post-launch V7 24h-Live-Beobachtung.
+6. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
 6. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5.
 7. **(optional vor/parallel V7)** V6.7-Polish — BL-460 (Style-Guide-V2 Hex-Drift) + BL-459 (Quick-Action-Label) + BL-418 (React #418 Hydration). 2-4h.
 8. **(Parallel optional)** /post-launch V6.6 — 24h-Live-Beobachtung (RPT-342 Schwellen).

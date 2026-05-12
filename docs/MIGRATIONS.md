@@ -703,3 +703,128 @@
   - `DROP FUNCTION IF EXISTS is_admin(), is_teamlead(), get_my_team_id(), can_see_owner(UUID);`
   - audit_log.view_as_target_user_id-Spalte bleibt (additive aus MIG-033, gehoert nicht zu RLS-Switch)
   - Nach Rollback: V6.6-Verhalten aktiv, Multi-User-Daten-Isolation aufgehoben, alle Eingeloggten sehen alles wieder. Code-Pfade die assertRole/assertNotReadOnlyContext nutzen werfen evtl. trotzdem 403 — dafuer braucht es zusaetzlichen Code-Revert (assertRole wird Permissive in V6.6).
+
+### V7 Migration Cookbook (SLC-701)
+- Date: 2026-05-12
+- Scope: Schritt-fuer-Schritt-Apply + Backout-Recovery fuer MIG-033/034/035 auf Hetzner-Coolify-DB (Container `supabase-db-k9f5pn5upfq7etoefb5ukbcg-151720499060`, Netz `k9f5pn5upfq7etoefb5ukbcg_business-net`). Folgt der Regel `feedback_sql_on_hetzner.md` (base64 → /tmp → `psql -U postgres`).
+
+#### Apply-Sequenz (Phase A → B → C)
+
+```bash
+# 0) Pre-Apply: Schema-Snapshot als Backup-Punkt
+ssh root@91.98.20.191 'docker exec supabase-db-k9f5pn5upfq7etoefb5ukbcg-151720499060 pg_dump -U postgres -s postgres > /tmp/pre_mig_033_schema.sql'
+
+# 1) Phase A — Schema
+BASE64=$(base64 -w 0 sql/migrations/033_v7_schema.sql)
+ssh root@91.98.20.191 "echo '$BASE64' | base64 -d > /tmp/033.sql && docker exec -i supabase-db-k9f5pn5upfq7etoefb5ukbcg-151720499060 psql -U postgres -d postgres -v ON_ERROR_STOP=1 < /tmp/033.sql"
+
+# 1a) Verifikation Phase A
+ssh root@91.98.20.191 "docker exec supabase-db-k9f5pn5upfq7etoefb5ukbcg-151720499060 psql -U postgres -d postgres -c \"\\d teams\" && \
+  docker exec supabase-db-k9f5pn5upfq7etoefb5ukbcg-151720499060 psql -U postgres -d postgres -c \"SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND column_name='owner_user_id';\""
+# Erwartet: teams existiert, owner_user_id-Spalten-Count = 8.
+
+# 2) Phase B — Backfill (nur nach Phase-A-Verifikation)
+BASE64=$(base64 -w 0 sql/migrations/034_v7_backfill.sql)
+ssh root@91.98.20.191 "echo '$BASE64' | base64 -d > /tmp/034.sql && docker exec -i supabase-db-k9f5pn5upfq7etoefb5ukbcg-151720499060 psql -U postgres -d postgres -v ON_ERROR_STOP=1 < /tmp/034.sql"
+
+# 2a) Verifikation Phase B: 0 NULL-Owner ueber 8 Kerntabellen
+ssh root@91.98.20.191 "docker exec supabase-db-k9f5pn5upfq7etoefb5ukbcg-151720499060 psql -U postgres -d postgres -c \"
+  SELECT 'companies' AS t, COUNT(*) FROM companies WHERE owner_user_id IS NULL
+  UNION ALL SELECT 'contacts', COUNT(*) FROM contacts WHERE owner_user_id IS NULL
+  UNION ALL SELECT 'deals', COUNT(*) FROM deals WHERE owner_user_id IS NULL
+  UNION ALL SELECT 'activities', COUNT(*) FROM activities WHERE owner_user_id IS NULL
+  UNION ALL SELECT 'meetings', COUNT(*) FROM meetings WHERE owner_user_id IS NULL
+  UNION ALL SELECT 'proposals', COUNT(*) FROM proposals WHERE owner_user_id IS NULL
+  UNION ALL SELECT 'email_messages', COUNT(*) FROM email_messages WHERE owner_user_id IS NULL
+  UNION ALL SELECT 'calls', COUNT(*) FROM calls WHERE owner_user_id IS NULL;\""
+# Erwartet: 8 Zeilen, alle count = 0.
+
+# 3) Phase C — RLS-Switch (nur nach Phase-B-Verifikation)
+BASE64=$(base64 -w 0 sql/migrations/035_v7_rls_switch.sql)
+ssh root@91.98.20.191 "echo '$BASE64' | base64 -d > /tmp/035.sql && docker exec -i supabase-db-k9f5pn5upfq7etoefb5ukbcg-151720499060 psql -U postgres -d postgres -v ON_ERROR_STOP=1 < /tmp/035.sql"
+
+# 3a) Verifikation Phase C: 4 Helper-Functions + 32 Policies aktiv
+ssh root@91.98.20.191 "docker exec supabase-db-k9f5pn5upfq7etoefb5ukbcg-151720499060 psql -U postgres -d postgres -c \"
+  SELECT proname, prosecdef FROM pg_proc
+   WHERE proname IN ('is_admin','is_teamlead','get_my_team_id','can_see_owner');\""
+# Erwartet: 4 Zeilen, prosecdef = t (SECURITY DEFINER) fuer alle 4.
+```
+
+#### Backout-Cookbook (MT-8 verifiziert)
+
+Phase A — Schema (vollstaendig reversibel):
+
+```sql
+-- Im Postgres-Container ausfuehren:
+ALTER TABLE audit_log DROP COLUMN IF EXISTS view_as_target_user_id;
+ALTER TABLE companies      DROP COLUMN IF EXISTS owner_user_id;
+ALTER TABLE contacts       DROP COLUMN IF EXISTS owner_user_id;
+ALTER TABLE deals          DROP COLUMN IF EXISTS owner_user_id;
+ALTER TABLE activities     DROP COLUMN IF EXISTS owner_user_id;
+ALTER TABLE meetings       DROP COLUMN IF EXISTS owner_user_id;
+ALTER TABLE proposals      DROP COLUMN IF EXISTS owner_user_id;
+ALTER TABLE email_messages DROP COLUMN IF EXISTS owner_user_id;
+ALTER TABLE calls          DROP COLUMN IF EXISTS owner_user_id;
+ALTER TABLE profiles DROP COLUMN IF EXISTS team_id;
+ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
+DROP TABLE IF EXISTS teams CASCADE;
+```
+
+Re-Apply: einfach MIG-033 erneut anwenden (idempotent durch IF NOT EXISTS).
+
+Phase B — Backfill (Daten-Recovery, NICHT echter Rollback):
+
+```sql
+-- Achtung: setzt Daten zurueck, danach sind Records ohne Owner. Re-Apply MIG-034 als Pflicht.
+UPDATE companies      SET owner_user_id = NULL;
+UPDATE contacts       SET owner_user_id = NULL;
+UPDATE deals          SET owner_user_id = NULL;
+UPDATE activities     SET owner_user_id = NULL;
+UPDATE meetings       SET owner_user_id = NULL;
+UPDATE proposals      SET owner_user_id = NULL;
+UPDATE email_messages SET owner_user_id = NULL;
+UPDATE calls          SET owner_user_id = NULL;
+UPDATE profiles SET team_id = NULL;
+DELETE FROM teams WHERE name = 'Strategaize';
+```
+
+Phase C — RLS-Switch (vollstaendig reversibel auf V6.6-Verhalten):
+
+```sql
+DO $$
+DECLARE
+  v_table TEXT;
+BEGIN
+  FOR v_table IN SELECT unnest(ARRAY[
+    'companies','contacts','deals','activities',
+    'meetings','proposals','email_messages','calls'
+  ]) LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I_select ON %I', v_table, v_table);
+    EXECUTE format('DROP POLICY IF EXISTS %I_insert ON %I', v_table, v_table);
+    EXECUTE format('DROP POLICY IF EXISTS %I_update ON %I', v_table, v_table);
+    EXECUTE format('DROP POLICY IF EXISTS %I_delete ON %I', v_table, v_table);
+    EXECUTE format('CREATE POLICY authenticated_full_access ON %I FOR ALL TO authenticated USING (true) WITH CHECK (true)', v_table);
+  END LOOP;
+END$$;
+
+DROP POLICY IF EXISTS profiles_select_team   ON profiles;
+DROP POLICY IF EXISTS profiles_admin_insert  ON profiles;
+DROP POLICY IF EXISTS profiles_admin_update  ON profiles;
+DROP POLICY IF EXISTS profiles_admin_delete  ON profiles;
+CREATE POLICY authenticated_full_access ON profiles FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS teams_select_all   ON teams;
+DROP POLICY IF EXISTS teams_admin_insert ON teams;
+DROP POLICY IF EXISTS teams_admin_update ON teams;
+DROP POLICY IF EXISTS teams_admin_delete ON teams;
+
+DROP FUNCTION IF EXISTS can_see_owner(UUID);
+DROP FUNCTION IF EXISTS get_my_team_id();
+DROP FUNCTION IF EXISTS is_teamlead();
+DROP FUNCTION IF EXISTS is_admin();
+```
+
+- Reason: Mindest-Reversibilitaet pro Phase. Phase A reversibel (Schema), Phase B Daten-Recovery (kein True-Rollback), Phase C reversibel auf V6.6.
+- Affected Areas: dokumentiert; keine Schema-Aenderungen durch dieses Cookbook.
+- Risk: Niedrig — Cookbook ist Doku, nicht ausfuehrbar.
+- Rollback Notes: dieses Cookbook IST das Rollback.
