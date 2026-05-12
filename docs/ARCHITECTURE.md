@@ -9039,8 +9039,10 @@ V7 gilt als releaseable wenn alle 8 Bedingungen erfuellt:
 `/slice-planning V7` — 7 Slices SLC-701..707 strukturiert ausdefinieren mit Acceptance Criteria pro Slice, Micro-Tasks-Liste mit Reihenfolge, QA-Fokus pro Slice. Insbesondere:
 - SLC-701: 3-Phasen-Migration mit Backout-Test pro Phase, RLS-Smoke fuer 8 Tabellen
 - SLC-702: assertRole-Pattern + Server-Side-Filter + Sidebar-Config + middleware.ts-Update + Visual-Diff
-- SLC-703: Verwaltungs-UI + Invite + Rolle-aendern + Bulk-Reassign-Preview
+- SLC-703: Verwaltungs-UI + Invite + Rolle-aendern (Bulk-Reassign nach /slice-planning V7 konsolidiert auf SLC-707, siehe Hinweis unten)
 - SLC-704: Owner-Wiring in allen Server Actions (audit-Liste der ~80 Actions)
 - SLC-705: Aggregat-Query-Performance-Smoke + Materialized-View-Fallback-Bedingung
 - SLC-706: Drilldown-Routes + Read-Only-Context + view_as-Audit-Eintraege
-- SLC-707: VERWALTUNG-Split + Mobile-Hamburger + Style-Guide-Verifikation + Bulk-Reassign-Live
+- SLC-707: VERWALTUNG-Split + Mobile-Hamburger + Style-Guide-Verifikation + Bulk-Reassign-Werkzeug (vollstaendig, kein Preview/Live-Split)
+
+> **Hinweis (Slice-Planning-Update 2026-05-12):** Die urspruengliche Empfehlung war Bulk-Reassign zweistufig (Preview in SLC-703 + Live in SLC-707). `/slice-planning V7` hat das auf einen einzigen Schritt in SLC-707 konsolidiert, weil ein zweistufiger Workflow mit Trockenlauf-Vorschau zu viel Overhead fuer den V7-Scope ist. SLC-703 enthaelt entsprechend nur noch Mitglieder-Tabelle + Invite + Rolle-aendern (kein Bulk-Reassign-UI mehr).
