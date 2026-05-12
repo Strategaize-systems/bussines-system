@@ -9,12 +9,12 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: stable
-- Current Focus: **V6.6 released 2026-05-11 als REL-028 auf Hetzner** (Image-Tag `360c6ec`). 7/7 Slices SLC-661..667 alle deployed, 6/6 Features FEAT-661..666 alle deployed. Records-Sync vollstaendig: features/INDEX.md + slices/INDEX.md + planning/roadmap.json + planning/backlog.json + docs/RELEASES.md + docs/STATE.md alle aktualisiert. Vitest 650/650 PASS, Container app healthy auf Image `360c6ec`, Audit-Trail aktiv (ai_signal_extract 286x matched RPT-342, V6.6-neu ki_workspace_report 3x + auto_winloss 3x). ISSUE-061 resolved. Internal-Test-Mode bleibt aktiv. Naechster Schritt: optional User-Coolify-Redeploy von HEAD (wenn Docs-only Commits ins Image gebaut werden sollen) + /requirements V7 fuer Multi-User+Teamlead (FEAT-502+503).
-- Current Phase: V6.6 Pre-V7-Audit-Sprint — Released. Stable.
+- High-Level State: requirements
+- Current Focus: **V7 Requirements done 2026-05-12** (Multi-User + Teamlead-Sprint). User-Direktiven: Voller Scope (FEAT-502 + 503 + 3-Sicht-Differenzierung + BL-437 + BL-457), 3-Rollen flach (admin/teamlead/member), Manual Assignment (kein Auto-Routing), Aggregat + Drilldown. 3 Feature-Specs erstellt: FEAT-502 Multi-User-Foundation + Lead/Deal-Ownership (Rollen-Modell + owner_user_id auf 8 Kerntabellen + RLS + Manual Assignment + Bulk-Reassign + MIG-033/034/035), FEAT-503 Teamlead-Sicht (Aggregat-Cockpit unter /team + Member-Drilldown read-only + view_as-Audit), FEAT-701 Multi-User-UX (rollen-konditionale Sidebar + VERWALTUNG-Split BL-437 + Mobile-Hamburger BL-457 + Rollen-Sichtbarkeit). 19 Open Questions verteilt ueber Specs warten auf /architecture V7. Naechster Schritt: /architecture V7.
+- Current Phase: V7 Multi-User + Teamlead-Sprint — Requirements done.
 
 ## Immediate Next Steps
-1. **(naechster Schritt) /requirements V7** — Multi-User + Teamlead (FEAT-502 Routing/Territories + FEAT-503 Teamlead-Rolle). V7 nimmt zusaetzlich BL-437 (UA-004 Sidebar-VERWALTUNG-Split, Multi-User-Sidebar baut um), BL-425 (Multi-Touch-Journey-Tab), BL-457 (Mobile-Hamburger-Sidebar), BL-458 (Kalender Pre/Post-Stauchung) auf. Mitarbeiter-/Chef-Drill-Downs + Rollen-Sichtbarkeit kommen hier.
+1. **(naechster Schritt) /architecture V7** — 19 Open Questions klaeren (Q1-Q8 in FEAT-502, Q1-Q6 in FEAT-503, Q1-Q5 in FEAT-701): RLS-Backfill-Strategie, Workflow-Rules + RAG + Win/Loss-Auto-Trigger rollen-aware?, Aggregat-Performance (Materialized View notwendig?), Drilldown-Mode (Server-side vs Client-side), Mutate-Lockdown-Guard, Sidebar-Config-Pattern, Server-Side-Rollen-Guard. Erwartete DECs: ~10-15. Erwartete Migrations: MIG-033/034/035.
 2. **(optional vor V7)** V6.7-Polish — Mini-Sprint mit BL-460 (Style-Guide-V2 Hex-Drift in 4 V6.6-Files → Brand-Tokens) + BL-459 (Quick-Action-Label "Task"/"Aufgabe"-Konsistenz) + BL-418 (React #418 Hydration auf Deal-Detail). Geschaetzt 2-4h, kann auch in V7 mitlaufen.
 3. **(nach V7)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern.
 4. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).
@@ -80,11 +80,10 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V5.5, V5.5.1, V5.6, V5.7, V6, V6.1, V6.2, V6.3, V6.4, V6.5, **V6.6**
 
 **Active:**
-- aktuell keine — V6.6 released, V7-Requirements ist naechster Schritt
+- **V7 (Requirements done 2026-05-12)** — Multi-User + Teamlead-Sprint, 3 Features (FEAT-502 + 503 + 701), 19 Open Questions warten auf /architecture V7.
 
 **Planned (Reihenfolge):**
 - ~~V6.5 — Hintergrund-Sprint parallel zu V7-Vorbereitung~~ (RELEASED REL-027 2026-05-08): BL-441 Theming-Sprint (Brand-Tokens + UA-011/012/013), BL-436 UA-002 Settings-Pages, BL-438 UA-007 ViewToggle generisch, BL-440 UA-009 Pipeline-PageHeader, BL-420 VIES-VAT-Lookup, BL-421 DE-§13b-Reverse-Charge, BL-424 Source-zu-Kampagne Bulk-Migration, BL-430 npm audit --force.
-- V7 — Multi-User + Teamlead (Routing/Territories + Teamlead-Rolle, reduzierter Scope): BL-437 Sidebar-VERWALTUNG-Split (Multi-User-Sidebar baut um), BL-425 Multi-Touch-Journey-Tab. Mitarbeiter-/Chef-Drill-Downs + Rollen-Sichtbarkeit kommen hier dazu.
 - **V7.5** Natural-Language-Automation (BL-435, hochgesetzt von medium auf high in V6.6-Discovery): Sculptor-Pattern, ~6 Slices in 3 Phasen.
 - **V7.6** Custom-Reports (BL-442 neu): User legt eigene Berichts-Vorlagen an, "Meine Berichte"-Auswahlfeld neben Standard-Buttons. ~1-2 Slices, folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).
 - **V8+** Externe Kommunikations-API-Integration (BL-443 neu, Slack/Teams/WhatsApp). Plus Multiplikatoren-Strategie-Item.

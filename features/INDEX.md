@@ -216,10 +216,11 @@
 
 ## V7 Features (Multi-User + Teamlead — planned)
 
-| ID | Feature | Status | Created |
-|----|---------|--------|---------|
-| FEAT-502 | Routing / Territories | planned | 2026-04-09 |
-| FEAT-503 | Teamlead-Rolle mit Teamsicht | planned | 2026-04-09 |
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-502 | Multi-User-Foundation + Lead/Deal-Ownership | planned | [Spec](FEAT-502-multi-user-foundation.md) | 2026-04-09 |
+| FEAT-503 | Teamlead-Rolle mit Teamsicht (Aggregat + Drilldown) | planned | [Spec](FEAT-503-teamlead-sicht.md) | 2026-04-09 |
+| FEAT-701 | Multi-User-UX (Sidebar-Restruktur + Mobile-Hamburger + Rollen-Sichtbarkeit) | planned | [Spec](FEAT-701-multi-user-ux.md) | 2026-05-12 |
 
 ## V6 Features (Zielsetzung + Performance-Tracking — released)
 
