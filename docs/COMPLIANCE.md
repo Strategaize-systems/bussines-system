@@ -634,6 +634,62 @@ MIG-028 — 5 additive Aenderungen, idempotent: `proposals.tax_rate` CHECK-White
 
 ---
 
+## V7 — Multi-User Profile-Lifecycle (2026-05-12, SLC-703)
+
+V7 fuehrt 3 Server Actions ein, die personenbezogene Daten (auth.users-Konto, profiles-Row mit Anzeigename) eines Mitarbeiters anlegen, aendern und loeschen koennen. Jede der drei Aktionen schreibt einen vollstaendigen Audit-Trail in `audit_log` mit `entity_type = 'profile'` und `entity_id = <betroffener User-ID>`.
+
+### Verarbeitungs-Vorgaenge
+
+| Vorgang | Wer darf | Wann | Was wird verarbeitet |
+|---|---|---|---|
+| `invite_sent` | admin, teamlead (nur eigenes Team) | bei Einladung neuer Mitarbeiter | E-Mail-Adresse + Rolle + team_id + optional Anzeigename. GoTrue verschickt Set-Password-Magic-Link. |
+| `role_changed` | admin | bei Rollen-Aenderung | old_role + new_role |
+| `profile_deleted` | admin | beim Loeschen eines ausgeschiedenen Mitarbeiters | display_name + Rolle + team_id als Backup im Audit-Payload (DSGVO-Loeschpflicht-konformer Trail) |
+
+### DSGVO-Profile-Delete (Loeschpflicht Art. 17 DSGVO)
+
+Profile-Delete folgt einem Hard-Lock-Pattern (DEC-193): Ein Profil darf nur dann geloescht werden, wenn der Mitarbeiter keine Owner-Records mehr in den 8 Kerntabellen (`companies`, `contacts`, `deals`, `activities`, `meetings`, `proposals`, `email_messages`, `calls`) hat. Vor dem Loeschen muss das Bulk-Reassign-Werkzeug (SLC-707) verwendet werden, um Owner-Eintraege auf einen anderen aktiven Mitarbeiter zu uebertragen.
+
+**Auswirkungen des Delete:**
+- `supabase.auth.admin.deleteUser()` loescht den Auth-Account (Login unmoeglich).
+- `DELETE FROM profiles WHERE id = ...` entfernt die Profile-Row.
+- FK `ON DELETE SET NULL` aus MIG-033 setzt `owner_user_id` in den 8 Kerntabellen automatisch auf NULL — fuer Records die durch Bulk-Reassign nicht verschoben wurden, gilt der System-Default (Owner = NULL).
+- Der Audit-Trail behaelt `display_name` + `role` + `team_id` als Backup-Payload, damit Nachvollziehbarkeit der Loeschung gewahrt bleibt (Pflicht-Information fuer Datenschutz-Auskunftsrecht Art. 15 + 30 DSGVO).
+
+### Audit-Trail-Felder
+
+```
+audit_log (
+  actor_id,          -- der einladende/aendernde/loeschende User (auth.uid())
+  action,            -- 'invite_sent' | 'role_changed' | 'profile_deleted'
+  entity_type,       -- 'profile'
+  entity_id,         -- der betroffene User (target)
+  changes JSONB,     -- Payload, anbieter-konkret pro Action
+  context TEXT       -- z.B. "V7 SLC-703 team invite"
+)
+```
+
+Kein Passwort, kein GoTrue-Token, kein Klartext-PII jenseits dessen, was zur Nachvollziehbarkeit zwingend notwendig ist.
+
+### Architektur-Entscheidungen V7-Profile-Lifecycle
+
+- DEC-181 — 3-flaches Rollen-Modell (admin/teamlead/member), 1 User in 1 Team.
+- DEC-193 — Profile-Delete Hard-Lock bei offenen Owner-Eintraegen.
+- DEC-194 — Invite-Flow ueber GoTrue Auth-Invite, team_id Pflicht, Default-Rolle `member`.
+- DEC-195 — `audit_log.actor_id` bleibt das einzige Akteurs-Feld; `view_as_target_user_id` kommt in SLC-706 als Drilldown-Verstaerker.
+
+### Migration
+
+MIG-033/034/035 — Owner-Spalten + Backfill + RLS-Switch. Bereits in SLC-701 dokumentiert. SLC-703 nutzt die existierenden Tabellen ohne weitere Schema-Aenderungen.
+
+### Bekannte Out-of-Scope-Themen
+
+- **GoTrue-Mailer Spam-Reputation** — bei Mail-Versand-Issues kann der Invite-Link manuell aus `auth.users.recovery_token` gezogen werden (siehe Slice-Risk R1 + Playwright-Recipe-Fallback). Falls Spam-Filter-Problem persistent: Resend-API-Wrapper-Pattern aus V5.3 ist verfuegbar, wird aber erst bei realem Bedarf implementiert.
+- **Bulk-Reassign-UI** — SLC-707. Bis dahin muss Bulk-Reassign manuell per SQL durchgefuehrt werden, falls Mitarbeiter mit Bestandsdaten ausscheiden.
+- **Drilldown-Read-Only-View** auf Mitarbeiter-Cockpit — SLC-706. Bis dahin gibt es nur den Verwaltungs-Tab.
+
+---
+
 ## Disclaimer
 
 Diese Dokumentation beschreibt den **technischen** Datenschutz-Stand des Systems zum Zeitpunkt **2026-05-04 (V5.7-Stand SLC-571 done)**. Sie ist eine **pragmatische Standardvorlage** und stellt **keine Rechtsberatung** dar. Insbesondere ersetzt sie nicht:
@@ -648,5 +704,5 @@ Vor produktivem Einsatz mit echten Kunden- oder Interessentendaten sind diese Pu
 
 ---
 
-**Letzte Aktualisierung:** 2026-05-04 (V5.7-Section ergaenzt — NL-VAT-Saetze, Reverse-Charge-Logik, Country-Switch, PDF-Block, Audit-Eintraege)
+**Letzte Aktualisierung:** 2026-05-12 (V7-Section ergaenzt — Multi-User Profile-Lifecycle, Invite/Role-Change/Delete-Audit-Trail, Hard-Lock-Pattern fuer DSGVO-konforme Profil-Loeschung)
 **Naechste empfohlene Pruefung:** Pre-Production-Compliance-Gate vor V7 — Anwalts-Pruefung gesamte COMPLIANCE.md, NL-Steuerberatung-Pruefung der V5.7-Section, Switch auf Azure-OpenAI-EU-Whisper, ISSUE-042-Schliessung
