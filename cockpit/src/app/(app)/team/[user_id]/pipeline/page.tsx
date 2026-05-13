@@ -70,19 +70,8 @@ export default async function DrilldownPipelinePage({ params }: PageProps) {
   const stages: StageRow[] = (stagesRes.data ?? []) as StageRow[];
   const deals: DealRow[] = (dealsRes.data ?? []) as DealRow[];
 
-  const dealsByPipeline = new Map<string, DealRow[]>();
-  for (const d of deals) {
-    const list = dealsByPipeline.get(d.pipeline_id) ?? [];
-    list.push(d);
-    dealsByPipeline.set(d.pipeline_id, list);
-  }
-
-  const stagesByPipeline = new Map<string, StageRow[]>();
-  for (const s of stages) {
-    const list = stagesByPipeline.get(s.pipeline_id) ?? [];
-    list.push(s);
-    stagesByPipeline.set(s.pipeline_id, list);
-  }
+  const pipelineNameById = new Map(pipelines.map((p) => [p.id, p.name]));
+  const stageNameById = new Map(stages.map((s) => [s.id, s.name]));
 
   const totalSum = deals.reduce((sum, d) => sum + Number(d.value ?? 0), 0);
 
@@ -100,63 +89,58 @@ export default async function DrilldownPipelinePage({ params }: PageProps) {
           </div>
         </div>
 
-        {pipelines.length === 0 ? (
-          <EmptyState text="Keine Pipelines definiert" />
-        ) : deals.length === 0 ? (
+        {deals.length === 0 ? (
           <EmptyState text="Keine aktiven Deals fuer diesen Mitarbeiter" />
         ) : (
-          pipelines
-            .filter((p) => (dealsByPipeline.get(p.id) ?? []).length > 0)
-            .map((pipeline) => {
-              const pipelineDeals = dealsByPipeline.get(pipeline.id) ?? [];
-              const pipelineStages = stagesByPipeline.get(pipeline.id) ?? [];
-              const stageNameById = new Map(pipelineStages.map((s) => [s.id, s.name]));
-              return (
-                <section key={pipeline.id}>
-                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-600">
-                    {pipeline.name}
-                  </h2>
-                  <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-                    <table className="w-full divide-y divide-slate-200">
-                      <thead className="bg-slate-50">
-                        <tr>
-                          <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                            Deal
-                          </th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                            Stage
-                          </th>
-                          <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">
-                            Wert
-                          </th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                            Naechste Aktion
-                          </th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                            Faellig
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200 bg-white">
-                        {pipelineDeals.map((d) => (
-                          <tr key={d.id}>
-                            <td className="px-4 py-2 text-sm font-medium text-slate-900">{d.title}</td>
-                            <td className="px-4 py-2 text-sm text-slate-700">
-                              {d.stage_id ? stageNameById.get(d.stage_id) ?? "—" : "—"}
-                            </td>
-                            <td className="px-4 py-2 text-right text-sm tabular-nums text-slate-900">
-                              {formatEuro(d.value)}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-700">{d.next_action ?? "—"}</td>
-                            <td className="px-4 py-2 text-xs text-slate-600">{formatDate(d.next_action_date)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
-              );
-            })
+          <section>
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-600">
+              Aktive Deals
+            </h2>
+            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+              <table className="w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                      Deal
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                      Pipeline
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                      Stage
+                    </th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">
+                      Wert
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                      Naechste Aktion
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                      Faellig
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 bg-white">
+                  {deals.map((d) => (
+                    <tr key={d.id}>
+                      <td className="px-4 py-2 text-sm font-medium text-slate-900">{d.title}</td>
+                      <td className="px-4 py-2 text-sm text-slate-700">
+                        {d.pipeline_id ? pipelineNameById.get(d.pipeline_id) ?? "—" : "—"}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-slate-700">
+                        {d.stage_id ? stageNameById.get(d.stage_id) ?? "—" : "—"}
+                      </td>
+                      <td className="px-4 py-2 text-right text-sm tabular-nums text-slate-900">
+                        {formatEuro(d.value)}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-slate-700">{d.next_action ?? "—"}</td>
+                      <td className="px-4 py-2 text-xs text-slate-600">{formatDate(d.next_action_date)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
         )}
       </main>
     </>
