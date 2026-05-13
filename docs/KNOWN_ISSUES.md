@@ -1,5 +1,14 @@
 # Known Issues
 
+### ISSUE-065 — getTeamMembers Self-Filter inaktiv durch .single() ohne explicit auth.uid()-Lookup
+- Status: open
+- Severity: High
+- Area: Backend / SLC-705 / V7 Team-Aggregat / Team-Cockpit + Bedrock-Context
+- Summary: `cockpit/src/lib/team/aggregate-queries.ts:188-192` macht `supabase.from("profiles").select("id, team_id").single()` ohne `.eq("id", auth.uid())`. RLS-Policy `profiles_select_team` liefert dem Teamlead 6 Rows (`team_id=get_my_team_id() OR id=auth.uid()`). `.single()` returnt bei multi-row `null` → `callerId = null` und `callerTeamId = null` → BEIDE Filter (`team_id`-eq + `id`-neq) werden inaktiv geschaltet. Effekt: `getTeamMembers()` returnt ALLE 6 RLS-sichtbaren Profiles inkl. Teamlead-Self.
+- Impact: Tabelle `/team` zeigt 6 Rows statt 5 (Teamlead-Self mit 0 €/0/0 als Member-Pseudo-Row). `getTeamBedrockContext()` ruft `getTeamMembers()` direkt → Bedrock-Coaching-Prompt enthaelt Teamlead-als-Member. Bedrock-Antwort fuer "Wer hat Underperformance?" identifiziert Teamlead als Outlier (mit Selbstklarstellung "Teamlead-Rolle typischerweise nicht auf eigene Pipeline ausgelegt"). Funktional kein Daten-Leak (RLS greift weiter), UX-Drift + Bedrock-Coaching-Drift.
+- Workaround: keiner — UX-akzeptabel im Internal-Test-Mode, vor Customer-Ship muss gefixt sein.
+- Next Action: Hotfix-Commit vor SLC-706: `cockpit/src/lib/team/aggregate-queries.ts:188` umbauen auf `const { data: { user } } = await supabase.auth.getUser(); const { data: callerProfile } = await supabase.from("profiles").select("id, team_id").eq("id", user.id).single();` ODER server-side SQL-RPC mit `auth.uid()`-Self-Lookup. Plus: `aggregate-queries.test.ts` muss `getTeamMembers()` direkt aufrufen (nicht SQL-replizieren) damit der Bug-Pfad zukuenftig gefangen wird. Aufwand ~30min.
+
 ### ISSUE-064 — SLC-704 Defense-in-Depth-Gap: 6 Mutate-Files ohne assertNotReadOnlyContext()
 - Status: resolved
 - Severity: High
