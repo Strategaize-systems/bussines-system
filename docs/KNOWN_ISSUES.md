@@ -1,5 +1,14 @@
 # Known Issues
 
+### ISSUE-064 — SLC-704 Defense-in-Depth-Gap: 6 Mutate-Files ohne assertNotReadOnlyContext()
+- Status: open
+- Severity: High
+- Area: Backend / SLC-704 / V7-Owner-Wiring / AC3-Mutate-Lockdown
+- Summary: AC3 fordert `await assertNotReadOnlyContext()` als first line in JEDER Mutate-Server-Action. `/qa SLC-704` hat 6 Files identifiziert, in denen das fehlt: 3 mutieren Core-Tabellen (`src/app/actions/meetings.ts` → meetings+activities, `src/lib/actions/activity-actions.ts` → activities, `src/lib/actions/insight-actions.ts` → activities), 3 mutieren non-core-Tabellen (`src/app/(app)/cadences/enrollment-actions.ts` → cadence_enrollments, `src/app/(app)/fit-assessment/signal-actions.ts` → signals, `src/app/(app)/settings/template-actions.ts` → email_templates). Audit-Doc `docs/AUDIT_SERVER_ACTIONS_V7.md` hat zudem 4 dieser 6 Files NICHT erfasst (AC1-Gap symmetrisch).
+- Impact: Heute kein Runtime-Risk weil SLC-706 (Read-Only-Context-Setter via Drilldown-Pages) noch nicht existiert. Aber sobald SLC-706 ausgeliefert wird, koennen diese 6 Pfade fremde Daten mutieren waehrend der Drilldown angeblich Read-Only ist. AC1 (Audit-Vollstaendigkeit) und AC3 (Guard-Vollstaendigkeit) und AC9 (TSC clean) sind nicht erfuellt.
+- Workaround: Keiner — SLC-706 wird die Drilldown-Pages aktiviert ausliefern.
+- Next Action: Slice-Internal-Fix vor SLC-705-Start: 6 Files × 1-Zeile `await assertNotReadOnlyContext()` + 1 Test-Mock-Fix in `auto_winloss_extract.test.ts:184` (ownerUserId hinzufuegen) + 4 Audit-Doc-Eintraege ergaenzen + Coolify-Redeploy + Smoke-Re-Run. Aufwand ~30-45 Min.
+
 ### ISSUE-063 — Team-Dropdown in Invite-Dialog zeigt UUID statt Team-Name
 - Status: open
 - Severity: Medium
