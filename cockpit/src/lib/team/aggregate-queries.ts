@@ -186,14 +186,27 @@ export async function getTeamMembers(
   supabase: SupabaseClient,
 ): Promise<TeamMemberAggregate[]> {
   // Schritt 1: caller-Profile fuer team_id + id-Self-Filter laden.
+  //
+  // ISSUE-065-Fix: `.single()` ohne explizit `.eq("id", auth.uid())` returnt
+  // bei mehreren RLS-sichtbaren Rows null (Teamlead sieht via permissive
+  // profiles-Policy alle Team-Profiles). Ohne expliziten Self-Lookup waeren
+  // callerTeamId + callerId beide null und der Self-Filter unten inaktiv.
+  // Daher: erst auth.getUser() fuer die eigene Identitaet, dann profiles
+  // WHERE id = auth.user.id explizit filtern.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
   const { data: callerProfile } = await supabase
     .from("profiles")
     .select("id, team_id")
+    .eq("id", user.id)
     .single();
 
   const caller = callerProfile as { id: string; team_id: string | null } | null;
   const callerTeamId = caller?.team_id ?? null;
-  const callerId = caller?.id ?? null;
+  const callerId = caller?.id ?? user.id;
 
   let profilesQuery = supabase
     .from("profiles")
