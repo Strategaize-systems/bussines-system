@@ -38,7 +38,6 @@ type StageRow = {
 type PipelineRow = {
   id: string;
   name: string;
-  slug: string | null;
   sort_order: number;
 };
 
@@ -57,7 +56,7 @@ export default async function DrilldownPipelinePage({ params }: PageProps) {
   const supabase = await createClient();
 
   const [pipelinesRes, stagesRes, dealsRes] = await Promise.all([
-    supabase.from("pipelines").select("id, name, slug, sort_order").order("sort_order"),
+    supabase.from("pipelines").select("id, name, sort_order").order("sort_order"),
     supabase.from("pipeline_stages").select("id, name, pipeline_id, sort_order").order("sort_order"),
     supabase
       .from("deals")

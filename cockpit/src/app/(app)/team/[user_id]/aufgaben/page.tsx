@@ -49,10 +49,12 @@ export default async function DrilldownAufgabenPage({ params }: PageProps) {
 
   const todayStr = new Date().toISOString().slice(0, 10);
 
+  // Schema-Note: tasks hat KEIN owner_user_id (V7 owner_user_id nur in 8
+  // Kerntabellen, siehe MIG-033 Phase 3). Owner = `assigned_to`.
   const { data: tasksData } = await supabase
     .from("tasks")
     .select("id, title, description, due_date, status, priority, type, completed_at")
-    .eq("owner_user_id", targetUserId)
+    .eq("assigned_to", targetUserId)
     .order("status", { ascending: true })
     .order("due_date", { ascending: true, nullsFirst: false })
     .limit(200);

@@ -73,11 +73,16 @@ export default async function DrilldownMeinTagPage({ params }: PageProps) {
   upcoming.setDate(upcoming.getDate() + 7);
   const upcomingStr = upcoming.toISOString().slice(0, 10);
 
+  // Schema-Notes:
+  //   tasks: hat KEIN owner_user_id (V7 owner_user_id nur in 8 Kerntabellen,
+  //     siehe MIG-033 Phase 3). Owner = `assigned_to`.
+  //   calendar_events: hat KEIN owner_user_id. Owner = `created_by`.
+  //   deals: hat owner_user_id (V7 Kerntabelle).
   const [openTasksRes, activeDealsRes, topDealsRes, calendarRes] = await Promise.all([
     supabase
       .from("tasks")
       .select("id, title, description, due_date, priority, status, type")
-      .eq("owner_user_id", targetUserId)
+      .eq("assigned_to", targetUserId)
       .in("status", ["open", "waiting"])
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(20),
@@ -100,7 +105,7 @@ export default async function DrilldownMeinTagPage({ params }: PageProps) {
     supabase
       .from("calendar_events")
       .select("id, title, start_time, end_time, type")
-      .eq("owner_user_id", targetUserId)
+      .eq("created_by", targetUserId)
       .gte("start_time", dayStart)
       .lt("start_time", dayEnd)
       .order("start_time", { ascending: true }),
