@@ -2217,7 +2217,7 @@
       "title": "V7 FEAT-502 Multi-User-Foundation + Lead/Deal-Ownership",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V7",
       "description": "FEAT-502 (Requirements 2026-05-12): 3-Rollen-Modell admin/teamlead/member als CHECK-Enum auf profiles.role + teams-Tabelle + profiles.team_id (ersetzt profiles.team TEXT). owner_user_id UUID FK auf 8 Kerntabellen (companies, contacts, deals, activities, meetings, proposals, email_messages, calls). RLS-Policies: admin=all, teamlead=team-scope-select+own-mutate+bulk-reassign, member=own-only. Manual Assignment beim Lead/Deal-Create (Default = aktueller User). Bulk-Reassign-Werkzeug unter /settings/team mit audit_log-Trail. Verwaltungs-UI /settings/team (Mitglieder-Tabelle + Einladen + Rolle-aendern). MIG-033/034/035 dreiphasig (Schema + Backfill + RLS-Switch). User-Direktive 2026-05-12: Manual Assignment (kein Auto-Routing), 3-Rollen flach, 1 User in 1 Team. Open Questions im Spec (Q1-Q8) gehen in /architecture V7.",
       "createdAt": "2026-05-12"
@@ -2227,7 +2227,7 @@
       "title": "V7 FEAT-503 Teamlead-Rolle mit Teamsicht (Aggregat + Drilldown)",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V7",
       "description": "FEAT-503 (Requirements 2026-05-12): Aggregat-Cockpit unter /team (neue Top-Level-Sektion in Sidebar) mit KPI-Header (Team-Pipeline-Sum, Aktivitaeten-Count, Conversion-Rate, Backlog-Indikator) + Mitglieder-Tabelle + KI-Workspace-Hybrid-Block auf Team-Scope. Member-Drilldown /team/[user_id]/cockpit als read-only-Routes mit ?as_member-Modus + view_as-Audit-Eintrag. Sidebar-Sektion TEAM rollen-konditional sichtbar. Performance-Ziel <500ms fuer Teams bis 20 Member (ggf. Materialized View team_kpi_snapshot). Hardware-Read-Only-Guard auf Server Actions in Drilldown. Out of Scope V7: Team-Targets/Quoten (V7.5), Comparative Reports (V7.5), Mutate-Aktionen durch Teamlead (V8+). Open Questions Q1-Q6 gehen in /architecture V7.",
       "createdAt": "2026-05-12"
