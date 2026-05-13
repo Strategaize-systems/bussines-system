@@ -1,3 +1,5 @@
+// SLC-705 MT-4 — Cache-Key um teamId erweitert (backwards-compatible: ?? "" haelt
+// V6.6-Keys stabil, weil teamId dort undefined ist).
 import type { KIWorkspaceScope, ReportResult } from "@/components/ki-workspace/types";
 
 const TTL_MS = 5 * 60 * 1000;
@@ -10,7 +12,7 @@ interface CacheEntry {
 const store = new Map<string, CacheEntry>();
 
 export function makeCacheKey(reportId: string, scope: KIWorkspaceScope): string {
-  return `${reportId}|${scope.userId}|${scope.dealId ?? ""}`;
+  return `${reportId}|${scope.userId}|${scope.teamId ?? ""}|${scope.dealId ?? ""}`;
 }
 
 export function getCached(key: string): ReportResult | null {

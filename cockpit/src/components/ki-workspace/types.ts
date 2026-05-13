@@ -1,8 +1,10 @@
-export type KIWorkspaceContext = "mein-tag" | "deal-detail" | "cockpit";
+// SLC-705 MT-4 — KIWorkspaceContext um "team-cockpit" + KIWorkspaceScope um teamId erweitert.
+export type KIWorkspaceContext = "mein-tag" | "deal-detail" | "cockpit" | "team-cockpit";
 
 export interface KIWorkspaceScope {
   userId: string;
   dealId?: string;
+  teamId?: string;
 }
 
 export interface KIWorkspaceReport {

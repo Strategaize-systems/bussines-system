@@ -1,3 +1,4 @@
+// SLC-705 MT-4 — TEAM_COCKPIT_REPORTS hinzugefuegt (3 Team-scope Bedrock-Reports).
 import type { KIWorkspaceReport } from "../types";
 
 export const MEIN_TAG_REPORTS: KIWorkspaceReport[] = [
@@ -23,4 +24,11 @@ export const COCKPIT_REPORTS: KIWorkspaceReport[] = [
   { id: "forecast", label: "Forecast", serverActionPath: "@/lib/ki-workspace/reports/forecast", cacheable: true },
   { id: "winloss-analyse", label: "Win/Loss-Analyse", serverActionPath: "@/lib/ki-workspace/reports/winloss-aggregate", cacheable: true },
   { id: "stagnierende-deals", label: "Stagnierende Deals", serverActionPath: "@/lib/ki-workspace/reports/stagnierende-deals", cacheable: true },
+];
+
+// SLC-705 MT-4 — Team-Cockpit-Berichte (admin + teamlead only).
+export const TEAM_COCKPIT_REPORTS: KIWorkspaceReport[] = [
+  { id: "team-underperformance", label: "Underperformance", serverActionPath: "@/lib/ki-workspace/reports/team-underperformance", cacheable: true },
+  { id: "team-burnout", label: "Burnout-Risiko", serverActionPath: "@/lib/ki-workspace/reports/team-burnout", cacheable: true },
+  { id: "team-stale-deals", label: "Stagnations-Verdacht", serverActionPath: "@/lib/ki-workspace/reports/team-stale-deals", cacheable: true },
 ];

@@ -1,6 +1,8 @@
+// SLC-705 MT-4 — authorizeTeamReport hinzugefuegt (admin/teamlead-Rollen-Gate).
 import { createHash } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { queryLLM } from "@/lib/ai/bedrock-client";
+import { getProfile } from "@/lib/auth/get-profile";
 import type { LLMOptions } from "@/lib/ai/types";
 import type { KIWorkspaceScope, ReportResult } from "@/components/ki-workspace/types";
 
@@ -28,6 +30,32 @@ export async function authorizeReport(scope: KIWorkspaceScope): Promise<Authoriz
     throw new Error("Scope-User stimmt nicht mit Session-User ueberein");
   }
   return { userId: user.id, dealId: scope.dealId };
+}
+
+/**
+ * SLC-705 MT-4 — Authorize a Team-scope report.
+ *
+ * Unterschied zu authorizeReport: caller MUSS admin oder teamlead sein.
+ * scope.userId ist hier caller-supplied und wird nicht 1:1 mit auth.uid
+ * abgeglichen — der scope referenziert den aufrufenden Teamlead/Admin
+ * selbst (als Owner-Surrogat), nicht ein anderes Subjekt. Zusaetzlich
+ * pruefen wir defensiv: wenn teamlead UND scope.teamId vorhanden, muss
+ * sie zur caller.team_id passen (RLS filtert ohnehin schon).
+ */
+export async function authorizeTeamReport(scope: KIWorkspaceScope): Promise<AuthorizedScope> {
+  const profile = await getProfile();
+  if (profile.role !== "admin" && profile.role !== "teamlead") {
+    throw new Error("Nicht autorisiert: Team-Reports nur fuer admin oder teamlead");
+  }
+  if (
+    profile.role === "teamlead" &&
+    scope.teamId &&
+    profile.team_id &&
+    scope.teamId !== profile.team_id
+  ) {
+    throw new Error("Scope-Team stimmt nicht mit caller.team_id ueberein");
+  }
+  return { userId: profile.user_id, dealId: scope.dealId };
 }
 
 /**
@@ -85,6 +113,22 @@ export interface InvokeArgs {
  */
 export async function invokeReport(args: InvokeArgs): Promise<ReportResult> {
   const authorized = await authorizeReport(args.scope);
+  return runBedrockAndAudit(authorized, args);
+}
+
+/**
+ * SLC-705 MT-4 — Variante mit Team-Rollen-Gate (admin/teamlead).
+ * Gleicher Lifecycle wie invokeReport, nur andere authorize-Funktion.
+ */
+export async function invokeTeamReport(args: InvokeArgs): Promise<ReportResult> {
+  const authorized = await authorizeTeamReport(args.scope);
+  return runBedrockAndAudit(authorized, args);
+}
+
+async function runBedrockAndAudit(
+  authorized: AuthorizedScope,
+  args: InvokeArgs,
+): Promise<ReportResult> {
   const scopeHash = await hashScope(args.scope);
 
   const llm = await queryLLM(args.userPrompt, args.systemPrompt, args.llmOptions);
