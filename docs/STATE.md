@@ -10,12 +10,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V7 ISSUE-065 Hotfix vollstaendig resolved 2026-05-13** (Live-Smoke PASS via RPT-405 gegen Image-Tag `853f31c`). Tabelle `/team` zeigt 5 Rows (Test-Member 1-5), kein Teamlead-Self mehr. Bedrock-Underperformance-Antwort identifiziert korrekt "Alle fuenf Mitarbeiter" ohne Teamlead-als-Outlier. Davor: Code-Fix in `cockpit/src/lib/team/aggregate-queries.ts:185-209` (zweistufiger Lookup via `auth.getUser()` + `.eq("id", user.id).single()`) + neuer Unit-Test `cockpit/src/lib/team/aggregate-queries.test.ts` mit 8 vi.mock-Tests, der `getTeamMembers()` direkt aufruft. Vitest 745/745 PASS. SLC-705 jetzt vollstaendig PASS (10/10 ACs), bereit fuer /frontend SLC-706.
-- Current Phase: V7 Multi-User + Teamlead-Sprint — 5/7 Slices done (SLC-701..705), ISSUE-065 resolved, bereit fuer /frontend SLC-706.
+- Current Focus: **V7 SLC-706 /frontend code-side done 2026-05-13** (Commit `062574f`). Drilldown-Foundation `/team/[user_id]/*` mit Layout-Guard (assertRole+Self-Block+RLS+can_see_owner-RPC), view_as-Audit-Insert, runWithReadOnlyContext+ReadOnlyContextProvider wrapping, DrilldownBanner sticky-top, und 3 Read-Only-Sub-Pages (mein-tag-Summary, pipeline-Tabelle, aufgaben-Liste) — alle mit explicit `owner_user_id=target_user_id`-Filter, keine Mutate-Buttons gerendert. Vitest 748/748 PASS (745 baseline + 3 MT-6 Mutate-Lockdown). Live-DB-Tests __tests__/team/drilldown.test.ts 4/4 PASS via `npm run test:rls` (audit_log-view_as_target_user_id-Spalte, can_see_owner same-team true, cross-team false, self true). TSC clean fuer SLC-706 (9 pre-existing unrelated = baseline). Warten auf User-Coolify-Redeploy + /qa SLC-706 (Browser-Smoke MT-8: Happy + Mutate-Block + Direct-Action-Call + Cross-Team-404).
+- Current Phase: V7 Multi-User + Teamlead-Sprint — 6/7 Slices done (SLC-701..706 code-side), warten auf User-Coolify-Redeploy + /qa SLC-706 → /frontend SLC-707.
 
 ## Immediate Next Steps
-1. **(naechster Schritt) /frontend SLC-706** — Drilldown-Routes (`/team/[user_id]/mein-tag`, `/team/[user_id]/pipeline`, etc.) mit Read-Only-Context-Setter + view_as-Audit. Read-Only-Guards aus SLC-704 sind bereits in 6 Mutate-Files verdrahtet. Pro Slice: /backend|/frontend → /qa → User-Coolify-Deploy → Live-Smoke.
-2. **(nach SLC-706)** /frontend SLC-707 — Polish + Bulk-Reassign-UI + Mobile-Hamburger + VERWALTUNG-Split + ISSUE-063-Fix.
+1. **(naechster Schritt) User-Coolify-Redeploy SLC-706** — Coolify-UI → cockpit-Resource → Force Rebuild auf Commit `062574f`. Danach /qa SLC-706 mit Browser-Smoke (4 Cases gem. AC8/AC9/AC10) via Playwright MCP gegen Live.
+2. **(nach /qa SLC-706 PASS)** /frontend SLC-707 — Polish + Bulk-Reassign-UI + Mobile-Hamburger + VERWALTUNG-Split + ISSUE-063-Fix.
 3. **(nach SLC-707)** Gesamt-/qa V7 → /final-check V7 → /go-live V7 → /deploy V7 als REL-029.
 3. **(optional Parallel) User-Manual-Fix ISSUE-062 in Coolify-UI** — `GOTRUE_SMTP_PASS=aithatworks-01!` setzen + GoTrue-Container Redeploy. Macht Auth-Mails wieder lebendig (Invite/Password-Reset/Email-Change). Blockiert sonst Live-Verifikation von SLC-703 AC3 (Invite-Mail).
 4. **(nach V7 7 Slices done)** /final-check V7 → /go-live V7 → /deploy V7 als REL-029 → /post-launch V7 24h-Live-Beobachtung.
