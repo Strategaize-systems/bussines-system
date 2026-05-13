@@ -188,6 +188,7 @@ function buildContext(
       contactId: null,
       companyId: null,
       dealId: "deal-1",
+      ownerUserId: null,
     },
     actionIndex: 0,
     triggerEventAuditId: "audit-1",

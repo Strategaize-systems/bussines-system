@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import {
   buildModeratorJwt,
   buildParticipantJwt,
@@ -57,6 +58,8 @@ export async function startMeeting(
   contactIds: string[],
   meetingTitle?: string,
 ): Promise<StartMeetingResult> {
+  await assertNotReadOnlyContext();
+
   // Auth check
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

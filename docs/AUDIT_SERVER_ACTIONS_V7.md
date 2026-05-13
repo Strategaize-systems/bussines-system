@@ -122,9 +122,21 @@ Pfad: `cockpit/src/app/(app)/<domain>/actions.ts` und `cockpit/src/app/actions/*
 | createCadence / updateCadence / deleteCadence | * | cadences | nicht-core |
 | addStep / updateStep / removeStep / reorderSteps | * | cadence_steps | nicht-core |
 
+### cadences/enrollment-actions.ts — non-core (post-RPT-402)
+| Funktion | Op | Tabelle | Notes |
+|---|---|---|---|
+| enrollInCadence | INSERT | cadence_enrollments | nicht-core, assertNotReadOnlyContext first line (RPT-402-Patch) |
+| pauseEnrollment / resumeEnrollment / stopEnrollment | UPDATE | cadence_enrollments | dito |
+
 ### fit-assessment/actions.ts — non-core
 | saveFitAssessment | UPSERT | fit_assessments | nicht-core |
 | (delete-pfad in saveFitAssessment) | DELETE | fit_assessments | nicht-core |
+
+### fit-assessment/signal-actions.ts — non-core (post-RPT-402)
+| Funktion | Op | Tabelle | Notes |
+|---|---|---|---|
+| createSignal / createSignalForActivity | INSERT | signals | nicht-core, assertNotReadOnlyContext first line (RPT-402-Patch) |
+| deleteSignal | DELETE | signals | dito |
 
 ### focus/actions.ts — Tranche 2 (Tasks/Deals = activities)
 | Funktion | Op | Tabelle | Pre | Post | Notes |
@@ -148,6 +160,7 @@ Pfad: `cockpit/src/app/(app)/<domain>/actions.ts` und `cockpit/src/app/actions/*
 | settings/briefing/actions.ts | getBriefingSettings / updateBriefingSettings | briefing_settings nicht-core |
 | settings/compliance/actions.ts | get/updateComplianceTemplate | compliance_templates nicht-core |
 | settings/payment-terms/actions.ts | create/update/delete/setDefault | payment_terms_templates nicht-core |
+| settings/template-actions.ts (post-RPT-402) | createEmailTemplate / updateEmailTemplate / deleteEmailTemplate / duplicateSystemTemplate | email_templates nicht-core, assertNotReadOnlyContext first line (RPT-402-Patch) |
 
 ### campaigns/[id]/actions.ts — non-core
 | Funktion | Op | Tabelle | Notes |
@@ -168,8 +181,8 @@ Pfad: `cockpit/src/app/(app)/<domain>/actions.ts` und `cockpit/src/app/actions/*
 ### app/actions/*.ts — Tranche 2 (Service-Level)
 | Datei | Funktion | Op | Tabelle | Notes |
 |---|---|---|---|---|
-| actions/meetings.ts | createMeetingFromSlot | INSERT | meetings | owner = Host-User (DEC-186) |
-| actions/meetings.ts | (interner createActivity-Pfad) | INSERT | activities | owner = meeting.owner_user_id |
+| actions/meetings.ts | startMeeting (post-RPT-402: korrigiert vs. createMeetingFromSlot) | INSERT | meetings | owner = Host-User (DEC-186), assertNotReadOnlyContext first line (RPT-402-Patch) |
+| actions/meetings.ts | startMeeting (interner activity-Insert-Pfad) | INSERT | activities | owner = meeting.owner_user_id (DEC-186-Cascading) |
 | actions/consent.ts | upsert/revokeConsent | * | consents | nicht-core |
 | actions/deal-products.ts | linkDealProduct / unlinkDealProduct | * | deal_products | nicht-core |
 | actions/goals.ts | save/deleteGoal | * | goals | nicht-core (User-bezogen, owner-bezogen ueber FK) |
@@ -181,8 +194,9 @@ Pfad: `cockpit/src/app/(app)/<domain>/actions.ts` und `cockpit/src/app/actions/*
 ### lib/actions/*.ts — Tranche 2 (Service-internal)
 | Datei | Funktion | Op | Tabelle | Notes |
 |---|---|---|---|---|
-| lib/actions/activity-actions.ts | createActivity | INSERT | activities | owner = caller's profile or passed-in |
-| lib/actions/insight-actions.ts | acceptInsight / rejectInsight | INSERT | activities | owner = getProfile().user_id |
+| lib/actions/activity-actions.ts | createActivity (post-RPT-402) | INSERT | activities | owner = caller's profile or passed-in, assertNotReadOnlyContext first line |
+| lib/actions/activity-actions.ts | completeActivity / deleteActivity (post-RPT-402) | UPDATE / DELETE | activities | assertNotReadOnlyContext first line |
+| lib/actions/insight-actions.ts | approveInsightAction / rejectInsightAction (post-RPT-402) | INSERT | activities | owner = approver user, assertNotReadOnlyContext first line; batch wrapper inherits via single-item call |
 | lib/actions/document-actions.ts | uploadDocument / deleteDocument | * | documents | nicht-core |
 | components/insights/insight-actions.ts | accept/reject (UI-wrapper) | INSERT | activities | wrapper, ruft lib/actions |
 

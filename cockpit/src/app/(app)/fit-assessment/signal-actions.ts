@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 export type Signal = {
   id: string;
@@ -36,6 +37,8 @@ export async function getSignals(params: {
 }
 
 export async function createSignal(formData: FormData) {
+  await assertNotReadOnlyContext();
+
   const supabase = await createClient();
 
   const contactId = (formData.get("contact_id") as string) || null;
@@ -63,6 +66,8 @@ export async function createSignalForActivity(
   companyId: string | null,
   signalType: string
 ) {
+  await assertNotReadOnlyContext();
+
   const supabase = await createClient();
 
   const { error } = await supabase.from("signals").insert({
@@ -80,6 +85,8 @@ export async function createSignalForActivity(
 }
 
 export async function deleteSignal(id: string) {
+  await assertNotReadOnlyContext();
+
   const supabase = await createClient();
   const { error } = await supabase.from("signals").delete().eq("id", id);
 

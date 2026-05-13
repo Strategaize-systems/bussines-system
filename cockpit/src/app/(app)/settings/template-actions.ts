@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
 // layout reserviert fuer V7+ Block-Builder (DEC-090). V5.3-Code ignoriert das Feld.
 export type EmailTemplate = {
@@ -60,6 +61,8 @@ export async function getEmailTemplates(opts?: {
 }
 
 export async function createEmailTemplate(formData: FormData) {
+  await assertNotReadOnlyContext();
+
   const supabase = await createClient();
 
   const language = (formData.get("language") as string) || "de";
@@ -86,6 +89,8 @@ export async function createEmailTemplate(formData: FormData) {
 }
 
 export async function updateEmailTemplate(id: string, formData: FormData) {
+  await assertNotReadOnlyContext();
+
   const supabase = await createClient();
 
   // Systemvorlagen duerfen nicht direkt editiert werden — der User soll
@@ -132,6 +137,8 @@ export async function updateEmailTemplate(id: string, formData: FormData) {
 }
 
 export async function deleteEmailTemplate(id: string) {
+  await assertNotReadOnlyContext();
+
   const supabase = await createClient();
 
   const { data: existing, error: fetchError } = await supabase
@@ -159,6 +166,8 @@ export async function deleteEmailTemplate(id: string) {
 }
 
 export async function duplicateSystemTemplate(id: string) {
+  await assertNotReadOnlyContext();
+
   const supabase = await createClient();
 
   const { data: source, error: fetchError } = await supabase

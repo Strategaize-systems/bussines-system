@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import type {
   CadenceEnrollment,
   CadenceEnrollmentWithContext,
@@ -87,6 +88,8 @@ export async function enrollInCadence(params: {
   dealId?: string;
   contactId?: string;
 }) {
+  await assertNotReadOnlyContext();
+
   if (!params.dealId && !params.contactId) {
     return { error: "Deal oder Kontakt muss angegeben werden." };
   }
@@ -143,6 +146,8 @@ export async function enrollInCadence(params: {
 // =============================================================
 
 export async function pauseEnrollment(enrollmentId: string) {
+  await assertNotReadOnlyContext();
+
   const supabase = await createClient();
 
   const { data: enrollment } = await supabase
@@ -169,6 +174,8 @@ export async function pauseEnrollment(enrollmentId: string) {
 }
 
 export async function resumeEnrollment(enrollmentId: string) {
+  await assertNotReadOnlyContext();
+
   const supabase = await createClient();
 
   const { data: enrollment } = await supabase
@@ -201,6 +208,8 @@ export async function resumeEnrollment(enrollmentId: string) {
 }
 
 export async function stopEnrollment(enrollmentId: string, reason?: string) {
+  await assertNotReadOnlyContext();
+
   const supabase = await createClient();
 
   const { data: enrollment } = await supabase

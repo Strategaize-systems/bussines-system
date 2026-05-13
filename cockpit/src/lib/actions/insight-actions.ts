@@ -8,6 +8,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { applyProposedChange } from "@/lib/ai/signals/applier";
 import type { AIActionQueueItem } from "@/types/ai-queue";
 
@@ -72,6 +73,8 @@ async function getCurrentUserId(): Promise<string | null> {
 export async function approveInsightAction(
   id: string,
 ): Promise<InsightActionResult> {
+  await assertNotReadOnlyContext();
+
   const userId = await getCurrentUserId();
   if (!userId) {
     return { success: false, error: "Nicht authentifiziert" };
@@ -159,6 +162,8 @@ export async function rejectInsightAction(
   id: string,
   reason?: string,
 ): Promise<InsightActionResult> {
+  await assertNotReadOnlyContext();
+
   const userId = await getCurrentUserId();
   if (!userId) {
     return { success: false, error: "Nicht authentifiziert" };

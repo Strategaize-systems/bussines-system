@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { indexActivity } from "@/lib/knowledge/indexer";
 import { logAuditWithId } from "@/lib/audit";
 import { dispatchAutomationTrigger } from "@/lib/automation/dispatcher";
@@ -50,6 +51,8 @@ export async function getActivities(params: {
 }
 
 export async function createActivity(formData: FormData) {
+  await assertNotReadOnlyContext();
+
   const supabase = await createClient();
 
   // V7 SLC-704 MT-6: owner_user_id = caller (User-Request-Pfad, DEC-182).
@@ -121,6 +124,8 @@ export async function createActivity(formData: FormData) {
 }
 
 export async function completeActivity(id: string) {
+  await assertNotReadOnlyContext();
+
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -137,6 +142,8 @@ export async function completeActivity(id: string) {
 }
 
 export async function deleteActivity(id: string) {
+  await assertNotReadOnlyContext();
+
   const supabase = await createClient();
   const { error } = await supabase.from("activities").delete().eq("id", id);
 
