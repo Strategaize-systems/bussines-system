@@ -1,5 +1,14 @@
 # Known Issues
 
+### ISSUE-066 — SLC-706 Drilldown Mutate-Lockdown Defense-in-Depth-Gap: AsyncLocalStorage propagiert nicht in Server-Action-Requests
+- Status: open
+- Severity: Medium
+- Area: Backend / SLC-706 / V7 Drilldown / Read-Only-Context-Propagation
+- Summary: `cockpit/src/app/(app)/team/[user_id]/layout.tsx` wrappt Children mit `runWithReadOnlyContext()` via Node `AsyncLocalStorage`. Der Context propagiert korrekt durch die Server-Component-Render-Chain (Vitest MT-6 3/3 PASS). ABER: Server Actions sind separate Request-Handler in Next.js App-Router — wenn ein Client Direct-Server-Action-Call macht (z.B. via DevTools `fetch` mit Next-Action-Header oder Form-POST), laeuft die Action OHNE aktiven Read-Only-Context. `assertNotReadOnlyContext()` greift dann nicht → Mutate-Action wuerde gelingen, obwohl Teamlead im Drilldown ist. Dokumentiert in `cockpit/src/lib/auth/read-only-context.ts:14-19` ("fuer den Block-Pfad dort muss SLC-704 zusaetzlich auf Pfad-/Header-Hinweise zurueckgreifen"). SLC-706 hat den Gap nicht geschlossen — Layout-Wrap allein reicht nicht fuer Direct-Server-Action-Call-Schutz.
+- Impact: Im UI sind alle Mutate-Buttons im Drilldown unsichtbar (V1 Defense-Layer 1 PASS). Aber technisch koennte ein Teamlead via DevTools eine Mutate-Server-Action seines Team-Members callen — Mutation gelingt, RLS erlaubt Teamlead Schreib-Rechte auf eigene Team-Member-Daten. **Kein Cross-Team-Daten-Leak** (RLS blockt das unabhaengig), nur Same-Team-Bypass des Read-Only-UX-Versprechens. Wenn der User immer auch der Manager ist (V1 Internal-Test-Mode), ist das Risiko vernachlaessigbar.
+- Workaround: Keiner — UX-Layer (keine Mutate-Buttons) bleibt aktiv. Vor Customer-Ship muss SLC-707 oder ein separater Slice die Defense-in-Depth schliessen.
+- Next Action: SLC-707 oder neuer V7.5-Slice: Middleware-basierter Pfad-Check (`/^\/team\/[user_id]\//`) der einen Request-Header `X-Read-Only-Mode: 1` setzt. `assertNotReadOnlyContext()` liest sowohl AsyncLocalStorage als auch den Header. Alternativ: Server-Action-Wrapper-HOF der vor jeder Mutate-Action den Path-Prefix prueft.
+
 ### ISSUE-065 — getTeamMembers Self-Filter inaktiv durch .single() ohne explicit auth.uid()-Lookup
 - Status: resolved
 - Severity: High
