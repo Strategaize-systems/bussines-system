@@ -2259,7 +2259,17 @@
       "priority": "medium",
       "status": "done",
       "version": "V7",
-      "description": "Aus /qa V7 RPT-408 ISSUE-068: cockpit/vitest.config.ts include-Pattern faengt nur src/**/*.test.ts(x), uebersieht root-level cockpit/__tests__/ (RLS-Matrix 96 + Bulk-Reassign 20 + Drilldown 4 + Aggregat-Live-DB 6 = 138+ V7-Tests). npm run test deckt aktuell die V7-Live-DB-Coverage nicht ab. Fix: include-Pattern um '__tests__/**/*.test.ts' erweitern. Aufwand ~10 min inkl. Verifikation. Vor /deploy V7 empfohlen, damit zukuenftige Test-Driven-Slices in V7-Bereich nicht unbemerkt regressieren. **Resolved 2026-05-14:** vitest.config.ts Zeile 9 um '__tests__/**/*.test.ts' erweitert (commit folgt). 5 Test-Files (rls/helper-functions, rls/v7-rls-matrix, team/aggregate-queries, team/bulk-reassign, team/drilldown) jetzt vom Default-Lauf erfasst. ISSUE-068 resolved.",
+      "description": "Aus /qa V7 RPT-408 ISSUE-068: cockpit/vitest.config.ts include-Pattern faengt nur src/**/*.test.ts(x), uebersieht root-level cockpit/__tests__/ (RLS-Matrix 96 + Bulk-Reassign 20 + Drilldown 4 + Aggregat-Live-DB 6 = 138+ V7-Tests). npm run test deckt aktuell die V7-Live-DB-Coverage nicht ab. **Resolved 2026-05-14 mit korrigierter Loesung:** Erster Anlauf (include-Pattern in vitest.config.ts erweitern) brach den Default-Lauf — __tests__/ braucht Node-env + TEST_DATABASE_URL, scheitert in jsdom-Default mit 'TEST_DATABASE_URL nicht gesetzt'. Korrekt: Neues npm-Script `test:all` in cockpit/package.json hinzugefuegt, das `test` (src/*, jsdom) gefolgt von `test:rls` (__tests__/*, node-env, Coolify-DB) ausfuehrt. vitest.config.ts auf src-only zurueckgesetzt. /qa-Skill soll zukuenftig `npm run test:all` verwenden (IMP-512 im Dev-System).",
+      "createdAt": "2026-05-14"
+    },
+    {
+      "id": "BL-466",
+      "title": "Post-Release-Polish-Slice V7: ISSUE-069 Audit-Doc-Sync + ISSUE-070 4 Defense-in-Depth-Guards",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V7",
+      "description": "Aus /final-check V7 RPT-410: 2 MEDIUM-Findings als Post-Release-Polish gebuendelt (~30 min Aufwand). (1) ISSUE-069 Audit-Doc-Sync: docs/AUDIT_SERVER_ACTIONS_V7.md um Bulk-Reassign-Server-Actions (bulkReassignPreview, bulkReassignApply), bulk-reassign.ts-Audit-Helper, working-hours-actions.ts, winloss.ts persistManualRun, lib/audit.ts logAudit/logAuditWithId erweitern. 1 Fehlklassifizierung von insight-actions.ts:201 korrigieren (steht als 'wrapper', macht aber selbst INSERT). (2) ISSUE-070 4 Defense-in-Depth-Guards: 4× await assertNotReadOnlyContext() als first line in bulk-reassign-actions.ts bulkReassignApply + insight-actions.ts saveInsight + working-hours-actions.ts updateWorkingHoursSettings + winloss.ts persistManualRun. Plus 4 Vitest-Mock-Tests (RED-GREEN-Pattern: Mock setzt Read-Only-Context, Action wird mit Error abgewiesen). Kein aktueller Exploit-Pfad — bei zukuenftiger Drilldown-Erweiterung wichtig.",
       "createdAt": "2026-05-14"
     }
   ]

@@ -1,5 +1,23 @@
 # Known Issues
 
+### ISSUE-070 — 4 Mutate-Server-Actions ohne assertNotReadOnlyContext-Guard (Defense-in-Depth-Polish, kein Exploit-Pfad)
+- Status: open
+- Severity: Medium
+- Area: Backend / V7 / Defense-in-Depth / SLC-704-Symmetrie
+- Summary: /final-check V7 RPT-410: 4 Files mutieren Tabellen ohne `await assertNotReadOnlyContext()` als first line — `lib/team/bulk-reassign-actions.ts` (bulkReassignApply, RLS-Bypass via SET LOCAL ROLE postgres), `components/insights/insight-actions.ts` (saveInsight INSERT activities), `lib/settings/working-hours-actions.ts` (updateWorkingHoursSettings UPSERT user_settings), `lib/ki-workspace/reports/winloss.ts` (persistManualRun INSERT auto_winloss_runs, V6.6-Code). ISSUE-064-Style-Policy ("first line in jeder Mutate-Action") nicht symmetrisch durchgezogen seit SLC-707.
+- Impact: Kein aktueller Exploit-Pfad. Die 4 Server-Actions sind NICHT aus dem `/team/[user_id]/*`-Drilldown-Subtree aufrufbar — Read-Only-Context wird nur dort via Layout-Wrap gesetzt. ISSUE-066-Kontext: AsyncLocalStorage propagiert ohnehin nicht in Server-Action-Requests, Guard wuerde dort eh nicht greifen. V7.5-Mitigation via Middleware-Header geplant. Bei zukuenftiger Drilldown-Erweiterung wuerden diese Guards wichtig.
+- Workaround: Keiner notwendig — keine Live-Auslieferungs-Bedrohung.
+- Next Action: BL-466 — Post-Release-Polish-Slice (~15 min): 4× `await assertNotReadOnlyContext()` als first line einfuegen + 4× Vitest-Mock-Tests + AUDIT_SERVER_ACTIONS_V7.md-Synchronisation (siehe ISSUE-069).
+
+### ISSUE-069 — AUDIT_SERVER_ACTIONS_V7.md stale: SLC-707 Bulk-Reassign + 3 V6.6-Mutate-Files nicht nachgetragen + 1 Fehlklassifizierung
+- Status: open
+- Severity: Medium
+- Area: Documentation / V7 / Audit-Trail
+- Summary: /final-check V7 RPT-410: docs/AUDIT_SERVER_ACTIONS_V7.md hat seit SLC-704-Sweep 4 Files ergaenzt (ISSUE-064-Tranche), aber 5 weitere Mutate-Files sind nicht synchron mit dem aktuellen Code-Stand. (a) Bulk-Reassign-Server-Actions (bulkReassignPreview, bulkReassignApply) sind nur in Section 8 "Out-of-Scope" gelistet — nie als "live"-Eintrag nachgetragen, obwohl SLC-707 sie produktiv ausgeliefert hat. (b) `lib/team/bulk-reassign.ts` Audit-Helper (writeInitiatedAudit + writeAppliedAudit) fehlen. (c) `lib/settings/working-hours-actions.ts` (V6.6) fehlt. (d) `lib/ki-workspace/reports/winloss.ts` persistManualRun (V6.6) fehlt. (e) `lib/audit.ts` logAudit + logAuditWithId (zentrale Audit-Insertion) fehlt. Plus 1 Fehlklassifizierung: `components/insights/insight-actions.ts:201` ist als "wrapper, ruft lib/actions" markiert — real macht die Datei selbst `supabase.from("activities").insert(...)` an Zeile 59.
+- Impact: Reine Doc-Hygiene. Kein Runtime-Risk. Aber: Compliance-Gate-Auditoren verlassen sich auf das Doc als Quelle-der-Wahrheit fuer Server-Action-Coverage und Audit-Trail-Pfade.
+- Workaround: Keiner.
+- Next Action: BL-466 — Doc-Sync (~10 min): 5 Eintraege ergaenzen, 1 Fehlklassifizierung korrigieren. Gebuendelt mit ISSUE-070 als Post-Release-Polish-Slice.
+
 ### ISSUE-068 — vitest.config.ts include-Pattern uebersieht root-level __tests__/-Suite (V7-Live-DB-Coverage silent geskipped)
 - Status: resolved
 - Severity: Medium
@@ -7,7 +25,7 @@
 - Summary: `cockpit/vitest.config.ts` `include`-Pattern faengt nur `src/**/*.test.ts(x)`. Die root-level `cockpit/__tests__/`-Tests (RLS-Matrix, Team-Aggregat, Drilldown, Bulk-Reassign — Live-DB-Tests gegen Coolify-DB) werden vom Default-Lauf silent geskipped. Discovery via /qa V7 (RPT-408): Subagent musste Override-Config `vitest.config.full.mts` mit zusaetzlichem `__tests__/**/*.test.ts`-Pattern bauen, um die 138+ V7-Live-DB-Tests ueberhaupt zu fahren.
 - Impact: Ein `npm run test` (oder /qa-default-Run) deckt **nicht** die V7-RLS-Tests (96), Bulk-Reassign-Tests (20), Drilldown-Tests (4) oder Team-Aggregat-Live-DB-Tests (6) ab. Future Test-Driven-Slices in V7-Bereich koennten Regression-Symptome haben, die der Default-Lauf nicht aufdeckt → falsche Sicherheit.
 - Workaround: Bei /qa-Laeufen explizit `vitest run __tests__/` oder Override-Config mit erweitertem include-Pattern verwenden.
-- Resolved: 2026-05-14 — BL-465. `cockpit/vitest.config.ts` `include`-Pattern um `"__tests__/**/*.test.ts"` erweitert. 5 zusaetzliche Test-Files (rls/helper-functions, rls/v7-rls-matrix, team/aggregate-queries, team/bulk-reassign, team/drilldown) werden jetzt vom Default-`npm run test`-Lauf erfasst.
+- Resolved: 2026-05-14 — BL-465. Erster Anlauf (include-Pattern in `vitest.config.ts` erweitern) brach den Default-Lauf, weil `__tests__/`-Tests Node-env + `TEST_DATABASE_URL` brauchen und im jsdom-Default-Run mit "TEST_DATABASE_URL nicht gesetzt" abbrechen (5 Test-Files failed). Korrekte Loesung: neuer `npm run test:all` Script in `cockpit/package.json`, der `test` (Default, src/* in jsdom) gefolgt von `test:rls` (existierendes Script, __tests__/* in node-env gegen Coolify-DB) ausfuehrt. `vitest.config.ts` wurde auf src-only zurueckgesetzt. /qa-Skill-Default muss zukuenftig `npm run test:all` verwenden um V7-Live-DB-Coverage einzuschliessen (IMP-512).
 
 ### ISSUE-067 — POSTGRES_URL/DATABASE_URL fehlt in Coolify-Business-System-ENV — Bulk-Reassign-Server-Action wuerde Runtime-Fehler werfen
 - Status: resolved
