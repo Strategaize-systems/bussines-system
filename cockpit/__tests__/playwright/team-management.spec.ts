@@ -139,6 +139,124 @@
  * URL fuer Set-Password: `https://<deploy>/auth/v1/verify?token=<token>
  *   &type=invite&redirect_to=https://<deploy>/mein-tag`. Dokumentiert in
  * Risk R1 des Slice; falls Spam-Issue auftritt, separate Backlog-Story.
+ *
+ * ────────────────────────────────────────────────────────────────────────────
+ * SLC-707 MT-7 — Bulk-Reassign E2E Smoke-Recipe (Anhang zu team-management).
+ *
+ * Verifiziert AC1 (Preview), AC2 (Apply mit SET LOCAL ROLE postgres),
+ * AC2b (Defense-in-Depth), AC2c (Two-Phase-Audit) gegen Live-DB.
+ *
+ * PRE-CHECKS:
+ *   - Admin-User (User Immo) eingeloggt.
+ *   - Mindestens 2 Test-Members im selben Team mit ein paar Deals
+ *     (z.B. Seed-Members 081 + 082, beide in TEAM-077).
+ *   - Mitglieder-Tabelle in /settings/team zeigt beide.
+ *
+ * VERIFIKATIONS-SCHRITTE:
+ *
+ *   1. HAPPY-PATH-Smoke: Preview -> Confirm -> Apply
+ *
+ *      a) Als Admin: navigate `/settings/team`. Erwartung: Button
+ *         "Bulk-Reassign" oben rechts neben "Mitglied einladen" sichtbar.
+ *      b) Click "Bulk-Reassign" -> Dialog oeffnet.
+ *      c) Quell-User auswaehlen: z.B. Member 081 (Anzeige: Display-Name oder
+ *         E-Mail, NICHT UUID — Display-Resolver Lesson aus MT-0).
+ *      d) Ziel-User auswaehlen: Member 082 (gleiches Team).
+ *      e) Filter optional setzen oder leer lassen. Click "Vorschau" Button.
+ *      f) Erwartung: Preview-Tabelle erscheint mit per-Tabelle-Counts und
+ *         Total-Zeile. Counts > 0 (Seed hat Deals fuer Member 081).
+ *      g) Click "Reassign starten" -> Confirm-Dialog erscheint mit
+ *         "X Records von <Member 081> zu <Member 082> verschieben?".
+ *      h) Falls X > 1000: Warnhinweis ueber moegliche Laufzeit sichtbar.
+ *      i) Click "Jetzt verschieben". Erwartung: Success-Toast
+ *         "X Records ... verschoben." Dialog schliesst nach ~1.5s,
+ *         router.refresh() aktualisiert die Tabelle.
+ *
+ *   2. AUDIT-Verifikation (AC2c Two-Phase-Audit, Happy Path):
+ *
+ *      Nach erfolgreichem Apply via SQL pruefen:
+ *
+ *         SELECT action, entity_type, changes
+ *           FROM audit_log
+ *          WHERE context = 'slc-707/bulk-reassign'
+ *            AND actor_id = '<admin-user-id>'
+ *          ORDER BY created_at DESC
+ *          LIMIT 10;
+ *
+ *      Erwartung:
+ *        - 1 Row mit action='bulk_reassign_initiated', entity_type=
+ *          'bulk_reassign', changes enthaelt requested_from/requested_to/
+ *          filter.
+ *        - 8 Rows mit action='bulk_reassign_applied', entity_type =
+ *          <table-name> (1x pro CORE_TABLE), changes enthaelt
+ *          initiated_audit_id (verlinkt zur Phase-1-Row), affected_rows.
+ *
+ *      Total: 9 Audit-Rows fuer einen erfolgreichen Apply (AC2c).
+ *
+ *   3. CROSS-TEAM-BLOCKED-Smoke (AC2b Defense-in-Depth):
+ *
+ *      Als Teamlead einloggen (Teamlead des Test-Teams). Versuche
+ *      Bulk-Reassign mit Quell-User aus Team A und Ziel-User aus Team B
+ *      (cross-team).
+ *
+ *      Hinweis: Admin sieht alle Teams im Dropdown, Teamlead nur sein
+ *      eigenes Team. Cross-Team waere nur via direkten Server-Action-Call
+ *      moeglich (Devtools-Network-Replay).
+ *
+ *      Erwartung: Server-Action returnt `{ ok: false, code: 'forbidden',
+ *      error: 'Teamlead darf nur within-Team reassign ...' }`. Inline-Error-
+ *      Hinweis im Dialog. Kein UPDATE ausgefuehrt.
+ *
+ *   4. MEMBER-BLOCKED-Smoke (AC2b):
+ *
+ *      Als Member einloggen. Versuche `/settings/team` zu oeffnen.
+ *      Erwartung: assertRole(['admin','teamlead']) redirected zu
+ *      `/mein-tag` (Member sieht die Page gar nicht).
+ *
+ *      Defense-in-Depth: selbst wenn Member die Server Action direkt aufruft
+ *      (Network-Replay), wird sie mit `{ ok: false, code: 'forbidden' }`
+ *      abgewiesen — gar kein UPDATE.
+ *
+ *   5. FILTER-INJECTION-SAFE-Smoke (AC2b):
+ *
+ *      Devtools-Console:
+ *        await fetch('/__nextjs_original-stack-frame', { ... })  // analog
+ *      ODER manueller Test der Server Action via Devtools-Network-Replay
+ *      mit:
+ *        filter: { pipeline_id: "'; DROP TABLE companies; --" }
+ *
+ *      Erwartung: Validation-Error vor jeglicher DB-Query. Companies-Tabelle
+ *      bleibt intakt (SQL via psql: `SELECT COUNT(*) FROM companies` returnt
+ *      gleiche Anzahl wie vorher).
+ *
+ *   6. TRANSACTION-ROLLBACK-Smoke (AC2c Failure Path):
+ *
+ *      Hinweis: nur durchfuehrbar mit kontrolliertem DB-Fehler (z.B. invalid
+ *      to-UUID, der kein REFERENCES profiles trifft). Optional, primaere
+ *      Verifikation erfolgt via Vitest (`audit-failure-leaves-initiated-only`).
+ *
+ *      Falls durchgefuehrt:
+ *        - Audit-Initiated-Row bleibt in audit_log (Forensik-Trail).
+ *        - Audit-Applied-Rows fehlen.
+ *        - UPDATE auf Kerntabellen NICHT angewandt (owner_user_id unveraendert).
+ *
+ * SUCCESS-CRITERIA:
+ *   - Happy-Path: 9 Audit-Rows, Member 082 hat Records, die vorher Member 081
+ *     gehoerten.
+ *   - Cross-Team-Block: Server Action rejected, kein UPDATE.
+ *   - Member-Block: redirect zu /mein-tag, Server Action rejected falls
+ *     direkt aufgerufen.
+ *   - Filter-Injection-Block: Validation-Error, DB intakt.
+ *   - Transaction-Rollback (optional): nur Initiated-Audit ueberlebt.
+ *
+ * VERTRAG MIT /qa SLC-707:
+ *
+ *   - AC1 Preview-Mode:                  via Schritt 1f
+ *   - AC2 Apply-Mode:                    via Schritt 1g..i + Schritt 2
+ *   - AC2b Defense-in-Depth:             via Schritte 3 + 4 + 5
+ *   - AC2c Two-Phase-Audit:              via Schritt 2 + Schritt 6 + Vitest
+ *   - AC9 TSC + Vitest + Build + Lint:   /qa-Pflicht (MT-8)
+ *   - AC10 Live-Smoke nach Coolify-Redeploy: Schritte 1..6
  */
 
 export {};
