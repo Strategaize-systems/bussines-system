@@ -20,6 +20,7 @@ import { logViewAs } from "@/lib/team/view-as-audit";
 import { runWithReadOnlyContext } from "@/lib/auth/read-only-context";
 import { ReadOnlyContextProvider } from "@/lib/auth/read-only-context-client";
 import { DrilldownBanner } from "@/components/drilldown/drilldown-banner";
+import { DrilldownSubNav } from "./_components/drilldown-sub-nav";
 
 export const dynamic = "force-dynamic";
 
@@ -90,6 +91,7 @@ export default async function DrilldownLayout({
             targetDisplayName={targetProfile.display_name ?? "Mitarbeiter"}
             targetUserId={targetUserId}
           />
+          <DrilldownSubNav targetUserId={targetUserId} />
           <div className="flex-1">{children}</div>
         </div>
       </ReadOnlyContextProvider>
