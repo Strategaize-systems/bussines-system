@@ -186,7 +186,7 @@
       "id": "v7",
       "name": "V7",
       "status": "released",
-      "summary": "Multi-User + Teamlead-Sprint RELEASED 2026-05-14 als REL-029 (Image-Tag 2131ec7). 7 Slices SLC-701..707 + 3 Features FEAT-502/503/701 + Patches BL-465/467/470 alle deployed. MIG-035 V7-RLS-Switch + Helper-Functions + MIG-036 view_as-Audit angewendet. Invite-Mail-Flow End-to-End Live verifiziert (RPT-411). Bulk-Reassign live (174 Records, 9 audit_log-Eintraege RPT-409). Mobile-Hamburger live. Pre-V7-Final-Check RPT-410 (CONDITIONALLY READY). Vitest 756/756 PASS. Internal-Test-Mode aufgeloest (Admin kann Teamleads + Members einladen). Defense-in-Depth-Polish + Drilldown-Pipeline-Erweiterung + Settings-Rollen-Permissions als V7.1-Sprint (BL-466 + BL-468 + BL-469).",
+      "summary": "Multi-User + Teamlead-Sprint RELEASED 2026-05-14 als REL-029 (Image-Tag 2131ec7). 7 Slices SLC-701..707 + 3 Features FEAT-502/503/701 + Patches BL-465/467/470 alle deployed. MIG-033 + MIG-034 + MIG-035 (3-Phasen V7-RLS-Switch + 4 Helper-Functions + view_as-Audit-Spalte) angewendet. Invite-Mail-Flow End-to-End Live verifiziert (RPT-411). Bulk-Reassign live (174 Records, 9 audit_log-Eintraege RPT-409). Mobile-Hamburger live. Pre-V7-Final-Check RPT-410 (CONDITIONALLY READY). Vitest 756/756 PASS. Internal-Test-Mode aufgeloest (Admin kann Teamleads + Members einladen). Defense-in-Depth-Polish + Drilldown-Pipeline-Erweiterung + Settings-Rollen-Permissions als V7.1-Sprint (BL-466 + BL-468 + BL-469).",
       "order": 27
     },
     {
