@@ -1,5 +1,23 @@
 # Known Issues
 
+### ISSUE-068 — vitest.config.ts include-Pattern uebersieht root-level __tests__/-Suite (V7-Live-DB-Coverage silent geskipped)
+- Status: open
+- Severity: Medium
+- Area: Test-Infrastructure / vitest.config / V7 Live-DB-Coverage
+- Summary: `cockpit/vitest.config.ts` `include`-Pattern faengt nur `src/**/*.test.ts(x)`. Die root-level `cockpit/__tests__/`-Tests (RLS-Matrix, Team-Aggregat, Drilldown, Bulk-Reassign — Live-DB-Tests gegen Coolify-DB) werden vom Default-Lauf silent geskipped. Discovery via /qa V7 (RPT-408): Subagent musste Override-Config `vitest.config.full.mts` mit zusaetzlichem `__tests__/**/*.test.ts`-Pattern bauen, um die 138+ V7-Live-DB-Tests ueberhaupt zu fahren.
+- Impact: Ein `npm run test` (oder /qa-default-Run) deckt **nicht** die V7-RLS-Tests (96), Bulk-Reassign-Tests (20), Drilldown-Tests (4) oder Team-Aggregat-Live-DB-Tests (6) ab. Future Test-Driven-Slices in V7-Bereich koennten Regression-Symptome haben, die der Default-Lauf nicht aufdeckt → falsche Sicherheit.
+- Workaround: Bei /qa-Laeufen explizit `vitest run __tests__/` oder Override-Config mit erweitertem include-Pattern verwenden.
+- Next Action: BL-465 — `cockpit/vitest.config.ts` `include` um `"__tests__/**/*.test.ts"` erweitern. Alternativ: Live-DB-Tests unter `src/lib/...` einsortieren (Inkonsistent mit aktueller Konvention, deshalb Patch des include-Pattern bevorzugt).
+
+### ISSUE-067 — POSTGRES_URL/DATABASE_URL fehlt in Coolify-Business-System-ENV — Bulk-Reassign-Server-Action wuerde Runtime-Fehler werfen
+- Status: open
+- Severity: High
+- Area: Infrastructure / Coolify-ENV / SLC-707 / Bulk-Reassign
+- Summary: SLC-707 MT-1 fuehrt einen neuen Raw-pg-Connection-Pfad ein (`cockpit/src/lib/db/pg.ts` → `getPgClient()` via `process.env.POSTGRES_URL ?? process.env.DATABASE_URL`). Bulk-Reassign-Server-Action (`bulkReassignPreview`, `bulkReassignApply`) und Audit-Helper `writeInitiatedAudit` brauchen den Connection-String fuer den SET-LOCAL-ROLE-postgres-Pfad. Die Coolify-Business-System-Resource hat aktuell weder `POSTGRES_URL` noch `DATABASE_URL` gesetzt (nicht in `.env.example`, nicht in `docs/ARCHITECTURE.md` ausser im unverwandten Cal.com-Block).
+- Impact: Bulk-Reassign-UI in Produktion bricht beim Klick auf "Vorschau" oder "Reassign starten" mit Fehler-Toast: "Kein Postgres-Connection-String in POSTGRES_URL oder DATABASE_URL gefunden — bulk-reassign benoetigt direkten DB-Zugriff". Vitest deckt das nicht ab, weil Tests die Pure-Helper direkt mit `pg.Client` aufrufen (Server-Action-Layer wird umgangen). Live-Smoke blockiert.
+- Workaround: ENV-Set in Coolify per Hand: `POSTGRES_URL=postgresql://postgres:${POSTGRES_PASSWORD}@<supabase-db-host>:5432/postgres`. Mit aktuellem Container-Suffix `supabase-db-k9f5pn5upfq7etoefb5ukbcg-075059013140` ist die ENV nach dem naechsten DB-Container-Redeploy stale (IMP-497 Container-Suffix-Drift). Stabiler: Service-Alias `supabase-db` falls Coolify-Compose das auto-erzeugt.
+- Next Action: BL-464 — User setzt `POSTGRES_URL` in Coolify Business-System ENV und Re-Deployt. Alternative-Architektur (BL-466 oder BL-467 falls noetig): SECURITY DEFINER Postgres-Function + `supabase.rpc('bulk_reassign_apply', ...)` Aufruf, das umgeht den ENV-Drift komplett (Aufwand ~2-3h Refactor).
+
 ### ISSUE-066 — SLC-706 Drilldown Mutate-Lockdown Defense-in-Depth-Gap: AsyncLocalStorage propagiert nicht in Server-Action-Requests
 - Status: open
 - Severity: Medium

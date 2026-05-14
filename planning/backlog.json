@@ -2241,6 +2241,26 @@
       "version": "V7",
       "description": "FEAT-701 (Requirements 2026-05-12): Sidebar wird rollen-konditional via Single-Source-Konfig lib/navigation/sidebar-config.ts mit visibleFor-Array pro Eintrag. Server-side-Filter im (authenticated)/layout.tsx, kein Client-Flash. Member-Sidebar verkuerzt (kein Dashboard/Cockpit/Workflow/Kampagnen-Eintrag per Memory feedback_admin_employee_chef_views). Teamlead-Sidebar mit TEAM-Sektion (FEAT-503). Admin-Sidebar Vollumfang. VERWALTUNG-Split (BL-437) in Mein-Profil + Setup als 2 kollabierbare Sub-Gruppen. Mobile-Hamburger (BL-457) als MobileTopBar + Sheet-Drawer fuer <768px. Server-Side-Guards auf rollen-geschuetzten Routes (assertRole). Rollen-Sichtbarkeit in Pages: Mein Tag/Cockpit/Pipeline rollen-aware. Open Questions Q1-Q5 fuer /architecture. **Resolved 2026-05-14 in SLC-707 MT-3+4+5+6 (Subagent-Commit a40cf8f):** MobileTopBar + Sidebar-Mobile-Variant + Sheet-Drawer + VERWALTUNG_MEIN/SETUP-Sub-Group-Split + Conditional Sub-Header-Render (Muster 1). Komplette FEAT-701 done via SLC-707.",
       "createdAt": "2026-05-12"
+    },
+    {
+      "id": "BL-464",
+      "title": "Coolify-ENV: POSTGRES_URL setzen fuer SLC-707 Bulk-Reassign (User-Action vor V7-Live-Smoke)",
+      "type": "fix",
+      "priority": "high",
+      "status": "open",
+      "version": "V7",
+      "description": "Aus /qa V7 RPT-408 ISSUE-067: SLC-707 MT-1 fuehrt Raw-pg-Connection-Pfad ein (cockpit/src/lib/db/pg.ts via POSTGRES_URL/DATABASE_URL ENV). Coolify Business-System Resource hat aktuell keine dieser ENV-Variablen gesetzt → Bulk-Reassign-UI in Produktion bricht beim Klick mit Fehlermeldung 'Kein Postgres-Connection-String in POSTGRES_URL oder DATABASE_URL gefunden'. **User-Action (~2 min):** Coolify UI → Business-System Resource → Environment Variables → POSTGRES_URL=postgresql://postgres:${POSTGRES_PASSWORD}@<supabase-db-host>:5432/postgres setzen. Container-Suffix wechselt bei jedem DB-Redeploy (IMP-497), entweder stabilen Service-Alias 'supabase-db' verwenden falls Coolify-Compose das auto-erzeugt, oder ENV nach jedem DB-Redeploy nachziehen. **Alternative (BL-466 falls Drift unhandhabbar): SECURITY DEFINER Postgres-Function + supabase.rpc()-Refactor (~2-3h).** Voraussetzung fuer V7-Release.",
+      "createdAt": "2026-05-14"
+    },
+    {
+      "id": "BL-465",
+      "title": "vitest.config.ts: include-Pattern erweitern um __tests__/-Suite (V7-Live-DB-Coverage)",
+      "type": "fix",
+      "priority": "medium",
+      "status": "open",
+      "version": "V7",
+      "description": "Aus /qa V7 RPT-408 ISSUE-068: cockpit/vitest.config.ts include-Pattern faengt nur src/**/*.test.ts(x), uebersieht root-level cockpit/__tests__/ (RLS-Matrix 96 + Bulk-Reassign 20 + Drilldown 4 + Aggregat-Live-DB 6 = 138+ V7-Tests). npm run test deckt aktuell die V7-Live-DB-Coverage nicht ab. Fix: include-Pattern um '__tests__/**/*.test.ts' erweitern. Aufwand ~10 min inkl. Verifikation. Vor /deploy V7 empfohlen, damit zukuenftige Test-Driven-Slices in V7-Bereich nicht unbemerkt regressieren.",
+      "createdAt": "2026-05-14"
     }
   ]
 }
