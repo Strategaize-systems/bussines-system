@@ -92,13 +92,14 @@
 - Resolved: 2026-05-14 (SLC-707 MT-0). Team-Select bekam Display-Resolver via `<SelectValue>{teams.find(...).name ?? teamId}</SelectValue>`. Adjacent-Bug-Fix per Deviation Rule 1: Role-Select hatte gleichen Root-Cause (zeigte `member`/`teamlead`/`admin` statt `Member`/`Teamlead`/`Admin`), wurde mit ternaerem Lookup im selben Edit gefixt.
 
 ### ISSUE-072 — Invite-Mail-Confirmation-Link nutzt internen Docker-Hostname `supabase-kong` statt Public-Domain
-- Status: open
+- Status: resolved
 - Severity: High
 - Area: Backend / Auth / GoTrue / Invite-Flow / SLC-703
 - Summary: User-Walkthrough 2026-05-14: Nach BL-467 SMTP-Fix kommt die Invite-Mail zwar an, aber der Confirmation-Link zeigt auf `http://supabase-kong:8000/auth/v1/verify?token=...` (interner Docker-Container-Hostname). Browser-DNS-Lookup auf `supabase-kong` scheitert mit `DNS_PROBE_FINISHED_NXDOMAIN`. Root Cause: `cockpit/src/lib/auth/invite.ts` ruft `admin.auth.admin.inviteUserByEmail()` ueber Server-Side-Admin-Client mit `SUPABASE_URL=http://supabase-kong:8000` (Container-DNS) auf. GoTrue v2.160.0 in Coolify-Supabase-Stack baut die Confirmation-URL aus dem Request-Host statt aus `GOTRUE_API_EXTERNAL_URL` — bekanntes Self-hosted-GoTrue-Issue. `createAdminClient` setzt zwar X-Forwarded-Host + X-Forwarded-Proto, GoTrue respektiert sie ohne trusted_proxy-Flag nicht.
 - Impact: Invite-Mail-Flow (SLC-703 AC3) ist UI-side nicht funktional — User kann die Mail nicht via Link-Klick beantworten. Workaround manuell moeglich (URL editieren), fuer produktiven Einsatz nicht akzeptabel.
 - Workaround: Mail-Link manuell editieren — `http://supabase-kong:8000` durch `https://business.strategaizetransition.com` ersetzen, Rest des URL-Pfads unveraendert lassen. Token bleibt gueltig.
 - Next Action: BL-470 — Code-Fix in `cockpit/src/lib/auth/invite.ts`. `admin.auth.admin.generateLink({ type: 'invite', email, options: { redirectTo } })` liefert `action_link` mit korrektem Public-Host. Mail-Versand selbst via V5.3 NodeMailer-SMTP-Pipeline mit eigenem Template. Vorteil: kein GoTrue-Auto-Mail mehr, Template-Kontrolle. ~2-3h. V7.1-Sprint.
+- Resolved: 2026-05-14 — BL-470 done. Code-Fix in 4 Schritten (alle haetten mit Onboarding-Pattern-Reuse in einem Step erfolgen koennen — siehe Memory `feedback_check_existing_patterns_first.md`): (1) `lib/auth/invite.ts` umgebaut auf `generateLink` + eigener NodeMailer-Send mit Public-Host-Confirm-URL (commit 05f3ff2, 8 Vitest-Tests). (2) `app/auth/callback/route.ts` 1:1 portiert aus Onboarding-Plattform — `NEXT_PUBLIC_APP_URL` statt `request.nextUrl.origin` + signOut() vor verifyOtp() + cookie-binding an NextResponse (commit d4107b8). (3) `app/auth/set-password/page.tsx` + `actions.ts` NEU angelegt (existierte vorher nicht, war 404) — Style-matching Login-Page (commit 2131ec7). (4) User-Live-Test bestaetigt: Invite an immo@bellaerts.de → Mail kam an → Link-Klick → Set-Password → Login → Dashboard. Vitest gesamt 756/756 PASS.
 
 ### ISSUE-062 — GOTRUE_SMTP_PASS in Coolify-ENV auf "unused" gesetzt — Mail-Versand blockiert
 - Status: resolved
