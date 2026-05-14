@@ -137,7 +137,13 @@ export function InviteDialog({ callerRole, callerTeamId, teams }: Props) {
               disabled={isPending}
             >
               <SelectTrigger className="w-full">
-                <SelectValue />
+                <SelectValue>
+                  {role === "admin"
+                    ? "Admin"
+                    : role === "teamlead"
+                      ? "Teamlead"
+                      : "Member"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="member">Member</SelectItem>
@@ -157,7 +163,9 @@ export function InviteDialog({ callerRole, callerTeamId, teams }: Props) {
               disabled={isPending || !isAdmin}
             >
               <SelectTrigger className="w-full">
-                <SelectValue />
+                <SelectValue>
+                  {teams.find((t) => t.id === teamId)?.name ?? teamId}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {teams.map((t) => (

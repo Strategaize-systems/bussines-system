@@ -28,13 +28,13 @@
 - Resolved: 2026-05-13
 
 ### ISSUE-063 — Team-Dropdown in Invite-Dialog zeigt UUID statt Team-Name
-- Status: open
+- Status: resolved
 - Severity: Medium
 - Area: Frontend / SLC-703 / Invite-Dialog
 - Summary: `cockpit/src/app/(app)/settings/team/invite-dialog.tsx` rendert `<SelectValue />` ohne expliziten Display-Resolver. base-ui-Select mappt den Value (UUID) NICHT automatisch auf das `<SelectItem>`-Kind. Resultat: User sieht `fa0ff2b6-6a12-4d5f-a9d0-54956c054728` statt z.B. "Standard-Team" im Team-Dropdown.
 - Impact: Funktional korrekt (Submit klappt), aber UX-Bug — User kann nicht erkennen welches Team gewaehlt ist. Bei mehreren Teams (Multi-Team-Setup spaeter) unbrauchbar.
 - Workaround: `<SelectValue>{teams.find(t => t.id === teamId)?.name ?? teamId}</SelectValue>` als Display-Override. ~5 Min Fix.
-- Next Action: Im V7-Polish-Slice SLC-707 oder als separater V6.7-BL.
+- Resolved: 2026-05-14 (SLC-707 MT-0). Team-Select bekam Display-Resolver via `<SelectValue>{teams.find(...).name ?? teamId}</SelectValue>`. Adjacent-Bug-Fix per Deviation Rule 1: Role-Select hatte gleichen Root-Cause (zeigte `member`/`teamlead`/`admin` statt `Member`/`Teamlead`/`Admin`), wurde mit ternaerem Lookup im selben Edit gefixt.
 
 ### ISSUE-062 — GOTRUE_SMTP_PASS in Coolify-ENV auf "unused" gesetzt — Mail-Versand blockiert
 - Status: open
