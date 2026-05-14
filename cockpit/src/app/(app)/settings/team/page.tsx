@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Users } from "lucide-react";
 import { TeamMembersTable } from "./team-members-table";
 import { InviteDialog } from "./invite-dialog";
+import { BulkReassignDialog } from "./bulk-reassign-dialog";
 
 export const dynamic = "force-dynamic";
 
@@ -98,6 +99,16 @@ export default async function TeamSettingsPage() {
     name: t.name,
   }));
 
+  // 6) Pipelines-Liste fuer Bulk-Reassign-Filter.
+  const pipelinesRes = await admin
+    .from("pipelines")
+    .select("id, name")
+    .order("sort_order");
+  const pipelines = ((pipelinesRes.data ?? []) as Array<{ id: string; name: string }>).map((p) => ({
+    id: p.id,
+    name: p.name,
+  }));
+
   const rows: TeamMemberRow[] = profileRows.map((p) => {
     const u = userById.get(p.id);
     return {
@@ -128,11 +139,21 @@ export default async function TeamSettingsPage() {
             : "Mitglieder des eigenen Teams einsehen und einladen"
         }
       >
-        <InviteDialog
-          callerRole={callerProfile.role}
-          callerTeamId={callerProfile.team_id}
-          teams={teams}
-        />
+        <div className="flex items-center gap-2">
+          <BulkReassignDialog
+            members={rows.map((r) => ({
+              user_id: r.user_id,
+              display_name: r.display_name,
+              email: r.email,
+            }))}
+            pipelines={pipelines}
+          />
+          <InviteDialog
+            callerRole={callerProfile.role}
+            callerTeamId={callerProfile.team_id}
+            teams={teams}
+          />
+        </div>
       </PageHeader>
 
       <main className="px-8 py-8 space-y-6">

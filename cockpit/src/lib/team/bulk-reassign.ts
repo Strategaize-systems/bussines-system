@@ -1,25 +1,18 @@
 /**
- * SLC-707 MT-1 — Bulk-Reassign Server Action.
+ * SLC-707 MT-1 — Bulk-Reassign Core (Types, Konstanten, Pure-Helper, SQL-Executor).
  *
- * Verschiebt alle einem User gehoerenden Records auf einen anderen User in
- * 8 Kerntabellen atomar via Transaction. Privileg-Eskalation (SET LOCAL ROLE
- * postgres) wird durch 4 Gates abgesichert (AC2b):
+ * Dieses File enthaelt KEINE Server Actions — alle Server Actions liegen in
+ * `bulk-reassign-actions.ts` (mit "use server" am File-Top). Trennung noetig,
+ * weil "use server" alle Exporte zwingend als async Server Actions
+ * deklariert; Pure-Helper waeren damit illegal.
  *
- *   1. Role-Gate (admin/teamlead, sonst forbidden)
- *   2. Team-Scope-Gate (teamlead: nur within-Team)
- *   3. Parametrisierte Filter (kein String-Concat)
- *   4. Two-Phase-Audit (AC2c) — Initiated ausserhalb Tx, Applied in Tx
- *
- * Pure Helper sind exportiert, damit Tests sie ohne Next.js-Context aufrufen
- * koennen.
+ * Sicherheit (AC2b) und Two-Phase-Audit (AC2c) sind in `bulk-reassign-actions.ts`
+ * implementiert — dieses File liefert die wiederverwendbaren Bausteine.
  */
-
-"use server";
 
 import type { PoolClient } from "pg";
 
 import { getPgClient } from "@/lib/db/pg";
-import { getProfile } from "@/lib/auth/get-profile";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Konstanten
@@ -351,14 +344,14 @@ export async function writeAppliedAudit(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Server Actions
+// Helper fuer Server Actions (kein Server-Action-Export — laeuft im Pool)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Liest team_id fuer einen User direkt aus profiles. Read-only, dient als
  * Vorpruefung fuer das Team-Scope-Gate.
  */
-async function getUserTeamIds(
+export async function getUserTeamIds(
   client: PoolClient,
   userIds: string[],
 ): Promise<Map<string, string | null>> {
@@ -367,123 +360,4 @@ async function getUserTeamIds(
     [userIds],
   );
   return new Map(rows.map((r) => [r.id, r.team_id]));
-}
-
-/**
- * AC1 — Preview (read-only).
- */
-export async function bulkReassignPreview(args: BulkReassignArgs): Promise<PreviewResult> {
-  const validation = validateBulkReassignInput(args);
-  if (!validation.ok) return validation;
-
-  const profile = await getProfile();
-  const caller: CallerProfile | null = profile
-    ? { user_id: profile.user_id, role: profile.role, team_id: profile.team_id }
-    : null;
-
-  const client = await getPgClient();
-  try {
-    const teamMap = await getUserTeamIds(client, [validation.value.from, validation.value.to]);
-    const fromTeamId = teamMap.get(validation.value.from) ?? null;
-    const toTeamId = teamMap.get(validation.value.to) ?? null;
-
-    const authz = assertCanReassign(caller, fromTeamId, toTeamId);
-    if (!authz.ok) return authz;
-
-    const tables = await countAffectedPerTable(client, validation.value.from, validation.value.filter);
-    const total = tables.reduce((sum, t) => sum + t.count, 0);
-
-    return { ok: true, tables, total };
-  } catch (err) {
-    return {
-      ok: false,
-      code: "db",
-      error: err instanceof Error ? err.message : "Preview-DB-Error",
-    };
-  } finally {
-    client.release();
-  }
-}
-
-/**
- * AC2 + AC2b + AC2c — Apply mit Two-Phase-Audit.
- */
-export async function bulkReassignApply(args: BulkReassignArgs): Promise<ApplyResult> {
-  const validation = validateBulkReassignInput(args);
-  if (!validation.ok) return validation;
-
-  const profile = await getProfile();
-  const caller: CallerProfile | null = profile
-    ? { user_id: profile.user_id, role: profile.role, team_id: profile.team_id }
-    : null;
-
-  // Gate 1: Role-Check (BEFORE jede DB-Connection)
-  if (!caller) return { ok: false, code: "not_authenticated", error: "Nicht angemeldet" };
-  if (caller.role === "member") {
-    return { ok: false, code: "forbidden", error: "Nur Admin oder Teamlead duerfen Bulk-Reassign starten" };
-  }
-
-  // Gate 2: Team-Scope-Check (Teamlead only)
-  const scopeClient = await getPgClient();
-  let fromTeamId: string | null;
-  let toTeamId: string | null;
-  try {
-    const teamMap = await getUserTeamIds(scopeClient, [validation.value.from, validation.value.to]);
-    fromTeamId = teamMap.get(validation.value.from) ?? null;
-    toTeamId = teamMap.get(validation.value.to) ?? null;
-  } finally {
-    scopeClient.release();
-  }
-
-  const authz = assertCanReassign(caller, fromTeamId, toTeamId);
-  if (!authz.ok) return authz;
-
-  // Phase 1: Initiated-Audit ausserhalb Tx
-  let initiatedAuditId: string;
-  try {
-    initiatedAuditId = await writeInitiatedAudit(caller.user_id, validation.value);
-  } catch (err) {
-    return {
-      ok: false,
-      code: "db",
-      error: `Audit-Init fehlgeschlagen: ${err instanceof Error ? err.message : "unknown"}`,
-    };
-  }
-
-  // Phase 2: Tx mit SET LOCAL ROLE postgres + 8x UPDATE + 8x Applied-Audit
-  const txClient = await getPgClient();
-  try {
-    await txClient.query("BEGIN");
-    await txClient.query("SET LOCAL ROLE postgres");
-
-    const tables = await applyReassignPerTable(
-      txClient,
-      validation.value.from,
-      validation.value.to,
-      validation.value.filter,
-    );
-
-    for (const t of tables) {
-      await writeAppliedAudit(txClient, caller.user_id, initiatedAuditId, t.name, {
-        from: validation.value.from,
-        to: validation.value.to,
-        filter: validation.value.filter,
-        affected_rows: t.affected_rows,
-      });
-    }
-
-    await txClient.query("COMMIT");
-
-    const total = tables.reduce((sum, t) => sum + t.affected_rows, 0);
-    return { ok: true, audit_initiated_id: initiatedAuditId, tables, total };
-  } catch (err) {
-    await txClient.query("ROLLBACK").catch(() => {});
-    return {
-      ok: false,
-      code: "db",
-      error: `Bulk-Reassign-Tx fehlgeschlagen (Rollback ausgefuehrt, Initiated-Audit-Eintrag bleibt): ${err instanceof Error ? err.message : "unknown"}`,
-    };
-  } finally {
-    txClient.release();
-  }
 }
