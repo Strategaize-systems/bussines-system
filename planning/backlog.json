@@ -2247,9 +2247,9 @@
       "title": "Coolify-ENV: POSTGRES_URL setzen fuer SLC-707 Bulk-Reassign (User-Action vor V7-Live-Smoke)",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V7",
-      "description": "Aus /qa V7 RPT-408 ISSUE-067: SLC-707 MT-1 fuehrt Raw-pg-Connection-Pfad ein (cockpit/src/lib/db/pg.ts via POSTGRES_URL/DATABASE_URL ENV). Coolify Business-System Resource hat aktuell keine dieser ENV-Variablen gesetzt → Bulk-Reassign-UI in Produktion bricht beim Klick mit Fehlermeldung 'Kein Postgres-Connection-String in POSTGRES_URL oder DATABASE_URL gefunden'. **User-Action (~2 min):** Coolify UI → Business-System Resource → Environment Variables → POSTGRES_URL=postgresql://postgres:${POSTGRES_PASSWORD}@<supabase-db-host>:5432/postgres setzen. Container-Suffix wechselt bei jedem DB-Redeploy (IMP-497), entweder stabilen Service-Alias 'supabase-db' verwenden falls Coolify-Compose das auto-erzeugt, oder ENV nach jedem DB-Redeploy nachziehen. **Alternative (BL-466 falls Drift unhandhabbar): SECURITY DEFINER Postgres-Function + supabase.rpc()-Refactor (~2-3h).** Voraussetzung fuer V7-Release.",
+      "description": "Aus /qa V7 RPT-408 ISSUE-067: SLC-707 MT-1 fuehrt Raw-pg-Connection-Pfad ein (cockpit/src/lib/db/pg.ts via POSTGRES_URL/DATABASE_URL ENV). Coolify Business-System Resource hat aktuell keine dieser ENV-Variablen gesetzt → Bulk-Reassign-UI in Produktion bricht beim Klick mit Fehlermeldung 'Kein Postgres-Connection-String in POSTGRES_URL oder DATABASE_URL gefunden'. **User-Action (~2 min):** Coolify UI → Business-System Resource → Environment Variables → POSTGRES_URL=postgresql://postgres:${POSTGRES_PASSWORD}@<supabase-db-host>:5432/postgres setzen. Container-Suffix wechselt bei jedem DB-Redeploy (IMP-497), entweder stabilen Service-Alias 'supabase-db' verwenden falls Coolify-Compose das auto-erzeugt, oder ENV nach jedem DB-Redeploy nachziehen. **Alternative (BL-466 falls Drift unhandhabbar): SECURITY DEFINER Postgres-Function + supabase.rpc()-Refactor (~2-3h).** Voraussetzung fuer V7-Release. **Resolved 2026-05-14 via Live-Smoke RPT-409:** ENV gesetzt mit URL-encodetem Password + stabilem DNS-Alias supabase-db (kein Drift-Risk). Bulk-Reassign Preview + Apply LIVE PASS (174 Records, 9 audit_log entries).",
       "createdAt": "2026-05-14"
     },
     {

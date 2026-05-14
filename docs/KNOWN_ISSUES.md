@@ -10,13 +10,14 @@
 - Next Action: BL-465 — `cockpit/vitest.config.ts` `include` um `"__tests__/**/*.test.ts"` erweitern. Alternativ: Live-DB-Tests unter `src/lib/...` einsortieren (Inkonsistent mit aktueller Konvention, deshalb Patch des include-Pattern bevorzugt).
 
 ### ISSUE-067 — POSTGRES_URL/DATABASE_URL fehlt in Coolify-Business-System-ENV — Bulk-Reassign-Server-Action wuerde Runtime-Fehler werfen
-- Status: open
+- Status: resolved
 - Severity: High
 - Area: Infrastructure / Coolify-ENV / SLC-707 / Bulk-Reassign
 - Summary: SLC-707 MT-1 fuehrt einen neuen Raw-pg-Connection-Pfad ein (`cockpit/src/lib/db/pg.ts` → `getPgClient()` via `process.env.POSTGRES_URL ?? process.env.DATABASE_URL`). Bulk-Reassign-Server-Action (`bulkReassignPreview`, `bulkReassignApply`) und Audit-Helper `writeInitiatedAudit` brauchen den Connection-String fuer den SET-LOCAL-ROLE-postgres-Pfad. Die Coolify-Business-System-Resource hat aktuell weder `POSTGRES_URL` noch `DATABASE_URL` gesetzt (nicht in `.env.example`, nicht in `docs/ARCHITECTURE.md` ausser im unverwandten Cal.com-Block).
 - Impact: Bulk-Reassign-UI in Produktion bricht beim Klick auf "Vorschau" oder "Reassign starten" mit Fehler-Toast: "Kein Postgres-Connection-String in POSTGRES_URL oder DATABASE_URL gefunden — bulk-reassign benoetigt direkten DB-Zugriff". Vitest deckt das nicht ab, weil Tests die Pure-Helper direkt mit `pg.Client` aufrufen (Server-Action-Layer wird umgangen). Live-Smoke blockiert.
 - Workaround: ENV-Set in Coolify per Hand: `POSTGRES_URL=postgresql://postgres:${POSTGRES_PASSWORD}@<supabase-db-host>:5432/postgres`. Mit aktuellem Container-Suffix `supabase-db-k9f5pn5upfq7etoefb5ukbcg-075059013140` ist die ENV nach dem naechsten DB-Container-Redeploy stale (IMP-497 Container-Suffix-Drift). Stabiler: Service-Alias `supabase-db` falls Coolify-Compose das auto-erzeugt.
 - Next Action: BL-464 — User setzt `POSTGRES_URL` in Coolify Business-System ENV und Re-Deployt. Alternative-Architektur (BL-466 oder BL-467 falls noetig): SECURITY DEFINER Postgres-Function + `supabase.rpc('bulk_reassign_apply', ...)` Aufruf, das umgeht den ENV-Drift komplett (Aufwand ~2-3h Refactor).
+- Resolved: 2026-05-14 (Live-Smoke RPT-409). User setzte `POSTGRES_URL=postgresql://postgres:<password>@supabase-db:5432/postgres` mit URL-encodetem Password und stabilem DNS-Alias `supabase-db` (kein Timestamp-Suffix-Drift mehr). Coolify-Redeploy mit Image `42f1e20`. Playwright-Live-Smoke verifizierte: Preview returned 174 records, Apply ueberschrieb owner_user_id auf 174 Records, 9 audit_log-Eintraege geschrieben (1 initiated + 8 applied), Member-1 deals 20->0, Member-2 deals 20->40. AC1+AC2+AC2b+AC2c PASS.
 
 ### ISSUE-066 — SLC-706 Drilldown Mutate-Lockdown Defense-in-Depth-Gap: AsyncLocalStorage propagiert nicht in Server-Action-Requests
 - Status: open
