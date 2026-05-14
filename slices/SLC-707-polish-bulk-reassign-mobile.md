@@ -17,7 +17,7 @@
 
 V7 schliessen mit drei Closing-Themen:
 1. **Bulk-Reassign-Werkzeug** — UI + Preview-Mode + Atomic-Transaction + Audit-Trail (DEC-184). Loest finale Verwaltungs-Funktion in /settings/team.
-2. **Mobile-Hamburger** (BL-457) — Sheet-Drawer im (authenticated)/layout.tsx (DEC-192) fuer <md:768px.
+2. **Mobile-Hamburger** (BL-457) — Sheet-Drawer im (app)/layout.tsx (DEC-192) fuer <md:768px.
 3. **VERWALTUNG-Split** (BL-437) — Sidebar VERWALTUNG-Sektion split in `Mein Profil` + `Setup` (Mein Profil sichtbar fuer alle 3 Rollen, Setup nur fuer admin/teamlead).
 
 Plus Slice-uebergreifender Style-Guide-V2-Sweep (alle V7-Pages auf Brand-Tokens pruefen, falls Hex-Drift entdeckt: fixen).
@@ -25,12 +25,15 @@ Plus Slice-uebergreifender Style-Guide-V2-Sweep (alle V7-Pages auf Brand-Tokens 
 ## Scope
 
 **In Scope:**
-- `cockpit/src/lib/team/bulk-reassign.ts` (NEU) — Server Action mit assertRole, Preview-Mode + Apply-Mode, Atomic-Transaction mit SET LOCAL ROLE postgres, audit_log pro Tabelle
-- `cockpit/src/app/(authenticated)/settings/team/bulk-reassign-dialog.tsx` (NEU) — UI mit Source-Owner-Select + Target-Owner-Select + Filter (Pipeline, Status, Date-Range) + Preview-Button + Apply-Button + Confirm-Dialog
+- `cockpit/src/app/(app)/settings/team/invite-dialog.tsx` (MOD) — ISSUE-063 Display-Resolver-Fix (Team-Dropdown zeigt Team-Name statt UUID)
+- `cockpit/src/app/(app)/team/[user_id]/_components/drilldown-sub-nav.tsx` (NEU) — Tab-Strip mein-tag/pipeline/aufgaben (Polish aus SLC-706 OpenPoints)
+- `cockpit/src/app/(app)/team/[user_id]/layout.tsx` (MOD oder NEU) — Sub-Nav-Strip in Drilldown-Layout integriert
+- `cockpit/src/lib/team/bulk-reassign.ts` (NEU) — Server Action mit assertRole, Preview-Mode + Apply-Mode, Two-Phase-Audit (AC2c), Atomic-Transaction mit SET LOCAL ROLE postgres, audit_log pro Tabelle
+- `cockpit/src/app/(app)/settings/team/bulk-reassign-dialog.tsx` (NEU) — UI mit Source-Owner-Select + Target-Owner-Select + Filter (Pipeline, Status, Date-Range) + Preview-Button + Apply-Button + Confirm-Dialog
 - `cockpit/src/lib/navigation/sidebar-config.ts` (MOD) — VERWALTUNG-Sektion split in `VERWALTUNG_MEIN` + `VERWALTUNG_SETUP`, Eintraege migriert
 - `cockpit/src/components/layout/mobile-top-bar.tsx` (NEU) — Sticky-Top-Bar fuer <md mit Logo + Hamburger-Icon
 - `cockpit/src/components/layout/sidebar.tsx` (MOD) — Mobile-Variant rendert in Sheet, Section-Headers + Sub-Group-Headers (`Mein Profil` / `Setup`)
-- `cockpit/src/app/(authenticated)/layout.tsx` (MOD) — Mobile-Top-Bar + Sheet-Drawer-Wrap, State-Management (useState fuer mobileSidebarOpen, kein localStorage)
+- `cockpit/src/app/(app)/layout.tsx` (MOD) — Mobile-Top-Bar + Sheet-Drawer-Wrap, State-Management (useState fuer mobileSidebarOpen, kein localStorage)
 - `cockpit/__tests__/team/bulk-reassign.test.ts` (NEU) — Vitest fuer Preview + Apply + Audit
 - `cockpit/__tests__/playwright/mobile-sidebar.spec.ts` (NEU) — Mobile-Smoke 3 Rollen × Hamburger-Open/Close
 - `cockpit/__tests__/playwright/verwaltung-split.spec.ts` (NEU) — VERWALTUNG-Split-Sicht-Test 3 Rollen
@@ -55,7 +58,38 @@ INSERT INTO audit_log (event, ...) VALUES ('bulk_reassign', ...);
 -- repeat fuer 8 Tabellen
 COMMIT;
 ```
-Audit-Eintrag pro Tabelle mit `affected_rows`, `from`, `to`, `filter`, `triggered_by_user_id`. Vitest verifiziert: Apply ueberschreibt owner_user_id, audit_log enthaelt 8 Eintraege.
+Audit-Eintrag pro Tabelle mit `affected_rows`, `from`, `to`, `filter`, `triggered_by_user_id`. Vitest verifiziert: Apply ueberschreibt owner_user_id, audit_log enthaelt **9 Eintraege** (1x `bulk_reassign_initiated` siehe AC2c + 8x `bulk_reassign_applied` pro Tabelle).
+
+**AC2b (Bulk-Reassign Security — Defense-in-Depth):** Die Privileg-Eskalation via `SET LOCAL ROLE postgres` (RLS-Umgang fuer Bulk-Operation) ist nur zulaessig nach 4 Pflicht-Gates in dieser Reihenfolge:
+
+1. **assertRole-Gate (BEFORE SET LOCAL):** `await assertRole(['admin','teamlead'])` als erste Zeile der Apply-Function. Member-Rolle wird mit `403 Forbidden` abgewiesen, bevor irgendeine DB-Verbindung aufgebaut wird.
+2. **Team-Scope-Gate (BEFORE SET LOCAL):** Fuer `teamlead`-Rolle: `from.team_id === get_my_team_id() === to.team_id`. Cross-Team-Reassign wird abgelehnt. `admin`-Rolle uebersteuert (sieht alle Teams).
+3. **Parametrisierte Filter (NO String-Concat):** Pipeline-IDs, Status-Werte, Date-Range gehen als parametrisierte Bind-Params (`$3, $4, ...`) in die UPDATE-Statements. Kein String-Concat von User-Input in SQL. Filter-Whitelist: nur `pipeline_id`, `status`, `created_at_from`, `created_at_to`.
+4. **Initiated-Audit-Pre-Tx (siehe AC2c):** Vor `BEGIN` wird in **separater DB-Connection (ausserhalb der Tx)** ein `audit_log`-Eintrag `bulk_reassign_initiated` mit `triggered_by_user_id`, `requested_from`, `requested_to`, `filter_snapshot` geschrieben. Dieser Eintrag ueberlebt einen Transaction-Rollback (Forensik-Trail).
+
+Vitest-Pflicht-Tests in `__tests__/team/bulk-reassign.test.ts`:
+- `member-blocked-403` — Member ruft `bulkReassignApply`, erwartet Error mit `403`/`forbidden`-Marker, kein UPDATE ausgefuehrt
+- `cross-team-blocked` — Teamlead ruft Apply mit `from.team_id !== to.team_id`, erwartet Error, kein UPDATE
+- `filter-injection-safe` — Apply mit Filter-Wert `'; DROP TABLE companies; --` als Pipeline-ID-String, erwartet entweder Validation-Error oder leeres Result (keine ausgefuehrte SQL-Injection)
+
+**AC2c (Bulk-Reassign Audit-Trail-Integrity — Two-Phase-Audit):** Audit-Trail ueberlebt Transaction-Failures, damit Forensik gescheiterte Bulk-Reassign-Versuche erkennt.
+
+**Phase 1 — Initiated (ausserhalb Tx, eigene Connection):**
+- Vor `BEGIN` wird ein `audit_log`-Eintrag mit `event = 'bulk_reassign_initiated'` ueber eine **separate DB-Connection (eigener Pool-Acquire, kein Reuse der Tx-Connection)** geschrieben.
+- Felder: `triggered_by_user_id`, `requested_from`, `requested_to`, `filter_snapshot` (JSONB), `timestamp = now()`.
+- Diese Zeile bleibt unabhaengig vom Tx-Outcome bestehen.
+
+**Phase 2 — Applied (innerhalb Tx, pro Tabelle):**
+- Pro UPDATE-Statement folgt ein `audit_log`-INSERT mit `event = 'bulk_reassign_applied'`, `table_name`, `affected_rows`, `triggered_by_user_id`.
+- 8 Eintraege bei Erfolg, 0 bei Rollback.
+
+**Ergebnis:**
+- **Happy Path:** 9 Audit-Eintraege (1x initiated + 8x applied).
+- **Failure Path:** 1 Audit-Eintrag (initiated, ohne applied-Follow-ups). User sieht Error-Toast, audit_log zeigt "tried at T".
+
+Vitest-Pflicht-Tests in `__tests__/team/bulk-reassign.test.ts`:
+- `audit-happy-path-9-entries` — Apply success, `SELECT * FROM audit_log WHERE event LIKE 'bulk_reassign_%'` returnt 9 Rows (1 initiated + 8 applied).
+- `audit-failure-leaves-initiated-only` — Apply mit forciertem Constraint-Failure auf Tabelle 7 (z.B. invalid `to`-UUID), erwartet Rollback. Danach `SELECT * FROM audit_log WHERE event = 'bulk_reassign_initiated'` enthaelt 1 Row, `WHERE event = 'bulk_reassign_applied'` enthaelt 0 Rows.
 
 **AC3 (Bulk-Reassign UI):** Dialog mit:
 - Source-Owner-Select (alle Team-Mitglieder)
@@ -67,7 +101,7 @@ Audit-Eintrag pro Tabelle mit `affected_rows`, `from`, `to`, `filter`, `triggere
 
 Native-HTML-Form-Pattern, useTransition fuer Submit, Toasts fuer Success/Error.
 
-**AC4 (Mobile-Hamburger Layout):** `(authenticated)/layout.tsx` rendert `<MobileTopBar>` mit `className="md:hidden"`. Hamburger-Icon-Click oeffnet `<Sheet side="left">` mit Sidebar-Content (Mobile-Mode). Sheet schliesst bei Route-Change (Next.js `usePathname()` + `useEffect`) und bei Esc + Backdrop-Click (Sheet-Default).
+**AC4 (Mobile-Hamburger Layout):** `(app)/layout.tsx` rendert `<MobileTopBar>` mit `className="md:hidden"`. Hamburger-Icon-Click oeffnet `<Sheet side="left">` mit Sidebar-Content (Mobile-Mode). Sheet schliesst bei Route-Change (Next.js `usePathname()` + `useEffect`) und bei Esc + Backdrop-Click (Sheet-Default).
 
 **AC5 (Mobile-Sidebar-Content):** Sidebar im Mobile-Mode rendert vollstaendige Sektion-Struktur mit Sektion-Headers (`ANALYSE`, `TEAM`, `OPERATIV`, `ARBEITSBEREICHE`, `VERWALTUNG`). Innerhalb `VERWALTUNG`: Sub-Group-Header `Mein Profil` + `Setup` mit jeweiligen Items. Eintrag-Click navigiert + schliesst Drawer.
 
@@ -77,9 +111,26 @@ Native-HTML-Form-Pattern, useTransition fuer Submit, Toasts fuer Success/Error.
 
 Member sieht nur `Mein Profil`, Sub-Group-Header `Setup` ist fuer Member nicht sichtbar. Admin/Teamlead sehen beide Sub-Groups.
 
+**Conditional Sub-Header-Render (Muster 1):** Bei nur **einer** sichtbaren Sub-Group fuer eine Rolle (Member-Fall — nur `Mein Profil`) wird der Sub-Group-Header `Mein Profil` **nicht** gerendert. Items erscheinen direkt unter dem Top-Sektion-Header `VERWALTUNG`. Sub-Group-Headers werden **nur bei ≥2 sichtbaren Sub-Groups** gerendert (Admin/Teamlead-Fall). Vermeidet visuell redundante Doppel-Header bei Member.
+
 **AC7 (Mobile-State Memory-only, OTQ 10):** `mobileSidebarOpen` als React-State `useState(false)`. Kein localStorage. Route-Wechsel resetted auf `false` (via `useEffect([pathname])`).
 
-**AC8 (Style-Guide-V2-Sweep):** `grep -rn "#[0-9a-fA-F]{3,6}" cockpit/src/app/(authenticated)/team` und analog fuer `/settings/team` zeigt 0 Hex-Drift. Brand-Tokens (z.B. `bg-brand-primary`, `text-brand-foreground`) durchgaengig. Fixes via Brand-Token-Replace falls Drift gefunden.
+**AC8 (Style-Guide-V2-Sweep — V7-Touched-Pages):** Sweep ueber alle V7-touched Bereiche:
+
+```bash
+grep -rn "#[0-9a-fA-F]\{3,6\}" \
+  cockpit/src/app/\(app\)/mein-tag \
+  cockpit/src/app/\(app\)/team \
+  cockpit/src/app/\(app\)/settings/team \
+  cockpit/src/app/\(app\)/verwaltung \
+  cockpit/src/app/\(app\)/pipeline \
+  cockpit/src/app/\(app\)/dashboard \
+  cockpit/src/components/layout
+```
+
+Erwartet: **0 Hex-Drift**. Brand-Tokens (z.B. `bg-brand-primary`, `text-brand-foreground`) durchgaengig. Fixes via Brand-Token-Replace falls Drift in V7-Touched-Pages gefunden.
+
+**Pre-V7-Drift-Policy:** Drift in Pages **ausserhalb** V7-Scope (z.B. Legacy-Auth-Pages, alte Activity-Views) → als BL-Item dokumentieren, **nicht im SLC-707 fixen** (Scope-Schutz).
 
 **AC9 (TSC + Vitest + Build + Lint + Playwright):** Alle Outputs clean. Playwright Mobile-Smoke 3-Rollen × Open-Close + VERWALTUNG-Split-Sicht 3-Rollen + Bulk-Reassign-Happy-Path PASS.
 
@@ -100,7 +151,7 @@ Member sieht nur `Mein Profil`, Sub-Group-Header `Setup` ist fuer Member nicht s
 
 ## Risks
 
-- **R1 — Bulk-Reassign-Transaction-Failure:** Wenn UPDATE auf 1 Tabelle scheitert, rollt Transaction zurueck, Audit-Log enthaelt 0 Eintraege (alle rolled back), aber User sieht moeglicherweise Partial-Toast. **Mitigation:** Server Action Try-Catch um Transaction, Error-Toast bei Failure, audit_log-Insert NACH erfolgreichem UPDATE pro Tabelle.
+- **R1 — Bulk-Reassign-Transaction-Failure:** Wenn UPDATE auf 1 Tabelle scheitert, rollt Transaction zurueck. **Mitigation:** Two-Phase-Audit (AC2c) — `bulk_reassign_initiated`-Eintrag wird ausserhalb der Tx geschrieben und ueberlebt Rollback (Forensik-Trail), `bulk_reassign_applied`-Eintraege innerhalb der Tx werden bei Rollback mit-zurueckgerollt (Konsistenz). Server Action Try-Catch um die Tx mit Error-Toast bei Failure. Forensik kann ueber `SELECT event, count(*) FROM audit_log WHERE event LIKE 'bulk_reassign_%' GROUP BY event` die Failure-Versuche rekonstruieren.
 - **R2 — Bulk-Reassign-Performance:** Wenn Filter sehr breit (z.B. 10000 Activities), UPDATE-Statement kann lange laufen. **Mitigation:** Preview-Mode zeigt Sum, Confirm-Dialog warnt bei Sum >1000 (`Achtung: Grosse Migration, kann 10+ Sek dauern`). Akzeptabel V7-Scope, V7.5 Async-Job falls noetig.
 - **R3 — Mobile-Sheet z-Index-Konflikt:** Wenn Sheet hinter PageHeader oder Toast rendert, ist UX broken. **Mitigation:** shadcn `<Sheet>` hat z-50-Default. Playwright-Smoke verifiziert sichtbar.
 - **R4 — VERWALTUNG-Split-Migration-Drift:** Wenn Sektion-Namen-Rename in SLC-702 SIDEBAR_CONFIG bereits anders ist, koennen Items verschwinden. **Mitigation:** SLC-702 MT-2 hat Sektion-Namen bereits gem. DEC-190 gesetzt (`VERWALTUNG_MEIN` + `VERWALTUNG_SETUP`). SLC-707 MOD ist nur Reorganisation + Sub-Group-Header-Render.
@@ -118,6 +169,14 @@ Member sieht nur `Mein Profil`, Sub-Group-Header `Setup` ist fuer Member nicht s
 
 ## Micro-Tasks
 
+### MT-0: ISSUE-063 Team-Dropdown-Display-Resolver
+- Goal: Bug aus ISSUE-063 fixen — Team-Dropdown im Invite-Dialog zeigt UUID statt Team-Name.
+- Files: `cockpit/src/app/(app)/settings/team/invite-dialog.tsx` (MOD)
+- Expected behavior: `<SelectValue>` mit Display-Override `{teams.find(t => t.id === teamId)?.name ?? teamId}`. Submit-Verhalten bleibt unveraendert.
+- Verification: TSC clean. Manueller Browser-Smoke im Dev-Server: Invite-Dialog oeffnen, Team-Dropdown zeigt Team-Namen.
+- Dependencies: none. Erster MT, ~5 min, einzelner File-Edit.
+- Reference: KNOWN_ISSUES.md ISSUE-063 (Workaround dort dokumentiert).
+
 ### MT-1: Bulk-Reassign Server Action
 - Goal: Server Action mit Preview + Apply.
 - Files: `cockpit/src/lib/team/bulk-reassign.ts` (NEU), `cockpit/__tests__/team/bulk-reassign.test.ts` (NEU)
@@ -127,7 +186,7 @@ Member sieht nur `Mein Profil`, Sub-Group-Header `Setup` ist fuer Member nicht s
 
 ### MT-2: Bulk-Reassign Dialog
 - Goal: UI fuer Preview + Apply.
-- Files: `cockpit/src/app/(authenticated)/settings/team/bulk-reassign-dialog.tsx` (NEU)
+- Files: `cockpit/src/app/(app)/settings/team/bulk-reassign-dialog.tsx` (NEU)
 - Expected behavior: Native-HTML-Form mit Source/Target-Selects + Filter-Section + Preview-Button + Apply-Button + Confirm-Dialog. useTransition fuer pending state.
 - Verification: Manueller Dev-Test mit Test-Team-Daten.
 - Dependencies: MT-1
@@ -148,7 +207,7 @@ Member sieht nur `Mein Profil`, Sub-Group-Header `Setup` ist fuer Member nicht s
 
 ### MT-5: Layout-Integration Mobile + State
 - Goal: Sheet-Drawer im Layout.
-- Files: `cockpit/src/app/(authenticated)/layout.tsx` (MOD)
+- Files: `cockpit/src/app/(app)/layout.tsx` (MOD)
 - Expected behavior: `<MobileTopBar onMenuOpen={() => setMobileSidebarOpen(true)} className="md:hidden">`. `<Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>` mit Sidebar als Content. useEffect([pathname]) → setMobileSidebarOpen(false).
 - Verification: Lokaler Dev-Test mit Resize.
 - Dependencies: MT-3, MT-4
@@ -159,6 +218,20 @@ Member sieht nur `Mein Profil`, Sub-Group-Header `Setup` ist fuer Member nicht s
 - Expected behavior: VERWALTUNG-Eintrage bekommen `section: 'VERWALTUNG_MEIN'` oder `'VERWALTUNG_SETUP'`. Sidebar-Component rendert beide unter Top-Sektion-Header `VERWALTUNG` mit Sub-Group-Renders.
 - Verification: TSC clean. Vitest snapshot.
 - Dependencies: SLC-702 MT-2 (Sektion-Names bereits korrekt)
+
+### MT-6.5: Sub-Nav-Strip im Drilldown (Tab-Links mein-tag/pipeline/aufgaben)
+- Goal: Tab-Strip im Drilldown-Layout, der zwischen `mein-tag`, `pipeline`, `aufgaben` Sub-Pages umschaltet. Closing-Polish aus SLC-706 OpenPoints.
+- Files (vermutlich, beim Start verifizieren):
+  - `cockpit/src/app/(app)/team/[user_id]/_components/drilldown-sub-nav.tsx` (NEU) — Tab-Strip-Komponente
+  - `cockpit/src/app/(app)/team/[user_id]/layout.tsx` (MOD oder NEU, falls noch nicht existiert) — rendert Sub-Nav ueber children
+- Expected behavior:
+  - Drei `<Link>`-basierte Tab-Buttons (`Mein Tag`, `Pipeline`, `Aufgaben`), aktive Route hervorgehoben (`usePathname()` fuer Aktiv-Detection)
+  - Brand-Tokens, KEINE Hex-Farben (Style-Guide-V2)
+  - Mobile-friendly: horizontal scrollbar oder kompakte Buttons bei <md
+  - Persistent visible auf allen drei Sub-Pages des Drilldowns
+- Verification: TSC clean. Visual-Check im Dev-Server: alle drei Tabs anklickbar, Aktiv-Highlight wechselt korrekt. Wird in MT-7 Playwright-Suite mit abgedeckt.
+- Dependencies: keine zwingenden, parallel zu MT-3..MT-6 implementierbar.
+- Estimated effort: ~30-60 min.
 
 ### MT-7: Playwright Mobile + VERWALTUNG-Split + Bulk-Reassign-Smokes
 - Goal: 3 Browser-Smoke-Suites.
@@ -173,7 +246,7 @@ Member sieht nur `Mein Profil`, Sub-Group-Header `Setup` ist fuer Member nicht s
 ### MT-8: Style-Guide-V2-Sweep + TSC + Build + Lint + Live-Smoke
 - Goal: Slice-Closing + Style-Guide-Verifikation.
 - Files: Verschiedene V7-Pages MOD falls Hex-Drift gefunden
-- Expected behavior: `grep -rn "#[0-9a-fA-F]\{3,6\}" cockpit/src/app/(authenticated)/team cockpit/src/app/(authenticated)/settings/team` zeigt 0 Drift. TSC + Build + Lint + Test alle clean. User-Coolify-Redeploy. Live-Smoke 3 Themen.
+- Expected behavior: `grep -rn "#[0-9a-fA-F]\{3,6\}" cockpit/src/app/(app)/team cockpit/src/app/(app)/settings/team` zeigt 0 Drift. TSC + Build + Lint + Test alle clean. User-Coolify-Redeploy. Live-Smoke 3 Themen.
 - Verification: Alle Tool-Outputs clean. Live-Smoke-Schritte dokumentiert in Slice-RPT.
 - Dependencies: MT-1..MT-7
 
