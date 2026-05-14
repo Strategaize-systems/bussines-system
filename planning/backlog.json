@@ -2271,6 +2271,36 @@
       "version": "V7",
       "description": "Aus /final-check V7 RPT-410: 2 MEDIUM-Findings als Post-Release-Polish gebuendelt (~30 min Aufwand). (1) ISSUE-069 Audit-Doc-Sync: docs/AUDIT_SERVER_ACTIONS_V7.md um Bulk-Reassign-Server-Actions (bulkReassignPreview, bulkReassignApply), bulk-reassign.ts-Audit-Helper, working-hours-actions.ts, winloss.ts persistManualRun, lib/audit.ts logAudit/logAuditWithId erweitern. 1 Fehlklassifizierung von insight-actions.ts:201 korrigieren (steht als 'wrapper', macht aber selbst INSERT). (2) ISSUE-070 4 Defense-in-Depth-Guards: 4× await assertNotReadOnlyContext() als first line in bulk-reassign-actions.ts bulkReassignApply + insight-actions.ts saveInsight + working-hours-actions.ts updateWorkingHoursSettings + winloss.ts persistManualRun. Plus 4 Vitest-Mock-Tests (RED-GREEN-Pattern: Mock setzt Read-Only-Context, Action wird mit Error abgewiesen). Kein aktueller Exploit-Pfad — bei zukuenftiger Drilldown-Erweiterung wichtig.",
       "createdAt": "2026-05-14"
+    },
+    {
+      "id": "BL-467",
+      "title": "ISSUE-062 GOTRUE_SMTP_PASS in Coolify-ENV setzen — Invite-Mail-Versand entsperren",
+      "type": "fix",
+      "priority": "high",
+      "status": "open",
+      "version": "V7",
+      "description": "Tracking-BL fuer den User-Manual-Coolify-Fix zu ISSUE-062 (KNOWN_ISSUES.md). Aktueller Zustand: GoTrue-Container hat ENV `GOTRUE_SMTP_PASS=unused` und `SMTP_PASS=unused`, waehrend `SMTP_PASSWORD=aithatworks-01!` korrekt ist. GoTrue liest die `GOTRUE_*`-prefixed Variante → Mail-Versand schlaegt mit `535 Authentication credentials invalid` fehl. Coolify-Supabase-ENV-Wrapper-Mapping-Bug. Blockiert ALLE Auth-Mails (Invite, Password-Reset, Email-Change-Confirmation), inkl. SLC-703 AC3 Live-Verifikation. Fix (~2 Min User-Aktion): Coolify-UI → Business-System Resource → Environment Variables → `GOTRUE_SMTP_PASS=aithatworks-01!` setzen + GoTrue-Container redeployen (alternativ `SMTP_PASS=aithatworks-01!`). Verifikation: Invite an Test-Mail-Adresse via /settings/team → Mail trifft ein, Link funktioniert. Wenn done: ISSUE-062 Status auf resolved setzen + BL-467 auf done.",
+      "createdAt": "2026-05-14"
+    },
+    {
+      "id": "BL-468",
+      "title": "Drilldown-Pipeline-Sicht erweitern: gleiche Toggle-Optionen wie /pipeline (Funnel, Filter, etc.) — read-only",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V7.1",
+      "description": "User-Feedback waehrend V7-Walkthrough 2026-05-14: Aktuell zeigt `/team/[user_id]/pipeline` nur die Liste der aktiven Deals des Members. Soll: identische Pipeline-Ansicht wie das normale `/pipeline` fuer den Member-Owner, INKL. aller Toggle-Moeglichkeiten (Funnel-View, Filter, Pipeline-Switcher, Stages, Forecast-Modi). Read-Only-Modus bleibt strikt — keine Mutate-Buttons. Implementation-Hint: vermutlich die `/pipeline`-Page-Component mit zusaetzlichem `viewAsUserId`-Prop wiederverwenden statt eigener Drilldown-Variante. Pflicht-Checks: (a) ReadOnlyContext via Layout-Wrap aktiv, (b) alle Stage-Change/Edit/Mutate-Buttons hidden oder disabled, (c) Pipeline-Toggles funktionieren mit Member-Daten (Filter scopen auf owner_user_id = target_user_id), (d) Filter-State persistiert nicht cross-User. Spaeter Erweiterung um analoge Sicht fuer /team/[user_id]/aktivitaeten + /team/[user_id]/mein-tag denkbar.",
+      "createdAt": "2026-05-14"
+    },
+    {
+      "id": "BL-469",
+      "title": "Settings-Permissions rollen-basiert: Branding/Payment-Terms/Pipelines/Templates/Workflow/Campaigns/Products/Compliance nur fuer Admin — User sieht nur sein Profil + Arbeitsbereich",
+      "type": "improvement",
+      "priority": "high",
+      "status": "open",
+      "version": "V7.1",
+      "description": "User-Feedback waehrend V7-Walkthrough 2026-05-14: Aktuell ist die Settings-Page /settings frei zugaenglich fuer alle Rollen — jeder Teamlead/Member kann Branding (Logo, Farben, Firma, Webseite, Footer-Text), Zahlungsbedingungen (Steuereinstellungen), Pipeline-Definitionen, E-Mail-Templates, Workflow-Automation, Kampagnen, Produkte aendern. Das ist gefaehrlich — diese Settings sind organisationsweit und sollen nur von Admins veraenderbar sein. **Soll:** Granulares Rollen-Permission-System auf Settings-Sub-Pages. (a) Admin-only: Branding, Payment-Terms (inkl. Steuern), Pipelines/Stages, Templates, Automation, Campaigns, Products, Compliance, IMAP. (b) Alle (inkl. Teamlead/Member): Mein Profil (Name, Telefon, Avatar), Working-Hours (eigene Arbeitszeit), Meeting-Einstellungen + Briefing (eigene). (c) Teamlead bonus: Team-Verwaltung (existiert, ist schon ADMIN_TEAMLEAD). Implementation-Hint: vermutlich `assertRole`-Server-Guard auf jeder Admin-only-Sub-Page + Sidebar-Visibility-Filter aktualisieren (sidebar-config.ts visibleFor). Settings-Landing-Page filtert Kacheln entsprechend Rolle. Wichtig: Brauchbar definieren was 'schaedlich' ist — Vor-Discussion mit User klaeren ob z.B. Workflow-Automation auch nur Admin oder Teamlead+Admin. Pflicht-Verifikation: jede Sub-Page mit Member-Login geladen → 403/Redirect. Audit-Trail bei jeder Branding/Payment-Aenderung (audit_log.action='settings_branding_update' etc.) — vermutlich existiert das schon partiell.",
+      "createdAt": "2026-05-14"
     }
   ]
 }

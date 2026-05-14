@@ -11,14 +11,15 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 ## Current State
 - High-Level State: implementing
 - Current Focus: **V7 Gesamt-/qa PASS + Live-Smoke PASS 2026-05-14** via RPT-408 (code-side) + RPT-409 (live). User setzte POSTGRES_URL mit stabilem `supabase-db`-DNS-Alias und URL-encodetem Password → Coolify Redeploy Image `42f1e20`. Playwright-MCP Live-Smoke verifizierte beide ausstehenden Release-Gate-Bedingungen: **Bulk-Reassign** (174 Records von Member-1 auf Member-2 ueberschrieben, 9 audit_log-Eintraege geschrieben = 1 initiated + 8 applied wie AC2c spec, Sum-affected = 174) + **Mobile-Hamburger** (Drawer Open + Item-Click navigiert + Auto-Close via useEffect[pathname]). **V7 Release-Gate: 8/8 Bedingungen erfuellt.** ISSUE-067 + BL-464 resolved. Offen: ISSUE-068 (vitest.config include-Pattern, accepted for V7-Release, BL-465 vor /deploy empfohlen) + ISSUE-066 (Defense-in-Depth-Gap, akzeptiert per Option-C, kommt nach V7.5).
-- Current Phase: V7 Multi-User + Teamlead-Sprint — **7/7 Slices done + Gesamt-/qa PASS + Live-Smoke PASS + /final-check PASS (CONDITIONALLY READY)**. **Release-Ready mit 1 User-Action (ISSUE-062 SMTP) und 2 Post-Release-Polish (BL-466).** Naechster Schritt: /go-live V7 → /deploy V7 als REL-029 → /post-launch V7.
+- Current Phase: V7 Multi-User + Teamlead-Sprint — **7/7 Slices done + Gesamt-/qa PASS + Live-Smoke PASS + /final-check PASS (CONDITIONALLY READY)**. **Release-Ready, ABER User-Walkthrough 2026-05-14 hat 2 Aenderungen gesetzt → V7.1-Plan vor Go-Live klaeren.** Pending: BL-467 SMTP-Fix (User), BL-468 Drilldown-Pipeline-Erweiterung (V7.1), BL-469 Settings-Permissions (V7.1).
 
 ## Immediate Next Steps
-1. **(naechster Schritt) /go-live V7** — Release-Readiness-Sign-Off. RPT-410 CONDITIONALLY READY: 0 Blocker, 1 HIGH (ISSUE-062 User-Coolify-SMTP-Fix), 2 MEDIUM Post-Release-Polish (BL-466).
-2. **(nach /go-live) /deploy V7 als REL-029** — Image-Tag-Lock + RELEASES.md-Eintrag.
-3. **(nach /deploy) /post-launch V7** — 24h-Live-Beobachtung.
-4. **(post-Release-Polish, BL-466 ~30 min)** ISSUE-069 Audit-Doc-Sync + ISSUE-070 4× assertNotReadOnlyContext-Guards in bulk-reassign-actions.ts + insight-actions.ts + working-hours-actions.ts + winloss.ts + 4 Vitest-Mock-Tests.
-5. **(optional Parallel zum /deploy) User-Manual-Fix ISSUE-062 in Coolify-UI** — `GOTRUE_SMTP_PASS=aithatworks-01!` setzen + GoTrue-Container Redeploy. Macht Auth-Mails wieder lebendig (Invite/Password-Reset/Email-Change). Blockiert sonst Live-Verifikation von SLC-703 AC3 (Invite-Mail).
+1. **(Entscheidung User) V7.1-Plan vor /go-live klaeren** — User-Walkthrough 2026-05-14 hat 2 Aenderungen gesetzt (BL-468 Drilldown-Pipeline-Sicht, BL-469 Settings-Rollen-Permissions). Optionen: (a) /go-live V7 jetzt + V7.1 als kleiner Polish-Sprint danach, (b) BL-468+469 + BL-466 als V7.1-Slice JETZT noch vor Go-Live ziehen (~6-10h zusaetzlich vor Release).
+2. **(parallel zu allem) BL-467 User-Manual-Fix ISSUE-062 in Coolify-UI** — `GOTRUE_SMTP_PASS=aithatworks-01!` setzen + GoTrue-Container Redeploy. Macht Auth-Mails wieder lebendig (Invite/Password-Reset/Email-Change). User-Aktion ohne Code-Change.
+3. **(nach Entscheidung) /go-live V7** — Release-Readiness-Sign-Off. RPT-410 CONDITIONALLY READY.
+4. **(nach /go-live) /deploy V7 als REL-029** — Image-Tag-Lock + RELEASES.md-Eintrag.
+5. **(nach /deploy) /post-launch V7** — 24h-Live-Beobachtung.
+6. **(post-Release-Polish, BL-466 ~30 min)** ISSUE-069 Audit-Doc-Sync + ISSUE-070 4× assertNotReadOnlyContext-Guards + 4 Vitest-Mock-Tests.
 7. **(nach V7-Release)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern. Inkl. ISSUE-066-Mitigation als eigener kleiner Slice (Middleware-Pfad-Check setzt X-Read-Only-Mode-Header, assertNotReadOnlyContext liest beides).
 8. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5.
 9. **(optional vor/parallel V7)** V6.7-Polish — BL-460 (Style-Guide-V2 Hex-Drift, jetzt aufgewertet um SLC-707-Sweep-Findings im sidebar Active-Highlight + mein-tag QuickActions + dashboard Calendar-Icon-Hover) + BL-459 (Quick-Action-Label) + BL-418 (React #418 Hydration). 2-4h.
