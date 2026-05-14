@@ -47,8 +47,19 @@ export const SECTION_LABEL: Record<SidebarSection, string> = {
   TEAM: "TEAM",
   OPERATIV: "OPERATIV",
   ARBEITSBEREICHE: "ARBEITSBEREICHE",
-  // VERWALTUNG-Split kommt erst in SLC-707 visuell — bis dahin werden beide
-  // Sub-Sections unter einem Label "VERWALTUNG" gerendert.
+  // SLC-707 MT-6: VERWALTUNG-Split mit Sub-Group-Headers. Der Top-Section-
+  // Header "VERWALTUNG" wird in der Sidebar separat (parentLabel) gerendert,
+  // diese Labels sind die Sub-Group-Header.
+  VERWALTUNG_MEIN: "Mein Profil",
+  VERWALTUNG_SETUP: "Setup",
+};
+
+/**
+ * SLC-707 MT-6: Top-Section-Parent-Label fuer Sections die unter einem
+ * gemeinsamen Top-Header gerendert werden. Sections ohne Parent rendern
+ * direkt mit ihrem eigenen Label als Top-Header.
+ */
+export const SECTION_PARENT: Partial<Record<SidebarSection, string>> = {
   VERWALTUNG_MEIN: "VERWALTUNG",
   VERWALTUNG_SETUP: "VERWALTUNG",
 };
@@ -280,22 +291,91 @@ export function groupBySection(
 }
 
 /**
- * Visual-Merge: VERWALTUNG_MEIN + VERWALTUNG_SETUP haben aktuell dasselbe
- * Label "VERWALTUNG". `groupVisualMerged` kollabiert beide Sections in eine
- * einzelne "VERWALTUNG"-Gruppe — bis SLC-707 die Sub-Headers implementiert.
+ * SLC-707 MT-6: Visual-Split mit Sub-Group-Headers.
+ *
+ * Rendert eine zweistufige Struktur:
+ * - Top-Sections wie ANALYSE / TEAM / OPERATIV / ARBEITSBEREICHE: 1 Gruppe ohne
+ *   Sub-Groups (`subGroups.length === 1`, subGroup hat `label = null`).
+ * - VERWALTUNG: 1 Top-Gruppe (`parentLabel = "VERWALTUNG"`) mit bis zu 2 Sub-
+ *   Groups (`Mein Profil`, `Setup`).
+ *
+ * **Conditional Sub-Header (Muster 1, AC6):** Bei nur **einer** sichtbaren
+ * Sub-Group fuer eine Rolle (Member-Fall: nur VERWALTUNG_MEIN) ist
+ * `subGroup.label = null` — der Sub-Header wird nicht gerendert, Items
+ * erscheinen direkt unter dem Top-Header. Bei ≥2 sichtbaren Sub-Groups
+ * behalten alle Sub-Groups ihr Label.
+ */
+export interface SidebarSubGroup {
+  /** Section-Key des ersten Sub-Group-Items (fuer React-keys). */
+  key: SidebarSection;
+  /** Sub-Group-Header-Label, oder `null` wenn unterdrueckt (Muster 1). */
+  label: string | null;
+  items: SidebarItem[];
+}
+
+export interface SidebarTopGroup {
+  /** Eindeutiger Key fuer React (erste Section in der Gruppe). */
+  key: string;
+  /** Top-Section-Header-Label, immer sichtbar. */
+  parentLabel: string;
+  /** 1..N Sub-Groups. */
+  subGroups: SidebarSubGroup[];
+}
+
+export function groupWithSubGroups(items: SidebarItem[]): SidebarTopGroup[] {
+  const sectionGroups = groupBySection(items);
+  const tops: SidebarTopGroup[] = [];
+
+  for (const g of sectionGroups) {
+    const parent = SECTION_PARENT[g.section] ?? g.label;
+    const last = tops[tops.length - 1];
+
+    if (last && last.parentLabel === parent && SECTION_PARENT[g.section]) {
+      // Section hat denselben Parent wie die vorherige -> Sub-Group anhaengen
+      last.subGroups.push({
+        key: g.section,
+        label: SECTION_LABEL[g.section],
+        items: [...g.items],
+      });
+    } else {
+      // Neue Top-Gruppe.
+      const hasParent = !!SECTION_PARENT[g.section];
+      tops.push({
+        key: g.section,
+        parentLabel: parent,
+        subGroups: [
+          {
+            key: g.section,
+            // Wenn Section keinen Parent hat, ist sie selbst der Top-Header
+            // und braucht keinen separaten Sub-Header.
+            label: hasParent ? SECTION_LABEL[g.section] : null,
+            items: [...g.items],
+          },
+        ],
+      });
+    }
+  }
+
+  // Muster 1: Bei genau 1 sichtbarer Sub-Group -> Sub-Header unterdruecken.
+  for (const top of tops) {
+    if (top.subGroups.length === 1) {
+      top.subGroups[0].label = null;
+    }
+  }
+
+  return tops;
+}
+
+/**
+ * @deprecated SLC-707 MT-6: ersetzt durch `groupWithSubGroups`. Bleibt fuer
+ * etwaige Alt-Aufrufer als Flatten-Adapter erhalten (eine Gruppe pro Top).
  */
 export function groupVisualMerged(
   items: SidebarItem[],
 ): Array<{ key: string; label: string; items: SidebarItem[] }> {
-  const groups = groupBySection(items);
-  const merged: Array<{ key: string; label: string; items: SidebarItem[] }> = [];
-  for (const g of groups) {
-    const last = merged[merged.length - 1];
-    if (last && last.label === g.label) {
-      last.items.push(...g.items);
-    } else {
-      merged.push({ key: g.section, label: g.label, items: [...g.items] });
-    }
-  }
-  return merged;
+  return groupWithSubGroups(items).map((top) => ({
+    key: top.key,
+    label: top.parentLabel,
+    items: top.subGroups.flatMap((sg) => sg.items),
+  }));
 }

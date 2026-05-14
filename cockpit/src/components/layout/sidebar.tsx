@@ -14,39 +14,60 @@ import { signout } from "@/app/(auth)/login/actions";
 import type { Role } from "@/lib/auth/types";
 import {
   filterByRole,
-  groupVisualMerged,
+  groupWithSubGroups,
   type SidebarItem,
+  type SidebarSubGroup,
+  type SidebarTopGroup,
 } from "@/lib/navigation/sidebar-config";
 
 /**
- * V7 Sidebar (SLC-702 MT-3).
+ * V7 Sidebar (SLC-702 MT-3 + SLC-707 MT-4).
  *
  * - Liest aus `SIDEBAR_CONFIG`, filtert per `role`-Prop (DEC-190).
- * - Server-Side-Filter: `role` kommt aus dem (app)/layout.tsx das via
- *   `await getProfile()` resolved wird. Kein Client-Flash, kein useEffect.
- * - Gruppiert via `groupVisualMerged` damit VERWALTUNG_MEIN + _SETUP unter
- *   einem "VERWALTUNG"-Header rendern (Split kommt in SLC-707).
- * - Sections ohne sichtbare Items werden komplett ausgeblendet.
+ * - Rendert Top-Sections mit optionalen Sub-Group-Headers (`groupWithSubGroups`).
+ *   VERWALTUNG hat Sub-Groups `Mein Profil` + `Setup`. Bei nur 1 sichtbarer
+ *   Sub-Group (Member-Fall) wird der Sub-Header unterdrueckt (AC6 Muster 1).
+ * - `variant="desktop"` (default): fixed left-Sidebar, max-md:hidden.
+ * - `variant="mobile"`: in-flow Render fuer Sheet, kein Fixed-Positioning,
+ *   kein Collapse-Toggle, ruft `onItemClick` nach Navigation (Drawer-Close).
  */
 
 const COLLAPSIBLE_SECTIONS = new Set(["ARBEITSBEREICHE", "VERWALTUNG"]);
 const DEFAULT_COLLAPSED_SECTIONS = new Set(["VERWALTUNG"]);
 
-export function Sidebar({ role }: { role: Role }) {
+export interface SidebarProps {
+  role: Role;
+  /** Desktop-Variant: fixed Sidebar. Mobile-Variant: in-flow im Sheet. */
+  variant?: "desktop" | "mobile";
+  /** Wird nach Item-Click ausgeloest (z.B. fuer Drawer-Close). Mobile-only. */
+  onItemClick?: () => void;
+}
+
+export function Sidebar({
+  role,
+  variant = "desktop",
+  onItemClick,
+}: SidebarProps) {
   const pathname = usePathname();
+  const isMobile = variant === "mobile";
+  // Collapse-Toggle (Schmal-Modus) gibt es nur auf Desktop.
   const [collapsed, setCollapsed] = useState(false);
 
-  const groups = useMemo(() => groupVisualMerged(filterByRole(role)), [role]);
+  const topGroups = useMemo(
+    () => groupWithSubGroups(filterByRole(role)),
+    [role],
+  );
 
   const [groupOpen, setGroupOpen] = useState<Record<string, boolean>>(() => {
     const state: Record<string, boolean> = {};
-    for (const group of groups) {
-      if (COLLAPSIBLE_SECTIONS.has(group.label)) {
-        const isActiveInGroup = group.items.some((item) =>
-          isPathnameActive(pathname, item.href),
+    for (const top of topGroups) {
+      if (COLLAPSIBLE_SECTIONS.has(top.parentLabel)) {
+        const isActiveInGroup = top.subGroups.some((sg) =>
+          sg.items.some((item) => isPathnameActive(pathname, item.href)),
         );
-        state[group.label] =
-          isActiveInGroup || !DEFAULT_COLLAPSED_SECTIONS.has(group.label);
+        state[top.parentLabel] =
+          isActiveInGroup ||
+          !DEFAULT_COLLAPSED_SECTIONS.has(top.parentLabel);
       }
     }
     return state;
@@ -64,30 +85,46 @@ export function Sidebar({ role }: { role: Role }) {
       <Link
         key={item.href}
         href={item.href}
+        onClick={isMobile ? onItemClick : undefined}
         className={cn(
           "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
           isActive
             ? "bg-gradient-to-r from-[#4454b8] to-[#120774] text-white shadow-[0_10px_15px_-3px_rgba(68,84,184,0.25)]"
             : "text-slate-400 hover:bg-white/[0.05] hover:text-white",
-          collapsed && "justify-center px-2",
+          !isMobile && collapsed && "justify-center px-2",
         )}
       >
         <Icon className="h-4 w-4 shrink-0" />
-        {!collapsed && <span>{item.label}</span>}
+        {(isMobile || !collapsed) && <span>{item.label}</span>}
       </Link>
     );
   };
 
-  const renderGroup = (group: (typeof groups)[number]) => {
-    const isCollapsible = COLLAPSIBLE_SECTIONS.has(group.label);
+  const renderSubGroup = (sg: SidebarSubGroup, showSubHeader: boolean) => (
+    <div key={sg.key}>
+      {showSubHeader && sg.label && (
+        <div className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          {sg.label}
+        </div>
+      )}
+      <div className="space-y-0.5">{sg.items.map(renderItem)}</div>
+    </div>
+  );
 
-    if (isCollapsible && !collapsed) {
+  const renderTopGroup = (top: SidebarTopGroup) => {
+    const isCollapsible = COLLAPSIBLE_SECTIONS.has(top.parentLabel);
+    // Sub-Header nur rendern wenn >=2 Sub-Groups sichtbar sind (AC6 Muster 1).
+    const showSubHeaders = top.subGroups.length >= 2;
+    const desktopCollapsed = !isMobile && collapsed;
+
+    if (isCollapsible && !desktopCollapsed) {
       const isOpen =
-        groupOpen[group.label] ?? !DEFAULT_COLLAPSED_SECTIONS.has(group.label);
+        groupOpen[top.parentLabel] ??
+        !DEFAULT_COLLAPSED_SECTIONS.has(top.parentLabel);
       return (
-        <div key={group.key}>
+        <div key={top.key}>
           <button
-            onClick={() => toggleGroup(group.label)}
+            onClick={() => toggleGroup(top.parentLabel)}
             className="flex w-full items-center gap-1 px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 hover:text-slate-400 transition-colors"
           >
             {isOpen ? (
@@ -95,28 +132,80 @@ export function Sidebar({ role }: { role: Role }) {
             ) : (
               <ChevronRight className="h-3 w-3 shrink-0" />
             )}
-            <span>{group.label}</span>
+            <span>{top.parentLabel}</span>
           </button>
           {isOpen && (
-            <div className="space-y-0.5">{group.items.map(renderItem)}</div>
+            <div className="space-y-1">
+              {top.subGroups.map((sg) => renderSubGroup(sg, showSubHeaders))}
+            </div>
           )}
         </div>
       );
     }
 
     return (
-      <div key={group.key}>
-        {!collapsed && (
+      <div key={top.key}>
+        {!desktopCollapsed && (
           <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-            {group.label}
+            {top.parentLabel}
           </div>
         )}
-        {collapsed && <div className="mx-auto my-2 h-px w-6 bg-white/10" />}
-        <div className="space-y-0.5">{group.items.map(renderItem)}</div>
+        {desktopCollapsed && (
+          <div className="mx-auto my-2 h-px w-6 bg-white/10" />
+        )}
+        <div className="space-y-1">
+          {top.subGroups.map((sg) => renderSubGroup(sg, showSubHeaders))}
+        </div>
       </div>
     );
   };
 
+  // Mobile-Variant: kein Fixed-Wrap, kein Collapse-Toggle.
+  if (isMobile) {
+    return (
+      <div
+        className="flex h-full flex-col"
+        style={{
+          background: "linear-gradient(to bottom, #0f172a, #0f172a, #020617)",
+        }}
+        data-testid="sidebar"
+        data-role={role}
+        data-variant="mobile"
+      >
+        {/* Logo Block */}
+        <div className="mx-3 mt-4 mb-2 px-3">
+          <div className="rounded-2xl bg-white p-4 flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/logo-full.png"
+              alt="StrategAIze"
+              className="h-10 w-auto"
+            />
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+          {topGroups.map(renderTopGroup)}
+        </nav>
+
+        {/* Footer */}
+        <div className="px-3 pb-4 space-y-2">
+          <form action={signout}>
+            <button
+              type="submit"
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-medium text-slate-400 hover:bg-white/[0.05] hover:text-white transition-all duration-200"
+            >
+              <LogOut className="h-4 w-4 shrink-0" />
+              <span>Ausloggen</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop-Variant (default).
   return (
     <aside
       className={cn(
@@ -160,7 +249,7 @@ export function Sidebar({ role }: { role: Role }) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
-        {groups.map(renderGroup)}
+        {topGroups.map(renderTopGroup)}
       </nav>
 
       {/* Footer */}
