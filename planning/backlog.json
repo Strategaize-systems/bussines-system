@@ -1947,9 +1947,9 @@
       "title": "UA-004 Sidebar VERWALTUNG-Gruppe Mega-Menu-Split (V7-Konflikt)",
       "type": "improvement",
       "priority": "low",
-      "status": "open",
+      "status": "done",
       "version": "V7",
-      "description": "Aus RPT-338 V6.4 UI-Audit (UA-004). VERWALTUNG-Sidebar-Gruppe hat 11 Eintraege, Settings ist Position 10 von 11 — sehr tief vergraben. Vorschlag: Split in 2 Sub-Gruppen 'Meine Daten' + 'Setup' oder Settings als prominenten Footer-Eintrag. Aufwand mittel 1-3h. Deferred wegen V7-Multi-User-Sprint (FEAT-502) Sidebar-Umbau mit Team-Switcher.",
+      "description": "Aus RPT-338 V6.4 UI-Audit (UA-004). VERWALTUNG-Sidebar-Gruppe hat 11 Eintraege, Settings ist Position 10 von 11 — sehr tief vergraben. Vorschlag: Split in 2 Sub-Gruppen 'Meine Daten' + 'Setup' oder Settings als prominenten Footer-Eintrag. Aufwand mittel 1-3h. Deferred wegen V7-Multi-User-Sprint (FEAT-502) Sidebar-Umbau mit Team-Switcher. **Resolved 2026-05-14 in SLC-707 MT-6 (Subagent-Commit a40cf8f):** SIDEBAR_CONFIG splittet VERWALTUNG_MEIN ('Mein Profil') und VERWALTUNG_SETUP ('Setup') als 2 Sub-Groups. Conditional Sub-Header-Render (Muster 1): bei nur 1 sichtbarer Sub-Group (Member) entfaellt der Sub-Header.",
       "createdAt": "2026-05-07"
     },
     {
@@ -2177,9 +2177,9 @@
       "title": "Mobile-Hamburger-Sidebar mit Sektion-Headern (Cockpit-Layout-Mobile-Gap)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V7",
-      "description": "SLC-667 AC13-Gap aus QA RPT-385: Die Sidebar ist auf Viewports ≤768px komplett via `max-md:hidden` ausgeblendet, kein Hamburger-Toggle-Button. Aktuelle Mobile-User haben keinen Sidebar-Zugang — sie navigieren nur via URL oder Action-Buttons in Pages. Pre-existing-Limitation des gesamten Cockpit-Layouts (nicht SLC-667-induziert). V7-Backlog: Hamburger-Button im PageHeader-Bereich (oder eigene mobile top-bar), Sidebar als Sheet/Drawer auf Klick. Sektion-Header (ANALYSE/OPERATIV/ARBEITSBEREICHE/VERWALTUNG) bleiben in Mobile-Drawer sichtbar. Voraussetzung: V6.6 released. Discovery aus SLC-667 /qa 2026-05-11.",
+      "description": "SLC-667 AC13-Gap aus QA RPT-385: Die Sidebar ist auf Viewports ≤768px komplett via `max-md:hidden` ausgeblendet, kein Hamburger-Toggle-Button. Aktuelle Mobile-User haben keinen Sidebar-Zugang — sie navigieren nur via URL oder Action-Buttons in Pages. Pre-existing-Limitation des gesamten Cockpit-Layouts (nicht SLC-667-induziert). V7-Backlog: Hamburger-Button im PageHeader-Bereich (oder eigene mobile top-bar), Sidebar als Sheet/Drawer auf Klick. Sektion-Header (ANALYSE/OPERATIV/ARBEITSBEREICHE/VERWALTUNG) bleiben in Mobile-Drawer sichtbar. Voraussetzung: V6.6 released. Discovery aus SLC-667 /qa 2026-05-11. **Resolved 2026-05-14 in SLC-707 MT-3+MT-5 (Subagent-Commit a40cf8f):** MobileTopBar-Component + Sheet-Drawer (via base-ui Dialog) im (app)/layout.tsx. Memory-only State (useState), Auto-Close bei pathname-Change.",
       "createdAt": "2026-05-11"
     },
     {
