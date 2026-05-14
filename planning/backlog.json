@@ -2257,9 +2257,9 @@
       "title": "vitest.config.ts: include-Pattern erweitern um __tests__/-Suite (V7-Live-DB-Coverage)",
       "type": "fix",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V7",
-      "description": "Aus /qa V7 RPT-408 ISSUE-068: cockpit/vitest.config.ts include-Pattern faengt nur src/**/*.test.ts(x), uebersieht root-level cockpit/__tests__/ (RLS-Matrix 96 + Bulk-Reassign 20 + Drilldown 4 + Aggregat-Live-DB 6 = 138+ V7-Tests). npm run test deckt aktuell die V7-Live-DB-Coverage nicht ab. Fix: include-Pattern um '__tests__/**/*.test.ts' erweitern. Aufwand ~10 min inkl. Verifikation. Vor /deploy V7 empfohlen, damit zukuenftige Test-Driven-Slices in V7-Bereich nicht unbemerkt regressieren.",
+      "description": "Aus /qa V7 RPT-408 ISSUE-068: cockpit/vitest.config.ts include-Pattern faengt nur src/**/*.test.ts(x), uebersieht root-level cockpit/__tests__/ (RLS-Matrix 96 + Bulk-Reassign 20 + Drilldown 4 + Aggregat-Live-DB 6 = 138+ V7-Tests). npm run test deckt aktuell die V7-Live-DB-Coverage nicht ab. Fix: include-Pattern um '__tests__/**/*.test.ts' erweitern. Aufwand ~10 min inkl. Verifikation. Vor /deploy V7 empfohlen, damit zukuenftige Test-Driven-Slices in V7-Bereich nicht unbemerkt regressieren. **Resolved 2026-05-14:** vitest.config.ts Zeile 9 um '__tests__/**/*.test.ts' erweitert (commit folgt). 5 Test-Files (rls/helper-functions, rls/v7-rls-matrix, team/aggregate-queries, team/bulk-reassign, team/drilldown) jetzt vom Default-Lauf erfasst. ISSUE-068 resolved.",
       "createdAt": "2026-05-14"
     }
   ]

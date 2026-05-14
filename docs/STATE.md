@@ -18,8 +18,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 2. **(nach /final-check) /go-live V7** — Release-Readiness-Check.
 3. **(nach /go-live) /deploy V7 als REL-029** — Image-Tag-Lock + Release-Records-Update.
 4. **(nach /deploy) /post-launch V7** — 24h-Live-Beobachtung.
-5. **(optional vor /deploy) BL-465 vitest.config.ts fix** — include-Pattern um `"__tests__/**/*.test.ts"` erweitern. ~10 min, verhindert silent-skip der V7-Live-DB-Coverage in zukuenftigen Laeufen.
-6. **(optional Parallel) User-Manual-Fix ISSUE-062 in Coolify-UI** — `GOTRUE_SMTP_PASS=aithatworks-01!` setzen + GoTrue-Container Redeploy. Macht Auth-Mails wieder lebendig (Invite/Password-Reset/Email-Change). Blockiert sonst Live-Verifikation von SLC-703 AC3 (Invite-Mail).
+5. **(optional Parallel) User-Manual-Fix ISSUE-062 in Coolify-UI** — `GOTRUE_SMTP_PASS=aithatworks-01!` setzen + GoTrue-Container Redeploy. Macht Auth-Mails wieder lebendig (Invite/Password-Reset/Email-Change). Blockiert sonst Live-Verifikation von SLC-703 AC3 (Invite-Mail).
 7. **(nach V7-Release)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern. Inkl. ISSUE-066-Mitigation als eigener kleiner Slice (Middleware-Pfad-Check setzt X-Read-Only-Mode-Header, assertNotReadOnlyContext liest beides).
 8. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5.
 9. **(optional vor/parallel V7)** V6.7-Polish — BL-460 (Style-Guide-V2 Hex-Drift, jetzt aufgewertet um SLC-707-Sweep-Findings im sidebar Active-Highlight + mein-tag QuickActions + dashboard Calendar-Icon-Hover) + BL-459 (Quick-Action-Label) + BL-418 (React #418 Hydration). 2-4h.
