@@ -214,13 +214,13 @@
 | FEAT-665 | Dashboard zu KI-Analyse-Cockpit | deployed | [Spec](FEAT-665-ki-analyse-cockpit.md) | 2026-05-09 |
 | FEAT-666 | KI-Inventur (Sparkles weg + Win/Loss-Auto-Trigger + Sidebar-Restruktur) | deployed | [Spec](FEAT-666-ki-inventur.md) | 2026-05-09 |
 
-## V7 Features (Multi-User + Teamlead — planned)
+## V7 Features (Multi-User + Teamlead — released 2026-05-14 als REL-029)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-502 | Multi-User-Foundation + Lead/Deal-Ownership | done | [Spec](FEAT-502-multi-user-foundation.md) | 2026-04-09 |
-| FEAT-503 | Teamlead-Rolle mit Teamsicht (Aggregat + Drilldown) | done | [Spec](FEAT-503-teamlead-sicht.md) | 2026-04-09 |
-| FEAT-701 | Multi-User-UX (Sidebar-Restruktur + Mobile-Hamburger + Rollen-Sichtbarkeit) | done | [Spec](FEAT-701-multi-user-ux.md) | 2026-05-12 |
+| FEAT-502 | Multi-User-Foundation + Lead/Deal-Ownership | deployed | [Spec](FEAT-502-multi-user-foundation.md) | 2026-04-09 |
+| FEAT-503 | Teamlead-Rolle mit Teamsicht (Aggregat + Drilldown) | deployed | [Spec](FEAT-503-teamlead-sicht.md) | 2026-04-09 |
+| FEAT-701 | Multi-User-UX (Sidebar-Restruktur + Mobile-Hamburger + Rollen-Sichtbarkeit) | deployed | [Spec](FEAT-701-multi-user-ux.md) | 2026-05-12 |
 
 ## V6 Features (Zielsetzung + Performance-Tracking — released)
 

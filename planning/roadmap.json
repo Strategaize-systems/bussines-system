@@ -185,8 +185,8 @@
     {
       "id": "v7",
       "name": "V7",
-      "status": "active",
-      "summary": "Multi-User + Teamlead-Sprint. /requirements done 2026-05-12 (RPT folgt). 3 Features: FEAT-502 Multi-User-Foundation + Lead/Deal-Ownership (3-Rollen-Modell admin/teamlead/member, owner_user_id auf 8 Kerntabellen, RLS-Policies, Manual Assignment + Bulk-Reassign, MIG-033/034/035), FEAT-503 Teamlead-Rolle mit Teamsicht (Aggregat-Cockpit unter /team + Member-Drilldown read-only + view_as-Audit-Trail), FEAT-701 Multi-User-UX (rollen-konditionale Sidebar + VERWALTUNG-Split BL-437 + Mobile-Hamburger BL-457 + Rollen-Sichtbarkeit). Manual Assignment per User-Entscheidung 2026-05-12 (kein Auto-Routing in V7). 3-Rollen flach (1 User in 1 Team, kein Multi-Team-Membership). Aggregat + Drilldown statt nur Aggregat. BL-425 (Multi-Touch-Journey-Tab) bleibt low prio, V7.x oder V7.5. BL-458 (Kalender Pre/Post-Stauchung) bleibt versions-frei.",
+      "status": "released",
+      "summary": "Multi-User + Teamlead-Sprint RELEASED 2026-05-14 als REL-029 (Image-Tag 2131ec7). 7 Slices SLC-701..707 + 3 Features FEAT-502/503/701 + Patches BL-465/467/470 alle deployed. MIG-035 V7-RLS-Switch + Helper-Functions + MIG-036 view_as-Audit angewendet. Invite-Mail-Flow End-to-End Live verifiziert (RPT-411). Bulk-Reassign live (174 Records, 9 audit_log-Eintraege RPT-409). Mobile-Hamburger live. Pre-V7-Final-Check RPT-410 (CONDITIONALLY READY). Vitest 756/756 PASS. Internal-Test-Mode aufgeloest (Admin kann Teamleads + Members einladen). Defense-in-Depth-Polish + Drilldown-Pipeline-Erweiterung + Settings-Rollen-Permissions als V7.1-Sprint (BL-466 + BL-468 + BL-469).",
       "order": 27
     },
     {
