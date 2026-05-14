@@ -1,5 +1,23 @@
 # Known Issues
 
+### ISSUE-071 — Disk-Voll-Risiko auf 91.98.20.191 (Docker Build-Cache + unbenutzte Images akkumulieren ohne Cleanup, fuehrt zu Postgres-Crash-Loop)
+- Status: open
+- Severity: High
+- Area: Hetzner-Server / Coolify / Disk-Capacity / Operational
+- Summary: 2026-05-14 ~10:25 UTC ist die Disk auf 91.98.20.191 auf 100% gelaufen (`/dev/sda1 38G 37G 0 Avail`). Hauptverbraucher: Docker Build-Cache (4.32GB, 164 cached layers, 100% reclaimable) + unbenutzte Images (5.55GB von 15.94GB total reclaimable). Postgres-Daten selbst nur ~64MB. Folge: Supabase-Postgres geriet in Crash-Loop wegen `PANIC: could not write to file "pg_logical/replorigin_checkpoint.tmp": No space left on device` — Container restartete sich endlos, DB war ~5min unerreichbar. Entdeckt durch Cross-System-Smoke aus Onboarding-Plattform SLC-106 MT-12 (RPT-252 dort), Lead-Intake-Endpoint antwortete mit HTTP 500.
+- Impact: Business-System komplett unerreichbar fuer Dauer des Crash-Loops (~5min). Alle Inbound-API-Calls schlugen fehl, Coolify-UI nicht ansprechbar, /supabase Storage/Auth nicht erreichbar. Kein Daten-Verlust (Postgres-WAL-Replay funktionierte, nur Checkpoint-Write blockierte). Bei laenger andauerndem Disk-Voll-Zustand: Risiko fuer Datenkorruption durch unvollstaendige Schreib-Operationen.
+- Workaround: 2026-05-14 ~10:27 UTC durchgefuehrt:
+  ```
+  docker builder prune -af   # reclaim 5.59GB
+  docker image prune -af     # reclaim 2.45GB
+  ```
+  Ergebnis: Disk 100% → 83% (6.2GB free), Postgres `pg_is_in_recovery()=false`, DB online. Non-destructive fuer laufende Container — nur dangling Build-Layers + unbenutzte Images entfernt.
+- Next Action:
+  1. **Coolify-Cron einrichten** (User-Pflicht via Coolify-UI): wöchentlich (z.B. Sonntag 03:00 UTC) `docker builder prune -af && docker image prune -af`. Wichtig: Befehl muss als root laufen — entweder direkt auf dem Host via Hetzner-systemd-cron (sauberster Pfad), oder via Coolify-Cron-Container mit Docker-Socket-Mount (privilegierter Pfad). Coolify-Cron-Pattern-Erfahrung in `~/.claude/projects/c--strategaize-strategaize-dev-system/memory/feedback_coolify_cron_node.md` (Coolify-Container `app` + `which curl` → Fallback auf `node -e fetch()`). Fuer Docker-prune ist Host-systemd-cron einfacher (eine systemd-timer-Unit, kein Container-Overhead). Beispiel: `/etc/systemd/system/docker-prune.timer` + `/etc/systemd/system/docker-prune.service` mit `ExecStart=/usr/bin/docker builder prune -af; /usr/bin/docker image prune -af`.
+  2. **Disk-Monitoring**: Hetzner-Cloud-Console Alert bei Disk-Usage > 85% (ueber Web-UI: Server → Metrics → Add Alert). Alternativ Coolify-Cron der `df -h /` parsed und bei Schwelle eine Mail/Webhook ausloest.
+  3. **Image-Retention-Policy in Coolify Settings** pruefen — Coolify hat optional Image-Retention-Config pro Resource. Auf "keep last 3 versions" stellen, falls noch nicht so.
+  4. **Repeat fuer 159.69.207.29 (Onboarding-Plattform)** — gleiches Build-Cache-Akkumulations-Muster ist dort ebenfalls zu erwarten, bisher noch nicht aufgetreten weil Repo juenger. Praeventiv selbe Cron + Monitoring einrichten.
+
 ### ISSUE-070 — 4 Mutate-Server-Actions ohne assertNotReadOnlyContext-Guard (Defense-in-Depth-Polish, kein Exploit-Pfad)
 - Status: open
 - Severity: Medium
