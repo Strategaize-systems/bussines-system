@@ -9,12 +9,13 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: **V7.1 Slice-Planning done 2026-05-15** via RPT-416. SLC-712 wurde in a/b gesplittet (Mein-Tag-Refactor-Tiefe rechtfertigte eigenen Slice). 4 Slices, 17 MTs gesamt: SLC-711 (6 MTs, ~4-6h, Settings-Permission-Layer mit assertRole-Guard auf 12 Pages + sidebar-config-Erweiterung + Tests + 3-Rollen-Tour), SLC-712a (4 MTs, ~3-4h, PipelineView-Props-Erweiterung + Drilldown-Pipeline-Rewrite + Vitest), SLC-712b (3 MTs, ~2-4h, Aufgaben + Mein-Tag-Component-Refactor + Drilldown-Page-Rewrites + Tests), SLC-713 (4 MTs, ~30 min - 1h, 4× assertNotReadOnlyContext + 4 Vitest-Tests + Audit-Doc-Sync + Cockpit-Records). Reihenfolge: SLC-711 → SLC-712a → SLC-712b → SLC-713 (713 kann parallel zu 712b). Worktree-Isolation empfohlen fuer 711 + 712a + 712b.
-- Current Phase: V7.1 **SLICE-PLANNING done**. Naechster Schritt: /backend SLC-711 — Settings-Permission-Layer Implementation. Total V7.1-Aufwand bleibt ~10-15h. Internal-Test-Mode bleibt aktiv.
+- High-Level State: implementing
+- Current Focus: **V7.1 SLC-711 /backend done 2026-05-15** via RPT-417. MT-1..MT-5 code-side komplett (10 neue Settings-Sub-Page-Items in SIDEBAR_CONFIG, Settings-Layout auf Server-Wrapper + Slug-Filter umgebaut, Settings-Landing-Kacheln rollen-aware mit Briefing-Kachel + ImapStatus admin-only, 12 Settings-Sub-Pages mit `assertRole`-Guard, sidebar-config.test.ts +5 SLC-711-Tests). Vitest 761/761 PASS (+5 vs V7-Baseline 756). MT-6 (Live-Smoke 3-Rollen-Tour) ist /qa-Territory. Naechster Schritt /qa SLC-711.
+- Current Phase: V7.1 **SLC-711 BACKEND DONE**. Naechster Schritt: /qa SLC-711 — Live-Smoke 3-Rollen-Tour. Total V7.1-Aufwand verbleibend ~7-11h (SLC-712a + SLC-712b + SLC-713).
 
 ## Immediate Next Steps
-1. **(Mainline) `/backend SLC-711`** — Settings-Permission-Layer Implementation. 6 MTs, ~4-6h. Worktree-Isolation empfohlen. Pattern-Reuse-First: assertRole + SIDEBAR_CONFIG.visibleFor.
+1. **(Mainline) `/qa SLC-711`** — Live-Smoke 3-Rollen-Tour (Admin + Teamlead + Member) gegen AC1..AC8. Browser-Smoke per Playwright-MCP oder manuell. Audit-Log-Symmetrie-Check (DEC-197 keine neuen settings_*-Eintraege).
+2. **(nach /qa SLC-711 PASS) /backend SLC-712a** — Pipeline-Drilldown Vollausbau via PipelineView-Reuse (4 MTs, ~3-4h).
 2. **(Parallel User-Action) ISSUE-071 Coolify-Cron** — User richtet weekly Disk-Cleanup ein (`docker builder prune -af && docker image prune -af`). Snippet in KNOWN_ISSUES.md. Pure User-Aktion, kein Code-Change.
 3. **(Optional) 2. Post-Launch-Check @24h** — In ~9h erneuter Live-Check fuer volle 24h-Schwelle. Aktuell ~15h erreicht. Nicht release-blocking.
 4. **(nach V7.1)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern. Inkl. ISSUE-066-Mitigation als eigener kleiner Slice (Middleware-Pfad-Check setzt X-Read-Only-Mode-Header, assertNotReadOnlyContext liest beides).

@@ -6,10 +6,12 @@ import {
   updateComplianceTemplate,
 } from "./actions";
 import { ComplianceTemplateBlock } from "@/components/settings/ComplianceTemplateBlock";
+import { assertRole } from "@/lib/auth/assert-role";
 
 export const dynamic = "force-dynamic";
 
 export default async function CompliancePage() {
+  await assertRole(["admin"]);
   const supabase = await createClient();
   const [{ data: auth }, templates] = await Promise.all([
     supabase.auth.getUser(),

@@ -3,10 +3,12 @@ import { Plus, Zap } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { listAutomationRules } from "./actions";
 import { RuleList } from "./_components/rule-list";
+import { assertRole } from "@/lib/auth/assert-role";
 
 export const dynamic = "force-dynamic";
 
 export default async function AutomationPage() {
+  await assertRole(["admin", "teamlead"]);
   const rules = await listAutomationRules();
 
   return (

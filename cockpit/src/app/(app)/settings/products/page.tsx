@@ -3,8 +3,10 @@ import { ProductList } from "@/components/products/product-list";
 import { ProductForm } from "@/components/products/product-form";
 import { Button } from "@/components/ui/button";
 import { Plus, Package } from "lucide-react";
+import { assertRole } from "@/lib/auth/assert-role";
 
 export default async function ProductsPage() {
+  await assertRole(["admin"]);
   const [products, categories] = await Promise.all([
     listProducts(),
     listProductCategories(),

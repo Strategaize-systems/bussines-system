@@ -5,6 +5,7 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import { CampaignForm } from "../../_components/campaign-form";
 import { getCampaign } from "../../actions";
 import type { SaveCampaignInput } from "@/types/campaign";
+import { assertRole } from "@/lib/auth/assert-role";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export default async function EditCampaignPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await assertRole(["admin", "teamlead"]);
   const { id } = await params;
   const campaign = await getCampaign(id);
   if (!campaign) notFound();

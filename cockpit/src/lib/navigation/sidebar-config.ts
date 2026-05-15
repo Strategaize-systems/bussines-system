@@ -18,6 +18,12 @@ import {
   Package,
   Zap,
   UserCog,
+  Palette,
+  Receipt,
+  GitBranch,
+  Megaphone,
+  Clock,
+  Bell,
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@/lib/auth/types";
@@ -216,6 +222,29 @@ export const SIDEBAR_CONFIG: readonly SidebarItem[] = [
     section: "VERWALTUNG_MEIN",
     visibleFor: ALL_ROLES,
   },
+  // SLC-711: persoenliche Settings-Sub-Pages (ALL_ROLES, sichtbar fuer
+  // Member im Settings-Sub-Sidebar-Slug-Filter + global unter Mein Profil).
+  {
+    href: "/settings/working-hours",
+    label: "Arbeitszeit",
+    icon: Clock,
+    section: "VERWALTUNG_MEIN",
+    visibleFor: ALL_ROLES,
+  },
+  {
+    href: "/settings/meetings",
+    label: "Meeting-Einstellungen",
+    icon: Calendar,
+    section: "VERWALTUNG_MEIN",
+    visibleFor: ALL_ROLES,
+  },
+  {
+    href: "/settings/briefing",
+    label: "Briefing",
+    icon: Bell,
+    section: "VERWALTUNG_MEIN",
+    visibleFor: ALL_ROLES,
+  },
 
   // VERWALTUNG_SETUP — managerial Tools, admin/teamlead-only.
   {
@@ -246,12 +275,65 @@ export const SIDEBAR_CONFIG: readonly SidebarItem[] = [
     section: "VERWALTUNG_SETUP",
     visibleFor: ADMIN_TEAMLEAD,
   },
+  // SLC-711: managerial Settings-Sub-Pages.
+  // Admin-only (organisationsweite Tiefe): branding, payment-terms, pipelines,
+  // products (existing), compliance. Admin+Teamlead (team-operativ): automation,
+  // templates, campaigns. Permission-Matrix per DEC-196.
+  {
+    href: "/settings/branding",
+    label: "Branding",
+    icon: Palette,
+    section: "VERWALTUNG_SETUP",
+    visibleFor: ADMIN_ONLY,
+  },
+  {
+    href: "/settings/payment-terms",
+    label: "Zahlungsbedingungen",
+    icon: Receipt,
+    section: "VERWALTUNG_SETUP",
+    visibleFor: ADMIN_ONLY,
+  },
+  {
+    href: "/settings/pipelines",
+    label: "Pipelines & Stages",
+    icon: GitBranch,
+    section: "VERWALTUNG_SETUP",
+    visibleFor: ADMIN_ONLY,
+  },
   {
     href: "/settings/products",
     label: "Produkte",
     icon: Package,
     section: "VERWALTUNG_SETUP",
     visibleFor: ADMIN_ONLY,
+  },
+  {
+    href: "/settings/compliance",
+    label: "Einwilligungstexte",
+    icon: FileText,
+    section: "VERWALTUNG_SETUP",
+    visibleFor: ADMIN_ONLY,
+  },
+  {
+    href: "/settings/automation",
+    label: "Workflow-Automation",
+    icon: Zap,
+    section: "VERWALTUNG_SETUP",
+    visibleFor: ADMIN_TEAMLEAD,
+  },
+  {
+    href: "/settings/templates",
+    label: "E-Mail-Templates",
+    icon: Mail,
+    section: "VERWALTUNG_SETUP",
+    visibleFor: ADMIN_TEAMLEAD,
+  },
+  {
+    href: "/settings/campaigns",
+    label: "Kampagnen",
+    icon: Megaphone,
+    section: "VERWALTUNG_SETUP",
+    visibleFor: ADMIN_TEAMLEAD,
   },
   {
     href: "/audit-log",

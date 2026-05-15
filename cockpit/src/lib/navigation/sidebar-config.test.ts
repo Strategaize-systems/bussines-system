@@ -9,8 +9,8 @@ import {
 import type { Role } from "@/lib/auth/types";
 
 describe("SIDEBAR_CONFIG", () => {
-  it("contains the V6.6-baseline + V7 TEAM-stubs (>=21 items)", () => {
-    expect(SIDEBAR_CONFIG.length).toBeGreaterThanOrEqual(21);
+  it("contains the V6.6-baseline + V7 TEAM-stubs + SLC-711 settings subs (>=32 items)", () => {
+    expect(SIDEBAR_CONFIG.length).toBeGreaterThanOrEqual(32);
   });
 
   it("every item has a non-empty visibleFor", () => {
@@ -127,11 +127,21 @@ describe("filterByRole — Snapshots", () => {
           "VERWALTUNG_MEIN:/emails",
           "VERWALTUNG_MEIN:/proposals",
           "VERWALTUNG_MEIN:/settings",
+          "VERWALTUNG_MEIN:/settings/working-hours",
+          "VERWALTUNG_MEIN:/settings/meetings",
+          "VERWALTUNG_MEIN:/settings/briefing",
           "VERWALTUNG_SETUP:/handoffs",
           "VERWALTUNG_SETUP:/referrals",
           "VERWALTUNG_SETUP:/performance/goals",
           "VERWALTUNG_SETUP:/cadences",
+          "VERWALTUNG_SETUP:/settings/branding",
+          "VERWALTUNG_SETUP:/settings/payment-terms",
+          "VERWALTUNG_SETUP:/settings/pipelines",
           "VERWALTUNG_SETUP:/settings/products",
+          "VERWALTUNG_SETUP:/settings/compliance",
+          "VERWALTUNG_SETUP:/settings/automation",
+          "VERWALTUNG_SETUP:/settings/templates",
+          "VERWALTUNG_SETUP:/settings/campaigns",
           "VERWALTUNG_SETUP:/audit-log",
         ],
         "member": [
@@ -148,6 +158,9 @@ describe("filterByRole — Snapshots", () => {
           "VERWALTUNG_MEIN:/emails",
           "VERWALTUNG_MEIN:/proposals",
           "VERWALTUNG_MEIN:/settings",
+          "VERWALTUNG_MEIN:/settings/working-hours",
+          "VERWALTUNG_MEIN:/settings/meetings",
+          "VERWALTUNG_MEIN:/settings/briefing",
         ],
         "teamlead": [
           "ANALYSE:/dashboard",
@@ -166,13 +179,120 @@ describe("filterByRole — Snapshots", () => {
           "VERWALTUNG_MEIN:/emails",
           "VERWALTUNG_MEIN:/proposals",
           "VERWALTUNG_MEIN:/settings",
+          "VERWALTUNG_MEIN:/settings/working-hours",
+          "VERWALTUNG_MEIN:/settings/meetings",
+          "VERWALTUNG_MEIN:/settings/briefing",
           "VERWALTUNG_SETUP:/handoffs",
           "VERWALTUNG_SETUP:/referrals",
           "VERWALTUNG_SETUP:/performance/goals",
           "VERWALTUNG_SETUP:/cadences",
+          "VERWALTUNG_SETUP:/settings/automation",
+          "VERWALTUNG_SETUP:/settings/templates",
+          "VERWALTUNG_SETUP:/settings/campaigns",
         ],
       }
     `);
+  });
+});
+
+describe("SLC-711 — Settings-Sub-Page Sidebar-Items (DEC-196 Permission-Matrix)", () => {
+  const SETTINGS_SUB_PAGES_ADMIN_ONLY = [
+    "/settings/branding",
+    "/settings/payment-terms",
+    "/settings/pipelines",
+    "/settings/compliance",
+  ] as const;
+
+  const SETTINGS_SUB_PAGES_ADMIN_TEAMLEAD = [
+    "/settings/automation",
+    "/settings/templates",
+    "/settings/campaigns",
+  ] as const;
+
+  const SETTINGS_SUB_PAGES_ALL_ROLES = [
+    "/settings/working-hours",
+    "/settings/meetings",
+    "/settings/briefing",
+  ] as const;
+
+  it("alle 10 neuen Settings-Sub-Page-Items existieren in SIDEBAR_CONFIG", () => {
+    const hrefs = SIDEBAR_CONFIG.map((i) => i.href);
+    for (const sub of [
+      ...SETTINGS_SUB_PAGES_ADMIN_ONLY,
+      ...SETTINGS_SUB_PAGES_ADMIN_TEAMLEAD,
+      ...SETTINGS_SUB_PAGES_ALL_ROLES,
+    ]) {
+      expect(hrefs).toContain(sub);
+    }
+  });
+
+  it("Admin sieht alle 10 neuen Settings-Sub-Pages (admin-only + admin-teamlead + all-roles)", () => {
+    const hrefs = filterByRole("admin").map((i) => i.href);
+    for (const sub of [
+      ...SETTINGS_SUB_PAGES_ADMIN_ONLY,
+      ...SETTINGS_SUB_PAGES_ADMIN_TEAMLEAD,
+      ...SETTINGS_SUB_PAGES_ALL_ROLES,
+    ]) {
+      expect(hrefs).toContain(sub);
+    }
+  });
+
+  it("Teamlead sieht admin-teamlead + all-roles, KEINE admin-only Settings-Sub-Pages", () => {
+    const hrefs = filterByRole("teamlead").map((i) => i.href);
+    for (const sub of [
+      ...SETTINGS_SUB_PAGES_ADMIN_TEAMLEAD,
+      ...SETTINGS_SUB_PAGES_ALL_ROLES,
+    ]) {
+      expect(hrefs).toContain(sub);
+    }
+    for (const sub of SETTINGS_SUB_PAGES_ADMIN_ONLY) {
+      expect(hrefs).not.toContain(sub);
+    }
+  });
+
+  it("Member sieht NUR all-roles Settings-Sub-Pages (working-hours/meetings/briefing)", () => {
+    const hrefs = filterByRole("member").map((i) => i.href);
+    for (const sub of SETTINGS_SUB_PAGES_ALL_ROLES) {
+      expect(hrefs).toContain(sub);
+    }
+    for (const sub of [
+      ...SETTINGS_SUB_PAGES_ADMIN_ONLY,
+      ...SETTINGS_SUB_PAGES_ADMIN_TEAMLEAD,
+    ]) {
+      expect(hrefs).not.toContain(sub);
+    }
+  });
+
+  it("DEC-196b Slug-Filter: nur /settings/*-Pages pro Rolle (Settings-Sub-Sidebar-Quelle)", () => {
+    const adminSlugItems = filterByRole("admin").filter((i) =>
+      i.href.startsWith("/settings/"),
+    );
+    const teamleadSlugItems = filterByRole("teamlead").filter((i) =>
+      i.href.startsWith("/settings/"),
+    );
+    const memberSlugItems = filterByRole("member").filter((i) =>
+      i.href.startsWith("/settings/"),
+    );
+
+    // Admin: alle 10 neuen + /settings/products + /settings/team = 12
+    expect(adminSlugItems.length).toBeGreaterThanOrEqual(10);
+    expect(adminSlugItems.map((i) => i.href)).toContain("/settings/branding");
+    expect(adminSlugItems.map((i) => i.href)).toContain("/settings/team");
+
+    // Teamlead: 6 (3 admin-teamlead + 3 all-roles) + /settings/team = 7
+    expect(teamleadSlugItems.length).toBeGreaterThanOrEqual(6);
+    expect(teamleadSlugItems.map((i) => i.href)).not.toContain(
+      "/settings/branding",
+    );
+    expect(teamleadSlugItems.map((i) => i.href)).toContain(
+      "/settings/automation",
+    );
+
+    // Member: nur 3 persoenliche Settings (working-hours/meetings/briefing)
+    expect(memberSlugItems.length).toBe(3);
+    expect(memberSlugItems.map((i) => i.href).sort()).toEqual(
+      [...SETTINGS_SUB_PAGES_ALL_ROLES].sort(),
+    );
   });
 });
 

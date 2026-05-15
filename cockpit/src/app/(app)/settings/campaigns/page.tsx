@@ -3,10 +3,12 @@ import { Plus, Megaphone } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { listCampaigns } from "./actions";
 import { CampaignsList } from "./_components/campaigns-list";
+import { assertRole } from "@/lib/auth/assert-role";
 
 export const dynamic = "force-dynamic";
 
 export default async function CampaignsSettingsPage() {
+  await assertRole(["admin", "teamlead"]);
   const items = await listCampaigns();
 
   return (

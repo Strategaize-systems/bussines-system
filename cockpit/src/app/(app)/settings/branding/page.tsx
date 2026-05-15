@@ -1,10 +1,12 @@
 import { Palette } from "lucide-react";
 import { getBranding, updateBranding, uploadLogo } from "./actions";
 import { BrandingForm } from "./branding-form";
+import { assertRole } from "@/lib/auth/assert-role";
 
 export const dynamic = "force-dynamic";
 
 export default async function BrandingPage() {
+  await assertRole(["admin"]);
   const branding = await getBranding();
 
   return (

@@ -1,9 +1,11 @@
 import { TemplatesConfig } from "../templates-config";
 import { getEmailTemplates } from "../template-actions";
+import { assertRole } from "@/lib/auth/assert-role";
 
 export const dynamic = "force-dynamic";
 
 export default async function TemplatesSettingsPage() {
+  await assertRole(["admin", "teamlead"]);
   const templates = await getEmailTemplates();
 
   return (

@@ -1,10 +1,12 @@
 import { getPipelines, getPipelineStages } from "../../pipeline/actions";
 import { PipelineConfig } from "../pipeline-config";
 import type { PipelineStage } from "../../pipeline/actions";
+import { assertRole } from "@/lib/auth/assert-role";
 
 export const dynamic = "force-dynamic";
 
 export default async function PipelinesSettingsPage() {
+  await assertRole(["admin"]);
   const pipelines = await getPipelines();
 
   const stagesResults = await Promise.all(

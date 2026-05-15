@@ -12,6 +12,7 @@ import type {
   StageOption,
   PipelineOption,
 } from "../_components/step-trigger";
+import { assertRole } from "@/lib/auth/assert-role";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,7 @@ const EMPTY_DRAFT: SaveAutomationRuleInput = {
 };
 
 export default async function NewAutomationRulePage() {
+  await assertRole(["admin", "teamlead"]);
   const pipelines = await getPipelines();
   const stagesByPipeline = await Promise.all(
     pipelines.map((p) => getPipelineStages(p.id))

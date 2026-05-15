@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { CampaignForm } from "../_components/campaign-form";
 import type { SaveCampaignInput } from "@/types/campaign";
+import { assertRole } from "@/lib/auth/assert-role";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,8 @@ const TODAY = (): string => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-export default function NewCampaignPage() {
+export default async function NewCampaignPage() {
+  await assertRole(["admin", "teamlead"]);
   const initial: SaveCampaignInput = {
     name: "",
     type: "linkedin",

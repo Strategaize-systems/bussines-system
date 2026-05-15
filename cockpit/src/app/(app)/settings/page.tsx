@@ -1,17 +1,146 @@
 import { getImapSyncStatus } from "./imap-actions";
 import { ImapStatus } from "./imap-status";
-import { getCurrentUserRole } from "@/lib/audit";
-import { Shield, Bell, FileText, Palette, Receipt, Zap, Megaphone, GitBranch, Mail, Clock } from "lucide-react";
+import { getProfile } from "@/lib/auth/get-profile";
+import {
+  Shield,
+  Bell,
+  FileText,
+  Palette,
+  Receipt,
+  Zap,
+  Megaphone,
+  GitBranch,
+  Mail,
+  Clock,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
+import type { Role } from "@/lib/auth/types";
+
+interface SettingsTile {
+  href: string;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  iconWrapperClasses: string;
+  iconClasses: string;
+  visibleFor: readonly [Role, ...Role[]];
+}
+
+const ALL_ROLES: readonly [Role, Role, Role] = ["admin", "teamlead", "member"];
+const ADMIN_TEAMLEAD: readonly [Role, Role] = ["admin", "teamlead"];
+const ADMIN_ONLY: readonly [Role] = ["admin"];
+
+// SLC-711 DEC-196: Permission-Matrix dreistufig (Admin / Admin+Teamlead / Alle).
+const SETTINGS_TILES: readonly SettingsTile[] = [
+  {
+    href: "/settings/working-hours",
+    label: "Arbeitszeit",
+    description: "Start- und End-Zeit fuer Kalender-Working-Hours-Filter",
+    icon: Clock,
+    iconWrapperClasses: "bg-blue-50",
+    iconClasses: "text-blue-700",
+    visibleFor: ALL_ROLES,
+  },
+  {
+    href: "/settings/meetings",
+    label: "Meeting-Einstellungen",
+    description: "Erinnerungen, Kalender und KI-Agenda",
+    icon: Bell,
+    iconWrapperClasses: "bg-orange-50",
+    iconClasses: "text-orange-600",
+    visibleFor: ALL_ROLES,
+  },
+  {
+    href: "/settings/briefing",
+    label: "Pre-Call Briefing",
+    description: "Push-Notifications und Inhalt des Pre-Call-Briefings",
+    icon: Bell,
+    iconWrapperClasses: "bg-yellow-50",
+    iconClasses: "text-yellow-700",
+    visibleFor: ALL_ROLES,
+  },
+  {
+    href: "/settings/branding",
+    label: "Branding",
+    description: "Logo, Farben, Schrift und Footer fuer ausgehende Mails",
+    icon: Palette,
+    iconWrapperClasses: "bg-violet-50",
+    iconClasses: "text-violet-700",
+    visibleFor: ADMIN_ONLY,
+  },
+  {
+    href: "/settings/payment-terms",
+    label: "Zahlungsbedingungen",
+    description: "Vorlagen fuer Angebote (Default + Custom-Templates)",
+    icon: Receipt,
+    iconWrapperClasses: "bg-emerald-50",
+    iconClasses: "text-emerald-700",
+    visibleFor: ADMIN_ONLY,
+  },
+  {
+    href: "/settings/compliance",
+    label: "Einwilligungstexte",
+    description: "DSGVO-Standardvorlagen fuer Meeting, E-Mail und Cal.com",
+    icon: FileText,
+    iconWrapperClasses: "bg-rose-50",
+    iconClasses: "text-rose-700",
+    visibleFor: ADMIN_ONLY,
+  },
+  {
+    href: "/settings/pipelines",
+    label: "Pipelines & Stages",
+    description:
+      "Pipelines anlegen, Stages konfigurieren und Reihenfolge festlegen",
+    icon: GitBranch,
+    iconWrapperClasses: "bg-indigo-50",
+    iconClasses: "text-indigo-700",
+    visibleFor: ADMIN_ONLY,
+  },
+  {
+    href: "/settings/automation",
+    label: "Workflow-Automation",
+    description:
+      "Wenn-Dann-Regeln fuer Routine-Reaktionen (Stage-Change, Activity, Deal-Create)",
+    icon: Zap,
+    iconWrapperClasses: "bg-amber-50",
+    iconClasses: "text-amber-600",
+    visibleFor: ADMIN_TEAMLEAD,
+  },
+  {
+    href: "/settings/campaigns",
+    label: "Kampagnen",
+    description:
+      "Kampagnen-Verwaltung mit Tracking-Links + Performance-KPIs (Klicks, Leads, Deals, Conversion-Rate)",
+    icon: Megaphone,
+    iconWrapperClasses: "bg-sky-50",
+    iconClasses: "text-sky-600",
+    visibleFor: ADMIN_TEAMLEAD,
+  },
+  {
+    href: "/settings/templates",
+    label: "E-Mail-Templates",
+    description: "Mehrsprachige Vorlagen fuer ausgehende E-Mails (DE / NL / EN)",
+    icon: Mail,
+    iconWrapperClasses: "bg-cyan-50",
+    iconClasses: "text-cyan-700",
+    visibleFor: ADMIN_TEAMLEAD,
+  },
+];
+
+const ROLE_LABEL: Record<Role, string> = {
+  admin: "Administrator",
+  teamlead: "Teamlead",
+  member: "Operator",
+};
 
 export default async function SettingsPage() {
-  const [role, imapSync] = await Promise.all([
-    getCurrentUserRole(),
-    getImapSyncStatus(),
-  ]);
-
-  const roleLabel = role === "admin" ? "Administrator" : "Operator";
+  const profile = await getProfile();
+  const role = profile.role;
+  const visibleTiles = SETTINGS_TILES.filter((t) => t.visibleFor.includes(role));
+  // SLC-711 DEC-196: IMAP ist Admin-Konzern → ImapStatus nur fuer Admin.
+  const imapSync = role === "admin" ? await getImapSyncStatus() : null;
 
   return (
     <div className="min-h-screen">
@@ -21,155 +150,43 @@ export default async function SettingsPage() {
       />
       <main className="px-8 py-8">
         <div className="max-w-[1800px] mx-auto space-y-6">
-      {/* Role display */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100">
-            <Shield className="h-4 w-4 text-slate-600" />
+          {/* Role display */}
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100">
+                <Shield className="h-4 w-4 text-slate-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-900">Deine Rolle</p>
+                <p className="text-sm text-slate-500">{ROLE_LABEL[role]}</p>
+              </div>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-medium text-slate-900">Deine Rolle</p>
-            <p className="text-sm text-slate-500">{roleLabel}</p>
-          </div>
-        </div>
-      </div>
 
-      {/* Working-Hours settings link (SLC-667 MT-7) */}
-      <Link href="/settings/working-hours" className="block">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:bg-slate-50">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50">
-              <Clock className="h-4 w-4 text-blue-700" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-900">Arbeitszeit</p>
-              <p className="text-sm text-slate-500">Start- und End-Zeit fuer Kalender-Working-Hours-Filter</p>
-            </div>
-          </div>
-        </div>
-      </Link>
+          {visibleTiles.map((tile) => {
+            const Icon = tile.icon;
+            return (
+              <Link key={tile.href} href={tile.href} className="block">
+                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:bg-slate-50">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-9 w-9 items-center justify-center rounded-lg ${tile.iconWrapperClasses}`}
+                    >
+                      <Icon className={`h-4 w-4 ${tile.iconClasses}`} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">
+                        {tile.label}
+                      </p>
+                      <p className="text-sm text-slate-500">{tile.description}</p>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
 
-      {/* Meeting settings link */}
-      <Link href="/settings/meetings" className="block">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:bg-slate-50">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50">
-              <Bell className="h-4 w-4 text-orange-600" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-900">Meeting-Einstellungen</p>
-              <p className="text-sm text-slate-500">Erinnerungen, Kalender und KI-Agenda</p>
-            </div>
-          </div>
-        </div>
-      </Link>
-
-      {/* Branding link */}
-      <Link href="/settings/branding" className="block">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:bg-slate-50">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50">
-              <Palette className="h-4 w-4 text-violet-700" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-900">Branding</p>
-              <p className="text-sm text-slate-500">Logo, Farben, Schrift und Footer fuer ausgehende Mails</p>
-            </div>
-          </div>
-        </div>
-      </Link>
-
-      {/* Payment-Terms link */}
-      <Link href="/settings/payment-terms" className="block">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:bg-slate-50">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50">
-              <Receipt className="h-4 w-4 text-emerald-700" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-900">Zahlungsbedingungen</p>
-              <p className="text-sm text-slate-500">Vorlagen fuer Angebote (Default + Custom-Templates)</p>
-            </div>
-          </div>
-        </div>
-      </Link>
-
-      {/* Workflow-Automation link */}
-      <Link href="/settings/automation" className="block">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:bg-slate-50">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50">
-              <Zap className="h-4 w-4 text-amber-600" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-900">Workflow-Automation</p>
-              <p className="text-sm text-slate-500">Wenn-Dann-Regeln fuer Routine-Reaktionen (Stage-Change, Activity, Deal-Create)</p>
-            </div>
-          </div>
-        </div>
-      </Link>
-
-      {/* Kampagnen link */}
-      <Link href="/settings/campaigns" className="block">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:bg-slate-50">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-50">
-              <Megaphone className="h-4 w-4 text-sky-600" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-900">Kampagnen</p>
-              <p className="text-sm text-slate-500">Kampagnen-Verwaltung mit Tracking-Links + Performance-KPIs (Klicks, Leads, Deals, Conversion-Rate)</p>
-            </div>
-          </div>
-        </div>
-      </Link>
-
-      {/* Compliance settings link */}
-      <Link href="/settings/compliance" className="block">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:bg-slate-50">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-50">
-              <FileText className="h-4 w-4 text-rose-700" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-900">Einwilligungstexte</p>
-              <p className="text-sm text-slate-500">DSGVO-Standardvorlagen fuer Meeting, E-Mail und Cal.com</p>
-            </div>
-          </div>
-        </div>
-      </Link>
-
-      {/* Pipelines & Stages link (V6.5 SLC-653 UA-002) */}
-      <Link href="/settings/pipelines" className="block">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:bg-slate-50">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50">
-              <GitBranch className="h-4 w-4 text-indigo-700" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-900">Pipelines & Stages</p>
-              <p className="text-sm text-slate-500">Pipelines anlegen, Stages konfigurieren und Reihenfolge festlegen</p>
-            </div>
-          </div>
-        </div>
-      </Link>
-
-      {/* E-Mail-Templates link (V6.5 SLC-653 UA-002) */}
-      <Link href="/settings/templates" className="block">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:bg-slate-50">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-50">
-              <Mail className="h-4 w-4 text-cyan-700" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-900">E-Mail-Templates</p>
-              <p className="text-sm text-slate-500">Mehrsprachige Vorlagen fuer ausgehende E-Mails (DE / NL / EN)</p>
-            </div>
-          </div>
-        </div>
-      </Link>
-
-      <ImapStatus syncState={imapSync} />
+          {imapSync ? <ImapStatus syncState={imapSync} /> : null}
         </div>
       </main>
     </div>
