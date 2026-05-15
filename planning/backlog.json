@@ -2311,6 +2311,16 @@
       "version": "V7.1",
       "description": "User-Walkthrough 2026-05-14: Mail-Versand klappt (SMTP-Fix BL-467 done), aber der Confirmation-Link in der Invite-Mail zeigt auf `http://supabase-kong:8000/auth/v1/verify?token=...` (interner Docker-Container-Hostname) statt auf `https://business.strategaizetransition.com/auth/v1/verify?token=...`. Browser-DNS-Lookup auf `supabase-kong` scheitert mit DNS_PROBE_FINISHED_NXDOMAIN. **Root Cause:** App-Server-Action ruft `supabase.auth.admin.inviteUserByEmail()` ueber Server-Side-Admin-Client mit `SUPABASE_URL=http://supabase-kong:8000` (Container-DNS) auf. GoTrue v2.160.0 in Coolify-Supabase-Stack baut die Confirmation-URL aus dem Request-Host statt aus `GOTRUE_API_EXTERNAL_URL` — bekanntes Self-hosted-Issue. createAdminClient setzt zwar X-Forwarded-Host + X-Forwarded-Proto, GoTrue respektiert sie ohne trusted_proxy-Flag nicht. **Workaround User-Side:** Mail-Link manuell editieren — `http://supabase-kong:8000` → `https://business.strategaizetransition.com`. **Empfohlene Loesung (Code-Fix, ~2-3h):** In `cockpit/src/lib/auth/invite.ts` umbauen auf `admin.auth.admin.generateLink({ type: 'invite', email, options: { redirectTo } })`. Liefert `action_link` mit korrektem Public-Host. Mail-Versand selbst via V5.3 NodeMailer-SMTP-Pipeline mit eigenem Template (Stil im Style-Guide-V2 + Logo). Vorteil: Mail-Template komplett unter Kontrolle, kein GoTrue-Auto-Mail mehr, kein BL-467-SMTP-ENV-Wrapper-Issue mehr. **Alternativen geprueft:** (a) ENV-Tuning GOTRUE_API_TRUSTED_PROXY=1 + GoTrue v2.170-Update — unsicher, Stack-Risk. (b) GoTrue-Image standalone bumpen — Stack-Risk. Code-Fix sauberster Pfad. **Tests:** Vitest invite.test.ts mit gemockter generateLink-Response + NodeMailer-Mock. Live-Smoke: Invite an reale Mail-Adresse, Link klicken, Password setzen, Login erfolgreich.",
       "createdAt": "2026-05-14"
+    },
+    {
+      "id": "BL-471",
+      "title": "create-qa-test-users.mjs um qa-admin@strategaize.test (UUID-Range 0...ba001) als 3. Rolle erweitern",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": null,
+      "description": "/qa SLC-711 (RPT-418) brauchte alle 3 Rollen (Admin/Teamlead/Member) fuer Live-Smoke, aber das Seed-Script enthielt nur Teamlead+Member. qa-admin musste in /qa-Session per Inline-Admin-API-POST + Profile-INSERT angelegt werden (~5-10 Min Overhead, plus 2 Stolperer mit curl-fehlt-im-Container + Heredoc-Variable-Expansion-Trap, siehe Dev-System IMP-486). Fix: cockpit/scripts/create-qa-test-users.mjs erweitern um Eintrag `{ id: '00000000-0000-0000-0000-0000000ba001', email: 'qa-admin@strategaize.test', password: 'QaSlc711-Admin!', role: 'admin' }` plus Profile-team_id-Setzung (TEST-Team `00000000-0000-0000-0000-000000000077`). Idempotent. Eliminiert /qa-Session-Overhead bei zukuenftigen rollen-basierten Permission-Smokes. Aufwand ~15 Min.",
+      "createdAt": "2026-05-15"
     }
   ]
 }
