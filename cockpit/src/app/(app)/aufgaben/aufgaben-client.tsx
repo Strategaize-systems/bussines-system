@@ -51,9 +51,12 @@ interface AufgabenClientProps {
   contacts: { id: string; first_name: string; last_name: string }[];
   companies: { id: string; name: string }[];
   deals: { id: string; title: string }[];
+  // V7.1 SLC-712b — Drilldown-Reuse (DEC-199-Pattern aus SLC-712a)
+  readOnly?: boolean;
+  viewAsUserId?: string;
 }
 
-export function AufgabenClient({ tasks, contacts, companies, deals }: AufgabenClientProps) {
+export function AufgabenClient({ tasks, contacts, companies, deals, readOnly = false, viewAsUserId: _viewAsUserId }: AufgabenClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
@@ -82,14 +85,19 @@ export function AufgabenClient({ tasks, contacts, companies, deals }: AufgabenCl
 
   return (
     <div className="min-h-screen">
-      <PageHeader title="Aufgaben" subtitle={`${tasks.length} Aufgaben gesamt`}>
-        <button
-          onClick={() => setShowNewTask(true)}
-          className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2"
-        >
-          <Plus size={16} strokeWidth={2.5} />
-          Aufgabe erstellen
-        </button>
+      <PageHeader
+        title={readOnly ? "Aufgaben (Read-Only)" : "Aufgaben"}
+        subtitle={`${tasks.length} Aufgaben gesamt`}
+      >
+        {!readOnly && (
+          <button
+            onClick={() => setShowNewTask(true)}
+            className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#00a84f] to-[#4dcb8b] text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2"
+          >
+            <Plus size={16} strokeWidth={2.5} />
+            Aufgabe erstellen
+          </button>
+        )}
       </PageHeader>
 
       <main className="px-8 py-8">
@@ -169,6 +177,7 @@ export function AufgabenClient({ tasks, contacts, companies, deals }: AufgabenCl
                     contacts={contacts}
                     companies={companies}
                     deals={deals}
+                    readOnly={readOnly}
                   />
                 ))}
               </div>
@@ -182,8 +191,8 @@ export function AufgabenClient({ tasks, contacts, companies, deals }: AufgabenCl
         </div>
       </main>
 
-      {/* New Task Sheet */}
-      {showNewTask && (
+      {/* New Task Sheet — only when not readOnly (defense-in-depth, Button bereits gated) */}
+      {!readOnly && showNewTask && (
         <TaskSheet
           contacts={contacts}
           companies={companies}
@@ -202,12 +211,14 @@ function TaskRow({
   contacts,
   companies,
   deals,
+  readOnly = false,
 }: {
   task: Task;
   today: string;
   contacts: { id: string; first_name: string; last_name: string }[];
   companies: { id: string; name: string }[];
   deals: { id: string; title: string }[];
+  readOnly?: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
   const isOverdue = task.status === "open" && task.due_date && task.due_date < today;
@@ -317,30 +328,32 @@ function TaskRow({
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
-          <Eye size={14} />
-        </button>
-        <TaskSheet
-          contacts={contacts}
-          companies={companies}
-          deals={deals}
-          task={task}
-          trigger={
-            <button className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
-              <Pencil size={14} />
-            </button>
-          }
-        />
-        <button
-          onClick={handleDelete}
-          disabled={isPending}
-          className="p-1.5 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
-        >
-          <Trash2 size={14} />
-        </button>
-      </div>
+      {/* Actions — hidden in readOnly */}
+      {!readOnly && (
+        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+            <Eye size={14} />
+          </button>
+          <TaskSheet
+            contacts={contacts}
+            companies={companies}
+            deals={deals}
+            task={task}
+            trigger={
+              <button className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                <Pencil size={14} />
+              </button>
+            }
+          />
+          <button
+            onClick={handleDelete}
+            disabled={isPending}
+            className="p-1.5 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

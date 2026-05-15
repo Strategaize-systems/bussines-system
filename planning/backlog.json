@@ -2287,7 +2287,7 @@
       "title": "Drilldown-View Vollausbau: gleiche Toggle-/Filter-/Forecast-Optionen wie /pipeline + /aktivitaeten + /mein-tag — read-only",
       "type": "improvement",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V7.1",
       "description": "User-Feedback waehrend V7-Walkthrough 2026-05-14: Aktuell zeigt `/team/[user_id]/pipeline` nur die Liste der aktiven Deals des Members. Soll: identische Pipeline-Ansicht wie das normale `/pipeline` fuer den Member-Owner, INKL. aller Toggle-Moeglichkeiten (Funnel-View, Filter, Pipeline-Switcher, Stages, Forecast-Modi). Read-Only-Modus bleibt strikt — keine Mutate-Buttons. Implementation-Hint: vermutlich die `/pipeline`-Page-Component mit zusaetzlichem `viewAsUserId`-Prop wiederverwenden statt eigener Drilldown-Variante. Pflicht-Checks: (a) ReadOnlyContext via Layout-Wrap aktiv, (b) alle Stage-Change/Edit/Mutate-Buttons hidden oder disabled, (c) Pipeline-Toggles funktionieren mit Member-Daten (Filter scopen auf owner_user_id = target_user_id), (d) Filter-State persistiert nicht cross-User. Spaeter Erweiterung um analoge Sicht fuer /team/[user_id]/aktivitaeten + /team/[user_id]/mein-tag denkbar.",
       "createdAt": "2026-05-14"

@@ -51,6 +51,10 @@ interface MeinTagClientProps {
   topDeals: TopDeal[];
   gatekeeperSummary: GatekeeperSummary;
   dateLabel: string;
+  // V7.1 SLC-712b — Drilldown-Reuse (DEC-199 + DEC-200 Pattern aus SLC-712a)
+  readOnly?: boolean;
+  viewAsUserId?: string;
+  targetUserDisplayName?: string;
 }
 
 const typeConfig: Record<TodayItemType, { icon: typeof ListTodo; bg: string }> = {
@@ -75,7 +79,10 @@ const statusStyles: Record<string, string> = {
 
 const WORKDAY_MINUTES = 480; // 8h workday
 
-export function MeinTagClient({ userId, data, stages, contacts, companies, deals, pipelines, calendarSlots, nextMeeting, topDeals, gatekeeperSummary, dateLabel }: MeinTagClientProps) {
+export function MeinTagClient({ userId, data, stages, contacts, companies, deals, pipelines, calendarSlots, nextMeeting, topDeals, gatekeeperSummary, dateLabel, readOnly = false, viewAsUserId, targetUserDisplayName }: MeinTagClientProps) {
+  // V7.1 SLC-712b — KI-Workspace-Scope: viewAsUserId hat Vorrang vor userId
+  // wenn gesetzt (Drilldown). KI-Reports laufen dann gegen Target-Member-Daten.
+  const kiWorkspaceUserId = viewAsUserId ?? userId;
   const totalItems = data.stats.overdueCount + data.stats.todayCount + data.stats.upcomingCount;
   const completedItems = 0;
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
@@ -118,8 +125,8 @@ export function MeinTagClient({ userId, data, stages, contacts, companies, deals
   return (
     <div className="min-h-screen">
       <PageHeader
-        title="Mein Tag"
-        subtitle={`${dateLabel} · Dein Operations-Cockpit`}
+        title={readOnly ? `Mein Tag (Read-Only${targetUserDisplayName ? `: ${targetUserDisplayName}` : ""})` : "Mein Tag"}
+        subtitle={`${dateLabel} · ${readOnly ? "Mitarbeiter-Sicht" : "Dein Operations-Cockpit"}`}
       >
         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 text-xs font-bold text-emerald-700">
           <CheckCircle2 size={14} />
@@ -142,43 +149,45 @@ export function MeinTagClient({ userId, data, stages, contacts, companies, deals
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* LEFT: Work Actions + Aufgaben */}
                 <div className="space-y-4">
-                  {/* Work Quick Actions */}
-                  <div className="flex items-center justify-center gap-3">
-                    <TaskSheet
-                      contacts={contacts}
-                      companies={companies}
-                      deals={deals}
-                      trigger={<QuickActionButton icon={ListTodo} label="Aufgabe" color="from-[#120774] to-[#4454b8]" />}
-                    />
-                    <Link href="/emails/compose">
-                      <QuickActionButton icon={Mail} label="E-Mail" color="from-sky-500 to-sky-600" />
-                    </Link>
-                    <MeetingSheet
-                      contacts={contacts}
-                      companies={companies}
-                      deals={deals}
-                      trigger={<QuickActionButton icon={Users} label="Meeting" color="from-emerald-500 to-emerald-600" />}
-                    />
-                    <EventSheet
-                      contacts={contacts}
-                      companies={companies}
-                      deals={deals}
-                      trigger={<QuickActionButton icon={Calendar} label="Termin" color="from-purple-500 to-purple-600" />}
-                    />
-                    <CallSheet
-                      contacts={contacts.map((c) => {
-                        const comp = c.company_id ? companies.find((co) => co.id === c.company_id) : null;
-                        return {
-                          id: c.id,
-                          first_name: c.first_name,
-                          last_name: c.last_name,
-                          phone: c.phone,
-                          company_name: comp?.name ?? null,
-                        };
-                      })}
-                      trigger={<QuickActionButton icon={Phone} label="Anruf" color="from-orange-500 to-orange-600" />}
-                    />
-                  </div>
+                  {/* Work Quick Actions — hidden in readOnly */}
+                  {!readOnly && (
+                    <div className="flex items-center justify-center gap-3">
+                      <TaskSheet
+                        contacts={contacts}
+                        companies={companies}
+                        deals={deals}
+                        trigger={<QuickActionButton icon={ListTodo} label="Aufgabe" color="from-[#120774] to-[#4454b8]" />}
+                      />
+                      <Link href="/emails/compose">
+                        <QuickActionButton icon={Mail} label="E-Mail" color="from-sky-500 to-sky-600" />
+                      </Link>
+                      <MeetingSheet
+                        contacts={contacts}
+                        companies={companies}
+                        deals={deals}
+                        trigger={<QuickActionButton icon={Users} label="Meeting" color="from-emerald-500 to-emerald-600" />}
+                      />
+                      <EventSheet
+                        contacts={contacts}
+                        companies={companies}
+                        deals={deals}
+                        trigger={<QuickActionButton icon={Calendar} label="Termin" color="from-purple-500 to-purple-600" />}
+                      />
+                      <CallSheet
+                        contacts={contacts.map((c) => {
+                          const comp = c.company_id ? companies.find((co) => co.id === c.company_id) : null;
+                          return {
+                            id: c.id,
+                            first_name: c.first_name,
+                            last_name: c.last_name,
+                            phone: c.phone,
+                            company_name: comp?.name ?? null,
+                          };
+                        })}
+                        trigger={<QuickActionButton icon={Phone} label="Anruf" color="from-orange-500 to-orange-600" />}
+                      />
+                    </div>
+                  )}
 
                   {/* AUFGABEN */}
                   <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden min-h-[320px] flex flex-col">
@@ -204,7 +213,7 @@ export function MeinTagClient({ userId, data, stages, contacts, companies, deals
                     <div className="divide-y divide-slate-50 flex-1">
                       {displayItems.length > 0 ? (
                         displayItems.map((item) => (
-                          <TaskItem key={item.id} item={item} onDealClick={setSelectedDealId} />
+                          <TaskItem key={item.id} item={item} onDealClick={setSelectedDealId} readOnly={readOnly} />
                         ))
                       ) : (
                         <div className="p-8 text-center">
@@ -249,15 +258,17 @@ export function MeinTagClient({ userId, data, stages, contacts, companies, deals
 
                 {/* RIGHT: Deal Action + Top Deals */}
                 <div className="space-y-4">
-                  <div className="flex items-center justify-center gap-3">
-                    <DealSheet
-                      stages={stages}
-                      pipelineId={pipelines[0]?.id ?? ""}
-                      contacts={contacts}
-                      companies={companies}
-                      trigger={<QuickActionButton icon={Briefcase} label="Neuer Deal" color="from-[#00a84f] to-[#4dcb8b]" />}
-                    />
-                  </div>
+                  {!readOnly && (
+                    <div className="flex items-center justify-center gap-3">
+                      <DealSheet
+                        stages={stages}
+                        pipelineId={pipelines[0]?.id ?? ""}
+                        contacts={contacts}
+                        companies={companies}
+                        trigger={<QuickActionButton icon={Briefcase} label="Neuer Deal" color="from-[#00a84f] to-[#4dcb8b]" />}
+                      />
+                    </div>
+                  )}
 
                   <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden min-h-[320px] flex flex-col">
                     <div className="px-5 py-3 border-b border-slate-200 flex items-center gap-2">
@@ -327,27 +338,31 @@ export function MeinTagClient({ userId, data, stages, contacts, companies, deals
                 </div>
               </div>
 
-              {/* KI-WORKSPACE — flows directly after Aufgaben + Deals */}
-              <MeinTagKIWorkspace userId={userId} />
+              {/* KI-WORKSPACE — flows directly after Aufgaben + Deals.
+                  V7.1 SLC-712b: viewAsUserId hat Vorrang in Drilldown — KI-Reports laufen
+                  gegen Target-Member-Daten. */}
+              <MeinTagKIWorkspace userId={kiWorkspaceUserId} />
             </div>
 
             {/* RIGHT COLUMN (4 cols on lg+): Entities + Zeit + Kalender + Meeting-Prep + Focus-Badges */}
             <div className="col-span-1 lg:col-span-4">
               <div className="lg:sticky lg:top-32 space-y-4">
-                {/* Entity Quick Actions */}
-                <div className="flex items-center justify-center gap-3">
-                  <ContactSheet
-                    companies={companies}
-                    trigger={<QuickActionButton icon={Users} label="Neuer Kontakt" color="from-[#120774] to-[#4454b8]" />}
-                  />
-                  <CompanySheet
-                    trigger={<QuickActionButton icon={Building2} label="Neue Firma" color="from-[#00a84f] to-[#4dcb8b]" />}
-                  />
-                  <ContactSheet
-                    companies={companies}
-                    trigger={<QuickActionButton icon={Handshake} label="Multiplikator" color="from-purple-500 to-purple-600" />}
-                  />
-                </div>
+                {/* Entity Quick Actions — hidden in readOnly */}
+                {!readOnly && (
+                  <div className="flex items-center justify-center gap-3">
+                    <ContactSheet
+                      companies={companies}
+                      trigger={<QuickActionButton icon={Users} label="Neuer Kontakt" color="from-[#120774] to-[#4454b8]" />}
+                    />
+                    <CompanySheet
+                      trigger={<QuickActionButton icon={Building2} label="Neue Firma" color="from-[#00a84f] to-[#4dcb8b]" />}
+                    />
+                    <ContactSheet
+                      companies={companies}
+                      trigger={<QuickActionButton icon={Handshake} label="Multiplikator" color="from-purple-500 to-purple-600" />}
+                    />
+                  </div>
+                )}
 
                 {/* Verfuegbare Zeit — compact bar */}
                 <div className={cn(
@@ -423,7 +438,7 @@ export function MeinTagClient({ userId, data, stages, contacts, companies, deals
                 </div>
 
                 {/* MEETING-PREP */}
-                {nextMeeting && <MeetingPrepCard meeting={nextMeeting} />}
+                {nextMeeting && <MeetingPrepCard meeting={nextMeeting} readOnly={readOnly} />}
 
                 {/* FOCUS-BADGES — only ungeordnete-E-Mails bleibt; Pipeline-Risiko ist im KI-Workspace-Bericht */}
                 {gatekeeperSummary.unclassified > 0 && (
@@ -462,7 +477,7 @@ export function MeinTagClient({ userId, data, stages, contacts, companies, deals
   );
 }
 
-function TaskItem({ item, onDealClick }: { item: TodayItem; onDealClick: (dealId: string) => void }) {
+function TaskItem({ item, onDealClick, readOnly = false }: { item: TodayItem; onDealClick: (dealId: string) => void; readOnly?: boolean }) {
   const config = typeConfig[item.type];
   const Icon = config.icon;
   const [isPending, startTransition] = useTransition();
@@ -502,14 +517,16 @@ function TaskItem({ item, onDealClick }: { item: TodayItem; onDealClick: (dealId
       )}
       onClick={() => isDeal ? onDealClick(rawId) : undefined}
     >
-      {/* Complete circle */}
-      <button
-        onClick={handleComplete}
-        disabled={isPending}
-        className="w-8 h-8 rounded-full border-2 border-slate-300 hover:border-emerald-500 hover:bg-emerald-50 flex items-center justify-center shrink-0 transition-colors"
-      >
-        {isPending && <Clock size={12} className="text-slate-400 animate-spin" />}
-      </button>
+      {/* Complete circle — hidden in readOnly (Mutate-Action) */}
+      {!readOnly && (
+        <button
+          onClick={handleComplete}
+          disabled={isPending}
+          className="w-8 h-8 rounded-full border-2 border-slate-300 hover:border-emerald-500 hover:bg-emerald-50 flex items-center justify-center shrink-0 transition-colors"
+        >
+          {isPending && <Clock size={12} className="text-slate-400 animate-spin" />}
+        </button>
+      )}
 
       {/* Content */}
       <div className="flex-1 min-w-0">
@@ -545,7 +562,7 @@ function TaskItem({ item, onDealClick }: { item: TodayItem; onDealClick: (dealId
 
 // ── Meeting-Prep Card ─────────────────────────────────────
 
-function MeetingPrepCard({ meeting }: { meeting: NonNullable<NextMeetingPrep> }) {
+function MeetingPrepCard({ meeting, readOnly = false }: { meeting: NonNullable<NextMeetingPrep>; readOnly?: boolean }) {
   const [isStarting, startJitsi] = useTransition();
 
   const handleStartMeeting = () => {
@@ -569,7 +586,7 @@ function MeetingPrepCard({ meeting }: { meeting: NonNullable<NextMeetingPrep> })
           <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Meeting-Vorbereitung</h3>
           <p className="text-[11px] text-blue-600">Nächstes Meeting um {meeting.timeStr}</p>
         </div>
-        {meeting.dealId && (
+        {meeting.dealId && !readOnly && (
           <button
             onClick={handleStartMeeting}
             disabled={isStarting}

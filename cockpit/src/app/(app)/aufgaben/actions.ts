@@ -24,12 +24,15 @@ export type Task = {
   deals?: { id: string; title: string } | null;
 };
 
-export async function getTasks(filter?: {
-  status?: string;
-  priority?: string;
-  dealId?: string;
-  type?: string;
-}) {
+export async function getTasks(
+  filter?: {
+    status?: string;
+    priority?: string;
+    dealId?: string;
+    type?: string;
+  },
+  options?: { assignedToUserId?: string | null },
+) {
   const supabase = await createClient();
 
   let query = supabase
@@ -48,6 +51,13 @@ export async function getTasks(filter?: {
   }
   if (filter?.type && filter.type !== "all") {
     query = query.eq("type", filter.type);
+  }
+
+  // V7.1 SLC-712b — optionaler Owner-Filter fuer Teamlead-Drilldown.
+  // Schema-Note: tasks hat KEIN owner_user_id (V7 owner_user_id nur in 8
+  // Kerntabellen, siehe MIG-033 Phase 3). Owner = `assigned_to`.
+  if (options?.assignedToUserId) {
+    query = query.eq("assigned_to", options.assignedToUserId);
   }
 
   const { data, error } = await query;
