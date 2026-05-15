@@ -14,8 +14,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - Current Phase: V7.1 **alle 4 Slices done + Gesamt-/qa PASS-with-Caveats**. Naechster Schritt: User-Entscheidung zu ISSUE-075 (immo@bellaerts.de Cleanup), dann Master-Merge SLC-713, dann /final-check V7.1.
 
 ## Immediate Next Steps
-1. **(Pre-Merge) User-Entscheidung ISSUE-075** — `immo@bellaerts.de` im Test-Team-77: complete delete, team_id NULL setzen, oder ins Strategaize-Team verschieben. Cleanup-Step entfernt automatisch ISSUE-073-Aggregate-FAILs.
-2. **(Mainline) Master-Merge SLC-713** — Branch `slc-713-defense-in-depth-polish` → `main` per `feedback_slice_deploy_procedure.md`-Pattern. Danach /final-check V7.1 → /go-live → /deploy als REL-030.
+1. **(Mainline) Master-Merge SLC-713** — Branch `slc-713-defense-in-depth-polish` → `main` per `feedback_slice_deploy_procedure.md`-Pattern. Danach /final-check V7.1 → /go-live → /deploy als REL-030. ISSUE-075 resolved durch User-Cleanup 2026-05-15.
 2. **(Parallel User-Action) ISSUE-071 Coolify-Cron** — User richtet weekly Disk-Cleanup ein (`docker builder prune -af && docker image prune -af`). Snippet in KNOWN_ISSUES.md. Pure User-Aktion, kein Code-Change.
 3. **(Optional) 2. Post-Launch-Check @24h** — In ~9h erneuter Live-Check fuer volle 24h-Schwelle. Aktuell ~15h erreicht. Nicht release-blocking.
 4. **(nach V7.1)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern. Inkl. ISSUE-066-Mitigation als eigener kleiner Slice (Middleware-Pfad-Check setzt X-Read-Only-Mode-Header, assertNotReadOnlyContext liest beides).

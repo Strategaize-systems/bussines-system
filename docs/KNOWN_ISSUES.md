@@ -1,7 +1,7 @@
 # Known Issues
 
 ### ISSUE-075 — Production-User immo@bellaerts.de im Test-Team-77 (BL-470-Smoke-Test-Artefakt nicht aufgeraeumt)
-- Status: open
+- Status: resolved
 - Severity: Medium
 - Area: Production-DB / Daten-Hygiene / BL-470-Followup
 - Summary: Profile `7bdd1faf-7d72-4ffb-8c78-66c3481290ba` (email `immo@bellaerts.de`, display_name "Richard", role=member) sitzt im Test-Team `00000000-0000-0000-0000-000000000077` ("[TEST] Test-Team") seit 2026-05-14 15:56:50 — eine Minute nach Richards Production-Login um 15:55. Vermutlich BL-470 Invite-Flow-Smoke-Test 2026-05-14 (User Richard hat sich selbst eingeladen, Smoke-Test landete im Test-Team-77 als Invite-Default). Nicht aufgeraeumt seit 2026-05-14. Echter Production-Admin ist UUID `96322a0a-be2d-49e1-ba0d-03c4de1f1440` (email `richard@bellaerts.de`, role=admin, team=`fa0ff2b6-...` "Strategaize").
@@ -12,6 +12,7 @@
   - (b) **Team-Nullsetzung**: `UPDATE profiles SET team_id = NULL WHERE id = '7bdd1faf-...'` (Account bleibt, ist aber kein Test-Team-Member mehr).
   - (c) **Team-Wechsel**: `UPDATE profiles SET team_id = 'fa0ff2b6-...', role = 'admin' WHERE id = '7bdd1faf-...'` (Account ins richtige Strategaize-Team als Second-Admin verschieben).
 - Reported: 2026-05-15 (Gesamt-/qa V7.1, RPT-425).
+- Resolved: 2026-05-15 — User-Entscheidung Option (a) Complete Delete. Auf Hetzner-91.98.20.191 ausgefuehrt: `BEGIN; DELETE FROM profiles WHERE id = '7bdd1faf-...'; DELETE FROM auth.users WHERE id = '7bdd1faf-...'; COMMIT;`. CASCADE entfernt 1 user_settings + 1 auth.sessions + 4 auth.refresh_tokens + 1 auth.identities. Verifikation: profiles 1→0, auth.users 1→0, alle auth-Cascade-Tables 0. Test-Team-77 jetzt wieder bei erwarteten 6 Members (1 Teamlead + 5 Test-Members). aggregate-queries.test.ts 6/6 PASS nach Cleanup re-verified.
 
 ### ISSUE-074 — vitest.rls.config.ts fehlt tsconfig-paths-Resolver fuer `@/...` Aliases (pre-existing V7-Test-Infra-Bug)
 - Status: open
@@ -23,8 +24,8 @@
 - Next Action: In V7.2-Cleanup-Slice oder als separater Hygiene-Patch: vitest.rls.config.ts erweitern mit `plugins: [tsconfigPaths()]` aus `vite-tsconfig-paths` (bereits in dependencies). Alternativ: `resolve.alias` direkt definieren (`{ "@": resolve(__dirname, "src") }`). Nach Fix: `bulk-reassign.test.ts` muss 7 Test-Suites mit echten Counts laufen.
 - Reported: 2026-05-15 (Gesamt-/qa V7.1, RPT-425).
 
-### ISSUE-073 — v7-rls-matrix.test.ts 96 SKIPPED auf Coolify-DB wegen fehlenden Seed-Daten + aggregate-queries.test.ts 2 FAIL (pre-existing V7-Seed-Drift)
-- Status: open
+### ISSUE-073 — v7-rls-matrix.test.ts 96 SKIPPED auf Coolify-DB wegen fehlenden Seed-Daten (pre-existing V7-Seed-Drift)
+- Status: open (aggregate-queries-Teil resolved via ISSUE-075-Cleanup)
 - Severity: Medium
 - Area: Test-Infra / Seed-Daten / Coolify-DB-State
 - Summary: `cockpit/__tests__/rls/v7-rls-matrix.test.ts` `beforeAll` wirft "Seed-Daten fehlen: deals hat keine Records mit owner=00000000-0000-0000-0000-000000000081. 'npm run seed:multi-user' ausfuehren." — die Coolify-DB hat fuer TEST_MEMBER_1 (`0...000081`) keine Records in `deals` (und vermutlich auch nicht in `companies, contacts, activities, meetings, proposals, email_messages, calls`). Folge: alle 96 Cross-Owner-Tests (8 Tabellen × 3 Rollen × 4 Operationen) SKIPPED. Zusaetzlich: `aggregate-queries.test.ts` 2/6 FAIL — `getTeamMembers` liefert 6 statt erwartete 5, `getTeamBedrockContext.members.length` 6 statt 5 (direkt verbunden mit ISSUE-075).
