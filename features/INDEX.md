@@ -222,6 +222,14 @@
 | FEAT-503 | Teamlead-Rolle mit Teamsicht (Aggregat + Drilldown) | deployed | [Spec](FEAT-503-teamlead-sicht.md) | 2026-04-09 |
 | FEAT-701 | Multi-User-UX (Sidebar-Restruktur + Mobile-Hamburger + Rollen-Sichtbarkeit) | deployed | [Spec](FEAT-701-multi-user-ux.md) | 2026-05-12 |
 
+## V7.1 Features (Polish-Sprint — Requirements 2026-05-15)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-711 | Settings-Permission-Layer (rollen-basiert Admin/Teamlead/Member) | planned | (Spec folgt nach /architecture) | 2026-05-15 |
+| FEAT-712 | Drilldown-View Vollausbau (Pipeline + Aktivitaeten + Mein-Tag) | planned | (Spec folgt nach /architecture) | 2026-05-15 |
+| FEAT-713 | V7-Defense-in-Depth Polish (4 Guards + Audit-Doc-Sync) | planned | (Spec folgt nach /architecture) | 2026-05-15 |
+
 ## V6 Features (Zielsetzung + Performance-Tracking — released)
 
 | ID | Feature | Status | Spec | Created |

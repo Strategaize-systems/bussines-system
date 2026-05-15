@@ -3520,3 +3520,137 @@ Ergebnis: Saubere Bedienmodell-Basis fuer V7 (Multi-User + Rollen-Sichtbarkeit),
 V7-Vorbereitung: alle Layout-Entscheidungen muessen V7-Multi-User-Differenzierung (Admin/Mitarbeiter/Chef) erlauben. Pre-Production-Compliance-Gate kommt separat spaeter.
 
 **V6.6 Requirements ready for `/architecture`.**
+
+## V7.1 — Polish-Sprint (Permissions + Drilldown-Vollausbau + Defense-in-Depth)
+
+### V7.1 Problem statement
+
+V7 ist released und stabil (RPT-413 Post-Launch STABIL), aber drei konkrete Luecken bleiben offen, die in der V7-Auslieferung bewusst verschoben wurden:
+
+1. **Settings sind rollen-agnostisch:** `/settings/*` ist aktuell vollstaendig fuer alle Rollen zugaenglich. Member und Teamlead koennen Branding (Logo, Firma, Footer), Steuer-/Payment-Terms, Pipeline-Definitionen, E-Mail-Templates, Workflow-Automation, Kampagnen, Produkte und Compliance-Settings veraendern. Diese Settings sind organisationsweit — versehentliche oder boeswillige Aenderungen durch Nicht-Admins haben Cross-Team-Impact. User-Walkthrough 2026-05-14: "das muss nur Admin koennen".
+2. **Drilldown ist unvollstaendig:** `/team/[user_id]/pipeline` zeigt aktuell nur eine reduzierte Deal-Liste — keine Funnel-Toggle, kein Filter, kein Pipeline-Switcher, kein Forecast. Gleiches gilt fuer `/team/[user_id]/aktivitaeten` und `/team/[user_id]/mein-tag`. Teamlead-Coaching-Sicht ist deshalb weniger maechtig als die eigene Pipeline-Sicht des Members. User-Feedback: "im Drilldown will ich genau die gleichen Toggles wie im normalen /pipeline".
+3. **V7-Defense-in-Depth ist asymmetrisch:** 4 Mutate-Server-Actions haben kein `assertNotReadOnlyContext()`-Guard (ISSUE-070), und 5 Eintraege in `AUDIT_SERVER_ACTIONS_V7.md` sind stale (ISSUE-069). Heute kein Live-Exploit (Drilldown-AsyncLocalStorage-Gap ISSUE-066 ist V7.5-Mitigation), aber Doc-Symmetrie und Defense-in-Depth-Vollstaendigkeit fehlen.
+
+### V7.1 Goal
+
+Sichtbare User-Wuensche zuerst schliessen (Permissions + Drilldown-Vollausbau), dann V7-Defense-in-Depth nachholen. V7 wird damit production-ready fuer den ersten Drittnutzer-Test (Internal-Test-Mode bleibt formell aktiv bis Pre-Production-Compliance-Gate).
+
+### V7.1 Primary users
+
+- **Admin (Strategaize-Founder):** Verwaltet organisationsweite Settings ohne Risiko, dass Teamleads/Members versehentlich darauf zugreifen.
+- **Teamlead:** Operative Settings (Workflow-Automation, Templates, Kampagnen) verwalten + voller Drilldown-Coaching-View mit Funnel/Filter/Forecast wie eigene Pipeline.
+- **Member:** Nur eigenes Profil + Working-Hours + Meeting-Einstellungen. Settings-Sidebar zeigt keine fremden Sub-Pages.
+
+### V7.1 V1 Scope
+
+**FEAT-711 — Settings-Permission-Layer (rollen-basiert)**
+
+Granulare Rollen-Permission-Matrix auf allen `/settings/*`-Sub-Pages. Permission-Check als Server-Guard (`assertRole(['admin', 'teamlead'])` oder `assertRole(['admin'])`) als first line in jeder Settings-Server-Action UND als Route-Layout-Guard. Sidebar-Visibility filtert nicht-zugaenglich Sub-Pages weg (kein 403-Flash beim Click). Settings-Landing-Page (`/settings`) zeigt nur Kacheln, die fuer die aktuelle Rolle erlaubt sind.
+
+**Permission-Matrix V7.1:**
+
+| Settings-Sub-Page | Admin | Teamlead | Member |
+|---|---|---|---|
+| Branding (Logo, Firma, Footer, Webseite, Farben) | RW | (nicht sichtbar) | (nicht sichtbar) |
+| Payment-Terms / Steuern (NL/DE-VAT, Skonto-Templates, Split-Plans) | RW | (nicht sichtbar) | (nicht sichtbar) |
+| Pipelines + Stages (Definitionen, Cleanup, Stage-Order) | RW | (nicht sichtbar) | (nicht sichtbar) |
+| Produkte (Position-Item-Katalog) | RW | (nicht sichtbar) | (nicht sichtbar) |
+| Compliance (DSGVO-Settings, Retention, Cron-Cleanup) | RW | (nicht sichtbar) | (nicht sichtbar) |
+| IMAP / E-Mail-Sync | RW | (nicht sichtbar) | (nicht sichtbar) |
+| Workflow-Automation (Rules, Trigger, Actions) | RW | RW | (nicht sichtbar) |
+| E-Mail-Templates | RW | RW | (nicht sichtbar) |
+| Kampagnen (Campaign-Settings, UTM-Mappings) | RW | RW | (nicht sichtbar) |
+| Team-Verwaltung (Invite, Bulk-Reassign, Rollen) | RW | RW (eigenes Team) | (nicht sichtbar) |
+| Mein Profil (Name, Telefon, Avatar, Passwort) | RW | RW | RW |
+| Working-Hours (eigene Arbeitszeit) | RW | RW | RW |
+| Meeting-Einstellungen + Briefing (eigene) | RW | RW | RW |
+
+User-Entscheidung 2026-05-15: Workflow + Templates + Kampagnen sind Admin+Teamlead, weil operativ Team-relevant. Branding/Payment-Terms/Pipelines/Produkte/Compliance/IMAP bleiben strikt Admin, weil organisationsweite Tiefe-Settings.
+
+**FEAT-712 — Drilldown-View Vollausbau (Pipeline + Aktivitaeten + Mein-Tag)**
+
+Alle drei Drilldown-Sub-Pages (`/team/[user_id]/pipeline`, `/team/[user_id]/aktivitaeten`, `/team/[user_id]/mein-tag`) bekommen die identische Toggle-/Filter-/Forecast-Funktionalitaet wie die originalen Self-Pages, aber strikt **Read-Only**.
+
+Konkret pro Sub-Page:
+
+- **Pipeline-Drilldown:** Funnel-View-Toggle (Sankey/Bar), Filter (Stage, Pipeline-Switcher, Wert-Range, Datum, Kampagne), Forecast-Modi (Weighted/Best/Worst), Suche. KEINE Stage-Change-Buttons, KEINE Edit-Form, KEINE Bulk-Aktionen.
+- **Aktivitaeten-Drilldown:** Filter (Typ: Call/Mail/Meeting/Task, Datum, Status, Stage), Tabs (Diese Woche / Naechste Woche / Ueberfaellig / Erledigt), Type-Ahead-Suche. KEINE Create-Activity, KEINE Edit-Activity, KEINE Complete-Toggle.
+- **Mein-Tag-Drilldown:** KI-Workspace-Block (Berichts-Buttons + Frage + Antwort wie eigenes Mein Tag, scoped auf target_user_id), Quick-Action-Karten (read-only Statistik), Pipeline-Snapshot. KEINE Notiz-Erstellung, KEINE Done-Toggle, KEINE Mutate-Actions im KI-Workspace.
+
+Implementation-Hint (nicht-bindend, /architecture entscheidet): die `/pipeline`-/`/aktivitaeten`-/`/mein-tag`-Page-Components mit zusaetzlichem `viewAsUserId`-Prop wiederverwenden statt eigener Drilldown-Variante. Filter scopen auf `owner_user_id = target_user_id`. Read-Only-Context via SLC-706-Layout-Wrap aktiv (ISSUE-066-Gap weiter via V7.5-Mitigation geschlossen — V7.1 nutzt nur den existierenden Layer).
+
+**FEAT-713 — V7-Defense-in-Depth Polish**
+
+Zwei zusammenhaengende Hygiene-Items als ein Slice gebuendelt:
+
+- **ISSUE-070 — 4× `assertNotReadOnlyContext()`-Guard** als first line in: `cockpit/src/lib/team/bulk-reassign-actions.ts:bulkReassignApply`, `cockpit/src/components/insights/insight-actions.ts:saveInsight`, `cockpit/src/lib/settings/working-hours-actions.ts:updateWorkingHoursSettings`, `cockpit/src/lib/ki-workspace/reports/winloss.ts:persistManualRun`. Plus 4 Vitest-Mock-Tests (RED-GREEN-Pattern: Mock setzt Read-Only-Context, Action wird mit Error abgewiesen).
+- **ISSUE-069 — Audit-Doc-Sync:** `docs/AUDIT_SERVER_ACTIONS_V7.md` um 5 fehlende Eintraege erweitern (bulkReassignPreview, bulkReassignApply, working-hours-actions, winloss.persistManualRun, lib/audit.ts-Helpers) und 1 Fehlklassifizierung in `components/insights/insight-actions.ts:201` korrigieren ("wrapper" → "macht selbst INSERT").
+
+Heute kein Exploit-Pfad (V7.1 setzt ihn auch nicht voraus), aber bei zukuenftiger Drilldown-Erweiterung (FEAT-712) wuerden die fehlenden Guards Defense-in-Depth-Luecken hinterlassen. Deshalb hier mit-fixen, NICHT erst nach V7.5.
+
+### V7.1 Out of Scope
+
+- **ISSUE-066 AsyncLocalStorage-Drilldown-Gap-Fix** bleibt fuer V7.5 (Middleware-basierter Pfad-Check setzt `X-Read-Only-Mode: 1` Header, `assertNotReadOnlyContext()` liest beides). V7.1 verlaesst sich auf den bestehenden Layout-Wrap aus SLC-706.
+- **Audit-Trail-Erweiterung auf Settings-Aenderungen** (`settings_branding_update` etc.) ist Nice-to-Have aber NICHT V7.1-V1. Wenn FEAT-711-Implementation entdeckt, dass das Audit-Pattern fehlt, wird es als V7.2-Item ge-backloggt.
+- **Granulare Settings-Audit-Reports** (Wer hat wann was geaendert) — V7.6 Custom-Reports.
+- **Bulk-Settings-Import/Export** — kein Bedarf, kein Item.
+- **Custom-Permission-Layer** (User-defined Roles ueber Admin/Teamlead/Member hinaus) — bleibt out-of-scope bis ein konkreter Drittnutzer-Bedarf existiert.
+- **Settings-Workspace-Multi-Tenant-Switch** — V7 ist Single-Tenant-Inhouse, kein Tenant-Switch im Settings-Bereich.
+
+### V7.1 Core Features
+
+| ID | Feature | Type | Prio | BL-Origin |
+|---|---|---|---|---|
+| FEAT-711 | Settings-Permission-Layer (rollen-basiert) | new | high | BL-469 |
+| FEAT-712 | Drilldown-View Vollausbau (Pipeline + Aktivitaeten + Mein-Tag) | improvement | medium | BL-468 |
+| FEAT-713 | V7-Defense-in-Depth Polish (Guards + Doc-Sync) | improvement | medium | BL-466 |
+
+### V7.1 Constraints
+
+- **Internal-Test-Mode bleibt aktiv** — V7.1 macht V7 production-readier, aber Compliance-Gate bleibt vor erstem Live-Drittnutzer-Call (ISSUE-042 + Anwaltspruefung COMPLIANCE.md).
+- **Keine neuen Provider, keine neue Infrastruktur, keine neue Datenbank** — V7.1 ist Pure-App-Polish auf bestehendem V7-Stack (Multi-User-RLS aus SLC-702 + Read-Only-Context aus SLC-706 + Bulk-Reassign-Pfad aus SLC-707).
+- **Keine Schema-Migration zwingend** — FEAT-711 nutzt existierende `profiles.role`-Spalte, FEAT-712 ist UI-Refactor, FEAT-713 ist Code-Patches. Falls FEAT-711-Audit-Trail-Erweiterung doch eine neue audit_log-Action braucht, ist das additiv (`audit_log.action`-String).
+- **TDD-Mandate fuer FEAT-711-Permission-Guards** — RLS- + Server-Action-Tests vor Implementation (Live-DB-Tests gegen Coolify-DB-Pattern, vgl. `__tests__/team/*` aus SLC-702..707).
+- **Pattern-Reuse-First** (CLAUDE.md Core-Default #5): FEAT-712 muss die existierenden `/pipeline`-/`/aktivitaeten`-/`/mein-tag`-Components wiederverwenden, NICHT als Drilldown-Variante neu schreiben. FEAT-711 muss bestehende `assertRole`-Pattern aus `cockpit/src/lib/auth/*` reusen.
+- **V7-Pattern weiterverwenden:** Read-Only-Context aus SLC-706, V7-Helper-Functions aus MIG-034, Bulk-Reassign-Pfad-Style aus SLC-707.
+
+### V7.1 Risks / Assumptions
+
+- **Risk:** FEAT-712 Drilldown-Vollausbau triggert subtile Filter-State-Cross-Pollution wenn Page-Component naiv wiederverwendet wird (z.B. localStorage-Key fuer Pipeline-Filter ueberschreibt Self-Filter). Mitigation: jeder Filter-Persist-Key muss `viewAsUserId` als Prefix bekommen ODER waehrend Drilldown-Render keinen Persist machen.
+- **Risk:** FEAT-711 versteckt Settings-Sub-Pages in Sidebar, aber Direct-URL-Navigation muss als 403/Redirect blocken — sonst URL-Sharing-Bug.
+- **Risk:** FEAT-713 ISSUE-070-Guard auf `bulk-reassign-actions.ts` greift heute nicht (Drilldown-Context propagiert nicht via AsyncLocalStorage in Server-Actions, ISSUE-066). Vitest-Tests muessen darum den Context explizit setzen (Mock-Layer), nicht via Page-Render.
+- **Assumption:** Bestehende `assertRole`-Helper existiert in `cockpit/src/lib/auth/*` (sollte aus V7-Layer kommen — sonst FEAT-711-Slice-1 wird Helper-Creation). /architecture verifiziert.
+- **Assumption:** Pipeline-/Aktivitaeten-/Mein-Tag-Components haben bereits owner_user_id-Filter (sonst RLS macht es transparent, aber Filter-UI muss target_user_id setzen).
+- **Risk:** Sprint-Reihenfolge (FEAT-711 → 712 → 713) bedeutet: FEAT-713 wartet bis Slice-3. Bei Zeit-Druck kann FEAT-713 als Mini-Hotfix vor V7.1-Release vorgezogen werden (~30 min Aufwand, kein Konflikt mit 711/712).
+
+### V7.1 Success Criteria
+
+- **FEAT-711:** Member-Login auf `/settings/branding` (oder jede Admin-only-Sub-Page) returnt 403 oder Redirect auf `/settings` mit Hinweis. Sidebar zeigt fuer Member nur "Mein Profil / Working-Hours / Meeting-Einstellungen". Teamlead sieht Workflow + Templates + Kampagnen, aber nicht Branding/Pipelines. Admin sieht alles wie heute. Live-Smoke mit allen 3 Rollen.
+- **FEAT-712:** `/team/[user_id]/pipeline` zeigt Funnel-Toggle + alle Filter aus `/pipeline` (Identitaets-Test mit gleicher View-Logik), Stage-Change/Edit-Buttons sind nicht sichtbar (oder disabled+grey). Analog fuer `/aktivitaeten` und `/mein-tag`. Filter-State persistiert nicht cross-User. Live-Smoke aus Teamlead-Sicht mit echtem Member.
+- **FEAT-713:** 4 Vitest-Mock-Tests bestaetigen Guard-Wirkung (assertNotReadOnlyContext throws). `docs/AUDIT_SERVER_ACTIONS_V7.md` enthaelt 5 neue Eintraege + 1 korrigierte Klassifizierung. Vitest-Suite (`npm run test:all`) bleibt 100% gruen.
+- **Gesamt:** V7.1 PASS heisst: Browser-Smoke aus Admin/Teamlead/Member-Sicht zeigt jeweils nur erlaubte Pages, Drilldown mit echtem Member aus Teamlead-Sicht zeigt volle Toggles ohne Mutate-Buttons, `npm run test:all` gruen, audit_log-Trail seit Deploy aktiv.
+
+### V7.1 Open Questions
+
+1. **Settings-Audit-Trail-Granularitaet:** Soll FEAT-711 zusaetzlich `audit_log.action='settings_*_update'`-Eintraege schreiben? Aktuell teils vorhanden (branding-update? campaign-update?), teils nicht. **Klaerung in /architecture.** Default: nur wenn ein Pattern bereits existiert, wird konsistent erweitert. Sonst V7.2-Item.
+2. **Sidebar-Settings-Section bei leerem Member-Scope:** Member hat nur 3 Sub-Pages (Profil/Working-Hours/Meeting). Eigene Settings-Section in Sidebar oder einfach Top-Level "Mein Profil"? **Klaerung in /architecture mit UI-Skizze.**
+3. **403 vs Redirect:** Wenn Member auf Admin-only-URL klickt — explizite 403-Seite oder Soft-Redirect auf `/settings` mit Toast "Keine Berechtigung"? **/architecture entscheidet basierend auf Style-Guide-V2.**
+4. **Drilldown-`viewAsUserId`-Prop vs Wrapper-Component:** Original-Pages mit Prop erweitern oder neue `DrilldownPipelinePage` als Wrapper, die `<PipelinePage scope={...} readonly />` rendert? **Architektur-Entscheidung in /architecture** — beide haben Reuse-Tradeoffs.
+5. **Filter-State-Storage-Key:** localStorage-Key-Schema fuer Drilldown? `pipeline-filters-${viewAsUserId ?? "self"}`? Oder Drilldown persistiert gar nicht? **/architecture klaert.**
+6. **FEAT-713-Test-Mock-Pattern:** Soll Vitest-Mock fuer Read-Only-Context per `vi.mock("cockpit/src/lib/auth/read-only-context", ...)` oder per direkter `runWithReadOnlyContext`-Wrapping im Test laufen? **/architecture klaert mit Test-Strategie.**
+
+### V7.1 Slice-Plan (vorlaeufige Schaetzung — /slice-planning konsolidiert)
+
+Reihenfolge nach User-Entscheidung 2026-05-15: **sichtbar zuerst**.
+
+- **SLC-711** (~4-6h) — FEAT-711 Settings-Permission-Layer. Pflicht: Server-Guard + Route-Layout + Sidebar-Visibility + Live-Smoke alle 3 Rollen. Live-DB-Tests fuer Permission-Matrix.
+- **SLC-712** (~5-8h) — FEAT-712 Drilldown-Vollausbau. Pflicht: Page-Component-Reuse, Filter-State-Isolation, 3 Sub-Pages, Live-Smoke Teamlead-Sicht. Ggf. in 2 Sub-Slices wenn `viewAsUserId`-Refactor zu gross.
+- **SLC-713** (~30 min - 1h) — FEAT-713 Defense-in-Depth-Polish. 4 Guards + Vitest-Mocks + Doc-Sync.
+
+Total V7.1-Aufwand: ~10-15h reine Implementation + QA + Live-Smoke.
+
+### V7.1 Delivery Mode
+
+**Internal-Tool, Polish-Sprint.** Kein neuer Provider, keine neue Datenbank, keine Schema-Migration (vermutlich), kein Compliance-Touch. Internal-Test-Mode bleibt aktiv. V7.1-PASS heisst: V7 bleibt deployed wie aktuell, plus 3 Slices als kumulative Aenderungen auf demselben Image-Stand.
+
+**V7.1 Requirements ready for `/architecture`.**

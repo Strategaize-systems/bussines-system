@@ -9,24 +9,20 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: released
-- Current Focus: **V7 Gesamt-/qa PASS + Live-Smoke PASS 2026-05-14** via RPT-408 (code-side) + RPT-409 (live). User setzte POSTGRES_URL mit stabilem `supabase-db`-DNS-Alias und URL-encodetem Password → Coolify Redeploy Image `42f1e20`. Playwright-MCP Live-Smoke verifizierte beide ausstehenden Release-Gate-Bedingungen: **Bulk-Reassign** (174 Records von Member-1 auf Member-2 ueberschrieben, 9 audit_log-Eintraege geschrieben = 1 initiated + 8 applied wie AC2c spec, Sum-affected = 174) + **Mobile-Hamburger** (Drawer Open + Item-Click navigiert + Auto-Close via useEffect[pathname]). **V7 Release-Gate: 8/8 Bedingungen erfuellt.** ISSUE-067 + BL-464 resolved. Offen: ISSUE-068 (vitest.config include-Pattern, accepted for V7-Release, BL-465 vor /deploy empfohlen) + ISSUE-066 (Defense-in-Depth-Gap, akzeptiert per Option-C, kommt nach V7.5).
-- Current Phase: V7 **RELEASED 2026-05-14 als REL-029** (Image-Tag `2131ec7`). 7/7 Slices + 3 Features + BL-465/467/470-Patches alle deployed. Multi-User-Mode operational. Naechster Schritt: /post-launch V7 (24h Live-Beobachtung) + dann V7.1-Sprint (BL-466 + BL-468 + BL-469).
+- High-Level State: slice-planning
+- Current Focus: **V7.1 Slice-Planning done 2026-05-15** via RPT-416. SLC-712 wurde in a/b gesplittet (Mein-Tag-Refactor-Tiefe rechtfertigte eigenen Slice). 4 Slices, 17 MTs gesamt: SLC-711 (6 MTs, ~4-6h, Settings-Permission-Layer mit assertRole-Guard auf 12 Pages + sidebar-config-Erweiterung + Tests + 3-Rollen-Tour), SLC-712a (4 MTs, ~3-4h, PipelineView-Props-Erweiterung + Drilldown-Pipeline-Rewrite + Vitest), SLC-712b (3 MTs, ~2-4h, Aufgaben + Mein-Tag-Component-Refactor + Drilldown-Page-Rewrites + Tests), SLC-713 (4 MTs, ~30 min - 1h, 4× assertNotReadOnlyContext + 4 Vitest-Tests + Audit-Doc-Sync + Cockpit-Records). Reihenfolge: SLC-711 → SLC-712a → SLC-712b → SLC-713 (713 kann parallel zu 712b). Worktree-Isolation empfohlen fuer 711 + 712a + 712b.
+- Current Phase: V7.1 **SLICE-PLANNING done**. Naechster Schritt: /backend SLC-711 — Settings-Permission-Layer Implementation. Total V7.1-Aufwand bleibt ~10-15h. Internal-Test-Mode bleibt aktiv.
 
 ## Immediate Next Steps
-1. **(Entscheidung User) V7.1-Plan vor /go-live klaeren** — User-Walkthrough 2026-05-14 hat 2 Aenderungen gesetzt (BL-468 Drilldown-Pipeline-Sicht, BL-469 Settings-Rollen-Permissions). Optionen: (a) /go-live V7 jetzt + V7.1 als kleiner Polish-Sprint danach, (b) BL-468+469 + BL-466 als V7.1-Slice JETZT noch vor Go-Live ziehen (~6-10h zusaetzlich vor Release).
-2. **(parallel zu allem) BL-467 User-Manual-Fix ISSUE-062 in Coolify-UI** — `GOTRUE_SMTP_PASS=aithatworks-01!` setzen + GoTrue-Container Redeploy. Macht Auth-Mails wieder lebendig (Invite/Password-Reset/Email-Change). User-Aktion ohne Code-Change.
-3. **(nach Entscheidung) /go-live V7** — Release-Readiness-Sign-Off. RPT-410 CONDITIONALLY READY.
-4. **(nach /go-live) /deploy V7 als REL-029** — Image-Tag-Lock + RELEASES.md-Eintrag.
-5. **(nach /deploy) /post-launch V7** — 24h-Live-Beobachtung.
-6. **(post-Release-Polish, BL-466 ~30 min)** ISSUE-069 Audit-Doc-Sync + ISSUE-070 4× assertNotReadOnlyContext-Guards + 4 Vitest-Mock-Tests.
-7. **(nach V7-Release)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern. Inkl. ISSUE-066-Mitigation als eigener kleiner Slice (Middleware-Pfad-Check setzt X-Read-Only-Mode-Header, assertNotReadOnlyContext liest beides).
-8. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5.
-9. **(optional vor/parallel V7)** V6.7-Polish — BL-460 (Style-Guide-V2 Hex-Drift, jetzt aufgewertet um SLC-707-Sweep-Findings im sidebar Active-Highlight + mein-tag QuickActions + dashboard Calendar-Icon-Hover) + BL-459 (Quick-Action-Label) + BL-418 (React #418 Hydration). 2-4h.
-8. **(Parallel optional)** /post-launch V6.6 — 24h-Live-Beobachtung (RPT-342 Schwellen).
-9. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit NL-BTW gegen Production-VIES.
-10. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04.
-11. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (User-Direktive 2026-05-01 "kommt viel spaeter").
+1. **(Mainline) `/backend SLC-711`** — Settings-Permission-Layer Implementation. 6 MTs, ~4-6h. Worktree-Isolation empfohlen. Pattern-Reuse-First: assertRole + SIDEBAR_CONFIG.visibleFor.
+2. **(Parallel User-Action) ISSUE-071 Coolify-Cron** — User richtet weekly Disk-Cleanup ein (`docker builder prune -af && docker image prune -af`). Snippet in KNOWN_ISSUES.md. Pure User-Aktion, kein Code-Change.
+3. **(Optional) 2. Post-Launch-Check @24h** — In ~9h erneuter Live-Check fuer volle 24h-Schwelle. Aktuell ~15h erreicht. Nicht release-blocking.
+4. **(nach V7.1)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern. Inkl. ISSUE-066-Mitigation als eigener kleiner Slice (Middleware-Pfad-Check setzt X-Read-Only-Mode-Header, assertNotReadOnlyContext liest beides).
+5. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5.
+6. **(optional)** V6.7-Polish — BL-460 (Style-Guide-V2 Hex-Drift) + BL-459 (Quick-Action-Label) + BL-418 (React #418 Hydration). 2-4h.
+7. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit NL-BTW gegen Production-VIES.
+8. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04.
+9. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (User-Direktive 2026-05-01 "kommt viel spaeter").
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"

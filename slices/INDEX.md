@@ -301,3 +301,14 @@ Reihenfolge zwingend: SLC-701 (Backend-Foundation, Blocker) → SLC-702 (Fronten
 | SLC-705 | [Team-Aggregat-Cockpit (/team Page mit KPIs + Mitglieder-Tabelle + KI-Workspace-Hybrid)](SLC-705-team-aggregat-cockpit.md) | FEAT-503 | done | High | 2026-05-12 |
 | SLC-706 | [Drilldown-Routes (/team/[user_id]/... Read-Only-Sicht + view_as-Audit)](SLC-706-drilldown-routes.md) | FEAT-503 | done | High | 2026-05-12 |
 | SLC-707 | [Polish + Bulk-Reassign-UI + Mobile-Hamburger + VERWALTUNG-Split](SLC-707-polish-bulk-reassign-mobile.md) | FEAT-502 + FEAT-701 | done | Medium | 2026-05-12 |
+
+## V7.1 Slices (Polish-Sprint — Slice-Planning done 2026-05-15)
+
+Reihenfolge nach User-Entscheidung 2026-05-15 (sichtbar zuerst): SLC-711 (Settings-Permission-Layer) → SLC-712a (Pipeline-Drilldown-Reuse) → SLC-712b (Aufgaben + Mein-Tag-Drilldown) → SLC-713 (Defense-in-Depth-Polish). SLC-713 kann parallel zu SLC-712b laufen (kein Code-Konflikt). Pro Slice: /backend|/frontend → /qa → User-Coolify-Deploy → Live-Smoke. Gesamt-/qa nach SLC-713. Final-Check + Go-Live + Deploy als REL-030. Gesamt geschaetzt ~10-15h.
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-711 | [Settings-Permission-Layer (rollen-basiert)](SLC-711-settings-permission-layer.md) | FEAT-711 | planned | High | 2026-05-15 |
+| SLC-712a | [Pipeline-Drilldown Vollausbau via PipelineView-Reuse](SLC-712a-pipeline-drilldown-reuse.md) | FEAT-712 | planned | Medium | 2026-05-15 |
+| SLC-712b | [Aufgaben + Mein-Tag Drilldown-Vollausbau](SLC-712b-aufgaben-meintag-drilldown.md) | FEAT-712 | planned | Medium | 2026-05-15 |
+| SLC-713 | [V7-Defense-in-Depth Polish (Guards + Audit-Doc-Sync)](SLC-713-defense-in-depth-polish.md) | FEAT-713 | planned | Medium | 2026-05-15 |

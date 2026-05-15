@@ -190,25 +190,32 @@
       "order": 27
     },
     {
+      "id": "v7-1",
+      "name": "V7.1",
+      "status": "active",
+      "summary": "Polish-Sprint nach V7-Release 2026-05-15. 3 Features: FEAT-711 Settings-Permission-Layer (rollen-basiert: Admin alles, Admin+Teamlead Workflow/Templates/Kampagnen/Team, Member nur Profil+Working-Hours+Meeting), FEAT-712 Drilldown-View Vollausbau (alle 3 Sub-Pages /team/[user]/pipeline + /aktivitaeten + /mein-tag mit voller Toggle-/Filter-/Forecast-Funktionalitaet read-only), FEAT-713 V7-Defense-in-Depth Polish (ISSUE-070 4 assertNotReadOnlyContext-Guards + ISSUE-069 AUDIT_SERVER_ACTIONS_V7.md-Sync). Sprint-Reihenfolge sichtbar zuerst: SLC-711 → SLC-712 → SLC-713. Total ~10-15h. Keine Schema-Migration. Internal-Test-Mode bleibt aktiv. Requirements ready 2026-05-15.",
+      "order": 28
+    },
+    {
       "id": "v7-5",
       "name": "V7.5",
       "status": "planned",
-      "summary": "NL-Automation (BL-435 hochgesetzt von medium auf high, V6.6-Discovery 2026-05-09). Natural-Language-Regel-Builder analog Clay 'Sculptor': User formuliert Automation-Regeln in Klarsprache (Voice/Text), Bedrock extrahiert in trigger+condition+action-Schema, persistiert in automation_rules-Tabelle. Read-Only-Migration des V6.2-Click-Builders. Phase 1 = 1 Trigger-Klasse (deal_stage_idle) + 3-5 Aktionen + Editor-UI, Phase 2 = mehr Trigger, Phase 3 = Inspektions-Log + Trockenlauf. ~6 Slices. Differenzierungs-Hebel gegenueber Microsoft-Copilot: gemeinsames Programmieren von Regeln zwischen Berater und Klient, nicht autonomes Handeln.",
-      "order": 28
+      "summary": "NL-Automation (BL-435 hochgesetzt von medium auf high, V6.6-Discovery 2026-05-09). Natural-Language-Regel-Builder analog Clay 'Sculptor': User formuliert Automation-Regeln in Klarsprache (Voice/Text), Bedrock extrahiert in trigger+condition+action-Schema, persistiert in automation_rules-Tabelle. Read-Only-Migration des V6.2-Click-Builders. Phase 1 = 1 Trigger-Klasse (deal_stage_idle) + 3-5 Aktionen + Editor-UI, Phase 2 = mehr Trigger, Phase 3 = Inspektions-Log + Trockenlauf. ~6 Slices. Differenzierungs-Hebel gegenueber Microsoft-Copilot: gemeinsames Programmieren von Regeln zwischen Berater und Klient, nicht autonomes Handeln. Inkl. ISSUE-066-Mitigation (Middleware-Pfad-Check setzt X-Read-Only-Mode-Header).",
+      "order": 29
     },
     {
       "id": "v7-6",
       "name": "V7.6",
       "status": "planned",
       "summary": "Custom-Reports (V6.6-Discovery 2026-05-09). User kann KI-Antworten als wiederverwendbare Berichts-Vorlagen speichern und im KI-Workspace abrufen. Nutzt V7.5-Architektur (NL-Schema-Extraktion). KEINE Button-Inflation — neue Reports erscheinen NICHT als zusaetzliche Standard-Buttons, sondern in einem 'Meine Berichte'-Auswahlfeld (Type-Ahead/Dropdown) rechts neben den Standard-Buttons. ~1-2 Slices. Folgt zwingend nach V7.5.",
-      "order": 29
+      "order": 30
     },
     {
       "id": "v8",
       "name": "V8+",
       "status": "planned",
       "summary": "API-Integration mit externen Kommunikations-Tools statt eigener Inhouse-Chat-Loesung (V6.6-Discovery 2026-05-09 Out-of-Scope-Verschiebung). Slack/Teams/WhatsApp als Channels fuer Notifications, Activity-Updates, Berichts-Versand. Externe Kunden-Kommunikation (z.B. WhatsApp) ist separates Business-Thema. Multiplikatoren-Bereich-Strategie-Item (KI-Erweiterung oder ersatzloser Wegfall, geschaeftsmodell-abhaengig). Konkreter Cut wird vor Implementierung in eigener Discovery festgelegt.",
-      "order": 30
+      "order": 31
     }
   ]
 }
