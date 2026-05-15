@@ -309,6 +309,6 @@ Reihenfolge nach User-Entscheidung 2026-05-15 (sichtbar zuerst): SLC-711 (Settin
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-711 | [Settings-Permission-Layer (rollen-basiert)](SLC-711-settings-permission-layer.md) | FEAT-711 | done | High | 2026-05-15 |
-| SLC-712a | [Pipeline-Drilldown Vollausbau via PipelineView-Reuse](SLC-712a-pipeline-drilldown-reuse.md) | FEAT-712 | planned | Medium | 2026-05-15 |
+| SLC-712a | [Pipeline-Drilldown Vollausbau via PipelineView-Reuse](SLC-712a-pipeline-drilldown-reuse.md) | FEAT-712 | done | Medium | 2026-05-15 |
 | SLC-712b | [Aufgaben + Mein-Tag Drilldown-Vollausbau](SLC-712b-aufgaben-meintag-drilldown.md) | FEAT-712 | planned | Medium | 2026-05-15 |
 | SLC-713 | [V7-Defense-in-Depth Polish (Guards + Audit-Doc-Sync)](SLC-713-defense-in-depth-polish.md) | FEAT-713 | planned | Medium | 2026-05-15 |

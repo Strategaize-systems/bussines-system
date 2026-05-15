@@ -43,6 +43,9 @@ interface PipelineViewProps {
   // V6.2 SLC-625 — optionaler Campaign-Filter (DEC-139)
   campaigns?: Array<{ id: string; name: string }>;
   selectedCampaignId?: string | null;
+  // V7.1 SLC-712a — Drilldown-Reuse (DEC-199 + DEC-200)
+  readOnly?: boolean;
+  viewAsUserId?: string;
 }
 
 // Known slugs for built-in pipelines (static routes)
@@ -68,7 +71,12 @@ export function PipelineView({
   currentSlug,
   campaigns = [],
   selectedCampaignId = null,
+  readOnly = false,
+  viewAsUserId,
 }: PipelineViewProps) {
+  // V7.1 SLC-712a — Pipeline-Tabs schicken Drilldown-User zur Drilldown-Variante.
+  // Self-Variante bleibt unveraendert wenn viewAsUserId nicht gesetzt.
+  const pipelinePathBase = viewAsUserId ? `/team/${viewAsUserId}/pipeline` : "/pipeline";
   const router = useRouter();
   const [stageFilter, setStageFilter] = useState("all");
   const [showNewDeal, setShowNewDeal] = useState(false);
@@ -117,7 +125,10 @@ export function PipelineView({
   return (
     <div style={{ width: 'calc(100vw - 16rem)', height: '100vh' }} className="flex flex-col overflow-hidden">
       <div className="shrink-0">
-        <PageHeader title="Pipeline" subtitle="Sales Pipeline · Deals & Opportunities Management" />
+        <PageHeader
+          title={readOnly ? "Pipeline (Read-Only)" : "Pipeline"}
+          subtitle="Sales Pipeline · Deals & Opportunities Management"
+        />
       </div>
 
       {/* Fixed upper section — Tabs + KPIs + Search */}
@@ -132,7 +143,7 @@ export function PipelineView({
                 return (
                   <Link
                     key={p.id}
-                    href={`/pipeline/${slug}`}
+                    href={`${pipelinePathBase}/${slug}`}
                     className={cn(
                       "px-5 py-2 rounded-xl text-sm font-bold transition-all border-2",
                       isActive
@@ -148,13 +159,15 @@ export function PipelineView({
             <div className="flex items-center gap-2">
               <ViewToggle modes={PIPELINE_VIEW_MODES} active={viewMode} onSelect={setViewMode} />
 
-              <button
-                onClick={() => setShowNewDeal(true)}
-                className="px-5 py-2 rounded-lg bg-gradient-to-r from-brand-primary-dark to-brand-primary text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2"
-              >
-                <Plus size={16} strokeWidth={2.5} />
-                Neuer Deal
-              </button>
+              {!readOnly && (
+                <button
+                  onClick={() => setShowNewDeal(true)}
+                  className="px-5 py-2 rounded-lg bg-gradient-to-r from-brand-primary-dark to-brand-primary text-white text-sm font-bold hover:shadow-lg transition-all flex items-center gap-2"
+                >
+                  <Plus size={16} strokeWidth={2.5} />
+                  Neuer Deal
+                </button>
+              )}
             </div>
           </div>
 
@@ -244,6 +257,7 @@ export function PipelineView({
                 stages={stages}
                 deals={filteredDeals}
                 onDealClick={(deal) => router.push(`/deals/${deal.id}`)}
+                readOnly={readOnly}
               />
             </div>
           </>
@@ -278,8 +292,8 @@ export function PipelineView({
         )}
       </div>
 
-      {/* New Deal Sheet */}
-      {showNewDeal && (
+      {/* New Deal Sheet — only when not readOnly (defense-in-depth, Button ist bereits gated) */}
+      {!readOnly && showNewDeal && (
         <DealSheet
           stages={stages}
           pipelineId={pipeline.id}

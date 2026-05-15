@@ -17,10 +17,12 @@ interface KanbanColumnProps {
   stage: PipelineStage;
   deals: Deal[];
   onDealClick?: (deal: Deal) => void;
+  // V7.1 SLC-712a — Read-Only-Mode (kein useDroppable, kein SortableContext)
+  readOnly?: boolean;
 }
 
-export function KanbanColumn({ stage, deals, onDealClick }: KanbanColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: stage.id });
+export function KanbanColumn({ stage, deals, onDealClick, readOnly = false }: KanbanColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({ id: stage.id, disabled: readOnly });
 
   const totalValue = useMemo(
     () => deals.reduce((sum, d) => sum + (d.value ?? 0), 0),
@@ -80,17 +82,33 @@ export function KanbanColumn({ stage, deals, onDealClick }: KanbanColumnProps) {
         }`}
         style={{ minHeight: 80 }}
       >
-        <SortableContext items={deals.map((d) => d.id)} strategy={verticalListSortingStrategy}>
-          {deals.map((deal) => (
-            <KanbanCard
-              key={deal.id}
-              deal={deal}
-              stageColor={stage.color || "#6366f1"}
-              stageProbability={stage.probability}
-              onClick={() => onDealClick?.(deal)}
-            />
-          ))}
-        </SortableContext>
+        {readOnly ? (
+          // V7.1 SLC-712a — Read-Only: kein SortableContext, kein DnD-Wrap
+          <>
+            {deals.map((deal) => (
+              <KanbanCard
+                key={deal.id}
+                deal={deal}
+                stageColor={stage.color || "#6366f1"}
+                stageProbability={stage.probability}
+                onClick={() => onDealClick?.(deal)}
+                readOnly
+              />
+            ))}
+          </>
+        ) : (
+          <SortableContext items={deals.map((d) => d.id)} strategy={verticalListSortingStrategy}>
+            {deals.map((deal) => (
+              <KanbanCard
+                key={deal.id}
+                deal={deal}
+                stageColor={stage.color || "#6366f1"}
+                stageProbability={stage.probability}
+                onClick={() => onDealClick?.(deal)}
+              />
+            ))}
+          </SortableContext>
+        )}
       </div>
     </div>
   );

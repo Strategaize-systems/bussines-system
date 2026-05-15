@@ -24,9 +24,11 @@ interface KanbanBoardProps {
   stages: PipelineStage[];
   deals: Deal[];
   onDealClick?: (deal: Deal) => void;
+  // V7.1 SLC-712a — Read-Only-Mode fuer Teamlead-Drilldown (kein DnD, keine Mutate-Buttons)
+  readOnly?: boolean;
 }
 
-export const KanbanBoard = forwardRef<HTMLDivElement, KanbanBoardProps>(function KanbanBoard({ stages, deals: initialDeals, onDealClick }, ref) {
+export const KanbanBoard = forwardRef<HTMLDivElement, KanbanBoardProps>(function KanbanBoard({ stages, deals: initialDeals, onDealClick, readOnly = false }, ref) {
   const [deals, setDeals] = useState(initialDeals);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -125,6 +127,23 @@ export const KanbanBoard = forwardRef<HTMLDivElement, KanbanBoardProps>(function
         });
       }
     }
+  }
+
+  // V7.1 SLC-712a — Read-Only-Mode rendert ohne DndContext (kein Drag-Drop, keine Server-Action-Trigger).
+  if (readOnly) {
+    return (
+      <div ref={ref} className="flex gap-4 overflow-x-auto overflow-y-auto h-full p-4" style={{ scrollbarWidth: "thin" }}>
+        {stages.map((stage) => (
+          <KanbanColumn
+            key={stage.id}
+            stage={stage}
+            deals={dealsByStage.get(stage.id) || []}
+            onDealClick={onDealClick}
+            readOnly
+          />
+        ))}
+      </div>
+    );
   }
 
   return (

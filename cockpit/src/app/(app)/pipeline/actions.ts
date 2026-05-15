@@ -102,7 +102,7 @@ export async function getPipelineStages(pipelineId: string) {
 
 export async function getDealsForPipeline(
   pipelineId: string,
-  options?: { campaignId?: string | null }
+  options?: { campaignId?: string | null; ownerUserId?: string | null }
 ) {
   const supabase = await createClient();
   let q = supabase
@@ -114,6 +114,13 @@ export async function getDealsForPipeline(
   // V6.2 SLC-625 — optionaler Campaign-Filter (DEC-139)
   if (options?.campaignId) {
     q = q.eq("campaign_id", options.campaignId);
+  }
+
+  // V7.1 SLC-712a — optionaler Owner-Filter fuer Teamlead-Drilldown.
+  // RLS erlaubt Teamlead ohnehin Read auf Team-Member-Daten (V7 MIG-033/034),
+  // dieser Filter ist semantisch fuer den Target-Member-Scope.
+  if (options?.ownerUserId) {
+    q = q.eq("owner_user_id", options.ownerUserId);
   }
 
   const { data, error } = await q;

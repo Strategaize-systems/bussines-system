@@ -43,6 +43,8 @@ interface KanbanCardProps {
   stageColor?: string;
   stageProbability?: number;
   onClick?: () => void;
+  // V7.1 SLC-712a — Read-Only-Mode (kein DnD, keine Mutate-Aktionen)
+  readOnly?: boolean;
 }
 
 function getDaysInStage(updatedAt: string): number {
@@ -51,7 +53,7 @@ function getDaysInStage(updatedAt: string): number {
   return Math.floor((now.getTime() - updated.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-export function KanbanCard({ deal, stageColor, stageProbability = 0, onClick }: KanbanCardProps) {
+export function KanbanCard({ deal, stageColor, stageProbability = 0, onClick, readOnly = false }: KanbanCardProps) {
   const router = useRouter();
   const [isCreating, startCreating] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export function KanbanCard({ deal, stageColor, stageProbability = 0, onClick }: 
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: deal.id });
+  } = useSortable({ id: deal.id, disabled: readOnly });
 
   const daysInStage = getDaysInStage(deal.updated_at);
   const isRotting = daysInStage >= 7;
@@ -85,9 +87,9 @@ export function KanbanCard({ deal, stageColor, stageProbability = 0, onClick }: 
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className={`cursor-grab active:cursor-grabbing rounded-xl bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 ${
+      {...(readOnly ? {} : attributes)}
+      {...(readOnly ? {} : listeners)}
+      className={`${readOnly ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"} rounded-xl bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 ${
         isDragging ? "ring-2 ring-[#4454b8]/40 border-2 border-slate-200" : ""
       } ${
         isCritical ? "border-2 border-red-300 ring-1 ring-red-100" : isRotting ? "border-2 border-amber-300 ring-1 ring-amber-100" : "border-2 border-slate-200"
@@ -104,48 +106,51 @@ export function KanbanCard({ deal, stageColor, stageProbability = 0, onClick }: 
         {/* Title + Menu */}
         <div className="flex items-start justify-between gap-1">
           <div className="font-bold text-sm leading-tight text-slate-900">{deal.title}</div>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              onClick={(e) => e.stopPropagation()}
-              onPointerDown={(e) => e.stopPropagation()}
-              className="p-0.5 rounded text-slate-300 hover:text-slate-500 shrink-0 -mr-1 outline-none focus:text-slate-700"
-              aria-label="Aktionen"
-            >
-              {isCreating ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <MoreVertical size={14} />
-              )}
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              onPointerDown={(e) => e.stopPropagation()}
-            >
-              <DropdownMenuItem
-                disabled={isCreating}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setError(null);
-                  startCreating(async () => {
-                    const res = await createProposal({
-                      deal_id: deal.id,
-                      contact_id: deal.contact_id ?? null,
-                      company_id: deal.company_id ?? null,
-                    });
-                    if (res.ok) {
-                      router.push(`/proposals/${res.proposalId}/edit`);
-                    } else {
-                      setError(res.error);
-                    }
-                  });
-                }}
-                className="gap-2"
+          {/* V7.1 SLC-712a — Aktions-DropdownMenu nur ausserhalb von readOnly */}
+          {!readOnly && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="p-0.5 rounded text-slate-300 hover:text-slate-500 shrink-0 -mr-1 outline-none focus:text-slate-700"
+                aria-label="Aktionen"
               >
-                <FileText className="h-4 w-4" />
-                Angebot erstellen
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {isCreating ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <MoreVertical size={14} />
+                )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <DropdownMenuItem
+                  disabled={isCreating}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setError(null);
+                    startCreating(async () => {
+                      const res = await createProposal({
+                        deal_id: deal.id,
+                        contact_id: deal.contact_id ?? null,
+                        company_id: deal.company_id ?? null,
+                      });
+                      if (res.ok) {
+                        router.push(`/proposals/${res.proposalId}/edit`);
+                      } else {
+                        setError(res.error);
+                      }
+                    });
+                  }}
+                  className="gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  Angebot erstellen
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
         {error && (
           <div className="text-[10px] font-bold text-red-600 bg-red-50 rounded px-2 py-1">
