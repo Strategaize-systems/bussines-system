@@ -226,7 +226,7 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-711 | Settings-Permission-Layer (rollen-basiert Admin/Teamlead/Member) | in_progress | [SLC-711](../slices/SLC-711-settings-permission-layer.md) | 2026-05-15 |
+| FEAT-711 | Settings-Permission-Layer (rollen-basiert Admin/Teamlead/Member) | done | [SLC-711](../slices/SLC-711-settings-permission-layer.md) | 2026-05-15 |
 | FEAT-712 | Drilldown-View Vollausbau (Pipeline + Aktivitaeten + Mein-Tag) | planned | (Spec folgt nach /architecture) | 2026-05-15 |
 | FEAT-713 | V7-Defense-in-Depth Polish (4 Guards + Audit-Doc-Sync) | planned | (Spec folgt nach /architecture) | 2026-05-15 |
 

@@ -10,12 +10,11 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V7.1 SLC-711 /backend done 2026-05-15** via RPT-417. MT-1..MT-5 code-side komplett (10 neue Settings-Sub-Page-Items in SIDEBAR_CONFIG, Settings-Layout auf Server-Wrapper + Slug-Filter umgebaut, Settings-Landing-Kacheln rollen-aware mit Briefing-Kachel + ImapStatus admin-only, 12 Settings-Sub-Pages mit `assertRole`-Guard, sidebar-config.test.ts +5 SLC-711-Tests). Vitest 761/761 PASS (+5 vs V7-Baseline 756). MT-6 (Live-Smoke 3-Rollen-Tour) ist /qa-Territory. Naechster Schritt /qa SLC-711.
-- Current Phase: V7.1 **SLC-711 BACKEND DONE**. Naechster Schritt: /qa SLC-711 — Live-Smoke 3-Rollen-Tour. Total V7.1-Aufwand verbleibend ~7-11h (SLC-712a + SLC-712b + SLC-713).
+- Current Focus: **V7.1 SLC-711 DONE 2026-05-15** via RPT-418. /qa Live-Smoke 3-Rollen-Tour (qa-admin + qa-teamlead + qa-member) via Playwright-MCP gegen `business.strategaizetransition.com` — alle 8 AC PASS. AC1+AC2+AC3 (Sidebar/Sub-Sidebar/Kacheln) korrekt fuer alle 3 Rollen. AC4+AC5 Direct-URL-Redirects: Member auf 4 admin/admin+teamlead-Routes → /mein-tag, Teamlead auf 2 admin-only → /mein-tag, Teamlead auf /settings/automation → 200 OK. AC8 Audit-Log-Symmetrie bestaetigt (0 settings_*-Eintraege seit Smoke-Start, DEC-197). SLC-711 + FEAT-711 + BL-469 → done. User-Coolify-Redeploy `da6af05` ist bereits durch.
+- Current Phase: V7.1 **SLC-711 DONE**. Naechster Schritt: /backend SLC-712a — Pipeline-Drilldown Vollausbau via PipelineView-Reuse (4 MTs, ~3-4h). Total V7.1-Aufwand verbleibend ~7-11h (SLC-712a + SLC-712b + SLC-713).
 
 ## Immediate Next Steps
-1. **(Mainline) `/qa SLC-711`** — Live-Smoke 3-Rollen-Tour (Admin + Teamlead + Member) gegen AC1..AC8. Browser-Smoke per Playwright-MCP oder manuell. Audit-Log-Symmetrie-Check (DEC-197 keine neuen settings_*-Eintraege).
-2. **(nach /qa SLC-711 PASS) /backend SLC-712a** — Pipeline-Drilldown Vollausbau via PipelineView-Reuse (4 MTs, ~3-4h).
+1. **(Mainline) `/backend SLC-712a`** — Pipeline-Drilldown Vollausbau via PipelineView-Reuse (4 MTs, ~3-4h). Pre-Bedingung erfuellt: SLC-711 deployed (Commit `da6af05`).
 2. **(Parallel User-Action) ISSUE-071 Coolify-Cron** — User richtet weekly Disk-Cleanup ein (`docker builder prune -af && docker image prune -af`). Snippet in KNOWN_ISSUES.md. Pure User-Aktion, kein Code-Change.
 3. **(Optional) 2. Post-Launch-Check @24h** — In ~9h erneuter Live-Check fuer volle 24h-Schwelle. Aktuell ~15h erreicht. Nicht release-blocking.
 4. **(nach V7.1)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern. Inkl. ISSUE-066-Mitigation als eigener kleiner Slice (Middleware-Pfad-Check setzt X-Read-Only-Mode-Header, assertNotReadOnlyContext liest beides).
