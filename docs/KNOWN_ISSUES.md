@@ -19,22 +19,24 @@
   4. **Repeat fuer 159.69.207.29 (Onboarding-Plattform)** — gleiches Build-Cache-Akkumulations-Muster ist dort ebenfalls zu erwarten, bisher noch nicht aufgetreten weil Repo juenger. Praeventiv selbe Cron + Monitoring einrichten.
 
 ### ISSUE-070 — 4 Mutate-Server-Actions ohne assertNotReadOnlyContext-Guard (Defense-in-Depth-Polish, kein Exploit-Pfad)
-- Status: open
+- Status: resolved
 - Severity: Medium
 - Area: Backend / V7 / Defense-in-Depth / SLC-704-Symmetrie
 - Summary: /final-check V7 RPT-410: 4 Files mutieren Tabellen ohne `await assertNotReadOnlyContext()` als first line — `lib/team/bulk-reassign-actions.ts` (bulkReassignApply, RLS-Bypass via SET LOCAL ROLE postgres), `components/insights/insight-actions.ts` (saveInsight INSERT activities), `lib/settings/working-hours-actions.ts` (updateWorkingHoursSettings UPSERT user_settings), `lib/ki-workspace/reports/winloss.ts` (persistManualRun INSERT auto_winloss_runs, V6.6-Code). ISSUE-064-Style-Policy ("first line in jeder Mutate-Action") nicht symmetrisch durchgezogen seit SLC-707.
 - Impact: Kein aktueller Exploit-Pfad. Die 4 Server-Actions sind NICHT aus dem `/team/[user_id]/*`-Drilldown-Subtree aufrufbar — Read-Only-Context wird nur dort via Layout-Wrap gesetzt. ISSUE-066-Kontext: AsyncLocalStorage propagiert ohnehin nicht in Server-Action-Requests, Guard wuerde dort eh nicht greifen. V7.5-Mitigation via Middleware-Header geplant. Bei zukuenftiger Drilldown-Erweiterung wuerden diese Guards wichtig.
 - Workaround: Keiner notwendig — keine Live-Auslieferungs-Bedrohung.
-- Next Action: BL-466 — Post-Release-Polish-Slice (~15 min): 4× `await assertNotReadOnlyContext()` als first line einfuegen + 4× Vitest-Mock-Tests + AUDIT_SERVER_ACTIONS_V7.md-Synchronisation (siehe ISSUE-069).
+- Resolution: SLC-713 MT-1 (Branch slc-713-defense-in-depth-polish): 4× `await assertNotReadOnlyContext()` als first line eingefuegt. `persistManualRun` aus `winloss.ts` zu sibling `winloss-persist.ts` (non-"use server") extrahiert (analog Pattern `bulk-reassign.ts`), damit der Audit-Insert nicht versehentlich als Server-Action exposed wird. 4 neue Vitest-Tests in MT-2 alle gruen (Pattern DEC-201: runWithReadOnlyContext-Wrap + rejects.toThrow(/Mutation blocked/) + AC3-Assertion dass Mock-Clients nicht aufgerufen werden). Volle Suite 779/779 PASS (+4 vs. Baseline 775).
+- Resolved: 2026-05-15
 
 ### ISSUE-069 — AUDIT_SERVER_ACTIONS_V7.md stale: SLC-707 Bulk-Reassign + 3 V6.6-Mutate-Files nicht nachgetragen + 1 Fehlklassifizierung
-- Status: open
+- Status: resolved
 - Severity: Medium
 - Area: Documentation / V7 / Audit-Trail
 - Summary: /final-check V7 RPT-410: docs/AUDIT_SERVER_ACTIONS_V7.md hat seit SLC-704-Sweep 4 Files ergaenzt (ISSUE-064-Tranche), aber 5 weitere Mutate-Files sind nicht synchron mit dem aktuellen Code-Stand. (a) Bulk-Reassign-Server-Actions (bulkReassignPreview, bulkReassignApply) sind nur in Section 8 "Out-of-Scope" gelistet — nie als "live"-Eintrag nachgetragen, obwohl SLC-707 sie produktiv ausgeliefert hat. (b) `lib/team/bulk-reassign.ts` Audit-Helper (writeInitiatedAudit + writeAppliedAudit) fehlen. (c) `lib/settings/working-hours-actions.ts` (V6.6) fehlt. (d) `lib/ki-workspace/reports/winloss.ts` persistManualRun (V6.6) fehlt. (e) `lib/audit.ts` logAudit + logAuditWithId (zentrale Audit-Insertion) fehlt. Plus 1 Fehlklassifizierung: `components/insights/insight-actions.ts:201` ist als "wrapper, ruft lib/actions" markiert — real macht die Datei selbst `supabase.from("activities").insert(...)` an Zeile 59.
 - Impact: Reine Doc-Hygiene. Kein Runtime-Risk. Aber: Compliance-Gate-Auditoren verlassen sich auf das Doc als Quelle-der-Wahrheit fuer Server-Action-Coverage und Audit-Trail-Pfade.
 - Workaround: Keiner.
-- Next Action: BL-466 — Doc-Sync (~10 min): 5 Eintraege ergaenzen, 1 Fehlklassifizierung korrigieren. Gebuendelt mit ISSUE-070 als Post-Release-Polish-Slice.
+- Resolution: SLC-713 MT-3 (Branch slc-713-defense-in-depth-polish): Neue Section 10 "Post-V7 Mutate-Pfade — SLC-707 + V6.6 nachgetragen" mit 5 Sub-Sections (bulk-reassign-actions / bulk-reassign Audit-Helpers / working-hours-actions / winloss-persist / lib/audit.ts) ergaenzt. Fehlklassifizierung `components/insights/insight-actions.ts` korrigiert (saveInsight macht selbst INSERT activities, nicht UI-wrapper). Section 8 Out-of-Scope: 3 abgehakte Eintraege als delivered annotiert (SLC-705/706/707). grep nach den 6 neuen Symbolen (bulkReassignApply, writeInitiatedAudit, writeAppliedAudit, updateWorkingHoursSettings, persistManualRun, logAuditWithId) bestaetigt alle in der Doc.
+- Resolved: 2026-05-15
 
 ### ISSUE-068 — vitest.config.ts include-Pattern uebersieht root-level __tests__/-Suite (V7-Live-DB-Coverage silent geskipped)
 - Status: resolved

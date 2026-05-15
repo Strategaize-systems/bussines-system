@@ -2267,7 +2267,7 @@
       "title": "Post-Release-Polish V7.1: ISSUE-069 Audit-Doc-Sync + ISSUE-070 4 Defense-in-Depth-Guards",
       "type": "improvement",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V7.1",
       "description": "Aus /final-check V7 RPT-410: 2 MEDIUM-Findings als Post-Release-Polish gebuendelt (~30 min Aufwand). (1) ISSUE-069 Audit-Doc-Sync: docs/AUDIT_SERVER_ACTIONS_V7.md um Bulk-Reassign-Server-Actions (bulkReassignPreview, bulkReassignApply), bulk-reassign.ts-Audit-Helper, working-hours-actions.ts, winloss.ts persistManualRun, lib/audit.ts logAudit/logAuditWithId erweitern. 1 Fehlklassifizierung von insight-actions.ts:201 korrigieren (steht als 'wrapper', macht aber selbst INSERT). (2) ISSUE-070 4 Defense-in-Depth-Guards: 4× await assertNotReadOnlyContext() als first line in bulk-reassign-actions.ts bulkReassignApply + insight-actions.ts saveInsight + working-hours-actions.ts updateWorkingHoursSettings + winloss.ts persistManualRun. Plus 4 Vitest-Mock-Tests (RED-GREEN-Pattern: Mock setzt Read-Only-Context, Action wird mit Error abgewiesen). Kein aktueller Exploit-Pfad — bei zukuenftiger Drilldown-Erweiterung wichtig.",
       "createdAt": "2026-05-14"

@@ -4,6 +4,7 @@
 // Schema: user_settings.working_hours_start TIME / working_hours_end TIME
 // CHECK-Constraint (beide NULL oder start<end) ist in MIG-032 (SLC-665).
 
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { createClient } from "@/lib/supabase/server";
 import { validateWorkingHours } from "./working-hours-validation";
 
@@ -44,6 +45,8 @@ export interface UpdateWorkingHoursResult {
 export async function updateWorkingHoursSettings(
   input: UpdateWorkingHoursInput,
 ): Promise<UpdateWorkingHoursResult> {
+  await assertNotReadOnlyContext();
+
   const supabase = await createClient();
   const {
     data: { user },

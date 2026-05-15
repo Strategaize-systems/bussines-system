@@ -1,5 +1,6 @@
 "use server";
 
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { writeFile, mkdir } from "fs/promises";
@@ -15,6 +16,8 @@ interface InsightData {
 }
 
 export async function saveInsight(data: InsightData) {
+  await assertNotReadOnlyContext();
+
   const supabase = await createClient();
 
   // V7 SLC-704 MT-6: owner_user_id = caller (User-Request-Pfad, DEC-182).
