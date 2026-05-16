@@ -2,9 +2,20 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { evaluateRouteGuard } from "@/lib/auth/middleware-guards";
 import { isRole } from "@/lib/auth/types";
+import { pathMatchesReadOnlyDrilldown } from "@/lib/auth/read-only-paths";
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+  // SLC-751 DEC-210 — Read-Only-Mode-Header fuer Drilldown-Routes.
+  // Wird auf die incoming request.headers gesetzt (nicht auf Response),
+  // damit Server-Components/Actions ihn ueber `headers()` lesen koennen.
+  const requestHeaders = new Headers(request.headers);
+  if (pathMatchesReadOnlyDrilldown(request.nextUrl.pathname)) {
+    requestHeaders.set("X-Read-Only-Mode", "1");
+  }
+
+  let supabaseResponse = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
 
   const supabase = createServerClient(
     process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +29,9 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
-          supabaseResponse = NextResponse.next({ request });
+          supabaseResponse = NextResponse.next({
+            request: { headers: requestHeaders },
+          });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           );
