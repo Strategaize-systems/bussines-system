@@ -312,3 +312,4 @@ Reihenfolge nach User-Entscheidung 2026-05-15 (sichtbar zuerst): SLC-711 (Settin
 | SLC-712a | [Pipeline-Drilldown Vollausbau via PipelineView-Reuse](SLC-712a-pipeline-drilldown-reuse.md) | FEAT-712 | done | Medium | 2026-05-15 |
 | SLC-712b | [Aufgaben + Mein-Tag Drilldown-Vollausbau](SLC-712b-aufgaben-meintag-drilldown.md) | FEAT-712 | done | Medium | 2026-05-15 |
 | SLC-713 | [V7-Defense-in-Depth Polish (Guards + Audit-Doc-Sync)](SLC-713-defense-in-depth-polish.md) | FEAT-713 | done | Medium | 2026-05-15 |
+| SLC-714 | [KI-Workspace im Drilldown-MeinTag ausblenden (Post-Smoke-Hotfix)](SLC-714-readonly-ki-workspace-hide.md) | FEAT-712 / BL-472 | done | High | 2026-05-16 |

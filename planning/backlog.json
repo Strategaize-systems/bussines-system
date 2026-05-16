@@ -2321,6 +2321,16 @@
       "version": null,
       "description": "/qa SLC-711 (RPT-418) brauchte alle 3 Rollen (Admin/Teamlead/Member) fuer Live-Smoke, aber das Seed-Script enthielt nur Teamlead+Member. qa-admin musste in /qa-Session per Inline-Admin-API-POST + Profile-INSERT angelegt werden (~5-10 Min Overhead, plus 2 Stolperer mit curl-fehlt-im-Container + Heredoc-Variable-Expansion-Trap, siehe Dev-System IMP-486). Fix: cockpit/scripts/create-qa-test-users.mjs erweitern um Eintrag `{ id: '00000000-0000-0000-0000-0000000ba001', email: 'qa-admin@strategaize.test', password: 'QaSlc711-Admin!', role: 'admin' }` plus Profile-team_id-Setzung (TEST-Team `00000000-0000-0000-0000-000000000077`). Idempotent. Eliminiert /qa-Session-Overhead bei zukuenftigen rollen-basierten Permission-Smokes. Aufwand ~15 Min.",
       "createdAt": "2026-05-15"
+    },
+    {
+      "id": "BL-472",
+      "title": "KI-Workspace im Drilldown /team/[user_id]/mein-tag komplett entfernen (V7.1.1 SLC-714)",
+      "type": "fix",
+      "priority": "high",
+      "status": "done",
+      "version": "V7.1",
+      "description": "User-Smoke nach V7.1-Deploy: Im Drilldown-/mein-tag (Teamlead-Sicht eines Members) wird der KI-Workspace-Block noch gerendert, scoped auf den Target-Member. Aber alle Mutate-Pfade (Berichts-Buttons + Frage-Eingabe) werfen Server-Errors, weil der KI-Workspace-Backend-Pfad in Read-Only-Context nicht laeuft. UX-Erwartung: Read-Only = keine KI-Interaktion. Fix: cockpit/src/app/(app)/mein-tag/mein-tag-client.tsx Z.344 `<MeinTagKIWorkspace userId={kiWorkspaceUserId} />` hinter `!readOnly`-Gate. Test mein-tag-client.test.tsx Case 4 invertiert: queryByTestId('ki-workspace-stub') = null im readOnly. Aufwand <30 Min. Resolved 2026-05-16 als V7.1.1 SLC-714 (1-Slice-Patch vor REL-030-Deploy).",
+      "createdAt": "2026-05-16"
     }
   ]
 }

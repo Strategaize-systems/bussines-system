@@ -5,7 +5,8 @@
  * 1. readOnly={true} blendet alle 9 QuickActionButtons aus
  * 2. readOnly={false} (Default) zeigt QuickActionButtons (Regression-Frei)
  * 3. PageHeader-Title postfixt mit "(Read-Only: {Name})" wenn readOnly + targetUserDisplayName
- * 4. KI-Workspace bekommt viewAsUserId als userId (Drilldown-Scope)
+ * 4. KI-Workspace ist im Drilldown (readOnly) komplett ausgeblendet (V7.1.1 SLC-714, BL-471)
+ * 5. KI-Workspace ist im Self-Modus mit eigener userId sichtbar (Regression-frei)
  */
 
 import { describe, it, expect, vi } from "vitest";
@@ -124,7 +125,7 @@ describe("MeinTagClient readOnly + viewAsUserId behavior (SLC-712b)", () => {
     ).toBeInTheDocument();
   });
 
-  it("uebergibt viewAsUserId an KI-Workspace im Drilldown-Modus", () => {
+  it("blendet KI-Workspace komplett aus im Drilldown (V7.1.1 SLC-714 / BL-471)", () => {
     render(
       <MeinTagClient
         {...baseProps()}
@@ -133,8 +134,9 @@ describe("MeinTagClient readOnly + viewAsUserId behavior (SLC-712b)", () => {
         targetUserDisplayName="Test Member"
       />,
     );
-    const kiStub = screen.getByTestId("ki-workspace-stub");
-    expect(kiStub.getAttribute("data-user-id")).toBe("target-user-id");
+    // KI-Workspace wird im readOnly-Modus nicht gerendert — keine Berichts-Buttons,
+    // keine Frage-Eingabe, kein Mutate-Pfad der Server-Errors werfen wuerde.
+    expect(screen.queryByTestId("ki-workspace-stub")).toBeNull();
   });
 
   it("uebergibt eigene userId an KI-Workspace im Self-Modus", () => {

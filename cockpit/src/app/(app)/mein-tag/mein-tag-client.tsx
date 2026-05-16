@@ -338,10 +338,12 @@ export function MeinTagClient({ userId, data, stages, contacts, companies, deals
                 </div>
               </div>
 
-              {/* KI-WORKSPACE — flows directly after Aufgaben + Deals.
-                  V7.1 SLC-712b: viewAsUserId hat Vorrang in Drilldown — KI-Reports laufen
-                  gegen Target-Member-Daten. */}
-              <MeinTagKIWorkspace userId={kiWorkspaceUserId} />
+              {/* KI-WORKSPACE — hidden in readOnly (Drilldown): keine Mutate-Pfade,
+                  Berichts-Buttons + Frage-Input wuerden Server-Errors werfen.
+                  V7.1.1 SLC-714: aus Drilldown entfernt (BL-471). */}
+              {!readOnly && (
+                <MeinTagKIWorkspace userId={kiWorkspaceUserId} />
+              )}
             </div>
 
             {/* RIGHT COLUMN (4 cols on lg+): Entities + Zeit + Kalender + Meeting-Prep + Focus-Badges */}
