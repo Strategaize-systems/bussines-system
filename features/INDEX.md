@@ -234,7 +234,7 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-721 | Test-Infra-Cleanup (Seed-Script Multi-User + qa-admin + vitest-RLS Path-Alias) | planned | [Spec](FEAT-721-test-infra-cleanup.md) | 2026-05-16 |
+| FEAT-721 | Test-Infra-Cleanup (Seed-Script Multi-User + qa-admin + vitest-RLS Path-Alias) | done | [Spec](FEAT-721-test-infra-cleanup.md) | 2026-05-16 |
 
 ## V6 Features (Zielsetzung + Performance-Tracking — released)
 

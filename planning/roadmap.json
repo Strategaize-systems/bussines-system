@@ -199,7 +199,7 @@
     {
       "id": "v7-2",
       "name": "V7.2",
-      "status": "planned",
+      "status": "active",
       "summary": "Test-Infra-Cleanup-Sprint vor V7.5 (Accepted Risks aus V7.1-Release REL-030 abarbeiten). 3 Items: (1) ISSUE-073 Coolify-DB `npm run seed:multi-user` applicieren + idempotent halten + in Container-Bootstrap einbauen, damit Multi-User-RLS-Matrix-Tests (96 Cases) auf der Live-DB laufen statt SKIPPED zu bleiben — direkt V7.5-relevant da NL-Automation im Multi-User-Kontext lebt. (2) ISSUE-074 `cockpit/vitest.rls.config.ts` Path-Alias-Resolver via `vite-tsconfig-paths` ergaenzen, sonst 7 Bulk-Reassign-Test-Suites nicht lauffaehig. (3) BL-471 `scripts/create-qa-test-users.mjs` um `qa-admin@strategaize.test` (UUID-Range 0...ba001) als 3. Rolle erweitern, damit Multi-User-Live-Smoke alle 3 Rollen (Admin/Teamlead/Member) deterministisch hat. ~3-4h, 1 Slice. Nicht in V7.5 mitgenommen weil V7.5 sonst Test-Infra + Feature-Code mischt; sauberer Cut.",
       "order": 29
     },

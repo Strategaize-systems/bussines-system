@@ -9,16 +9,15 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: **V7.2 Slice-Planning DONE 2026-05-16** (RPT-432). SLC-721 angelegt mit 3 MTs: MT-1 qa-admin Seed-Script-Erweiterung (~30 Min, BL-471), MT-2 vitest.rls.config Path-Alias-Resolver (~15 Min, ISSUE-074 + KNOWN_ISSUES-Faktenkorrektur), MT-3 Coolify-DB-Apply + npm run test:all + Records-Sync (~1.5-2h, ISSUE-073 + BL-473). MT-1+MT-2 parallel moeglich, MT-3 zwingend zuletzt. 10 ACs definiert. Worktree-Isolation optional. Commit-Sequenz 1-pro-MT. Deployment: data-only Release REL-031, kein Coolify-Redeploy noetig (kein Production-Code-Change). 3 DECs (DEC-202..204) referenziert. V7.1 (REL-030 Image `770dd55`) bleibt stable in Production.
-- Current Phase: V7.2 **slice-planning done**. Naechster Schritt: /backend V7.2 SLC-721 (MT-1 + MT-2 parallel implementieren, dann MT-3).
+- High-Level State: qa
+- Current Focus: **V7.2 SLC-721 /backend DONE 2026-05-16**. 3 MTs (MT-1 qa-admin im Seed, MT-2 vitest.rls.config.ts resolve.alias, MT-3 Coolify-Apply + Test-Run + Records-Sync) atomic-commits 94b69b3 → 1b2e046 → 46497f9 auf Branch `slc-721-test-infra-cleanup`. Coolify-DB enthaelt jetzt 7 qa-* Profile (admin=1, teamlead=1, member=5) + 3 qa-* auth.users + 882 Seed-Rows. `npm run test:all` gegen TEST_DATABASE_URL=Coolify-DB: **917 PASS / 0 FAIL / 0 SKIP** (779 jsdom + 138 RLS, davon 96 v7-rls-matrix vorher 96 SKIP). 1 Test-Adjustment in aggregate-queries.test.ts (Erwartung 5→6 wegen qa-admin im Team-77, DEC-204). ISSUE-073 + ISSUE-074 resolved. BL-471 + BL-473 + BL-474 done. Time-Box 3-4h: durchgekommen in ~3h. Naechster Schritt: /qa V7.2 SLC-721 (Gesamt-Check 10 ACs).
+- Current Phase: V7.2 **backend done, awaiting /qa**.
 
 ## Immediate Next Steps
-1. **(Mainline)** /backend V7.2 SLC-721 — MT-1 (qa-admin Seed-Script-Erweiterung) + MT-2 (vitest.rls.config Path-Alias-Resolver) implementieren. ~45 Min total wenn parallel.
-2. **(nach Backend)** MT-3 (Coolify-DB-Apply + npm run test:all + Records-Sync, ~1.5-2h) — SSH-Apply auf 91.98.20.191 via docker exec, dann lokal `npm run test:all` Verifikation gegen TEST_DATABASE_URL=Coolify-DB.
-3. **(nach SLC-721 done)** /qa V7.2 SLC-721 — Gesamt-Check 897 PASS-Target.
-4. **(nach /qa)** /final-check + /go-live + /deploy V7.2 als REL-031 (data-only, kein Image-Tag-Wechsel).
-5. **(Parallel User-Action, nicht zeitkritisch)** ISSUE-071 weekly Cron einrichten.
+1. **(Mainline)** /qa V7.2 SLC-721 — Gesamt-Check aller 10 ACs gegen aktuellen Stand. 897 Tests-Target uebererfuellt mit 917.
+2. **(nach /qa)** /final-check + /go-live + /deploy V7.2 als REL-031 (data-only, kein Image-Tag-Wechsel, kein Coolify-Redeploy).
+3. **(nach /deploy)** Master-Merge `slc-721-test-infra-cleanup` → `main`. Branch-Cleanup.
+4. **(Parallel User-Action, nicht zeitkritisch)** ISSUE-071 weekly Cron einrichten.
 2. **(Parallel User-Action, nicht zeitkritisch jetzt)** ISSUE-071 weekly Cron einrichten — Docker-Prune kommt akkumulationsbedingt in 1-2 Wochen wieder. systemd-Timer auf Host (sauber) oder Coolify-Cron-Container (privilegiert mit Docker-Socket-Mount). Snippet siehe ISSUE-071-Next-Action.
 3. **(nach V7.2)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern. Inkl. ISSUE-066-Mitigation als eigener kleiner Slice (Middleware-Pfad-Check setzt X-Read-Only-Mode-Header, assertNotReadOnlyContext liest beides).
 4. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5.

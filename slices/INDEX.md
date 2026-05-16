@@ -320,4 +320,4 @@ V7.2 ist ein 1-Slice Test-Infra-Sprint, 3 MTs, kein Production-Code-Touch, keine
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-721 | [Test-Infra-Cleanup (Seed-Multi-User qa-admin + vitest-RLS Path-Alias + Coolify-DB-Apply)](SLC-721-test-infra-cleanup.md) | FEAT-721 | planned | High | 2026-05-16 |
+| SLC-721 | [Test-Infra-Cleanup (Seed-Multi-User qa-admin + vitest-RLS Path-Alias + Coolify-DB-Apply)](SLC-721-test-infra-cleanup.md) | FEAT-721 | done | High | 2026-05-16 |

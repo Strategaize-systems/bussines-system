@@ -15,7 +15,8 @@
 - Resolved: 2026-05-15 — User-Entscheidung Option (a) Complete Delete. Auf Hetzner-91.98.20.191 ausgefuehrt: `BEGIN; DELETE FROM profiles WHERE id = '7bdd1faf-...'; DELETE FROM auth.users WHERE id = '7bdd1faf-...'; COMMIT;`. CASCADE entfernt 1 user_settings + 1 auth.sessions + 4 auth.refresh_tokens + 1 auth.identities. Verifikation: profiles 1→0, auth.users 1→0, alle auth-Cascade-Tables 0. Test-Team-77 jetzt wieder bei erwarteten 6 Members (1 Teamlead + 5 Test-Members). aggregate-queries.test.ts 6/6 PASS nach Cleanup re-verified.
 
 ### ISSUE-074 — vitest.rls.config.ts fehlt tsconfig-paths-Resolver fuer `@/...` Aliases (pre-existing V7-Test-Infra-Bug)
-- Status: open
+- Status: resolved
+- Resolved: 2026-05-16 — V7.2 SLC-721 MT-2 (Commit `1b2e046`). `cockpit/vitest.rls.config.ts` erhielt `resolve.alias`-Block (Pattern-Reuse aus `vitest.config.ts:14-18`). 7 Bulk-Reassign-Test-Suites laufen jetzt — `npm run test:rls -- bulk-reassign.test.ts` zeigt 20 PASS (vorher 0).
 - Severity: Medium
 - Area: Test-Infra / vitest-Config / Path-Alias-Resolution
 - Summary: `cockpit/vitest.rls.config.ts` hat keinen Path-Alias-Resolver konfiguriert. Folge: `__tests__/team/bulk-reassign.test.ts` importiert `../../src/lib/team/bulk-reassign`, das Source-File macht `import { getPgClient } from "@/lib/db/pg"` (Z.15) — Resolver kann `@/...` nicht aufloesen → `Error: Cannot find package '@/lib/db/pg' imported from /app/src/lib/team/bulk-reassign.ts`. Test-File laedt mit 0 Tests, vitest markiert als FAIL. Pre-existing seit SLC-707 (Bulk-Reassign-Test-Setup 2026-05-12). Die Default-vitest.config.ts hat den Alias-Resolver via Next.js-Plugin — daher 779/779 PASS in der jsdom-Suite.
@@ -25,7 +26,8 @@
 - Reported: 2026-05-15 (Gesamt-/qa V7.1, RPT-425).
 
 ### ISSUE-073 — v7-rls-matrix.test.ts 96 SKIPPED auf Coolify-DB wegen fehlenden Seed-Daten (pre-existing V7-Seed-Drift)
-- Status: open (aggregate-queries-Teil resolved via ISSUE-075-Cleanup)
+- Status: resolved
+- Resolved: 2026-05-16 — V7.2 SLC-721 MT-3. Seed-Script + Auth-User-Script auf Coolify-DB applied via `docker run node:20` im Coolify-Netzwerk: 882 Rows (1 Team + 7 Profile inkl. qa-admin + 50/200/100/500 Volumen-Daten + 24 Aux-Fixtures). v7-rls-matrix.test.ts: 96/96 PASS (statt 96 SKIP). aggregate-queries.test.ts 6/6 PASS nach Test-Anpassung an qa-admin (Commit `46497f9`). Gesamt-Test-Suite `npm run test:all` 917 PASS / 0 FAIL / 0 SKIP (779 jsdom + 138 RLS).
 - Severity: Medium
 - Area: Test-Infra / Seed-Daten / Coolify-DB-State
 - Summary: `cockpit/__tests__/rls/v7-rls-matrix.test.ts` `beforeAll` wirft "Seed-Daten fehlen: deals hat keine Records mit owner=00000000-0000-0000-0000-000000000081. 'npm run seed:multi-user' ausfuehren." — die Coolify-DB hat fuer TEST_MEMBER_1 (`0...000081`) keine Records in `deals` (und vermutlich auch nicht in `companies, contacts, activities, meetings, proposals, email_messages, calls`). Folge: alle 96 Cross-Owner-Tests (8 Tabellen × 3 Rollen × 4 Operationen) SKIPPED. Zusaetzlich: `aggregate-queries.test.ts` 2/6 FAIL — `getTeamMembers` liefert 6 statt erwartete 5, `getTeamBedrockContext.members.length` 6 statt 5 (direkt verbunden mit ISSUE-075).
