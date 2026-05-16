@@ -27,6 +27,7 @@ import { Client } from "pg";
 
 const TEST_TEAM_ID = "00000000-0000-0000-0000-000000000077";
 const TEST_TEAMLEAD_ID = "00000000-0000-0000-0000-000000000078";
+const TEST_ADMIN_ID = "00000000-0000-0000-0000-0000000ba001"; // SLC-721/DEC-204
 const TEST_MEMBER_IDS = [
   "00000000-0000-0000-0000-000000000081",
   "00000000-0000-0000-0000-000000000082",
@@ -34,6 +35,10 @@ const TEST_MEMBER_IDS = [
   "00000000-0000-0000-0000-000000000084",
   "00000000-0000-0000-0000-000000000085",
 ];
+// Team-77 enthaelt seit SLC-721: 5 qa-members + 1 qa-admin + 1 qa-teamlead.
+// getTeamMembers/getTeamBedrockContext filtert nur den Caller (Teamlead) raus,
+// gibt daher 6 Profile zurueck (5 Member + 1 Admin).
+const TEST_TEAM_MEMBERS_EXPECTED = [...TEST_MEMBER_IDS, TEST_ADMIN_ID];
 
 let client: Client;
 
@@ -56,14 +61,16 @@ afterAll(async () => {
 });
 
 describe("SLC-705 MT-1 — Aggregate Queries (RLS-gefiltert, Teamlead-Session)", () => {
-  it("getTeamMembers liefert genau 5 Members fuer Test-Team (Teamlead nicht in Liste)", async () => {
+  it("getTeamMembers liefert 5 Members + 1 Admin fuer Test-Team (Teamlead nicht in Liste)", async () => {
     await client.query("BEGIN");
     try {
       await setTeamleadSession();
 
       // Spiegelt die Production-SQL-Logik aus getTeamMembers:
       //   profiles WHERE team_id = caller.team_id AND id != caller.id
-      // Der Teamlead taucht NICHT in seiner eigenen Mitarbeiter-Tabelle auf.
+      // Der Teamlead taucht NICHT in seiner eigenen Mitarbeiter-Tabelle auf,
+      // qa-admin (SLC-721/DEC-204) jedoch schon — getTeamMembers filtert
+      // nicht nach Role.
       const { rows } = await client.query<{ id: string }>(
         `SELECT p.id
            FROM profiles p
@@ -73,9 +80,9 @@ describe("SLC-705 MT-1 — Aggregate Queries (RLS-gefiltert, Teamlead-Session)",
       );
 
       const memberIds = rows.map((r) => r.id).sort();
-      const expected = [...TEST_MEMBER_IDS].sort();
+      const expected = [...TEST_TEAM_MEMBERS_EXPECTED].sort();
       expect(memberIds).toEqual(expected);
-      expect(memberIds.length).toBe(5);
+      expect(memberIds.length).toBe(6);
     } finally {
       await client.query("ROLLBACK");
     }
@@ -162,9 +169,10 @@ describe("SLC-705 MT-1 — Aggregate Queries (RLS-gefiltert, Teamlead-Session)",
     }
   });
 
-  it("getTeamBedrockContext.members.length === 5", async () => {
+  it("getTeamBedrockContext.members.length === 6 (5 Members + 1 Admin, SLC-721)", async () => {
     // Logisch identisch zu getTeamMembers — Bedrock-Context wraps die gleiche
-    // Liste (caller-Self filtered out).
+    // Liste (caller-Self filtered out). Seit SLC-721/DEC-204 enthaelt das Team
+    // zusaetzlich qa-admin → 6 statt vorher 5.
     await client.query("BEGIN");
     try {
       await setTeamleadSession();
@@ -177,7 +185,7 @@ describe("SLC-705 MT-1 — Aggregate Queries (RLS-gefiltert, Teamlead-Session)",
         [TEST_TEAM_ID, TEST_TEAMLEAD_ID],
       );
 
-      expect(rows.length).toBe(5);
+      expect(rows.length).toBe(6);
     } finally {
       await client.query("ROLLBACK");
     }
