@@ -1,4 +1,5 @@
 import { defineConfig } from "vitest/config";
+import path from "node:path";
 
 /**
  * Vitest-Config fuer DB-gegen-Coolify-Tests (SLC-701 MT-4/6 + SLC-705 MT-1).
@@ -11,6 +12,11 @@ import { defineConfig } from "vitest/config";
  *   - include: __tests__/rls/** + __tests__/team/** (keine src-Suite)
  *     SLC-705 MT-1 Aggregat-Queries-Tests teilen DB-Setup + pg.Client-Pattern
  *     mit den RLS-Matrix-Tests, daher gemeinsame Config.
+ *
+ * SLC-721/DEC-203: resolve.alias-Pattern aus vitest.config.ts portiert,
+ * damit `__tests__/team/**` Tests `@/lib/...`-Imports aufloesen koennen.
+ * vite-tsconfig-paths ist NICHT in dependencies — bewusst resolve.alias
+ * statt Plugin (kein neuer dep, Pattern-Reuse).
  */
 export default defineConfig({
   test: {
@@ -23,5 +29,10 @@ export default defineConfig({
     ],
     exclude: ["node_modules/**", ".next/**", "dist/**"],
     globals: false,
+  },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
   },
 });
