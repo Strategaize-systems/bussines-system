@@ -1,5 +1,27 @@
 # Migrations
 
+### MIG-036 — V7.5 SLC-752 automation_rules.created_via
+- Date: 2026-05-16 (applied via SSH+base64 in SLC-752 MT-0 — postgres-User, idempotent)
+- Scope: 1 additive Aenderung in `036_v75_automation_rules_created_via.sql`:
+  ```sql
+  ALTER TABLE automation_rules
+    ADD COLUMN IF NOT EXISTS created_via TEXT NOT NULL DEFAULT 'click_wizard';
+
+  ALTER TABLE automation_rules
+    ADD CONSTRAINT automation_rules_created_via_check
+    CHECK (created_via IN ('click_wizard', 'nl_sculptor'));
+
+  COMMENT ON COLUMN automation_rules.created_via IS '...';
+  ```
+- Reason: FEAT-751 Natural-Language Workflow-Sculptor braucht Provenance-Marker, damit Inspection-Logs und Builder-UI unterscheiden koennen, ob eine Rule durch den V6.2 4-Step-Wizard oder den V7.5 NL-Surface angelegt wurde.
+- Affected Areas:
+  - `automation_rules`-Table: neue Spalte mit Whitelist + DEFAULT.
+  - Bestehende Rules (2 Rows): rueckwirkend auf `click_wizard` gesetzt via DEFAULT-Greif.
+  - V7.5-Sculptor (SLC-752+): wird beim Apply via Server Action `created_via='nl_sculptor'` setzen.
+- Risk: minimal. Additive Spalte mit DEFAULT, kein Query-Pfad bricht, kein Backfill noetig.
+- Rollback Notes: `ALTER TABLE automation_rules DROP COLUMN created_via;` Vorher pruefen ob V7.5-Inspection-Log noch aktive Referenzen auf `created_via` haelt — andernfalls Inspection-Log-Query brechen.
+- Verification (2026-05-16): `\d automation_rules` zeigt `created_via TEXT NOT NULL DEFAULT 'click_wizard'::text` + `automation_rules_created_via_check CHECK (created_via IN ('click_wizard','nl_sculptor'))`. 2 bestehende Rows = 'click_wizard'.
+
 ### MIG-032 — V6.6 Working-Hours-Setting + Win/Loss-Auto-Trigger Schema
 - Date: 2026-05-11 (applied via SSH+base64 in SLC-665 MT-1, plus MIG-032b system-rule INSERT)
 - Scope: 3 additive Aenderungen in `032_v66_working_hours_and_winloss.sql` + `032b_v66_system_winloss_rule.sql`:
