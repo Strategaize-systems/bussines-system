@@ -2027,7 +2027,7 @@
       "title": "ISSUE-066 Middleware-Mitigation (FEAT-752) — Read-Only-Context Defense-in-Depth",
       "type": "improvement",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V7.5",
       "description": "ISSUE-066 schliessen via Middleware-basiertem Pfad-Check (`^\\/team\\/[^/]+\\/`-Regex) der `X-Read-Only-Mode: 1` Request-Header setzt. `assertNotReadOnlyContext()` liest sowohl AsyncLocalStorage als auch den Header. Damit greift der Read-Only-Guard auch bei Direct-Server-Action-Calls aus dem Drilldown — heute nur UX-Hide mitigiert. Plus Vitest-Mock-Test (RED-GREEN, 4 Cases) + Playwright-MCP-Live-Smoke via DevTools-Direct-Server-Action-Call. Pattern war im SLC-706-Quellcode-Kommentar dokumentiert. V7.5 setzt es um. ~1-2h. Slice-Planning done 2026-05-16: implementiert als SLC-751 (Foundation-First per Architecture-Empfehlung, erster V7.5-Slice). Spec /features/FEAT-752-readonly-context-middleware.md + /slices/SLC-751-issue066-middleware-mitigation.md.",
       "createdAt": "2026-05-16"

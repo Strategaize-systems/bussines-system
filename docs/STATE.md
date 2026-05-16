@@ -9,14 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: **V7.5 Slice-Planning done 2026-05-16** (RPT-441). 6 Slices SLC-751..756 angelegt mit AC + Micro-Tasks. Foundation-First-Reihenfolge bestaetigt: SLC-751 = FEAT-752 ISSUE-066-Middleware-Mitigation (1-2h, kleinster Slice, Defense-in-Depth-Foundation) → SLC-752 = FEAT-751 Sculptor-Core + MIG-036 additiv `automation_rules.created_via` (3-5h) → SLC-753 = Mein-Tag NL-Surface + Sculpt-Server-Action (3-5h) → SLC-754 = Trockenlauf + Apply-Confirm-Modal (2-3h) → SLC-755 = Voice-Input (1-2h, parallel zu 754+756 moeglich) → SLC-756 = Inspection-Log Admin-only (2-3h, letzter Slice). Gesamt-Schaetzung ~12-20h. 5 Open Questions entschieden (Reihenfolge Foundation-First, created_via in V7.5, Few-Shot-Pool 8, SLC-752-Split=1-Slice, Confirm-Modal=shadcn-Dialog-Reuse). Naechster Schritt: /backend SLC-751.
-- Current Phase: V7.5 Slice-Planning done. Backend SLC-751 next.
+- High-Level State: implementing
+- Current Focus: **SLC-751 done 2026-05-16** (RPT-442 + 443 + 444). FEAT-752 Read-Only-Context Defense-in-Depth komplett — Middleware-Pfad-Regex `/^\/team\/[^/]+\//` + `X-Read-Only-Mode: 1`-Request-Header + `assertNotReadOnlyContext()` async Layer-2-Read + Best-Effort `audit_log`-Insert. Master-Merge auf main (`c9d065b`) + Coolify-Redeploy + Playwright-MCP-Live-Smoke PASS (Direct-Server-Action-Fetch gegen Drilldown-Pfad → HTTP 500 Error-Digest + `audit_log read_only_context_blocked`-Eintrag mit teamlead-actor_id). ISSUE-066 resolved. 13 neue Vitest-Cases. **Naechster Schritt: /backend SLC-752** (Sculptor-Core + MIG-036 `automation_rules.created_via`).
+- Current Phase: V7.5 SLC-751 done. /backend SLC-752 next.
 
 ## Immediate Next Steps
-1. **(Mainline)** /backend SLC-751 — FEAT-752 ISSUE-066 Middleware-Mitigation. ~1-2h. 6 Micro-Tasks (Worktree + Middleware-Regex + Vitest-9-Cases + assertNotReadOnlyContext-Erweiterung + Vitest-4-Cases + Playwright-Live-Smoke + Records-Sync). Spec /slices/SLC-751-issue066-middleware-mitigation.md.
-2. **(nach SLC-751)** /qa SLC-751 inkl. Playwright-MCP-Live-Smoke (Teamlead-DevTools-Direct-Server-Action-Call → ReadOnlyContextError + audit_log-Eintrag). Coolify-Redeploy bevor Live-Smoke.
-3. **(V7.5-Sequenz nach SLC-751)** /backend SLC-752 Sculptor-Core + MIG-036 → /frontend SLC-753 NL-Surface → /backend+frontend SLC-754 Trockenlauf+Apply-Confirm → /frontend SLC-755 Voice-Input → /backend+frontend SLC-756 Inspection-Log → Gesamt-/qa V7.5 → /final-check → /go-live → /deploy als REL-032.
+1. **(Mainline)** /backend SLC-752 — FEAT-751 Sculptor-Core + MIG-036. ~3-5h, 9 Micro-Tasks. Pure-Functions in `lib/automation/` (sculptor + prompts + schema + cost + dedup + nl-history) + Bedrock-Region-Pin + healJsonEscapes-Pattern + 8 Real-World-Prompts Vitest. Spec /slices/SLC-752-sculptor-core.md.
+2. **(nach SLC-752)** /qa SLC-752 + User-Coolify-Redeploy + ggf. Live-Smoke des MIG-036-Effekts. Master-Merge nach PASS.
+3. **(V7.5-Sequenz nach SLC-752)** /frontend SLC-753 NL-Surface → /backend+frontend SLC-754 Trockenlauf+Apply-Confirm → /frontend SLC-755 Voice-Input → /backend+frontend SLC-756 Inspection-Log → Gesamt-/qa V7.5 → /final-check → /go-live → /deploy als REL-032.
 4. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).
 5. **(Parallel User-Action, nicht zeitkritisch)** ISSUE-071 weekly Cron einrichten — Docker-Prune kommt akkumulationsbedingt in 1-2 Wochen wieder. systemd-Timer auf Host oder Coolify-Cron-Container. Snippet siehe ISSUE-071-Next-Action.
 6. **(Skill-Improvement-Kandidat fuer Dev-System)** Mount-Pfad fuer campaigns-schema.test.ts in `coolify-test-setup.md` dokumentieren (Repo-Root-Mount statt cockpit-Mount).
