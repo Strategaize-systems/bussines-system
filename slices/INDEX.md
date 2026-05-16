@@ -313,3 +313,11 @@ Reihenfolge nach User-Entscheidung 2026-05-15 (sichtbar zuerst): SLC-711 (Settin
 | SLC-712b | [Aufgaben + Mein-Tag Drilldown-Vollausbau](SLC-712b-aufgaben-meintag-drilldown.md) | FEAT-712 | deployed | Medium | 2026-05-15 |
 | SLC-713 | [V7-Defense-in-Depth Polish (Guards + Audit-Doc-Sync)](SLC-713-defense-in-depth-polish.md) | FEAT-713 | deployed | Medium | 2026-05-15 |
 | SLC-714 | [KI-Workspace im Drilldown-MeinTag ausblenden (Post-Smoke-Hotfix)](SLC-714-readonly-ki-workspace-hide.md) | FEAT-712 / BL-472 | deployed | High | 2026-05-16 |
+
+## V7.2 Slices (Test-Infra-Cleanup-Sprint — Slice-Planning done 2026-05-16)
+
+V7.2 ist ein 1-Slice Test-Infra-Sprint, 3 MTs, kein Production-Code-Touch, keine Schema-Migration, kein Coolify-Redeploy noetig (data-only release REL-031). Reihenfolge MT-1 + MT-2 parallel moeglich, MT-3 zwingend zuletzt. Time-Box 3-4h. Erwartetes Outcome `npm run test:all` 897 PASS (779 jsdom + 118 RLS).
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-721 | [Test-Infra-Cleanup (Seed-Multi-User qa-admin + vitest-RLS Path-Alias + Coolify-DB-Apply)](SLC-721-test-infra-cleanup.md) | FEAT-721 | planned | High | 2026-05-16 |

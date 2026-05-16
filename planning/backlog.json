@@ -2331,6 +2331,26 @@
       "version": "V7.1",
       "description": "User-Smoke nach V7.1-Deploy: Im Drilldown-/mein-tag (Teamlead-Sicht eines Members) wird der KI-Workspace-Block noch gerendert, scoped auf den Target-Member. Aber alle Mutate-Pfade (Berichts-Buttons + Frage-Eingabe) werfen Server-Errors, weil der KI-Workspace-Backend-Pfad in Read-Only-Context nicht laeuft. UX-Erwartung: Read-Only = keine KI-Interaktion. Fix: cockpit/src/app/(app)/mein-tag/mein-tag-client.tsx Z.344 `<MeinTagKIWorkspace userId={kiWorkspaceUserId} />` hinter `!readOnly`-Gate. Test mein-tag-client.test.tsx Case 4 invertiert: queryByTestId('ki-workspace-stub') = null im readOnly. Aufwand <30 Min. Resolved 2026-05-16 als V7.1.1 SLC-714 (1-Slice-Patch vor REL-030-Deploy).",
       "createdAt": "2026-05-16"
+    },
+    {
+      "id": "BL-473",
+      "title": "Coolify-DB Multi-User-Seed + Container-Bootstrap (ISSUE-073)",
+      "type": "improvement",
+      "priority": "high",
+      "status": "open",
+      "version": "V7.2",
+      "description": "Accepted Risk REL-030: cockpit/__tests__/rls/v7-rls-matrix.test.ts faengt 96 Multi-User-RLS-Cases (8 Tabellen x 3 Rollen x 4 Operationen) — alle SKIPPED weil `npm run seed:multi-user` nicht auf Coolify-DB applied. Fix: (1) Seed-Script gegen Coolify-DB idempotent applicieren (INSERT ON CONFLICT DO NOTHING fuer 3 Test-Owner-Accounts + Daten in 8 Tabellen). (2) Container-Bootstrap einbauen (Dockerfile-Entrypoint oder start.sh) damit nach jedem Coolify-Redeploy idempotent re-applied. UUID-Range 0...000080..0000ba001 (qa-* Prefix, klar von Production-IDs separiert). Verifikation: nach Bootstrap `npm run test:rls -- v7-rls-matrix` = 96 PASS (statt 96 SKIP). Time-Box ~2h Hauptarbeit (Bootstrap-Hook + Seed-Daten-Umfang-Entscheidung). Erwartungs-Outcome 118/118 RLS PASS auf Coolify-DB.",
+      "createdAt": "2026-05-16"
+    },
+    {
+      "id": "BL-474",
+      "title": "vitest.rls.config.ts Path-Alias-Resolver fuer @/-Imports (ISSUE-074)",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V7.2",
+      "description": "Accepted Risk REL-030: cockpit/vitest.rls.config.ts hat keinen Path-Alias-Resolver fuer @/-Imports. Folge: cockpit/__tests__/team/bulk-reassign.test.ts importiert `../../src/lib/team/bulk-reassign`, die Source macht `import { getPgClient } from '@/lib/db/pg'` (Z.15) → Resolver kann @/-Aliases nicht aufloesen → 7 Bulk-Reassign-Test-Suites laden mit 0 Tests. Pre-existing seit SLC-707. Fix: `plugins: [tsconfigPaths()]` aus `vite-tsconfig-paths` (bereits in dependencies) ergaenzen, analog cockpit/vitest.config.ts (jsdom-Default). Alternativ: `resolve.alias: { '@': resolve(__dirname, 'src') }`. Pattern-Reuse-Pflicht: Resolver-Setup aus jsdom-Default-Config 1:1 portieren. Verifikation: `npm run test:rls -- bulk-reassign` laedt 7 Suites + alle laufen gegen Coolify-DB. Time-Box ~30 Min.",
+      "createdAt": "2026-05-16"
     }
   ]
 }

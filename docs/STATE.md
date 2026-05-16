@@ -9,21 +9,23 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: **V7.1 RELEASED 2026-05-16 als REL-030** (Image-Tag `770dd55`). 5 Slices SLC-711..714 deployed (Polish-Sprint nach V7-Walkthrough + Post-Smoke-Hotfix SLC-714 KI-Workspace-Hide im Drilldown). Coolify-Redeploy von main durchgefuehrt durch User. Live-Smoke RPT-427 via Playwright-MCP gegen Production-HEAD `770dd55` PASS (19/19 DOM-Assertions). 779/779 Vitest PASS. Internal-Test-Mode bleibt aktiv. ISSUE-069 + ISSUE-070 + ISSUE-075 resolved durch SLC-713 + User-Cleanup. Accepted Risks aus V7 unveraendert: ISSUE-066 V7.5-Mitigation, ISSUE-071 weekly Cron User-Pflicht, ISSUE-073 + ISSUE-074 V7.2-Cleanup, ISSUE-058 + fast-uri pre-existing.
-- Current Phase: V7.1 **deployed**. Naechster Schritt: /post-launch V7.1 in ~24h (Disk-Usage-Trend + Container-Health + Audit-Log-Volume). Parallel: User-Action weekly Coolify-Cron fuer ISSUE-071.
+- High-Level State: slice-planning
+- Current Focus: **V7.2 Slice-Planning DONE 2026-05-16** (RPT-432). SLC-721 angelegt mit 3 MTs: MT-1 qa-admin Seed-Script-Erweiterung (~30 Min, BL-471), MT-2 vitest.rls.config Path-Alias-Resolver (~15 Min, ISSUE-074 + KNOWN_ISSUES-Faktenkorrektur), MT-3 Coolify-DB-Apply + npm run test:all + Records-Sync (~1.5-2h, ISSUE-073 + BL-473). MT-1+MT-2 parallel moeglich, MT-3 zwingend zuletzt. 10 ACs definiert. Worktree-Isolation optional. Commit-Sequenz 1-pro-MT. Deployment: data-only Release REL-031, kein Coolify-Redeploy noetig (kein Production-Code-Change). 3 DECs (DEC-202..204) referenziert. V7.1 (REL-030 Image `770dd55`) bleibt stable in Production.
+- Current Phase: V7.2 **slice-planning done**. Naechster Schritt: /backend V7.2 SLC-721 (MT-1 + MT-2 parallel implementieren, dann MT-3).
 
 ## Immediate Next Steps
-1. **(Mainline) /post-launch V7.1** in ~24h — Production-Stability-Check auf Image-Tag `770dd55`. Beobachten: Disk-Usage-Trend (ISSUE-071), Container-Healthchecks, Audit-Log-Volume, KI-Workspace-Errors weg.
-2. **(Parallel User-Action) ISSUE-071 Coolify-Cron** — User richtet weekly Disk-Cleanup ein (`docker builder prune -af && docker image prune -af`). Snippet in KNOWN_ISSUES.md. Pure User-Aktion, kein Code-Change.
-3. **(Optional) 2. Post-Launch-Check @24h** — In ~9h erneuter Live-Check fuer volle 24h-Schwelle. Aktuell ~15h erreicht. Nicht release-blocking.
-4. **(nach V7.1, vor V7.5)** /requirements V7.2 — Test-Infra-Cleanup-Sprint (~3-4h, 1 Slice). 3 Items aus Accepted Risks REL-030: ISSUE-073 Coolify-DB `npm run seed:multi-user` + Container-Bootstrap, ISSUE-074 `vitest.rls.config.ts` Path-Alias-Resolver, BL-471 qa-admin im Seed-Script. Saubere Multi-User-Test-Basis bevor V7.5 NL-Automation darauf aufsetzt.
-5. **(nach V7.2)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern. Inkl. ISSUE-066-Mitigation als eigener kleiner Slice (Middleware-Pfad-Check setzt X-Read-Only-Mode-Header, assertNotReadOnlyContext liest beides).
-6. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5.
-7. **(optional)** V6.7-Polish — BL-460 (Style-Guide-V2 Hex-Drift) + BL-459 (Quick-Action-Label) + BL-418 (React #418 Hydration). 2-4h. Oder als Sub-Sprint vor V7.5: BL-455 Pflichtfelder-Modal beim Stage-Move (High-Prio UX-Fix, unabhaengig).
-8. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit NL-BTW gegen Production-VIES.
-9. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04.
-10. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (User-Direktive 2026-05-01 "kommt viel spaeter").
+1. **(Mainline)** /backend V7.2 SLC-721 — MT-1 (qa-admin Seed-Script-Erweiterung) + MT-2 (vitest.rls.config Path-Alias-Resolver) implementieren. ~45 Min total wenn parallel.
+2. **(nach Backend)** MT-3 (Coolify-DB-Apply + npm run test:all + Records-Sync, ~1.5-2h) — SSH-Apply auf 91.98.20.191 via docker exec, dann lokal `npm run test:all` Verifikation gegen TEST_DATABASE_URL=Coolify-DB.
+3. **(nach SLC-721 done)** /qa V7.2 SLC-721 — Gesamt-Check 897 PASS-Target.
+4. **(nach /qa)** /final-check + /go-live + /deploy V7.2 als REL-031 (data-only, kein Image-Tag-Wechsel).
+5. **(Parallel User-Action, nicht zeitkritisch)** ISSUE-071 weekly Cron einrichten.
+2. **(Parallel User-Action, nicht zeitkritisch jetzt)** ISSUE-071 weekly Cron einrichten — Docker-Prune kommt akkumulationsbedingt in 1-2 Wochen wieder. systemd-Timer auf Host (sauber) oder Coolify-Cron-Container (privilegiert mit Docker-Socket-Mount). Snippet siehe ISSUE-071-Next-Action.
+3. **(nach V7.2)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern. Inkl. ISSUE-066-Mitigation als eigener kleiner Slice (Middleware-Pfad-Check setzt X-Read-Only-Mode-Header, assertNotReadOnlyContext liest beides).
+4. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5.
+5. **(optional)** V6.7-Polish — BL-460 (Style-Guide-V2 Hex-Drift) + BL-459 (Quick-Action-Label) + BL-418 (React #418 Hydration). 2-4h. Oder als Sub-Sprint vor V7.5: BL-455 Pflichtfelder-Modal beim Stage-Move (High-Prio UX-Fix, unabhaengig).
+6. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit NL-BTW gegen Production-VIES.
+7. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04.
+8. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (User-Direktive 2026-05-01 "kommt viel spaeter").
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"

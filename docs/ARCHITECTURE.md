@@ -9401,3 +9401,152 @@ Per Slice + Gesamt-V7.1:
 - **Gesamt-V7.1 PASS:** alle Slices live, `npm run test:all` gruen, audit_log-Trail seit Slice-Deploy aktiv (keine neuen Action-Typen, aber bestehende ai_signal_extract/ai_followup/invite_sent/bulk_reassign/view_as bleiben tracked).
 
 **V7.1 Architecture ready for `/slice-planning`.**
+
+## V7.2 — Test-Infra-Cleanup Architecture (Seed-Script Multi-User + qa-admin + vitest-RLS Path-Alias)
+
+V7.2 ist ein 3-Item Test-Infra-Sprint ohne neue Geschaeftslogik, ohne Schema-Migration, ohne Production-User-Touchpoint. Architektur-Inhalt = Klaerung der 4 Open Questions aus /requirements V7.2 + 3 DECs.
+
+### V7.2 Architecture Summary
+
+| Sub-Item | Komponente | Aenderung | Aufwand |
+|---|---|---|---|
+| BL-471 | `cockpit/scripts/create-qa-test-users.mjs` + `cockpit/scripts/seed-multi-user.ts` | 1 zusaetzlicher User-Eintrag (qa-admin), 1 Profile-Eintrag, 1 Aux-Fixture-Set | ~20 Min |
+| ISSUE-073 | Coolify-DB Multi-User-Seed | `npm run seed:multi-user` einmalig nach V7.2-Deploy via `docker exec` (Manual-Apply, kein Bootstrap-Hook) | ~10 Min Apply |
+| ISSUE-074 | `cockpit/vitest.rls.config.ts` | 4-Zeilen-Patch `resolve.alias` (Pattern aus `vitest.config.ts` portiert) | ~5 Min |
+
+**Kein Code-Touch ausserhalb dieser 3 Files.** Keine Schema-Migration. Keine neuen npm-Packages. Keine Dockerfile-Aenderung.
+
+### V7.2 Main Components
+
+#### 1. `cockpit/scripts/seed-multi-user.ts` (Modifikation)
+- Bestehender Seed-Script (SLC-701 MT-1) wird um qa-admin-Profile erweitert.
+- Neue Konstante `TEST_ADMIN_ID = "00000000-0000-0000-0000-0000000ba001"` (DEC-204 — Range-Konvention).
+- `seedTeamAndProfiles` legt qa-admin als 7. Profile mit `role='admin'` und `team_id=TEST_TEAM_ID` an (ON CONFLICT DO UPDATE).
+- `seedAuxiliaryFixtures` legt fuer qa-admin 1 Record pro (meetings, proposals, email_messages, calls) an.
+- Volumen-Daten (50 companies + 200 contacts + 100 deals + 500 activities) bleiben unveraendert auf 5 Members verteilt — qa-admin ist NICHT Owner von Volumen-Daten, sondern Beobachter mit admin-RLS-Sicht.
+- `reset()` erweitert um qa-admin in owners-Array fuer sauberen Re-Seed.
+
+#### 2. `cockpit/scripts/create-qa-test-users.mjs` (Modifikation)
+- Bestehende `TEST_USERS`-Liste um qa-admin-Eintrag erweitern (UUID `0...0ba001`, email `qa-admin@strategaize.test`, password `QaV72-Admin!`).
+- Idempotenz-Pattern (probe-then-update-or-create) bleibt unveraendert.
+
+#### 3. `cockpit/vitest.rls.config.ts` (Modifikation)
+- 4-Zeilen-Patch nach Default-Pattern aus `vitest.config.ts`:
+  ```ts
+  import path from "node:path";
+  // ...
+  resolve: {
+    alias: { "@": path.resolve(__dirname, "./src") },
+  },
+  ```
+- DEC-203 — bewusst `resolve.alias` (Direct-Path) und nicht `vite-tsconfig-paths`-Plugin (keine neue Dependency, Pattern-Reuse mit Default-Config).
+
+### V7.2 Data Flow
+
+V7.2 hat keinen Runtime-Data-Flow im Production-Code. Pure Test-Setup-Datenpfade:
+
+```
+Developer/Agent (lokal oder via SSH)
+   |
+   v
+docker exec <app-container> npx tsx scripts/seed-multi-user.ts
+   |
+   v (TEST_DATABASE_URL=postgresql://postgres:...@supabase-db:5432/postgres)
+Coolify-Postgres (Supabase-DB)
+   |  -- BEGIN
+   |  -- reset()    : DELETE FROM <8 tables> WHERE owner_user_id = ANY([qa-admin + qa-teamlead + 5 qa-members])
+   |                  DELETE FROM profiles WHERE id = ANY([qa-admin + qa-teamlead + 5 qa-members])
+   |                  DELETE FROM teams WHERE id = TEST_TEAM_ID
+   |  -- seed()     : INSERT 1 team + 7 profiles (qa-admin + qa-teamlead + 5 qa-members) + 50 + 200 + 100 + 500 + 7*4 records
+   |  -- COMMIT
+   v
+Test-Daten verfuegbar fuer:
+   - `npm run test:rls -- v7-rls-matrix` (96 Cases: 8 Tabellen x 3 Rollen x 4 Operationen — admin/teamlead/member)
+   - `npm run test:rls -- bulk-reassign` (7 Suites)
+   - `npm run test:rls -- aggregate-queries` (6 Tests)
+```
+
+**Keine Auswirkung auf Production-User-Pfad.** Test-Records sind alle `[TEST]`-prefixed und im `TEST_TEAM_ID` isoliert.
+
+### V7.2 External Dependencies / Integrations
+
+Keine. Alle Aenderungen lokal in cockpit/scripts und cockpit/vitest.rls.config.ts.
+
+### V7.2 Security / Privacy Considerations
+
+- **Test-User-Passwords sind starke aber bekannte Strings** (`QaV72-Admin!`, `QaSlc702-Teamlead!`, `QaSlc702-Member!`). Akzeptables Risiko, weil:
+  - V7.2 ist Internal-Test-Mode (kein Customer-Login)
+  - Test-Accounts sind im TEST-Team isoliert (kein Cross-Team-Daten-Zugriff per RLS)
+  - Production-Admin-Account `richard@bellaerts.de` ist separat und nicht von diesen Test-Patterns betroffen
+- **Production-DB-Modifikation:** Der Seed-Script wird auf der Coolify-Production-DB ausgefuehrt (Internal-Test-Mode-Pattern). Sicherheits-Massnahmen:
+  - Alle DELETE/INSERT sind auf UUID-Range `00000000-0000-0000-0000-0000000xxx` beschraenkt (TEST_TEAM_ID 077, TEAMLEAD 078, MEMBERS 081-085, ADMIN 0ba001) — kein Production-UUID-Overlap moeglich.
+  - Alle Records `[TEST]`-prefixed (display_name, company-name, deal-title) — visuell klar markiert in jedem Listing.
+  - Transaktion BEGIN/COMMIT/ROLLBACK — bei Fehler kein partial-State.
+- **Audit-Log:** Seed-Run wird NICHT in `audit_log` geschrieben (kein User-Aktion-Charakter). Dokumentation im Slice-Report reicht.
+
+### V7.2 Constraints and Tradeoffs
+
+| Constraint | Tradeoff |
+|---|---|
+| Kein Bootstrap-Hook in Dockerfile (DEC-202) | Manual-Apply nach jedem V7.2-Deploy. Akzeptabel, weil Re-Seed nur ~1-2x/Quartal noetig (nach Schema-Aenderungen). |
+| Manual-Apply via docker exec | Agent (Claude) muss bei /qa/Post-Launch den Seed-Run dokumentieren. Konsistent mit feedback_ssh_migrations_always_claude.md. |
+| Path-Alias via resolve.alias (nicht vite-tsconfig-paths-Plugin) | Plugin haette automatische tsconfig.json-Path-Resolution geliefert. Tradeoff: 4-Zeilen-Patch vs. neue Dependency + Plugin-Init-Cost. Bei kuenftig vielen Aliases ggf. Plugin-Switch. |
+| qa-admin in TEST_TEAM_ID (nicht in Strategaize-Team) | qa-admin sieht nur TEST-Team-Daten, nicht Strategaize-Production-Daten. Akzeptabel weil V7-RLS admin-policies bereits getestet sind via richard@bellaerts.de. qa-admin ist nur fuer Multi-User-RLS-Matrix-Tests da. |
+| Time-Box 3-4h | Wenn MT-1 (qa-admin + Seed-Apply) mehr Reibung erzeugt als erwartet (z.B. ISSUE-067-Style POSTGRES_URL-Drift), wird MT-2 (vitest-Config) unabhaengig vorgezogen. |
+
+### V7.2 Open Questions Aufgeloest
+
+**Q1 — Container-Bootstrap-Pfad: Dockerfile-Entrypoint vs. start.sh vs. Coolify-Cron?**
+→ **DEC-202: Manual-Apply, kein Bootstrap-Hook.** Begruendung: Bootstrap-Hook in Dockerfile braucht Entrypoint-Script + DB-readiness-Wait + ENV-Gate gegen Production-Drift = 2-3h Aufwand auf 3-4h Sprint plus Risiko-Surface. Manual-Apply via `docker exec` ist konsistent mit `sql-migration-hetzner.md`-Pattern. Wenn spaeter Staging/CI hinzukommt → BL-475 fuer V7.3+.
+
+**Q2 — Seed-Daten-Umfang: Records pro (Tabelle, Owner)?**
+→ **Keine Aenderung.** Aktueller Seed hat bereits 50/200/100/500 Records (companies/contacts/deals/activities) auf 5 Member verteilt = 10/40/20/100 pro Member. Mehr als ausreichend fuer RLS-Matrix-Test (braucht min 1 pro Tabelle pro Owner). qa-admin als Beobachter mit admin-RLS-Sicht braucht nur 1 Aux-Fixture-Set (meetings/proposals/email_messages/calls). Keine Volumen-Aenderung.
+
+**Q3 — Internal-Test-Mode-Gate: ENV-Flag oder always-on?**
+→ **Entfaellt.** Da kein Bootstrap-Hook, gibt es kein Auto-Ausfuehrungs-Risiko. Manual-Apply ist immer bewusste Entscheidung. Kein ENV-Flag noetig.
+
+**Q4 — Idempotenz-Pattern: `ON CONFLICT DO NOTHING` vs. `WHERE NOT EXISTS`?**
+→ **Bestehendes DELETE-then-INSERT-Pattern (mit ON CONFLICT DO UPDATE fuer Team+Profiles) bleibt.** Aktuelle Implementation `reset() + INSERT` ist praktisch idempotent (zweiter Run liefert identischen Endzustand). Refactoring auf ON-CONFLICT-DO-NOTHING + deterministische UUIDs waere Pattern-Wechsel mit hohem Risiko gegenueber bestehenden Tests, die Random-UUID-Verhalten erwarten. Keine Aenderung.
+
+### V7.2 Technical Decisions
+
+3 neue DECs werden in `/docs/DECISIONS.md` ergaenzt:
+
+- **DEC-202** — V7.2 Container-Bootstrap-Pattern: Manual-Apply via docker exec, kein Dockerfile-Hook
+- **DEC-203** — V7.2 vitest.rls.config Path-Alias via `resolve.alias` (nicht vite-tsconfig-paths Plugin)
+- **DEC-204** — V7.2 qa-admin UUID 0...0ba001 + role='admin' + TEST_TEAM_ID-Zuordnung
+
+### V7.2 Slice-Plan-Skizze (für /slice-planning V7.2)
+
+**1 Slice, 3 MTs:**
+
+- **SLC-721 — Test-Infra-Cleanup (~3-4h)**
+  - **MT-1** (~30 Min) — `create-qa-test-users.mjs` + `seed-multi-user.ts` um qa-admin erweitern
+    - 1 neuer Eintrag in `TEST_USERS`-Array (create-qa-test-users.mjs)
+    - 1 neue Konstante `TEST_ADMIN_ID` (seed-multi-user.ts)
+    - `seedTeamAndProfiles` profile-INSERT fuer qa-admin
+    - `seedAuxiliaryFixtures` aux-records fuer qa-admin
+    - `reset()` owners-Array erweitern
+    - Verifikation: `npx tsx scripts/seed-multi-user.ts --reset` clean, dann `npx tsx scripts/seed-multi-user.ts` legt 7 Profile statt 6
+  - **MT-2** (~15 Min) — `vitest.rls.config.ts` Path-Alias-Resolver
+    - Import `path` aus `node:path`
+    - `resolve.alias` Block aus default-config kopieren
+    - Verifikation: `npm run test:rls -- bulk-reassign` laedt 7 Suites (statt 0)
+  - **MT-3** (~1-2h) — Coolify-DB Apply + Test-Suite-Verifikation + Records-Sync
+    - SSH zu 91.98.20.191
+    - `TEST_DATABASE_URL=postgresql://postgres:...@supabase-db:5432/postgres docker exec <app-container> npx tsx scripts/seed-multi-user.ts` (Apply)
+    - `docker exec <app-container> node /tmp/create-qa-test-users.mjs` (qa-admin auth.user anlegen)
+    - Lokal: `npm run test:all` gegen Coolify-DB → erwartet 897 PASS
+    - Falls Tests rote Stellen aufzeigen die durch Schema-Drift entstehen: ISSUE notieren, V7.2-Scope NICHT erweitern
+    - Records-Sync: ISSUE-073 + ISSUE-074 + BL-471 + BL-473 + BL-474 auf `resolved`, SLC-721 + FEAT-721 auf `done`
+
+### V7.2 Verifikations-Plan
+
+Per MT + Gesamt-V7.2:
+
+- **MT-1 PASS:** `psql -c "SELECT email, role FROM profiles WHERE id LIKE '0000%' ORDER BY id"` zeigt 7 Profile mit qa-admin als role=admin.
+- **MT-2 PASS:** `npm run test:rls -- bulk-reassign` laedt 7 Test-Suites + sie laufen (Pass/Fail egal — Hauptziel: nicht 0 Tests).
+- **MT-3 PASS:** `npm run test:all` 897 PASS (779 jsdom + 118 RLS), Idempotenz-Re-Run liefert identischen Output.
+- **Gesamt-V7.2 PASS:** alle 3 MTs done, 897 PASS, ISSUE-073+074 resolved, V7.5-Ramp ready.
+
+**V7.2 Architecture ready for `/slice-planning`.**

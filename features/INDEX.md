@@ -230,6 +230,12 @@
 | FEAT-712 | Drilldown-View Vollausbau (Pipeline + Aktivitaeten + Mein-Tag) | deployed | [SLC-712a](../slices/SLC-712a-pipeline-drilldown-reuse.md) + [SLC-712b](../slices/SLC-712b-aufgaben-meintag-drilldown.md) + [SLC-714](../slices/SLC-714-readonly-ki-workspace-hide.md) | 2026-05-15 |
 | FEAT-713 | V7-Defense-in-Depth Polish (4 Guards + Audit-Doc-Sync) | deployed | [SLC-713](../slices/SLC-713-defense-in-depth-polish.md) | 2026-05-15 |
 
+## V7.2 Features (Test-Infra-Cleanup-Sprint — planned)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-721 | Test-Infra-Cleanup (Seed-Script Multi-User + qa-admin + vitest-RLS Path-Alias) | planned | [Spec](FEAT-721-test-infra-cleanup.md) | 2026-05-16 |
+
 ## V6 Features (Zielsetzung + Performance-Tracking — released)
 
 | ID | Feature | Status | Spec | Created |
