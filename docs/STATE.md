@@ -9,16 +9,17 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: stable
-- Current Focus: **V7.2 RELEASED 2026-05-16 als REL-031** (data-only release). 1 Slice SLC-721 mit 3 MTs vollstaendig durch /backend → /qa → /final-check → /go-live → /deploy. Branch `slc-721-test-infra-cleanup` Fast-Forward-merged in main. Production-Image bleibt `770dd55` (V7.1), kein Coolify-Redeploy. Coolify-DB enthaelt 7 qa-* Profile (admin=1, teamlead=1, member=5) + 3 qa-* auth.users + 882 Seed-Rows. `npm run test:all` 917 PASS / 0 FAIL / 0 SKIP (779 jsdom + 138 RLS, davon 96 v7-rls-matrix vorher SKIP). ISSUE-073 + ISSUE-074 resolved. BL-471 + BL-473 + BL-474 done. RPT-433..437. Time-Box 3-4h: ~3.5h durchgekommen. Naechster Schritt: V7.5 Natural-Language-Automation Requirements (BL-435).
-- Current Phase: V7.2 **released, stable**. Naechste Version V7.5.
+- High-Level State: architecture
+- Current Focus: **V7.5 Architecture done 2026-05-16** (RPT-440). 7 DECs (DEC-205..211) zu Sculptor-Prompt-Architektur (Single-Shot mit Re-Prompt-Loop), NL-History-Storage (audit_log JSONB), Apply-Confirmation-UI (Confirm-Modal mit Pflicht-Checkbox), Sculptor-Cost-Display (Real-Cost nachher), File-Layout (6 Files unter cockpit/src/lib/automation/), Middleware-Pfad-Regex `/^\/team\/[^/]+\//`, Bedrock-Region-Pin eu-central-1 mit Startup-Assertion. Architecture V7.5-Section in docs/ARCHITECTURE.md (~280 Zeilen). Slice-Reihenfolge-Empfehlung Foundation-First (ISSUE-066-Middleware als SLC-751). Naechster Schritt: /slice-planning V7.5.
+- Current Phase: V7.5 Architecture done. Slice-Planning next.
 
 ## Immediate Next Steps
-1. **(Mainline)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern. Inkl. ISSUE-066-Mitigation als eigener kleiner Slice (Middleware-Pfad-Check setzt X-Read-Only-Mode-Header).
-2. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5.
-3. **(Parallel User-Action, nicht zeitkritisch)** ISSUE-071 weekly Cron einrichten — Docker-Prune kommt akkumulationsbedingt in 1-2 Wochen wieder.
-4. **(Skill-Improvement-Kandidat fuer Dev-System)** Mount-Pfad fuer campaigns-schema.test.ts in `coolify-test-setup.md` dokumentieren (Repo-Root-Mount statt cockpit-Mount).
-5. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
+1. **(Mainline)** /slice-planning V7.5 — konsolidiert 6 Slices SLC-751..756 mit konkreten Acceptance Criteria pro Slice. Foundation-First-Reihenfolge per /architecture Empfehlung (SLC-751=FEAT-752 ISSUE-066-Middleware, dann SLC-752..756=FEAT-751 Sculptor + Mein-Tag-Surface + Trockenlauf+Confirm + Voice + Inspection-Log).
+2. **(nach /slice-planning)** /backend SLC-751 starten (FEAT-752 Middleware-Mitigation, ~1-2h, kleinster Slice als Foundation-First-Vorlauf).
+3. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).
+4. **(Parallel User-Action, nicht zeitkritisch)** ISSUE-071 weekly Cron einrichten — Docker-Prune kommt akkumulationsbedingt in 1-2 Wochen wieder.
+5. **(Skill-Improvement-Kandidat fuer Dev-System)** Mount-Pfad fuer campaigns-schema.test.ts in `coolify-test-setup.md` dokumentieren (Repo-Root-Mount statt cockpit-Mount).
+6. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call.
 2. **(Parallel User-Action, nicht zeitkritisch jetzt)** ISSUE-071 weekly Cron einrichten — Docker-Prune kommt akkumulationsbedingt in 1-2 Wochen wieder. systemd-Timer auf Host (sauber) oder Coolify-Cron-Container (privilegiert mit Docker-Socket-Mount). Snippet siehe ISSUE-071-Next-Action.
 3. **(nach V7.2)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern. Inkl. ISSUE-066-Mitigation als eigener kleiner Slice (Middleware-Pfad-Check setzt X-Read-Only-Mode-Header, assertNotReadOnlyContext liest beides).
 4. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5.

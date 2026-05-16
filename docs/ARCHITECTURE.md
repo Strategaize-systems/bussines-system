@@ -9550,3 +9550,532 @@ Per MT + Gesamt-V7.2:
 - **Gesamt-V7.2 PASS:** alle 3 MTs done, 897 PASS, ISSUE-073+074 resolved, V7.5-Ramp ready.
 
 **V7.2 Architecture ready for `/slice-planning`.**
+
+## V7.5 — Natural-Language Workflow-Sculptor + ISSUE-066-Closure Architecture
+
+### V7.5 Strategy
+
+V7.5 ist ein **Reuse-Heavy-Feature-Sprint**. Zwei Bauteile:
+
+1. **FEAT-751 NL-Workflow-Sculptor** — neuer Bedrock-LLM-Layer-Adapter (`sculptor.ts`), der Klarsprache **strict 1:1** auf bestehende V6.2-`automation_rules`-Struktur mappt. Keine neue Schema-Tabelle, kein neuer Cron, kein neuer Provider, kein neuer Trigger-Typ. Aufgesetzt auf bestehende `bedrock-client.ts` (V3) + `whisper-adapter.ts` (V4.1) + `automation_rules`/`automation_runs` (V6.2) + Mein-Tag-KI-Workspace-Hybrid-Layout (V6.6).
+
+2. **FEAT-752 ISSUE-066-Closure** — Middleware-Pfad-Check setzt `X-Read-Only-Mode: 1`-Request-Header fuer `/team/[user_id]/*`-Routes. `assertNotReadOnlyContext()` erweitert um `next/headers`-Read. Defense-in-Depth-Symmetrie zu V7-AsyncLocalStorage-Layer.
+
+Keine neuen npm-Packages (`zod` existiert bereits in V5.7+, Whisper + Bedrock-Clients existieren). Keine neuen Container, kein neuer Cron, keine neuen Tabellen (nur additiv: `audit_log`-Action `automation_rule.sculpt_attempt`). Internal-Test-Mode bleibt aktiv.
+
+### V7.5 Strategy-Leitprinzipien
+
+- **Pattern-Reuse-First** (CLAUDE.md Core-Default #5, `feedback_cross_project_reference`): Bedrock-Client aus V3, Whisper-Adapter aus V4.1, healJsonEscapes aus IS-SLC-109, V6.2 `automation_rules`-Schema + DEC-132-Trockenlauf, V6.6 KI-Workspace-Hybrid-Layout.
+- **Strict-Schema-Mandate (DEC-205):** Sculptor mappt LLM-Output gegen zod-Schema, das die V6.2-Whitelists exakt spiegelt (3 Trigger + 4 Actions + Field-Whitelist aus `automation/field-whitelist.ts`). Bei Validation-Fail: 1x Re-Prompt mit Korrektur-Hint, sonst structured Reject.
+- **Trockenlauf-Pflicht (User-Direktive 2026-05-16):** UI-State erzwingt Sequenz `Sculpt → Trockenlauf → Confirm-Modal → Apply`. Kein Skip-Pfad, kein "Sofort-aktiv"-Toggle.
+- **Multi-User-Aware-from-Start:** Sculptor-Aufruf braucht `auth.uid()` → kein Anonymous-Pfad. Soft-Dedup (DEC-209c) verhindert Doubletten desselben Owners. Visibility folgt V7.1-Permission-Matrix (`assertRole(["admin","teamlead"])` auf Mein-Tag-NL-Surface).
+- **Data-Residency-Pin (DEC-211):** Bedrock-Region strikt `eu-central-1`. Startup-Assertion in `bedrock-client.ts`. Kein US-Endpoint-Drift in V7.5.
+
+### V7.5 Components Affected
+
+```
+Browser (HTTPS)
+  │
+Coolify / Caddy
+  │
+Next.js App (BD Cockpit)
+  │
+  ├── middleware.ts                                       ─── ERWEITERT (FEAT-752)
+  │   └── Pfad-Regex /^\/team\/[^/]+\// triggert
+  │       NextResponse.headers.set("X-Read-Only-Mode","1")
+  │       (alle anderen Pfade unbeeinflusst)
+  │
+  ├── /lib/auth/read-only-context.ts                      ─── ERWEITERT (FEAT-752)
+  │   └── assertNotReadOnlyContext() liest AsyncLocalStorage
+  │       UND headers().get("X-Read-Only-Mode") parallel.
+  │       Throw bei beiden. ISSUE-066-Comment angepasst.
+  │
+  ├── /lib/automation/                                    ─── NEU (FEAT-751)
+  │   ├── sculptor.ts            — sculptRule(nlInput, userId) → SculptResult
+  │   │                            Single-Shot Bedrock-Call + zod-Validate +
+  │   │                            healJsonEscapes-Reuse + max 2 Versuche +
+  │   │                            audit_log-Insert pro Versuch
+  │   ├── sculptor-prompts.ts    — System-Prompt + 8 Few-Shot-Examples
+  │   │                            (4 Erfolg + 2 Reject + 2 Edge)
+  │   ├── sculptor-schema.ts     — zod-Schema das V6.2-Trigger+Action-
+  │   │                            Whitelist exakt spiegelt (Single-Source-
+  │   │                            of-Truth gemeinsam mit
+  │   │                            automation/field-whitelist.ts)
+  │   ├── sculptor-cost.ts       — Bedrock-Pricing-Tabelle + Cost-Calc
+  │   │                            aus usage.input_tokens + output_tokens
+  │   ├── sculptor-dedup.ts      — assertNotDuplicateRule(...) Soft-Check
+  │   │                            via Name + Trigger + JSON.stringify
+  │   └── nl-history.ts          — listNlSculptHistory(limit, userId)
+  │                                Listing-Query aus audit_log
+  │
+  ├── /lib/speech/whisper-adapter.ts                      ─── REUSE (V4.1)
+  │   └── transcribe(audioBlob) → text — bereits in V4.1/V6.6 verwendet
+  │
+  ├── /lib/llm/bedrock-client.ts                          ─── REUSE + ERWEITERT
+  │   └── Bestehende invokeBedrock() + Region-Assertion (DEC-211)
+  │       wirft bei region !== "eu-central-1"
+  │
+  ├── (app)/mein-tag/                                     ─── ERWEITERT
+  │   ├── components/nl-rule-builder-card.tsx (NEU)
+  │   │   └── 4-Karten-Sequenz:
+  │   │       ├── 1. NL-Eingabe (Text + Mikro-Button + Sculpt-Button)
+  │   │       ├── 2. Klarsprache-Karte (Original + Intent-Echo)
+  │   │       ├── 3. Schema-Karte (editierbare Form-Felder)
+  │   │       ├── 4. Trockenlauf-Karte (V6.2-DEC-132-Reuse)
+  │   │       └── Confirm-Modal (DEC-207) vor Apply
+  │   └── mein-tag-client.tsx (PATCH)
+  │       └── Mounted <NLRuleBuilderCard /> im KI-Workspace-Bereich
+  │         (Visibility: assertRole(["admin","teamlead"]) Server-Side
+  │         + serverProps.canSculpt Boolean → Client hidet fuer Member)
+  │
+  ├── (app)/settings/workflow-automation/                 ─── ERWEITERT
+  │   └── nl-history/page.tsx (NEU)
+  │       └── assertRole(["admin"]) als first line.
+  │           Liste der letzten 50 Sculpt-Versuche aus audit_log.
+  │           Tabelle: Datum / User / NL-Input-Snippet / Status /
+  │           Cost-USD / Trigger-Event (bei Erfolg) / Reject-Reason.
+  │
+  └── (app)/mein-tag/actions/
+      ├── sculpt-nl-rule.ts (NEU)
+      │   └── Server Action: sculptNlRule(formData) → SculptResult
+      │       1. assertRole(["admin","teamlead"])
+      │       2. Optional: Whisper-Transkription wenn audio_blob
+      │       3. sculptRule() aus lib/automation/sculptor.ts
+      │       4. audit_log Insert (action="automation_rule.sculpt_attempt")
+      │
+      ├── preview-nl-rule.ts (NEU)
+      │   └── Server Action: previewNlRule(schemaJson) → PreviewResult
+      │       Reuse V6.2-DEC-132-Trockenlauf-Logik (read-only Query
+      │       letzte 7 Tage) — kein DB-Mutate, kein audit_log.
+      │
+      └── apply-nl-rule.ts (NEU)
+          └── Server Action: applyNlRule(schemaJson, sculpt_audit_id)
+              1. assertRole(["admin","teamlead"])
+              2. zod-Validate (Defense-in-Depth)
+              3. assertNotDuplicateRule()
+              4. INSERT automation_rules(status="active",
+                 created_by=auth.uid(), trigger_event/config/conditions/
+                 actions=<form-state>, created_via="nl_sculptor")
+              5. audit_log Insert (action="automation_rule.create_via_nl",
+                 metadata: {nl_input, sculpt_audit_id, sculptor_cost_usd})
+```
+
+### V7.5 Schema / Data Model
+
+**Keine neue Tabelle, keine zwingende ALTER TABLE.** Zwei optional additive Spalten:
+
+```sql
+-- OPTIONAL (additiv, kein UPDATE bestehender Rows):
+ALTER TABLE automation_rules ADD COLUMN created_via TEXT
+  CHECK (created_via IN ('click_wizard','nl_sculptor'))
+  DEFAULT 'click_wizard';
+-- bestehende Rows bleiben 'click_wizard' (Default). Inspection-Log-Filter
+-- "Nur NL-erzeugte Regeln" funktioniert sofort. NICHT zwingend fuer V7.5,
+-- aber bei Inspection-Filter sinnvoll. /slice-planning entscheidet ob
+-- in V7.5 oder als V7.6-Polish.
+```
+
+Wenn `created_via` nicht in V7.5 angelegt wird, leistet das Inspection-Log seine Funktion auch via `audit_log.action='automation_rule.create_via_nl'`-Pfad (Sub-Query-Join). Default-Hypothese: in V7.5 mit-eintragen, kostet 1 MIG.
+
+**Audit-Log-Schema (bestehend, additiv genutzt):**
+
+```
+audit_log:
+  action: 'automation_rule.sculpt_attempt'   -- NEU (V7.5)
+  metadata JSONB:
+    {
+      "nl_input": "Wenn ein Deal in Phase Angebot bewegt wird...",
+      "transcript_source": "text" | "voice",
+      "sculptor_model_id": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+      "sculptor_cost_usd": 0.003,
+      "attempt_count": 1,
+      "result_status": "success" | "reject" | "validation_fail",
+      "result_payload": { /* SculptResult oder Reject-Reason */ }
+    }
+
+  action: 'automation_rule.create_via_nl'    -- NEU (V7.5)
+  entity_type: 'automation_rule'
+  entity_id: <new rule id>
+  metadata JSONB:
+    {
+      "nl_input": "...",
+      "sculpt_audit_id": "<audit_log.id of sculpt_attempt>",
+      "sculptor_cost_usd": 0.003,
+      "edited_in_form": true | false
+    }
+
+  action: 'read_only_context_blocked'        -- NEU (V7.5 FEAT-752)
+  metadata JSONB:
+    {
+      "path": "/team/<uuid>/pipeline",
+      "attempted_action": "updateDeal",
+      "blocked_via": "header" | "async_local_storage" | "both"
+    }
+```
+
+Listing-Query `nl-history.ts`:
+```sql
+SELECT id, actor_id, created_at, metadata
+FROM audit_log
+WHERE action = 'automation_rule.sculpt_attempt'
+  AND ($1::uuid IS NULL OR actor_id = $1)  -- Optional Owner-Scope
+ORDER BY created_at DESC
+LIMIT 50;
+```
+
+### V7.5 Sculptor-Prompt-Architektur (DEC-205)
+
+**Entscheidung: Single-Shot mit zod-Validate + 1x Re-Prompt-Loop (max 2 Bedrock-Calls).**
+
+Alternativen geprueft:
+
+| Pattern | Pro | Contra | Entscheidung |
+|---|---|---|---|
+| **A** Single-Shot ohne Loop | billigste Cost (~$0.003) | LLM-JSON-Drift bricht alles | verworfen |
+| **B** Single-Shot mit zod-Validate + 1x Re-Prompt (max 2) | robust gegen JSON-Drift, Total-Cost <$0.006 | minimal komplexer Code-Pfad | **gewaehlt** |
+| **C** Multi-Turn (Trigger → Conditions → Actions separat) | strukturierte Aufloesung | 3x Cost + 3x Latenz, kein Mehrwert bei Strict-Schema | verworfen |
+| **D** Tool-Use / Function-Calling-API von Bedrock | strukturiertes Output, vom Provider erzwungen | Lock-in Tool-Calling-Spec, weniger portierbar bei Provider-Wechsel | verworfen fuer V7.5 (Backlog: BL-spaeter) |
+
+**System-Prompt-Skizze (DEC-205b):**
+
+```
+Du bist ein Workflow-Sculptor fuer ein deutsches B2B-CRM. Aufgabe:
+nimm eine NL-Eingabe (Deutsch oder Englisch), die eine Automatisierungs-
+Regel beschreibt, und antworte mit GENAU einem JSON-Objekt, das die
+folgende strikte Schema-Form hat:
+
+{
+  "trigger_event": "deal.stage_changed" | "deal.created" | "activity.created",
+  "trigger_config": { /* event-spezifische Keys, siehe Few-Shots */ },
+  "conditions": [ { "field": ..., "op": "eq"|"neq"|"gt"|"lt"|..., "value": ... } ],
+  "actions": [ { "type": "create_task"|"send_email_template"|
+                          "create_activity"|"update_field",
+                  "params": { /* type-spezifische Keys */ } } ]
+}
+
+Wenn die Eingabe einen Trigger oder eine Action ausdrueckt, der/die
+NICHT in der Whitelist ist, antworte stattdessen mit:
+
+{ "reject_reason": "out_of_domain",
+  "explanation": "<2 saetze: was geht nicht + Vorschlag fuer V6.2-konformen Ersatz>" }
+
+NIEMALS andere Trigger-Events, NIEMALS andere Action-Types,
+NIEMALS Free-Form Property-Keys. Bei Unsicherheit: reject.
+
+Hier sind 8 Beispiele:
+[Few-Shots: 4x success / 2x reject / 2x edge]
+```
+
+**Re-Prompt-Loop-Pattern:**
+
+```typescript
+async function sculptRule(nlInput: string): Promise<SculptResult> {
+  let lastError: string | null = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const prompt = lastError
+      ? `${SYSTEM_PROMPT}\n\nDein letzter Versuch hatte folgenden Fehler: ${lastError}\nKorrigiere das Format und antworte erneut.`
+      : SYSTEM_PROMPT;
+    const response = await invokeBedrock(prompt, nlInput);
+    const healed = healJsonEscapes(response.text);  // IS-SLC-109-Pattern
+    const parsed = sculptSchema.safeParse(JSON.parse(healed));
+    await insertAuditLog({
+      action: "automation_rule.sculpt_attempt",
+      actor_id: userId,
+      metadata: { nl_input: nlInput, attempt_count: attempt, ... }
+    });
+    if (parsed.success) return { status: "success", payload: parsed.data, attemptCount: attempt };
+    lastError = parsed.error.message;
+  }
+  return { status: "validation_fail", reason: lastError, attemptCount: 2 };
+}
+```
+
+Total-Cost-Erwartung: ~$0.003 fuer Erfolg-1st-Try, ~$0.006 fuer 2nd-Try-Recovery, ~$0.006 fuer Reject. **Median: <$0.005.**
+
+### V7.5 NL-History-Storage (DEC-206)
+
+**Entscheidung: `audit_log`-Reuse mit JSONB-`metadata`. KEIN neues Schema.**
+
+Alternativen geprueft:
+
+| Pattern | Pro | Contra | Entscheidung |
+|---|---|---|---|
+| **A** Neue Tabelle `nl_sculpt_history` | starker Index auf nl_input, schnelle Query | neues Schema, neue Migration, neue RLS-Policy, neue Backup-Sektion | verworfen |
+| **B** audit_log mit JSONB metadata | kein neues Schema, RLS bereits aktiv, konsistent mit V6.2-Audit | weniger schnelle Query bei sehr grossem audit_log | **gewaehlt** |
+| **C** Bedrock-Cost in Cloudwatch separat tracken | Provider-side Cost-View | App-spezifische Logik fehlt im Cloudwatch (z.B. Edit-Status), 2 Quellen | verworfen |
+
+Inspection-Log-UI auf `/settings/workflow-automation/nl-history` ist Admin-only (V7.1-Permission-Matrix). Listing-Query LIMIT 50. Bei Bedarf spaeter Pagination, V7.5 nimmt Latest-50.
+
+### V7.5 Apply-Confirmation-UI (DEC-207)
+
+**Entscheidung: Confirm-Modal nach Trockenlauf, vor `automation_rules`-INSERT.**
+
+Sequenz:
+1. User klickt "Trockenlauf anzeigen" → `previewNlRule()` → Trockenlauf-Karte erscheint mit "Diese Regel haette folgendes erzeugt: ..."
+2. User klickt "Regel aktivieren" → **Confirm-Modal** oeffnet sich mit:
+   - Klarsprache-Echo
+   - Trigger-Event-Label ("Bei Stage-Wechsel auf 'Angebot'")
+   - Action-Liste-Label ("erzeuge Task 'Follow-up zu {{deal.name}}' in 2 Tagen")
+   - Pflicht-Checkbox: "Ich bestaetige: Diese Regel wird ab jetzt auf alle neuen Stage-Wechsel angewandt."
+   - Apply-Button (disabled bis Checkbox aktiv)
+3. Apply-Klick → `applyNlRule()` → INSERT mit `status='active'` + Audit-Log + Toast "Regel aktiviert"
+
+Modal verhindert Klick-Drift (Trockenlauf-Karte-Knopf neben anderen Buttons). Konsistent mit `feedback_qa_mandatory`-Pattern (User mag Guardrails).
+
+### V7.5 Sculptor-Cost-Display (DEC-208)
+
+**Entscheidung: Real-Cost nach Bedrock-Call, additiv bei Reject-Loop.**
+
+`sculptor-cost.ts`:
+
+```typescript
+const PRICING = {
+  "anthropic.claude-3-5-sonnet-20241022-v2:0": {
+    input_per_1k:  0.003,
+    output_per_1k: 0.015,
+  }
+};
+
+export function calculateSculptCost(usage: BedrockUsage, modelId: string): number {
+  const pricing = PRICING[modelId];
+  return (usage.input_tokens / 1000) * pricing.input_per_1k
+       + (usage.output_tokens / 1000) * pricing.output_per_1k;
+}
+```
+
+UI zeigt nach Sculpt-Klick: `"~$0.003 fuer 1 Versuch"` oder `"~$0.006 fuer 2 Versuche"` (kumulativ bei Re-Prompt-Loop). **Vorab-Estimate (Tokenizer-Client-side) ist out-of-scope** — Tokenizer-Lib-Bundle waere ein Extra-Bundle-Size, kein User-Mehrwert (~$0.003 ist niedrig genug, keine Pre-Approval-Friction noetig).
+
+### V7.5 ISSUE-066 Middleware-Mitigation (DEC-210)
+
+**Pfad-Regex:** `/^\/team\/[^/]+\//`
+
+Match-Tabelle:
+
+| Request-Pfad | Match | Header-Set |
+|---|---|---|
+| `/team/abc-123/pipeline` | ✓ | `X-Read-Only-Mode: 1` |
+| `/team/abc-123/aufgaben/new` | ✓ | `X-Read-Only-Mode: 1` |
+| `/team/abc-123/mein-tag` | ✓ | `X-Read-Only-Mode: 1` |
+| `/team/` (Liste, ohne Sub-Pfad) | ✗ | kein Header |
+| `/team` (Top-Level) | ✗ | kein Header |
+| `/api/cron/automation-runner` | ✗ | kein Header |
+| `/api/health` | ✗ | kein Header |
+| `/settings/team` | ✗ | kein Header |
+| `/login` | ✗ | kein Header |
+
+`assertNotReadOnlyContext()` post-V7.5:
+
+```typescript
+import { headers } from "next/headers";
+
+export async function assertNotReadOnlyContext(): Promise<void> {
+  // Layer 1: AsyncLocalStorage (SLC-706, Server-Component-Render-Chain)
+  const ctx = readOnlyContextStore.getStore();
+  if (ctx) throw new ReadOnlyContextError("AsyncLocalStorage", ctx);
+
+  // Layer 2: HTTP-Header (V7.5 FEAT-752, Server-Action-Request)
+  const hdr = headers().get("X-Read-Only-Mode");
+  if (hdr === "1") {
+    throw new ReadOnlyContextError("X-Read-Only-Mode header", { source: "middleware" });
+  }
+  // Beide Layer aktiv: throw ist bereits passiert, kein parallel-bedingter Pfad
+}
+```
+
+Vitest-Mock-Pattern (DEC-201-konform):
+```typescript
+import { headers } from "next/headers";
+vi.mock("next/headers");
+
+test("blocks via X-Read-Only-Mode header", async () => {
+  vi.mocked(headers).mockReturnValue({
+    get: vi.fn().mockReturnValue("1")
+  } as any);
+  await expect(assertNotReadOnlyContext()).rejects.toThrow(ReadOnlyContextError);
+});
+```
+
+### V7.5 Bedrock-Region-Pin (DEC-211)
+
+**Entscheidung: Startup-Assertion in `bedrock-client.ts` + ENV-Variable `BEDROCK_REGION=eu-central-1` (existiert bereits).**
+
+```typescript
+// bedrock-client.ts (Erweiterung)
+const ALLOWED_REGION = "eu-central-1";
+
+export function createBedrockClient(): BedrockRuntimeClient {
+  const region = process.env.BEDROCK_REGION ?? process.env.AWS_REGION ?? "";
+  if (region !== ALLOWED_REGION) {
+    throw new Error(
+      `Bedrock-Region-Drift: BEDROCK_REGION=${region}, erwartet ${ALLOWED_REGION}. ` +
+      `Data-Residency-Pflicht laut data-residency.md.`
+    );
+  }
+  return new BedrockRuntimeClient({ region });
+}
+```
+
+Vitest-Test: Mock `process.env.BEDROCK_REGION = "us-east-1"` → `createBedrockClient()` wirft. Region-Pin gilt fuer **alle** Bedrock-Aufrufer im Repo (V3 LLM-Layer, V4.2 RAG-Embeddings, V6.2 Workflow-LLM-falls-vorhanden, V7.5 Sculptor) — Single Choke-Point.
+
+### V7.5 Sculptor-File-Layout (DEC-209)
+
+`cockpit/src/lib/automation/`:
+- `sculptor.ts` — Core: `sculptRule(nlInput, userId)`, `re-prompt-loop`, audit-log-insert
+- `sculptor-prompts.ts` — System-Prompt-String + Few-Shot-Examples-Array (8 Cases)
+- `sculptor-schema.ts` — zod-Schemas: SculptSuccessSchema, SculptRejectSchema, ConditionFieldSchema, ActionTypeSchema. Importiert `FIELD_WHITELIST` aus bestehender `field-whitelist.ts` als Single-Source-of-Truth.
+- `sculptor-cost.ts` — PRICING-Table + `calculateSculptCost(usage, modelId)`
+- `sculptor-dedup.ts` — `assertNotDuplicateRule(rule, userId)` → throws 409 bei Match
+- `nl-history.ts` — `listNlSculptHistory(limit, ownerScope?)` — Listing-Query
+
+Test-Files unter `cockpit/__tests__/automation/` (Live-DB-Tests gegen Coolify-DB) + `cockpit/src/lib/automation/__tests__/` (Unit-Tests mit vi.mock).
+
+### V7.5 Data Flow — Sculpt-Pfad
+
+```
+1. User auf /mein-tag, Admin oder Teamlead. NLRuleBuilderCard sichtbar.
+2. User tippt oder spricht Klarsprache. Voice-Path:
+   - Mikro-Klick → MediaRecorder → POST /api/whisper-transcribe
+   - whisper-adapter.ts → openai-Default oder Azure-EU
+   - Transkript zurueck in Text-Feld, editierbar.
+3. User klickt "Regel bauen" → Server Action sculptNlRule(nlInput, transcriptSource)
+4. Server Action:
+   4a. assertRole(["admin","teamlead"]) (Member-Bypass-Schutz)
+   4b. sculptor.sculptRule(nlInput, userId)
+       - invokeBedrock() mit System-Prompt + nlInput (1st Try)
+       - healJsonEscapes(response.text)
+       - sculptSchema.safeParse(JSON.parse(...))
+       - bei success: audit_log INSERT success-Eintrag, return Payload
+       - bei fail: 1x Re-Prompt mit Korrektur-Hint, sonst Reject
+   4c. Return SculptResult an Client.
+5. Client UI:
+   - bei success: Klarsprache-Karte + Schema-Karte (editierbar) rendern
+   - bei reject (out_of_domain): Reject-Karte mit Erklaerung + Vorschlag
+   - bei validation_fail: Generic-Fail-Karte mit "Bitte praeziser formulieren"
+6. User klickt "Trockenlauf anzeigen" → Server Action previewNlRule(currentSchema)
+7. Server Action: V6.2-DEC-132-Reuse, read-only SELECT-Query letzte 7 Tage,
+   Mock-Apply der Rule-Logik (kein DB-Mutate, kein audit_log).
+8. Client: Trockenlauf-Karte mit Trefferliste.
+9. User klickt "Regel aktivieren" → Confirm-Modal mit Pflicht-Checkbox.
+10. Apply-Klick → Server Action applyNlRule(currentSchema, sculpt_audit_id)
+    10a. assertRole + zod-Validate (Defense-in-Depth)
+    10b. assertNotDuplicateRule() — Soft-Dedup, 409 bei Match
+    10c. INSERT automation_rules(status="active", created_by=auth.uid(),
+         trigger_event/config/conditions/actions=<form>, created_via="nl_sculptor")
+    10d. INSERT audit_log(action="automation_rule.create_via_nl", entity=<rule>,
+         metadata={nl_input, sculpt_audit_id, edited_in_form})
+11. Client: Toast "Regel aktiviert". Karten-State resettet.
+12. V6.2-Engine: ab naechstem Stage-Wechsel auf <stage> wird die neue
+    Regel via Dispatcher executiert (kein Code-Change in V6.2-Pfad).
+```
+
+### V7.5 Data Flow — Drilldown-Mutate-Block (FEAT-752)
+
+```
+1. Teamlead navigiert /team/<member-uuid>/pipeline.
+2. middleware.ts: Pfad matched /^\/team\/[^/]+\// → NextResponse.headers
+   .set("X-Read-Only-Mode", "1"). Request laeuft weiter.
+3. layout.tsx (V7-SLC-706, unveraendert): runWithReadOnlyContext({...}, render).
+4. Page rendert. PipelineView readOnly. Keine Mutate-Buttons sichtbar (V7.1-FEAT-712).
+5. Angreifer (Teamlead in DevTools) macht Direct-Server-Action-Call:
+   fetch("/team/<member-uuid>/pipeline", {
+     method: "POST",
+     headers: { "Next-Action": "<server-action-id>", ... },
+     body: <updateDeal-payload>
+   })
+6. Next.js routet zur Server-Action.
+7. Server-Action ruft assertNotReadOnlyContext() als first line (Pattern aus
+   SLC-704, FEAT-713).
+8. assertNotReadOnlyContext():
+   - AsyncLocalStorage: nicht aktiv im Server-Action-Pfad (ISSUE-066-Gap).
+   - headers().get("X-Read-Only-Mode"): "1" (von Middleware gesetzt).
+   - throw ReadOnlyContextError("X-Read-Only-Mode header", ...).
+9. audit_log INSERT(action="read_only_context_blocked", metadata={path,
+   attempted_action, blocked_via}).
+10. Client erhaelt 500/Error-Response. UI keine Mutation.
+```
+
+### V7.5 External Dependencies / Integrations
+
+**KEIN Delta.** Alle V7.5-Funktionalitaet nutzt bestehende Provider:
+
+- Bedrock Claude Sonnet 3.5 — `eu-central-1` (V3+, Region-Pin DEC-211)
+- Whisper Speech-to-Text — openai-Default (V4.1), Azure-EU Code-Ready (V5.2)
+- Supabase Postgres + GoTrue — V2 (audit_log, automation_rules)
+
+Keine neue npm-Package-Dependency (`zod` existiert seit V5.7, healJsonEscapes ist Code-Reuse aus IS-SLC-109-Pattern).
+
+### V7.5 Security / Privacy Considerations
+
+- **Bedrock-Region-Pin** (DEC-211) verhindert US-Endpoint-Drift bei Provider-Wechsel oder Mis-Config.
+- **NL-Input enthaelt potenziell PII** (Deal-Namen, Kontakt-Hinweise). Bedrock-EU-Frankfurt hat DSGVO-konformes DPA (data-residency.md). Audit-Log speichert `nl_input` voll → Loesch-/Retention-Policy folgt bestehender `audit_log`-Retention (heute: 365 Tage). Falls Retention strenger gewuenscht: V8+-Item.
+- **Voice-Input via Whisper-openai-Default** (V4.1) hat dokumentiertes Compliance-Gate (ISSUE-042 + Azure-EU-Switch). V7.5 erbt diesen Stand — kein neues Risiko, aber **vor Drittnutzer-Customer-Ship** zwingend Azure-EU-Switch.
+- **Permission-Gate** verhindert Member-Sculpting (V7.1-Matrix). `assertRole(["admin","teamlead"])` server-side. Client-side `canSculpt`-Boolean nur UX-Layer.
+- **Soft-Dedup** verhindert Doubletten desselben Owners (kein Trust-Layer, sondern UX-Layer — DB-RLS bleibt erste Verteidigungslinie).
+- **FEAT-752 schliesst ISSUE-066** — Same-Team-Bypass-Risiko des Read-Only-UX-Versprechens entfaellt. Cross-Team-RLS-Schutz unveraendert aktiv.
+- **Audit-Trail-Erweiterung**: 3 neue `audit_log`-Action-Strings (`automation_rule.sculpt_attempt`, `automation_rule.create_via_nl`, `read_only_context_blocked`). Listing-Recipes existieren (V6.2-Pattern), keine neue audit-Doc-Spalte noetig.
+
+### V7.5 Constraints & Tradeoffs
+
+- **Strict-Schema-Mandate (DEC-205)** = bewusster Tradeoff gegen User-Komfort. NL-Sculptor wird Regeln ablehnen, die ein freier Builder erfinden koennte. Begruendung: V6.2-Engine ist Single-Source-of-Truth, neue Trigger/Actions sind eigene V8+-Releases mit eigenen Migrations.
+- **Trockenlauf-Pflicht (DEC-132-Reuse)** = bewusster Tradeoff gegen Schnellsetup. Ein "Soforktiv"-Skip-Modus wurde diskutiert und verworfen (User-Direktive: Guardrails-strong).
+- **Single-Shot-Prompt (DEC-205)** = bewusster Tradeoff gegen Multi-Turn-Robustheit. Bei Schema-Drift wuerde Multi-Turn graceful-er degraden, kostet aber ~3x. /qa-Slice misst Sculpt-Accuracy auf 10 Real-World-Prompts; falls <70% PASS, Multi-Turn als V7.6-Polish.
+- **audit_log-Reuse (DEC-206)** = bewusster Tradeoff gegen Query-Speed. Bei >100k audit_log-Rows Filter-Performance pruefen. V7.5 nimmt das Risiko (Tabelle heute <10k Rows).
+- **Voice-Input openai-Default-Erbe** = ISSUE-042-Pre-Production-Gate bleibt aktiv. V7.5 macht keine Customer-Releases — Internal-Test-Mode-Pattern.
+- **Inspection-Log Admin-only** = Teamlead sieht eigene NL-Versuche NICHT in einer Listing-View. Begruendung: Teamlead-Inspection-Bedarf ist gering, Admin macht Audit-Sweep. Wenn Bedarf real auftritt: V7.6-Erweiterung Inspection-Log `assertRole(["admin","teamlead"])`.
+
+### V7.5 Open Technical Questions
+
+Alle 6 PRD-Open-Questions in V7.5-DECs entschieden (DEC-205..211). **Keine offenen technischen Open-Questions** mehr. Folgendes wird in /slice-planning konkretisiert (nicht-architektonisch):
+
+1. ~~Sculptor-Prompt-Architektur~~ → DEC-205 Single-Shot mit 1x Re-Prompt
+2. ~~NL-History-Storage~~ → DEC-206 audit_log JSONB
+3. ~~Apply-Confirmation-UI~~ → DEC-207 Confirm-Modal mit Pflicht-Checkbox
+4. ~~Sculptor-Cost-Display~~ → DEC-208 Real-Cost nach Bedrock-Call
+5. ~~ISSUE-066-Middleware-Pfad-Regex~~ → DEC-210 `/^\/team\/[^/]+\//`
+6. ~~Bedrock-Region-Drift~~ → DEC-211 Startup-Assertion `eu-central-1`
+
+**Offene /slice-planning-Fragen:**
+- Slice-Reihenfolge: ISSUE-066-Middleware (SLC-751) als foundation-first? oder als letzter Slice (post-Feature-Smoke)? **Empfehlung Architecture:** foundation-first.
+- `automation_rules.created_via`-Column in V7.5 anlegen (additive Migration) oder als V7.6-Polish defer? **Empfehlung Architecture:** in V7.5 mit anlegen (1 MIG-Eintrag, kein User-facing Code-Touch noetig).
+- Few-Shot-Pool-Groesse: 8 (Default) oder 12? **Empfehlung Architecture:** 8 reicht fuer V7.5-Sculpt-Accuracy-Ziel (>70% PASS).
+
+### V7.5 Empfohlene Slice-Reihenfolge (Vorschlag fuer /slice-planning)
+
+**Foundation-First-Pattern:**
+
+| Slice | Feature | Inhalt | Schaetzung | Acceptance |
+|---|---|---|---|---|
+| SLC-751 | FEAT-752 | ISSUE-066-Middleware-Mitigation (Pfad-Regex + Header + assertNotReadOnlyContext-Erweiterung + Vitest-Mock + Playwright-Live-Smoke) | 1-2h | Defense-in-Depth-Foundation steht |
+| SLC-752 | FEAT-751 | Sculptor-Adapter Core (sculptor.ts + sculptor-prompts.ts + sculptor-schema.ts + sculptor-cost.ts + Vitest mit 8 Real-World-Prompts + Bedrock-Region-Assertion) | 3-5h | Sculpt-Accuracy >70% in Vitest |
+| SLC-753 | FEAT-751 | Mein-Tag-NL-Surface (NLRuleBuilderCard.tsx + Sculpt-Server-Action + assertRole + Klarsprache+Schema-Karten + Bedrock-Cost-Display) | 3-5h | Live-Smoke: NL→Schema-Karte sichtbar |
+| SLC-754 | FEAT-751 | Trockenlauf-Karte + Apply-Confirmation-Modal (previewNlRule + applyNlRule + assertNotDuplicateRule + audit_log-create_via_nl + Confirm-Modal mit Pflicht-Checkbox) | 2-3h | Live-Smoke: Regel aktiv, V6.2-Engine triggert sie |
+| SLC-755 | FEAT-751 | Voice-Input-Integration (Whisper-Adapter-Reuse + Mikro-Button + Transkript-Edit + Audio-Upload-API-Route) | 1-2h | Live-Smoke: Voice→Transkript→Schema |
+| SLC-756 | FEAT-751 | Inspection-Log auf /settings/workflow-automation/nl-history (Admin-only assertRole + Listing-Query + Tabelle + audit_log-Filter) | 2-3h | Live-Smoke: Admin sieht eigene + andere Sculpts |
+
+Total: ~12-20h. /slice-planning kann Slices weiter splitten oder zusammenziehen, aber **Reihenfolge SLC-751 als Foundation-First** ist Architecture-Empfehlung.
+
+### V7.5 Verifikations-Plan
+
+**Vitest (Unit + Live-DB):**
+- Sculptor-Vitest: 8 Real-World-Prompts (4 success, 2 reject, 2 edge). Mindest-PASS-Rate ≥70%.
+- zod-Schema-Vitest: Schema-Validate gegen 20 generierte LLM-Output-Variations (good/drifted/malformed). Reject-Loop greift.
+- Sculptor-Cost-Vitest: Mock Bedrock-Usage → Cost-Berechnung exakt.
+- assertNotDuplicateRule-Vitest: identical-Rule-Insert wirft 409, distinct-Rule passes.
+- assertNotReadOnlyContext-Vitest: 4 Cases (header=1+no-ALS, no-header+ALS, both, neither).
+- Middleware-Pfad-Regex-Vitest: 9 Pfad-Variationen (siehe Match-Tabelle).
+- Bedrock-Region-Assertion-Vitest: us-east-1 throws, eu-central-1 passes.
+
+**Playwright-MCP Live-Smoke (post-Deploy):**
+- NL-Sculpt-Smoke (DE): "Wenn ein Deal in Phase Angebot bewegt wird, leg mir eine Follow-up-Task in 2 Tagen an." → 4-Karten-Sequenz → Apply → V6.2-Engine triggert nach Test-Stage-Wechsel.
+- Voice-Smoke: Audio-Blob hochladen → Whisper-Transkript erscheint → Sculpt → Schema-Karte.
+- Reject-Smoke: "Wenn der Kunde mir eine Sprachnachricht schickt..." → structured Reject mit Vorschlag.
+- ISSUE-066-DevTools-Smoke (Pattern aus `reference_playwright_live_smoke_pattern`): Teamlead-Login → /team/<member>/pipeline → DevTools-fetch → ReadOnlyContextError → audit_log-Eintrag verifiziert.
+- Inspection-Log-Smoke (Admin): /settings/workflow-automation/nl-history zeigt 50-Eintrag-Tabelle mit Filterable Trigger-Event-Column.
+
+**Gesamt-V7.5 PASS-Kriterium:**
+- Vitest npm run test:all ≥917+10 PASS (V7.2-Baseline + V7.5-Erweiterungen)
+- 5 Playwright-Live-Smokes PASS
+- audit_log enthaelt `automation_rule.sculpt_attempt` + `create_via_nl` + `read_only_context_blocked`-Eintraege
+- ISSUE-066 Status `resolved` in KNOWN_ISSUES.md mit Resolution-Notes verlinkend auf SLC-751 Live-Smoke
+
+**V7.5 Architecture ready for `/slice-planning`.**
