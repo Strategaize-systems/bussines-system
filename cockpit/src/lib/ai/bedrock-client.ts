@@ -10,17 +10,48 @@ import type { LLMOptions, LLMResponse } from "./types";
 
 // Default configuration
 const DEFAULT_MODEL_ID = process.env.LLM_MODEL || "eu.anthropic.claude-sonnet-4-6-20250514-v1:0";
-const DEFAULT_REGION = "eu-central-1";
+const REQUIRED_REGION = "eu-central-1";
 const DEFAULT_TEMPERATURE = 0.3;
 const DEFAULT_MAX_TOKENS = 2048;
 const DEFAULT_TIMEOUT_MS = 60_000;
 
 /**
+ * V7.5 SLC-752 MT-1 — Bedrock-Region-Pin (Data-Residency-Choke-Point).
+ *
+ * Wirft, wenn die effektive Region nicht `eu-central-1` ist oder weder
+ * BEDROCK_REGION noch AWS_REGION gesetzt ist. Single Choke-Point fuer alle
+ * Bedrock-Aufrufer (queryLLM, signals/extractor, winloss/runWinLossExtract,
+ * ai/classifiers/*, knowledge/search, ki-workspace/reports, sculptor.ts).
+ *
+ * BEDROCK_REGION ist der kanonische Region-Pin laut data-residency.md.
+ * AWS_REGION ist Backwards-Compat-Fallback fuer Coolify-ENV vor V7.5 — gilt
+ * nach SLC-752 als Legacy. Beide auf eu-central-1 setzen ist zulaessig.
+ */
+export function assertBedrockRegion(): string {
+  const fromBedrock = process.env.BEDROCK_REGION;
+  const fromAws = process.env.AWS_REGION;
+  const resolved = fromBedrock || fromAws;
+  if (!resolved) {
+    throw new Error(
+      "Bedrock-Region-Drift: weder BEDROCK_REGION noch AWS_REGION gesetzt, erwartet eu-central-1. Data-Residency-Pflicht laut data-residency.md."
+    );
+  }
+  if (resolved !== REQUIRED_REGION) {
+    const source = fromBedrock ? "BEDROCK_REGION" : "AWS_REGION";
+    throw new Error(
+      `Bedrock-Region-Drift: ${source}=${resolved}, erwartet ${REQUIRED_REGION}. Data-Residency-Pflicht laut data-residency.md.`
+    );
+  }
+  return resolved;
+}
+
+/**
  * Creates a Bedrock Runtime client configured from environment variables.
- * Region defaults to eu-central-1 (Frankfurt) for GDPR compliance.
+ * Region is pinned to eu-central-1 (Frankfurt) for GDPR compliance — siehe
+ * `assertBedrockRegion()` Single-Choke-Point.
  */
 function getClient(): BedrockRuntimeClient {
-  const region = process.env.AWS_REGION || DEFAULT_REGION;
+  const region = assertBedrockRegion();
 
   return new BedrockRuntimeClient({
     region,
