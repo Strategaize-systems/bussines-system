@@ -197,25 +197,32 @@
       "order": 28
     },
     {
+      "id": "v7-2",
+      "name": "V7.2",
+      "status": "planned",
+      "summary": "Test-Infra-Cleanup-Sprint vor V7.5 (Accepted Risks aus V7.1-Release REL-030 abarbeiten). 3 Items: (1) ISSUE-073 Coolify-DB `npm run seed:multi-user` applicieren + idempotent halten + in Container-Bootstrap einbauen, damit Multi-User-RLS-Matrix-Tests (96 Cases) auf der Live-DB laufen statt SKIPPED zu bleiben — direkt V7.5-relevant da NL-Automation im Multi-User-Kontext lebt. (2) ISSUE-074 `cockpit/vitest.rls.config.ts` Path-Alias-Resolver via `vite-tsconfig-paths` ergaenzen, sonst 7 Bulk-Reassign-Test-Suites nicht lauffaehig. (3) BL-471 `scripts/create-qa-test-users.mjs` um `qa-admin@strategaize.test` (UUID-Range 0...ba001) als 3. Rolle erweitern, damit Multi-User-Live-Smoke alle 3 Rollen (Admin/Teamlead/Member) deterministisch hat. ~3-4h, 1 Slice. Nicht in V7.5 mitgenommen weil V7.5 sonst Test-Infra + Feature-Code mischt; sauberer Cut.",
+      "order": 29
+    },
+    {
       "id": "v7-5",
       "name": "V7.5",
       "status": "planned",
       "summary": "NL-Automation (BL-435 hochgesetzt von medium auf high, V6.6-Discovery 2026-05-09). Natural-Language-Regel-Builder analog Clay 'Sculptor': User formuliert Automation-Regeln in Klarsprache (Voice/Text), Bedrock extrahiert in trigger+condition+action-Schema, persistiert in automation_rules-Tabelle. Read-Only-Migration des V6.2-Click-Builders. Phase 1 = 1 Trigger-Klasse (deal_stage_idle) + 3-5 Aktionen + Editor-UI, Phase 2 = mehr Trigger, Phase 3 = Inspektions-Log + Trockenlauf. ~6 Slices. Differenzierungs-Hebel gegenueber Microsoft-Copilot: gemeinsames Programmieren von Regeln zwischen Berater und Klient, nicht autonomes Handeln. Inkl. ISSUE-066-Mitigation (Middleware-Pfad-Check setzt X-Read-Only-Mode-Header).",
-      "order": 29
+      "order": 30
     },
     {
       "id": "v7-6",
       "name": "V7.6",
       "status": "planned",
       "summary": "Custom-Reports (V6.6-Discovery 2026-05-09). User kann KI-Antworten als wiederverwendbare Berichts-Vorlagen speichern und im KI-Workspace abrufen. Nutzt V7.5-Architektur (NL-Schema-Extraktion). KEINE Button-Inflation — neue Reports erscheinen NICHT als zusaetzliche Standard-Buttons, sondern in einem 'Meine Berichte'-Auswahlfeld (Type-Ahead/Dropdown) rechts neben den Standard-Buttons. ~1-2 Slices. Folgt zwingend nach V7.5.",
-      "order": 30
+      "order": 31
     },
     {
       "id": "v8",
       "name": "V8+",
       "status": "planned",
       "summary": "API-Integration mit externen Kommunikations-Tools statt eigener Inhouse-Chat-Loesung (V6.6-Discovery 2026-05-09 Out-of-Scope-Verschiebung). Slack/Teams/WhatsApp als Channels fuer Notifications, Activity-Updates, Berichts-Versand. Externe Kunden-Kommunikation (z.B. WhatsApp) ist separates Business-Thema. Multiplikatoren-Bereich-Strategie-Item (KI-Erweiterung oder ersatzloser Wegfall, geschaeftsmodell-abhaengig). Konkreter Cut wird vor Implementierung in eigener Discovery festgelegt.",
-      "order": 31
+      "order": 32
     }
   ]
 }

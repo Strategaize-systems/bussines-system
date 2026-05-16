@@ -2318,7 +2318,7 @@
       "type": "improvement",
       "priority": "medium",
       "status": "open",
-      "version": null,
+      "version": "V7.2",
       "description": "/qa SLC-711 (RPT-418) brauchte alle 3 Rollen (Admin/Teamlead/Member) fuer Live-Smoke, aber das Seed-Script enthielt nur Teamlead+Member. qa-admin musste in /qa-Session per Inline-Admin-API-POST + Profile-INSERT angelegt werden (~5-10 Min Overhead, plus 2 Stolperer mit curl-fehlt-im-Container + Heredoc-Variable-Expansion-Trap, siehe Dev-System IMP-486). Fix: cockpit/scripts/create-qa-test-users.mjs erweitern um Eintrag `{ id: '00000000-0000-0000-0000-0000000ba001', email: 'qa-admin@strategaize.test', password: 'QaSlc711-Admin!', role: 'admin' }` plus Profile-team_id-Setzung (TEST-Team `00000000-0000-0000-0000-000000000077`). Idempotent. Eliminiert /qa-Session-Overhead bei zukuenftigen rollen-basierten Permission-Smokes. Aufwand ~15 Min.",
       "createdAt": "2026-05-15"
     },

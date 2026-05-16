@@ -17,12 +17,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 1. **(Mainline) /post-launch V7.1** in ~24h — Production-Stability-Check auf Image-Tag `770dd55`. Beobachten: Disk-Usage-Trend (ISSUE-071), Container-Healthchecks, Audit-Log-Volume, KI-Workspace-Errors weg.
 2. **(Parallel User-Action) ISSUE-071 Coolify-Cron** — User richtet weekly Disk-Cleanup ein (`docker builder prune -af && docker image prune -af`). Snippet in KNOWN_ISSUES.md. Pure User-Aktion, kein Code-Change.
 3. **(Optional) 2. Post-Launch-Check @24h** — In ~9h erneuter Live-Check fuer volle 24h-Schwelle. Aktuell ~15h erreicht. Nicht release-blocking.
-4. **(nach V7.1)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern. Inkl. ISSUE-066-Mitigation als eigener kleiner Slice (Middleware-Pfad-Check setzt X-Read-Only-Mode-Header, assertNotReadOnlyContext liest beides).
-5. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5.
-6. **(optional)** V6.7-Polish — BL-460 (Style-Guide-V2 Hex-Drift) + BL-459 (Quick-Action-Label) + BL-418 (React #418 Hydration). 2-4h.
-7. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit NL-BTW gegen Production-VIES.
-8. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04.
-9. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (User-Direktive 2026-05-01 "kommt viel spaeter").
+4. **(nach V7.1, vor V7.5)** /requirements V7.2 — Test-Infra-Cleanup-Sprint (~3-4h, 1 Slice). 3 Items aus Accepted Risks REL-030: ISSUE-073 Coolify-DB `npm run seed:multi-user` + Container-Bootstrap, ISSUE-074 `vitest.rls.config.ts` Path-Alias-Resolver, BL-471 qa-admin im Seed-Script. Saubere Multi-User-Test-Basis bevor V7.5 NL-Automation darauf aufsetzt.
+5. **(nach V7.2)** /requirements V7.5 — Natural-Language-Automation (BL-435, ~6 Slices). Sculptor-Pattern. Inkl. ISSUE-066-Mitigation als eigener kleiner Slice (Middleware-Pfad-Check setzt X-Read-Only-Mode-Header, assertNotReadOnlyContext liest beides).
+6. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5.
+7. **(optional)** V6.7-Polish — BL-460 (Style-Guide-V2 Hex-Drift) + BL-459 (Quick-Action-Label) + BL-418 (React #418 Hydration). 2-4h. Oder als Sub-Sprint vor V7.5: BL-455 Pflichtfelder-Modal beim Stage-Move (High-Prio UX-Fix, unabhaengig).
+8. **(Optional, 5 Min)** Visuelle User-Form-Smoke `/settings/branding` mit NL-BTW gegen Production-VIES.
+9. **(Optional, nicht zeitkritisch)** Coolify-Cron `click-log-cleanup` anlegen — Snippet siehe RPT-335. Frueheste Wirkung 2026-08-04.
+10. **(Pre-Production-spaeter)** ISSUE-042 OpenAI-Key + Compliance-Gate vor erstem Kunden-Live-Call (User-Direktive 2026-05-01 "kommt viel spaeter").
 
 ## Spaeter (nicht jetzt)
 - Pre-Production-Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) — User-Hinweis 2026-05-01: "kommt viel spaeter"
@@ -78,7 +79,8 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 **Planned (Reihenfolge):**
 - ~~V6.5 — Hintergrund-Sprint parallel zu V7-Vorbereitung~~ (RELEASED REL-027 2026-05-08): BL-441 Theming-Sprint (Brand-Tokens + UA-011/012/013), BL-436 UA-002 Settings-Pages, BL-438 UA-007 ViewToggle generisch, BL-440 UA-009 Pipeline-PageHeader, BL-420 VIES-VAT-Lookup, BL-421 DE-§13b-Reverse-Charge, BL-424 Source-zu-Kampagne Bulk-Migration, BL-430 npm audit --force.
-- **V7.5** Natural-Language-Automation (BL-435, hochgesetzt von medium auf high in V6.6-Discovery): Sculptor-Pattern, ~6 Slices in 3 Phasen.
+- **V7.2** Test-Infra-Cleanup-Sprint (~3-4h, 1 Slice): ISSUE-073 seed:multi-user + Container-Bootstrap, ISSUE-074 vitest.rls.config.ts Path-Alias, BL-471 qa-admin im Seed-Script. Vorbereitung der Multi-User-Test-Basis fuer V7.5.
+- **V7.5** Natural-Language-Automation (BL-435, hochgesetzt von medium auf high in V6.6-Discovery): Sculptor-Pattern, ~6 Slices in 3 Phasen. Inkl. ISSUE-066-Middleware-Mitigation.
 - **V7.6** Custom-Reports (BL-442 neu): User legt eigene Berichts-Vorlagen an, "Meine Berichte"-Auswahlfeld neben Standard-Buttons. ~1-2 Slices, folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).
 - **V8+** Externe Kommunikations-API-Integration (BL-443 neu, Slack/Teams/WhatsApp). Plus Multiplikatoren-Strategie-Item.
 - Backlog (kein V-Slot): BL-444 Feiertag-Logik DE/NL, BL-397 GitHub-App Org-Anbindung (Infra-Hygiene). BL-439 Pipeline-Stages-Cleanup zurueckgezogen — user-self-served in Settings.
