@@ -2017,10 +2017,20 @@
       "title": "Natural-Language-Regel-Builder (Mein Tag) — User formuliert Automation-Regeln in Klarsprache",
       "type": "feature",
       "priority": "high",
+      "status": "in_progress",
+      "version": "V7.5",
+      "description": "V7.5 Requirements done 2026-05-16 (siehe PRD V7.5-Section + FEAT-751-Spec + FEAT-752-Spec). 4 User-Entscheidungen 2026-05-16: (1) UI-Surface=Nur Mein Tag (kein Settings-Page-Touch), (2) Trockenlauf=Pflicht vor Apply (V6.2 DEC-132-Reuse), (3) Voice-Input=im V7.5-Scope (Whisper-Adapter-Reuse aus V4.1), (4) LLM-Domain=strict 1:1 zu V6.2-Schema (3 Trigger + 4 Actions, Out-of-Domain → strukturierter Reject). FEAT-751 Sculptor + Mein-Tag-Surface + Voice + Inspection-Log + Soft-Dedup. FEAT-752 ISSUE-066-Middleware-Mitigation als eigener Slice (BL-476). 6 Slices Default-Hypothese SLC-751..756. Naechster Schritt /architecture V7.5. Inspiriert von Clay 'Sculptor' Mai 2026. Differenzierungs-Hebel: gemeinsames Programmieren von Regeln zwischen Berater und Klient, kein autonomes Handeln.",
+      "createdAt": "2026-05-07"
+    },
+    {
+      "id": "BL-476",
+      "title": "ISSUE-066 Middleware-Mitigation (FEAT-752) — Read-Only-Context Defense-in-Depth",
+      "type": "improvement",
+      "priority": "medium",
       "status": "open",
       "version": "V7.5",
-      "description": "Hochgesetzt auf V7.5 + priority=high in V6.6-Discovery 2026-05-09 (eigene NL-Automation-Release nach V7-Multi-User). Inspiriert von Clay 'Sculptor': User legt im Mein-Tag-Bereich eigene Automation-Regeln durch Sprache/Voice an. Beispiel: 'Wenn ein Deal in Phase Angebot mehr als 5 Tage unbeantwortet ist, schreib mir das morgens in Mein Tag und schlag eine Follow-up-Mail vor.' Bedrock-LLM extrahiert in strukturiertes Schema (trigger+condition+action), User sieht Regel als editierbare Karte mit Klarsprache, persistiert in automation_rules-Tabelle, bestehender Cron evaluiert sie. Strategaize-Position: einziger relevanter Bereich der NL-Workflow-UI-Welle, in dem heute Luecke besteht (NL-Eingabe und NL-Suche sind bereits stark abgedeckt). Differenzierungs-Hebel gegenueber Microsoft-Copilot-Pfad: nicht autonomes Handeln, sondern gemeinsames Programmieren von Regeln zwischen Berater und Klient. Geplanter Aufwand: Phase 1 (1 Trigger-Klasse 'deal_stage_idle' + 3-5 Aktionen + Editor-UI) ~2 Slices, Phase 2 (mehr Trigger) ~2 Slices, Phase 3 (Inspektions-Log + Trockenlauf) ~2 Slices. Gesamt ~6 Slices fuer V7.5-Release. Quelle: KI-Assistenten-Markt-Check 2026-05-07 + V6.6-Discovery 2026-05-09.",
-      "createdAt": "2026-05-07"
+      "description": "ISSUE-066 schliessen via Middleware-basiertem Pfad-Check (`^\\/team\\/[^/]+\\/`-Regex) der `X-Read-Only-Mode: 1` Request-Header setzt. `assertNotReadOnlyContext()` liest sowohl AsyncLocalStorage als auch den Header. Damit greift der Read-Only-Guard auch bei Direct-Server-Action-Calls aus dem Drilldown — heute nur UX-Hide mitigiert. Plus Vitest-Mock-Test (RED-GREEN, 4 Cases) + Playwright-MCP-Live-Smoke via DevTools-Direct-Server-Action-Call. Pattern war im SLC-706-Quellcode-Kommentar dokumentiert. V7.5 setzt es um. ~1-2h. Eigener kleiner Slice SLC-756 in V7.5-Sequenz. Spec /features/FEAT-752-readonly-context-middleware.md.",
+      "createdAt": "2026-05-16"
     },
     {
       "id": "BL-442",

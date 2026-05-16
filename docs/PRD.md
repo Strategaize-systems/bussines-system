@@ -3654,3 +3654,136 @@ Total V7.1-Aufwand: ~10-15h reine Implementation + QA + Live-Smoke.
 **Internal-Tool, Polish-Sprint.** Kein neuer Provider, keine neue Datenbank, keine Schema-Migration (vermutlich), kein Compliance-Touch. Internal-Test-Mode bleibt aktiv. V7.1-PASS heisst: V7 bleibt deployed wie aktuell, plus 3 Slices als kumulative Aenderungen auf demselben Image-Stand.
 
 **V7.1 Requirements ready for `/architecture`.**
+
+## V7.5 — Natural-Language Workflow-Sculptor (BL-435)
+
+### V7.5 Problem statement
+
+Das Business-System hat seit V6.2 einen funktionalen Workflow-Automation-Rule-Builder (FEAT-621): drei Trigger-Events (`deal.stage_changed`, `deal.created`, `activity.created`), vier Actions (`create_task`, `send_email_template`, `create_activity`, `update_field`), Anti-Loop-Marker, Trockenlauf-Modul (DEC-132), Audit-Log-Side-Effect. **Aber:** der einzige Eingabe-Pfad ist heute ein 4-Step-Click-Wizard auf `/settings/workflow-automation`. Drei Probleme aus realer Nutzung:
+
+1. **Click-Wizard ist Setup-Heavy:** User muss sich mental erst ein Datenmodell aufbauen (Trigger-Auswahl → Condition-Builder → Action-Builder → Trockenlauf-Pruefung), bevor er die eigentliche geschaeftliche Absicht ausdruecken kann. Mein-Tag-Workflow-Beispiel "Wenn ein Deal in Phase Angebot mehr als 5 Tage unbeantwortet ist, schreib mir das morgens in Mein Tag und schlag eine Follow-up-Mail vor" landet heute als unbeantworteter Wunsch — der User fasst es als Gedanken im KI-Workspace, nicht als Regel. **Klarsprache → Regel-Persistierung ist heute der fehlende Bruecken-Layer.**
+2. **NL-Workflow-UI-Welle:** Clay 'Sculptor' (Mai 2026), Microsoft Copilot, Zapier-NL-Assistant, Make.com-AI-Builder bringen alle aehnliche NL-Builder. Strategaize ist heute funktional komplett (Trigger+Actions+Anti-Loop+Audit), nur der Eingabe-Layer fehlt. AI-FIRST.ai (Wettbewerber, fast identisches Bausteine-Modell, Felix) wird voraussichtlich genau dort einsteigen — die NL-Builder-Welle ist also auch Wettbewerbs-Hebel, nicht nur Komfort.
+3. **ISSUE-066 muss spaetestens vor erstem produktivem Multi-User-Nutzer geschlossen werden:** SLC-706 Drilldown-Mutate-Lockdown hat eine bekannte Defense-in-Depth-Luecke — `AsyncLocalStorage`-basierter Read-Only-Context propagiert NICHT in Server-Action-Requests. Heute UX-mitigiert (Mutate-Buttons im Drilldown ausgeblendet), aber Direct-Server-Action-Call via DevTools wuerde mutate-en. Cross-Team-RLS greift weiter, aber Same-Team-Bypass des Read-Only-UX-Versprechens ist offen. Internal-Test-Mode-Risiko vernachlaessigbar, aber **vor Drittnutzer-Customer-Ship muss das geschlossen sein** — und V7.5 ist die nahe Release-Stelle, bevor V8+ externe Kommunikation oeffnet.
+
+V7.5 schliesst diese drei Luecken in einem buendelfreundlichen Release: NL-Sculptor-Layer ueber V6.2 + ISSUE-066-Middleware-Mitigation. Differenzierungs-Position gegenueber Microsoft-Copilot-Pfad: **nicht autonomes Handeln, sondern gemeinsames Programmieren von Regeln zwischen Berater und Klient.** Die Regel ist als editierbare Karte sichtbar, der Klient kann sie nachvollziehen, Trockenlauf zeigt Wirkung — kein Black-Box-Agent.
+
+### V7.5 Goal
+
+Auf der Mein-Tag-Seite eine Klarsprache-Eingabe (Text + Voice) bereitstellen, die Bedrock Claude Sonnet in eine strikt V6.2-schema-konforme Automation-Regel uebersetzt. Trockenlauf-Karte als Pflicht-Schritt vor Apply. Regel wird in der bestehenden `automation_rules`-Tabelle persistiert und vom bestehenden V6.2-Dispatcher + Executor + Cron-Fallback ausgefuehrt. Plus: ISSUE-066-Middleware-Mitigation schliesst Defense-in-Depth-Gap fuer V7-Drilldown.
+
+### V7.5 Primary users
+
+- **Admin (Strategaize-Founder):** Hauptnutzer. Formuliert Mein-Tag-Workflows ad-hoc per Sprache/Text waehrend des Tagesgeschaefts. Nicht waehrend Settings-Wartung.
+- **Teamlead:** Darf Regeln formulieren, soweit V7.1-Permission-Matrix Workflow-Automation auf RW fuer Teamlead setzt. Same NL-Surface wie Admin auf Mein Tag.
+- **Member:** **KEIN** NL-Surface auf Mein Tag (Permission-Matrix V7.1: Workflow-Automation = `(nicht sichtbar)` fuer Member). Member sehen die NL-Box NICHT.
+
+### V7.5 V1 Scope
+
+**FEAT-751 — Natural-Language Workflow-Sculptor (NL-Adapter + Mein-Tag-Surface + Trockenlauf + Voice + Inspection)**
+
+NL-Eingabe-Karte auf Mein Tag (im KI-Workspace-Bereich, konsistent zum V6.6-Hybrid-Pattern). User tippt oder spricht eine Regel-Absicht ("Wenn ein Deal in Phase Angebot mehr als 5 Tage unbeantwortet ist..."). Bedrock-Adapter (`cockpit/src/lib/automation/sculptor.ts` — neu) mappt strict 1:1 in V6.2-Schema:
+- Eines der 3 Trigger-Events (`deal.stage_changed`, `deal.created`, `activity.created`)
+- 0..n AND-only Conditions als `{field, op, value}`-Array (Whitelist-Felder aus V6.2)
+- 1..n Actions als geordnetes `{type, params, assignee?}`-Array, beschraenkt auf die 4 V6.2-Action-Types
+
+Bei Out-of-Domain-Input (z.B. "Wenn der Kunde mir eine Sprachnachricht schickt..." → kein V6.2-Trigger) returnt der Adapter **strukturierter Reject** mit Hinweis "Diese Regel braucht einen Trigger-Typ, der heute nicht unterstuetzt wird. Vorschlag: stattdessen `activity.created` mit Type=Call/E-Mail nutzen — oder Backlog-Eintrag fuer V8+".
+
+Bei erfolgreichem Mapping zeigt das UI:
+1. **Klarsprache-Karte** (oben) — User sieht seinen Original-Text + von Bedrock erkanntes Intent in Worten ("Du moechtest folgende Regel: ...")
+2. **Schema-Karte** (Mitte) — editierbare Form-Felder Trigger / Conditions / Actions / Assignee (gleicher Form-Style wie V6.2-Wizard)
+3. **Trockenlauf-Karte** (Pflicht, DEC-132-Reuse) — "Was waere mit den letzten 7 Tagen passiert?" Liste der getroffenen Deals/Activities + Action-Outcomes (read-only, KEIN Insert). Pflicht-Klick **"Trockenlauf anzeigen"** vor **"Regel aktivieren"**-Button.
+4. **Apply** — Server Action `applyNlRule()` persistiert in `automation_rules` mit `status='active'`, `created_by=auth.uid()`, `trigger_event/trigger_config/conditions/actions` aus Form-State. Audit-Log-Eintrag `automation_rule.create_via_nl` mit `nl_input` + `sculptor_model_id` + `sculptor_cost_usd`.
+
+**Voice-Input** (User-Direktive `feedback_voice_input_no_compromise`): Mikro-Button in der NL-Box reuse Whisper-Adapter aus V4.1 (heute openai-Default, Azure-EU Code-Ready ab V5.2). Same Adapter wie KI-Workspace-Frage-Eingabe in V6.6 — kein neuer Provider, kein neuer Endpoint.
+
+**Inspection-Log** (`/settings/workflow-automation/nl-history` — nur fuer Admin sichtbar): letzte 50 NL-Sculpt-Aufrufe mit Original-Text, gemapptes Schema, Bedrock-Cost-USD, Reject-Reason (falls reject). Reuse `audit_log`-Query, kein eigener Table.
+
+**FEAT-752 — Read-Only-Context Defense-in-Depth (ISSUE-066-Closure)**
+
+Middleware-basierter Pfad-Check (`cockpit/src/middleware.ts` erweitern). Bei Request-Pfad-Match auf Regex `^\/team\/[^/]+\/` (V7-Drilldown-Route) wird Request-Header `X-Read-Only-Mode: 1` gesetzt (durch `headers.set` im NextResponse). `cockpit/src/lib/auth/read-only-context.ts:assertNotReadOnlyContext()` wird erweitert: liest AsyncLocalStorage **UND** den Header (aus `next/headers`-API). Falls eines von beiden gesetzt ist → throw. Plus Vitest-Mock-Test der den Header-Pfad explizit testet.
+
+Dieses Pattern war im SLC-706-Quellcode-Kommentar (`cockpit/src/lib/auth/read-only-context.ts:14-19`) als Workaround-Plan dokumentiert. V7.5 setzt es um.
+
+### V7.5 Out of Scope
+
+- **Neue Trigger-Events** wie `deal.stage_idle` (5-Tage-Inaktivitaet) oder `activity.no_response` — der Backlog-Text BL-435 nennt Beispiele wie "Wenn Deal in Phase Angebot mehr als 5 Tage unbeantwortet ist". Diese Absicht ist im V7.5-Scope NUR aus dem Konjunktiv heraus implementierbar — Sculptor mappt sie auf existierende V6.2-Triggers + zusaetzliche Conditions (z.B. `deal.stage_changed` mit Condition `last_activity_at < now() - 5 days` nach Stage-Wechsel auf Angebot). Echte neue Trigger-Typen (Time-Based-Triggers wie "5 Tage nach X") sind V8-Item.
+- **Settings-Workflow-Automation-Page-Integration:** NL-Surface kommt NUR auf Mein Tag (User-Entscheidung 2026-05-16). Der V6.2-Click-Wizard auf `/settings/workflow-automation` bleibt unveraendert. Spaetere Migration des Click-Wizards in NL-Pfad ist V7.6+.
+- **Frei-Form-Schema (LLM darf neue Action-/Trigger-Typen vorschlagen):** Strict 1:1 zu V6.2-Schema (User-Entscheidung 2026-05-16). Bei Out-of-Domain-Input → strukturierter Reject, kein dynamisches Schema-Wachstum.
+- **Bulk-NL-Input** (mehrere Regeln in einem Prompt erfassen) — V8-Item, V7.5 ist 1-Prompt-=-1-Rule.
+- **Autonomes Handeln** (LLM apply-t Regel direkt ohne Trockenlauf-Bestaetigung) — Trockenlauf-Pflicht aus V6.2 DEC-132 bleibt aktiv, kein Skip-Modus.
+- **Edit-Existing-Rule-via-NL:** V7.5 unterstuetzt nur NL→neue-Regel. Bestehende Regeln editieren bleibt im V6.2-Click-Wizard. Spaetere Erweiterung Phase 2 oder V7.6+.
+- **Mehrere NL-Sprachen:** V7.5 prompt-engineert Deutsch primaer + Englisch fallback (Bedrock Claude Sonnet kann beides). Niederlaendisch + andere Sprachen sind V8+.
+- **Voice-Output (LLM spricht Antwort)** — V7.5 ist Voice-Input only, Antwort bleibt textuell.
+- **Custom Sculptor-Prompts** (User kann Sculptor-System-Prompt anpassen) — Internes Tuning bleibt Code-side, kein User-facing Config.
+
+### V7.5 Core Features
+
+| ID | Feature | Type | Prio | BL-Origin |
+|---|---|---|---|---|
+| FEAT-751 | Natural-Language Workflow-Sculptor (Mein-Tag-Surface + Voice + Trockenlauf) | new | high | BL-435 |
+| FEAT-752 | Read-Only-Context Defense-in-Depth (ISSUE-066 Middleware-Mitigation) | improvement | medium | BL-476 (neu) |
+
+### V7.5 Constraints
+
+- **Internal-Test-Mode bleibt aktiv.** V7.5 macht den Pfad zu Drittnutzer-Tests bereiter (ISSUE-066-Closure), aber Compliance-Gate (Anwaltspruefung COMPLIANCE.md + Azure-EU-Whisper-Switch + ISSUE-042) bleibt vor erstem Live-Drittnutzer-Call (User-Direktive 2026-05-01 "kommt viel spaeter").
+- **LLM-Provider:** Bedrock Claude Sonnet 3.5 in `eu-central-1` (Frankfurt). Reuse `cockpit/src/lib/llm/bedrock-client.ts` aus V3 (`feedback_async_always_coolify_cron` data-residency-Regel — keine US-Endpoints, kein OpenAI-API-Direct).
+- **Voice-Provider:** Whisper-Adapter aus V4.1 (`cockpit/src/lib/speech/whisper-adapter.ts`). Heute openai-Default, Azure-EU Code-Ready. **Vor erstem Drittnutzer-Customer-Ship**: Switch auf Azure-EU-Whisper (ISSUE-042 + COMPLIANCE.md V5.2-Decision). V7.5-internal bleibt openai-Default.
+- **Schema-Compatibility:** Strict 1:1 zu V6.2 `automation_rules`-Schema. **Keine Schema-Migration in V7.5.** Wenn /architecture-Audit doch eine kleine Erweiterung braucht (z.B. `automation_rules.created_via TEXT CHECK IN ('click_wizard','nl_sculptor')` fuer Inspection-Log-Filter), dann additiv ohne Bestands-Daten zu touchen.
+- **Trockenlauf-Pflicht:** V6.2 DEC-132 (read-only Preview) bleibt aktiv. NL-Sculptor-UI **darf keinen Skip-Modus haben**, der den Trockenlauf-Step ueberspringt — Sicherheit + LLM-Hallucination-Schutz.
+- **Pattern-Reuse-First** (CLAUDE.md Core-Default #5): Sculptor-Adapter folgt Bedrock-LLM-Adapter-Pattern aus V3+V6.6 (`bedrock-client.ts`-Reuse, `feedback_bedrock_cost_control`-Regel), Voice folgt Whisper-Adapter-Pattern aus V4.1, KI-Workspace-Layout folgt V6.6-Hybrid-Pattern aus Mein-Tag-Re-Architecture.
+- **TDD-Mandate fuer FEAT-752-Middleware:** Vitest-Mock-Test (RED-GREEN) der den Header-Pfad explizit testet, BEVOR Production-Middleware-Edit committed wird. Plus Live-Smoke via Playwright-MCP-DevTools-Pattern (vgl. `reference_playwright_live_smoke_pattern`).
+- **Bedrock-Cost-Control:** Sculptor-Aufruf ist On-Click, kein Auto-Load (User-Direktive `feedback_bedrock_cost_control`). Plus Display der ungefaehren Cost pro Sculpt-Versuch (typisch ~$0.003 fuer 1-Shot 1k-Token).
+
+### V7.5 Risks / Assumptions
+
+- **Risk LLM-Hallucination:** Bedrock mappt Klarsprache auf nicht-existierendes Trigger-Event oder erfindet Action-Param-Keys. **Mitigation:** strikte JSON-Schema-Validation post-Sculpt mit `zod` (Whitelist aller 3 Trigger + 4 Actions + Param-Keys), Reject + Re-Prompt-Loop max. 2x. Plus `healJsonEscapes`-Pattern aus IS SLC-109 (`feedback_bedrock_json_drift_pattern`).
+- **Risk Voice-Accuracy:** Whisper-openai-Default ist solide fuer DE, aber Geschaeftsbegriffe wie "Pipeline" oder "Stage" werden manchmal als Englisch erkannt. **Mitigation:** Voice-Transkript ist editierbar bevor Sculpt-Klick, User kann manuell nachschaerfen.
+- **Risk Trockenlauf-Cost:** Wenn Trockenlauf auf grossem Backlog (z.B. 200 Deals + 500 Activities) laeuft, kann der read-only Query teuer sein. **Mitigation:** Time-Window-Constraint im Trockenlauf-Pfad — V6.2 DEC-132 macht das schon (letzte 7 Tage). Sculptor-Trockenlauf folgt exakt diesem Pattern.
+- **Risk ISSUE-066-Middleware konfligiert mit V6.2-Cron:** `/api/cron/automation-runner` ist Cron-Pfad, nicht User-Drilldown-Pfad. **Mitigation:** Middleware-Pfad-Regex `^\/team\/[^/]+\/` greift NUR fuer Drilldown-Routes, nicht fuer `/api/*`. Vitest-Mock-Test verifiziert.
+- **Risk Multi-User-NL-Konflikte:** Wenn 2 User gleichzeitig identische NL-Regel formulieren → 2x identische `automation_rules`-INSERTs. **Mitigation:** Soft-Dedup im Apply-Pfad (`assertNotDuplicateRule()`-Helper, vergleicht `name + trigger_event + JSON.stringify(conditions+actions)` mit existierenden active Rules des `created_by`-Owners). Bei Match → 409-Conflict mit Hinweis. Kein DB-UNIQUE-Constraint (zu strikt fuer absichtliche Quasi-Duplikate).
+- **Assumption:** Bedrock Claude Sonnet 3.5 EU-Frankfurt erreicht ~95% Sculpt-Accuracy auf typischen Mein-Tag-Workflow-Prompts. **Verifikation:** /qa-Slice mit 10 Real-World-Prompts + Edit-Rate-Messung (User editiert das Schema in <30% der Faelle = PASS).
+- **Assumption:** V6.2 `automation_rules`-Schema deckt alle realistischen Mein-Tag-Use-Cases. **Verifikation:** Sculptor-Cost-Audit nach 1 Woche Live-Use: wenn >20% der Sculpt-Aufrufe in `out_of_domain_reject` enden, ist V8+-Trigger-Erweiterung gerechtfertigt.
+- **Assumption:** Whisper-Adapter aus V4.1 funktioniert ohne Anpassung. **Verifikation:** /qa Smoke mit Voice-Input.
+
+### V7.5 Success Criteria
+
+- **FEAT-751:**
+  - Mein-Tag-NL-Box akzeptiert Text-Input "Wenn ein Deal in Phase Angebot bewegt wird, leg mir eine Follow-up-Task in 2 Tagen an." → Sculpt → Schema-Karte zeigt `trigger_event=deal.stage_changed`, `conditions=[{field:stage_id, op:eq, value:<angebot-stage-uuid>}]`, `actions=[{type:create_task, params:{due_in_days:2, title:"Follow-up zu {{deal.name}}"}}]`.
+  - Trockenlauf-Karte zeigt typisch 3-8 historische Stage-Wechsel der letzten 7 Tage mit "Diese Regel haette folgende Tasks erzeugt: ..."
+  - Apply → `automation_rules`-INSERT mit `status='active'`, `created_by=auth.uid()`, Audit-Log-Eintrag `automation_rule.create_via_nl` mit `nl_input` + Cost-USD.
+  - Voice-Input: Mikro-Button transkribiert "Wenn ein Deal in Phase Angebot bewegt wird, leg mir eine Follow-up-Task in 2 Tagen an" mit >95% Accuracy. Edit moeglich vor Sculpt-Klick.
+  - Out-of-Domain-Input "Wenn der Kunde eine Sprachnachricht schickt..." → strukturierter Reject mit Hinweis "Trigger-Typ 'Sprachnachricht' nicht unterstuetzt. Vorschlag: stattdessen `activity.created` Type=Anruf nutzen."
+  - Inspection-Log auf `/settings/workflow-automation/nl-history` zeigt letzte 50 Sculpt-Aufrufe mit Cost + Outcome.
+- **FEAT-752:**
+  - Playwright-MCP-Live-Smoke: Teamlead loggt sich ein, navigiert auf `/team/<member-id>/pipeline`, oeffnet DevTools, fired Direct-Server-Action-Call (z.B. `updateDeal({id, stage_id})`) → Action wirft `ReadOnlyContextError`. Heute (Pre-V7.5) wuerde die Action gelingen.
+  - Vitest-Mock-Test: `assertNotReadOnlyContext()` mit gemocktem `headers().get('X-Read-Only-Mode') === '1'` → throws. Mit `headers().get('X-Read-Only-Mode') === null` und ohne AsyncLocalStorage → passes.
+  - Cron-Pfade (`/api/cron/*`) bleiben unbeeinflusst — Middleware-Pfad-Regex matcht nicht. Vitest-Test verifiziert.
+- **Gesamt:** V7.5 PASS heisst: 1 Mein-Tag-NL-Workflow-Smoke end-to-end (Voice + Trockenlauf + Apply + Bestaetigung dass V6.2-Engine die Regel wirklich triggert), ISSUE-066 closed (Playwright-DevTools-Smoke), `npm run test:all` gruen, audit_log-Trail mit ≥1 `automation_rule.create_via_nl`-Eintrag, ISSUE-066 Status `resolved` in KNOWN_ISSUES.md.
+
+### V7.5 Open Questions
+
+1. **Sculptor-Prompt-Architektur:** Single-Shot (1 Bedrock-Call mit gesamtem Prompt + Reject-Loop max. 2x) ODER Multi-Turn (erst Trigger-Identifizierung, dann Conditions, dann Actions getrennt)? **Klaerung in `/architecture`.** Default-Hypothese: Single-Shot mit zod-Re-Prompt-Loop, weil Multi-Turn dreifache Cost + Latenz erzeugt fuer das Edge-Case-Verhalten.
+2. **NL-History-Storage:** Reuse `audit_log` (Pattern aus V3+) ODER neue `nl_sculpt_history`-Tabelle mit `nl_input/sculptor_model_id/cost_usd/result_status/result_payload`? **Klaerung in `/architecture`.** Default-Hypothese: `audit_log` mit JSONB-`metadata`-Spalte reuse, kein neues Schema.
+3. **Apply-Confirmation-UI:** Trockenlauf-Karte zeigt Ergebnis. Klick auf "Regel aktivieren" → sofort INSERT + active ODER zusaetzliche Confirm-Modal-Bestaetigung ("Diese Regel wird ab jetzt auf alle neuen Stage-Wechsel angewandt. Sicher?")? **Klaerung in `/architecture` mit UX-Skizze.**
+4. **Sculptor-Cost-Display:** Pro Sculpt-Versuch wird ungefaehre USD-Cost angezeigt. Soll das **vorab** (Cost-Estimate basierend auf Token-Count) ODER **nachher** (Real-Cost aus Bedrock-Response) gezeigt werden? Beide moeglich, Vorab ist UI-aufwendiger. **Klaerung in `/architecture`.**
+5. **ISSUE-066-Slice-Position:** FEAT-752 Middleware-Mitigation als erster oder letzter Slice der V7.5-Reihenfolge? **Klaerung in `/slice-planning`.** Default-Hypothese: erster Slice (Defense-in-Depth-Foundation steht bevor neue Features hinzukommen), aber wenn /qa der ersten 5 NL-Slices kein konkretes Risiko zeigt, kann FEAT-752 auch als letzter Slice direkt vor /final-check kommen.
+6. **Bedrock-Region-Drift-Check:** V6.2 verwendet `eu-central-1`. Architecture-Audit verifiziert dass die Sculptor-Region 1:1 gleich bleibt — kein US-Endpoint-Drift. **Klaerung in `/architecture`.**
+
+### V7.5 Slice-Plan (vorlaeufige Schaetzung — `/slice-planning` konsolidiert)
+
+Reihenfolge nach `/slice-planning` zu bestimmen. Default-Hypothese (User darf in /slice-planning re-ordnen):
+
+- **SLC-751** (~3-5h) — FEAT-751 Phase 1: Bedrock Sculptor-Adapter (`sculptor.ts`) + zod-Schema-Validation + `healJsonEscapes`-Reuse + Vitest mit 10 Real-World-Prompts.
+- **SLC-752** (~3-5h) — FEAT-751 Phase 1b: Mein-Tag-NL-Surface (Text-Input + Klarsprache-Karte + Schema-Karte + Apply-Button). Voice noch nicht.
+- **SLC-753** (~2-3h) — FEAT-751 Phase 2: Trockenlauf-Karte (V6.2 DEC-132-Reuse) + Apply-Confirmation-Flow.
+- **SLC-754** (~1-2h) — FEAT-751 Phase 2b: Voice-Input-Integration (Whisper-Adapter-Reuse + Mikro-Button + Transkript-Edit).
+- **SLC-755** (~2-3h) — FEAT-751 Phase 3: Inspection-Log auf `/settings/workflow-automation/nl-history` (Admin-only via FEAT-711-Permission-Matrix).
+- **SLC-756** (~1-2h) — FEAT-752: ISSUE-066-Middleware-Mitigation (Pfad-Regex + Header-Set + assertNotReadOnlyContext-Erweiterung + Vitest-Mock + Playwright-Smoke).
+
+Total V7.5-Aufwand: ~12-20h reine Implementation + QA + Live-Smoke. Schlanker als V7 (~5 Tage), groesser als V7.2 (~3.5h).
+
+### V7.5 Delivery Mode
+
+**Internal-Tool, Feature-Sprint.** Neuer LLM-Pfad (Sculptor-Adapter), keine neue Datenbank-Tabelle (nur additive Spalten-Erweiterung moeglicherweise), kein neuer Container, kein neuer Cron-Job, keine neue npm-Package-Dependency (Bedrock-Client + Whisper-Adapter beide bestehende Pattern). Internal-Test-Mode bleibt aktiv. V7.5-PASS heisst: V7.2-Stack bleibt deployed wie aktuell (Production-Image `770dd55` V7.1), plus 6 Slices als kumulative Aenderungen auf demselben Image-Stand mit Coolify-Redeploy am Slice-Ende.
+
+**V7.5 Requirements ready for `/architecture`.**

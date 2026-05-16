@@ -206,8 +206,8 @@
     {
       "id": "v7-5",
       "name": "V7.5",
-      "status": "planned",
-      "summary": "NL-Automation (BL-435 hochgesetzt von medium auf high, V6.6-Discovery 2026-05-09). Natural-Language-Regel-Builder analog Clay 'Sculptor': User formuliert Automation-Regeln in Klarsprache (Voice/Text), Bedrock extrahiert in trigger+condition+action-Schema, persistiert in automation_rules-Tabelle. Read-Only-Migration des V6.2-Click-Builders. Phase 1 = 1 Trigger-Klasse (deal_stage_idle) + 3-5 Aktionen + Editor-UI, Phase 2 = mehr Trigger, Phase 3 = Inspektions-Log + Trockenlauf. ~6 Slices. Differenzierungs-Hebel gegenueber Microsoft-Copilot: gemeinsames Programmieren von Regeln zwischen Berater und Klient, nicht autonomes Handeln. Inkl. ISSUE-066-Mitigation (Middleware-Pfad-Check setzt X-Read-Only-Mode-Header).",
+      "status": "active",
+      "summary": "Requirements done 2026-05-16 (PRD V7.5-Section + FEAT-751-Spec + FEAT-752-Spec). NL-Workflow-Sculptor + ISSUE-066-Closure. 2 Features: FEAT-751 Natural-Language Workflow-Sculptor (Bedrock Claude Sonnet eu-central-1, strict 1:1 V6.2-Schema-Mapping, Mein-Tag-Eingabe-Surface fuer Admin+Teamlead, Voice-Input via Whisper-Adapter aus V4.1, Trockenlauf-Pflicht-Karte V6.2 DEC-132-Reuse, Apply persistiert in automation_rules, Inspection-Log auf /settings/workflow-automation/nl-history, Soft-Dedup gegen Doubletten). FEAT-752 Read-Only-Context Defense-in-Depth (ISSUE-066 Middleware-Mitigation via Pfad-Regex + X-Read-Only-Mode-Header). 4 User-Entscheidungen 2026-05-16: UI=Nur Mein Tag, Trockenlauf=Pflicht, Voice=im Scope, LLM=strict 1:1. ~6 Slices Default-Hypothese SLC-751..756. ~12-20h Aufwand. Internal-Test-Mode bleibt aktiv. Naechster Schritt: /architecture V7.5.",
       "order": 30
     },
     {
