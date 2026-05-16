@@ -222,13 +222,13 @@
 | FEAT-503 | Teamlead-Rolle mit Teamsicht (Aggregat + Drilldown) | deployed | [Spec](FEAT-503-teamlead-sicht.md) | 2026-04-09 |
 | FEAT-701 | Multi-User-UX (Sidebar-Restruktur + Mobile-Hamburger + Rollen-Sichtbarkeit) | deployed | [Spec](FEAT-701-multi-user-ux.md) | 2026-05-12 |
 
-## V7.1 Features (Polish-Sprint — Requirements 2026-05-15)
+## V7.1 Features (Polish-Sprint — released REL-030 2026-05-16)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-711 | Settings-Permission-Layer (rollen-basiert Admin/Teamlead/Member) | done | [SLC-711](../slices/SLC-711-settings-permission-layer.md) | 2026-05-15 |
-| FEAT-712 | Drilldown-View Vollausbau (Pipeline + Aktivitaeten + Mein-Tag) | done | [SLC-712a done](../slices/SLC-712a-pipeline-drilldown-reuse.md) + [SLC-712b done](../slices/SLC-712b-aufgaben-meintag-drilldown.md) | 2026-05-15 |
-| FEAT-713 | V7-Defense-in-Depth Polish (4 Guards + Audit-Doc-Sync) | done | [SLC-713 done](../slices/SLC-713-defense-in-depth-polish.md) | 2026-05-15 |
+| FEAT-711 | Settings-Permission-Layer (rollen-basiert Admin/Teamlead/Member) | deployed | [SLC-711](../slices/SLC-711-settings-permission-layer.md) | 2026-05-15 |
+| FEAT-712 | Drilldown-View Vollausbau (Pipeline + Aktivitaeten + Mein-Tag) | deployed | [SLC-712a](../slices/SLC-712a-pipeline-drilldown-reuse.md) + [SLC-712b](../slices/SLC-712b-aufgaben-meintag-drilldown.md) + [SLC-714](../slices/SLC-714-readonly-ki-workspace-hide.md) | 2026-05-15 |
+| FEAT-713 | V7-Defense-in-Depth Polish (4 Guards + Audit-Doc-Sync) | deployed | [SLC-713](../slices/SLC-713-defense-in-depth-polish.md) | 2026-05-15 |
 
 ## V6 Features (Zielsetzung + Performance-Tracking — released)
 

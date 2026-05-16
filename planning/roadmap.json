@@ -192,8 +192,8 @@
     {
       "id": "v7-1",
       "name": "V7.1",
-      "status": "active",
-      "summary": "Polish-Sprint nach V7-Release 2026-05-15. 3 Features: FEAT-711 Settings-Permission-Layer (rollen-basiert: Admin alles, Admin+Teamlead Workflow/Templates/Kampagnen/Team, Member nur Profil+Working-Hours+Meeting), FEAT-712 Drilldown-View Vollausbau (alle 3 Sub-Pages /team/[user]/pipeline + /aktivitaeten + /mein-tag mit voller Toggle-/Filter-/Forecast-Funktionalitaet read-only), FEAT-713 V7-Defense-in-Depth Polish (ISSUE-070 4 assertNotReadOnlyContext-Guards + ISSUE-069 AUDIT_SERVER_ACTIONS_V7.md-Sync). Sprint-Reihenfolge sichtbar zuerst: SLC-711 → SLC-712 → SLC-713. Total ~10-15h. Keine Schema-Migration. Internal-Test-Mode bleibt aktiv. Requirements ready 2026-05-15.",
+      "status": "released",
+      "summary": "Polish-Sprint RELEASED 2026-05-16 als REL-030 (Image-Tag 770dd55). 4 Slices SLC-711..713 + Post-Smoke-Hotfix SLC-714 (BL-472 KI-Workspace im Drilldown-MeinTag ausgeblendet). 3 Features FEAT-711/712/713 deployed. SLC-711 Settings-Permission-Layer fuer 11 Sub-Pages (Admin/Teamlead/Member-Matrix DEC-196). SLC-712a Pipeline-Drilldown via PipelineView-Reuse. SLC-712b Aufgaben + Mein-Tag Drilldown analog. SLC-713 V7-Defense-in-Depth Polish (ISSUE-069+070 resolved). SLC-714 KI-Workspace-Hide nach User-Live-Smoke. Keine Schema-Migration. Vitest 779/779 PASS. Live-Smoke RPT-427 via Playwright-MCP (19/19 DOM-Assertions). Internal-Test-Mode bleibt aktiv. Accepted Risks: ISSUE-066 V7.5-Mitigation, ISSUE-071 Disk-Voll User-Pflicht, ISSUE-073+074 V7.2-Cleanup.",
       "order": 28
     },
     {
