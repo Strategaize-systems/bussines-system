@@ -6,6 +6,7 @@
  * Test-Team-UUID + [TEST]-Display-Name-Prefix) folgendes Datenmodell:
  *   - 1 Team "Test-Team"        (id = TEST_TEAM_ID)
  *   - 1 Teamlead-Profile        (id = TEST_TEAMLEAD_ID)
+ *   - 1 Admin-Profile           (id = TEST_ADMIN_ID, SLC-721/DEC-204)
  *   - 5 Member-Profiles         (ids = TEST_MEMBER_IDS[0..4])
  *   - 50 companies              (owner zufaellig auf 5 Member verteilt)
  *   - 200 contacts              (jeweils einer Company zugeordnet)
@@ -26,6 +27,7 @@ import { randomUUID } from "node:crypto";
 
 const TEST_TEAM_ID = "00000000-0000-0000-0000-000000000077";
 const TEST_TEAMLEAD_ID = "00000000-0000-0000-0000-000000000078";
+const TEST_ADMIN_ID = "00000000-0000-0000-0000-0000000ba001";
 const TEST_MEMBER_IDS: ReadonlyArray<string> = [
   "00000000-0000-0000-0000-000000000081",
   "00000000-0000-0000-0000-000000000082",
@@ -50,7 +52,7 @@ function pickMemberId(i: number): string {
 }
 
 async function reset(client: Client): Promise<void> {
-  const owners = [...TEST_MEMBER_IDS, TEST_TEAMLEAD_ID];
+  const owners = [...TEST_MEMBER_IDS, TEST_TEAMLEAD_ID, TEST_ADMIN_ID];
   // Reihenfolge: child tables zuerst (FK-Cascade nicht ueberall vorhanden).
   for (const table of [
     "activities",
@@ -86,6 +88,16 @@ async function seedTeamAndProfiles(client: Client): Promise<void> {
          role         = EXCLUDED.role,
          team_id      = EXCLUDED.team_id`,
     [TEST_TEAMLEAD_ID, TEST_TEAM_ID],
+  );
+
+  await client.query(
+    `INSERT INTO profiles (id, display_name, role, team_id)
+       VALUES ($1, '[TEST] Test-Admin', 'admin', $2)
+       ON CONFLICT (id) DO UPDATE SET
+         display_name = EXCLUDED.display_name,
+         role         = EXCLUDED.role,
+         team_id      = EXCLUDED.team_id`,
+    [TEST_ADMIN_ID, TEST_TEAM_ID],
   );
 
   for (let i = 0; i < TEST_MEMBER_IDS.length; i++) {
@@ -178,7 +190,8 @@ async function seedActivities(client: Client, dealIds: string[]): Promise<void> 
  * gehalten — Volumen-Daten leben in companies/contacts/deals/activities.
  */
 async function seedAuxiliaryFixtures(client: Client): Promise<void> {
-  for (const memberId of TEST_MEMBER_IDS) {
+  const owners: ReadonlyArray<string> = [...TEST_MEMBER_IDS, TEST_ADMIN_ID];
+  for (const memberId of owners) {
     await client.query(
       `INSERT INTO meetings (id, title, scheduled_at, owner_user_id)
          VALUES ($1, $2, NOW(), $3)`,
@@ -232,11 +245,11 @@ async function main(): Promise<void> {
     await seedAuxiliaryFixtures(client);
 
     await client.query("COMMIT");
-    const auxiliary = TEST_MEMBER_IDS.length * 4; // meetings + proposals + email_messages + calls
+    const auxiliary = (TEST_MEMBER_IDS.length + 1) * 4; // (members + admin) × (meetings + proposals + email_messages + calls)
     const total =
-      TARGET.companies + TARGET.contacts + TARGET.deals + TARGET.activities + auxiliary + 1 + 1 + 5;
+      TARGET.companies + TARGET.contacts + TARGET.deals + TARGET.activities + auxiliary + 1 + 1 + 5 + 1;
     console.log(
-      `[seed] Seeded ${total} rows (1 team + 6 profiles + ${TARGET.companies} companies + ${TARGET.contacts} contacts + ${TARGET.deals} deals + ${TARGET.activities} activities + ${auxiliary} auxiliary fixtures) in ${Date.now() - t0}ms`,
+      `[seed] Seeded ${total} rows (1 team + 7 profiles + ${TARGET.companies} companies + ${TARGET.contacts} contacts + ${TARGET.deals} deals + ${TARGET.activities} activities + ${auxiliary} auxiliary fixtures) in ${Date.now() - t0}ms`,
     );
   } catch (e) {
     await client.query("ROLLBACK").catch(() => undefined);

@@ -17,6 +17,12 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
 
 const TEST_USERS = [
   {
+    id: "00000000-0000-0000-0000-0000000ba001",
+    email: "qa-admin@strategaize.test",
+    password: "QaV72-Admin!",
+    role: "admin",
+  },
+  {
     id: "00000000-0000-0000-0000-000000000078",
     email: "qa-teamlead@strategaize.test",
     password: "QaSlc702-Teamlead!",
