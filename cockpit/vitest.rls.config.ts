@@ -26,6 +26,7 @@ export default defineConfig({
     include: [
       "__tests__/rls/**/*.test.ts",
       "__tests__/team/**/*.test.ts",
+      "__tests__/automation/**/*.test.ts",
     ],
     exclude: ["node_modules/**", ".next/**", "dist/**"],
     globals: false,
