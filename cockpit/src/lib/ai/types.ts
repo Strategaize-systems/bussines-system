@@ -12,6 +12,12 @@ export interface LLMOptions {
   timeoutMs?: number;
 }
 
+/** Token-Usage als geliefert von Anthropic Messages API via Bedrock. */
+export interface LLMTokenUsage {
+  input_tokens: number;
+  output_tokens: number;
+}
+
 /** Generic wrapper for LLM responses */
 export interface LLMResponse<T = unknown> {
   success: boolean;
@@ -19,6 +25,17 @@ export interface LLMResponse<T = unknown> {
   error: string | null;
   /** Raw LLM output before parsing (useful for debugging) */
   raw?: string;
+  /**
+   * Token-Counts aus der Bedrock-Response. V7.5 SLC-752 — wird vom Sculptor
+   * fuer Cost-Berechnung benutzt. Optional, da aeltere Mock-Paths das Feld
+   * nicht setzen.
+   */
+  usage?: LLMTokenUsage;
+  /**
+   * Vollstaendige Bedrock-Model-ID (Inferenz-Profil oder Direct). V7.5 SLC-752
+   * — wird vom Sculptor fuer PRICING-Lookup in audit_log benutzt.
+   */
+  modelId?: string;
 }
 
 // -------------------------------------------------------------

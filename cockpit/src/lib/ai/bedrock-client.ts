@@ -134,11 +134,24 @@ export async function queryLLM(
       responseBody.completion ??
       "";
 
+    // V7.5 SLC-752: usage + modelId fuer Sculptor-Cost. Bedrock-Response-Shape:
+    //   { content:[{text}], usage:{input_tokens, output_tokens}, ... }
+    const usage =
+      typeof responseBody.usage?.input_tokens === "number" &&
+      typeof responseBody.usage?.output_tokens === "number"
+        ? {
+            input_tokens: responseBody.usage.input_tokens as number,
+            output_tokens: responseBody.usage.output_tokens as number,
+          }
+        : undefined;
+
     return {
       success: true,
       data: text,
       error: null,
       raw: text,
+      usage,
+      modelId: DEFAULT_MODEL_ID,
     };
   } catch (err: unknown) {
     const message =
