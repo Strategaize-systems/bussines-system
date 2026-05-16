@@ -1,5 +1,39 @@
 # Known Issues
 
+### ISSUE-075 — Production-User immo@bellaerts.de im Test-Team-77 (BL-470-Smoke-Test-Artefakt nicht aufgeraeumt)
+- Status: resolved
+- Severity: Medium
+- Area: Production-DB / Daten-Hygiene / BL-470-Followup
+- Summary: Profile `7bdd1faf-7d72-4ffb-8c78-66c3481290ba` (email `immo@bellaerts.de`, display_name "Richard", role=member) sitzt im Test-Team `00000000-0000-0000-0000-000000000077` ("[TEST] Test-Team") seit 2026-05-14 15:56:50 — eine Minute nach Richards Production-Login um 15:55. Vermutlich BL-470 Invite-Flow-Smoke-Test 2026-05-14 (User Richard hat sich selbst eingeladen, Smoke-Test landete im Test-Team-77 als Invite-Default). Nicht aufgeraeumt seit 2026-05-14. Echter Production-Admin ist UUID `96322a0a-be2d-49e1-ba0d-03c4de1f1440` (email `richard@bellaerts.de`, role=admin, team=`fa0ff2b6-...` "Strategaize").
+- Impact: Kein Production-Code-Bug, kein Security-Issue (RLS funktioniert weiterhin korrekt — Member-Profile im Test-Team sieht nur Test-Team-Daten). Aber: Production-DB-User-Hygiene-Drift. Konkrete Folgen: (1) Falls User sich versehentlich mit immo@bellaerts.de einloggt, landet er als Member im Test-Team statt im Strategaize-Team mit Admin-Rechten. (2) Causes aggregate-queries.test.ts 2/6 FAILs (siehe ISSUE-073). (3) Test-Team-Cockpit zeigt 6 statt 5 Members — verfaelscht jede Cross-Team-Aggregat-Statistic in Tests.
+- Workaround: Keiner — User muss entscheiden.
+- Next Action: **User-Entscheidung erforderlich** zwischen 3 Optionen:
+  - (a) **Complete Delete**: `DELETE FROM profiles WHERE id = '7bdd1faf-...'` + `DELETE FROM auth.users WHERE id = '7bdd1faf-...'` (Cleanup, falls Account nicht weiter gebraucht wird).
+  - (b) **Team-Nullsetzung**: `UPDATE profiles SET team_id = NULL WHERE id = '7bdd1faf-...'` (Account bleibt, ist aber kein Test-Team-Member mehr).
+  - (c) **Team-Wechsel**: `UPDATE profiles SET team_id = 'fa0ff2b6-...', role = 'admin' WHERE id = '7bdd1faf-...'` (Account ins richtige Strategaize-Team als Second-Admin verschieben).
+- Reported: 2026-05-15 (Gesamt-/qa V7.1, RPT-425).
+- Resolved: 2026-05-15 — User-Entscheidung Option (a) Complete Delete. Auf Hetzner-91.98.20.191 ausgefuehrt: `BEGIN; DELETE FROM profiles WHERE id = '7bdd1faf-...'; DELETE FROM auth.users WHERE id = '7bdd1faf-...'; COMMIT;`. CASCADE entfernt 1 user_settings + 1 auth.sessions + 4 auth.refresh_tokens + 1 auth.identities. Verifikation: profiles 1→0, auth.users 1→0, alle auth-Cascade-Tables 0. Test-Team-77 jetzt wieder bei erwarteten 6 Members (1 Teamlead + 5 Test-Members). aggregate-queries.test.ts 6/6 PASS nach Cleanup re-verified.
+
+### ISSUE-074 — vitest.rls.config.ts fehlt tsconfig-paths-Resolver fuer `@/...` Aliases (pre-existing V7-Test-Infra-Bug)
+- Status: open
+- Severity: Medium
+- Area: Test-Infra / vitest-Config / Path-Alias-Resolution
+- Summary: `cockpit/vitest.rls.config.ts` hat keinen Path-Alias-Resolver konfiguriert. Folge: `__tests__/team/bulk-reassign.test.ts` importiert `../../src/lib/team/bulk-reassign`, das Source-File macht `import { getPgClient } from "@/lib/db/pg"` (Z.15) — Resolver kann `@/...` nicht aufloesen → `Error: Cannot find package '@/lib/db/pg' imported from /app/src/lib/team/bulk-reassign.ts`. Test-File laedt mit 0 Tests, vitest markiert als FAIL. Pre-existing seit SLC-707 (Bulk-Reassign-Test-Setup 2026-05-12). Die Default-vitest.config.ts hat den Alias-Resolver via Next.js-Plugin — daher 779/779 PASS in der jsdom-Suite.
+- Impact: 7 Bulk-Reassign-Test-Suites (validateBulkReassignInput, assertCanReassign, buildFilterClause, countAffectedPerTable, applyReassignPerTable, Audit-Trail Phase 2, Two-Phase-Audit-Integrity) koennen nicht laufen — keine RLS-Live-DB-Confidence fuer SLC-707-Bulk-Reassign-Pfad. V7.1-Code-Pfad unbetroffen (V7.1 modifiziert `bulk-reassign-actions.ts` Wrapper, nicht `bulk-reassign.ts` Pure-Core, und der Wrapper-Test laeuft in der Default-jsdom-Suite via `bulk-reassign-actions.test.ts`).
+- Workaround: Keiner — RLS-Live-DB-Confidence fuer Bulk-Reassign-Pfad fehlt.
+- Next Action: In V7.2-Cleanup-Slice oder als separater Hygiene-Patch: vitest.rls.config.ts erweitern mit `plugins: [tsconfigPaths()]` aus `vite-tsconfig-paths` (bereits in dependencies). Alternativ: `resolve.alias` direkt definieren (`{ "@": resolve(__dirname, "src") }`). Nach Fix: `bulk-reassign.test.ts` muss 7 Test-Suites mit echten Counts laufen.
+- Reported: 2026-05-15 (Gesamt-/qa V7.1, RPT-425).
+
+### ISSUE-073 — v7-rls-matrix.test.ts 96 SKIPPED auf Coolify-DB wegen fehlenden Seed-Daten (pre-existing V7-Seed-Drift)
+- Status: open (aggregate-queries-Teil resolved via ISSUE-075-Cleanup)
+- Severity: Medium
+- Area: Test-Infra / Seed-Daten / Coolify-DB-State
+- Summary: `cockpit/__tests__/rls/v7-rls-matrix.test.ts` `beforeAll` wirft "Seed-Daten fehlen: deals hat keine Records mit owner=00000000-0000-0000-0000-000000000081. 'npm run seed:multi-user' ausfuehren." — die Coolify-DB hat fuer TEST_MEMBER_1 (`0...000081`) keine Records in `deals` (und vermutlich auch nicht in `companies, contacts, activities, meetings, proposals, email_messages, calls`). Folge: alle 96 Cross-Owner-Tests (8 Tabellen × 3 Rollen × 4 Operationen) SKIPPED. Zusaetzlich: `aggregate-queries.test.ts` 2/6 FAIL — `getTeamMembers` liefert 6 statt erwartete 5, `getTeamBedrockContext.members.length` 6 statt 5 (direkt verbunden mit ISSUE-075).
+- Impact: Primary RLS-Regression-Check (8×3×4=96 Cases) liefert keine Confidence. Allerdings: V7.1 aendert keine RLS-Policies oder DB-Schema → RLS-Regression-Risk aus V7.1 ist Null. Die Seed-Luecke wuerde aber zukuenftige Multi-User-Slices blockieren (V7.5, V8+).
+- Workaround: Keiner — manuell auf Coolify-DB seed:multi-user-Script applicieren.
+- Next Action: In V7.2-Cleanup-Slice: (1) `npm run seed:multi-user` auf Coolify-DB applicieren + idempotent halten, (2) ISSUE-075 cleanup (entfernt 2 aggregate-queries-FAILs automatisch), (3) Seed-Script in den Container-Bootstrap einbauen damit es bei jedem Coolify-Redeploy idempotent re-applied wird. Erwartetes Outcome nach Fix: 12+4+6+0+96 = 118/118 PASS auf RLS-Suite (statt heute 20 PASS + 2 FAIL + 96 SKIP).
+- Reported: 2026-05-15 (Gesamt-/qa V7.1, RPT-425).
+
 ### ISSUE-071 — Disk-Voll-Risiko auf 91.98.20.191 (Docker Build-Cache + unbenutzte Images akkumulieren ohne Cleanup, fuehrt zu Postgres-Crash-Loop)
 - Status: open
 - Severity: High
@@ -19,22 +53,24 @@
   4. **Repeat fuer 159.69.207.29 (Onboarding-Plattform)** — gleiches Build-Cache-Akkumulations-Muster ist dort ebenfalls zu erwarten, bisher noch nicht aufgetreten weil Repo juenger. Praeventiv selbe Cron + Monitoring einrichten.
 
 ### ISSUE-070 — 4 Mutate-Server-Actions ohne assertNotReadOnlyContext-Guard (Defense-in-Depth-Polish, kein Exploit-Pfad)
-- Status: open
+- Status: resolved
 - Severity: Medium
 - Area: Backend / V7 / Defense-in-Depth / SLC-704-Symmetrie
 - Summary: /final-check V7 RPT-410: 4 Files mutieren Tabellen ohne `await assertNotReadOnlyContext()` als first line — `lib/team/bulk-reassign-actions.ts` (bulkReassignApply, RLS-Bypass via SET LOCAL ROLE postgres), `components/insights/insight-actions.ts` (saveInsight INSERT activities), `lib/settings/working-hours-actions.ts` (updateWorkingHoursSettings UPSERT user_settings), `lib/ki-workspace/reports/winloss.ts` (persistManualRun INSERT auto_winloss_runs, V6.6-Code). ISSUE-064-Style-Policy ("first line in jeder Mutate-Action") nicht symmetrisch durchgezogen seit SLC-707.
 - Impact: Kein aktueller Exploit-Pfad. Die 4 Server-Actions sind NICHT aus dem `/team/[user_id]/*`-Drilldown-Subtree aufrufbar — Read-Only-Context wird nur dort via Layout-Wrap gesetzt. ISSUE-066-Kontext: AsyncLocalStorage propagiert ohnehin nicht in Server-Action-Requests, Guard wuerde dort eh nicht greifen. V7.5-Mitigation via Middleware-Header geplant. Bei zukuenftiger Drilldown-Erweiterung wuerden diese Guards wichtig.
 - Workaround: Keiner notwendig — keine Live-Auslieferungs-Bedrohung.
-- Next Action: BL-466 — Post-Release-Polish-Slice (~15 min): 4× `await assertNotReadOnlyContext()` als first line einfuegen + 4× Vitest-Mock-Tests + AUDIT_SERVER_ACTIONS_V7.md-Synchronisation (siehe ISSUE-069).
+- Resolution: SLC-713 MT-1 (Branch slc-713-defense-in-depth-polish): 4× `await assertNotReadOnlyContext()` als first line eingefuegt. `persistManualRun` aus `winloss.ts` zu sibling `winloss-persist.ts` (non-"use server") extrahiert (analog Pattern `bulk-reassign.ts`), damit der Audit-Insert nicht versehentlich als Server-Action exposed wird. 4 neue Vitest-Tests in MT-2 alle gruen (Pattern DEC-201: runWithReadOnlyContext-Wrap + rejects.toThrow(/Mutation blocked/) + AC3-Assertion dass Mock-Clients nicht aufgerufen werden). Volle Suite 779/779 PASS (+4 vs. Baseline 775).
+- Resolved: 2026-05-15
 
 ### ISSUE-069 — AUDIT_SERVER_ACTIONS_V7.md stale: SLC-707 Bulk-Reassign + 3 V6.6-Mutate-Files nicht nachgetragen + 1 Fehlklassifizierung
-- Status: open
+- Status: resolved
 - Severity: Medium
 - Area: Documentation / V7 / Audit-Trail
 - Summary: /final-check V7 RPT-410: docs/AUDIT_SERVER_ACTIONS_V7.md hat seit SLC-704-Sweep 4 Files ergaenzt (ISSUE-064-Tranche), aber 5 weitere Mutate-Files sind nicht synchron mit dem aktuellen Code-Stand. (a) Bulk-Reassign-Server-Actions (bulkReassignPreview, bulkReassignApply) sind nur in Section 8 "Out-of-Scope" gelistet — nie als "live"-Eintrag nachgetragen, obwohl SLC-707 sie produktiv ausgeliefert hat. (b) `lib/team/bulk-reassign.ts` Audit-Helper (writeInitiatedAudit + writeAppliedAudit) fehlen. (c) `lib/settings/working-hours-actions.ts` (V6.6) fehlt. (d) `lib/ki-workspace/reports/winloss.ts` persistManualRun (V6.6) fehlt. (e) `lib/audit.ts` logAudit + logAuditWithId (zentrale Audit-Insertion) fehlt. Plus 1 Fehlklassifizierung: `components/insights/insight-actions.ts:201` ist als "wrapper, ruft lib/actions" markiert — real macht die Datei selbst `supabase.from("activities").insert(...)` an Zeile 59.
 - Impact: Reine Doc-Hygiene. Kein Runtime-Risk. Aber: Compliance-Gate-Auditoren verlassen sich auf das Doc als Quelle-der-Wahrheit fuer Server-Action-Coverage und Audit-Trail-Pfade.
 - Workaround: Keiner.
-- Next Action: BL-466 — Doc-Sync (~10 min): 5 Eintraege ergaenzen, 1 Fehlklassifizierung korrigieren. Gebuendelt mit ISSUE-070 als Post-Release-Polish-Slice.
+- Resolution: SLC-713 MT-3 (Branch slc-713-defense-in-depth-polish): Neue Section 10 "Post-V7 Mutate-Pfade — SLC-707 + V6.6 nachgetragen" mit 5 Sub-Sections (bulk-reassign-actions / bulk-reassign Audit-Helpers / working-hours-actions / winloss-persist / lib/audit.ts) ergaenzt. Fehlklassifizierung `components/insights/insight-actions.ts` korrigiert (saveInsight macht selbst INSERT activities, nicht UI-wrapper). Section 8 Out-of-Scope: 3 abgehakte Eintraege als delivered annotiert (SLC-705/706/707). grep nach den 6 neuen Symbolen (bulkReassignApply, writeInitiatedAudit, writeAppliedAudit, updateWorkingHoursSettings, persistManualRun, logAuditWithId) bestaetigt alle in der Doc.
+- Resolved: 2026-05-15
 
 ### ISSUE-068 — vitest.config.ts include-Pattern uebersieht root-level __tests__/-Suite (V7-Live-DB-Coverage silent geskipped)
 - Status: resolved

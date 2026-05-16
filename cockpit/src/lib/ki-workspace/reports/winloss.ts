@@ -11,6 +11,7 @@
 //   3. "Aktualisieren"-Button im AnswerPane setzt bypassCache=true.
 
 import { invokeReport, authorizeReport } from "./_shared";
+import { classifyDealStatus, persistManualRun } from "./winloss-persist";
 import { loadDealContext } from "@/lib/ki-workspace/deal-context";
 import {
   DEAL_WINLOSS_SYSTEM_PROMPT,
@@ -124,38 +125,3 @@ async function loadRecentAutoRun(
   };
 }
 
-async function classifyDealStatus(dealId: string): Promise<"won" | "lost"> {
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("deals")
-    .select("status")
-    .eq("id", dealId)
-    .maybeSingle();
-  const status = (data as { status?: string } | null)?.status;
-  if (status === "won") return "won";
-  if (status === "lost") return "lost";
-  // Default fuer aktive Deals: target_status='won' damit Schema-Constraint
-  // erfuellt ist. Der Prompt klassifiziert selbst (aktiv / gewonnen / verloren).
-  return "won";
-}
-
-async function persistManualRun(args: {
-  dealId: string;
-  userId: string;
-  markdown: string;
-  model: string;
-  completedAt: string;
-}): Promise<void> {
-  const supabase = createAdminClient();
-  const targetStatus = await classifyDealStatus(args.dealId);
-  await supabase.from("auto_winloss_runs").insert({
-    deal_id: args.dealId,
-    target_status: targetStatus,
-    triggered_by_user_id: args.userId,
-    triggered_by_system: false,
-    bedrock_output: args.markdown,
-    bedrock_model: args.model,
-    bedrock_completed_at: args.completedAt,
-    status: "succeeded",
-  });
-}

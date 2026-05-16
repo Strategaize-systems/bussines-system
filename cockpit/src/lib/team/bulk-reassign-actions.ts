@@ -9,6 +9,7 @@
 
 "use server";
 
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { getPgClient } from "@/lib/db/pg";
 import { getProfile } from "@/lib/auth/get-profile";
 
@@ -76,6 +77,8 @@ export async function bulkReassignPreview(args: BulkReassignArgs): Promise<Previ
  *  - Phase 2 (Applied, innerhalb Tx):    wird bei Rollback mit-zurueckgerollt
  */
 export async function bulkReassignApply(args: BulkReassignArgs): Promise<ApplyResult> {
+  await assertNotReadOnlyContext();
+
   const validation = validateBulkReassignInput(args);
   if (!validation.ok) return validation;
 

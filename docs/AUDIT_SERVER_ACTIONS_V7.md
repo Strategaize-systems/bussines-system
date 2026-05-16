@@ -198,7 +198,7 @@ Pfad: `cockpit/src/app/(app)/<domain>/actions.ts` und `cockpit/src/app/actions/*
 | lib/actions/activity-actions.ts | completeActivity / deleteActivity (post-RPT-402) | UPDATE / DELETE | activities | assertNotReadOnlyContext first line |
 | lib/actions/insight-actions.ts | approveInsightAction / rejectInsightAction (post-RPT-402) | INSERT | activities | owner = approver user, assertNotReadOnlyContext first line; batch wrapper inherits via single-item call |
 | lib/actions/document-actions.ts | uploadDocument / deleteDocument | * | documents | nicht-core |
-| components/insights/insight-actions.ts | accept/reject (UI-wrapper) | INSERT | activities | wrapper, ruft lib/actions |
+| components/insights/insight-actions.ts | saveInsight | INSERT | activities | macht selbst `supabase.from("activities").insert(...)` (Zeile 59) — KEIN reiner UI-Wrapper. SLC-713 MT-1: `await assertNotReadOnlyContext()` first line. |
 
 ## 2) Cron-Endpoints (AC4)
 
@@ -335,9 +335,9 @@ INSERT-Punkte in 8 Kerntabellen (alle Layer zusammen):
 
 ## 8) Out-of-Scope (Deferred fuer spaetere V7-Slices)
 
-- Bulk-Reassign-UI (SLC-707)
-- Drilldown `/team/[user_id]/...` Routes (SLC-706)
-- /team Aggregat-Queries (SLC-705)
+- ~~Bulk-Reassign-UI (SLC-707)~~ — **delivered in SLC-707**, siehe Section 10 (Post-V7-Mutate-Pfade).
+- ~~Drilldown `/team/[user_id]/...` Routes (SLC-706)~~ — **delivered in SLC-706 + SLC-712a/b**.
+- ~~/team Aggregat-Queries (SLC-705)~~ — **delivered in SLC-705**.
 - Listing-Filter (RLS uebernimmt transparent)
 - Eslint-Custom-Rule "every mutate Server Action must call assertNotReadOnlyContext" (Defense-in-Depth, dokumentiert)
 
@@ -345,3 +345,38 @@ INSERT-Punkte in 8 Kerntabellen (alle Layer zusammen):
 
 - AC1 (dieses Audit-File) — DONE mit dieser Datei.
 - AC2..AC10 — siehe Slice-Verifikations-Plan.
+
+## 10) Post-V7 Mutate-Pfade — SLC-707 + V6.6 nachgetragen (SLC-713 MT-3)
+
+Eintraege, die in der ursprünglichen V7-SLC-704-Audit-Erfassung fehlten und in SLC-713
+(V7.1 Defense-in-Depth-Polish) nachgetragen wurden. Synchron mit ISSUE-069-Resolution.
+
+### lib/team/bulk-reassign-actions.ts — SLC-707 Bulk-Reassign Server Actions
+| Funktion | Op | Tabelle | Pre | Post | Notes |
+|---|---|---|---|---|---|
+| bulkReassignPreview | SELECT | (read-only Preview) | n/a | n/a | RBAC-Gate via assertCanReassign, kein Mutate |
+| bulkReassignApply | UPDATE | deals + activities + meetings + proposals + calls + email_messages + companies + contacts | nein | JA | SLC-713 MT-1: `await assertNotReadOnlyContext()` first line. 4 Defense-Gates (Validation + Role-Check + Team-Scope + Initiated-Audit) + Tx mit SET LOCAL ROLE postgres + Applied-Audit. Audit-Helpers in lib/team/bulk-reassign.ts. |
+
+### lib/team/bulk-reassign.ts — Audit-Helpers (Pure-Core, kein "use server")
+| Funktion | Op | Tabelle | Notes |
+|---|---|---|---|
+| writeInitiatedAudit | INSERT | audit_log | Pre-Tx-Eintrag mit `bulk_reassign_initiated` action. Bleibt bei Rollback erhalten (Forensik-Trail vor Privileg-Eskalation). |
+| writeAppliedAudit | INSERT | audit_log | Innerhalb Tx, ein Eintrag pro betroffene Tabelle mit affected_rows + audit_initiated_id-Link. Wird bei Rollback mit-zurueckgerollt. |
+
+### lib/settings/working-hours-actions.ts — V6.6 Working-Hours-Settings
+| Funktion | Op | Tabelle | Pre | Post | Notes |
+|---|---|---|---|---|---|
+| getWorkingHoursSettings | SELECT | user_settings | n/a | n/a | read-only |
+| updateWorkingHoursSettings | UPSERT | user_settings | nein | JA | SLC-713 MT-1: `await assertNotReadOnlyContext()` first line. Schreibt working_hours_start/end pro user (CHECK-Constraint MIG-032). |
+
+### lib/ki-workspace/reports/winloss-persist.ts — V6.6 Manueller Win/Loss-Run-Pfad
+| Funktion | Op | Tabelle | Pre | Post | Notes |
+|---|---|---|---|---|---|
+| classifyDealStatus | SELECT | deals | n/a | n/a | read-only Lookup (won/lost/active). |
+| persistManualRun | INSERT | auto_winloss_runs | nein | JA | SLC-713 MT-1: `await assertNotReadOnlyContext()` first line. Extrahiert aus winloss.ts in V7.1 SLC-713 als Pure-Helper (kein "use server"), damit der Audit-Insert nicht versehentlich als Server-Action exposed wird. Aufruf erfolgt nur aus `winloss.ts:runReport` nach `authorizeReport`. |
+
+### lib/audit.ts — Zentrale Audit-Insertion (V6.4-Code, in V7-Audit nie inventarisiert)
+| Funktion | Op | Tabelle | Notes |
+|---|---|---|---|
+| logAudit | INSERT | audit_log | Best-effort, swallow errors — Audit darf NIE eine erfolgreiche Operation blocken. Aufgerufen aus diversen Mutate-Pfaden (Workflow-Dispatcher, FollowupEngine, Signal-Extractor). |
+| logAuditWithId | INSERT | audit_log | Variante mit explizit übergebener entity_id (statt actor_id-as-entity_id-Fallback). Verwendet von Cleanup-Cron (`/api/cron/click-log-cleanup`) für DSGVO-Trail. |
