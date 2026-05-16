@@ -321,3 +321,16 @@ V7.2 ist ein 1-Slice Test-Infra-Sprint, 3 MTs, kein Production-Code-Touch, keine
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-721 | [Test-Infra-Cleanup (Seed-Multi-User qa-admin + vitest-RLS Path-Alias + Coolify-DB-Apply)](SLC-721-test-infra-cleanup.md) | FEAT-721 | done | High | 2026-05-16 |
+
+## V7.5 Slices (NL-Workflow-Sculptor + ISSUE-066-Closure — Slice-Planning done 2026-05-16)
+
+V7.5 = 6 Slices SLC-751..756, Foundation-First. Reihenfolge per Architecture-Empfehlung: SLC-751 (Middleware-Mitigation, Foundation) → SLC-752 (Sculptor-Core + MIG-036) → SLC-753 (Mein-Tag-NL-Surface) → SLC-754 (Trockenlauf + Apply-Confirm-Modal) → SLC-755 (Voice-Input, parallel zu SLC-754+756 moeglich) → SLC-756 (Inspection-Log, letzter Slice, schliesst FEAT-751). Pro Slice: /backend|/frontend → /qa → User-Coolify-Deploy → Live-Smoke. Gesamt-/qa nach SLC-756. Final-Check + Go-Live + Deploy als REL-032. Gesamt geschaetzt ~12-20h. Reuse-Heavy: Bedrock-Client (V3) + Whisper (V4.1) + automation_rules+DEC-132-Trockenlauf (V6.2) + KI-Workspace-Hybrid (V6.6) + AsyncLocalStorage-Read-Only-Context (V7) + Settings-Permission-Layer (V7.1).
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-751 | [ISSUE-066 Middleware-Mitigation (Foundation-First)](SLC-751-issue066-middleware-mitigation.md) | FEAT-752 | planned | High | 2026-05-16 |
+| SLC-752 | [Sculptor-Adapter Core + MIG-036 (Pure-Functions + Vitest)](SLC-752-sculptor-core.md) | FEAT-751 | planned | High | 2026-05-16 |
+| SLC-753 | [Mein-Tag NL-Surface + Sculpt-Server-Action](SLC-753-mein-tag-nl-surface.md) | FEAT-751 | planned | High | 2026-05-16 |
+| SLC-754 | [Trockenlauf-Karte + Apply-Confirmation-Modal](SLC-754-preview-apply-confirm.md) | FEAT-751 | planned | High | 2026-05-16 |
+| SLC-755 | [Voice-Input-Integration (Whisper-Adapter-Reuse)](SLC-755-voice-input.md) | FEAT-751 | planned | Medium | 2026-05-16 |
+| SLC-756 | [Inspection-Log /settings/workflow-automation/nl-history (Admin-only)](SLC-756-inspection-log.md) | FEAT-751 | planned | Medium | 2026-05-16 |

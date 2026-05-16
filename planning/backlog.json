@@ -2019,7 +2019,7 @@
       "priority": "high",
       "status": "in_progress",
       "version": "V7.5",
-      "description": "V7.5 Requirements done 2026-05-16 (siehe PRD V7.5-Section + FEAT-751-Spec + FEAT-752-Spec). 4 User-Entscheidungen 2026-05-16: (1) UI-Surface=Nur Mein Tag (kein Settings-Page-Touch), (2) Trockenlauf=Pflicht vor Apply (V6.2 DEC-132-Reuse), (3) Voice-Input=im V7.5-Scope (Whisper-Adapter-Reuse aus V4.1), (4) LLM-Domain=strict 1:1 zu V6.2-Schema (3 Trigger + 4 Actions, Out-of-Domain → strukturierter Reject). FEAT-751 Sculptor + Mein-Tag-Surface + Voice + Inspection-Log + Soft-Dedup. FEAT-752 ISSUE-066-Middleware-Mitigation als eigener Slice (BL-476). 6 Slices Default-Hypothese SLC-751..756. Naechster Schritt /architecture V7.5. Inspiriert von Clay 'Sculptor' Mai 2026. Differenzierungs-Hebel: gemeinsames Programmieren von Regeln zwischen Berater und Klient, kein autonomes Handeln.",
+      "description": "V7.5 Slice-Planning done 2026-05-16 (RPT-441, 6 Slices SLC-751..756 mit AC + Micro-Tasks). Foundation-First-Reihenfolge per Architecture-Empfehlung. Architecture done 2026-05-16 (RPT-440, 7 DECs DEC-205..211). Requirements done 2026-05-16. 4 User-Entscheidungen 2026-05-16: (1) UI-Surface=Nur Mein Tag (kein Settings-Page-Touch), (2) Trockenlauf=Pflicht vor Apply (V6.2 DEC-132-Reuse), (3) Voice-Input=im V7.5-Scope (Whisper-Adapter-Reuse aus V4.1), (4) LLM-Domain=strict 1:1 zu V6.2-Schema (3 Trigger + 4 Actions, Out-of-Domain → strukturierter Reject). FEAT-751 Sculptor (SLC-752 Core + SLC-753 NL-Surface + SLC-754 Trockenlauf+Apply + SLC-755 Voice + SLC-756 Inspection-Log) + FEAT-752 ISSUE-066-Middleware-Mitigation (SLC-751, Foundation-First). MIG-036 additiv `automation_rules.created_via`. Naechster Schritt /backend SLC-751. Inspiriert von Clay 'Sculptor' Mai 2026. Differenzierungs-Hebel: gemeinsames Programmieren von Regeln zwischen Berater und Klient, kein autonomes Handeln.",
       "createdAt": "2026-05-07"
     },
     {
@@ -2027,9 +2027,9 @@
       "title": "ISSUE-066 Middleware-Mitigation (FEAT-752) — Read-Only-Context Defense-in-Depth",
       "type": "improvement",
       "priority": "medium",
-      "status": "open",
+      "status": "in_progress",
       "version": "V7.5",
-      "description": "ISSUE-066 schliessen via Middleware-basiertem Pfad-Check (`^\\/team\\/[^/]+\\/`-Regex) der `X-Read-Only-Mode: 1` Request-Header setzt. `assertNotReadOnlyContext()` liest sowohl AsyncLocalStorage als auch den Header. Damit greift der Read-Only-Guard auch bei Direct-Server-Action-Calls aus dem Drilldown — heute nur UX-Hide mitigiert. Plus Vitest-Mock-Test (RED-GREEN, 4 Cases) + Playwright-MCP-Live-Smoke via DevTools-Direct-Server-Action-Call. Pattern war im SLC-706-Quellcode-Kommentar dokumentiert. V7.5 setzt es um. ~1-2h. Eigener kleiner Slice SLC-756 in V7.5-Sequenz. Spec /features/FEAT-752-readonly-context-middleware.md.",
+      "description": "ISSUE-066 schliessen via Middleware-basiertem Pfad-Check (`^\\/team\\/[^/]+\\/`-Regex) der `X-Read-Only-Mode: 1` Request-Header setzt. `assertNotReadOnlyContext()` liest sowohl AsyncLocalStorage als auch den Header. Damit greift der Read-Only-Guard auch bei Direct-Server-Action-Calls aus dem Drilldown — heute nur UX-Hide mitigiert. Plus Vitest-Mock-Test (RED-GREEN, 4 Cases) + Playwright-MCP-Live-Smoke via DevTools-Direct-Server-Action-Call. Pattern war im SLC-706-Quellcode-Kommentar dokumentiert. V7.5 setzt es um. ~1-2h. Slice-Planning done 2026-05-16: implementiert als SLC-751 (Foundation-First per Architecture-Empfehlung, erster V7.5-Slice). Spec /features/FEAT-752-readonly-context-middleware.md + /slices/SLC-751-issue066-middleware-mitigation.md.",
       "createdAt": "2026-05-16"
     },
     {
