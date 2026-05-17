@@ -330,7 +330,7 @@ V7.5 = 6 Slices SLC-751..756, Foundation-First. Reihenfolge per Architecture-Emp
 |----|-------|---------|--------|----------|---------|
 | SLC-751 | [ISSUE-066 Middleware-Mitigation (Foundation-First)](SLC-751-issue066-middleware-mitigation.md) | FEAT-752 | done | High | 2026-05-16 |
 | SLC-752 | [Sculptor-Adapter Core + MIG-036 (Pure-Functions + Vitest)](SLC-752-sculptor-core.md) | FEAT-751 | done | High | 2026-05-16 |
-| SLC-753 | [Mein-Tag NL-Surface + Sculpt-Server-Action](SLC-753-mein-tag-nl-surface.md) | FEAT-751 | in_progress | High | 2026-05-16 |
+| SLC-753 | [Mein-Tag NL-Surface + Sculpt-Server-Action](SLC-753-mein-tag-nl-surface.md) | FEAT-751 | done | High | 2026-05-16 |
 | SLC-754 | [Trockenlauf-Karte + Apply-Confirmation-Modal](SLC-754-preview-apply-confirm.md) | FEAT-751 | planned | High | 2026-05-16 |
 | SLC-755 | [Voice-Input-Integration (Whisper-Adapter-Reuse)](SLC-755-voice-input.md) | FEAT-751 | planned | Medium | 2026-05-16 |
 | SLC-756 | [Inspection-Log /settings/workflow-automation/nl-history (Admin-only)](SLC-756-inspection-log.md) | FEAT-751 | planned | Medium | 2026-05-16 |

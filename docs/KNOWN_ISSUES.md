@@ -1,5 +1,15 @@
 # Known Issues
 
+### ISSUE-076 — Sculptor-PRICING-Coverage-Gap fuer Coolify-LLM_MODEL Kurz-Form
+- Status: resolved
+- Severity: Low
+- Area: AI / Bedrock / SLC-752 Sculptor-Cost
+- Summary: Production-Coolify-ENV `LLM_MODEL=eu.anthropic.claude-sonnet-4-6` (Kurz-Form) war nicht in `sculptor-cost.ts` PRICING-Table. Bestehende Eintraege nur Lang-Form `...-20250514-v1:0`. Folge: `safeCalculate` fing UnknownModelPricingError und returnte cost=0, Render-Condition `totalCostUsd > 0` evaluierte false, Cost-Display rendert nicht.
+- Impact: SLC-753 AC7 FAIL in Run-1 (08:14:39 UTC 2026-05-17). User sah keine Bedrock-Kosten. audit_log persistiert cost=0 statt echtem Cost-Wert. Kein Funktions-Bug im Sculpt-Pfad selbst.
+- Discovery: SLC-753 Live-Smoke RPT-450 — erste echte Production-Sculpt-Anfrage.
+- Resolution: Hotfix-Branch `hotfix/slc-753-pricing-short-id` Commit `bafe9ca` (2026-05-17). 2 Kurz-Form-Aliase ergaenzt (`anthropic.claude-sonnet-4-6` + `eu.anthropic.claude-sonnet-4-6`) mit identischem Pricing wie Lang-Form. +2 Vitest. Re-Smoke Run-2 (08:25:22 UTC) cost=0.009312 in audit_log, UI rendert "Bedrock-Kosten: ~$0.009 fuer 1 Versuch".
+- Next Action: Optional — Coolify-ENV `LLM_MODEL` auf Lang-Form `eu.anthropic.claude-sonnet-4-6-20250514-v1:0` korrigieren als Best-Practice. PRICING-Code-Pfad ist via Alias abgesichert, aber Lang-Form ist die kanonische AWS-ID.
+
 ### ISSUE-075 — Production-User immo@bellaerts.de im Test-Team-77 (BL-470-Smoke-Test-Artefakt nicht aufgeraeumt)
 - Status: resolved
 - Severity: Medium
