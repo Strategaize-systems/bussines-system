@@ -16,11 +16,18 @@
 // Cost-Display (DEC-208 Real-Cost-Display) ist Inline-Helper formatBedrockCost.
 
 import * as React from "react";
-import { Sparkles, Mic, AlertTriangle, Wand2, Plus, X, Lock } from "lucide-react";
+import { Sparkles, Mic, AlertTriangle, Wand2, Plus, X, TestTube2, CheckCircle2 } from "lucide-react";
 
 import { sculptNlRule, type SculptNlRuleResult } from "@/app/(app)/mein-tag/actions/sculpt-nl-rule";
+import { previewNlRule } from "@/app/(app)/mein-tag/actions/preview-nl-rule";
+import { applyNlRule } from "@/app/(app)/mein-tag/actions/apply-nl-rule";
 import type { SculptResult } from "@/lib/automation/sculptor";
 import type { SculptSuccess } from "@/lib/automation/sculptor-schema";
+import type { DryRunResult } from "@/lib/automation/dry-run";
+import type { Condition, ConditionOp } from "@/types/automation";
+
+import { PreviewResultCard } from "./preview-result-card";
+import { ApplyConfirmModal } from "./apply-confirm-modal";
 
 // ---------------------------------------------------------------------------
 // Public helper (also covered by MT-4 RTL-Test)
@@ -98,6 +105,68 @@ function payloadToSchema(payload: SculptSuccess): EditableSchema {
   };
 }
 
+// V7.5 SLC-754 MT-5 — Konvertiert lossy EditableSchema zurueck zu SculptSuccess
+// fuer previewNlRule + applyNlRule (Best-Effort-Merge mit Original-Payload-
+// Params, da Editor nicht alle Action-Params kapselt — z.B. send_email_template
+// template_id-UUID ist Read-Only).
+function buildCurrentSchema(
+  payload: SculptSuccess,
+  edits: EditableSchema
+): SculptSuccess {
+  const original = payload.actions[0];
+
+  let firstAction: SculptSuccess["actions"][number];
+  if (edits.actionType === "create_task") {
+    firstAction = {
+      type: "create_task",
+      params: {
+        title: edits.actionTitle || "Aufgabe",
+        ...(original?.type === "create_task" && {
+          due_in_days: original.params.due_in_days,
+          assignee: original.params.assignee,
+        }),
+      },
+    };
+  } else if (edits.actionType === "create_activity") {
+    firstAction = {
+      type: "create_activity",
+      params: {
+        type:
+          original?.type === "create_activity" ? original.params.type : "note",
+        title: edits.actionTitle || "Aktivitaet",
+      },
+    };
+  } else if (
+    edits.actionType === "send_email_template" &&
+    original?.type === "send_email_template"
+  ) {
+    firstAction = original;
+  } else if (
+    edits.actionType === "update_field" &&
+    original?.type === "update_field"
+  ) {
+    firstAction = original;
+  } else {
+    firstAction = original ?? {
+      type: "create_task",
+      params: { title: edits.actionTitle || "Aufgabe" },
+    };
+  }
+
+  return {
+    name: payload.name,
+    description: payload.description ?? null,
+    trigger_event: edits.triggerEvent,
+    trigger_config: payload.trigger_config,
+    conditions: edits.conditions.map<Condition>((c) => ({
+      field: c.field,
+      op: c.op as ConditionOp,
+      value: c.value,
+    })),
+    actions: [firstAction, ...payload.actions.slice(1)],
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -112,18 +181,47 @@ export function NLRuleBuilderCard({ canSculpt }: Props) {
   const [editableSchema, setEditableSchema] = React.useState<EditableSchema | null>(null);
   const [isPending, startTransition] = React.useTransition();
 
+  // SLC-754 MT-5 — Trockenlauf + Apply state
+  const [previewResult, setPreviewResult] = React.useState<DryRunResult | null>(null);
+  const [previewError, setPreviewError] = React.useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = React.useState(false);
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const [applyError, setApplyError] = React.useState<string | null>(null);
+  const [applyLoading, setApplyLoading] = React.useState(false);
+  const [applySuccess, setApplySuccess] = React.useState<{ ruleId: string } | null>(null);
+
   // Auf MT-3: Server-Side-Guard rendert die Card nur fuer admin/teamlead. Die
   // Client-Side-Pruefung hier ist Defense-in-Depth (z.B. wenn Reuse spaeter
   // ohne Server-Prop erfolgt).
   if (!canSculpt) return null;
 
   const sculptResult: SculptResult | null = actionResult?.ok ? actionResult.result : null;
+  const sculptPayload: SculptSuccess | null =
+    sculptResult && sculptResult.status === "success" ? sculptResult.payload : null;
+  const sculptSessionId: string | null = sculptResult?.sessionId ?? null;
+  const sculptCostUsd = sculptResult?.totalCostUsd ?? 0;
+
+  // Derived: edited-in-Form flag — true wenn der User Schema-Karte editiert hat.
+  const editedInForm = React.useMemo(() => {
+    if (!sculptPayload || !editableSchema) return false;
+    const original = payloadToSchema(sculptPayload);
+    return JSON.stringify(original) !== JSON.stringify(editableSchema);
+  }, [sculptPayload, editableSchema]);
+
+  function resetDerivedState() {
+    setPreviewResult(null);
+    setPreviewError(null);
+    setApplyError(null);
+    setApplySuccess(null);
+    setModalOpen(false);
+  }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (nlInput.trim().length === 0) return;
     const fd = new FormData();
     fd.set("nlInput", nlInput);
+    resetDerivedState();
     startTransition(async () => {
       const res = await sculptNlRule(fd);
       setActionResult(res);
@@ -135,7 +233,65 @@ export function NLRuleBuilderCard({ canSculpt }: Props) {
     });
   }
 
+  async function handlePreview() {
+    if (!sculptPayload || !editableSchema) return;
+    setPreviewLoading(true);
+    setPreviewError(null);
+    try {
+      const currentSchema = buildCurrentSchema(sculptPayload, editableSchema);
+      const res = await previewNlRule(currentSchema);
+      if (res.ok) {
+        setPreviewResult(res.result);
+      } else {
+        setPreviewError(res.message);
+      }
+    } catch (e) {
+      setPreviewError(`Trockenlauf fehlgeschlagen: ${(e as Error).message}`);
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
+
+  async function handleApply() {
+    if (!sculptPayload || !editableSchema || !sculptSessionId) return;
+    setApplyLoading(true);
+    setApplyError(null);
+    try {
+      const currentSchema = buildCurrentSchema(sculptPayload, editableSchema);
+      const res = await applyNlRule({
+        schema: currentSchema,
+        nl_input: nlInput,
+        sculpt_audit_id: sculptSessionId,
+        sculptor_cost_usd: sculptCostUsd,
+        edited_in_form: editedInForm,
+      });
+      if (res.ok) {
+        setApplySuccess({ ruleId: res.rule_id });
+        setModalOpen(false);
+      } else {
+        setApplyError(res.message);
+      }
+    } catch (e) {
+      setApplyError(`Apply fehlgeschlagen: ${(e as Error).message}`);
+    } finally {
+      setApplyLoading(false);
+    }
+  }
+
+  function handleNewRule() {
+    setNlInput("");
+    setActionResult(null);
+    setEditableSchema(null);
+    resetDerivedState();
+  }
+
+  const currentSchemaForModal: SculptSuccess | null =
+    sculptPayload && editableSchema
+      ? buildCurrentSchema(sculptPayload, editableSchema)
+      : null;
+
   return (
+    <>
     <div
       data-testid="nl-rule-builder-card"
       className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg overflow-hidden"
@@ -393,24 +549,91 @@ export function NLRuleBuilderCard({ canSculpt }: Props) {
               </div>
             </div>
 
-            {/* KARTE 4: Trockenlauf-Placeholder (SLC-754) */}
-            <div
-              data-testid="nl-rule-builder-dryrun-placeholder"
-              className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-2 text-xs text-slate-500">
-                <Lock size={14} />
-                Trockenlauf + Aktivieren folgen in SLC-754.
+            {/* KARTE 4: Trockenlauf + Apply (SLC-754) */}
+            {!previewResult && (
+              <div
+                data-testid="nl-rule-builder-preview-cta"
+                className="rounded-lg border border-slate-200 bg-white px-4 py-3 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2 text-xs text-slate-600">
+                  <TestTube2 size={14} className="text-[#4454b8]" />
+                  Pruefe die Regel im Trockenlauf gegen die letzten 7 Tage.
+                </div>
+                <button
+                  type="button"
+                  data-testid="nl-rule-builder-preview-button"
+                  onClick={handlePreview}
+                  disabled={previewLoading}
+                  className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {previewLoading ? "Pruefe..." : "Trockenlauf anzeigen"}
+                </button>
               </div>
+            )}
+
+            {previewError && (
+              <div
+                data-testid="nl-rule-builder-preview-error"
+                className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700 flex items-start gap-2"
+              >
+                <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                <span>{previewError}</span>
+              </div>
+            )}
+
+            {previewResult && (
+              <>
+                <PreviewResultCard result={previewResult} />
+                <div
+                  data-testid="nl-rule-builder-apply-cta"
+                  className="rounded-lg border border-slate-200 bg-white px-4 py-3 flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2 text-xs text-slate-600">
+                    <Sparkles size={14} className="text-[#4454b8]" />
+                    Aktiviere die Regel — sie wird ab sofort automatisch ausgefuehrt.
+                  </div>
+                  <button
+                    type="button"
+                    data-testid="nl-rule-builder-apply-button"
+                    onClick={() => {
+                      setApplyError(null);
+                      setModalOpen(true);
+                    }}
+                    disabled={applyLoading}
+                    className="rounded-lg bg-gradient-to-r from-[#120774] to-[#4454b8] px-3 py-1.5 text-xs font-semibold text-white hover:from-[#0f0660] hover:to-[#3a48a0] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Regel aktivieren
+                  </button>
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        {/* Apply-Success-Banner (SLC-754 MT-5) */}
+        {applySuccess && (
+          <div
+            data-testid="nl-rule-builder-apply-success"
+            className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 flex items-start gap-3"
+          >
+            <CheckCircle2 size={18} className="text-emerald-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-emerald-900">
+                Regel aktiviert
+              </p>
+              <p className="text-xs text-emerald-700 mt-0.5">
+                Die Regel ist jetzt aktiv und feuert bei zukuenftigen Ereignissen.
+              </p>
               <button
                 type="button"
-                disabled
-                className="rounded-lg bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-400 cursor-not-allowed"
+                data-testid="nl-rule-builder-new-rule-button"
+                onClick={handleNewRule}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-white border border-emerald-300 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100"
               >
-                Regel pruefen
+                <Plus size={12} /> Neue Regel anlegen
               </button>
             </div>
-          </>
+          </div>
         )}
 
         {sculptResult && sculptResult.status === "reject" && (
@@ -466,5 +689,20 @@ export function NLRuleBuilderCard({ canSculpt }: Props) {
         )}
       </div>
     </div>
+
+    {currentSchemaForModal && (
+      <ApplyConfirmModal
+        open={modalOpen}
+        onOpenChange={(open) => {
+          setModalOpen(open);
+          if (!open) setApplyError(null);
+        }}
+        schema={currentSchemaForModal}
+        onApply={handleApply}
+        isApplying={applyLoading}
+        errorMessage={applyError}
+      />
+    )}
+    </>
   );
 }

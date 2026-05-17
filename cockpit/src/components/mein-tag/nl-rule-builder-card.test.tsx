@@ -13,8 +13,18 @@ vi.mock("@/app/(app)/mein-tag/actions/sculpt-nl-rule", () => ({
   sculptNlRule: vi.fn(),
 }));
 
+vi.mock("@/app/(app)/mein-tag/actions/preview-nl-rule", () => ({
+  previewNlRule: vi.fn(),
+}));
+
+vi.mock("@/app/(app)/mein-tag/actions/apply-nl-rule", () => ({
+  applyNlRule: vi.fn(),
+}));
+
 const { NLRuleBuilderCard, formatBedrockCost } = await import("./nl-rule-builder-card");
 const { sculptNlRule } = await import("@/app/(app)/mein-tag/actions/sculpt-nl-rule");
+const { previewNlRule } = await import("@/app/(app)/mein-tag/actions/preview-nl-rule");
+const { applyNlRule } = await import("@/app/(app)/mein-tag/actions/apply-nl-rule");
 
 describe("NLRuleBuilderCard — Hide for non-allowed roles", () => {
   it("renders nothing when canSculpt=false", () => {
@@ -80,8 +90,9 @@ describe("NLRuleBuilderCard — Success state", () => {
     expect(screen.getByTestId("nl-rule-builder-clarsprache").textContent).toMatch(/Folge-Aufgabe/);
     // Cost-Display
     expect(screen.getByTestId("nl-rule-builder-cost").textContent).toMatch(/~\$0\.003 fuer 1 Versuch/);
-    // Trockenlauf-Placeholder sichtbar
-    expect(screen.getByTestId("nl-rule-builder-dryrun-placeholder")).toBeInTheDocument();
+    // SLC-754 MT-5: Preview-CTA-Card sichtbar (statt SLC-753-Placeholder)
+    expect(screen.getByTestId("nl-rule-builder-preview-cta")).toBeInTheDocument();
+    expect(screen.getByTestId("nl-rule-builder-preview-button")).toBeInTheDocument();
     // KEIN Reject
     expect(screen.queryByTestId("nl-rule-builder-reject")).not.toBeInTheDocument();
   });
@@ -137,6 +148,107 @@ describe("NLRuleBuilderCard — Forbidden server-action error", () => {
       expect(screen.getByTestId("nl-rule-builder-action-error")).toBeInTheDocument();
     });
     expect(screen.getByTestId("nl-rule-builder-action-error").textContent).toMatch(/Admin/);
+  });
+});
+
+describe("NLRuleBuilderCard — SLC-754 Trockenlauf + Apply Sequenz", () => {
+  it("renders preview-result + apply-cta after preview, opens modal, applies on submit", async () => {
+    vi.mocked(sculptNlRule).mockResolvedValue({
+      ok: true,
+      result: {
+        status: "success",
+        payload: {
+          name: "Follow-up nach Angebot",
+          description: null,
+          trigger_event: "deal.stage_changed",
+          trigger_config: {},
+          conditions: [],
+          actions: [
+            { type: "create_task", params: { title: "Follow-up", due_in_days: 2 } },
+          ],
+        },
+        totalCostUsd: 0.012,
+        attemptCount: 1,
+        sessionId: "session-aaa",
+      },
+    });
+    vi.mocked(previewNlRule).mockResolvedValue({
+      ok: true,
+      result: {
+        total_matched: 2,
+        hits: [
+          {
+            entity_type: "deal",
+            entity_id: "d1",
+            entity_label: "Deal: Acme",
+            entity_url: "/deals/d1",
+            matched_at: "2026-05-15T09:00:00Z",
+            would_run_actions: [
+              { type: "create_task", summary: 'Aufgabe anlegen: "Follow-up"' },
+            ],
+          },
+          {
+            entity_type: "deal",
+            entity_id: "d2",
+            entity_label: "Deal: Beta",
+            entity_url: "/deals/d2",
+            matched_at: "2026-05-14T09:00:00Z",
+            would_run_actions: [
+              { type: "create_task", summary: 'Aufgabe anlegen: "Follow-up"' },
+            ],
+          },
+        ],
+        truncated: false,
+        source_count: 5,
+      },
+    });
+    vi.mocked(applyNlRule).mockResolvedValue({
+      ok: true,
+      rule_id: "rule-new-1",
+    });
+
+    render(<NLRuleBuilderCard canSculpt={true} />);
+    fireEvent.change(screen.getByPlaceholderText(/Beispiel/), {
+      target: { value: "Wenn Deal nach Angebot, leg Follow-up an" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Regel bauen/ }));
+
+    // 1) Wait for sculpt + schema to render
+    await waitFor(() => {
+      expect(screen.getByTestId("nl-rule-builder-schema")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("nl-rule-builder-preview-cta")).toBeInTheDocument();
+
+    // 2) Click Trockenlauf
+    fireEvent.click(screen.getByTestId("nl-rule-builder-preview-button"));
+    await waitFor(() => {
+      expect(screen.getByTestId("preview-result-card")).toBeInTheDocument();
+    });
+    expect(previewNlRule).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("nl-rule-builder-apply-cta")).toBeInTheDocument();
+
+    // 3) Click Regel aktivieren -> Modal opens
+    fireEvent.click(screen.getByTestId("nl-rule-builder-apply-button"));
+    await waitFor(() => {
+      expect(screen.getByTestId("apply-confirm-modal")).toBeInTheDocument();
+    });
+    const submitBtn = screen.getByTestId("apply-confirm-submit") as HTMLButtonElement;
+    expect(submitBtn.disabled).toBe(true);
+
+    // 4) Check checkbox -> submit enabled
+    fireEvent.click(screen.getByTestId("apply-confirm-checkbox"));
+    expect(submitBtn.disabled).toBe(false);
+
+    // 5) Submit -> applyNlRule called + success banner
+    fireEvent.click(submitBtn);
+    await waitFor(() => {
+      expect(screen.getByTestId("nl-rule-builder-apply-success")).toBeInTheDocument();
+    });
+    expect(applyNlRule).toHaveBeenCalledTimes(1);
+    const applyArg = vi.mocked(applyNlRule).mock.calls[0][0];
+    expect(applyArg.sculpt_audit_id).toBe("session-aaa");
+    expect(applyArg.sculptor_cost_usd).toBe(0.012);
+    expect(applyArg.edited_in_form).toBe(false);
   });
 });
 
