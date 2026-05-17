@@ -1,5 +1,15 @@
 # Known Issues
 
+### ISSUE-077 — NL-Rule-Builder Card-State-Reset + Success-Toast bleiben aus nach Apply (SLC-754 Live-Smoke)
+- Status: open
+- Severity: Medium
+- Area: Frontend / Mein-Tag / NL-Rule-Builder / SLC-754
+- Summary: Nach erfolgreichem `applyNlRule()` (Rule + Audit-Log INSERT serverseitig verifiziert) schliesst zwar das Confirm-Modal, aber die Klarsprache-Karte, Schema-Karte, Preview-Karte und Apply-Button bleiben unveraendert in der UI sichtbar. Textarea-Wert + `nl-rule-builder-clarsprache` + `preview-result-card` weiterhin gerendert, Apply-Button weiterhin enabled. Kein Success-Toast sichtbar (toastCount=0 nach 3s+8s Wait). AC5 spezifiziert: "Toast 'Regel aktiviert' + Modal-Close + Card-State-Reset" — Modal-Close erfuellt, die anderen zwei nicht.
+- Impact: User koennte versehentlich die gleiche Rule erneut aktivieren (Soft-Dedup AC6 wuerde den 2. Apply fangen, aber UX-Confusion). Keine Server-Side-Konsequenz — Rule + Audit sind sauber persistiert. UI-State-Reset-Bug.
+- Workaround: Page-Reload setzt UI zurueck. Rule wird trotz fehlendem Visual-Feedback korrekt erstellt.
+- Discovery: SLC-754 /qa Live-Smoke RPT-453, 2026-05-17 ~10:27 UTC. Manuell verifiziert: dialogStillOpen=false, clarspracheVisible=true, previewVisible=true, applyButtonExists=true+!disabled, toastCount=0.
+- Next Action: Pruefe `nl-rule-builder-card.tsx` Apply-Success-Handler — vermutlich fehlen `setSculptResult(null)`, `setPreviewResult(null)`, `setNlInput("")`, `setLastSculptAuditId(null)`-Calls. Toast-Integration: Sonner-Toaster-Mount im RootLayout pruefen (`<Toaster />`-Komponente vorhanden?), und `toast.success("Regel aktiviert")`-Call in Apply-Success-Path verifizieren. Folge-Slice oder Fast-Fix in V7.5.
+
 ### ISSUE-076 — Sculptor-PRICING-Coverage-Gap fuer Coolify-LLM_MODEL Kurz-Form
 - Status: resolved
 - Severity: Low
