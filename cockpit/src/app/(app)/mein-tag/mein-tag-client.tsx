@@ -36,6 +36,7 @@ import { ContactSheet } from "../contacts/contact-sheet";
 import { CompanySheet } from "../companies/company-sheet";
 import { CallSheet } from "./call-sheet";
 import { MeinTagKIWorkspace } from "./ki-workspace-wrapper";
+import { NLRuleBuilderCard } from "@/components/mein-tag/nl-rule-builder-card";
 import { startMeeting } from "@/app/actions/meetings";
 
 interface MeinTagClientProps {
@@ -55,6 +56,8 @@ interface MeinTagClientProps {
   readOnly?: boolean;
   viewAsUserId?: string;
   targetUserDisplayName?: string;
+  // V7.5 SLC-753 — Role-Gated NL-Rule-Builder (Admin+Teamlead). Server-Side-resolved.
+  canSculpt?: boolean;
 }
 
 const typeConfig: Record<TodayItemType, { icon: typeof ListTodo; bg: string }> = {
@@ -79,7 +82,7 @@ const statusStyles: Record<string, string> = {
 
 const WORKDAY_MINUTES = 480; // 8h workday
 
-export function MeinTagClient({ userId, data, stages, contacts, companies, deals, pipelines, calendarSlots, nextMeeting, topDeals, gatekeeperSummary, dateLabel, readOnly = false, viewAsUserId, targetUserDisplayName }: MeinTagClientProps) {
+export function MeinTagClient({ userId, data, stages, contacts, companies, deals, pipelines, calendarSlots, nextMeeting, topDeals, gatekeeperSummary, dateLabel, readOnly = false, viewAsUserId, targetUserDisplayName, canSculpt = false }: MeinTagClientProps) {
   // V7.1 SLC-712b — KI-Workspace-Scope: viewAsUserId hat Vorrang vor userId
   // wenn gesetzt (Drilldown). KI-Reports laufen dann gegen Target-Member-Daten.
   const kiWorkspaceUserId = viewAsUserId ?? userId;
@@ -344,6 +347,12 @@ export function MeinTagClient({ userId, data, stages, contacts, companies, deals
               {!readOnly && (
                 <MeinTagKIWorkspace userId={kiWorkspaceUserId} />
               )}
+
+              {/* V7.5 SLC-753 — NL-Rule-Builder (Admin+Teamlead only).
+                  Server-Side-Guard in page.tsx setzt canSculpt; Card-Internal
+                  returnt null wenn false. Im Drilldown ebenfalls verborgen,
+                  da sie tenant-globalen Workflow-Effekt hat. */}
+              {!readOnly && canSculpt && <NLRuleBuilderCard canSculpt={canSculpt} />}
             </div>
 
             {/* RIGHT COLUMN (4 cols on lg+): Entities + Zeit + Kalender + Meeting-Prep + Focus-Badges */}
