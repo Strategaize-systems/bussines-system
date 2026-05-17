@@ -28,6 +28,10 @@ export interface BedrockPricing {
  * (`anthropic.claude-sonnet-4...`) teilen sich denselben Preis (AWS-Doku
  * 2026-05-16). Eintraege bewusst doppelt halten damit ein Match unabhaengig
  * von der gewaehlten Aufruf-Variante funktioniert.
+ *
+ * SLC-753 Hotfix 2026-05-17: Production-LLM_MODEL ENV ist die Kurz-Form
+ * `eu.anthropic.claude-sonnet-4-6` (ohne `-20250514-v1:0`-Suffix).
+ * Daher Kurz-Form-Aliase ergaenzt. Discovery via Live-Smoke RPT-449.
  */
 export const PRICING: Record<string, BedrockPricing> = {
   // Claude Sonnet 4.6 (Standard fuer Cockpit-Bedrock-Aufrufer V3-V7.5)
@@ -40,6 +44,17 @@ export const PRICING: Record<string, BedrockPricing> = {
     input_per_1k_usd: 0.003,
     output_per_1k_usd: 0.015,
     source_note: "AWS Bedrock Pricing eu-central-1, Claude Sonnet 4.6 (Inferenz-Profil, 2026-05-16).",
+  },
+  // Kurz-Form-Aliase (SLC-753 Hotfix 2026-05-17, Production-ENV-Form):
+  "anthropic.claude-sonnet-4-6": {
+    input_per_1k_usd: 0.003,
+    output_per_1k_usd: 0.015,
+    source_note: "AWS Bedrock Pricing eu-central-1, Claude Sonnet 4.6 (Kurz-Form-Alias, SLC-753 Hotfix).",
+  },
+  "eu.anthropic.claude-sonnet-4-6": {
+    input_per_1k_usd: 0.003,
+    output_per_1k_usd: 0.015,
+    source_note: "AWS Bedrock Pricing eu-central-1, Claude Sonnet 4.6 (Inferenz-Profil Kurz-Form, SLC-753 Hotfix).",
   },
   // Claude Sonnet 4.5 — Fallback falls Cockpit-LLM_MODEL temporaer downgraded wird
   "anthropic.claude-sonnet-4-5-20250109-v1:0": {

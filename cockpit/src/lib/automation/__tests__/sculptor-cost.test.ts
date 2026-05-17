@@ -96,6 +96,25 @@ describe("calculateSculptCost — V7.5 SLC-752 MT-5", () => {
     expect(PRICING[MODEL_46].input_per_1k_usd).toBe(0.003);
     expect(PRICING[MODEL_46].output_per_1k_usd).toBe(0.015);
   });
+
+  // SLC-753 Hotfix 2026-05-17: Production-LLM_MODEL ENV ist die Kurz-Form
+  // `eu.anthropic.claude-sonnet-4-6` (ohne `-20250514-v1:0`-Suffix).
+  // Vor diesem Hotfix wurde cost=0 in audit_log + UI gerendert.
+  it("Kurz-Form-Alias `eu.anthropic.claude-sonnet-4-6` matcht (SLC-753 Hotfix)", () => {
+    const cost = calculateSculptCost(
+      { input_tokens: 1000, output_tokens: 500 },
+      "eu.anthropic.claude-sonnet-4-6"
+    );
+    expect(cost).toBeCloseTo(0.0105, 6);
+  });
+
+  it("Kurz-Form-Alias `anthropic.claude-sonnet-4-6` matcht (SLC-753 Hotfix)", () => {
+    const cost = calculateSculptCost(
+      { input_tokens: 1000, output_tokens: 500 },
+      "anthropic.claude-sonnet-4-6"
+    );
+    expect(cost).toBeCloseTo(0.0105, 6);
+  });
 });
 
 describe("sumSculptCosts — Re-Prompt-Loop-Akkumulation", () => {
