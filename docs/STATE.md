@@ -10,11 +10,11 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **SLC-752 deployed 2026-05-17**. Coolify-Redeploy auf `main` HEAD `1de2529` durch (User-Action), Container `app-k9f5pn5upfq7etoefb5ukbcg-070057711928` Up healthy auf Image-Tag `1de2529011d7b6321204246b55ccf22a2186aa50`. Cron-Logs sauber (`AutomationRunner picked=0`, `RecordingPoll` laeuft) — kein Bedrock-Region-Drift-Throw → `assertBedrockRegion()` (Single-Choke-Point in `lib/ai/bedrock-client.ts`) aktiv ohne Production-Impact. AWS_REGION=eu-central-1 Fallback greift; BEDROCK_REGION-ENV-Discipline (RPT-446 F-3) bleibt optional. MIG-036 Live seit MT-0. **V7.5-Foundation komplett (SLC-751 + SLC-752 done, 2/6).** **Naechster Schritt: /frontend SLC-753 Mein-Tag NL-Surface + Sculpt-Server-Action** (~2-3h).
-- Current Phase: V7.5 SLC-752 deployed. /frontend SLC-753 next.
+- Current Focus: **SLC-753 /frontend code-side done 2026-05-17** (RPT-448, Worktree `strategaize-business-system-slc753` Branch `slc-753-mein-tag-nl-surface` Commits `87c95d9` + `6594873` + `41b178d`). MT-1 Server-Action `sculptNlRule` mit getProfile-Role-Guard + Result-Pattern, MT-2/MT-4 `NLRuleBuilderCard` 4-Karten-Sequenz mit native HTML form + useTransition + Cost-Display, MT-3 Mount im Mein-Tag KI-Workspace mit `canSculpt`-Server-Prop. Default-Vitest 92/92 Files 899/899 Tests PASS (885 Baseline + 14 SLC-753 = 5 Card-States + 6 Action-Validations + 3 Cost-Helper). TSC 0 neue Errors (8 pre-existing in 4 unrelated Files unveraendert). **Naechster Schritt: /qa SLC-753 inkl. Browser-Smoke MT-5 mit echter Production-Bedrock-Sculpt-Anfrage** (erfuellt zugleich AC3-Real-Bedrock-Probe-Defer aus RPT-446).
+- Current Phase: V7.5 SLC-753 /frontend done, /qa MT-5 next.
 
 ## Immediate Next Steps
-1. **(Mainline)** /frontend SLC-753 Mein-Tag NL-Surface + Sculpt-Server-Action. ~2-3h. Wrapped den V7.5 Foundation-Sculptor in eine UI + Server Action `sculptNlRule()`. Spec /slices/SLC-753-mein-tag-nl-surface.md.
+1. **(Mainline)** /qa SLC-753 — Browser-Smoke per Playwright-MCP gegen Production-Bedrock. AC10 + AC3-Real-Bedrock-Probe-Defer aus RPT-446. Erst danach Master-Merge + User-Coolify-Redeploy + STATE-Sync.
 2. **(Optional User-Action, nicht zeitkritisch)** `BEDROCK_REGION=eu-central-1` in Coolify-ENV explizit setzen als Discipline-Massnahme (Code-Pfad ist via AWS_REGION-Fallback abgesichert, daher nicht-blockierend). RPT-446 F-3.
 3. **(V7.5-Sequenz nach SLC-753)** /backend+frontend SLC-754 Trockenlauf+Apply-Confirm → /frontend SLC-755 Voice-Input → /backend+frontend SLC-756 Inspection-Log → Gesamt-/qa V7.5 → /final-check → /go-live → /deploy als REL-032.
 4. **(nach V7.5)** /requirements V7.6 — Custom-Reports (BL-442, ~1-2 Slices). Folgt zwingend nach V7.5 (Architektur-Abhaengigkeit).
