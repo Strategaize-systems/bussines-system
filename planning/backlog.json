@@ -2023,6 +2023,16 @@
       "createdAt": "2026-05-07"
     },
     {
+      "id": "BL-479",
+      "title": "NL-Rule-Builder in KI-Workspace integrieren (kein eigenstaendiger Card-Block neben Workspace)",
+      "type": "improvement",
+      "priority": "high",
+      "status": "open",
+      "version": "V7.6",
+      "description": "User-Feedback nach Post-Deploy-UI-Inspektion 2026-05-18: V7.5 hat den NL-Rule-Builder als separate Karte auf /mein-tag platziert (unterhalb des KI-Workspace-Hybrid-Blocks). Das verletzt das V6.6-KI-Workspace-Pattern (siehe Memory feedback_ki_workspace_pattern + feedback_no_extra_cards): 'alles laeuft ueber KI-Workspace, keine extra Cards untereinander'. User-Direktive: NL-Rule-Builder gehoert ALS WORKSPACE-BUTTON in den MeinTagKIWorkspace, rechts neben den existierenden Berichts-Buttons (Tagesanalyse / Gestern / Seit-Login / Wochen-Performance / Pipeline-Risiko) als 6. Button. Klick oeffnet den Sculpt-Workflow (Eingabe → Sculpt → Trockenlauf → Apply-Confirm) im Antwort-Fenster des KI-Workspace, nicht in einer separaten Card daneben. Bedrock-Cost-Display + Modell-Anzeige raus (gehoert nicht ins User-UI, ist Audit-Only). Scope: Refactor MeinTagKIWorkspace-Wrapper + Move nl-rule-builder-card.tsx-Logik ins Workspace + Entferne Cost-Display + Entferne standalone-Card-Render auf /mein-tag. ~1-2 Slices. Keine Schema-Migration. Behaelt FEAT-751-Backend (sculpt/preview/apply Server-Actions) komplett bei. Out-of-Scope V7.5 weil Layout-Aenderung. **Folgt zwingend vor V7.6-Custom-Reports (BL-442)** weil das selbe Workspace-Pattern betrifft.",
+      "createdAt": "2026-05-18"
+    },
+    {
       "id": "BL-478",
       "title": "ISSUE-078 Sonner-Toast rendert nicht im Cockpit (Turbopack 16.2 Hydration)",
       "type": "improvement",
