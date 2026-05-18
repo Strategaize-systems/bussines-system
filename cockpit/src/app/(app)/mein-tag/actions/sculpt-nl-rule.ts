@@ -7,15 +7,18 @@
 // Type-Guards). Result-Type stammt aus sculptor.ts.
 //
 // Flow:
-//   1. assertCanSculpt — getProfile() + role-in ["admin","teamlead"] sonst RoleForbidden.
-//   2. NL-Input aus FormData validieren (min 5 Zeichen).
-//   3. sculptRule(nlInput, profile.user_id) aus SLC-752.
+//   1. assertNotReadOnlyContext (V7 Drilldown-Block + V7.5 Middleware-Mitigation).
+//   2. assertCanSculpt — getProfile() + role-in ["admin","teamlead"] sonst RoleForbidden.
+//   3. NL-Input aus FormData validieren (min 5 Zeichen).
+//   4. sculptRule(nlInput, profile.user_id) aus SLC-752.
 //
 // Reuse-Trail:
 //   - lib/automation/sculptor.ts sculptRule (SLC-752 MT-6)
 //   - lib/auth/get-profile.ts getProfile (SLC-701)
+//   - lib/auth/read-only-context.ts assertNotReadOnlyContext (SLC-706 + SLC-751)
 
 import { getProfile } from "@/lib/auth/get-profile";
+import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { sculptRule, type SculptResult } from "@/lib/automation/sculptor";
 
 const NL_INPUT_MIN_LEN = 5;
@@ -26,6 +29,8 @@ export type SculptNlRuleResult =
   | { ok: false; error: "forbidden" | "input_too_short" | "input_too_long" | "infra"; message: string };
 
 export async function sculptNlRule(formData: FormData): Promise<SculptNlRuleResult> {
+  await assertNotReadOnlyContext();
+
   const profile = await getProfile();
   if (profile.role !== "admin" && profile.role !== "teamlead") {
     return {

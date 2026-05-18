@@ -14,12 +14,17 @@ vi.mock("@/lib/auth/get-profile", () => ({
   getProfile: vi.fn(),
 }));
 
+vi.mock("@/lib/auth/read-only-context", () => ({
+  assertNotReadOnlyContext: vi.fn(),
+}));
+
 vi.mock("@/lib/automation/sculptor", () => ({
   sculptRule: vi.fn(),
 }));
 
 const { sculptNlRule } = await import("./sculpt-nl-rule");
 const { getProfile } = await import("@/lib/auth/get-profile");
+const { assertNotReadOnlyContext } = await import("@/lib/auth/read-only-context");
 const { sculptRule } = await import("@/lib/automation/sculptor");
 
 function formData(nlInput: string): FormData {
@@ -39,6 +44,7 @@ function profile(role: "admin" | "teamlead" | "member") {
 
 beforeEach(() => {
   vi.mocked(getProfile).mockReset();
+  vi.mocked(assertNotReadOnlyContext).mockReset();
   vi.mocked(sculptRule).mockReset();
 });
 
