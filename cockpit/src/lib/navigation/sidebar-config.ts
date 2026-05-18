@@ -24,6 +24,7 @@ import {
   Megaphone,
   Clock,
   Bell,
+  ScrollText,
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@/lib/auth/types";
@@ -320,6 +321,15 @@ export const SIDEBAR_CONFIG: readonly SidebarItem[] = [
     icon: Zap,
     section: "VERWALTUNG_SETUP",
     visibleFor: ADMIN_TEAMLEAD,
+  },
+  // SLC-756 V7.5: Admin-Inspection-Log fuer NL-Workflow-Sculptor-Versuche
+  // (audit_log.action='automation_rule.sculpt_attempt'). Admin-only.
+  {
+    href: "/settings/workflow-automation/nl-history",
+    label: "NL-Sculptor-Audit",
+    icon: ScrollText,
+    section: "VERWALTUNG_SETUP",
+    visibleFor: ADMIN_ONLY,
   },
   {
     href: "/settings/templates",
