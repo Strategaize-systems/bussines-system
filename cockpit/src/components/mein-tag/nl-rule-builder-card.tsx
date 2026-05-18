@@ -16,7 +16,8 @@
 // Cost-Display (DEC-208 Real-Cost-Display) ist Inline-Helper formatBedrockCost.
 
 import * as React from "react";
-import { Sparkles, Mic, Square, AlertTriangle, Wand2, Plus, X, TestTube2, CheckCircle2 } from "lucide-react";
+import { Sparkles, Mic, Square, AlertTriangle, Wand2, Plus, X, TestTube2 } from "lucide-react";
+import { toast } from "sonner";
 
 // V7.5 SLC-755 Voice-Input: useVoiceCapture-Hook 1:1-Reuse aus KIWorkspace.
 // Pattern aus c:/strategaize/strategaize-business-system/cockpit/src/components/ki-workspace/KIWorkspace.tsx:34,49-58,109-123,150-154
@@ -193,7 +194,6 @@ export function NLRuleBuilderCard({ canSculpt }: Props) {
   const [modalOpen, setModalOpen] = React.useState(false);
   const [applyError, setApplyError] = React.useState<string | null>(null);
   const [applyLoading, setApplyLoading] = React.useState(false);
-  const [applySuccess, setApplySuccess] = React.useState<{ ruleId: string } | null>(null);
 
   // SLC-755 Voice-Input: Hook-Reuse aus KIWorkspace (Pattern-Reuse-Rule).
   const voice = useVoiceCapture();
@@ -230,7 +230,6 @@ export function NLRuleBuilderCard({ canSculpt }: Props) {
     setPreviewResult(null);
     setPreviewError(null);
     setApplyError(null);
-    setApplySuccess(null);
     setModalOpen(false);
   }
 
@@ -284,8 +283,8 @@ export function NLRuleBuilderCard({ canSculpt }: Props) {
         edited_in_form: editedInForm,
       });
       if (res.ok) {
-        setApplySuccess({ ruleId: res.rule_id });
-        setModalOpen(false);
+        toast.success("Regel aktiviert");
+        handleNewRule();
       } else {
         setApplyError(res.message);
       }
@@ -645,32 +644,6 @@ export function NLRuleBuilderCard({ canSculpt }: Props) {
               </>
             )}
           </>
-        )}
-
-        {/* Apply-Success-Banner (SLC-754 MT-5) */}
-        {applySuccess && (
-          <div
-            data-testid="nl-rule-builder-apply-success"
-            className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 flex items-start gap-3"
-          >
-            <CheckCircle2 size={18} className="text-emerald-600 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-emerald-900">
-                Regel aktiviert
-              </p>
-              <p className="text-xs text-emerald-700 mt-0.5">
-                Die Regel ist jetzt aktiv und feuert bei zukuenftigen Ereignissen.
-              </p>
-              <button
-                type="button"
-                data-testid="nl-rule-builder-new-rule-button"
-                onClick={handleNewRule}
-                className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-white border border-emerald-300 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100"
-              >
-                <Plus size={12} /> Neue Regel anlegen
-              </button>
-            </div>
-          </div>
         )}
 
         {sculptResult && sculptResult.status === "reject" && (
