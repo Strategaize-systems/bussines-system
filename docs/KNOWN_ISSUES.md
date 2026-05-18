@@ -1,7 +1,17 @@
 # Known Issues
 
-### ISSUE-077 — NL-Rule-Builder Card-State-Reset + Success-Toast bleiben aus nach Apply (SLC-754 Live-Smoke)
+### ISSUE-078 — Sonner-Toast rendert nicht client-side im Cockpit (Turbopack 16.2 Hydration-Issue)
 - Status: open
+- Severity: Low
+- Area: Frontend / Infra / Turbopack / Sonner-Library
+- Summary: Onboarding-Plattform-Pattern (sonner@^2.0.7 + Toaster im RootLayout + toast.success-Call client-side) wurde 1:1 in Business System portiert, rendert aber keinen Toast. Live-Smoke RPT-460 zeigte: Sonner-Library wird komplett aus dem client bundle tree-shaked (kein `data-sonner-toaster`, kein `toaster group`-className, kein `Notifications alt+T` in Static-Chunks), nur SSR-Markup vom leeren `<section aria-label="Notifications alt+T">` erscheint. toast.success() laeuft fehlerfrei (kein Console-Error), aber rendert keinen Toast.
+- Impact: NL-Rule-Builder Apply hat aktuell keine visuelle Success-Confirmation. Funktional unkritisch — Modal schliesst + Card-Reset signalisiert Erfolg, Soft-Dedup (SLC-754 AC6) faengt versehentliches Wieder-Apply.
+- Workaround: Card-State-Reset (SLC-757 Variante A) bleibt als implizites Feedback. Toast-Integration aus Code zurueckgezogen.
+- Discovery: SLC-757 MT-6 Live-Smoke, 3 Iterations + 2 Fix-Versuche (e82bda9 "use client" Zeile 1, cad02d0 Wrapper-Delete + Direct-Import), beide ohne Effekt. RPT-460.
+- Next Action: Eigener Mini-Slice in V7.6 — Reproducer in isoliertem Mini-Next-16.2.3-Repo bauen, Turbopack-Behavior gegen Webpack-Fallback vergleichen, ggf. Next.js-Bugreport. Versions-Diff zu Onboarding: Next 16.1.1 → 16.2.3 (vermutliche Regression). Workaround-Idee: Toaster-Mount via Client-Component-Wrapper unterhalb (app) layout statt RootLayout. Bedeutung niedrig — funktionaler Code laeuft, nur UX-Politur.
+
+### ISSUE-077 — NL-Rule-Builder Card-State-Reset + Success-Toast bleiben aus nach Apply (SLC-754 Live-Smoke)
+- Status: resolved
 - Severity: Medium
 - Area: Frontend / Mein-Tag / NL-Rule-Builder / SLC-754
 - Summary: Nach erfolgreichem `applyNlRule()` (Rule + Audit-Log INSERT serverseitig verifiziert) schliesst zwar das Confirm-Modal, aber die Klarsprache-Karte, Schema-Karte, Preview-Karte und Apply-Button bleiben unveraendert in der UI sichtbar. Textarea-Wert + `nl-rule-builder-clarsprache` + `preview-result-card` weiterhin gerendert, Apply-Button weiterhin enabled. Kein Success-Toast sichtbar (toastCount=0 nach 3s+8s Wait). AC5 spezifiziert: "Toast 'Regel aktiviert' + Modal-Close + Card-State-Reset" — Modal-Close erfuellt, die anderen zwei nicht.
@@ -9,6 +19,7 @@
 - Workaround: Page-Reload setzt UI zurueck. Rule wird trotz fehlendem Visual-Feedback korrekt erstellt.
 - Discovery: SLC-754 /qa Live-Smoke RPT-453, 2026-05-17 ~10:27 UTC. Manuell verifiziert: dialogStillOpen=false, clarspracheVisible=true, previewVisible=true, applyButtonExists=true+!disabled, toastCount=0.
 - Next Action: Pruefe `nl-rule-builder-card.tsx` Apply-Success-Handler — vermutlich fehlen `setSculptResult(null)`, `setPreviewResult(null)`, `setNlInput("")`, `setLastSculptAuditId(null)`-Calls. Toast-Integration: Sonner-Toaster-Mount im RootLayout pruefen (`<Toaster />`-Komponente vorhanden?), und `toast.success("Regel aktiviert")`-Call in Apply-Success-Path verifizieren. Folge-Slice oder Fast-Fix in V7.5.
+- Resolution: SLC-757 MT-3 (Commit d2f7082) — `handleApply()` ruft nach `res.ok` `handleNewRule()` (Card-State-Reset komplett: Textarea, Schema, Preview, Apply-CTA, Banner, Modal). Apply-Success-Banner-Block + applySuccess-State entfernt. Live-Smoke 3 Iterations RPT-460 gegen Coolify-Image (zuletzt cad02d0): Card-State-Reset PASS in allen 3 Iterations (textarea-value="", schema/preview/apply-cta/banner alle weg). Toast-Teil als ISSUE-078 abgespalten (Turbopack-Hydration-Issue, nicht SLC-757-Scope).
 
 ### ISSUE-076 — Sculptor-PRICING-Coverage-Gap fuer Coolify-LLM_MODEL Kurz-Form
 - Status: resolved

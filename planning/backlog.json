@@ -2023,13 +2023,23 @@
       "createdAt": "2026-05-07"
     },
     {
+      "id": "BL-478",
+      "title": "ISSUE-078 Sonner-Toast rendert nicht im Cockpit (Turbopack 16.2 Hydration)",
+      "type": "improvement",
+      "priority": "low",
+      "status": "open",
+      "version": "V7.6",
+      "description": "Aus SLC-757 MT-6 Live-Smoke abgespaltene Diagnose-Slice: sonner@^2.0.7 + Toaster-Mount im RootLayout (Onboarding-Pattern 1:1) rendert keinen Toast im Cockpit. Sonner-Library wird komplett aus client bundle tree-shaked. 2 Fix-Versuche in SLC-757 (e82bda9 'use client' Zeile 1, cad02d0 Wrapper-Delete + Direct-Import) ohne Effekt. Vermutete Regression Next 16.1.1 → 16.2.3 (Onboarding funktioniert mit 16.1.1). Scope V7.6: Reproducer in isoliertem Mini-Next-Repo + Versions-Bisect + ggf. Next.js-Bugreport + Workaround (Toaster-Mount via Client-Component-Wrapper unterhalb (app) layout). RPT-460 dokumentiert die 3 Iterations + Befunde.",
+      "createdAt": "2026-05-18"
+    },
+    {
       "id": "BL-477",
-      "title": "ISSUE-077 NL-Rule-Builder Apply-Polish — State-Reset + Sonner-Toast (SLC-757)",
+      "title": "ISSUE-077 NL-Rule-Builder Apply-Polish — State-Reset (SLC-757)",
       "type": "improvement",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V7.5",
-      "description": "Mini-Polish-Slice fuer ISSUE-077 (SLC-754 Live-Smoke RPT-453 Discovery): Nach erfolgreichem applyNlRule() bleibt die NL-Eingabe-Karte sichtbar (Textarea + Klarsprache + Preview + Apply-Button) und kein Success-Toast erscheint. Server-Side war sauber, reine UI-State-Reset-Luecke + fehlende Sonner-Integration. Slice umfasst: sonner@^2.0.7 + next-themes@^0.4.6 als neue Deps, components/ui/sonner.tsx 1:1-Port aus strategaize-onboarding-plattform (Pattern-Reuse-Rule), Toaster im RootLayout mounten, handleApply ruft toast.success(\"Regel aktiviert\") + handleNewRule() (Variante A — Banner-Block entfaellt), Vitest RTL-Test, Live-Smoke. User-Entscheidung Option B 2026-05-18: eigener Slice statt Inline-Fast-Fix. ~30-45 Min Code + ~30 Min /qa.",
+      "description": "Mini-Polish-Slice fuer ISSUE-077 (SLC-754 Live-Smoke RPT-453 Discovery): Nach erfolgreichem applyNlRule() bleibt die NL-Eingabe-Karte sichtbar (Textarea + Klarsprache + Preview + Apply-Button). DONE 2026-05-18: handleApply Variante A ruft handleNewRule() nach Erfolg — Card komplett zurueckgesetzt (Schema, Preview, Apply-CTA, Banner, Modal alle weg, Textarea leer). Live-Smoke 3 Iterations gegen Coolify-Image (zuletzt cad02d0) bestaetigen Reset-Verhalten. Toast-Teilziel zu ISSUE-078 + BL-478 abgespalten (Turbopack-Sonner-Hydration-Bug, ausser SLC-757-Scope). RPT-460.",
       "createdAt": "2026-05-18"
     },
     {

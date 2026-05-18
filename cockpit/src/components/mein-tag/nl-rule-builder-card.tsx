@@ -17,7 +17,6 @@
 
 import * as React from "react";
 import { Sparkles, Mic, Square, AlertTriangle, Wand2, Plus, X, TestTube2 } from "lucide-react";
-import { toast } from "sonner";
 
 // V7.5 SLC-755 Voice-Input: useVoiceCapture-Hook 1:1-Reuse aus KIWorkspace.
 // Pattern aus c:/strategaize/strategaize-business-system/cockpit/src/components/ki-workspace/KIWorkspace.tsx:34,49-58,109-123,150-154
@@ -283,7 +282,8 @@ export function NLRuleBuilderCard({ canSculpt }: Props) {
         edited_in_form: editedInForm,
       });
       if (res.ok) {
-        toast.success("Regel aktiviert");
+        // SLC-757: handleNewRule() schliesst Modal + setzt Card komplett zurueck.
+        // Toast-Feedback ist via ISSUE-078 (Turbopack/Sonner-Hydration) deferred.
         handleNewRule();
       } else {
         setApplyError(res.message);

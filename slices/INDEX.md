@@ -334,4 +334,4 @@ V7.5 = 6 Slices SLC-751..756, Foundation-First. Reihenfolge per Architecture-Emp
 | SLC-754 | [Trockenlauf-Karte + Apply-Confirmation-Modal](SLC-754-preview-apply-confirm.md) | FEAT-751 | done | High | 2026-05-16 |
 | SLC-755 | [Voice-Input-Integration (Whisper-Adapter-Reuse)](SLC-755-voice-input.md) | FEAT-751 | done | Medium | 2026-05-16 |
 | SLC-756 | [Inspection-Log /settings/workflow-automation/nl-history (Admin-only)](SLC-756-inspection-log.md) | FEAT-751 | done | Medium | 2026-05-16 |
-| SLC-757 | [NL-Rule-Builder Apply-Polish (ISSUE-077 State-Reset + Toast)](SLC-757-issue077-nl-rule-builder-polish.md) | FEAT-751 | in_progress | Medium | 2026-05-18 |
+| SLC-757 | [NL-Rule-Builder Apply-Polish (ISSUE-077 State-Reset, Toast → ISSUE-078)](SLC-757-issue077-nl-rule-builder-polish.md) | FEAT-751 | done | Medium | 2026-05-18 |

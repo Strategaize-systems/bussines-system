@@ -22,16 +22,6 @@ vi.mock("@/app/(app)/mein-tag/actions/apply-nl-rule", () => ({
   applyNlRule: vi.fn(),
 }));
 
-// SLC-757 — sonner-Toast wird in handleApply() Success-Branch aufgerufen.
-vi.mock("sonner", () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-    warning: vi.fn(),
-  },
-}));
-
 vi.mock("@/components/ki-workspace/hooks/useVoiceCapture", () => ({
   useVoiceCapture: vi.fn(),
 }));
@@ -40,7 +30,6 @@ const { NLRuleBuilderCard, formatBedrockCost } = await import("./nl-rule-builder
 const { sculptNlRule } = await import("@/app/(app)/mein-tag/actions/sculpt-nl-rule");
 const { previewNlRule } = await import("@/app/(app)/mein-tag/actions/preview-nl-rule");
 const { applyNlRule } = await import("@/app/(app)/mein-tag/actions/apply-nl-rule");
-const { toast } = await import("sonner");
 const { useVoiceCapture } = await import("@/components/ki-workspace/hooks/useVoiceCapture");
 
 // Default-Voice-Mock fuer alle Tests — Voice-spezifische Tests setzen ihren eigenen Return-Value.
@@ -268,13 +257,12 @@ describe("NLRuleBuilderCard — SLC-754 Trockenlauf + Apply Sequenz", () => {
     fireEvent.click(screen.getByTestId("apply-confirm-checkbox"));
     expect(submitBtn.disabled).toBe(false);
 
-    // 5) Submit -> applyNlRule called + toast.success + card-state-reset (SLC-757 Variante A)
-    vi.mocked(toast.success).mockClear();
+    // 5) Submit -> applyNlRule called + card-state-reset (SLC-757 Variante A,
+    // ohne Toast — Toast deferred zu ISSUE-078 Turbopack-Hydration-Issue)
     fireEvent.click(submitBtn);
     await waitFor(() => {
-      expect(vi.mocked(toast.success)).toHaveBeenCalledWith("Regel aktiviert");
+      expect(applyNlRule).toHaveBeenCalledTimes(1);
     });
-    expect(applyNlRule).toHaveBeenCalledTimes(1);
     const applyArg = vi.mocked(applyNlRule).mock.calls[0][0];
     expect(applyArg.sculpt_audit_id).toBe("session-aaa");
     expect(applyArg.sculptor_cost_usd).toBe(0.012);
