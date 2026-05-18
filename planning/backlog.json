@@ -2023,6 +2023,16 @@
       "createdAt": "2026-05-07"
     },
     {
+      "id": "BL-477",
+      "title": "ISSUE-077 NL-Rule-Builder Apply-Polish — State-Reset + Sonner-Toast (SLC-757)",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V7.5",
+      "description": "Mini-Polish-Slice fuer ISSUE-077 (SLC-754 Live-Smoke RPT-453 Discovery): Nach erfolgreichem applyNlRule() bleibt die NL-Eingabe-Karte sichtbar (Textarea + Klarsprache + Preview + Apply-Button) und kein Success-Toast erscheint. Server-Side war sauber, reine UI-State-Reset-Luecke + fehlende Sonner-Integration. Slice umfasst: sonner@^2.0.7 + next-themes@^0.4.6 als neue Deps, components/ui/sonner.tsx 1:1-Port aus strategaize-onboarding-plattform (Pattern-Reuse-Rule), Toaster im RootLayout mounten, handleApply ruft toast.success(\"Regel aktiviert\") + handleNewRule() (Variante A — Banner-Block entfaellt), Vitest RTL-Test, Live-Smoke. User-Entscheidung Option B 2026-05-18: eigener Slice statt Inline-Fast-Fix. ~30-45 Min Code + ~30 Min /qa.",
+      "createdAt": "2026-05-18"
+    },
+    {
       "id": "BL-476",
       "title": "ISSUE-066 Middleware-Mitigation (FEAT-752) — Read-Only-Context Defense-in-Depth",
       "type": "improvement",
