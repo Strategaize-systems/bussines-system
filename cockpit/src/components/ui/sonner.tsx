@@ -1,6 +1,7 @@
+"use client"
+
 // Pattern aus strategaize-onboarding-plattform/src/components/ui/sonner.tsx
 // (Rule: strategaize-pattern-reuse.md, Slice: SLC-757, ISSUE-077).
-"use client"
 
 import {
   CircleCheck,
