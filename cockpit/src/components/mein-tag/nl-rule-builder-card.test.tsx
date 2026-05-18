@@ -5,8 +5,9 @@
 //   2. Submit + sculptRule success → Klarsprache + Schema-Karte rendern, Cost sichtbar.
 //   3. Submit + sculptRule reject → Reject-Karte rendert, Schema-Karte NICHT.
 //   4. formatBedrockCost-Helper (MT-4).
+//   5. SLC-757: Apply-Success → toast.success + Card-State-Reset (Variante A).
 
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 vi.mock("@/app/(app)/mein-tag/actions/sculpt-nl-rule", () => ({
@@ -21,10 +22,36 @@ vi.mock("@/app/(app)/mein-tag/actions/apply-nl-rule", () => ({
   applyNlRule: vi.fn(),
 }));
 
+// SLC-757 — sonner-Toast wird in handleApply() Success-Branch aufgerufen.
+vi.mock("sonner", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+  },
+}));
+
+vi.mock("@/components/ki-workspace/hooks/useVoiceCapture", () => ({
+  useVoiceCapture: vi.fn(),
+}));
+
 const { NLRuleBuilderCard, formatBedrockCost } = await import("./nl-rule-builder-card");
 const { sculptNlRule } = await import("@/app/(app)/mein-tag/actions/sculpt-nl-rule");
 const { previewNlRule } = await import("@/app/(app)/mein-tag/actions/preview-nl-rule");
 const { applyNlRule } = await import("@/app/(app)/mein-tag/actions/apply-nl-rule");
+const { toast } = await import("sonner");
+const { useVoiceCapture } = await import("@/components/ki-workspace/hooks/useVoiceCapture");
+
+// Default-Voice-Mock fuer alle Tests — Voice-spezifische Tests setzen ihren eigenen Return-Value.
+beforeEach(() => {
+  vi.mocked(useVoiceCapture).mockReturnValue({
+    isRecording: false,
+    start: vi.fn(),
+    stop: vi.fn().mockResolvedValue(""),
+    error: null,
+  });
+});
 
 describe("NLRuleBuilderCard — Hide for non-allowed roles", () => {
   it("renders nothing when canSculpt=false", () => {
@@ -241,16 +268,29 @@ describe("NLRuleBuilderCard — SLC-754 Trockenlauf + Apply Sequenz", () => {
     fireEvent.click(screen.getByTestId("apply-confirm-checkbox"));
     expect(submitBtn.disabled).toBe(false);
 
-    // 5) Submit -> applyNlRule called + success banner
+    // 5) Submit -> applyNlRule called + toast.success + card-state-reset (SLC-757 Variante A)
+    vi.mocked(toast.success).mockClear();
     fireEvent.click(submitBtn);
     await waitFor(() => {
-      expect(screen.getByTestId("nl-rule-builder-apply-success")).toBeInTheDocument();
+      expect(vi.mocked(toast.success)).toHaveBeenCalledWith("Regel aktiviert");
     });
     expect(applyNlRule).toHaveBeenCalledTimes(1);
     const applyArg = vi.mocked(applyNlRule).mock.calls[0][0];
     expect(applyArg.sculpt_audit_id).toBe("session-aaa");
     expect(applyArg.sculptor_cost_usd).toBe(0.012);
     expect(applyArg.edited_in_form).toBe(false);
+
+    // SLC-757 — Card-State-Reset nach Apply-Success (Variante A):
+    // Schema-Karte + Apply-CTA + Banner weg, Textarea leer.
+    await waitFor(() => {
+      expect(screen.queryByTestId("nl-rule-builder-schema")).not.toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("nl-rule-builder-apply-cta")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("nl-rule-builder-apply-success")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("nl-rule-builder-clarsprache")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("preview-result-card")).not.toBeInTheDocument();
+    const ta = screen.getByPlaceholderText(/Beispiel/) as HTMLTextAreaElement;
+    expect(ta.value).toBe("");
   });
 });
 
@@ -275,13 +315,8 @@ describe("formatBedrockCost", () => {
 // direkt — Hook-Internals sind durch useVoiceCapture.test.tsx getrennt
 // abgedeckt (happy + denied + network-error). Hier geht es nur um die
 // Verdrahtung im NL-Card.
+// useVoiceCapture-Mock + Default-Setup oben am Datei-Kopf (SLC-757-Cleanup).
 // ---------------------------------------------------------------------------
-
-vi.mock("@/components/ki-workspace/hooks/useVoiceCapture", () => ({
-  useVoiceCapture: vi.fn(),
-}));
-
-const { useVoiceCapture } = await import("@/components/ki-workspace/hooks/useVoiceCapture");
 
 describe("NLRuleBuilderCard — Voice-Input (SLC-755)", () => {
   it("shows recording-state (aria-pressed=true, label='Aufnahme stoppen') when isRecording=true", () => {

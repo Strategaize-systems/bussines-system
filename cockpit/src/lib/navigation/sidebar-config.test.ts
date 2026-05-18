@@ -140,6 +140,7 @@ describe("filterByRole — Snapshots", () => {
           "VERWALTUNG_SETUP:/settings/products",
           "VERWALTUNG_SETUP:/settings/compliance",
           "VERWALTUNG_SETUP:/settings/automation",
+          "VERWALTUNG_SETUP:/settings/workflow-automation/nl-history",
           "VERWALTUNG_SETUP:/settings/templates",
           "VERWALTUNG_SETUP:/settings/campaigns",
           "VERWALTUNG_SETUP:/audit-log",
