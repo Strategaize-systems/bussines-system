@@ -236,12 +236,12 @@
 |----|---------|--------|------|---------|
 | FEAT-721 | Test-Infra-Cleanup (Seed-Script Multi-User + qa-admin + vitest-RLS Path-Alias) | deployed | [Spec](FEAT-721-test-infra-cleanup.md) | 2026-05-16 |
 
-## V7.5 Features (NL-Workflow-Sculptor + ISSUE-066-Closure — in_progress, Slice-Planning done 2026-05-16)
+## V7.5 Features (NL-Workflow-Sculptor + ISSUE-066-Closure — released REL-032 2026-05-18)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-751 | Natural-Language Workflow-Sculptor (Mein-Tag-Surface + Voice + Trockenlauf) | done | [Spec](FEAT-751-nl-workflow-sculptor.md) | 2026-05-16 |
-| FEAT-752 | Read-Only-Context Defense-in-Depth (ISSUE-066 Middleware-Mitigation) | done | [Spec](FEAT-752-readonly-context-middleware.md) | 2026-05-16 |
+| FEAT-751 | Natural-Language Workflow-Sculptor (Mein-Tag-Surface + Voice + Trockenlauf) | deployed | [Spec](FEAT-751-nl-workflow-sculptor.md) | 2026-05-16 |
+| FEAT-752 | Read-Only-Context Defense-in-Depth (ISSUE-066 Middleware-Mitigation) | deployed | [Spec](FEAT-752-readonly-context-middleware.md) | 2026-05-16 |
 
 ## V6 Features (Zielsetzung + Performance-Tracking — released)
 

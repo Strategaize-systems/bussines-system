@@ -206,8 +206,8 @@
     {
       "id": "v7-5",
       "name": "V7.5",
-      "status": "active",
-      "summary": "Requirements done 2026-05-16 (PRD V7.5-Section + FEAT-751-Spec + FEAT-752-Spec). NL-Workflow-Sculptor + ISSUE-066-Closure. 2 Features: FEAT-751 Natural-Language Workflow-Sculptor (Bedrock Claude Sonnet eu-central-1, strict 1:1 V6.2-Schema-Mapping, Mein-Tag-Eingabe-Surface fuer Admin+Teamlead, Voice-Input via Whisper-Adapter aus V4.1, Trockenlauf-Pflicht-Karte V6.2 DEC-132-Reuse, Apply persistiert in automation_rules, Inspection-Log auf /settings/workflow-automation/nl-history, Soft-Dedup gegen Doubletten). FEAT-752 Read-Only-Context Defense-in-Depth (ISSUE-066 Middleware-Mitigation via Pfad-Regex + X-Read-Only-Mode-Header). 4 User-Entscheidungen 2026-05-16: UI=Nur Mein Tag, Trockenlauf=Pflicht, Voice=im Scope, LLM=strict 1:1. ~6 Slices Default-Hypothese SLC-751..756. ~12-20h Aufwand. Internal-Test-Mode bleibt aktiv. Naechster Schritt: /architecture V7.5.",
+      "status": "released",
+      "summary": "RELEASED 2026-05-18 als REL-032 (Image-Tag 4228209). Natural-Language Workflow-Sculptor + ISSUE-066-Closure. 7 Slices SLC-751..757 done. FEAT-751 + FEAT-752 deployed. MIG-036 additiv automation_rules.created_via live. Vitest 1078/1078 (932 jsdom + 146 RLS). RPT-444..463 Reports-Trail. Live-Smoke gegen business.strategaizetransition.com PASS, 3 sculpt_attempt + 2 read_only_context_blocked Production-Audit-Eintraege als Beweis. F-1 Defense-in-Depth-Gap pre-Go-Live via SLC-753-Patch (08427aa) geschlossen. Accepted Risks: ISSUE-071 (User-Pflicht-Action weekly Cron Hetzner, kritisch nach 3 Auftritten in 4 Tagen), ISSUE-078 V7.6 BL-478 Sonner-Toast, F-2 AUDIT_SERVER_ACTIONS_V7.md stale V7.6-Defer, F-3 COMPLIANCE.md V7.5-Section V7.6-Defer.",
       "order": 30
     },
     {
