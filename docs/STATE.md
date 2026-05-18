@@ -10,13 +10,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **SLC-757 DONE 2026-05-18** (RPT-460). Card-State-Reset nach Apply-Success ist live-verifiziert in 3 Smoke-Iterations gegen Coolify (Images 9b9860b, e82bda9, cad02d0). Alle queryByTestId fuer schema/preview/apply-cta/banner/modal null, textarea leer. ISSUE-077 resolved. Toast-Teilziel war Turbopack-Sonner-Hydration-Bug (2 Fix-Versuche ohne Effekt) — abgespalten als ISSUE-078 + BL-478 (V7.6, low). Sonner-Integration aus aktivem Code zurueckgenommen, `handleApply()` ruft nur `handleNewRule()`. FEAT-751 komplett. **Naechster Schritt: Gesamt-/qa V7.5 → /final-check → /go-live → /deploy als REL-032.**
-- Current Phase: V7.5 SLC-757 DONE. FEAT-751 (6/6 SLCs) + Polish + ISSUE-066-Closure + ISSUE-077-Closure ready. V7.5 Release-Sequenz steht an.
+- Current Focus: **V7.5 Gesamt-/qa PASS 2026-05-18** (RPT-461). Alle 7 Slices SLC-751..757 done, FEAT-751 + FEAT-752 komplett. Vitest 932 jsdom + 146 RLS = **1078/1078 PASS** (RLS auf Coolify-DB via docker run node:20). Lint 144/55 = V6.6-Baseline ohne Regress. Build clean. Live-Smoke gegen Production-Image fb2488a PASS. MIG-036 + Audit-Trail (3 sculpt_attempt + 2 read_only_context_blocked) live verifiziert. 1 Test-Isolation-Bug surgical gefixt (Commit e68594e, nl-history-live.test.ts ownerScope `string[]`-Support). Production-Outage ISSUE-071-Repeat waehrend /qa entdeckt + Workaround applied (docker prune, ~8GB reclaim, Disk 100%→82%). **Naechster Schritt: /final-check V7.5.**
+- Current Phase: V7.5 Gesamt-/qa PASS. FEAT-751 + FEAT-752 ready fuer /final-check → /go-live → /deploy als REL-032. ISSUE-078 (V7.6 Backlog) + ISSUE-071 (User-Cron-Action ausstehend) als akzeptierte Carry-Forwards.
 
 ## Immediate Next Steps
-1. **(Mainline)** Gesamt-/qa V7.5 — Cockpit-Vollchecks aller 7 SLCs (SLC-751..757), Vitest-Sammel-Run, Lint-Baseline, KNOWN_ISSUES + Backlog vollstaendig. Branch `slc-757-issue077-polish` ist nach Merge in main (Commits 9b9860b..post-revert) bereits master-merged.
-2. **(nach Gesamt-/qa PASS)** /final-check V7.5 → Compliance + Security + Audit.
-3. **(nach /final-check)** /go-live V7.5 → Release-Readiness-Bestaetigung, dann /deploy V7.5 als REL-032 (Image-Tag + Coolify-Redeploy + Live-Verify).
+1. **(Mainline)** /final-check V7.5 — Compliance + Security + Audit + Dependency-Sweep ueber V7.5-Scope (7 Slices SLC-751..757). Gesamt-/qa PASS RPT-461 2026-05-18 (1078/1078 Tests, Lint = V6.6-Baseline, Build clean, Live-Smoke PASS, MIG-036 + audit-Trail live).
+2. **(nach /final-check)** /go-live V7.5 → Release-Readiness-Bestaetigung, dann /deploy V7.5 als REL-032 (Image-Tag + Coolify-Redeploy + Live-Verify).
 3a. **(V7.6-Backlog, neu durch SLC-757)** BL-478 ISSUE-078 Sonner-Toast-Hydration in Mini-Reproducer untersuchen (Turbopack 16.2 + Sonner v2.0.7 Hydration-Bug, V7.6 low-prio).
 3. **(Optional User-Action, nicht zeitkritisch)** `BEDROCK_REGION=eu-central-1` in Coolify-ENV explizit setzen als Discipline-Massnahme (Code-Pfad ist via AWS_REGION-Fallback abgesichert, daher nicht-blockierend). RPT-446 F-3. Plus: `LLM_MODEL` auf Lang-Form `eu.anthropic.claude-sonnet-4-6-20250514-v1:0` korrigieren als Best-Practice (Code-Pfad via Kurz-Form-Alias abgesichert, ISSUE-076 resolved).
 4. **(V7.5-Sequenz nach SLC-754)** /backend+/frontend SLC-755 Voice-Input → /backend+/frontend SLC-756 Inspection-Log → Gesamt-/qa V7.5 → /final-check → /go-live → /deploy als REL-032.
