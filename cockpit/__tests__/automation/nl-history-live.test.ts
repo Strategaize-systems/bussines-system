@@ -82,11 +82,14 @@ interface RawSculptRow {
 
 async function fetchHistoryViaPg(
   limit: number,
-  ownerScope?: string | null
+  ownerScope?: string | string[] | null
 ): Promise<RawSculptRow[]> {
   const params: unknown[] = [limit];
   let scopeClause = "";
-  if (ownerScope) {
+  if (Array.isArray(ownerScope) && ownerScope.length > 0) {
+    params.push(ownerScope);
+    scopeClause = "AND actor_id = ANY($2::uuid[])";
+  } else if (typeof ownerScope === "string" && ownerScope) {
     params.push(ownerScope);
     scopeClause = "AND actor_id = $2";
   }
@@ -128,7 +131,9 @@ describe("nl-history Live-DB (V7.5 SLC-752 MT-8)", () => {
       nlInput: "Rule B1",
     });
 
-    const rows = await fetchHistoryViaPg(10);
+    // Filter auf Test-Actors damit pre-existing Production-Audit-Trail
+    // (echte qa-admin-Sculpts aus Live-Smokes) den Test nicht pollutet.
+    const rows = await fetchHistoryViaPg(10, [TEST_USER_A, TEST_USER_B]);
     const parsed = rows.map(parseHistoryRow);
     expect(parsed.length).toBe(3);
     // DESC by created_at -> juengster zuerst
