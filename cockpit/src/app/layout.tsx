@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Business Cockpit — Strategaize",
@@ -15,6 +16,7 @@ export default function RootLayout({
     <html lang="de" className="h-full antialiased" suppressHydrationWarning>
       <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
         {children}
+        <Toaster />
       </body>
     </html>
   );
