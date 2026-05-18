@@ -16,7 +16,12 @@
 // Cost-Display (DEC-208 Real-Cost-Display) ist Inline-Helper formatBedrockCost.
 
 import * as React from "react";
-import { Sparkles, Mic, AlertTriangle, Wand2, Plus, X, TestTube2, CheckCircle2 } from "lucide-react";
+import { Sparkles, Mic, Square, AlertTriangle, Wand2, Plus, X, TestTube2, CheckCircle2 } from "lucide-react";
+
+// V7.5 SLC-755 Voice-Input: useVoiceCapture-Hook 1:1-Reuse aus KIWorkspace.
+// Pattern aus c:/strategaize/strategaize-business-system/cockpit/src/components/ki-workspace/KIWorkspace.tsx:34,49-58,109-123,150-154
+// (Memory: feedback_cross_project_reference, Rule: strategaize-pattern-reuse).
+import { useVoiceCapture } from "@/components/ki-workspace/hooks/useVoiceCapture";
 
 import { sculptNlRule, type SculptNlRuleResult } from "@/app/(app)/mein-tag/actions/sculpt-nl-rule";
 import { previewNlRule } from "@/app/(app)/mein-tag/actions/preview-nl-rule";
@@ -190,6 +195,19 @@ export function NLRuleBuilderCard({ canSculpt }: Props) {
   const [applyLoading, setApplyLoading] = React.useState(false);
   const [applySuccess, setApplySuccess] = React.useState<{ ruleId: string } | null>(null);
 
+  // SLC-755 Voice-Input: Hook-Reuse aus KIWorkspace (Pattern-Reuse-Rule).
+  const voice = useVoiceCapture();
+  const handleVoiceClick = React.useCallback(async () => {
+    if (voice.isRecording) {
+      const text = await voice.stop();
+      if (text) {
+        setNlInput((prev) => (prev ? `${prev} ${text}` : text));
+      }
+    } else {
+      await voice.start();
+    }
+  }, [voice]);
+
   // Auf MT-3: Server-Side-Guard rendert die Card nur fuer admin/teamlead. Die
   // Client-Side-Pruefung hier ist Defense-in-Depth (z.B. wenn Reuse spaeter
   // ohne Server-Prop erfolgt).
@@ -329,13 +347,20 @@ export function NLRuleBuilderCard({ canSculpt }: Props) {
             />
             <button
               type="button"
-              disabled
-              title="Spracheingabe folgt — SLC-755"
-              aria-label="Spracheingabe (folgt in SLC-755)"
+              onClick={handleVoiceClick}
+              disabled={isPending}
+              aria-pressed={voice.isRecording}
+              aria-label={voice.isRecording ? "Aufnahme stoppen" : "Spracheingabe starten"}
+              title={voice.isRecording ? "Aufnahme stoppen" : "Spracheingabe starten"}
               data-testid="nl-rule-builder-mic"
-              className="absolute right-2 top-2 inline-flex items-center justify-center h-7 w-7 rounded-md bg-slate-100 text-slate-400 cursor-not-allowed"
+              className={
+                "absolute right-2 top-2 inline-flex items-center justify-center h-7 w-7 rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50 " +
+                (voice.isRecording
+                  ? "bg-red-100 text-red-700 hover:bg-red-200"
+                  : "bg-slate-100 text-slate-500 hover:bg-[#4454b8]/10 hover:text-[#4454b8]")
+              }
             >
-              <Mic size={14} />
+              {voice.isRecording ? <Square size={14} className="fill-current" /> : <Mic size={14} />}
             </button>
           </div>
 
@@ -363,6 +388,18 @@ export function NLRuleBuilderCard({ canSculpt }: Props) {
           >
             <AlertTriangle size={14} className="shrink-0 mt-0.5" />
             <span>{actionResult.message}</span>
+          </div>
+        )}
+
+        {/* SLC-755 Voice-Input: Mikro-Fehler (Permission-Denied / Transcription-Fail) */}
+        {voice.error && (
+          <div
+            data-testid="nl-rule-builder-voice-error"
+            role="status"
+            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 flex items-start gap-2"
+          >
+            <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+            <span>{voice.error}</span>
           </div>
         )}
 

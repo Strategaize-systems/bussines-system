@@ -35,13 +35,15 @@ describe("NLRuleBuilderCard — Hide for non-allowed roles", () => {
 });
 
 describe("NLRuleBuilderCard — Initial state", () => {
-  it("renders form + disabled mic placeholder", () => {
+  it("renders form + idle mic-button (SLC-755 enabled)", () => {
     render(<NLRuleBuilderCard canSculpt={true} />);
     expect(screen.getByTestId("nl-rule-builder-card")).toBeInTheDocument();
     expect(screen.getByTestId("nl-rule-builder-form")).toBeInTheDocument();
     const mic = screen.getByTestId("nl-rule-builder-mic") as HTMLButtonElement;
-    expect(mic.disabled).toBe(true);
-    expect(mic.title).toMatch(/SLC-755/);
+    // SLC-755: Mikro ist aktiv, idle-State zeigt "Spracheingabe starten"
+    expect(mic.disabled).toBe(false);
+    expect(mic.getAttribute("aria-pressed")).toBe("false");
+    expect(mic.getAttribute("aria-label")).toBe("Spracheingabe starten");
     expect(screen.queryByTestId("nl-rule-builder-clarsprache")).not.toBeInTheDocument();
     expect(screen.queryByTestId("nl-rule-builder-schema")).not.toBeInTheDocument();
     expect(screen.queryByTestId("nl-rule-builder-cost")).not.toBeInTheDocument();
@@ -263,5 +265,82 @@ describe("formatBedrockCost", () => {
 
   it("rounds half-up to 3 decimals", () => {
     expect(formatBedrockCost(0.0125, 1)).toBe("~$0.013 fuer 1 Versuch");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SLC-755 Voice-Input: Mikro-Button-States + Permission-Denied
+//
+// Hook-Reuse von useVoiceCapture (KIWorkspace-Pattern). Tests mocken den Hook
+// direkt — Hook-Internals sind durch useVoiceCapture.test.tsx getrennt
+// abgedeckt (happy + denied + network-error). Hier geht es nur um die
+// Verdrahtung im NL-Card.
+// ---------------------------------------------------------------------------
+
+vi.mock("@/components/ki-workspace/hooks/useVoiceCapture", () => ({
+  useVoiceCapture: vi.fn(),
+}));
+
+const { useVoiceCapture } = await import("@/components/ki-workspace/hooks/useVoiceCapture");
+
+describe("NLRuleBuilderCard — Voice-Input (SLC-755)", () => {
+  it("shows recording-state (aria-pressed=true, label='Aufnahme stoppen') when isRecording=true", () => {
+    vi.mocked(useVoiceCapture).mockReturnValue({
+      isRecording: true,
+      start: vi.fn(),
+      stop: vi.fn().mockResolvedValue(""),
+      error: null,
+    });
+
+    render(<NLRuleBuilderCard canSculpt={true} />);
+    const mic = screen.getByTestId("nl-rule-builder-mic") as HTMLButtonElement;
+    expect(mic.getAttribute("aria-pressed")).toBe("true");
+    expect(mic.getAttribute("aria-label")).toBe("Aufnahme stoppen");
+  });
+
+  it("renders voice.error in red banner when error is set", () => {
+    vi.mocked(useVoiceCapture).mockReturnValue({
+      isRecording: false,
+      start: vi.fn(),
+      stop: vi.fn().mockResolvedValue(""),
+      error: "Mikrofon-Zugriff verweigert",
+    });
+
+    render(<NLRuleBuilderCard canSculpt={true} />);
+    const err = screen.getByTestId("nl-rule-builder-voice-error");
+    expect(err).toBeInTheDocument();
+    expect(err.textContent).toMatch(/Mikrofon-Zugriff verweigert/);
+  });
+
+  it("calls voice.start when idle and clicked", () => {
+    const startMock = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useVoiceCapture).mockReturnValue({
+      isRecording: false,
+      start: startMock,
+      stop: vi.fn().mockResolvedValue(""),
+      error: null,
+    });
+
+    render(<NLRuleBuilderCard canSculpt={true} />);
+    fireEvent.click(screen.getByTestId("nl-rule-builder-mic"));
+    expect(startMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls voice.stop when recording and clicked, appends transcript to textarea", async () => {
+    const stopMock = vi.fn().mockResolvedValue("transkribierter Text");
+    vi.mocked(useVoiceCapture).mockReturnValue({
+      isRecording: true,
+      start: vi.fn(),
+      stop: stopMock,
+      error: null,
+    });
+
+    render(<NLRuleBuilderCard canSculpt={true} />);
+    fireEvent.click(screen.getByTestId("nl-rule-builder-mic"));
+    expect(stopMock).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      const ta = screen.getByPlaceholderText(/Beispiel/) as HTMLTextAreaElement;
+      expect(ta.value).toBe("transkribierter Text");
+    });
   });
 });
