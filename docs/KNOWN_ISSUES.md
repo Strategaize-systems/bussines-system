@@ -1,5 +1,15 @@
 # Known Issues
 
+### ISSUE-079 — Duplicate Backlog-ID BL-442 in planning/backlog.json (V6.5 + V7.6 beide ID BL-442)
+- Status: open
+- Severity: Low
+- Area: Project Records / Cockpit-Parser
+- Summary: planning/backlog.json enthaelt zwei verschiedene Eintraege mit derselben ID `BL-442`: (1) "V6.5 Theming Phase A — Brand-Tokens" status `done` 2026-05-08 SLC-651, (2) "Custom-Reports — User legt eigene Berichts-Vorlagen im KI-Workspace an" status `in_progress` V7.6 (FEAT-762). Beide haben semantisch eigenstaendige Inhalte und sind beide gewuenscht — der Konflikt entstand durch unabhaengiges ID-Vergabe ohne uniqueness-check.
+- Impact: Cockpit-Backlog-Parser-Verhalten bei Duplicate-Keys ist undokumentiert. Vermutlich zeigt der Parser den ersten Match oder erzeugt einen JSON-Key-Conflict. Funktional unkritisch — beide Items haben eigene Lifecycles, Slice-Mapping geht ueber features/INDEX.md + slices/INDEX.md. Risk: V7.6-Backlog-Progress wird in der Cockpit-Roadmap-Progress-Bar evt. inkorrekt angezeigt.
+- Workaround: Bis-Fix funktioniert das System ueber features/INDEX.md + slices/INDEX.md als Source-of-Truth. Cockpit-Roadmap-V7.6-Progress kann manuell verifiziert werden.
+- Discovery: V7.6 /slice-planning RPT-468 — beim Read von backlog.json fuer Slice-Mapping aufgefallen, `grep '"id": "BL-442"' planning/backlog.json` zeigt 2 Treffer.
+- Next Action: Hygiene-Fix in V7.7+: Eine der beiden Duplicate-IDs umnummerieren (Empfehlung: V6.5-Eintrag bekommt naechste freie BL-Nummer, V7.6-Eintrag behaelt BL-442 weil FEAT-762 + RPT-466 darauf referenzieren). Plus IMP-644 (Dev-System) — Skill-Improvement fuer Backlog-ID-Uniqueness-Check vor Insert.
+
 ### ISSUE-078 — Sonner-Toast rendert nicht client-side im Cockpit (Turbopack 16.2 Hydration-Issue)
 - Status: open
 - Severity: Low
