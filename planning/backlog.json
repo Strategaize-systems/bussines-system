@@ -1,6 +1,16 @@
 {
   "items": [
     {
+      "id": "BL-480",
+      "title": "KI-Provider-Anzeige im User-UI abstrahieren (kein 'Bedrock' / 'Claude Sonnet' / Hersteller-Branding sichtbar)",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": null,
+      "description": "User-Direktive 2026-05-19 nach V7.6 /final-check: Im User-sichtbaren UI darf nicht der konkrete KI-Anbieter (Bedrock, Anthropic Claude Sonnet, Amazon Web Services) erscheinen. Grund: (1) Vendor-Lock-in-Vermeidung — wir wollen spaeter ggf. andere Hersteller einsetzen koennen ohne UI-Refactor und User-Verwirrung. (2) Kein Disclosure des konkreten Providers ggf. ungewollt gegenueber Endkunden. Code-Level (Variablen, Funktionsnamen, Imports, Kommentare, Logs, audit_log) darf weiterhin 'bedrock' / 'invokeBedrock' / model_id-Strings nutzen — das ist forensisch relevant und intern. Nur **User-sichtbare Strings** sollen auf generisches 'KI-System' oder 'Strategaize KI' umgestellt werden. **Konkret bekannte User-sichtbare Stellen (Audit-Stand 2026-05-19, nicht vollstaendig):** (a) [cockpit/src/components/ki-workspace/AnswerPane.tsx](cockpit/src/components/ki-workspace/AnswerPane.tsx) Loading-Hint 'Bedrock arbeitet ...' (sehr sichtbar bei jeder KI-Anfrage); (b) [cockpit/src/components/ki-workspace/nl-builder-inline.tsx](cockpit/src/components/ki-workspace/nl-builder-inline.tsx) Error-Message 'Bedrock-Aufruf fehlgeschlagen'; (c) [cockpit/src/app/(app)/emails/compose/inline-edit-dialog.tsx](cockpit/src/app/(app)/emails/compose/inline-edit-dialog.tsx) Dialog-Description 'Bedrock modifiziert den Body gemaess Anweisung.'. **Scope:** Vollstaendiger Audit aller User-sichtbaren Strings via `grep -rE 'Bedrock|Claude|Anthropic|Amazon|AWS' cockpit/src --include='*.tsx'` + Refactor zu generischem KI-Begriff (Vorschlag: 'KI' / 'Strategaize KI' / 'KI-System'). Backend, Code-Kommentare, Funktionsnamen, audit_log.context.model_id BLEIBEN unveraendert (forensisch relevant). Schaetzung: ~1-2h Audit + ~1h Refactor + Vitest-Update = 1 Mini-Slice. Folgt nach V7.6 Customer-Live-Pre-Phase, vor erstem echten Kundengespraech. Nicht V7.6-blocking.",
+      "createdAt": "2026-05-19"
+    },
+    {
       "id": "BL-101",
       "title": "Kontakte erweitern: Beziehungstypen, Rollen, Qualitätsfelder",
       "type": "feature",
