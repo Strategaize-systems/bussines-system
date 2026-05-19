@@ -1,4 +1,8 @@
 // SLC-705 MT-4 — TEAM_COCKPIT_REPORTS hinzugefuegt (3 Team-scope Bedrock-Reports).
+// V7.6 SLC-761 MT-2 — MEIN_TAG_REPORTS um 6. Eintrag "nl-builder" ergaenzt
+// (DEC-212 "Workflow bauen"). serverActionPath leer + cacheable=false, da
+// KIWorkspace bei id === "nl-builder" short-circuited (kein reportRun.run()).
+// Sichtbarkeit per canSculpt-Filter im ki-workspace-wrapper.tsx (admin/teamlead).
 import type { KIWorkspaceReport } from "../types";
 
 export const MEIN_TAG_REPORTS: KIWorkspaceReport[] = [
@@ -7,6 +11,7 @@ export const MEIN_TAG_REPORTS: KIWorkspaceReport[] = [
   { id: "seit-login", label: "Seit Login", serverActionPath: "@/lib/ki-workspace/reports/seit-login", cacheable: false },
   { id: "wochen-performance", label: "Wochen-Performance", serverActionPath: "@/lib/ki-workspace/reports/wochen-performance", cacheable: true },
   { id: "pipeline-risiko", label: "Pipeline-Risiko", serverActionPath: "@/lib/ki-workspace/reports/pipeline-risiko", cacheable: true },
+  { id: "nl-builder", label: "Workflow bauen", serverActionPath: "", cacheable: false },
 ];
 
 export const DEAL_DETAIL_REPORTS: KIWorkspaceReport[] = [

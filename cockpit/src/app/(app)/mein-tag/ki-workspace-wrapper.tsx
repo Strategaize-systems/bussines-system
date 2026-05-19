@@ -1,12 +1,19 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { KIWorkspace } from "@/components/ki-workspace/KIWorkspace";
 import { MEIN_TAG_REPORTS } from "@/components/ki-workspace/reports/registry";
 import type { ReportRunner } from "@/components/ki-workspace/types";
 
 interface Props {
   userId: string;
+  /**
+   * V7.6 SLC-761 — Sichtbarkeit des 6. Reports "nl-builder" ist auf
+   * admin/teamlead beschraenkt. Server-Side resolved in page.tsx
+   * (`profile.role === "admin" || profile.role === "teamlead"`).
+   * Member sehen 5 Standard-Reports, Admin/Teamlead 6 (inkl. "Workflow bauen").
+   */
+  canSculpt: boolean;
 }
 
 const REPORT_PATHS = [
@@ -23,7 +30,19 @@ function isKnownPath(path: string): path is ReportPath {
   return (REPORT_PATHS as readonly string[]).includes(path);
 }
 
-export function MeinTagKIWorkspace({ userId }: Props) {
+export function MeinTagKIWorkspace({ userId, canSculpt }: Props) {
+  // V7.6 SLC-761 MT-2 — Filtert den NL-Builder-Button per Role-Gate. Damit
+  // ist die Sichtbarkeit primaer im UI-Layer geloest; die Server-Actions
+  // (sculptNlRule/previewNlRule/applyNlRule) gaten zusaetzlich auf Role
+  // (Defense-in-Depth, siehe AUDIT_SERVER_ACTIONS_V7.md Section 11).
+  const reports = useMemo(
+    () =>
+      canSculpt
+        ? MEIN_TAG_REPORTS
+        : MEIN_TAG_REPORTS.filter((r) => r.id !== "nl-builder"),
+    [canSculpt],
+  );
+
   const loadRunner = useCallback(async (path: string): Promise<ReportRunner> => {
     if (!isKnownPath(path)) {
       throw new Error(`Unknown report path: ${path}`);
@@ -62,7 +81,7 @@ export function MeinTagKIWorkspace({ userId }: Props) {
       </div>
       <KIWorkspace
         context="mein-tag"
-        reports={MEIN_TAG_REPORTS}
+        reports={reports}
         scope={{ userId }}
         voiceEnabled={true}
         loadRunner={loadRunner}

@@ -36,7 +36,6 @@ import { ContactSheet } from "../contacts/contact-sheet";
 import { CompanySheet } from "../companies/company-sheet";
 import { CallSheet } from "./call-sheet";
 import { MeinTagKIWorkspace } from "./ki-workspace-wrapper";
-import { NLRuleBuilderCard } from "@/components/mein-tag/nl-rule-builder-card";
 import { startMeeting } from "@/app/actions/meetings";
 
 interface MeinTagClientProps {
@@ -343,16 +342,13 @@ export function MeinTagClient({ userId, data, stages, contacts, companies, deals
 
               {/* KI-WORKSPACE — hidden in readOnly (Drilldown): keine Mutate-Pfade,
                   Berichts-Buttons + Frage-Input wuerden Server-Errors werfen.
-                  V7.1.1 SLC-714: aus Drilldown entfernt (BL-471). */}
+                  V7.1.1 SLC-714: aus Drilldown entfernt (BL-471).
+                  V7.6 SLC-761: NL-Rule-Builder wandert als 6. Berichts-Button
+                  ("Workflow bauen") in den Workspace; canSculpt steuert die
+                  Button-Sichtbarkeit im Wrapper (admin/teamlead). */}
               {!readOnly && (
-                <MeinTagKIWorkspace userId={kiWorkspaceUserId} />
+                <MeinTagKIWorkspace userId={kiWorkspaceUserId} canSculpt={canSculpt} />
               )}
-
-              {/* V7.5 SLC-753 — NL-Rule-Builder (Admin+Teamlead only).
-                  Server-Side-Guard in page.tsx setzt canSculpt; Card-Internal
-                  returnt null wenn false. Im Drilldown ebenfalls verborgen,
-                  da sie tenant-globalen Workflow-Effekt hat. */}
-              {!readOnly && canSculpt && <NLRuleBuilderCard canSculpt={canSculpt} />}
             </div>
 
             {/* RIGHT COLUMN (4 cols on lg+): Entities + Zeit + Kalender + Meeting-Prep + Focus-Badges */}

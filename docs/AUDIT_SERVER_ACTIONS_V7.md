@@ -380,3 +380,37 @@ Eintraege, die in der ursprünglichen V7-SLC-704-Audit-Erfassung fehlten und in 
 |---|---|---|---|
 | logAudit | INSERT | audit_log | Best-effort, swallow errors — Audit darf NIE eine erfolgreiche Operation blocken. Aufgerufen aus diversen Mutate-Pfaden (Workflow-Dispatcher, FollowupEngine, Signal-Extractor). |
 | logAuditWithId | INSERT | audit_log | Variante mit explizit übergebener entity_id (statt actor_id-as-entity_id-Fallback). Verwendet von Cleanup-Cron (`/api/cron/click-log-cleanup`) für DSGVO-Trail. |
+
+## 11) V7.5 Server-Actions — NL-Rule-Builder (SLC-761 MT-1, F-2 Doc-Hygiene nachgetragen)
+
+V7.5-Server-Actions die in V7.5 SLC-753..SLC-756 entstanden sind, hier nach V7.6 SLC-761 MT-1 (F-2 Doc-Hygiene aus RPT-462) nachgetragen.
+
+Pfad: `cockpit/src/app/(app)/mein-tag/actions/*.ts`. Alle drei Mutate-Pfade haben `assertNotReadOnlyContext()` als first line + Role-Gate `["admin","teamlead"]`. `automation_rules` ist non-core (kein owner_user_id-Wiring noetig), `audit_log` ist non-core Forensik-Trail.
+
+### app/(app)/mein-tag/actions/sculpt-nl-rule.ts — SLC-753 MT-1
+| Funktion | Op | Tabelle | Pre | Post | Notes |
+|---|---|---|---|---|---|
+| sculptNlRule(formData) | INSERT (via sculptor) | audit_log | JA | n/a | assertNotReadOnlyContext + role-in ["admin","teamlead"] sonst "forbidden". FormData.nlInput (5..2000 Zeichen). Ruft `sculptRule(nlInput, profile.user_id)` aus `lib/automation/sculptor.ts` (SLC-752 MT-6), das wiederum `insertAttempt()` aufruft → INSERT audit_log action='automation_rule.sculpt_attempt' mit `entity_id=sculpt_session_id`. Bedrock Claude Sonnet 4.5 eu-central-1 (DEC-211). |
+
+### app/(app)/mein-tag/actions/preview-nl-rule.ts — SLC-754 MT-1
+| Funktion | Op | Tabelle | Pre | Post | Notes |
+|---|---|---|---|---|---|
+| previewNlRule(schema) | SELECT (read-only) | n/a (Trockenlauf, 7-Tage-Lookback gegen deals/activities/meetings) | nein | n/a | role-in ["admin","teamlead"] sonst "forbidden". Baut synthetic AutomationRule aus SculptSuccess-Schema (kein DB-Insert) + ruft `dryRunRule(rule, daysBack=7)` aus `lib/automation/dry-run.ts` (V6.2 SLC-622 DEC-132-Reuse). Liefert DryRunResult mit hits + would_run_actions. Kein assertNotReadOnlyContext noetig (read-only). |
+
+### app/(app)/mein-tag/actions/apply-nl-rule.ts — SLC-754 MT-2
+| Funktion | Op | Tabelle | Pre | Post | Notes |
+|---|---|---|---|---|---|
+| applyNlRule(input) | INSERT | automation_rules + audit_log | JA | n/a (non-core) | assertNotReadOnlyContext + role-in ["admin","teamlead"] sonst "forbidden". Re-Validate gegen SculptSuccessSchema (Defense-in-Depth gegen Edit-zwischen-Sculpt-und-Apply). `assertNotDuplicateRuleDb()`-Gate (SLC-752 MT-7). INSERT automation_rules mit `created_via='nl_sculptor'` + `status='active'` + `created_by=profile.user_id`. INSERT audit_log action='automation_rule.create_via_nl' mit Sculpt-Metadata (`sculpt_audit_id`-Link, `sculptor_cost_usd`, `edited_in_form`). revalidatePath /settings/automation + /mein-tag. |
+
+### lib/automation/nl-history.ts — SLC-752 MT-8 (Service-Helper, kein "use server")
+| Funktion | Op | Tabelle | Pre | Post | Notes |
+|---|---|---|---|---|---|
+| listNlSculptHistory(supabase, options) | SELECT | audit_log | n/a | n/a | Read-only Listing der letzten Sculpt-Attempts (success/reject/validation_fail/infra_fail) fuer SLC-756 Inspection-Log-UI auf `/settings/workflow-automation/nl-history`. ownerScope-Param fuer Member-Scope vs Admin/Teamlead-Scope. RLS-Filter via Supabase-Client. Limit 1..200 (default 50). Konsumiert von `app/(app)/settings/workflow-automation/nl-history/page.tsx`. Kein eigener "use server"-Wrapper — wird aus Server-Component aufgerufen. |
+
+### Sicherheitsmodell V7.5 NL-Rule-Builder
+
+- Doppelter Role-Gate: Server-side `role-in ["admin","teamlead"]` in jeder der drei Mutate-Actions + Client-side Server-Side-Guard in `nl-rule-builder-card.tsx`/`nl-builder-inline.tsx` (Defense-in-Depth).
+- Sculptor-Cost-Tracking: jeder Bedrock-Call schreibt `totalCostUsd` + `attemptCount` ins `audit_log.context` (Forensik fuer Cost-Anomalien).
+- Sculpt-Session-ID: UUID die ueber Re-Prompt-Loop hinweg stabil bleibt — verlinkt `sculpt_attempt` mit `create_via_nl`-Eintrag fuer End-to-End-Forensik.
+- Schema-Re-Validation: zwischen Sculpt und Apply kann der User die Schema-Karte editieren — `applyNlRule` revalidiert gegen Zod-Schema, niemals trust-the-client.
+- Soft-Dedup: identische bestehende Rule blockiert Apply mit `existing_rule_id`-Hint (User-UX) statt silent-skip.

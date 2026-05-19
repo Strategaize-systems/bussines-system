@@ -9,8 +9,9 @@
 //   - Pflicht-Checkbox "Ich bestaetige..."
 //   - Cancel + Apply-Button (Apply disabled bis Checkbox aktiv und nicht-pending)
 //
-// On-Apply-Klick ruft `onApply` Callback — Parent (NLRuleBuilderCard) ruft die
-// applyNlRule-Server-Action und schliesst das Modal nach Success.
+// On-Apply-Klick ruft `onApply` Callback — Parent (NLBuilderInline V7.6, vor
+// V7.6 NLRuleBuilderCard) ruft die applyNlRule-Server-Action und schliesst das
+// Modal nach Success.
 //
 // Per DEC-207: Pflicht-Checkbox darf NICHT geskipped werden. UI ist bewusst
 // reibungsvoll — User muss aktiv bestaetigen, dass die Regel auf alle
