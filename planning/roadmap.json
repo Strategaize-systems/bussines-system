@@ -213,8 +213,8 @@
     {
       "id": "v7-6",
       "name": "V7.6",
-      "status": "planned",
-      "summary": "Custom-Reports (V6.6-Discovery 2026-05-09). User kann KI-Antworten als wiederverwendbare Berichts-Vorlagen speichern und im KI-Workspace abrufen. Nutzt V7.5-Architektur (NL-Schema-Extraktion). KEINE Button-Inflation — neue Reports erscheinen NICHT als zusaetzliche Standard-Buttons, sondern in einem 'Meine Berichte'-Auswahlfeld (Type-Ahead/Dropdown) rechts neben den Standard-Buttons. ~1-2 Slices. Folgt zwingend nach V7.5.",
+      "status": "active",
+      "summary": "NL-Workspace-Integration + Custom-Reports (Requirements done 2026-05-19, RPT-466). 2 Features FEAT-761 + FEAT-762. FEAT-761 (BL-479, high prio, ZUERST): NL-Rule-Builder wird als 6. Button in den MeinTagKIWorkspace integriert. Klick triggert Sculpt-Workflow inline im AnswerPane. Cost-Display + Modell-Anzeige raus aus User-UI (bleibt im audit_log fuer Forensik). Standalone-Card auf /mein-tag wird entfernt. FEAT-751-Backend bleibt komplett bestehen. Kein Schema-Touch. FEAT-762 (BL-442, medium prio, danach): Custom-Reports. User legt eigene KI-Antworten als wiederverwendbare Berichts-Vorlagen an. 'Meine Berichte'-Dropdown rechts neben Standard-Buttons (KEINE Button-Inflation per V6.6-Direktive). custom_reports-Tabelle mit RLS owner-scope, Type-Ahead-Filter ab 6+, Context-Filter mein-tag vs cockpit. MIG-037 additiv. F-2 Doc-Hygiene als Setup-MT (AUDIT_SERVER_ACTIONS_V7.md V7.5-Section). ~3-4 Slices. BL-478 + F-3 raus aus V7.6.",
       "order": 31
     },
     {
