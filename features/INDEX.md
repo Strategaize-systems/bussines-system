@@ -247,8 +247,8 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-761 | NL-Rule-Builder in KI-Workspace integrieren (BL-479) | done | [Spec](FEAT-761-nl-builder-in-workspace.md) | 2026-05-19 |
-| FEAT-762 | Custom-Reports im KI-Workspace (BL-442) | done | [Spec](FEAT-762-custom-reports.md) | 2026-05-19 |
+| FEAT-761 | NL-Rule-Builder in KI-Workspace integrieren (BL-479) | deployed | [Spec](FEAT-761-nl-builder-in-workspace.md) | 2026-05-19 |
+| FEAT-762 | Custom-Reports im KI-Workspace (BL-442) | deployed | [Spec](FEAT-762-custom-reports.md) | 2026-05-19 |
 
 ## V6 Features (Zielsetzung + Performance-Tracking — released)
 
