@@ -10,14 +10,14 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V7.6 /final-check CONDITIONALLY READY 2026-05-19 (RPT-473)**. Code+Security clean, Documentation vollstaendig. **1 High-Finding blockt /deploy: ISSUE-071 Disk-Druck 93% auf Hetzner** (Anstieg 82%→93% in 6h, Coolify-Redeploy wuerde >95% triggern → Postgres-Crash-Loop-Risiko Pattern RPT-461). User-Pflicht-Action vor /go-live: `ssh root@91.98.20.191 'docker builder prune -af && docker image prune -af && df -h /'`. Andere Findings (npm audit 5 vulns, COMPLIANCE.md V7.5+V7.6-Gap, Pre-Existing-Lint-Schuld 143/57) als accepted residual dokumentiert. **Naechster Schritt: User-Disk-Cleanup → /go-live V7.6 → /deploy als REL-033.**
-- Current Phase: V7.6 /final-check DONE conditionally. Ready fuer /go-live nach Disk-Cleanup.
+- Current Focus: **V7.6 /go-live GO 2026-05-19 (RPT-474)**. Disk-Cleanup auf Hetzner durchgefuehrt (93% → 82%, 6.7G frei). Alle Operational-Minimums erfuellt: App-Container healthy, Login HTTP 200, main HEAD `e641022` (BL-480 KI-Provider-Anzeige als Backlog dokumentiert + commit gepusht), Rollback-Path via Coolify-Image-History → REL-032 (`fb2488a`). 7 Accepted Residual Risks dokumentiert (npm audit, COMPLIANCE-Gap, Pre-Existing-Lint, etc.) — alle defer V7.7+ oder per User-Direktive. **Naechster Schritt: User-Coolify-Manual-Redeploy auf `e641022`, dann `/deploy` als REL-033.**
+- Current Phase: V7.6 /go-live GO. Ready fuer User-Coolify-Redeploy + /deploy.
 
 ## Immediate Next Steps
-1. **(User-Pflicht-Action vor /go-live)** Disk-Cleanup auf Hetzner via SSH: `ssh root@91.98.20.191 'docker builder prune -af && docker image prune -af && df -h /'`. Erwartet: Disk von 93% auf 80-85%. ISSUE-071 Next-Action #1 bleibt offen fuer Coolify-Cron-Setup (weekly).
-2. **(Nach Disk-Cleanup-Bestaetigung)** `/go-live V7.6` — Release-Decision GO/NO-GO.
-3. **(Nach /go-live GO)** `/deploy` als REL-033 — Coolify Manual-Redeploy fuer main HEAD ee6f116.
-4. **(Nach /deploy stable)** `/post-launch` Burn-In (~2-4h, audit_log-Trail-Check + Bedrock-Cost-Burn-In).
+1. **(User-Pflicht-Action)** Coolify-Manual-Redeploy auf main HEAD `e641022`. Coolify-UI → Business System → app → Reload Compose File (falls neu) → Redeploy. Build ~3-5 Min. Browser-Verify: /mein-tag zeigt 6 Workspace-Buttons + "Meine Berichte"-Dropdown.
+2. **(Nach Redeploy-Bestaetigung)** `/deploy` — RELEASES.md REL-033-Eintrag + Live-Verifikation.
+3. **(Nach /deploy stable)** `/post-launch` Burn-In ~2-4h (audit_log-Trail-Check + Bedrock-Cost-Burn-In + Disk-Trend).
+4. **(Spaeter, nicht V7.6-blocking)** Coolify-Cron fuer Docker-Cleanup einrichten (ISSUE-071 Next-Action #1, Resilience).
 2. **(Parallel User-Pflicht-Action, weniger zeitkritisch nach Disk-Erholung)** ISSUE-071 weekly Cron auf Hetzner einrichten — `docker builder prune -af && docker image prune -af` als Coolify-Cron oder systemd-timer. Snippet in KNOWN_ISSUES.md ISSUE-071 Next-Action #1. **Disk-Trend POSITIV: 91%→82% (6.5G free) durch automatisches Coolify-Image-Cleanup nach ~13h.** Cron weiterhin sinnvoll fuer naechsten Redeploy-Zyklus.
 3. **(V7.6-IMP-Kandidaten aus RPT-462)** F-2 AUDIT_SERVER_ACTIONS_V7.md Section 11 mit V7.5-Server-Actions nachtragen (~15 Min, wird als Setup-MT in SLC-761 mit erledigt). F-3 COMPLIANCE.md V7.5+V7.6-Section mit NL-Sculptor + 4 neue Custom-Report-Audit-Actions ergaenzen (Pre-Production-Compliance-Gate-Item, defer User-Direktive 2026-05-01 "kommt viel spaeter").
 4. **(V7.6-Backlog, neu durch SLC-757)** BL-478 ISSUE-078 Sonner-Toast-Hydration in Mini-Reproducer untersuchen (Turbopack 16.2 + Sonner v2.0.7 Hydration-Bug, V7.6 low-prio, defer V7.7+).
