@@ -10,6 +10,7 @@ import {
   getGatekeeperSummary,
 } from "./actions";
 import { MeinTagClient } from "./mein-tag-client";
+import { listCustomReports } from "@/lib/custom-reports/actions/list";
 
 export default async function MeinTagPage() {
   const supabase = await createClient();
@@ -23,14 +24,19 @@ export default async function MeinTagPage() {
   const profile = await getProfile();
   const canSculpt = profile.role === "admin" || profile.role === "teamlead";
 
-  const [data, context, calendarSlots, nextMeeting, topDeals, gatekeeperSummary] = await Promise.all([
+  const [data, context, calendarSlots, nextMeeting, topDeals, gatekeeperSummary, customReportsRes] = await Promise.all([
     getTodayItems(),
     getMeinTagContext(),
     getCalendarEventsForToday(),
     getNextMeetingWithContext(),
     getTopDeals(5),
     getGatekeeperSummary(),
+    listCustomReports({ context_type: "mein-tag" }),
   ]);
+
+  // V7.6 SLC-763 — Custom-Reports nur bei Success durchreichen. Bei Infra-Error
+  // bleibt das Dropdown leer (best-effort, kein Hard-Crash der Seite).
+  const customReports = customReportsRes.ok ? customReportsRes.items : [];
 
   const dateLabel = new Date().toLocaleDateString("de-DE", {
     weekday: "long",
@@ -54,6 +60,7 @@ export default async function MeinTagPage() {
       gatekeeperSummary={gatekeeperSummary}
       dateLabel={dateLabel}
       canSculpt={canSculpt}
+      customReports={customReports}
     />
   );
 }

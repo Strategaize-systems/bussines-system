@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, RefreshCw, AlertCircle } from "lucide-react";
+import { Loader2, RefreshCw, AlertCircle, BookmarkPlus } from "lucide-react";
 import { Fragment, useState, type ReactNode } from "react";
 import type { ReportResult } from "./types";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,10 @@ interface AnswerPaneProps {
    * MarkdownView. Tab-Wechsel ist clientseitig, kein neuer Bedrock-Call.
    */
   reportId?: string;
+  // V7.6 SLC-763 MT-1 (DEC-216): Parent (KIWorkspace) setzt den Callback nur
+  // bei `selectedReport.id === "freie-frage" && reportRun.result`. Button
+  // erscheint NIE bei Standard-Berichten oder Custom-Report-Reruns.
+  onSaveAsReport?: () => void;
 }
 
 export function AnswerPane({
@@ -30,6 +34,7 @@ export function AnswerPane({
   onRefresh,
   className,
   reportId,
+  onSaveAsReport,
 }: AnswerPaneProps) {
   return (
     <div
@@ -43,17 +48,30 @@ export function AnswerPane({
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Antwort
         </span>
-        {result && onRefresh && (
-          <button
-            type="button"
-            onClick={onRefresh}
-            className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-brand-primary transition-colors"
-            data-testid="ki-workspace-refresh-button"
-          >
-            <RefreshCw className="h-3 w-3" />
-            Aktualisieren
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {result && onSaveAsReport && (
+            <button
+              type="button"
+              onClick={onSaveAsReport}
+              className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-brand-primary transition-colors"
+              data-testid="answer-pane-save-as-report"
+            >
+              <BookmarkPlus className="h-3 w-3" />
+              Als Bericht speichern
+            </button>
+          )}
+          {result && onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-brand-primary transition-colors"
+              data-testid="ki-workspace-refresh-button"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Aktualisieren
+            </button>
+          )}
+        </div>
       </div>
 
       {isLoading && (

@@ -12,11 +12,29 @@ import { AnswerPane } from "./AnswerPane";
 import { NLBuilderInline } from "./nl-builder-inline";
 import { useReportRun } from "./hooks/useReportRun";
 import { useVoiceCapture } from "./hooks/useVoiceCapture";
+import { MeineBerichteDropdown } from "./meine-berichte-dropdown";
+import { SaveCustomReportModal } from "./save-custom-report-modal";
+import type {
+  CustomReportContextType,
+  CustomReportRow,
+} from "@/lib/custom-reports/types";
 
 interface ExtendedProps extends KIWorkspaceProps {
   className?: string;
   /** Test/SLC-662 injection point — overrides default _mock loader. */
   loadRunner?: (serverActionPath: string) => Promise<ReportRunner>;
+  // V7.6 SLC-763 — Optional. Wenn gesetzt, rendert KIWorkspace die
+  // "Meine Berichte"-Dropdown rechts neben den Standard-Buttons und ein
+  // Save-Modal nach freier Frage. Wird vom Page-Wrapper befuellt
+  // (Server-Component-Side via `listCustomReports`).
+  customReports?: CustomReportRow[];
+  /** Pflicht wenn customReports gesetzt — "mein-tag" oder "cockpit". */
+  customReportContextType?: CustomReportContextType;
+  /**
+   * Wird nach Save/Rename/Delete eines Custom-Reports aufgerufen. Page-Wrapper
+   * triggert dann `router.refresh()`, damit `listCustomReports` neu laeuft.
+   */
+  onCustomReportsChanged?: () => void;
 }
 
 const FREE_QUESTION_REPORT_ID = "freie-frage";
@@ -24,6 +42,12 @@ const FREE_QUESTION_REPORT_ID = "freie-frage";
 // triggert statt einen Bedrock-Report-Runner aufzurufen. Sichtbarkeit per
 // canSculpt-Filter im ki-workspace-wrapper.tsx.
 const NL_BUILDER_REPORT_ID = "nl-builder";
+// V7.6 SLC-763 — Pseudo-Pfad fuer Custom-Reports. mein-tag-wrapper +
+// cockpit-ki-workspace-Wrapper resolvieren den auf einen Adapter, der die
+// `runCustomReport`-Server-Action aufruft. reportId steckt die UUID via
+// "custom-<uuid>"-Prefix mit drin.
+const CUSTOM_REPORT_SERVER_ACTION_PATH = "__custom__";
+const CUSTOM_REPORT_ID_PREFIX = "custom-";
 
 type WorkspaceMode = "report" | "nl-builder";
 
@@ -34,6 +58,9 @@ export function KIWorkspace({
   voiceEnabled,
   className,
   loadRunner,
+  customReports,
+  customReportContextType,
+  onCustomReportsChanged,
 }: ExtendedProps) {
   const [inputText, setInputText] = useState("");
   const [selectedReport, setSelectedReport] = useState<KIWorkspaceReport | null>(null);
@@ -41,8 +68,16 @@ export function KIWorkspace({
   // inline NL-Rule-Builder. Default "report" haelt das bisherige Verhalten
   // unveraendert; "nl-builder" wird durch Klick auf den 6. Button gesetzt.
   const [mode, setMode] = useState<WorkspaceMode>("report");
+  // V7.6 SLC-763 — Save-Modal-Open-State (controlled). Wird durch
+  // AnswerPane.onSaveAsReport-Callback getoggled, erscheint NUR nach freier
+  // Frage (DEC-216).
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
   const reportRun = useReportRun({ loadRunner });
   const voice = useVoiceCapture();
+
+  const canShowCustomReports =
+    customReports !== undefined &&
+    customReportContextType !== undefined;
 
   const handleReportClick = useCallback(
     async (report: KIWorkspaceReport) => {
@@ -63,6 +98,34 @@ export function KIWorkspace({
     if (!selectedReport) return;
     await reportRun.run(selectedReport, scope, { bypassCache: true });
   }, [reportRun, scope, selectedReport]);
+
+  // V7.6 SLC-763 — Klick auf Item in der Dropdown. Wir bauen einen Pseudo-
+  // KIWorkspaceReport mit `serverActionPath="__custom__"`, der Wrapper
+  // (mein-tag-wrapper / cockpit-ki-workspace) muss diesen Pfad in einen
+  // runCustomReport-Adapter aufloesen.
+  const handleCustomReportClick = useCallback(
+    async (row: CustomReportRow) => {
+      const pseudo: KIWorkspaceReport = {
+        id: `${CUSTOM_REPORT_ID_PREFIX}${row.id}`,
+        label: row.name,
+        serverActionPath: CUSTOM_REPORT_SERVER_ACTION_PATH,
+        cacheable: false,
+      };
+      setSelectedReport(pseudo);
+      setMode("report");
+      await reportRun.run(pseudo, scope);
+    },
+    [reportRun, scope],
+  );
+
+  const isFreeFormResult =
+    selectedReport?.id === FREE_QUESTION_REPORT_ID &&
+    reportRun.result !== null &&
+    !reportRun.isLoading;
+
+  const handleSaveAsReport = useCallback(() => {
+    setSaveModalOpen(true);
+  }, []);
 
   const handleVoiceClick = useCallback(async () => {
     if (voice.isRecording) {
@@ -87,29 +150,38 @@ export function KIWorkspace({
       data-context={context}
       data-mode={mode}
     >
-      <div
-        className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x"
-        data-testid="ki-workspace-report-buttons"
-      >
-        {reports.map((report) => (
-          <button
-            key={report.id}
-            type="button"
-            onClick={() => handleReportClick(report)}
-            disabled={reportRun.isLoading}
-            className={cn(
-              "shrink-0 snap-start rounded-full px-3 py-1.5 text-xs font-medium",
-              "border border-brand-primary/30 bg-brand-primary/10 text-brand-primary",
-              "hover:bg-brand-primary hover:text-brand-foreground transition-colors",
-              "disabled:opacity-50 disabled:cursor-not-allowed",
-              selectedReport?.id === report.id &&
-                "bg-brand-primary text-brand-foreground",
-            )}
-            data-testid={`ki-workspace-report-${report.id}`}
-          >
-            {report.label}
-          </button>
-        ))}
+      <div className="flex items-center gap-2">
+        <div
+          className="flex flex-1 gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x"
+          data-testid="ki-workspace-report-buttons"
+        >
+          {reports.map((report) => (
+            <button
+              key={report.id}
+              type="button"
+              onClick={() => handleReportClick(report)}
+              disabled={reportRun.isLoading}
+              className={cn(
+                "shrink-0 snap-start rounded-full px-3 py-1.5 text-xs font-medium",
+                "border border-brand-primary/30 bg-brand-primary/10 text-brand-primary",
+                "hover:bg-brand-primary hover:text-brand-foreground transition-colors",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+                selectedReport?.id === report.id &&
+                  "bg-brand-primary text-brand-foreground",
+              )}
+              data-testid={`ki-workspace-report-${report.id}`}
+            >
+              {report.label}
+            </button>
+          ))}
+        </div>
+        {canShowCustomReports && (
+          <MeineBerichteDropdown
+            reports={customReports ?? []}
+            onSelect={(row) => void handleCustomReportClick(row)}
+            onChanged={() => onCustomReportsChanged?.()}
+          />
+        )}
       </div>
 
       <div className="flex w-full items-center gap-2">
@@ -195,6 +267,24 @@ export function KIWorkspace({
           result={reportRun.result}
           onRefresh={selectedReport ? handleRefresh : undefined}
           reportId={selectedReport?.id}
+          onSaveAsReport={
+            canShowCustomReports && isFreeFormResult
+              ? handleSaveAsReport
+              : undefined
+          }
+        />
+      )}
+
+      {canShowCustomReports && customReportContextType && (
+        <SaveCustomReportModal
+          open={saveModalOpen}
+          onOpenChange={setSaveModalOpen}
+          promptTemplate={inputText}
+          contextType={customReportContextType}
+          onSaved={() => {
+            setSaveModalOpen(false);
+            onCustomReportsChanged?.();
+          }}
         />
       )}
     </div>

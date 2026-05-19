@@ -37,6 +37,7 @@ import { CompanySheet } from "../companies/company-sheet";
 import { CallSheet } from "./call-sheet";
 import { MeinTagKIWorkspace } from "./ki-workspace-wrapper";
 import { startMeeting } from "@/app/actions/meetings";
+import type { CustomReportRow } from "@/lib/custom-reports/types";
 
 interface MeinTagClientProps {
   userId: string;
@@ -57,6 +58,8 @@ interface MeinTagClientProps {
   targetUserDisplayName?: string;
   // V7.5 SLC-753 — Role-Gated NL-Rule-Builder (Admin+Teamlead). Server-Side-resolved.
   canSculpt?: boolean;
+  // V7.6 SLC-763 — Custom-Reports der eingeloggten User fuer "mein-tag"-Scope.
+  customReports?: CustomReportRow[];
 }
 
 const typeConfig: Record<TodayItemType, { icon: typeof ListTodo; bg: string }> = {
@@ -81,7 +84,7 @@ const statusStyles: Record<string, string> = {
 
 const WORKDAY_MINUTES = 480; // 8h workday
 
-export function MeinTagClient({ userId, data, stages, contacts, companies, deals, pipelines, calendarSlots, nextMeeting, topDeals, gatekeeperSummary, dateLabel, readOnly = false, viewAsUserId, targetUserDisplayName, canSculpt = false }: MeinTagClientProps) {
+export function MeinTagClient({ userId, data, stages, contacts, companies, deals, pipelines, calendarSlots, nextMeeting, topDeals, gatekeeperSummary, dateLabel, readOnly = false, viewAsUserId, targetUserDisplayName, canSculpt = false, customReports = [] }: MeinTagClientProps) {
   // V7.1 SLC-712b — KI-Workspace-Scope: viewAsUserId hat Vorrang vor userId
   // wenn gesetzt (Drilldown). KI-Reports laufen dann gegen Target-Member-Daten.
   const kiWorkspaceUserId = viewAsUserId ?? userId;
@@ -347,7 +350,11 @@ export function MeinTagClient({ userId, data, stages, contacts, companies, deals
                   ("Workflow bauen") in den Workspace; canSculpt steuert die
                   Button-Sichtbarkeit im Wrapper (admin/teamlead). */}
               {!readOnly && (
-                <MeinTagKIWorkspace userId={kiWorkspaceUserId} canSculpt={canSculpt} />
+                <MeinTagKIWorkspace
+                  userId={kiWorkspaceUserId}
+                  canSculpt={canSculpt}
+                  customReports={customReports}
+                />
               )}
             </div>
 

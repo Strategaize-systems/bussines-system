@@ -12,6 +12,22 @@ vi.mock("../nl-builder-inline", () => ({
   ),
 }));
 
+// V7.6 SLC-763 — Mock SaveCustomReportModal damit die Tests deterministisch
+// bleiben (echtes Modal nutzt eine echte Server-Action).
+vi.mock("../save-custom-report-modal", () => ({
+  SaveCustomReportModal: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="save-custom-report-modal-mock">save-modal</div> : null,
+}));
+
+// MeineBerichteDropdown bleibt unmocked — Wire-Up testen wir end-to-end im
+// Workspace, Server-Action-Calls werden im dropdown-Test selbst gemockt.
+vi.mock("@/lib/custom-reports/actions/rename", () => ({
+  renameCustomReport: vi.fn(),
+}));
+vi.mock("@/lib/custom-reports/actions/delete", () => ({
+  deleteCustomReport: vi.fn(),
+}));
+
 import { KIWorkspace } from "../KIWorkspace";
 import { __resetCacheForTests } from "@/lib/ki-workspace/cache";
 import type {
@@ -19,6 +35,22 @@ import type {
   ReportResult,
   RunReportArgs,
 } from "../types";
+import type { CustomReportRow } from "@/lib/custom-reports/types";
+
+function makeCustomReportRow(name: string, idx: number): CustomReportRow {
+  return {
+    id: `crep-${idx}`,
+    owner_user_id: "u1",
+    context_type: "mein-tag",
+    name,
+    prompt_template: "Frage?",
+    description: null,
+    last_used_at: null,
+    usage_count: 0,
+    created_at: "2026-05-19T10:00:00Z",
+    updated_at: "2026-05-19T10:00:00Z",
+  };
+}
 
 const REPORTS: KIWorkspaceReport[] = [
   {
@@ -320,6 +352,173 @@ describe("KIWorkspace", () => {
       });
       expect(screen.getByTestId("ki-workspace").getAttribute("data-mode")).toBe("report");
       expect(screen.getByTestId("ki-workspace-answer-pane")).toBeInTheDocument();
+    });
+  });
+
+  // V7.6 SLC-763 — Custom-Reports-Wire-Up Tests.
+  describe("V7.6 SLC-763 Custom-Reports wire-up", () => {
+    it("does NOT render Meine-Berichte-Dropdown when customReports prop is missing", () => {
+      const loadRunner = async () => async () => makeResult("never");
+      render(
+        <KIWorkspace
+          context="mein-tag"
+          reports={REPORTS}
+          scope={SCOPE}
+          voiceEnabled={false}
+          loadRunner={loadRunner}
+        />,
+      );
+      expect(screen.queryByTestId("meine-berichte-dropdown")).toBeNull();
+    });
+
+    it("renders Meine-Berichte-Dropdown with empty state when customReports=[]", () => {
+      render(
+        <KIWorkspace
+          context="mein-tag"
+          reports={REPORTS}
+          scope={SCOPE}
+          voiceEnabled={false}
+          loadRunner={async () => async () => makeResult("never")}
+          customReports={[]}
+          customReportContextType="mein-tag"
+        />,
+      );
+      const dropdown = screen.getByTestId("meine-berichte-dropdown");
+      expect(dropdown).toBeInTheDocument();
+      fireEvent.click(screen.getByTestId("meine-berichte-trigger"));
+      expect(screen.getByTestId("meine-berichte-empty")).toBeInTheDocument();
+    });
+
+    it("clicking a custom-report item calls loadRunner with '__custom__' path and reportId 'custom-<id>'", async () => {
+      const customRunner = vi.fn(async (_args: RunReportArgs) =>
+        makeResult("custom-1-result"),
+      );
+      const loadRunner = vi.fn(async (path: string) => {
+        if (path === "__custom__") return customRunner;
+        return async () => makeResult("standard");
+      });
+      const customReports = [makeCustomReportRow("Mein erster Bericht", 1)];
+
+      render(
+        <KIWorkspace
+          context="mein-tag"
+          reports={REPORTS}
+          scope={SCOPE}
+          voiceEnabled={false}
+          loadRunner={loadRunner}
+          customReports={customReports}
+          customReportContextType="mein-tag"
+        />,
+      );
+
+      fireEvent.click(screen.getByTestId("meine-berichte-trigger"));
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("meine-berichte-item-select-crep-1"));
+      });
+
+      expect(loadRunner).toHaveBeenCalledWith("__custom__");
+      expect(customRunner).toHaveBeenCalledTimes(1);
+      expect(customRunner.mock.calls[0][0].reportId).toBe("custom-crep-1");
+      await waitFor(() => {
+        expect(screen.getByTestId("ki-workspace-result")).toHaveTextContent(
+          "custom-1-result",
+        );
+      });
+    });
+
+    it("Save-as-Report button is hidden before any free-form question is asked", () => {
+      render(
+        <KIWorkspace
+          context="mein-tag"
+          reports={REPORTS}
+          scope={SCOPE}
+          voiceEnabled={false}
+          loadRunner={async () => async () => makeResult("never")}
+          customReports={[]}
+          customReportContextType="mein-tag"
+        />,
+      );
+      expect(screen.queryByTestId("answer-pane-save-as-report")).toBeNull();
+    });
+
+    it("Save-as-Report button is hidden after Standard-Bericht click (DEC-216)", async () => {
+      const runner = async () => makeResult("standard-result");
+      render(
+        <KIWorkspace
+          context="mein-tag"
+          reports={REPORTS}
+          scope={SCOPE}
+          voiceEnabled={false}
+          loadRunner={async () => runner}
+          customReports={[]}
+          customReportContextType="mein-tag"
+        />,
+      );
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("ki-workspace-report-tagesanalyse"));
+      });
+      await waitFor(() => {
+        expect(screen.getByTestId("ki-workspace-result")).toHaveTextContent(
+          "standard-result",
+        );
+      });
+      // selectedReport.id === "tagesanalyse" → kein Save-Button.
+      expect(screen.queryByTestId("answer-pane-save-as-report")).toBeNull();
+    });
+
+    it("Save-as-Report button is visible after Freie-Frage Send (DEC-216 happy path)", async () => {
+      const runner = async () => makeResult("freie-frage-result");
+      render(
+        <KIWorkspace
+          context="mein-tag"
+          reports={REPORTS}
+          scope={SCOPE}
+          voiceEnabled={false}
+          loadRunner={async () => runner}
+          customReports={[]}
+          customReportContextType="mein-tag"
+        />,
+      );
+      const input = screen.getByTestId("ki-workspace-input");
+      fireEvent.change(input, { target: { value: "Welche Deals haben keine Aktivitaet?" } });
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("ki-workspace-send-button"));
+      });
+      await waitFor(() => {
+        expect(screen.getByTestId("ki-workspace-result")).toHaveTextContent(
+          "freie-frage-result",
+        );
+      });
+      expect(screen.getByTestId("answer-pane-save-as-report")).toBeInTheDocument();
+    });
+
+    it("Save-as-Report button click opens the SaveCustomReportModal", async () => {
+      const runner = async () => makeResult("freie-frage-result");
+      render(
+        <KIWorkspace
+          context="mein-tag"
+          reports={REPORTS}
+          scope={SCOPE}
+          voiceEnabled={false}
+          loadRunner={async () => runner}
+          customReports={[]}
+          customReportContextType="mein-tag"
+        />,
+      );
+      fireEvent.change(screen.getByTestId("ki-workspace-input"), {
+        target: { value: "Freie Frage Test" },
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("ki-workspace-send-button"));
+      });
+      await waitFor(() => {
+        expect(screen.getByTestId("answer-pane-save-as-report")).toBeInTheDocument();
+      });
+
+      expect(screen.queryByTestId("save-custom-report-modal-mock")).toBeNull();
+      fireEvent.click(screen.getByTestId("answer-pane-save-as-report"));
+      expect(screen.getByTestId("save-custom-report-modal-mock")).toBeInTheDocument();
     });
   });
 });

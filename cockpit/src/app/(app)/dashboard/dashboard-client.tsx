@@ -9,6 +9,7 @@ import { CockpitActionBar } from "@/components/dashboard/cockpit-action-bar";
 import { CockpitKIWorkspace } from "@/components/dashboard/cockpit-ki-workspace";
 import { Calendar, ChevronRight } from "lucide-react";
 import type { CalendarSlot } from "@/app/(app)/mein-tag/actions";
+import type { CustomReportRow } from "@/lib/custom-reports/types";
 
 interface DashboardClientProps {
   userId: string;
@@ -23,6 +24,8 @@ interface DashboardClientProps {
   companies: Array<{ id: string; name: string }>;
   deals: Array<{ id: string; title: string }>;
   calendarSlots: CalendarSlot[];
+  // V7.6 SLC-763 — Custom-Reports der eingeloggten User fuer "cockpit"-Scope.
+  customReports?: CustomReportRow[];
 }
 
 export function DashboardClient({
@@ -31,6 +34,7 @@ export function DashboardClient({
   companies,
   deals,
   calendarSlots,
+  customReports = [],
 }: DashboardClientProps) {
   return (
     <div className="min-h-screen">
@@ -45,7 +49,7 @@ export function DashboardClient({
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2" data-testid="cockpit-ki-workspace-column">
-              <CockpitKIWorkspace userId={userId} />
+              <CockpitKIWorkspace userId={userId} customReports={customReports} />
             </div>
 
             <aside className="lg:col-span-1" data-testid="cockpit-calendar-column">

@@ -3,14 +3,21 @@
 // SLC-666 Hotfix — Cockpit-spezifischer KIWorkspace-Wrapper mit loadRunner
 // fuer die 6 Cockpit-Berichts-Pfade. Default-Loader in useReportRun kennt nur
 // _mock, wirft sonst "Unknown report path".
+//
+// V7.6 SLC-763 — Custom-Reports-Adapter (`__custom__`-Pfad) + customReports-
+// Prop fuer den Cockpit-Scope.
 
 import { useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { KIWorkspace } from "@/components/ki-workspace/KIWorkspace";
 import { COCKPIT_REPORTS } from "@/components/ki-workspace/reports/registry";
 import type { ReportRunner } from "@/components/ki-workspace/types";
+import { runCustomReport } from "@/lib/custom-reports/actions/run";
+import type { CustomReportRow } from "@/lib/custom-reports/types";
 
 interface Props {
   userId: string;
+  customReports?: CustomReportRow[];
 }
 
 const REPORT_PATHS = [
@@ -28,8 +35,20 @@ function isKnownPath(path: string): path is ReportPath {
   return (REPORT_PATHS as readonly string[]).includes(path);
 }
 
-export function CockpitKIWorkspace({ userId }: Props) {
+export function CockpitKIWorkspace({ userId, customReports = [] }: Props) {
+  const router = useRouter();
   const loadRunner = useCallback(async (path: string): Promise<ReportRunner> => {
+    if (path === "__custom__") {
+      // V7.6 SLC-763 — Adapter fuer Custom-Reports (siehe mein-tag-wrapper).
+      return async ({ reportId, scope }) => {
+        const id = reportId.replace(/^custom-/, "");
+        const res = await runCustomReport({ id, scope });
+        if (!res.ok) {
+          throw new Error(res.message);
+        }
+        return res.result;
+      };
+    }
     if (!isKnownPath(path)) {
       throw new Error(`Unknown report path: ${path}`);
     }
@@ -68,6 +87,9 @@ export function CockpitKIWorkspace({ userId }: Props) {
       scope={{ userId }}
       voiceEnabled={true}
       loadRunner={loadRunner}
+      customReports={customReports}
+      customReportContextType="cockpit"
+      onCustomReportsChanged={() => router.refresh()}
     />
   );
 }

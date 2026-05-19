@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCalendarEventsForToday } from "@/app/(app)/mein-tag/actions";
 import { DashboardClient } from "./dashboard-client";
+import { listCustomReports } from "@/lib/custom-reports/actions/list";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -16,7 +17,7 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const [contactsRes, companiesRes, dealsRes, calendarSlots] = await Promise.all([
+  const [contactsRes, companiesRes, dealsRes, calendarSlots, customReportsRes] = await Promise.all([
     supabase
       .from("contacts")
       .select("id, first_name, last_name, phone, email, company_id")
@@ -28,7 +29,11 @@ export default async function DashboardPage() {
       .eq("status", "active")
       .order("updated_at", { ascending: false }),
     getCalendarEventsForToday(),
+    listCustomReports({ context_type: "cockpit" }),
   ]);
+
+  // V7.6 SLC-763 — Custom-Reports nur bei Success durchreichen.
+  const customReports = customReportsRes.ok ? customReportsRes.items : [];
 
   return (
     <DashboardClient
@@ -44,6 +49,7 @@ export default async function DashboardPage() {
       companies={(companiesRes.data ?? []) as Array<{ id: string; name: string }>}
       deals={(dealsRes.data ?? []) as Array<{ id: string; title: string }>}
       calendarSlots={calendarSlots}
+      customReports={customReports}
     />
   );
 }

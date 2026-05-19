@@ -51,4 +51,44 @@ describe("AnswerPane", () => {
     render(<AnswerPane isLoading={false} onRefresh={vi.fn()} />);
     expect(screen.queryByTestId("ki-workspace-refresh-button")).toBeNull();
   });
+
+  // V7.6 SLC-763 MT-1 (DEC-216): "Als Bericht speichern"-Button erscheint nur
+  // wenn Parent (KIWorkspace) den Callback setzt UND ein result vorliegt.
+  describe("V7.6 SLC-763 Save-as-Report-Button", () => {
+    it("shows Save-as-Report button when result and onSaveAsReport set", () => {
+      const onSave = vi.fn();
+      render(
+        <AnswerPane
+          isLoading={false}
+          result={RESULT}
+          onSaveAsReport={onSave}
+        />,
+      );
+      expect(screen.getByTestId("answer-pane-save-as-report")).toBeInTheDocument();
+    });
+
+    it("hides Save-as-Report button when result is missing", () => {
+      const onSave = vi.fn();
+      render(<AnswerPane isLoading={false} onSaveAsReport={onSave} />);
+      expect(screen.queryByTestId("answer-pane-save-as-report")).toBeNull();
+    });
+
+    it("hides Save-as-Report button when onSaveAsReport prop is missing", () => {
+      render(<AnswerPane isLoading={false} result={RESULT} />);
+      expect(screen.queryByTestId("answer-pane-save-as-report")).toBeNull();
+    });
+
+    it("Save-as-Report button click triggers onSaveAsReport callback", () => {
+      const onSave = vi.fn();
+      render(
+        <AnswerPane
+          isLoading={false}
+          result={RESULT}
+          onSaveAsReport={onSave}
+        />,
+      );
+      fireEvent.click(screen.getByTestId("answer-pane-save-as-report"));
+      expect(onSave).toHaveBeenCalledOnce();
+    });
+  });
 });
