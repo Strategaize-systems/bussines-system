@@ -2067,9 +2067,9 @@
       "title": "Custom-Reports — User legt eigene Berichts-Vorlagen im KI-Workspace an",
       "type": "feature",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V7.6",
-      "description": "Requirements done 2026-05-19 als FEAT-762 (RPT-466 + features/FEAT-762-custom-reports.md). Aus V6.6-Discovery 2026-05-09. User kann KI-Antworten als wiederverwendbare Berichts-Vorlagen speichern und im KI-Workspace (Mein Tag + Dashboard in V7.6, /deal/[id] + /team Defer V7.7+) abrufen. Nutzt V7.5-Architektur (Bedrock Claude Sonnet eu-central-1). KEINE Button-Inflation — neue Reports erscheinen NICHT als zusaetzliche Standard-Buttons, sondern in einem 'Meine Berichte'-Dropdown (Type-Ahead-Filter ab 6+ Items) rechts neben den Standard-Buttons. custom_reports-Tabelle mit RLS owner-scope (UNIQUE owner_user_id+name), Per-User-Scope in V1, Team-Sharing Defer V8. Save-Workflow: User stellt freie Frage → Bedrock-Antwort gefaellt → Klick 'Als Bericht speichern' auf der Antwort → Namen vergeben → Save. ~1-2 Slices in V7.6. MIG-037 additiv. Folgt zwingend nach FEAT-761 (Workspace-Refactor).",
+      "description": "FEAT-762 DONE 2026-05-19. Alle 3 V7.6-Slices (SLC-761 Workspace-Refactor + SLC-762 Backend MIG-037 + 5 Server-Actions + SLC-763 Frontend) implementiert + /qa SLC-763 LIVE-PASS (RPT-471). End-to-End-Live-Smoke gegen Coolify gruen: freie Frage → Save → Dropdown-Eintrag → Klick → usage_count+1 → Rename → Delete → Context-Filter (mein-tag vs cockpit). audit_log Trail komplett: custom_report.created/executed/renamed/deleted alle vorhanden. Bedrock Claude Sonnet eu-central-1 mit Cost-Tracking. Requirements done 2026-05-19 als FEAT-762 (RPT-466 + features/FEAT-762-custom-reports.md). custom_reports-Tabelle mit RLS owner-scope (UNIQUE owner_user_id+name) + 'Meine Berichte'-Dropdown (Type-Ahead-Filter ab 6+ Items). MIG-037 additiv. Naechster Schritt: Gesamt-/qa V7.6 (V7.6-uebergreifend) → /final-check V7.6 → /go-live V7.6 → /deploy als REL-033.",
       "createdAt": "2026-05-09"
     },
     {

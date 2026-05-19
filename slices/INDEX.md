@@ -344,4 +344,4 @@ V7.6 = 3 Slices SLC-761..763, strict sequential (Foundation-First â†’ Backend â†
 |----|-------|---------|--------|----------|---------|
 | SLC-761 | [NL-Builder als 6. Workspace-Button + Card-Cleanup + F-2 Doc-Hygiene](SLC-761-nl-builder-in-workspace.md) | FEAT-761 / BL-479 | done | High | 2026-05-19 |
 | SLC-762 | [Custom-Reports Backend (MIG-037 + 5 Server-Actions + Context-Loader + audit_log)](SLC-762-custom-reports-backend.md) | FEAT-762 / BL-442 | done | High | 2026-05-19 |
-| SLC-763 | [Custom-Reports Frontend (AnswerPane-Save-Button + Save-Modal + Meine-Berichte-Dropdown + Rename/Delete)](SLC-763-custom-reports-frontend.md) | FEAT-762 / BL-442 | in_progress | High | 2026-05-19 |
+| SLC-763 | [Custom-Reports Frontend (AnswerPane-Save-Button + Save-Modal + Meine-Berichte-Dropdown + Rename/Delete)](SLC-763-custom-reports-frontend.md) | FEAT-762 / BL-442 | done | High | 2026-05-19 |
