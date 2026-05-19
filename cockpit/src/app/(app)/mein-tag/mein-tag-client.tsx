@@ -4,13 +4,11 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import {
   ListTodo,
-  Kanban,
   ChevronRight,
   Clock,
   CheckCircle2,
   Check,
   Calendar,
-  CalendarClock,
   Users,
   Building2,
   Handshake,
@@ -20,13 +18,12 @@ import {
   MapPin,
   FileText,
   Briefcase,
-  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { DealDetailSheet } from "../pipeline/deal-detail-sheet";
 import { completeTaskFromMeinTag, completeDealActionFromMeinTag } from "./actions";
-import type { TodayData, TodayItem, TodayItemType, CalendarSlot, NextMeetingPrep, TopDeal, GatekeeperSummary } from "./actions";
+import type { TodayData, TodayItem, CalendarSlot, NextMeetingPrep, TopDeal, GatekeeperSummary } from "./actions";
 import type { Deal, PipelineStage } from "../pipeline/actions";
 import { TaskSheet } from "../aufgaben/task-sheet";
 import { MeetingSheet } from "@/components/meetings/meeting-sheet";
@@ -61,15 +58,6 @@ interface MeinTagClientProps {
   // V7.6 SLC-763 — Custom-Reports der eingeloggten User fuer "mein-tag"-Scope.
   customReports?: CustomReportRow[];
 }
-
-const typeConfig: Record<TodayItemType, { icon: typeof ListTodo; bg: string }> = {
-  overdue_task: { icon: AlertTriangle, bg: "bg-red-50 text-red-600" },
-  overdue_follow_up: { icon: AlertTriangle, bg: "bg-red-50 text-red-600" },
-  overdue_deal: { icon: AlertTriangle, bg: "bg-red-50 text-red-600" },
-  task: { icon: ListTodo, bg: "bg-blue-50 text-brand-primary" },
-  follow_up: { icon: CalendarClock, bg: "bg-purple-50 text-purple-600" },
-  deal_action: { icon: Kanban, bg: "bg-emerald-50 text-brand-success-dark" },
-};
 
 const priorityColors: Record<string, { bg: string; label: string }> = {
   high: { bg: "bg-red-100 text-red-700 border-red-200", label: "Hoch" },
@@ -492,8 +480,6 @@ export function MeinTagClient({ userId, data, stages, contacts, companies, deals
 }
 
 function TaskItem({ item, onDealClick, readOnly = false }: { item: TodayItem; onDealClick: (dealId: string) => void; readOnly?: boolean }) {
-  const config = typeConfig[item.type];
-  const Icon = config.icon;
   const [isPending, startTransition] = useTransition();
   const [completed, setCompleted] = useState(false);
   const isTask = item.type === "task" || item.type === "overdue_task";
