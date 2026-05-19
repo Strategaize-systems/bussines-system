@@ -243,12 +243,12 @@
 | FEAT-751 | Natural-Language Workflow-Sculptor (Mein-Tag-Surface + Voice + Trockenlauf) | deployed | [Spec](FEAT-751-nl-workflow-sculptor.md) | 2026-05-16 |
 | FEAT-752 | Read-Only-Context Defense-in-Depth (ISSUE-066 Middleware-Mitigation) | deployed | [Spec](FEAT-752-readonly-context-middleware.md) | 2026-05-16 |
 
-## V7.6 Features (NL-Workspace-Integration + Custom-Reports — requirements done 2026-05-19)
+## V7.6 Features (NL-Workspace-Integration + Custom-Reports — slice-planning done 2026-05-19, 3 Slices SLC-761/762/763)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-761 | NL-Rule-Builder in KI-Workspace integrieren (BL-479) | planned | [Spec](FEAT-761-nl-builder-in-workspace.md) | 2026-05-19 |
-| FEAT-762 | Custom-Reports im KI-Workspace (BL-442) | planned | [Spec](FEAT-762-custom-reports.md) | 2026-05-19 |
+| FEAT-761 | NL-Rule-Builder in KI-Workspace integrieren (BL-479) | in_progress | [Spec](FEAT-761-nl-builder-in-workspace.md) | 2026-05-19 |
+| FEAT-762 | Custom-Reports im KI-Workspace (BL-442) | in_progress | [Spec](FEAT-762-custom-reports.md) | 2026-05-19 |
 
 ## V6 Features (Zielsetzung + Performance-Tracking — released)
 

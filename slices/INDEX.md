@@ -335,3 +335,13 @@ V7.5 = 6 Slices SLC-751..756, Foundation-First. Reihenfolge per Architecture-Emp
 | SLC-755 | [Voice-Input-Integration (Whisper-Adapter-Reuse)](SLC-755-voice-input.md) | FEAT-751 | done | Medium | 2026-05-16 |
 | SLC-756 | [Inspection-Log /settings/workflow-automation/nl-history (Admin-only)](SLC-756-inspection-log.md) | FEAT-751 | done | Medium | 2026-05-16 |
 | SLC-757 | [NL-Rule-Builder Apply-Polish (ISSUE-077 State-Reset, Toast → ISSUE-078)](SLC-757-issue077-nl-rule-builder-polish.md) | FEAT-751 | done | Medium | 2026-05-18 |
+
+## V7.6 Slices (NL-Workspace-Integration + Custom-Reports — Slice-Planning done 2026-05-19)
+
+V7.6 = 3 Slices SLC-761..763, strict sequential (Foundation-First → Backend → Frontend) per DEC-218. **SLC-761** macht den NL-Builder zum 6. Workspace-Button + entfernt die Standalone-Card + F-2 Doc-Hygiene (~2-3h, kein Schema). **SLC-762** Backend-Foundation fuer Custom-Reports: MIG-037 (custom_reports-Tabelle mit Owner-RLS, GRANTs + NOTIFY pgrst Pflicht) + 5 Server-Actions (save/list/run/rename/delete) + custom-report-runner.ts mit Context-Type-Default-Loadern + 4 audit_log-Actions (~3-5h). **SLC-763** Frontend: AnswerPane "Als Bericht speichern"-Button (Free-Form-Only) + Save-Modal (Native HTML Form + 409-Handling) + "Meine Berichte"-Dropdown (Type-Ahead ab 6+, last_used-Postfix, ⋮-Sub-Menu fuer Rename/Delete) + Context-Filter (mein-tag vs cockpit) (~2-4h). Total ~7-12h. Pro Slice: /backend|/frontend → /qa → User-Coolify-Deploy → Live-Smoke. Gesamt-/qa nach SLC-763 ueber alle 3 Slices. Reuse-Heavy: KI-Workspace-Foundation (V6.6), AnswerPane-Discriminator-Pattern (SLC-666), V7.5 Bedrock-Region-Pin (DEC-211), V7.5 audit_log-Pattern, V6.2 RLS-Pattern + GRANTs (`feedback_migration_rls_needs_grants`).
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-761 | [NL-Builder als 6. Workspace-Button + Card-Cleanup + F-2 Doc-Hygiene](SLC-761-nl-builder-in-workspace.md) | FEAT-761 / BL-479 | planned | High | 2026-05-19 |
+| SLC-762 | [Custom-Reports Backend (MIG-037 + 5 Server-Actions + Context-Loader + audit_log)](SLC-762-custom-reports-backend.md) | FEAT-762 / BL-442 | planned | High | 2026-05-19 |
+| SLC-763 | [Custom-Reports Frontend (AnswerPane-Save-Button + Save-Modal + Meine-Berichte-Dropdown + Rename/Delete)](SLC-763-custom-reports-frontend.md) | FEAT-762 / BL-442 | planned | High | 2026-05-19 |
