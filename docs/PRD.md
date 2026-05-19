@@ -3787,3 +3787,127 @@ Total V7.5-Aufwand: ~12-20h reine Implementation + QA + Live-Smoke. Schlanker al
 **Internal-Tool, Feature-Sprint.** Neuer LLM-Pfad (Sculptor-Adapter), keine neue Datenbank-Tabelle (nur additive Spalten-Erweiterung moeglicherweise), kein neuer Container, kein neuer Cron-Job, keine neue npm-Package-Dependency (Bedrock-Client + Whisper-Adapter beide bestehende Pattern). Internal-Test-Mode bleibt aktiv. V7.5-PASS heisst: V7.2-Stack bleibt deployed wie aktuell (Production-Image `770dd55` V7.1), plus 6 Slices als kumulative Aenderungen auf demselben Image-Stand mit Coolify-Redeploy am Slice-Ende.
 
 **V7.5 Requirements ready for `/architecture`.**
+
+---
+
+## V8 — Hygiene-Sprint (Requirements done 2026-05-19)
+
+### V8 Problem Statement
+
+Nach V7.6 Release (REL-033, 2026-05-19) ist V7.6 in Production und der User hat im /discovery V8 explizit gesagt: "ich hab das ganze so aufgebaut, wie ich es mir vorstelle, und dementsprechend nervt mich auch gerade nichts an V7.6". Es gibt kein dringliches neues Feature-Thema. **Aber** der Code hat strukturelle Schulden:
+
+- **Settings**: `/settings`-Landing ist eine einspaltige Tile-Liste ohne Gruppierung, Rollen-Verwaltung ist visuell versteckt in einer Tabellen-Spalte, Ghost-Subpages (`/settings/products/`, `/settings/workflow-automation/`) haben keine Tile-Eintraege, Automation-Duplikat (`automation/` vs `workflow-automation/` Folder), Doppel-Pfad `/team` Top-Level vs `/settings/team`.
+- **KI-Provider-Anzeige**: User-sichtbar "Bedrock arbeitet ..." in AnswerPane + `BedrockSection`-Component in ItemSheet. Vendor-Lock-in-Wahrnehmung soll vermieden werden.
+- **Performance-Page-Bruecke**: `/performance` ist seit V6.6 nur noch 1.5s-Redirect-Toast. Bruecke war fuer 1 Sprint geplant — wir sind jetzt 5 Sprints weiter.
+- **Label-Inkonsistenz**: Quick-Action-Buttons heissen "Task" in /mein-tag + Deal-Detail, "Aufgabe" in Cockpit. Funktional identisch, inkonsistent.
+- **Stage-Move-UX**: Drag-Drop auf "Verloren" wirft Toast-Error wenn Pflichtfelder fehlen, User muss Edit-Pencil-Umweg gehen. Plus: Verlustgrund-Eingabe haengt oft, weil der Ausloeser in der Activity-History liegt.
+
+### V8 Goal / Intended Outcome
+
+V8 ist ein **Hygiene-Sprint**. Strukturelle Schulden abbauen + ein UX-relevanter HIGH-Prio-Backlog-Item (BL-455 Pflichtfelder-Modal beim Stage-Move) mit KI-Pre-Fill. Kein neuer Top-Level-Feature, keine neue Stack-Komponente.
+
+### V8 Primary Users
+
+Wie BS gesamt: Strategaize-Gruender (Admin), Strategaize-Verkaufsleiter (Teamlead), Strategaize-Verkaeufer (Member). Single-Org-internal-tool.
+
+### V8 Scope
+
+**In scope (4 Features):**
+
+#### FEAT-801 — Settings-Layout-Refactor + Rollen-Auffindbarkeit
+- Tile-Gruppierung mit 3 Sections: Persoenlich / Vertrieb / System
+- Rollen-Verwaltung als eigenes Tile in System-Section sichtbar machen
+- Ghost-Subpages cleanup (products, workflow-automation)
+- Automation-Duplikat aufloesen
+- Drilldown-Button in team-members-table aktivieren oder entfernen
+- `/team` Top-Level bleibt (Cockpit/Analyse), `/settings/team` bleibt (Verwaltung)
+- 3 Rollen bleiben (kein 4. Auditor/Read-Only)
+
+#### FEAT-802 — KI-Provider-Anzeige im UI abstrahieren (BL-480)
+- "Bedrock arbeitet" → "KI arbeitet" / aequivalent
+- `BedrockSection`-Component-Display-Label neutralisieren
+- ARIA-Labels + Tooltips pruefen
+- Audit-Log-User-View pruefen
+- Internal Naming bleibt (Variablennamen, Modul-Pfade), nur User-sichtbar abstrahieren
+
+#### FEAT-803 — /performance-Page-Cleanup + Task/Aufgabe-Label-Konsistenz (BL-453 + BL-459)
+- `/performance/page.tsx` komplett loeschen (Redirect-Bruecke nach 5 Sprints obsolet)
+- `/performance/goals/` pruefen + ggf. mitloeschen
+- Quick-Action-Button-Label "Task" → "Aufgabe" auf /mein-tag, Deal-Detail, Cockpit
+
+#### FEAT-804 — Pflichtfelder-Modal beim Stage-Move + KI-Verlustgrund-Vorschlag (BL-455 HIGH + BL-456)
+- Modal `StageMovePflichtfelderModal` direkt im Drop-Event
+- Stage-Move atomar mit Pflichtfeld-Set + Stage-Change
+- KI-Verlustgrund-Vorschlag via Bedrock-Call mit Activity-History-Snapshot
+- Audit-Log `ki_loss_reason_suggested` mit Cost-Tracking
+- Modal-Pattern initial nur fuer "Verloren"-Stage (andere Pflichtfeld-Stages in Slice-Planning pruefen)
+
+**Out of scope:**
+- 4. Rolle (Read-Only / Auditor / Steuerberater) — gehoert ins OS, nicht ins BS
+- API-Integration Slack/Teams/WhatsApp (BL-443) — nach Parking verschoben, V10+
+- WhatsApp-Channel — Markt-Recherche 2026-05-19 negativ fuer B2B-DACH-Mittelstand
+- Autonome AI-Agents (Agentforce-Style) — V10+ Wettbewerbsreaktion oder Kundenwunsch
+- Neuer LLM-Provider / Provider-Switch — kein V8-Treiber
+- Schema-Migrations gross — V8 ist UI- und Hygiene-orientiert, max additive Spalten falls Audit-Log-Erweiterung in FEAT-804 noetig
+- Theming-Sprint BL-441 / Hex-Hardcodes BL-460 — separater Theming-Tracker, kein V8
+
+### V8 Core Features
+
+| ID | Feature | Backlog-Bezug | Aufwand-Indikator |
+|---|---|---|---|
+| FEAT-801 | Settings-Layout-Refactor + Rollen-Auffindbarkeit | BL-481 (neu) | 1 Slice |
+| FEAT-802 | KI-Provider-Anzeige abstrahieren | BL-480 | 1 Mini-Slice (~1-2h) |
+| FEAT-803 | /performance + Label-Konsistenz | BL-453 + BL-459 | 1 Mini-Slice (~30 Min - 1h) |
+| FEAT-804 | Pflichtfelder-Modal + KI-Verlustgrund | BL-455 + BL-456 | 1 Slice (groesster Block) |
+
+Voraussichtlich 2-3 Slices in der Slice-Planning. Aufwand-Schaetzung gesamt ~6-10h reine Implementation.
+
+### V8 Constraints
+
+- **Keine neue Stack-Komponente** — kein neuer Container, kein neuer Cron, kein neues npm-Package
+- **Keine grosse Schema-Migration** — max additive Spalten (z.B. audit_log Metadata-Erweiterung in FEAT-804)
+- **Bedrock-Region-Pin DEC-211 bleibt** — eu-central-1 Claude Sonnet 4.6
+- **Internal-Test-Mode bleibt aktiv** — kein Pre-Customer-Live-Switch in V8
+- **Mobile-Layout** — Tile-Sections muessen unter 768px funktionieren
+
+### V8 Risks / Assumptions
+
+- **Risk:** FEAT-804 ist groesster Block (Modal + Bedrock-Suggest + Audit-Log). Wenn /architecture zeigt, dass Bedrock-Prompt-Template-Design mehr Aufwand braucht, koennte BL-456 (KI-Vorschlag) aus V8 ausgegliedert werden — Modal-only Option bleibt.
+- **Assumption:** `/team/[user_id]`-Drilldown-Page ist aus V7 vollstaendig — sonst muss FEAT-801 entweder Drilldown ergaenzen oder den disabled Button entfernen.
+- **Assumption:** Ghost-Subpages `products/` und `workflow-automation/` enthalten keine kritische Funktion — Slice-Planning verifiziert das vor Loeschung.
+- **Assumption:** Activity-History fuer KI-Verlustgrund-Vorschlag liefert in den meisten Faellen genug Context (min. 1 Item) — bei leerer History faellt Modal auf User-only-Eingabe zurueck.
+
+### V8 Success Criteria
+
+- `/settings` rendert 3 visuell getrennte Sections, Rollen-Verwaltung sichtbar
+- Visueller Walkthrough zeigt 0 "Bedrock"/"Claude"/"Anthropic"-Strings im UI
+- `/performance`-URL produziert keinen Redirect-Loop / Crash
+- Quick-Action-Button-Label cross-page konsistent "Aufgabe"
+- Drag-Drop auf "Verloren" oeffnet Modal vor Server-Call, mit KI-Vorschlag wenn Activity-History vorhanden
+- `npm run build` + `npm run lint` + `npm run test` clean
+- Live-Smoke auf business.strategaizetransition.com PASS fuer alle 4 Features
+
+### V8 Open Questions
+
+- Tile-Reihenfolge innerhalb der 3 Sections — Slice-Planning
+- Drilldown-Button aktivieren ODER entfernen — Slice-Planning nach Pruefung
+- `performance/goals/` Inhalt: mitloeschen oder wo hin — Slice-Planning
+- Endgueltige neutrale Bezeichnung "KI" / "Strategaize KI" / "Assistent" — /architecture oder Slice-Planning
+- Bedrock-Prompt-Template fuer Loss-Reason-Suggest — `/architecture`
+- Andere Stage-Pflichtfelder ausser `loss_reason` — Slice-Planning Inventur gegen `STAGE_REQUIRED_FIELDS`
+- Modal-Pattern auch fuer "Won"-Stage (Deal-Wert) in V8 oder V9 — Design-Frage Slice-Planning
+
+### V8 Slice-Planning Hint
+
+Voraussichtlich 3 Slices:
+- **SLC-811** (~3-4h) — FEAT-801 + FEAT-803: Settings-Refactor + /performance + Label-Konsistenz (UI-orientiert, kein KI, kein Schema)
+- **SLC-812** (~1-2h) — FEAT-802: KI-Provider-Anzeige abstrahieren (rein UI-Strings + Component-Display-Labels)
+- **SLC-813** (~3-5h) — FEAT-804: Pflichtfelder-Modal + KI-Verlustgrund-Vorschlag (Modal-Component + Bedrock-Call + Audit-Log)
+
+Total V8-Aufwand: ~7-11h reine Implementation + QA + Live-Smoke. Schmaler als V7.6 (3 Slices ~12h), kein groesseres Refactor.
+
+### V8 Delivery Mode
+
+**Internal-Tool, Hygiene-Sprint.** Keine neue Stack-Komponente, keine grosse Schema-Migration (max additive Audit-Log-Spalten), kein neuer Provider, kein neuer Cron. Internal-Test-Mode bleibt aktiv. V8-PASS heisst: V7.6-Stack bleibt deployed wie aktuell (Production-Image `1ffae6e` V7.6), plus 3 Slices als kumulative Aenderungen mit Coolify-Redeploy am Slice-Ende.
+
+**V8 Requirements ready for `/architecture`.**

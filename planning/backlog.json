@@ -6,7 +6,7 @@
       "type": "improvement",
       "priority": "medium",
       "status": "open",
-      "version": null,
+      "version": "V8",
       "description": "User-Direktive 2026-05-19 nach V7.6 /final-check: Im User-sichtbaren UI darf nicht der konkrete KI-Anbieter (Bedrock, Anthropic Claude Sonnet, Amazon Web Services) erscheinen. Grund: (1) Vendor-Lock-in-Vermeidung — wir wollen spaeter ggf. andere Hersteller einsetzen koennen ohne UI-Refactor und User-Verwirrung. (2) Kein Disclosure des konkreten Providers ggf. ungewollt gegenueber Endkunden. Code-Level (Variablen, Funktionsnamen, Imports, Kommentare, Logs, audit_log) darf weiterhin 'bedrock' / 'invokeBedrock' / model_id-Strings nutzen — das ist forensisch relevant und intern. Nur **User-sichtbare Strings** sollen auf generisches 'KI-System' oder 'Strategaize KI' umgestellt werden. **Konkret bekannte User-sichtbare Stellen (Audit-Stand 2026-05-19, nicht vollstaendig):** (a) [cockpit/src/components/ki-workspace/AnswerPane.tsx](cockpit/src/components/ki-workspace/AnswerPane.tsx) Loading-Hint 'Bedrock arbeitet ...' (sehr sichtbar bei jeder KI-Anfrage); (b) [cockpit/src/components/ki-workspace/nl-builder-inline.tsx](cockpit/src/components/ki-workspace/nl-builder-inline.tsx) Error-Message 'Bedrock-Aufruf fehlgeschlagen'; (c) [cockpit/src/app/(app)/emails/compose/inline-edit-dialog.tsx](cockpit/src/app/(app)/emails/compose/inline-edit-dialog.tsx) Dialog-Description 'Bedrock modifiziert den Body gemaess Anweisung.'. **Scope:** Vollstaendiger Audit aller User-sichtbaren Strings via `grep -rE 'Bedrock|Claude|Anthropic|Amazon|AWS' cockpit/src --include='*.tsx'` + Refactor zu generischem KI-Begriff (Vorschlag: 'KI' / 'Strategaize KI' / 'KI-System'). Backend, Code-Kommentare, Funktionsnamen, audit_log.context.model_id BLEIBEN unveraendert (forensisch relevant). Schaetzung: ~1-2h Audit + ~1h Refactor + Vitest-Update = 1 Mini-Slice. Folgt nach V7.6 Customer-Live-Pre-Phase, vor erstem echten Kundengespraech. Nicht V7.6-blocking.",
       "createdAt": "2026-05-19"
     },
@@ -2088,7 +2088,7 @@
       "type": "feature",
       "priority": "low",
       "status": "open",
-      "version": "V8",
+      "version": null,
       "description": "Aus V6.6-Discovery 2026-05-09 (statt eigener Inhouse-Chat-Loesung). API-Integration mit externen Kommunikations-Tools fuer Notifications, Activity-Updates, Berichts-Versand. Externe Kunden-Kommunikation (z.B. WhatsApp-Channel) ist separates Business-Thema. Konkreter Cut wird vor Implementierung in eigener Discovery festgelegt.",
       "createdAt": "2026-05-09"
     },
@@ -2188,7 +2188,7 @@
       "type": "improvement",
       "priority": "low",
       "status": "open",
-      "version": null,
+      "version": "V8",
       "description": "DEC-169 (V6.6): SLC-662 macht /performance zur Redirect-Page mit Toast (1 Sprint Bruecke). Nach REL-028 (V6.6-Release) ist die Toast-Bruecke aktiv — User-Migrations-Pfad sichtbar. Nach 1 Sprint (V6.7+) /performance-Datei + Redirect-Logik komplett loeschen. Voraussetzung: Audit dass keine Bookmarks/Verweise mehr auf /performance gehen (audit_log + access-log-Inspection).",
       "createdAt": "2026-05-09"
     },
@@ -2208,7 +2208,7 @@
       "type": "improvement",
       "priority": "high",
       "status": "open",
-      "version": null,
+      "version": "V8",
       "description": "Aktuell: User dragged Deal auf 'Verloren', moveDealToStage (cockpit/src/app/(app)/pipeline/actions.ts:381-490) prueft STAGE_REQUIRED_FIELDS und blockiert mit error 'Pflichtfelder fuer Verloren: Verlustgrund'. User muss den Move abbrechen, ueber Bearbeitungs-Pencil ins Deal, Verlustgrund eintragen, dann erneut draggen. Hohe Friction, jedes Mal. Gleiche Logik fuer 'Gewonnen' (Deal-Wert), 'Angebot vorbereitet'/'Angebot offen' (Deal-Wert), 'Verhandlung / Einwaende' (Deal-Wert + Kontakt). Loesung: Inline-Modal direkt beim Drop, das die Pflichtfelder abfragt + transaktional speichert + den Move ausfuehrt. UX-Pattern: shadcn Dialog + Form-Felder generisch aus STAGE_REQUIRED_FIELDS gerendert. Beim Cancel: kein Move. Beim Save: Pflichtfelder + Stage-Update in einer Server-Action. Discovery aus SLC-665 /qa 2026-05-11. Voraussetzung fuer BL-456 (KI-Vorschlag fuer Verlustgrund) — die KI-Logik haengt im gleichen Modal.",
       "createdAt": "2026-05-11"
     },
@@ -2218,7 +2218,7 @@
       "type": "feature",
       "priority": "medium",
       "status": "open",
-      "version": null,
+      "version": "V8",
       "description": "Beim Stage-Move auf 'Verloren' (oder 'Geparkt') haengt der User-Verlustgrund-Eingabe oft an: Was war der konkrete Ausloeser? Meist liegt das in der Activity-History (E-Mail mit Absage, Meeting-Notiz 'will nicht', Call-Recording mit Einwand, Notiz). Idee: Beim Oeffnen des Verlust-Modals (BL-455) laedt eine Server-Action die letzten ~5 Activities (emails, meetings, notes, calls) + macht einen Bedrock-Call (FEAT-114-Pattern, EU-Region Frankfurt) mit Prompt 'Analysiere diese letzten Interaktionen und schlage einen Verlustgrund vor'. Antwort wird im Modal als vorausgefuelltes Textfeld + Button 'Uebernehmen' oder 'Eigenen Grund eingeben' angezeigt. User editierbar, dann Speichern. Audit-Trail: ki_suggested vs user_typed in auto_winloss_runs oder Audit-Log. Voraussetzung: BL-455 (Modal-Container) ist done. Bedrock-Adapter aus FEAT-114/SLC-665 wiederverwendbar — nur Prompt anders. Datenschutz: gleicher Pfad wie Win/Loss-Extract, EU-Region, keine US-Endpoints. Discovery aus SLC-665 /qa 2026-05-11.",
       "createdAt": "2026-05-11"
     },
@@ -2248,7 +2248,7 @@
       "type": "improvement",
       "priority": "low",
       "status": "open",
-      "version": null,
+      "version": "V8",
       "description": "Gesamt-/qa V6.6 RPT-386 Low-Finding L-1: Cockpit (SLC-666) verwendet 'Aufgabe' als Label fuer den Task-Button, Mein-Tag (SLC-662) und Deal-Detail (SLC-664) verwenden 'Task'. Funktional identisch, aber UI-Wording-Drift zwischen den drei KI-Workspace-Callern. Empfehlung fuer V6.7-Polish: kanonische Variante festlegen (deutsch konsequent: 'Aufgabe' empfohlen, da andere Quick-Actions auch deutsch sind: E-Mail, Meeting, Anruf, Notiz, Angebot) und auf Mein-Tag + Deal-Detail einheitlich anwenden. Pre-existing Label aus V3-Cockpit-Pattern (Mein-Tag). Nicht V6.6-Release-blockierend. Discovery aus Gesamt-/qa V6.6 2026-05-11.",
       "createdAt": "2026-05-11"
     },
@@ -2401,6 +2401,16 @@
       "version": "V7.2",
       "description": "Accepted Risk REL-030: cockpit/vitest.rls.config.ts hat keinen Path-Alias-Resolver fuer @/-Imports. Folge: cockpit/__tests__/team/bulk-reassign.test.ts importiert `../../src/lib/team/bulk-reassign`, die Source macht `import { getPgClient } from '@/lib/db/pg'` (Z.15) → Resolver kann @/-Aliases nicht aufloesen → 7 Bulk-Reassign-Test-Suites laden mit 0 Tests. Pre-existing seit SLC-707. Fix: `plugins: [tsconfigPaths()]` aus `vite-tsconfig-paths` (bereits in dependencies) ergaenzen, analog cockpit/vitest.config.ts (jsdom-Default). Alternativ: `resolve.alias: { '@': resolve(__dirname, 'src') }`. Pattern-Reuse-Pflicht: Resolver-Setup aus jsdom-Default-Config 1:1 portieren. Verifikation: `npm run test:rls -- bulk-reassign` laedt 7 Suites + alle laufen gegen Coolify-DB. Time-Box ~30 Min.",
       "createdAt": "2026-05-16"
+    },
+    {
+      "id": "BL-481",
+      "title": "Settings-Layout-Refactor + Rollen-Auffindbarkeit",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V8",
+      "description": "Aus /discovery BS V8 2026-05-19: /settings Landing-Page ist einspaltige Liste aus 10 Tiles ohne Gruppierung, drei Permission-Levels (Admin/Teamlead/Member) sind schwer unterscheidbar. Rollen-Verwaltung existiert bereits in /settings/team/team-members-table.tsx als Inline-Select pro Zeile, aber visuell versteckt. Plus Ghost-Subpages /settings/products und /settings/workflow-automation (kein Tile), Automation-Duplikat automation/ vs workflow-automation/, Doppel-Pfad /team Top-Level vs /settings/team. V8 raeumt strukturell auf via Tile-Gruppierung (3 Sections Persoenlich/Vertrieb/System), Rollen-Verwaltung als eigenes Tile, Ghost-Subpage-Cleanup. Siehe FEAT-801.",
+      "createdAt": "2026-05-19"
     }
   ]
 }

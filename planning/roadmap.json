@@ -219,10 +219,24 @@
     },
     {
       "id": "v8",
-      "name": "V8+",
-      "status": "planned",
-      "summary": "API-Integration mit externen Kommunikations-Tools statt eigener Inhouse-Chat-Loesung (V6.6-Discovery 2026-05-09 Out-of-Scope-Verschiebung). Slack/Teams/WhatsApp als Channels fuer Notifications, Activity-Updates, Berichts-Versand. Externe Kunden-Kommunikation (z.B. WhatsApp) ist separates Business-Thema. Multiplikatoren-Bereich-Strategie-Item (KI-Erweiterung oder ersatzloser Wegfall, geschaeftsmodell-abhaengig). Konkreter Cut wird vor Implementierung in eigener Discovery festgelegt.",
+      "name": "V8",
+      "status": "active",
+      "summary": "Hygiene-Sprint (Requirements done 2026-05-19): 4 Features — FEAT-801 Settings-Layout-Refactor + Rollen-Auffindbarkeit (Tile-Gruppierung, Ghost-Subpages weg, Automation-Duplikat aufloesen, Rollen-Verwaltung als eigenes Tile sichtbar), FEAT-802 KI-Provider-Anzeige im UI abstrahieren (BL-480, 'Bedrock arbeitet' → 'KI arbeitet'), FEAT-803 /performance-Page-Cleanup + Task/Aufgabe-Label-Konsistenz (BL-453 + BL-459), FEAT-804 Pflichtfelder-Modal beim Stage-Move + KI-Verlustgrund-Vorschlag aus Activity-History (BL-455 HIGH + BL-456 medium). User-Discovery-Entscheidungen 2026-05-19: WhatsApp + Slack/Teams aus V8 raus → BL-443 nach Parking (no-version), keine 4. Rolle (Steuerberater-Zugang ist OS-Thema). Wettbewerbs-Update kein V8-Druck. Naechster Schritt: /architecture.",
       "order": 32
+    },
+    {
+      "id": "v9",
+      "name": "V9",
+      "status": "planned",
+      "summary": "Offen — wartet auf Real-Use-Erkenntnisse aus Tag-zu-Tag-Vertrieb. Triggert sich sobald User selbst aktiv verkauft oder 1. Multiplikator-Pilot startet.",
+      "order": 33
+    },
+    {
+      "id": "v10",
+      "name": "V10+",
+      "status": "planned",
+      "summary": "Autonome AI-Agents (Agentforce-Style: Antwort-Vorschlag → Auto-Reply mit Approval-Workflow), API-Integration externe Kommunikations-Tools (BL-443 Slack/Teams), Multiplikatoren-Bereich-Strategie-Item. Wettbewerbsreaktion auf Salesforce Agentforce oder Kundenwunsch.",
+      "order": 34
     }
   ]
 }

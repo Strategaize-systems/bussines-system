@@ -9,12 +9,13 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: deploying
-- Current Focus: **V7.6 DEPLOYED 2026-05-19 als REL-033 (RPT-475)**. Coolify-Manual-Redeploy durch (Build-ID `95JC00DBjXBUAOyGOIYoQ`, Container-Suffix `142831320347`, main HEAD `1ffae6e`). Live-Verify-Sequence PASS: 8 Container Up (7 healthy, supabase-studio unhealthy = pre-existing non-release-kritisch), MIG-037 4 RLS-Policies bestaetigt, V7.6 audit_log Actions (created/executed/renamed/deleted) alle vorhanden, Login HTTP 200, Build-ID neu. Disk Hetzner 88% (Anstieg 82%→88% durch neue Images, erwartbar). **Naechster Schritt: /post-launch Burn-In ~2-4h.**
-- Current Phase: V7.6 RELEASED via Coolify Manual-Redeploy. Ready fuer /post-launch Burn-In.
+- High-Level State: requirements
+- Current Focus: **V8 Requirements DONE 2026-05-19 (RPT-476)**. Hygiene-Sprint mit 4 Features (FEAT-801..804): Settings-Layout-Refactor + Rollen-Auffindbarkeit, KI-Provider-Anzeige abstrahieren (BL-480), /performance-Cleanup + Task/Aufgabe-Label-Konsistenz (BL-453 + BL-459), Pflichtfelder-Modal beim Stage-Move + KI-Verlustgrund-Vorschlag (BL-455 HIGH + BL-456). 5 Backlog-Items als V8 getaggt + 1 neuer Backlog-Eintrag BL-481. BL-443 (API-Integration) nach Parking verschoben (no-version, gemeinsam mit Slack/Teams/WhatsApp auf V10+). User-Discovery-Entscheidungen 2026-05-19: keine 4. Rolle in BS (Steuerberater-Zugang = OS-Thema), Wettbewerbs-Update kein V8-Druck. **V7.6 RELEASED 2026-05-19 (REL-033, main HEAD `1ffae6e`)** — /post-launch Burn-In bleibt fuer morgen offen.
+- Current Phase: V8 Requirements done. Naechster Schritt: /architecture V8.
 
 ## Immediate Next Steps
-1. **(Mainline)** `/post-launch` Burn-In V7.6 ~2-4h — audit_log-Trail-Check + Bedrock-Cost-Trend + Disk-Trend + User-Beobachtung. Anschliessend V7.6 → `stable`.
+1. **(Mainline morgen)** `/post-launch` Burn-In V7.6 ~2-4h — audit_log-Trail-Check + Bedrock-Cost-Trend + Disk-Trend + User-Beobachtung. Anschliessend V7.6 → `stable`.
+2. **(V8 nach Burn-In)** `/architecture` V8 — FEAT-801..804 architektonisch klaeren (Modal-Pattern fuer Stage-Move, Bedrock-Prompt-Template fuer Loss-Reason-Suggest, KI-Provider-Display-Naming).
 2. **(Operational, weiterhin offen)** Coolify-Cron fuer Docker-Cleanup einrichten (ISSUE-071 Next-Action #1, Resilience). Aktueller Disk-Druck 88% wird in 2-3 Tagen wieder kritisch ohne Cron.
 3. **(Pre-Customer-Live, nicht zeitkritisch)** BL-480 KI-Provider-Anzeige im User-UI abstrahieren (Bedrock-Strings entfernen). Mini-Slice ~1-2h.
 4. **(Spaeter)** V7.7-Planning: Tech-Debt-Cleanup-Slice (Pre-Existing-Lint + npm audit Major-Upgrade), Per-User-Bedrock-Cost-Cap, Custom-Reports auf /deal/[id].

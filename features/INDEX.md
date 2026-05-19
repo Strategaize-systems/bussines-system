@@ -250,6 +250,15 @@
 | FEAT-761 | NL-Rule-Builder in KI-Workspace integrieren (BL-479) | deployed | [Spec](FEAT-761-nl-builder-in-workspace.md) | 2026-05-19 |
 | FEAT-762 | Custom-Reports im KI-Workspace (BL-442) | deployed | [Spec](FEAT-762-custom-reports.md) | 2026-05-19 |
 
+## V8 Features (Hygiene-Sprint — requirements done 2026-05-19)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-801 | Settings-Layout-Refactor + Rollen-Auffindbarkeit | planned | [Spec](FEAT-801-settings-rollen-refactor.md) | 2026-05-19 |
+| FEAT-802 | KI-Provider-Anzeige im User-UI abstrahieren (BL-480) | planned | [Spec](FEAT-802-ki-provider-abstrahierung.md) | 2026-05-19 |
+| FEAT-803 | /performance-Page-Cleanup + Task/Aufgabe-Label-Konsistenz (BL-453 + BL-459) | planned | [Spec](FEAT-803-performance-cleanup-label-konsistenz.md) | 2026-05-19 |
+| FEAT-804 | Pflichtfelder-Modal beim Stage-Move + KI-Verlustgrund-Vorschlag (BL-455 + BL-456) | planned | [Spec](FEAT-804-pflichtfelder-modal-stage-move.md) | 2026-05-19 |
+
 ## V6 Features (Zielsetzung + Performance-Tracking — released)
 
 | ID | Feature | Status | Spec | Created |
