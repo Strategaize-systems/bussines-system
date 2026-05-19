@@ -1,5 +1,66 @@
 # Migrations
 
+### MIG-037 — V7.6 SLC-762 custom_reports (PLANNED — not yet applied)
+- Date: PLANNED (target: V7.6 SLC-762 MT-1 via SSH+base64 als postgres-User, idempotent)
+- Scope: 1 neue Tabelle `custom_reports` + 2 Indizes + 4 RLS-Policies + 2 GRANTs in `037_v76_custom_reports.sql`:
+  ```sql
+  CREATE TABLE IF NOT EXISTS custom_reports (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    context_type TEXT NOT NULL CHECK (context_type IN ('mein-tag', 'cockpit')),
+    name TEXT NOT NULL CHECK (char_length(name) BETWEEN 2 AND 80),
+    prompt_template TEXT NOT NULL CHECK (char_length(prompt_template) BETWEEN 10 AND 2000),
+    description TEXT,
+    last_used_at TIMESTAMPTZ,
+    usage_count INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_custom_reports_owner_ctx
+    ON custom_reports(owner_user_id, context_type);
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_custom_reports_owner_name
+    ON custom_reports(owner_user_id, name);
+
+  ALTER TABLE custom_reports ENABLE ROW LEVEL SECURITY;
+
+  DROP POLICY IF EXISTS custom_reports_owner_select ON custom_reports;
+  CREATE POLICY custom_reports_owner_select ON custom_reports
+    FOR SELECT USING (owner_user_id = auth.uid());
+
+  DROP POLICY IF EXISTS custom_reports_owner_insert ON custom_reports;
+  CREATE POLICY custom_reports_owner_insert ON custom_reports
+    FOR INSERT WITH CHECK (owner_user_id = auth.uid());
+
+  DROP POLICY IF EXISTS custom_reports_owner_update ON custom_reports;
+  CREATE POLICY custom_reports_owner_update ON custom_reports
+    FOR UPDATE USING (owner_user_id = auth.uid())
+    WITH CHECK (owner_user_id = auth.uid());
+
+  DROP POLICY IF EXISTS custom_reports_owner_delete ON custom_reports;
+  CREATE POLICY custom_reports_owner_delete ON custom_reports
+    FOR DELETE USING (owner_user_id = auth.uid());
+
+  GRANT SELECT, INSERT, UPDATE, DELETE ON custom_reports TO authenticated;
+  GRANT SELECT, INSERT, UPDATE, DELETE ON custom_reports TO service_role;
+
+  NOTIFY pgrst, 'reload schema';
+  ```
+- Reason: FEAT-762 Custom-Reports erlaubt User-eigene Berichts-Vorlagen im KI-Workspace. Owner-Scope-Isolation per RLS, UNIQUE(owner_user_id, name) verhindert Duplikate, usage_count + last_used_at fuer Dropdown-Sort.
+- Affected Areas:
+  - Neue Tabelle `custom_reports` mit 10 Spalten + 4 RLS-Policies + 2 Indizes.
+  - Keine bestehenden Tabellen beruehrt (rein additiv).
+  - V7.6-Server-Actions (saveCustomReport/listCustomReports/runCustomReport/renameCustomReport/deleteCustomReport) bauen darauf auf.
+  - `audit_log` bekommt 4 neue Action-Werte (`custom_report.created`/`executed`/`renamed`/`deleted`) — keine Schema-Aenderung am audit_log.
+- Risk: minimal. Additive Tabelle. Bei UNIQUE-Conflict-Apply (idempotent via IF NOT EXISTS) wirft Postgres nichts. RLS-Grants Pflicht laut `feedback_migration_rls_needs_grants` — sonst PostgREST 401 silent-fail.
+- Rollback Notes: `DROP TABLE IF EXISTS custom_reports CASCADE;` — kein Backfill noetig (Feature ist neu, V7.6-First-Live keine User-Daten gegangen). `NOTIFY pgrst, 'reload schema';` nach Drop. Vorher pruefen: gibt es bereits Live-Daten? Falls ja: Export per `pg_dump --table=custom_reports` als Backup.
+- Verification (post-Apply in SLC-762 MT-1):
+  - `\d custom_reports` zeigt 10 Spalten, RLS=ENABLED, 4 Policies, 2 Indizes (1 BTREE + 1 UNIQUE).
+  - `SELECT polname, polcmd FROM pg_policy WHERE polrelid = 'custom_reports'::regclass;` zeigt 4 Eintraege (SELECT/INSERT/UPDATE/DELETE).
+  - `SELECT has_table_privilege('authenticated', 'custom_reports', 'INSERT');` returns `t`.
+  - `SELECT has_table_privilege('service_role', 'custom_reports', 'SELECT');` returns `t`.
+  - PostgREST-Smoke: `curl https://<host>/rest/v1/custom_reports?limit=1` mit anon-Header sollte 200 mit `[]` returnen (RLS filtert leer, kein 404 = Schema-Cache aktiv).
+
 ### MIG-036 — V7.5 SLC-752 automation_rules.created_via
 - Date: 2026-05-16 (applied via SSH+base64 in SLC-752 MT-0 — postgres-User, idempotent)
 - Scope: 1 additive Aenderung in `036_v75_automation_rules_created_via.sql`:

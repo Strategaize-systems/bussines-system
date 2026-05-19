@@ -10079,3 +10079,402 @@ Total: ~12-20h. /slice-planning kann Slices weiter splitten oder zusammenziehen,
 - ISSUE-066 Status `resolved` in KNOWN_ISSUES.md mit Resolution-Notes verlinkend auf SLC-751 Live-Smoke
 
 **V7.5 Architecture ready for `/slice-planning`.**
+
+## V7.6 — NL-Workspace-Integration + Custom-Reports Architecture
+
+### V7.6 Strategy
+
+V7.6 ist ein **UI-Konsolidierungs-Sprint** mit additivem Schema. Zwei Bauteile:
+
+1. **FEAT-761 NL-Builder in KI-Workspace integrieren (BL-479, High Prio).** V7.5 SLC-753 hat den NL-Rule-Builder als **separate Card** unter dem KI-Workspace plaziert (V6.6-Pattern-Verletzung). FEAT-761 macht ihn zum **6. Berichts-Button** im `MeinTagKIWorkspace`. Klick triggert einen **NL-Builder-Mode** im Workspace statt eines Bedrock-Calls. Cost-Display + Modell-Anzeige verschwinden aus dem User-UI (bleiben im `audit_log` + V7.5-Inspection-Log auf `/settings/workflow-automation/nl-history`). **Reines Frontend-Refactor — kein Schema, keine neuen Server-Actions.**
+
+2. **FEAT-762 Custom-Reports (BL-442, Medium Prio).** User legen eigene Berichts-Vorlagen via "Als Bericht speichern" auf Free-Form-Bedrock-Antworten an. Ein "Meine Berichte"-Dropdown rechts neben den Standard-Buttons listet sie (Type-Ahead ab 6+ Items, Context-Filter `mein-tag` vs `cockpit`). **Additive Migration MIG-037** mit `custom_reports`-Tabelle (Owner-Scope-RLS, UNIQUE(owner_user_id, name)). **Per-User-Scope in V1**, Team-Sharing defer V8.
+
+Keine neuen npm-Packages. Keine neuen Container, kein neuer Cron, keine neuen LLM-Provider. Reuse: V6.6 KI-Workspace-Hybrid-Layout, V7.5 Bedrock-Region-Pin (DEC-211), V7.5 NL-Sculptor-Server-Actions (`sculptNlRule`/`previewNlRule`/`applyNlRule` bleiben unangetastet), V6.2 `audit_log`-Pattern, V6.5 Brand-Tokens.
+
+### V7.6 Strategy-Leitprinzipien
+
+- **Pattern-Reuse-First** (CLAUDE.md Core-Default #5): NL-Sculpt-Workflow-Code aus V7.5 `cockpit/src/components/mein-tag/nl-rule-builder-card.tsx` zieht 1:1 nach `cockpit/src/components/ki-workspace/nl-builder-inline.tsx` um. Keine Re-Implementierung der 4-Karten-Sequenz.
+- **Mode-Switch im KIWorkspace statt RenderRegistry-Refactor (DEC-217):** AnswerPane behaelt seinen single `reportId === "top-chancen"`-Discriminator. KIWorkspace bekommt einen zusaetzlichen `mode: "report" | "nl-builder"`-State. RenderRegistry-Refactor erst V7.7+ wenn 4+ Cases UND echte Plugin-Use-Case.
+- **Standard-Reports + Custom-Reports geteilter Bedrock-Pfad (DEC-215):** `runCustomReport(id)` lade Context-Type-spezifischen Default-Data-Context (mein-tag = Activities+Tasks+Deals fuer User, cockpit = Pipeline-Aggregate) und schicke ihn mit `prompt_template` an Bedrock. Kein Sculpt-Schritt vor Context-Loading (DEC-215-Alternative B verworfen).
+- **Save-Trigger nach Bedrock-Result (DEC-216):** "Als Bericht speichern"-Button rendert nur auf Free-Form-Antworten (nicht auf Standard-Berichten, nicht im NL-Builder-Mode). User sieht Ergebnis und entscheidet bewusst.
+- **Cost-Display weg aus User-UI (FEAT-761), aber audit_log + Inspection-Log unveraendert.** Cost-Forensik bleibt in `audit_log.metadata.sculptor_cost_usd` (V7.5) und in `custom_report.executed`-Audit-Action (V7.6 neu). Inspection-Log auf `/settings/workflow-automation/nl-history` bleibt SLC-756 (V7.5).
+- **Per-Owner-RLS strict.** `custom_reports`-Tabelle hat 4 Policies (SELECT/INSERT/UPDATE/DELETE) jeweils `owner_user_id = auth.uid()`. Kein Admin-Read-Trapdoor in V1 (Forensik laeuft ueber `audit_log`-Trail, der schon admin-readable ist).
+- **EU-Region pflicht (DEC-211-Reuse):** `runCustomReport` ruft `invokeBedrock()` und faellt damit unter die V7.5-Region-Assertion. Kein neuer LLM-Pfad.
+
+### V7.6 Components Affected
+
+```
+Browser (HTTPS)
+  │
+Coolify / Caddy
+  │
+Next.js App (BD Cockpit)
+  │
+  ├── /components/ki-workspace/                              ─── ERWEITERT (FEAT-761 + FEAT-762)
+  │   ├── KIWorkspace.tsx (PATCH)
+  │   │   └── + mode: "report" | "nl-builder" State
+  │   │     + handleReportClick short-circuit bei id="nl-builder"
+  │   │       (KEIN reportRun.run(), nur setMode("nl-builder"))
+  │   │     + Render-Switch: NLBuilderInline vs AnswerPane
+  │   │     + Input-Bar im nl-builder-Mode disabled mit Hint
+  │   │       "Workflow-Modus aktiv — verwende die NL-Eingabe unten"
+  │   │     + "Meine Berichte"-Dropdown rechts neben Standard-Buttons
+  │   │       (Type-Ahead ab 6+, Klick triggert runCustomReport)
+  │   ├── AnswerPane.tsx (MINIMAL-PATCH)
+  │   │   └── + onSaveAsReport-Callback-Prop (Render des
+  │   │       "Als Bericht speichern"-Buttons; Sichtbarkeit:
+  │   │       reportId === "freie-frage" && result vorhanden)
+  │   ├── nl-builder-inline.tsx (NEU)
+  │   │   └── 4-Karten-Sequenz aus V7.5 portiert:
+  │   │     ├── NL-Eingabe (Text + Mikro-Button + Sculpt-Button)
+  │   │     ├── Klarsprache-Karte (Original + Intent-Echo)
+  │   │     ├── Schema-Karte (editierbare Form-Felder)
+  │   │     └── Trockenlauf + Apply-Confirm-Modal
+  │   │     OHNE Cost-Display, OHNE Modell-Hint, OHNE Card-Wrapper-Box
+  │   ├── meine-berichte-dropdown.tsx (NEU)
+  │   │   └── Dropdown-Component:
+  │   │     ├── Trigger-Button mit chevron + Label "Meine Berichte"
+  │   │     ├── Type-Ahead-Filter (ab 6+ Eintraegen sichtbar)
+  │   │     ├── Item-Liste mit Name + last_used_at-Postfix
+  │   │     ├── ⋮-Sub-Menu pro Item: "Umbenennen" + "Loeschen"
+  │   │     └── Empty-State-Hint "Stelle eine freie Frage und
+  │   │         speichere die Antwort als Bericht."
+  │   ├── save-custom-report-modal.tsx (NEU)
+  │   │   └── Modal mit Native-Form-Pattern:
+  │   │     ├── Name-Input (Pflicht, 2-80 chars)
+  │   │     ├── Description-Textarea (optional)
+  │   │     └── Submit → saveCustomReport Server-Action
+  │   └── reports/registry.ts (PATCH)
+  │       └── MEIN_TAG_REPORTS um Eintrag
+  │         { id: "nl-builder", label: "Workflow bauen", ... } ergaenzt
+  │
+  ├── /components/mein-tag/                                  ─── REDUZIERT (FEAT-761)
+  │   ├── nl-rule-builder-card.tsx (LOESCHEN)
+  │   │   └── ersetzt durch nl-builder-inline.tsx unter ki-workspace/
+  │   ├── nl-rule-builder-card.test.tsx (LOESCHEN)
+  │   ├── apply-confirm-modal.tsx (BLEIBT — Sub-Komponente)
+  │   ├── preview-result-card.tsx (BLEIBT — Sub-Komponente)
+  │   └── apply-confirm-modal.test.tsx (BLEIBT)
+  │
+  ├── /app/(app)/mein-tag/mein-tag-client.tsx (PATCH)        ─── REDUZIERT (FEAT-761)
+  │   └── - <NLRuleBuilderCard /> Sibling-Render entfernen
+  │     + Workspace zeigt jetzt den 6. Button "Workflow bauen"
+  │
+  ├── /lib/ki-workspace/                                     ─── ERWEITERT (FEAT-762)
+  │   ├── custom-report-runner.ts (NEU)
+  │   │   └── runCustomReportCore({ promptTemplate, contextType, scope })
+  │   │     1. Loader-Switch:
+  │   │        - contextType="mein-tag" → loadMeinTagContext(scope)
+  │   │          (Reuse von tagesanalyse.ts-Data-Loader)
+  │   │        - contextType="cockpit" → loadCockpitContext(scope)
+  │   │          (Reuse von pipeline-snapshot.ts-Data-Loader)
+  │   │     2. Build Bedrock-Prompt: SYSTEM_PROMPT + dataContext + promptTemplate
+  │   │     3. invokeBedrock() — gleicher V7.5-Region-Assertion-Pfad
+  │   │     4. Return ReportResult { markdown, completedAt, model, refreshable: true }
+  │   ├── custom-report-prompt.ts (NEU)
+  │   │   └── System-Prompt fuer Custom-Reports (kurz, generisch)
+  │   └── reports/* (BLEIBT — Standard-Reports unangetastet)
+  │
+  └── /app/(app)/(custom-reports actions)/                   ─── NEU (FEAT-762)
+      ├── /lib/custom-reports/actions/save.ts (NEU)
+      │   └── saveCustomReport({ name, prompt_template, context_type, description? })
+      │     1. zod-Validate (Length-Checks)
+      │     2. INSERT custom_reports — RLS-implicit
+      │     3. UNIQUE-Constraint catch → 409 "Name bereits vergeben"
+      │     4. audit_log INSERT action='custom_report.created'
+      │     5. Result-Pattern { ok, id } | { ok: false, code, message }
+      ├── /lib/custom-reports/actions/list.ts (NEU)
+      │   └── listCustomReports({ context_type })
+      │     SELECT ... WHERE context_type=$1
+      │     ORDER BY last_used_at DESC NULLS LAST, created_at DESC
+      ├── /lib/custom-reports/actions/run.ts (NEU)
+      │   └── runCustomReport({ id, scope })
+      │     1. SELECT custom_reports WHERE id=$1 (RLS Owner-Check implicit)
+      │     2. runCustomReportCore() aus lib/ki-workspace/
+      │     3. UPDATE custom_reports SET usage_count=usage_count+1,
+      │        last_used_at=now()
+      │     4. audit_log INSERT action='custom_report.executed',
+      │        metadata: { cost_usd, model_id, prompt_template_snippet }
+      │     5. Return ReportResult
+      ├── /lib/custom-reports/actions/rename.ts (NEU)
+      │   └── renameCustomReport({ id, name }) + UNIQUE-Check + audit
+      └── /lib/custom-reports/actions/delete.ts (NEU)
+          └── deleteCustomReport({ id }) + audit
+```
+
+### V7.6 Schema / Data Model (MIG-037)
+
+**Eine neue Tabelle `custom_reports` mit Owner-Scope-RLS. Additiv, kein Touch an bestehenden Tabellen.**
+
+```sql
+-- MIG-037 V7.6 SLC-762 custom_reports
+CREATE TABLE IF NOT EXISTS custom_reports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  context_type TEXT NOT NULL CHECK (context_type IN ('mein-tag', 'cockpit')),
+  name TEXT NOT NULL CHECK (char_length(name) BETWEEN 2 AND 80),
+  prompt_template TEXT NOT NULL CHECK (char_length(prompt_template) BETWEEN 10 AND 2000),
+  description TEXT,
+  last_used_at TIMESTAMPTZ,
+  usage_count INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_custom_reports_owner_ctx
+  ON custom_reports(owner_user_id, context_type);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_custom_reports_owner_name
+  ON custom_reports(owner_user_id, name);
+
+ALTER TABLE custom_reports ENABLE ROW LEVEL SECURITY;
+
+-- Drop+Create-Pattern (idempotent, V14+-portabel)
+DROP POLICY IF EXISTS custom_reports_owner_select ON custom_reports;
+CREATE POLICY custom_reports_owner_select ON custom_reports
+  FOR SELECT USING (owner_user_id = auth.uid());
+
+DROP POLICY IF EXISTS custom_reports_owner_insert ON custom_reports;
+CREATE POLICY custom_reports_owner_insert ON custom_reports
+  FOR INSERT WITH CHECK (owner_user_id = auth.uid());
+
+DROP POLICY IF EXISTS custom_reports_owner_update ON custom_reports;
+CREATE POLICY custom_reports_owner_update ON custom_reports
+  FOR UPDATE USING (owner_user_id = auth.uid())
+  WITH CHECK (owner_user_id = auth.uid());
+
+DROP POLICY IF EXISTS custom_reports_owner_delete ON custom_reports;
+CREATE POLICY custom_reports_owner_delete ON custom_reports
+  FOR DELETE USING (owner_user_id = auth.uid());
+
+-- Service-Role-Grants Pflicht (sonst PostgREST 401)
+GRANT SELECT, INSERT, UPDATE, DELETE ON custom_reports TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON custom_reports TO service_role;
+```
+
+**Audit-Log-Schema (bestehend, additiv genutzt):**
+
+```
+audit_log:
+  action: 'custom_report.created'        -- NEU (V7.6)
+  entity_type: 'custom_report'
+  entity_id: <custom_reports.id>
+  metadata JSONB:
+    {
+      "name": "...",
+      "context_type": "mein-tag" | "cockpit",
+      "prompt_template_length": 250
+    }
+
+  action: 'custom_report.executed'       -- NEU (V7.6)
+  entity_type: 'custom_report'
+  entity_id: <custom_reports.id>
+  metadata JSONB:
+    {
+      "name": "...",
+      "context_type": "mein-tag" | "cockpit",
+      "cost_usd": 0.008,
+      "model_id": "eu.anthropic.claude-sonnet-4-6-20250514-v1:0",
+      "input_tokens": 1250,
+      "output_tokens": 380,
+      "prompt_template_snippet": "<first 200 chars>"
+    }
+
+  action: 'custom_report.renamed'        -- NEU (V7.6)
+  entity_type: 'custom_report'
+  entity_id: <custom_reports.id>
+  metadata JSONB: { "old_name": "...", "new_name": "..." }
+
+  action: 'custom_report.deleted'        -- NEU (V7.6)
+  entity_type: 'custom_report'
+  entity_id: <custom_reports.id>
+  metadata JSONB: { "name": "..." }
+```
+
+**Migration-Procedure:** Per `sql-migration-hetzner.md` ueber SSH+base64 als `postgres`-User. `NOTIFY pgrst, 'reload schema';` zwingend nach Apply (PostgREST-Schema-Cache).
+
+### V7.6 AnswerPane Mode-Switch (DEC-217)
+
+**Entscheidung: Mode-Switch im KIWorkspace, AnswerPane bleibt Standard-Renderer mit `reportId`-Discriminator.**
+
+Heutiger Stand: `AnswerPane` rendert `<PipelineTabsRenderer>` bei `reportId === "top-chancen"`, sonst `<MarkdownView>`. V7.6 Custom-Reports nutzen den `<MarkdownView>`-Pfad ohne weiteren Discriminator-Case. **NL-Builder ist KEIN result-Rendering** — er ist ein eigener interaktiver Mode. Daher Mode-Switch eine Ebene hoeher.
+
+Alternativen geprueft:
+
+| Pattern | Pro | Contra | Entscheidung |
+|---|---|---|---|
+| **A** Mode-Switch im KIWorkspace, AnswerPane unveraendert | Klarste Trennung, AnswerPane bleibt single-purpose | KIWorkspace bekommt zusaetzlichen State (`mode`) | **gewaehlt** |
+| **B** AnswerPane bekommt `renderMode`-Prop + children-Slot | Single Render-Punkt | AnswerPane wird zur Wundertuete (Render+Mode) | verworfen |
+| **C** RenderRegistry-Refactor (Map<id, Component>) | Skaliert auf N Cases | Premature abstraction bei 3 Cases | V7.7+ wenn 4+ Cases |
+
+**Implementierungs-Skizze:**
+
+```tsx
+// KIWorkspace.tsx (V7.6)
+const [mode, setMode] = useState<"report" | "nl-builder">("report");
+
+const handleReportClick = useCallback(async (report) => {
+  if (report.id === "nl-builder") {
+    setMode("nl-builder");
+    setSelectedReport(report);
+    return; // KEIN reportRun.run()
+  }
+  setMode("report");
+  setSelectedReport(report);
+  await reportRun.run(report, scope);
+}, [reportRun, scope]);
+
+return (
+  <div>
+    <ReportButtons />
+    <MeineBerichteDropdown /> {/* FEAT-762 */}
+    <InputBar disabled={mode === "nl-builder"} hint={mode === "nl-builder" ? "Workflow-Modus aktiv ..." : undefined} />
+    {mode === "nl-builder"
+      ? <NLBuilderInline onClose={() => setMode("report")} />
+      : <AnswerPane reportId={selectedReport?.id} result={reportRun.result} ... onSaveAsReport={selectedReport?.id === "freie-frage" ? handleSaveAsReport : undefined} />}
+  </div>
+);
+```
+
+### V7.6 Bedrock Context-Loader fuer Custom-Reports (DEC-215)
+
+**Entscheidung: Context-Type-spezifischer Default-Data-Context. KEIN NL-Sculpt-Schritt vor Context-Loading.**
+
+Alternativen geprueft:
+
+| Pattern | Pro | Contra | Entscheidung |
+|---|---|---|---|
+| **A** Context-Type-Default-Context (mein-tag → tagesanalyse-style, cockpit → pipeline-snapshot-style) | Einfach, vorhersagbar, ein Bedrock-Call, Reuse bestehender Data-Loader | Manche User-Prompts brauchen evtl. mehr Daten als der Default liefert | **gewaehlt** |
+| **B** NL-Sculpt fuer Daten-Selektion (1. Bedrock-Call extrahiert "welche Daten brauche ich", 2. Bedrock-Call mit gezielten Daten) | Maechtig, smart | 2x Cost + 2x Latenz, komplex, V7.6-Scope-Inflation | V7.7+ Erweiterung wenn echter Bedarf |
+| **C** Free-Form-Frage-Loader (gleicher Pfad wie heute "freie-frage" im KI-Workspace) | Maximale Konsistenz mit Free-Form-Pfad | Mein-Tag-Free-Form-Loader laedt heute denselben Default → kein Unterschied zu A | aequivalent zu A, A bevorzugt wegen Explicit-Naming |
+
+**Context-Loader-Datenumfang (DEC-215b):**
+
+| context_type | Daten-Loader (Reuse) | Inhalt |
+|---|---|---|
+| `mein-tag` | `lib/ki-workspace/loaders/mein-tag-context.ts` (neu, Reuse aus tagesanalyse.ts) | Activities heute + offene Tasks fuer scope.userId + aktive Deals des Users (last 30d) + Multiplikator-Hinweise |
+| `cockpit` | `lib/ki-workspace/loaders/cockpit-context.ts` (neu, Reuse aus pipeline-snapshot.ts) | Pipeline-Aggregate (pro Phase Count+Sum), Top-10 stagnierende Deals, Win/Loss letzte 30d |
+
+**Wichtig:** Diese Loader werden in /slice-planning ausgegliedert. Falls die bestehenden Reports-Module sie heute direkt inlinen (z.B. `tagesanalyse.ts` macht alles in einer Funktion), wird in SLC-762 MT-3 refactoriert auf einen wiederverwendbaren Loader-Export. Falls schon separiert: nur Re-Use, kein Refactor.
+
+### V7.6 Save-Trigger UX (DEC-216)
+
+**Entscheidung: "Als Bericht speichern"-Button rendert nach Bedrock-Result, nur bei Free-Form-Frage.**
+
+Render-Bedingungen fuer den Save-Button:
+
+| Workspace-State | Save-Button sichtbar? |
+|---|---|
+| Standard-Bericht (z.B. Tagesanalyse) | NEIN — Bericht ist bereits "verstandard" |
+| NL-Builder-Mode | NEIN — Workflow != Report |
+| Custom-Bericht-Ausfuehrung | NEIN — Bericht existiert schon |
+| Free-Form-Frage mit Bedrock-Result | JA |
+| Free-Form-Frage ohne Result (Loading/Error) | NEIN |
+
+**Implementierungs-Skizze:**
+
+```tsx
+// AnswerPane.tsx (V7.6 minimal-patch)
+{result && onSaveAsReport && (
+  <button onClick={onSaveAsReport} data-testid="answer-pane-save-as-report">
+    <BookmarkPlus className="h-3 w-3" /> Als Bericht speichern
+  </button>
+)}
+
+// KIWorkspace.tsx (V7.6)
+<AnswerPane
+  result={reportRun.result}
+  reportId={selectedReport?.id}
+  onSaveAsReport={
+    selectedReport?.id === FREE_QUESTION_REPORT_ID && reportRun.result
+      ? () => setSaveModalOpen(true)
+      : undefined
+  }
+/>
+```
+
+### V7.6 NL-Builder-Inline File-Location (DEC-213)
+
+**Entscheidung: `cockpit/src/components/ki-workspace/nl-builder-inline.tsx` (Option A aus FEAT-761).**
+
+Pro:
+- Semantisch korrekt — NL-Builder ist eine Workspace-Mode-Variation, gehoert ins Workspace-Modul.
+- Zukunftsfaehig fuer Re-Use auf anderen Pages (Deal-Detail-NL-Builder in V7.7+ ist denkbar).
+- Konsistent mit dem geplanten `meine-berichte-dropdown.tsx` + `save-custom-report-modal.tsx` unter `ki-workspace/`.
+
+Cleanup-Plan (DEC-213b):
+- `cockpit/src/components/mein-tag/nl-rule-builder-card.tsx` wird **komplett geloescht** (CLAUDE.md "Surgical changes"-Rule erfuellt).
+- `nl-rule-builder-card.test.tsx` ebenso.
+- Sub-Komponenten `apply-confirm-modal.tsx` + `preview-result-card.tsx` bleiben unter `cockpit/src/components/mein-tag/` (V7.5-Reuse), werden vom neuen `nl-builder-inline.tsx` importiert. Wenn /slice-planning oder /backend feststellt dass sie auch nur einmalig genutzt werden, koennen sie nach `ki-workspace/` mit-umgezogen werden.
+
+### V7.6 Slice-Plan-Outlook (DEC-218)
+
+**Entscheidung: 3 Slices, sequentiell. SLC-761 zuerst (Foundation), dann SLC-762 (Backend), dann SLC-763 (Frontend).**
+
+| Slice | Feature | Inhalt | Schaetzung | Acceptance |
+|---|---|---|---|---|
+| SLC-761 | FEAT-761 | NL-Builder-Refactor: 6. Button + Mode-Switch + nl-builder-inline.tsx + Card-Sibling-Loeschung + Cost-Hint-Removal + AUDIT_SERVER_ACTIONS_V7.md V7.5-Section (F-2) | ~2-3h | Live-Smoke: NL-Workflow im Workspace via 6. Button funktioniert end-to-end, keine Cost-Anzeige sichtbar |
+| SLC-762 | FEAT-762 | Backend: MIG-037 + 5 Server-Actions (save/list/run/rename/delete) + custom-report-runner.ts mit Context-Loadern + audit_log-Actions + Doc-Hygiene (AUDIT-Section + MIGRATIONS-Section) | ~3-5h | Vitest: CRUD + RLS-Owner-Isolation + Bedrock-Call mit Cost-Tracking + UNIQUE-Constraint-409 |
+| SLC-763 | FEAT-762 | Frontend: "Als Bericht speichern"-Button + Save-Modal + "Meine Berichte"-Dropdown (Type-Ahead ab 6+, last_used-Postfix) + Rename/Delete-Sub-Menu + Empty-State | ~2-4h | Live-Smoke: User legt Custom-Report an, ruft ihn 2x ab, benennt um, loescht — alle audit_log-Eintraege korrekt |
+
+Total: ~7-12h. /slice-planning kann Slices weiter splitten oder zusammenziehen, aber **Reihenfolge SLC-761 → SLC-762 → SLC-763** ist Architecture-Empfehlung (Foundation-First, Backend-vor-Frontend).
+
+### V7.6 Constraints
+
+- **EU-Region pflicht** (Reuse DEC-211): Bedrock `eu-central-1` strict via Startup-Assertion.
+- **Native HTML Form-Pattern** weiterhin pflicht (`feedback_native_html_form_pattern`): Save-Modal nutzt `<form action={saveCustomReport}>` + `useTransition`, keine `react-hook-form`.
+- **V2-Sidebar-Layout** bleibt (`feedback_v2_sidebar_pflicht`).
+- **Brand-Tokens** aus V6.5 Theming-Sprint — keine neuen Custom-Hex-Werte fuer Dropdown/Modal.
+- **MIG-037 idempotent** via `CREATE TABLE IF NOT EXISTS` + `CREATE INDEX IF NOT EXISTS` + `DROP POLICY IF EXISTS` + `CREATE POLICY`.
+- **PostgREST-Schema-Reload** zwingend nach MIG-037-Apply (`NOTIFY pgrst, 'reload schema';`) per `reference_postgrest_schema_reload`.
+- **Service-Role + authenticated-GRANTs** zwingend (Lehre aus OP V7 SLC-134, `feedback_migration_rls_needs_grants`).
+- **FEAT-751-Backend bleibt komplett unangetastet** (sculptNlRule/previewNlRule/applyNlRule + MIG-036 + audit_log-Actions). Nur Frontend-Move.
+
+### V7.6 Risks
+
+- **Risk:** AnswerPane skaliert weiter mit Discriminator-Cases (V7.6 = 2 Cases + 1 Save-Button-Render-Bedingung). Bei 4+ Cases V7.7+ Refactor noetig. **Mitigation:** Mode-Switch im KIWorkspace haelt AnswerPane stabil bei 1 Discriminator (`top-chancen`). Custom-Reports nutzen den `<MarkdownView>`-Standard-Pfad. NL-Builder ist eigener Render-Pfad ausserhalb AnswerPane.
+- **Risk:** Custom-Report-prompt_template kann Bedrock zu beliebigen Antworten zwingen (Prompt-Injection vom User auf sich selbst). **Akzeptiert:** Owner-Scope-Isolation via RLS verhindert Cross-User-Wirkung. audit_log macht Cost transparent. Im Compliance-Review (Pre-Production-Gate) als Item aufnehmen.
+- **Risk:** Per-User-Schrott-Prompts kosten kumulativ. **Mitigation:** audit_log mit `cost_usd` ermoeglicht Admin-Forensik. V7.7+ ggf. Per-User-Cost-Cap als zweite Verteidigungslinie.
+- **Risk:** Bei FEAT-761 wird der V7.5 Voice-Pfad (`useVoiceCapture` im NL-Builder) und der Workspace-Voice-Pfad (`ki-workspace-voice-button`) gleichzeitig sichtbar im NL-Builder-Mode. **Mitigation:** Im NL-Builder-Mode ist die Workspace-Input-Bar disabled (inkl. ihr Voice-Button). Nur der NL-Builder-eigene Mikro-Button bleibt aktiv. Doku-Hinweis im UI.
+- **Risk:** Custom-Report-Bedrock-Call laeuft mit User-Owner-Scope, aber Default-Context-Loader laedt Daten auch fuer User mit Read-Only-Header (ISSUE-066-Pfad). **Mitigation:** runCustomReport ist explizit kein Mutation-Pfad (read-only); audit_log-Insert ist additiv via `service_role` (kein Conflict mit Read-Only-Context-Guard). Vitest deckt das ab.
+- **Assumption:** PostgreSQL-Version 15+ auf Coolify-Self-hosted-Supabase (`CREATE POLICY` mit `WITH CHECK` ist 9.5+, `DROP POLICY IF EXISTS` ist 14+). Aktueller Stand laut MIG-036 OK.
+
+### V7.6 Open Points
+
+Alle 7 OQs aus FEAT-761 + FEAT-762 sind in DEC-212..218 entschieden. Keine offenen architektonischen Fragen mehr. **Defer-Liste fuer V7.7+:**
+
+- NL-Builder auf `/deal/[id]` (Deal-spezifische Workflow-Sculpts) — bisher keine User-Direktive.
+- Custom-Reports auf `/deal/[id]` mit Deal-Context-Persistenz (template_text resolve auf deal_id).
+- Custom-Reports auf `/team` (Team-Cockpit) — TEAM_COCKPIT_REPORTS-Pfad ist separat.
+- Team-Sharing fuer Custom-Reports — defer V8.
+- Versionierung von prompt_template (Edit-History) — defer V7.7+ wenn benoetigt.
+- RenderRegistry-Refactor fuer AnswerPane — Trigger ist 4+ Discriminator-Cases.
+- BL-478 ISSUE-078 Sonner-Toast-Hydration — defer V7.7+ Reproducer-Slice.
+- F-3 COMPLIANCE.md V7.5+V7.6-Section — Pre-Production-Compliance-Gate per User-Direktive 2026-05-01.
+
+### V7.6 Verifikations-Plan
+
+**Vitest (Unit + Live-DB):**
+- AnswerPane-Save-Button-Sichtbarkeit: 4 Cases (freie-frage+result / freie-frage+no-result / standard-report+result / nl-builder-mode).
+- KIWorkspace mode-Switch: Klick auf nl-builder Button setzt mode + KEIN reportRun-Call; Klick auf Standard-Bericht setzt mode back.
+- saveCustomReport-Validation: zod-Length-Checks + UNIQUE-409-Mapping + audit_log-Insert.
+- runCustomReport-Pfad: RLS-Owner-Check + Cost-Tracking + usage_count-Increment.
+- RLS-Live-DB-Tests (Coolify-Test-Setup-Pattern): User A sieht User B's custom_reports nicht; SELECT/INSERT/UPDATE/DELETE alle owner-scoped.
+- UNIQUE-Constraint catch: Insert mit Duplicate-Name → 23505 → 409-Mapping.
+- Type-Ahead-Filter-Logic: Filter case-insensitive auf name; sichtbar erst ab 6+ Items.
+
+**Playwright-MCP Live-Smoke (post-Deploy):**
+- NL-Builder-Smoke: 6 Buttons im Workspace, Klick "Workflow bauen" → NL-Eingabe sichtbar, kein Cost-Hint im DOM (`data-testid="nl-rule-builder-cost"` darf nicht existieren).
+- Custom-Report-Save-Smoke (mein-tag): Freie Frage stellen → Result → "Als Bericht speichern" → Modal → Save → "Meine Berichte"-Dropdown zeigt neuen Eintrag.
+- Custom-Report-Run-Smoke: Klick auf Custom-Report-Dropdown-Item → AnswerPane rendert Bedrock-Antwort, audit_log enthaelt `custom_report.executed` mit Cost.
+- Owner-Isolation-Smoke: 2 Test-Accounts, User A legt Report an, User B sieht ihn nicht.
+- Context-Filter-Smoke: Custom-Report auf mein-tag mit context_type='mein-tag' erscheint NICHT im /dashboard-Workspace.
+
+**Gesamt-V7.6 PASS-Kriterium:**
+- Vitest `npm run test:all` 1100+/1100+ PASS (V7.5-Baseline + V7.6-Erweiterungen)
+- 5 Playwright-Live-Smokes PASS
+- audit_log enthaelt `custom_report.created` + `custom_report.executed` + `custom_report.renamed` + `custom_report.deleted`-Eintraege
+- `/mein-tag` rendert keine Standalone-NLRuleBuilderCard mehr (DOM-Check)
+- Inspection-Log auf `/settings/workflow-automation/nl-history` (V7.5 SLC-756) bleibt funktional
+
+**V7.6 Architecture ready for `/slice-planning`.**
