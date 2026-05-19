@@ -1,7 +1,7 @@
 # Migrations
 
-### MIG-037 — V7.6 SLC-762 custom_reports (PLANNED — not yet applied)
-- Date: PLANNED (target: V7.6 SLC-762 MT-1 via SSH+base64 als postgres-User, idempotent)
+### MIG-037 — V7.6 SLC-762 custom_reports
+- Date: 2026-05-19 (applied via SSH+base64 in SLC-762 MT-1 — postgres-User, idempotent)
 - Scope: 1 neue Tabelle `custom_reports` + 2 Indizes + 4 RLS-Policies + 2 GRANTs in `037_v76_custom_reports.sql`:
   ```sql
   CREATE TABLE IF NOT EXISTS custom_reports (
@@ -54,12 +54,12 @@
   - `audit_log` bekommt 4 neue Action-Werte (`custom_report.created`/`executed`/`renamed`/`deleted`) — keine Schema-Aenderung am audit_log.
 - Risk: minimal. Additive Tabelle. Bei UNIQUE-Conflict-Apply (idempotent via IF NOT EXISTS) wirft Postgres nichts. RLS-Grants Pflicht laut `feedback_migration_rls_needs_grants` — sonst PostgREST 401 silent-fail.
 - Rollback Notes: `DROP TABLE IF EXISTS custom_reports CASCADE;` — kein Backfill noetig (Feature ist neu, V7.6-First-Live keine User-Daten gegangen). `NOTIFY pgrst, 'reload schema';` nach Drop. Vorher pruefen: gibt es bereits Live-Daten? Falls ja: Export per `pg_dump --table=custom_reports` als Backup.
-- Verification (post-Apply in SLC-762 MT-1):
-  - `\d custom_reports` zeigt 10 Spalten, RLS=ENABLED, 4 Policies, 2 Indizes (1 BTREE + 1 UNIQUE).
-  - `SELECT polname, polcmd FROM pg_policy WHERE polrelid = 'custom_reports'::regclass;` zeigt 4 Eintraege (SELECT/INSERT/UPDATE/DELETE).
-  - `SELECT has_table_privilege('authenticated', 'custom_reports', 'INSERT');` returns `t`.
-  - `SELECT has_table_privilege('service_role', 'custom_reports', 'SELECT');` returns `t`.
-  - PostgREST-Smoke: `curl https://<host>/rest/v1/custom_reports?limit=1` mit anon-Header sollte 200 mit `[]` returnen (RLS filtert leer, kein 404 = Schema-Cache aktiv).
+- Verification (post-Apply in SLC-762 MT-1, 2026-05-19):
+  - `\d custom_reports` zeigt 10 Spalten, RLS=ENABLED, 4 Policies, 2 Indizes (1 BTREE `idx_custom_reports_owner_ctx` + 1 UNIQUE `idx_custom_reports_owner_name`), 3 CHECK-Constraints, FK auf `auth.users(id) ON DELETE CASCADE`. PASS.
+  - `SELECT polname, polcmd FROM pg_policy WHERE polrelid = 'custom_reports'::regclass;` zeigt 4 Eintraege: delete=`d`, insert=`a`, select=`r`, update=`w`. PASS.
+  - `information_schema.role_table_grants` fuer `custom_reports`: `authenticated` hat SELECT/INSERT/UPDATE/DELETE, `service_role` hat SELECT/INSERT/UPDATE/DELETE. PASS.
+  - PostgREST-Smoke ueber Coolify-internal Kong (`http://supabase-kong-...:8000/rest/v1/custom_reports?limit=1` mit anon-Header) liefert HTTP 401 (Endpoint registriert, RLS filtert ohne authentifiziertem JWT). NICHT 404 = Schema-Cache aktiv (Pattern aus `reference_postgrest_schema_reload`). PASS.
+  - RLS-Live-DB-Tests via node:20 im Coolify-Net (`coolify-test-setup.md`): 6/6 PASS in 403ms — Owner-Isolation, UNIQUE-23505, FK confdeltype='c' (CASCADE).
 
 ### MIG-036 — V7.5 SLC-752 automation_rules.created_via
 - Date: 2026-05-16 (applied via SSH+base64 in SLC-752 MT-0 — postgres-User, idempotent)

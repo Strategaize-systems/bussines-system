@@ -414,3 +414,43 @@ Pfad: `cockpit/src/app/(app)/mein-tag/actions/*.ts`. Alle drei Mutate-Pfade habe
 - Sculpt-Session-ID: UUID die ueber Re-Prompt-Loop hinweg stabil bleibt — verlinkt `sculpt_attempt` mit `create_via_nl`-Eintrag fuer End-to-End-Forensik.
 - Schema-Re-Validation: zwischen Sculpt und Apply kann der User die Schema-Karte editieren — `applyNlRule` revalidiert gegen Zod-Schema, niemals trust-the-client.
 - Soft-Dedup: identische bestehende Rule blockiert Apply mit `existing_rule_id`-Hint (User-UX) statt silent-skip.
+
+## 12) V7.6 Server-Actions — Custom-Reports (SLC-762)
+
+V7.6 SLC-762 Backend fuer FEAT-762 Custom-Reports im KI-Workspace. 5 Server-Actions + Runner + Loader. Tabelle `custom_reports` ist Owner-Scoped per RLS (`owner_user_id = auth.uid()`) — kein zusaetzlicher Role-Gate. `assertNotReadOnlyContext()` als Defense-in-Depth in allen 3 Mutate-Pfaden (save/rename/delete). audit_log-Trail mit 4 neuen Action-Werten: `custom_report.created`/`executed`/`renamed`/`deleted` — `entity_type='custom_report'`, `entity_id` = `custom_reports.id`, `context` JSON mit operation-spezifischen Metadaten.
+
+Pfad: `cockpit/src/lib/custom-reports/actions/*.ts`. Runner-Helper: `cockpit/src/lib/ki-workspace/custom-report-runner.ts` + Kontext-Loader `mein-tag-context.ts` + `cockpit-context-block.ts`.
+
+### lib/custom-reports/actions/save.ts — SLC-762 MT-2
+| Funktion | Op | Tabelle | Pre | Post | Notes |
+|---|---|---|---|---|---|
+| saveCustomReport(input) | INSERT | custom_reports + audit_log | JA | n/a (non-core) | assertNotReadOnlyContext + getProfile (kein Role-Gate). zod-Validate (name 2..80, prompt_template 10..2000, context_type whitelist `mein-tag|cockpit`). INSERT mit `owner_user_id = profile.user_id`. Postgres-Code `23505` (UNIQUE-Verletzung auf `(owner_user_id, name)`) → `{ ok:false, code:"duplicate_name" }`. Best-effort INSERT audit_log action='custom_report.created' mit `{ name, context_type }`. |
+
+### lib/custom-reports/actions/list.ts — SLC-762 MT-2
+| Funktion | Op | Tabelle | Pre | Post | Notes |
+|---|---|---|---|---|---|
+| listCustomReports(input) | SELECT | custom_reports | nein | n/a | getProfile + zod-Validate. SELECT ueber RLS-Owner-Filter, ORDER BY `last_used_at DESC NULLS LAST, created_at DESC`. Read-only — kein assertNotReadOnlyContext noetig. |
+
+### lib/custom-reports/actions/run.ts — SLC-762 MT-3
+| Funktion | Op | Tabelle | Pre | Post | Notes |
+|---|---|---|---|---|---|
+| runCustomReport(input) | SELECT + UPDATE + INSERT | custom_reports + audit_log | nein (read-Action im User-Sinne, kein write-mutate fuer Drilldown-Block) | n/a | getProfile + Scope-Cross-Check (`scope.userId === profile.user_id`). SELECT custom_reports WHERE id (RLS-implicit, `not_found` falls null). `runCustomReportCore({ promptTemplate, contextType })` → Loader-Switch + `queryLLM` aus `lib/ai/bedrock-client` (V7.5 DEC-211 Region-Pin). Cost-Calc via `calculateSculptCost` aus `lib/automation/sculptor-cost.ts` (R7-Reuse statt Extract). UPDATE `usage_count + 1` + `last_used_at = now()` (Race tolerant, V7.7+ atomic RPC denkbar). Best-effort INSERT audit_log action='custom_report.executed' mit `{ name, context_type, model_id, cost_usd, input_tokens, output_tokens }`. Liefert `ReportResult { markdown, completedAt, model, refreshable:true }` (kein Cost im UI-Layer, DEC-214). |
+
+### lib/custom-reports/actions/rename.ts — SLC-762 MT-4
+| Funktion | Op | Tabelle | Pre | Post | Notes |
+|---|---|---|---|---|---|
+| renameCustomReport(input) | UPDATE | custom_reports + audit_log | JA | n/a | assertNotReadOnlyContext + getProfile + zod-Validate (name 2..80, id uuid). Pre-SELECT um `old_name` zu kennen + RLS-Filter-Check (`not_found` falls null). UPDATE name + updated_at. Postgres-Code `23505` → `{ ok:false, code:"duplicate_name" }`. Best-effort audit_log action='custom_report.renamed' mit `{ old_name, new_name }`. |
+
+### lib/custom-reports/actions/delete.ts — SLC-762 MT-4
+| Funktion | Op | Tabelle | Pre | Post | Notes |
+|---|---|---|---|---|---|
+| deleteCustomReport(input) | DELETE | custom_reports + audit_log | JA | n/a | assertNotReadOnlyContext + getProfile + zod-Validate. Pre-SELECT (RLS-implicit, `not_found` falls null). DELETE. Best-effort audit_log action='custom_report.deleted' mit `{ name }`. |
+
+### Sicherheitsmodell V7.6 Custom-Reports
+
+- Owner-Scope via RLS: `custom_reports_owner_select|insert|update|delete` Policies forcen `owner_user_id = auth.uid()` (MIG-037). Auch wenn ein User die `id` eines anderen Custom-Reports erraet, liefert SELECT 0 Zeilen und UPDATE/DELETE 0 affected.
+- GRANTs Pflicht: `authenticated` + `service_role` haben volle CRUD-GRANTs (per `feedback_migration_rls_needs_grants` — sonst PostgREST 401 silent-fail). Verifiziert via `information_schema.role_table_grants`.
+- Defense-in-Depth Read-Only-Context: save/rename/delete rufen `assertNotReadOnlyContext()` als erste Zeile (V7 Drilldown-Mitigation, SLC-706 + SLC-751).
+- UNIQUE-409-Symmetrie: `(owner_user_id, name)` UNIQUE in MIG-037 verhindert Duplikate. Save + Rename mappen Postgres `23505` auf `{ ok:false, code:"duplicate_name" }` — keine Tx-Abort, keine Stale-Cache.
+- audit_log-Forensik: 4 neue Actions decken den kompletten Lifecycle ab. `cost_usd` + `model_id` + Token-Counts in `custom_report.executed` ermoeglichen Cost-Anomalien-Detection (analog V7.5 Sculptor-Cost-Tracking).
+- Cascade-Schutz: FK `owner_user_id` → `auth.users(id) ON DELETE CASCADE` (verifiziert via `pg_constraint.confdeltype='c'`). Bei User-Loeschung gehen alle Custom-Reports automatisch mit.
