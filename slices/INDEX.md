@@ -345,3 +345,13 @@ V7.6 = 3 Slices SLC-761..763, strict sequential (Foundation-First → Backend �
 | SLC-761 | [NL-Builder als 6. Workspace-Button + Card-Cleanup + F-2 Doc-Hygiene](SLC-761-nl-builder-in-workspace.md) | FEAT-761 / BL-479 | done | High | 2026-05-19 |
 | SLC-762 | [Custom-Reports Backend (MIG-037 + 5 Server-Actions + Context-Loader + audit_log)](SLC-762-custom-reports-backend.md) | FEAT-762 / BL-442 | done | High | 2026-05-19 |
 | SLC-763 | [Custom-Reports Frontend (AnswerPane-Save-Button + Save-Modal + Meine-Berichte-Dropdown + Rename/Delete)](SLC-763-custom-reports-frontend.md) | FEAT-762 / BL-442 | done | High | 2026-05-19 |
+
+## V8 Slices (Hygiene-Sprint — Slice-Planning done 2026-05-20)
+
+V8 = 3 Slices SLC-811..813, Reihenfolge-Empfehlung 812 → 811 → 813 (Risiko aufsteigend) per DEC-226. **SLC-812** (~1-2h) KI-Provider-Naming-Abstrahierung im User-UI (String-Substitutionen + formatModelDisplayName-Wrapper), kein Schema, geringes Risiko, schnelle V8-Sichtbarkeit. **SLC-811** (~3-4h) Settings-Layout-Refactor in 3 Sections (Persoenlich/Vertrieb/System) + 4 neue Tiles (Produkte, NL-Regel-Historie, Rollen-Verwaltung, Ziele) + Drilldown-Button aktivieren + /performance loeschen + /performance/goals nach /settings/goals verschieben + Task→Aufgabe-Label-Fix. **SLC-813** (~3-5h) StageRequirementsModal-Component + suggestLossReason-Server-Action mit Bedrock-Prompt-Template (DEC-220) + moveDealToStage-Extension mit requirementValues-Parameter + Drop-Event-Wiring. Total ~7-11h. Pro Slice: /frontend|/backend → /qa → User-Coolify-Deploy am Slice-Ende. Gesamt-/qa nach SLC-813 ueber alle 3 Slices. Reuse-Heavy: V6.6 KI-Workspace-Pattern, V7.5 Bedrock-Prompt-Strict-JSON-Pattern, V7.6 Custom-Reports Audit-Cost-Tracking-Pattern, shadcn/ui Dialog.
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-812 | [KI-Provider-Anzeige abstrahieren](SLC-812-ki-provider-abstrahierung.md) | FEAT-802 / BL-480 | planned | Medium | 2026-05-20 |
+| SLC-811 | [Settings-Refactor + /performance-Cleanup + Goals-Move + Label-Konsistenz](SLC-811-settings-refactor-hygiene.md) | FEAT-801 + FEAT-803 / BL-481 + BL-453 + BL-459 | planned | High | 2026-05-20 |
+| SLC-813 | [Stage-Requirements-Modal + KI-Verlustgrund-Vorschlag](SLC-813-stage-requirements-modal.md) | FEAT-804 / BL-455 + BL-456 | planned | High | 2026-05-20 |
