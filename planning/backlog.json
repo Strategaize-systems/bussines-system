@@ -7,17 +7,17 @@
       "priority": "medium",
       "status": "done",
       "version": "V8",
-      "description": "User-Direktive 2026-05-19 nach V7.6 /final-check: Im User-sichtbaren UI darf nicht der konkrete KI-Anbieter (Bedrock, Anthropic Claude Sonnet, Amazon Web Services) erscheinen. Grund: (1) Vendor-Lock-in-Vermeidung — wir wollen spaeter ggf. andere Hersteller einsetzen koennen ohne UI-Refactor und User-Verwirrung. (2) Kein Disclosure des konkreten Providers ggf. ungewollt gegenueber Endkunden. Code-Level (Variablen, Funktionsnamen, Imports, Kommentare, Logs, audit_log) darf weiterhin 'bedrock' / 'invokeBedrock' / model_id-Strings nutzen — das ist forensisch relevant und intern. Nur **User-sichtbare Strings** sollen auf generisches 'KI-System' oder 'Strategaize KI' umgestellt werden. **Konkret bekannte User-sichtbare Stellen (Audit-Stand 2026-05-19, nicht vollstaendig):** (a) [cockpit/src/components/ki-workspace/AnswerPane.tsx](cockpit/src/components/ki-workspace/AnswerPane.tsx) Loading-Hint 'Bedrock arbeitet ...' (sehr sichtbar bei jeder KI-Anfrage); (b) [cockpit/src/components/ki-workspace/nl-builder-inline.tsx](cockpit/src/components/ki-workspace/nl-builder-inline.tsx) Error-Message 'Bedrock-Aufruf fehlgeschlagen'; (c) [cockpit/src/app/(app)/emails/compose/inline-edit-dialog.tsx](cockpit/src/app/(app)/emails/compose/inline-edit-dialog.tsx) Dialog-Description 'Bedrock modifiziert den Body gemaess Anweisung.'. **Scope:** Vollstaendiger Audit aller User-sichtbaren Strings via `grep -rE 'Bedrock|Claude|Anthropic|Amazon|AWS' cockpit/src --include='*.tsx'` + Refactor zu generischem KI-Begriff (Vorschlag: 'KI' / 'Strategaize KI' / 'KI-System'). Backend, Code-Kommentare, Funktionsnamen, audit_log.context.model_id BLEIBEN unveraendert (forensisch relevant). Schaetzung: ~1-2h Audit + ~1h Refactor + Vitest-Update = 1 Mini-Slice. Folgt nach V7.6 Customer-Live-Pre-Phase, vor erstem echten Kundengespraech. Nicht V7.6-blocking.",
+      "description": "User-Direktive 2026-05-19 nach V7.6 /final-check: Im User-sichtbaren UI darf nicht der konkrete KI-Anbieter (Bedrock, Anthropic Claude Sonnet, Amazon Web Services) erscheinen. Grund: (1) Vendor-Lock-in-Vermeidung â€” wir wollen spaeter ggf. andere Hersteller einsetzen koennen ohne UI-Refactor und User-Verwirrung. (2) Kein Disclosure des konkreten Providers ggf. ungewollt gegenueber Endkunden. Code-Level (Variablen, Funktionsnamen, Imports, Kommentare, Logs, audit_log) darf weiterhin 'bedrock' / 'invokeBedrock' / model_id-Strings nutzen â€” das ist forensisch relevant und intern. Nur **User-sichtbare Strings** sollen auf generisches 'KI-System' oder 'Strategaize KI' umgestellt werden. **Konkret bekannte User-sichtbare Stellen (Audit-Stand 2026-05-19, nicht vollstaendig):** (a) [cockpit/src/components/ki-workspace/AnswerPane.tsx](cockpit/src/components/ki-workspace/AnswerPane.tsx) Loading-Hint 'Bedrock arbeitet ...' (sehr sichtbar bei jeder KI-Anfrage); (b) [cockpit/src/components/ki-workspace/nl-builder-inline.tsx](cockpit/src/components/ki-workspace/nl-builder-inline.tsx) Error-Message 'Bedrock-Aufruf fehlgeschlagen'; (c) [cockpit/src/app/(app)/emails/compose/inline-edit-dialog.tsx](cockpit/src/app/(app)/emails/compose/inline-edit-dialog.tsx) Dialog-Description 'Bedrock modifiziert den Body gemaess Anweisung.'. **Scope:** Vollstaendiger Audit aller User-sichtbaren Strings via `grep -rE 'Bedrock|Claude|Anthropic|Amazon|AWS' cockpit/src --include='*.tsx'` + Refactor zu generischem KI-Begriff (Vorschlag: 'KI' / 'Strategaize KI' / 'KI-System'). Backend, Code-Kommentare, Funktionsnamen, audit_log.context.model_id BLEIBEN unveraendert (forensisch relevant). Schaetzung: ~1-2h Audit + ~1h Refactor + Vitest-Update = 1 Mini-Slice. Folgt nach V7.6 Customer-Live-Pre-Phase, vor erstem echten Kundengespraech. Nicht V7.6-blocking.",
       "createdAt": "2026-05-19"
     },
     {
       "id": "BL-101",
-      "title": "Kontakte erweitern: Beziehungstypen, Rollen, Qualitätsfelder",
+      "title": "Kontakte erweitern: Beziehungstypen, Rollen, QualitÃ¤tsfelder",
       "type": "feature",
       "priority": "high",
       "status": "done",
       "version": "V2",
-      "description": "FEAT-101: Beziehungstypen (Steuerberater, M&A, Bank, etc.), Empfehlungsfähigkeit, Vertrauen, thematische Relevanz. Bestehende Kontakt-Tabelle erweitern.",
+      "description": "FEAT-101: Beziehungstypen (Steuerberater, M&A, Bank, etc.), EmpfehlungsfÃ¤higkeit, Vertrauen, thematische Relevanz. Bestehende Kontakt-Tabelle erweitern.",
       "createdAt": "2026-04-01"
     },
     {
@@ -27,7 +27,7 @@
       "priority": "high",
       "status": "done",
       "version": "V2",
-      "description": "FEAT-102: Exit-Bezug, KI-Reife, Eigentümerstruktur, Budgetpotenzial, Champion. Firmen-Tabelle erweitern + Eignungs-UI.",
+      "description": "FEAT-102: Exit-Bezug, KI-Reife, EigentÃ¼merstruktur, Budgetpotenzial, Champion. Firmen-Tabelle erweitern + Eignungs-UI.",
       "createdAt": "2026-04-01"
     },
     {
@@ -37,12 +37,12 @@
       "priority": "high",
       "status": "done",
       "version": "V2",
-      "description": "FEAT-103: Multiplikator-Typ, Vertrauen, Empfehlungsstatistiken, vermittelte Leads + Qualität, 10-Stufen-Pipeline.",
+      "description": "FEAT-103: Multiplikator-Typ, Vertrauen, Empfehlungsstatistiken, vermittelte Leads + QualitÃ¤t, 10-Stufen-Pipeline.",
       "createdAt": "2026-04-01"
     },
     {
       "id": "BL-104",
-      "title": "Opportunity/Deal Engine: Geschäftsspezifische Pipelines",
+      "title": "Opportunity/Deal Engine: GeschÃ¤ftsspezifische Pipelines",
       "type": "feature",
       "priority": "high",
       "status": "done",
@@ -52,12 +52,12 @@
     },
     {
       "id": "BL-105",
-      "title": "Gesprächsmanagement: Strukturierte Dokumentation",
+      "title": "GesprÃ¤chsmanagement: Strukturierte Dokumentation",
       "type": "feature",
       "priority": "high",
       "status": "done",
       "version": "V2",
-      "description": "FEAT-105: Gesprächsart, Teilnehmer, strukturierte Notizen (Einwände, Chancen, Risiken, nächste Schritte). Bestehende Aktivitäten erweitern.",
+      "description": "FEAT-105: GesprÃ¤chsart, Teilnehmer, strukturierte Notizen (EinwÃ¤nde, Chancen, Risiken, nÃ¤chste Schritte). Bestehende AktivitÃ¤ten erweitern.",
       "createdAt": "2026-04-01"
     },
     {
@@ -77,7 +77,7 @@
       "priority": "high",
       "status": "done",
       "version": "V2",
-      "description": "FEAT-107: Angebotsversionen, Status, Won/Lost mit strukturierten Gründen, Verknüpfung zu Deal.",
+      "description": "FEAT-107: Angebotsversionen, Status, Won/Lost mit strukturierten GrÃ¼nden, VerknÃ¼pfung zu Deal.",
       "createdAt": "2026-04-01"
     },
     {
@@ -92,22 +92,22 @@
     },
     {
       "id": "BL-109",
-      "title": "Aufgaben/Follow-ups: Eigenständiges Modul",
+      "title": "Aufgaben/Follow-ups: EigenstÃ¤ndiges Modul",
       "type": "feature",
       "priority": "high",
       "status": "done",
       "version": "V2",
-      "description": "FEAT-109: Nächste Aktion, Fristen, Prioritäten, Waiting-Status, Verantwortlicher. Überfällige rot markiert.",
+      "description": "FEAT-109: NÃ¤chste Aktion, Fristen, PrioritÃ¤ten, Waiting-Status, Verantwortlicher. ÃœberfÃ¤llige rot markiert.",
       "createdAt": "2026-04-01"
     },
     {
       "id": "BL-110",
-      "title": "Übergabe an System 1 (Onboarding)",
+      "title": "Ãœbergabe an System 1 (Onboarding)",
       "type": "feature",
       "priority": "medium",
       "status": "done",
       "version": "V2",
-      "description": "FEAT-110: Übergabe-Status, Einstiegsschiene, Ansprechpartner, Vorinformationen, Checkliste.",
+      "description": "FEAT-110: Ãœbergabe-Status, Einstiegsschiene, Ansprechpartner, Vorinformationen, Checkliste.",
       "createdAt": "2026-04-01"
     },
     {
@@ -122,12 +122,12 @@
     },
     {
       "id": "BL-112",
-      "title": "Relationship Timeline (quer über Module)",
+      "title": "Relationship Timeline (quer Ã¼ber Module)",
       "type": "feature",
       "priority": "high",
       "status": "done",
       "version": "V2",
-      "description": "FEAT-112: Chronologische Sicht pro Kontakt/Firma: Gespräche, E-Mails, Notizen, Angebote, Empfehlungen, Aufgaben.",
+      "description": "FEAT-112: Chronologische Sicht pro Kontakt/Firma: GesprÃ¤che, E-Mails, Notizen, Angebote, Empfehlungen, Aufgaben.",
       "createdAt": "2026-04-01"
     },
     {
@@ -147,7 +147,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V2",
-      "description": "FEAT-114: Strukturierte Verlustgründe bei verlorenen Deals, auswertbar über Zeit.",
+      "description": "FEAT-114: Strukturierte VerlustgrÃ¼nde bei verlorenen Deals, auswertbar Ã¼ber Zeit.",
       "createdAt": "2026-04-01"
     },
     {
@@ -157,7 +157,7 @@
       "priority": "high",
       "status": "done",
       "version": "V2",
-      "description": "FEAT-115: BD-relevante Metriken statt generischer CRM-Zahlen. Pipeline-Werte, Multiplikator-Performance, offene Follow-ups, Übergabe-Status.",
+      "description": "FEAT-115: BD-relevante Metriken statt generischer CRM-Zahlen. Pipeline-Werte, Multiplikator-Performance, offene Follow-ups, Ãœbergabe-Status.",
       "createdAt": "2026-04-01"
     },
     {
@@ -167,12 +167,12 @@
       "priority": "high",
       "status": "done",
       "version": "V2",
-      "description": "Content-Kalender, Marketing-Skills-Verweise aus Navigation + Code entfernen. Gehören zu System 4.",
+      "description": "Content-Kalender, Marketing-Skills-Verweise aus Navigation + Code entfernen. GehÃ¶ren zu System 4.",
       "createdAt": "2026-04-01"
     },
     {
       "id": "BL-117",
-      "title": "Deal-Status-Workflow (active → won/lost) + Auto-Status bei Stage-Wechsel",
+      "title": "Deal-Status-Workflow (active â†’ won/lost) + Auto-Status bei Stage-Wechsel",
       "type": "feature",
       "priority": "high",
       "status": "done",
@@ -187,7 +187,7 @@
       "priority": "high",
       "status": "done",
       "version": "V2.1",
-      "description": "Klick auf Kanban-Card öffnet großes Sheet/Modal mit: Kontaktdaten, Firma, alle Interaktionen (Gespräche, E-Mails, Angebote), Dokumente, Signale, Stage-History. Direkt bearbeitbar. Nach Schließen wird Pipeline aktualisiert. Wie bei Pipedrive/HubSpot.",
+      "description": "Klick auf Kanban-Card Ã¶ffnet groÃŸes Sheet/Modal mit: Kontaktdaten, Firma, alle Interaktionen (GesprÃ¤che, E-Mails, Angebote), Dokumente, Signale, Stage-History. Direkt bearbeitbar. Nach SchlieÃŸen wird Pipeline aktualisiert. Wie bei Pipedrive/HubSpot.",
       "createdAt": "2026-04-03"
     },
     {
@@ -197,17 +197,17 @@
       "priority": "medium",
       "status": "done",
       "version": "V2.1",
-      "description": "Filter-Leiste über dem Kanban: Status (active/won/lost), Wert-Range, Kontakt, Opportunity-Typ, Tags. Auch als Liste-Ansicht toggle.",
+      "description": "Filter-Leiste Ã¼ber dem Kanban: Status (active/won/lost), Wert-Range, Kontakt, Opportunity-Typ, Tags. Auch als Liste-Ansicht toggle.",
       "createdAt": "2026-04-03"
     },
     {
       "id": "BL-120",
-      "title": "Activity-Logging für Deal Create/Update/Delete",
+      "title": "Activity-Logging fÃ¼r Deal Create/Update/Delete",
       "type": "improvement",
       "priority": "medium",
       "status": "done",
       "version": "V2.1",
-      "description": "Alle Deal-Mutationen (nicht nur Stage-Wechsel) als Activities loggen. Deal-Erstellung, Feld-Änderungen, Löschung nachvollziehbar.",
+      "description": "Alle Deal-Mutationen (nicht nur Stage-Wechsel) als Activities loggen. Deal-Erstellung, Feld-Ã„nderungen, LÃ¶schung nachvollziehbar.",
       "createdAt": "2026-04-03"
     },
     {
@@ -217,12 +217,12 @@
       "priority": "medium",
       "status": "done",
       "version": "V2.1",
-      "description": "Stage-Probability × Deal-Wert = gewichteter Forecast. Auf Dashboard und Pipeline-Header anzeigen.",
+      "description": "Stage-Probability Ã— Deal-Wert = gewichteter Forecast. Auf Dashboard und Pipeline-Header anzeigen.",
       "createdAt": "2026-04-03"
     },
     {
       "id": "BL-122",
-      "title": "Referral-Source auf Deals verknüpfen",
+      "title": "Referral-Source auf Deals verknÃ¼pfen",
       "type": "improvement",
       "priority": "low",
       "status": "done",
@@ -237,7 +237,7 @@
       "priority": "low",
       "status": "done",
       "version": "V2.1",
-      "description": "lost_reason Spalte entfernen (ersetzt durch won_lost_reason). referral_source_id FK-Constraint hinzufügen. created_by bei Deal-Erstellung setzen.",
+      "description": "lost_reason Spalte entfernen (ersetzt durch won_lost_reason). referral_source_id FK-Constraint hinzufÃ¼gen. created_by bei Deal-Erstellung setzen.",
       "createdAt": "2026-04-03"
     },
     {
@@ -262,12 +262,12 @@
     },
     {
       "id": "BL-126",
-      "title": "Activity-Reminder auf Dashboard (überfällige Aktionen)",
+      "title": "Activity-Reminder auf Dashboard (Ã¼berfÃ¤llige Aktionen)",
       "type": "improvement",
       "priority": "high",
       "status": "done",
       "version": "V2.1",
-      "description": "Prominenter Hinweis auf Dashboard: 'X überfällige Aktionen'. Banner oder Card mit direktem Link zu den betroffenen Deals.",
+      "description": "Prominenter Hinweis auf Dashboard: 'X Ã¼berfÃ¤llige Aktionen'. Banner oder Card mit direktem Link zu den betroffenen Deals.",
       "createdAt": "2026-04-03"
     },
     {
@@ -277,22 +277,22 @@
       "priority": "medium",
       "status": "done",
       "version": "V2.1",
-      "description": "Dritte Pipeline für Lead-Management: Outreach-Aktionen tracken (z.B. 150 Leute angeschrieben → wer meldet sich → wer wird qualifiziert). Stages: Identifiziert → Angeschrieben → Follow-up 1 → Follow-up 2 → Reagiert → Qualifiziert → In Pipeline verschoben.",
+      "description": "Dritte Pipeline fÃ¼r Lead-Management: Outreach-Aktionen tracken (z.B. 150 Leute angeschrieben â†’ wer meldet sich â†’ wer wird qualifiziert). Stages: Identifiziert â†’ Angeschrieben â†’ Follow-up 1 â†’ Follow-up 2 â†’ Reagiert â†’ Qualifiziert â†’ In Pipeline verschoben.",
       "createdAt": "2026-04-03"
     },
     {
       "id": "BL-143",
-      "title": "Mein Tag — Tagesplanungs-Übersicht",
+      "title": "Mein Tag â€” Tagesplanungs-Ãœbersicht",
       "type": "feature",
       "priority": "high",
       "status": "done",
       "version": "V2.1",
-      "description": "Dedizierte Seite 'Mein Tag': Was steht heute an? Zusammengeführt aus: (1) Fällige Aufgaben heute, (2) Deals mit next_action_date heute, (3) Geplante Meetings/Rückrufe, (4) Überfällige Items von gestern. Später erweiterbar um Zeitblöcke (10-12 Rückrufe, 14-16 Meetings) und Verfügbarkeit ('Donnerstag ganzer Tag unterwegs'). Morgens als Erstes öffnen → wissen was zu tun ist.",
+      "description": "Dedizierte Seite 'Mein Tag': Was steht heute an? ZusammengefÃ¼hrt aus: (1) FÃ¤llige Aufgaben heute, (2) Deals mit next_action_date heute, (3) Geplante Meetings/RÃ¼ckrufe, (4) ÃœberfÃ¤llige Items von gestern. SpÃ¤ter erweiterbar um ZeitblÃ¶cke (10-12 RÃ¼ckrufe, 14-16 Meetings) und VerfÃ¼gbarkeit ('Donnerstag ganzer Tag unterwegs'). Morgens als Erstes Ã¶ffnen â†’ wissen was zu tun ist.",
       "createdAt": "2026-04-03"
     },
     {
       "id": "BL-128",
-      "title": "Pipeline Liste-Ansicht Toggle (Kanban ↔ Tabelle)",
+      "title": "Pipeline Liste-Ansicht Toggle (Kanban â†” Tabelle)",
       "type": "feature",
       "priority": "medium",
       "status": "done",
@@ -307,7 +307,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V3.1",
-      "description": "Textbausteine für Cold-E-Mails, Follow-ups, Angebots-Begleitung. Platzhalter wie {{vorname}}, {{firma}}. Pro Template 3 Sprachversionen (DE/NL/EN). Sprache wird automatisch aus Kontakt-Sprache vorgeschlagen.",
+      "description": "Textbausteine fÃ¼r Cold-E-Mails, Follow-ups, Angebots-Begleitung. Platzhalter wie {{vorname}}, {{firma}}. Pro Template 3 Sprachversionen (DE/NL/EN). Sprache wird automatisch aus Kontakt-Sprache vorgeschlagen.",
       "createdAt": "2026-04-03"
     },
     {
@@ -317,7 +317,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V3.3",
-      "description": "Eine Timeline die Activities + E-Mails + Proposals + Signals + Referrals chronologisch zusammenführt. Pro Kontakt und pro Firma sichtbar.",
+      "description": "Eine Timeline die Activities + E-Mails + Proposals + Signals + Referrals chronologisch zusammenfÃ¼hrt. Pro Kontakt und pro Firma sichtbar.",
       "createdAt": "2026-04-03"
     },
     {
@@ -337,7 +337,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V3.1",
-      "description": "Dedizierte Ansicht: 'Arbeite deine nächsten 5 Aktionen ab'. Zeigt Deal + Kontakt + was zu tun ist. Nach Erledigung springt zur nächsten. Wie Pipedrive Focus View.",
+      "description": "Dedizierte Ansicht: 'Arbeite deine nÃ¤chsten 5 Aktionen ab'. Zeigt Deal + Kontakt + was zu tun ist. Nach Erledigung springt zur nÃ¤chsten. Wie Pipedrive Focus View.",
       "createdAt": "2026-04-03"
     },
     {
@@ -352,12 +352,12 @@
     },
     {
       "id": "BL-141",
-      "title": "Voice-Input für Gesprächsnotizen (Whisper im Activity-Form)",
+      "title": "Voice-Input fÃ¼r GesprÃ¤chsnotizen (Whisper im Activity-Form)",
       "type": "feature",
       "priority": "high",
       "status": "done",
       "version": "V2.1",
-      "description": "Mikrofon-Button im Activity-Form (bei Anruf/Meeting). Whisper-Transkription → Text wird in Summary-Feld eingefügt. Kein voller Notetaker, nur Sprache-zu-Text für schnelles Erfassen. Wie beim Blueprint Voice-Input. Server-seitig via Whisper API oder lokales Modell.",
+      "description": "Mikrofon-Button im Activity-Form (bei Anruf/Meeting). Whisper-Transkription â†’ Text wird in Summary-Feld eingefÃ¼gt. Kein voller Notetaker, nur Sprache-zu-Text fÃ¼r schnelles Erfassen. Wie beim Blueprint Voice-Input. Server-seitig via Whisper API oder lokales Modell.",
       "createdAt": "2026-04-03"
     },
     {
@@ -367,7 +367,7 @@
       "priority": "high",
       "status": "done",
       "version": "V2.1",
-      "description": "Button 'An Intelligence senden' auf: (1) Verlorene Deals → won_lost_reason + won_lost_details als strukturierter Insight, (2) Gesprächsnotizen → Summary + Objections + Opportunities als Feedback, (3) Manuelle Notizen → Freitext-Insight. Sendet strukturiertes JSON an System 4 Inbox (REST-Endpoint oder lokale Datei). Kategorie: Marktfeedback, Produktfeedback, Wettbewerb, Prozess-Insight.",
+      "description": "Button 'An Intelligence senden' auf: (1) Verlorene Deals â†’ won_lost_reason + won_lost_details als strukturierter Insight, (2) GesprÃ¤chsnotizen â†’ Summary + Objections + Opportunities als Feedback, (3) Manuelle Notizen â†’ Freitext-Insight. Sendet strukturiertes JSON an System 4 Inbox (REST-Endpoint oder lokale Datei). Kategorie: Marktfeedback, Produktfeedback, Wettbewerb, Prozess-Insight.",
       "createdAt": "2026-04-03"
     },
     {
@@ -387,7 +387,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V3.3",
-      "description": "Aggregierte Ansicht der won_lost_reasons über Zeit. Welche Verlustgründe häufen sich? Trend-Analyse.",
+      "description": "Aggregierte Ansicht der won_lost_reasons Ã¼ber Zeit. Welche VerlustgrÃ¼nde hÃ¤ufen sich? Trend-Analyse.",
       "createdAt": "2026-04-03"
     },
     {
@@ -397,7 +397,7 @@
       "priority": "low",
       "status": "done",
       "version": "V6.2",
-      "description": "Regel-basierte Automation done 2026-05-05 (FEAT-621 komplett, SLC-621+SLC-622+SLC-623). Foundation+Engine+Builder-UI live: 3 Trigger (deal.stage_changed, deal.created, activity.created), 4 Actions (create_task, send_email_template, create_activity, update_field), Recursion-Guard (DEC-138), Stage-Soft-Disable (DEC-133), Cron-Fallback /api/cron/automation-runner, audit_log-Side-Effect mit triggered_by_user_id (DEC-131). UI: Listing + 4-Step-Wizard (Trigger→Conditions→Actions→Activate) + Trockenlauf-Modul (DEC-132, read-only). RPT-311..314 + RPT-315.",
+      "description": "Regel-basierte Automation done 2026-05-05 (FEAT-621 komplett, SLC-621+SLC-622+SLC-623). Foundation+Engine+Builder-UI live: 3 Trigger (deal.stage_changed, deal.created, activity.created), 4 Actions (create_task, send_email_template, create_activity, update_field), Recursion-Guard (DEC-138), Stage-Soft-Disable (DEC-133), Cron-Fallback /api/cron/automation-runner, audit_log-Side-Effect mit triggered_by_user_id (DEC-131). UI: Listing + 4-Step-Wizard (Triggerâ†’Conditionsâ†’Actionsâ†’Activate) + Trockenlauf-Modul (DEC-132, read-only). RPT-311..314 + RPT-315.",
       "createdAt": "2026-04-03"
     },
     {
@@ -407,7 +407,7 @@
       "priority": "low",
       "status": "done",
       "version": "V5",
-      "description": "Tracking-Pixel und Link-Wrapping für gesendete E-Mails. Zeigt ob und wann eine E-Mail geöffnet/geklickt wurde. [Absorbed into BL-382/FEAT-506]",
+      "description": "Tracking-Pixel und Link-Wrapping fÃ¼r gesendete E-Mails. Zeigt ob und wann eine E-Mail geÃ¶ffnet/geklickt wurde. [Absorbed into BL-382/FEAT-506]",
       "createdAt": "2026-04-03"
     },
     {
@@ -417,7 +417,7 @@
       "priority": "high",
       "status": "done",
       "version": "V5",
-      "description": "Eingehende E-Mails (IMAP) automatisch an Kontakte zuordnen. Stufe 1: E-Mail-Adresse matcht Kontakt → 100% Zuordnung. Stufe 2: Name in E-Mail-Body/Signatur → KI-Wahrscheinlichkeit (z.B. 85%). Stufe 3: Nicht zuordenbar → 'Unbekannt'-Queue zur täglichen manuellen Prüfung. Im E-Mail-Postfach sichtbar: zugeordneter Kontakt + Confidence-Level. Abhängig von BL-203 (IMAP-Integration). [Absorbed into BL-381/FEAT-505]",
+      "description": "Eingehende E-Mails (IMAP) automatisch an Kontakte zuordnen. Stufe 1: E-Mail-Adresse matcht Kontakt â†’ 100% Zuordnung. Stufe 2: Name in E-Mail-Body/Signatur â†’ KI-Wahrscheinlichkeit (z.B. 85%). Stufe 3: Nicht zuordenbar â†’ 'Unbekannt'-Queue zur tÃ¤glichen manuellen PrÃ¼fung. Im E-Mail-Postfach sichtbar: zugeordneter Kontakt + Confidence-Level. AbhÃ¤ngig von BL-203 (IMAP-Integration). [Absorbed into BL-381/FEAT-505]",
       "createdAt": "2026-04-03"
     },
     {
@@ -437,7 +437,7 @@
       "priority": "low",
       "status": "done",
       "version": null,
-      "description": "Duplicate of BL-423 — bereinigt im V6.3-Slice SLC-631 MT-7. Originaler Eintrag BL-423 (V6.3) ist die fuehrende Version.",
+      "description": "Duplicate of BL-423 â€” bereinigt im V6.3-Slice SLC-631 MT-7. Originaler Eintrag BL-423 (V6.3) ist die fuehrende Version.",
       "createdAt": "2026-05-06"
     },
     {
@@ -447,7 +447,7 @@
       "priority": "low",
       "status": "done",
       "version": null,
-      "description": "Duplicate of BL-424 — bereinigt im V6.3-Slice SLC-631 MT-7. Originaler Eintrag BL-424 (V6.3) ist die fuehrende Version.",
+      "description": "Duplicate of BL-424 â€” bereinigt im V6.3-Slice SLC-631 MT-7. Originaler Eintrag BL-424 (V6.3) ist die fuehrende Version.",
       "createdAt": "2026-05-06"
     },
     {
@@ -457,7 +457,7 @@
       "priority": "low",
       "status": "done",
       "version": null,
-      "description": "Duplicate of BL-425 — bereinigt im V6.3-Slice SLC-631 MT-7. Originaler Eintrag BL-425 (V6.3) ist die fuehrende Version.",
+      "description": "Duplicate of BL-425 â€” bereinigt im V6.3-Slice SLC-631 MT-7. Originaler Eintrag BL-425 (V6.3) ist die fuehrende Version.",
       "createdAt": "2026-05-06"
     },
     {
@@ -467,7 +467,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V3.1",
-      "description": "Das bestehende 'source' Freitext-Feld auf Kontakten durch strukturiertes Feld ersetzen: Dropdown (Empfehlung, LinkedIn, Event, Kaltakquise, Inbound, Kampagne) + optionaler Kampagnen-Verweis. Auch auf Firmen-Ebene hinzufügen. Für Auswertung: wie viele Leads pro Quelle, Conversion pro Kanal.",
+      "description": "Das bestehende 'source' Freitext-Feld auf Kontakten durch strukturiertes Feld ersetzen: Dropdown (Empfehlung, LinkedIn, Event, Kaltakquise, Inbound, Kampagne) + optionaler Kampagnen-Verweis. Auch auf Firmen-Ebene hinzufÃ¼gen. FÃ¼r Auswertung: wie viele Leads pro Quelle, Conversion pro Kanal.",
       "createdAt": "2026-04-03"
     },
     {
@@ -507,28 +507,28 @@
       "priority": "medium",
       "status": "done",
       "version": "V5",
-      "description": "FEAT-204: Strukturierte Daten aus BD-System an Intelligence Studio übergeben. [Absorbed into BL-383/FEAT-504]",
+      "description": "FEAT-204: Strukturierte Daten aus BD-System an Intelligence Studio Ã¼bergeben. [Absorbed into BL-383/FEAT-504]",
       "createdAt": "2026-04-01"
     },
     {
       "id": "BL-205",
-      "title": "Jitsi Meet — Self-Hosted Video-Meeting-Plattform",
+      "title": "Jitsi Meet â€” Self-Hosted Video-Meeting-Plattform",
       "type": "feature",
       "priority": "high",
       "status": "done",
       "version": "V4.1",
-      "note": "Infrastruktur-Blocker fuer BL-201 Call Intelligence — SLC-412 deployed 2026-04-16, QA PASS (RPT-120)",
-      "description": "Self-hosted Jitsi Meet auf Hetzner für Browser-basierte Video-Meetings. Kein Download nötig. Integration mit Cal.com für Terminplanung. Jibri für Recording. Meetings direkt aus 'Mein Tag' und Deal-Detail starten. Aufnahmen fließen in Call Intelligence Pipeline (BL-201).",
+      "note": "Infrastruktur-Blocker fuer BL-201 Call Intelligence â€” SLC-412 deployed 2026-04-16, QA PASS (RPT-120)",
+      "description": "Self-hosted Jitsi Meet auf Hetzner fÃ¼r Browser-basierte Video-Meetings. Kein Download nÃ¶tig. Integration mit Cal.com fÃ¼r Terminplanung. Jibri fÃ¼r Recording. Meetings direkt aus 'Mein Tag' und Deal-Detail starten. Aufnahmen flieÃŸen in Call Intelligence Pipeline (BL-201).",
       "createdAt": "2026-04-04"
     },
     {
       "id": "BL-206",
-      "title": "Jigasi — Telefon-Integration für Jitsi (SIP/PSTN Gateway)",
+      "title": "Jigasi â€” Telefon-Integration fÃ¼r Jitsi (SIP/PSTN Gateway)",
       "type": "feature",
       "priority": "high",
       "status": "done",
       "version": "V5.1",
-      "description": "Erfuellt durch V5.1 ueber Asterisk-Ansatz statt Jigasi (DEC-080): Telefonnummern direkt aus dem System anrufen, Gespraeche aufnehmen + transkribieren. Pipeline: Asterisk WAV → Whisper → Bedrock-Summary → Deal-Activity. Identisches Outcome wie ursprueglich gefordert, anderer technischer Weg.",
+      "description": "Erfuellt durch V5.1 ueber Asterisk-Ansatz statt Jigasi (DEC-080): Telefonnummern direkt aus dem System anrufen, Gespraeche aufnehmen + transkribieren. Pipeline: Asterisk WAV â†’ Whisper â†’ Bedrock-Summary â†’ Deal-Activity. Identisches Outcome wie ursprueglich gefordert, anderer technischer Weg.",
       "createdAt": "2026-04-04"
     },
     {
@@ -538,17 +538,17 @@
       "priority": "high",
       "status": "done",
       "version": "V3",
-      "description": "Grundsatzentscheidung: LLM-Aufrufe (Meeting-Summaries, Signal-Extraktion, E-Mail-Zuordnung) über AWS Bedrock API (Claude, Frankfurt eu-central-1, DSGVO-konform, Pay-per-use) oder Ollama auf eigenem Server (fixe Kosten, volle Kontrolle, größerer Server nötig). Aktuell kein LLM im Business System — Entscheidung wird relevant sobald Call Intelligence (BL-201) oder Auto-Signale (BL-202) implementiert werden.",
+      "description": "Grundsatzentscheidung: LLM-Aufrufe (Meeting-Summaries, Signal-Extraktion, E-Mail-Zuordnung) Ã¼ber AWS Bedrock API (Claude, Frankfurt eu-central-1, DSGVO-konform, Pay-per-use) oder Ollama auf eigenem Server (fixe Kosten, volle Kontrolle, grÃ¶ÃŸerer Server nÃ¶tig). Aktuell kein LLM im Business System â€” Entscheidung wird relevant sobald Call Intelligence (BL-201) oder Auto-Signale (BL-202) implementiert werden.",
       "createdAt": "2026-04-04"
     },
     {
       "id": "BL-208",
-      "title": "Cal.com — Self-Hosted Kalender + Terminbuchung",
+      "title": "Cal.com â€” Self-Hosted Kalender + Terminbuchung",
       "type": "feature",
       "priority": "high",
       "status": "done",
       "version": "V4",
-      "description": "Cal.com self-hosted auf Hetzner. Buchungsseiten für Kunden, Google/Outlook Calendar Sync, Standard .ics-Einladungen. Integration in 'Mein Tag' (Termine heute sehen). Meeting-Links automatisch mit Jitsi (BL-205). Ersetzt den Kalender-Platzhalter in Mein Tag.",
+      "description": "Cal.com self-hosted auf Hetzner. Buchungsseiten fÃ¼r Kunden, Google/Outlook Calendar Sync, Standard .ics-Einladungen. Integration in 'Mein Tag' (Termine heute sehen). Meeting-Links automatisch mit Jitsi (BL-205). Ersetzt den Kalender-Platzhalter in Mein Tag.",
       "createdAt": "2026-04-04"
     },
     {
@@ -563,12 +563,12 @@
     },
     {
       "id": "BL-211",
-      "title": "KI/Voice Suchfunktion — Placeholder UI auf allen Seiten",
+      "title": "KI/Voice Suchfunktion â€” Placeholder UI auf allen Seiten",
       "type": "feature",
       "priority": "medium",
       "status": "done",
       "version": "V2.2",
-      "description": "Voice (Mikrofon) + KI (Sparkles) Buttons in FilterBar auf allen Seiten als Placeholder. Funktionalität (LLM-gestützte Datenabfragen, Whisper-Sprachsuche) kommt als V3 Feature. Dashboard-Suchleiste für zukünftige intelligente Reports.",
+      "description": "Voice (Mikrofon) + KI (Sparkles) Buttons in FilterBar auf allen Seiten als Placeholder. FunktionalitÃ¤t (LLM-gestÃ¼tzte Datenabfragen, Whisper-Sprachsuche) kommt als V3 Feature. Dashboard-Suchleiste fÃ¼r zukÃ¼nftige intelligente Reports.",
       "createdAt": "2026-04-08"
     },
     {
@@ -598,7 +598,7 @@
       "priority": "high",
       "status": "done",
       "version": "V2.2",
-      "description": "Beim V2.2 UI-Redesign sind Seiten weggefallen oder nicht migriert worden (E-Mail, Termine, ggf. weitere). Bestandsaufnahme machen: Was war vorher da? Was fehlt jetzt? Gezielt entscheiden: Wiederherstellen, zusammenfassen, oder bewusst entfernen. Ziel: So wenige separate Seiten wie möglich, möglichst viel über 'Mein Tag' + KI-Assistent abwickeln.",
+      "description": "Beim V2.2 UI-Redesign sind Seiten weggefallen oder nicht migriert worden (E-Mail, Termine, ggf. weitere). Bestandsaufnahme machen: Was war vorher da? Was fehlt jetzt? Gezielt entscheiden: Wiederherstellen, zusammenfassen, oder bewusst entfernen. Ziel: So wenige separate Seiten wie mÃ¶glich, mÃ¶glichst viel Ã¼ber 'Mein Tag' + KI-Assistent abwickeln.",
       "createdAt": "2026-04-08"
     },
     {
@@ -608,7 +608,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V2.2",
-      "description": "Vision: Mit 2-3 Seiten alles machen können dank KI-Unterstützung. Prüfen ob separate Seiten (E-Mail, Aufgaben, Termine, etc.) in eine Übersichtsseite mit aufklappbaren Bereichen zusammengefasst werden können. Alternativ: Alles über Mein Tag + KI-Assistent zugänglich machen. Für Nicht-KI-Nutzer: Eine Übersichtsseite mit Accordion-Bereichen als Fallback.",
+      "description": "Vision: Mit 2-3 Seiten alles machen kÃ¶nnen dank KI-UnterstÃ¼tzung. PrÃ¼fen ob separate Seiten (E-Mail, Aufgaben, Termine, etc.) in eine Ãœbersichtsseite mit aufklappbaren Bereichen zusammengefasst werden kÃ¶nnen. Alternativ: Alles Ã¼ber Mein Tag + KI-Assistent zugÃ¤nglich machen. FÃ¼r Nicht-KI-Nutzer: Eine Ãœbersichtsseite mit Accordion-Bereichen als Fallback.",
       "createdAt": "2026-04-08"
     },
     {
@@ -618,7 +618,7 @@
       "priority": "medium",
       "status": "deferred",
       "version": null,
-      "description": "Mein Tag als Progressive Web App (PWA) für Smartphone/Tablet. Abgespeckte mobile Version: Aufgaben, KI-Assistent mit Voice, Kalender. Kein kompletter Nachbau der Desktop-Version. PWA-Manifest + Service Worker + mobile-optimiertes Layout. Voice-Input funktioniert nativ über Browser. Whisper API ist bereits server-seitig verfügbar. Vorteil: Kein App Store nötig, direkt aus Browser installierbar, funktioniert auf iOS + Android.",
+      "description": "Mein Tag als Progressive Web App (PWA) fÃ¼r Smartphone/Tablet. Abgespeckte mobile Version: Aufgaben, KI-Assistent mit Voice, Kalender. Kein kompletter Nachbau der Desktop-Version. PWA-Manifest + Service Worker + mobile-optimiertes Layout. Voice-Input funktioniert nativ Ã¼ber Browser. Whisper API ist bereits server-seitig verfÃ¼gbar. Vorteil: Kein App Store nÃ¶tig, direkt aus Browser installierbar, funktioniert auf iOS + Android.",
       "createdAt": "2026-04-08"
     },
     {
@@ -628,7 +628,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V3.2",
-      "description": "Interaktive Karte auf Kontakte-, Firmen- und Multiplikatoren-Seiten. Tech: react-leaflet + OpenStreetMap (kostenlos, kein API-Key). Deutschland-Ausschnitt, einzoombar, verschiebbar. Farbige Pins pro Kontakttyp (Kontakte blau, Firmen grün, Multiplikatoren lila). Clustering bei vielen Pins ('23 Kontakte in München'). Suchfeld oben. Geocoding über PLZ-Koordinaten-Tabelle (Open Data DE/NL/AT, einmalig importiert — kein Live-API-Call). Heatmap-Effekt optional. Dependency: npm install react-leaflet leaflet @types/leaflet. PLZ-Tabelle als JSON oder DB-Seed.",
+      "description": "Interaktive Karte auf Kontakte-, Firmen- und Multiplikatoren-Seiten. Tech: react-leaflet + OpenStreetMap (kostenlos, kein API-Key). Deutschland-Ausschnitt, einzoombar, verschiebbar. Farbige Pins pro Kontakttyp (Kontakte blau, Firmen grÃ¼n, Multiplikatoren lila). Clustering bei vielen Pins ('23 Kontakte in MÃ¼nchen'). Suchfeld oben. Geocoding Ã¼ber PLZ-Koordinaten-Tabelle (Open Data DE/NL/AT, einmalig importiert â€” kein Live-API-Call). Heatmap-Effekt optional. Dependency: npm install react-leaflet leaflet @types/leaflet. PLZ-Tabelle als JSON oder DB-Seed.",
       "createdAt": "2026-04-07"
     },
     {
@@ -798,7 +798,7 @@
       "priority": "high",
       "status": "done",
       "version": "V3.1",
-      "description": "Zeitauswahl bei Meetings/Kalender-Events verbessern: Vorschlaege fuer gaengige Zeiten (15, 30, 45, 60 Min. Intervalle), direkt klickbar. Fuer Sonderzeiten: editierbares Feld per Icon-Klick. Kein Browser-natives Scroll-Raedchen — das ist auf Desktop unpraktisch und bietet keine Schnellauswahl.",
+      "description": "Zeitauswahl bei Meetings/Kalender-Events verbessern: Vorschlaege fuer gaengige Zeiten (15, 30, 45, 60 Min. Intervalle), direkt klickbar. Fuer Sonderzeiten: editierbares Feld per Icon-Klick. Kein Browser-natives Scroll-Raedchen â€” das ist auf Desktop unpraktisch und bietet keine Schnellauswahl.",
       "createdAt": "2026-04-10"
     },
     {
@@ -808,7 +808,7 @@
       "priority": "high",
       "status": "done",
       "version": "V3.1",
-      "description": "Meetings brauchen Typ-Auswahl: Online (Default, Location automatisch 'Home Office') oder Physisch (Adresse muss eingegeben werden). 99% der Meetings sind online — das muss der Standard sein. Freitext-Location reicht nicht.",
+      "description": "Meetings brauchen Typ-Auswahl: Online (Default, Location automatisch 'Home Office') oder Physisch (Adresse muss eingegeben werden). 99% der Meetings sind online â€” das muss der Standard sein. Freitext-Location reicht nicht.",
       "createdAt": "2026-04-10"
     },
     {
@@ -818,7 +818,7 @@
       "priority": "high",
       "status": "done",
       "version": "V3.1",
-      "description": "Mein Tag Schnellaktionen: 'Neuer Termin' fehlt komplett. Ausserdem muessen alle Schnellaktionen geprueft werden — sie sollen direkt die Erstellungs-Maske oeffnen (Sheet/Modal), nicht auf Listenseiten navigieren. Aktuell linken z.B. 'Neue E-Mail' und andere einfach auf die jeweilige Seite statt ein Formular zu oeffnen.",
+      "description": "Mein Tag Schnellaktionen: 'Neuer Termin' fehlt komplett. Ausserdem muessen alle Schnellaktionen geprueft werden â€” sie sollen direkt die Erstellungs-Maske oeffnen (Sheet/Modal), nicht auf Listenseiten navigieren. Aktuell linken z.B. 'Neue E-Mail' und andere einfach auf die jeweilige Seite statt ein Formular zu oeffnen.",
       "createdAt": "2026-04-10"
     },
     {
@@ -828,7 +828,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V3.1",
-      "description": "Klick auf 'Neue E-Mail' in Schnellaktionen soll direkt die E-Mail-Erstellungs-Maske (EmailSheet) oeffnen — nicht auf /emails navigieren. Gleiches Prinzip fuer alle anderen Schnellaktionen: direkt erstellen, nicht zur Liste navigieren.",
+      "description": "Klick auf 'Neue E-Mail' in Schnellaktionen soll direkt die E-Mail-Erstellungs-Maske (EmailSheet) oeffnen â€” nicht auf /emails navigieren. Gleiches Prinzip fuer alle anderen Schnellaktionen: direkt erstellen, nicht zur Liste navigieren.",
       "createdAt": "2026-04-10"
     },
     {
@@ -858,7 +858,7 @@
       "priority": "high",
       "status": "done",
       "version": "V3.1",
-      "description": "Kernfunktion: Wenn ein Formular (E-Mail, Meeting, Task, Aktivitaet, Deal-Edit) aus einem Kontext geoeffnet wird (z.B. Deal-Workspace), muessen alle verfuegbaren Felder automatisch vorbefuellt sein — Kontakt, Firma, Deal, Betreff/naechste Aktion, etc. Kein manuelles Klicken/Tippen fuer Daten die das System schon kennt. Zusaetzlich: Voice-Input + KI-Verbesserung in allen Textfeldern (Agenda, Beschreibung, Nachricht). Override per Sprache moeglich ('Pass auf, aender den Kontakt auf XY'). Gilt fuer: E-Mail (BL-322), Meeting, Task, Aktivitaet, Deal-Bearbeitung. Das ist DAS Differenzierungsmerkmal gegenueber klassischem CRM.",
+      "description": "Kernfunktion: Wenn ein Formular (E-Mail, Meeting, Task, Aktivitaet, Deal-Edit) aus einem Kontext geoeffnet wird (z.B. Deal-Workspace), muessen alle verfuegbaren Felder automatisch vorbefuellt sein â€” Kontakt, Firma, Deal, Betreff/naechste Aktion, etc. Kein manuelles Klicken/Tippen fuer Daten die das System schon kennt. Zusaetzlich: Voice-Input + KI-Verbesserung in allen Textfeldern (Agenda, Beschreibung, Nachricht). Override per Sprache moeglich ('Pass auf, aender den Kontakt auf XY'). Gilt fuer: E-Mail (BL-322), Meeting, Task, Aktivitaet, Deal-Bearbeitung. Das ist DAS Differenzierungsmerkmal gegenueber klassischem CRM.",
       "createdAt": "2026-04-10"
     },
     {
@@ -879,7 +879,7 @@
       "status": "done",
       "version": "V4",
       "note": "Abhaengig von BL-203 IMAP",
-      "description": "KI-gesteuerte Wiedervorlagen mit FREIGABE-PRINZIP — KI handelt NIE autonom am Kunden. Ablauf: (1) KI prueft taeglich: Hat Kunde geantwortet? Ist Mitarbeiter-Wiedervorlage erledigt? (2) Ergebnis erscheint als eigene Liste in Mein Tag / KI-Tageseinschaetzung: 'Heute stehen X Nachfass-Aktionen an' mit Kunde, Grund, vorgeschlagene Aktion. (3) Mitarbeiter geht Liste durch (5 Min morgens): Pro Eintrag: Freigeben / Verschieben (z.B. +2 Tage, +5 Tage) / Abbrechen. (4) Erst NACH Freigabe fuehrt KI die Aktion aus (E-Mail senden, Erinnerung). BIDIREKTIONAL: Wiedervorlagen koennen in beide Richtungen verschoben werden — (A) Eigene Wiedervorlage → KI delegieren ('das kann die KI automatisch nachfassen') und (B) KI-Wiedervorlage → selbst uebernehmen ('den rufe ich lieber persoenlich an'). Beide Listen leben nebeneinander in Mein Tag. Zusaetzlich: Meeting-Erinnerungen (am Morgen oder 30 Min vorher) koennen automatisch laufen — die betreffen eigene Termine, nicht Kunden-Nachfass. Ziel: Mitarbeiter behaelt volle Kontrolle, KI entlastet aber maximal. Keine genervten Kunden durch stumpfe Automatik.",
+      "description": "KI-gesteuerte Wiedervorlagen mit FREIGABE-PRINZIP â€” KI handelt NIE autonom am Kunden. Ablauf: (1) KI prueft taeglich: Hat Kunde geantwortet? Ist Mitarbeiter-Wiedervorlage erledigt? (2) Ergebnis erscheint als eigene Liste in Mein Tag / KI-Tageseinschaetzung: 'Heute stehen X Nachfass-Aktionen an' mit Kunde, Grund, vorgeschlagene Aktion. (3) Mitarbeiter geht Liste durch (5 Min morgens): Pro Eintrag: Freigeben / Verschieben (z.B. +2 Tage, +5 Tage) / Abbrechen. (4) Erst NACH Freigabe fuehrt KI die Aktion aus (E-Mail senden, Erinnerung). BIDIREKTIONAL: Wiedervorlagen koennen in beide Richtungen verschoben werden â€” (A) Eigene Wiedervorlage â†’ KI delegieren ('das kann die KI automatisch nachfassen') und (B) KI-Wiedervorlage â†’ selbst uebernehmen ('den rufe ich lieber persoenlich an'). Beide Listen leben nebeneinander in Mein Tag. Zusaetzlich: Meeting-Erinnerungen (am Morgen oder 30 Min vorher) koennen automatisch laufen â€” die betreffen eigene Termine, nicht Kunden-Nachfass. Ziel: Mitarbeiter behaelt volle Kontrolle, KI entlastet aber maximal. Keine genervten Kunden durch stumpfe Automatik.",
       "createdAt": "2026-04-10"
     },
     {
@@ -889,7 +889,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V4.1",
-      "description": "Automatische Meeting-Erinnerungen an externe Teilnehmer: (1) E-Mail X Stunden vor Meeting (konfigurierbar, z.B. 2h oder 4h) mit Meeting-Details, Agenda, Einwahl-Link. (2) Kalender-Integration: Bei Meeting-Zusage automatisch .ics / CalDAV-Eintrag senden, damit es im Kalender des Teilnehmers landet (Google Cal, Outlook, Apple Calendar). (3) Spaeter: Cal.com-Sync fuer bidirektionale Buchung (bereits als FEAT-406 geplant). Meeting-Erinnerungen duerfen automatisch laufen — das sind eigene Termine, kein Kunden-Nachfass.",
+      "description": "Automatische Meeting-Erinnerungen an externe Teilnehmer: (1) E-Mail X Stunden vor Meeting (konfigurierbar, z.B. 2h oder 4h) mit Meeting-Details, Agenda, Einwahl-Link. (2) Kalender-Integration: Bei Meeting-Zusage automatisch .ics / CalDAV-Eintrag senden, damit es im Kalender des Teilnehmers landet (Google Cal, Outlook, Apple Calendar). (3) Spaeter: Cal.com-Sync fuer bidirektionale Buchung (bereits als FEAT-406 geplant). Meeting-Erinnerungen duerfen automatisch laufen â€” das sind eigene Termine, kein Kunden-Nachfass.",
       "createdAt": "2026-04-10"
     },
     {
@@ -899,7 +899,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V4",
-      "description": "KI analysiert eingehende E-Mails auf Abwesenheitshinweise und Kontext: (1) Auto-Reply 'Bin bis 20.04. nicht erreichbar' → Wiedervorlage automatisch auf 22.04. setzen (+1-2 Puffer nach Rueckkehr). (2) 'Melde mich naechste Woche' → Wiedervorlage entsprechend schieben. (3) Ergebnis erscheint in Tageseinschaetzung: 'Bei Kunde X kam gestern ein Auto-Reply — erst ab 22.04. wieder erreichbar'. Vertriebsintelligenz: Nicht am Rueckkehrtag nerven, sondern 1-2 Tage Puffer geben. Setzt IMAP-Integration (FEAT-405) voraus fuer E-Mail-Analyse.",
+      "description": "KI analysiert eingehende E-Mails auf Abwesenheitshinweise und Kontext: (1) Auto-Reply 'Bin bis 20.04. nicht erreichbar' â†’ Wiedervorlage automatisch auf 22.04. setzen (+1-2 Puffer nach Rueckkehr). (2) 'Melde mich naechste Woche' â†’ Wiedervorlage entsprechend schieben. (3) Ergebnis erscheint in Tageseinschaetzung: 'Bei Kunde X kam gestern ein Auto-Reply â€” erst ab 22.04. wieder erreichbar'. Vertriebsintelligenz: Nicht am Rueckkehrtag nerven, sondern 1-2 Tage Puffer geben. Setzt IMAP-Integration (FEAT-405) voraus fuer E-Mail-Analyse.",
       "createdAt": "2026-04-10"
     },
     {
@@ -909,7 +909,7 @@
       "priority": "high",
       "status": "done",
       "version": "V3.1",
-      "description": "KI-Tageseinschaetzung in Mein Tag erweitern um: (1) Zusammenfassung vom Vortag — was ist passiert, was habe ich noch nicht gesehen? Auto-Replies, eingehende E-Mails, Statusaenderungen bei Deals. (2) Ungesehene Ereignisse markieren: 'Gestern kam ein Auto-Reply von Kunde X — erst ab Donnerstag erreichbar'. (3) Quick-Acknowledge: Pro Eintrag einfach 'OK, gesehen' oder 'Muss ich mir anschauen'. Ziel: Morgens 5 Min einlesen, alles im Blick, nichts uebersehen. Nicht nur 'Was steht heute an?' sondern auch 'Was habe ich verpasst?'.",
+      "description": "KI-Tageseinschaetzung in Mein Tag erweitern um: (1) Zusammenfassung vom Vortag â€” was ist passiert, was habe ich noch nicht gesehen? Auto-Replies, eingehende E-Mails, Statusaenderungen bei Deals. (2) Ungesehene Ereignisse markieren: 'Gestern kam ein Auto-Reply von Kunde X â€” erst ab Donnerstag erreichbar'. (3) Quick-Acknowledge: Pro Eintrag einfach 'OK, gesehen' oder 'Muss ich mir anschauen'. Ziel: Morgens 5 Min einlesen, alles im Blick, nichts uebersehen. Nicht nur 'Was steht heute an?' sondern auch 'Was habe ich verpasst?'.",
       "createdAt": "2026-04-10"
     },
     {
@@ -919,7 +919,7 @@
       "priority": "high",
       "status": "done",
       "version": "V4",
-      "description": "KI als persoenlicher Gatekeeper im Hintergrund: (1) Eingehende E-Mails automatisch analysieren und dem richtigen Kontakt/Deal zuordnen. (2) Priorisierung: Kundenrueckfragen sofort in Aufgabenliste schieben ('Kunde XY hat Rueckfrage zu Angebot'). Weniger dringendes in Tageseinschaetzung am naechsten Morgen. (3) Handlungsvorschlaege: 'Kunde bittet um Meeting → soll ich Termin vorschlagen?', 'Rueckfrage zu Preis → hier ist der Kontext aus dem Angebot'. (4) Ziel: Kein manuelles E-Mail-Postfach durcharbeiten mehr. KI filtert, priorisiert, ordnet zu, schlaegt vor. Mitarbeiter reagiert nur noch auf aufbereitete, priorisierte Items. Setzt IMAP-Integration (FEAT-405) voraus. Recherche: State-of-the-Art bei AI Personal Assistants (OpenClaw, Anthropic MCP, etc.) fuer Best Practices.",
+      "description": "KI als persoenlicher Gatekeeper im Hintergrund: (1) Eingehende E-Mails automatisch analysieren und dem richtigen Kontakt/Deal zuordnen. (2) Priorisierung: Kundenrueckfragen sofort in Aufgabenliste schieben ('Kunde XY hat Rueckfrage zu Angebot'). Weniger dringendes in Tageseinschaetzung am naechsten Morgen. (3) Handlungsvorschlaege: 'Kunde bittet um Meeting â†’ soll ich Termin vorschlagen?', 'Rueckfrage zu Preis â†’ hier ist der Kontext aus dem Angebot'. (4) Ziel: Kein manuelles E-Mail-Postfach durcharbeiten mehr. KI filtert, priorisiert, ordnet zu, schlaegt vor. Mitarbeiter reagiert nur noch auf aufbereitete, priorisierte Items. Setzt IMAP-Integration (FEAT-405) voraus. Recherche: State-of-the-Art bei AI Personal Assistants (OpenClaw, Anthropic MCP, etc.) fuer Best Practices.",
       "createdAt": "2026-04-10"
     },
     {
@@ -929,7 +929,7 @@
       "priority": "high",
       "status": "done",
       "version": "V3.1",
-      "description": "Alle Bedrock LLM-Aufrufe von auto-load auf expliziten Klick umstellen. Betrifft: (1) Deal-Workspace KI-Summary — Button 'KI-Zusammenfassung generieren' statt auto-load bei Seitenaufruf. (2) Mein Tag KI-Tageseinschaetzung — Klick zum Aktivieren. (3) Alle weiteren Stellen wo Bedrock automatisch aufgerufen wird. Grund: Pay-per-Use-Kosten bei Bedrock laufen hoch wenn bei jedem Seitenaufruf LLM-Calls feuern, besonders in Test-/Entwicklungsphase. Spaeter optional: Auto-Load als User-Setting wenn Kosten kalkulierbar.",
+      "description": "Alle Bedrock LLM-Aufrufe von auto-load auf expliziten Klick umstellen. Betrifft: (1) Deal-Workspace KI-Summary â€” Button 'KI-Zusammenfassung generieren' statt auto-load bei Seitenaufruf. (2) Mein Tag KI-Tageseinschaetzung â€” Klick zum Aktivieren. (3) Alle weiteren Stellen wo Bedrock automatisch aufgerufen wird. Grund: Pay-per-Use-Kosten bei Bedrock laufen hoch wenn bei jedem Seitenaufruf LLM-Calls feuern, besonders in Test-/Entwicklungsphase. Spaeter optional: Auto-Load als User-Setting wenn Kosten kalkulierbar.",
       "createdAt": "2026-04-10"
     },
     {
@@ -939,7 +939,7 @@
       "priority": "high",
       "status": "done",
       "version": "V3.2",
-      "description": "Quick Action Buttons auf Mein Tag �ffnen teilweise falsche Ziele: Deals-Button geht zur Pipeline statt New Deal Modal, Anruf �ffnet Task statt Anruf-Fenster (VoIP mit Mikrofon/Speaker), Neuer Kontakt/Firma/Multiplikator navigiert zu Listenseiten statt Modal zu �ffnen. Alle Buttons m�ssen Sheet/Modal �ffnen f�r direkte Erstellung.",
+      "description": "Quick Action Buttons auf Mein Tag ï¿½ffnen teilweise falsche Ziele: Deals-Button geht zur Pipeline statt New Deal Modal, Anruf ï¿½ffnet Task statt Anruf-Fenster (VoIP mit Mikrofon/Speaker), Neuer Kontakt/Firma/Multiplikator navigiert zu Listenseiten statt Modal zu ï¿½ffnen. Alle Buttons mï¿½ssen Sheet/Modal ï¿½ffnen fï¿½r direkte Erstellung.",
       "createdAt": "2026-04-11"
     },
     {
@@ -949,7 +949,7 @@
       "priority": "high",
       "status": "done",
       "version": "V3.2",
-      "description": "Pipeline-Seite hat mehrere Probleme: KPI-Karten zu breit (Grid passt nicht), Scroll-Mechanismus nicht sichtbar, Stage-Karten und Deal-Cards sehen nicht aus wie im Figma-Design. Zus�tzlich: Pipeline-Selector einbauen (Dropdown/Tabs f�r Multiplikatoren/Chancen/Leads), oberer Bereich (KPIs + Filter) fix, Pipeline-Board darunter als scrollbarer Bereich der sich je nach Pipeline-Auswahl neu l�dt.",
+      "description": "Pipeline-Seite hat mehrere Probleme: KPI-Karten zu breit (Grid passt nicht), Scroll-Mechanismus nicht sichtbar, Stage-Karten und Deal-Cards sehen nicht aus wie im Figma-Design. Zusï¿½tzlich: Pipeline-Selector einbauen (Dropdown/Tabs fï¿½r Multiplikatoren/Chancen/Leads), oberer Bereich (KPIs + Filter) fix, Pipeline-Board darunter als scrollbarer Bereich der sich je nach Pipeline-Auswahl neu lï¿½dt.",
       "createdAt": "2026-04-11"
     },
     {
@@ -959,7 +959,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V3.2",
-      "description": "Deutschlandkarte mit PLZ-Suche f�r Kontakte, Firmen und Multiplikatoren. User gibt PLZ ein, Karte zoomt auf den Bereich und zeigt alle Eintr�ge im Umkreis. Links daneben werden die gefundenen Eintr�ge als Liste angezeigt. Heatmap-Darstellung zeigt Aktivit�tsdichte nach Region. Erg�nzt die bestehende Name/Text-Suche um geografische Suche.",
+      "description": "Deutschlandkarte mit PLZ-Suche fï¿½r Kontakte, Firmen und Multiplikatoren. User gibt PLZ ein, Karte zoomt auf den Bereich und zeigt alle Eintrï¿½ge im Umkreis. Links daneben werden die gefundenen Eintrï¿½ge als Liste angezeigt. Heatmap-Darstellung zeigt Aktivitï¿½tsdichte nach Region. Ergï¿½nzt die bestehende Name/Text-Suche um geografische Suche.",
       "createdAt": "2026-04-11"
     },
     {
@@ -969,7 +969,7 @@
       "priority": "high",
       "status": "done",
       "version": "V3.2",
-      "description": "Pipeline Stage-Headers und Deal-Cards sehen nicht aus wie im Figma-Design (Version 104). Stages brauchen farbige Icons, runde Badges mit Deal-Count + Wert. Deal-Cards brauchen Firmenname, Kontaktperson, Priorit�t-Badge, Deal-Wert prominent, Wahrscheinlichkeit mit Progress-Bar, Close-Date, n�chste Aktion. Aktuelles UI wirkt im Vergleich zum Design-Entwurf billig und unfertig.",
+      "description": "Pipeline Stage-Headers und Deal-Cards sehen nicht aus wie im Figma-Design (Version 104). Stages brauchen farbige Icons, runde Badges mit Deal-Count + Wert. Deal-Cards brauchen Firmenname, Kontaktperson, Prioritï¿½t-Badge, Deal-Wert prominent, Wahrscheinlichkeit mit Progress-Bar, Close-Date, nï¿½chste Aktion. Aktuelles UI wirkt im Vergleich zum Design-Entwurf billig und unfertig.",
       "createdAt": "2026-04-11"
     },
     {
@@ -979,17 +979,17 @@
       "priority": "high",
       "status": "done",
       "version": "V3.2",
-      "description": "Logout-Button fehlt komplett. Muss in der Sidebar unten (neben Business Dev CRM Label) und in den Einstellungen verf�gbar sein. Login-Flow muss nach Logout korrekt funktionieren.",
+      "description": "Logout-Button fehlt komplett. Muss in der Sidebar unten (neben Business Dev CRM Label) und in den Einstellungen verfï¿½gbar sein. Login-Flow muss nach Logout korrekt funktionieren.",
       "createdAt": "2026-04-11"
     },
     {
       "id": "BL-336",
-      "title": "Pipeline-Verwaltung in Einstellungen: Erstellen, Umbenennen, L�schen",
+      "title": "Pipeline-Verwaltung in Einstellungen: Erstellen, Umbenennen, Lï¿½schen",
       "type": "feature",
       "priority": "medium",
       "status": "done",
       "version": "V3.2",
-      "description": "In den Einstellungen soll man Pipelines erstellen, umbenennen und l�schen k�nnen. Beim Erstellen soll ein Standard-Template mit Stages vorgeschlagen werden, das man anpassen kann. �nderungen (Name, L�schen) m�ssen sich in den Pipeline-Selector-Tabs widerspiegeln. Stages pro Pipeline sollen ebenfalls verwaltet werden k�nnen.",
+      "description": "In den Einstellungen soll man Pipelines erstellen, umbenennen und lï¿½schen kï¿½nnen. Beim Erstellen soll ein Standard-Template mit Stages vorgeschlagen werden, das man anpassen kann. ï¿½nderungen (Name, Lï¿½schen) mï¿½ssen sich in den Pipeline-Selector-Tabs widerspiegeln. Stages pro Pipeline sollen ebenfalls verwaltet werden kï¿½nnen.",
       "createdAt": "2026-04-11"
     },
     {
@@ -999,7 +999,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V3.2",
-      "description": "Intelligente Suche mit Live-Vorschl�gen: Beim Tippen werden passende Eintr�ge aus der Datenbank als Dropdown angezeigt (Deals, Kontakte, Firmen, etc.). Nicht nur Freitext-Suche, sondern Autocomplete mit Ergebnis-Preview. Gilt f�r Pipeline-Suche, Kontakte, Firmen, Multiplikatoren und alle anderen Suchfelder. Debounced API-Call nach 2+ Zeichen.",
+      "description": "Intelligente Suche mit Live-Vorschlï¿½gen: Beim Tippen werden passende Eintrï¿½ge aus der Datenbank als Dropdown angezeigt (Deals, Kontakte, Firmen, etc.). Nicht nur Freitext-Suche, sondern Autocomplete mit Ergebnis-Preview. Gilt fï¿½r Pipeline-Suche, Kontakte, Firmen, Multiplikatoren und alle anderen Suchfelder. Debounced API-Call nach 2+ Zeichen.",
       "createdAt": "2026-04-11"
     },
     {
@@ -1009,7 +1009,7 @@
       "priority": "high",
       "status": "done",
       "version": "V3.3",
-      "description": "Auf der Mein-Tag-Seite fehlt ein zentrales KI-Eingabefeld mit Mikrofon-Button. Platzierung: oberhalb oder neben dem KI-Analyse-Bereich. Funktion: (1) Texteingabe fuer KI-Abfragen ('Welche Deals sind diese Woche faellig?'). (2) Mikrofon-Button fuer Voice-Input via Whisper API (bereits server-seitig verfuegbar). (3) KI-Button zum Absenden/Verarbeiten. Kein reines Suchfeld — soll Anweisungen und Fragen verarbeiten koennen. Ist der zentrale Einstiegspunkt fuer den KI-Assistenten auf Mein Tag.",
+      "description": "Auf der Mein-Tag-Seite fehlt ein zentrales KI-Eingabefeld mit Mikrofon-Button. Platzierung: oberhalb oder neben dem KI-Analyse-Bereich. Funktion: (1) Texteingabe fuer KI-Abfragen ('Welche Deals sind diese Woche faellig?'). (2) Mikrofon-Button fuer Voice-Input via Whisper API (bereits server-seitig verfuegbar). (3) KI-Button zum Absenden/Verarbeiten. Kein reines Suchfeld â€” soll Anweisungen und Fragen verarbeiten koennen. Ist der zentrale Einstiegspunkt fuer den KI-Assistenten auf Mein Tag.",
       "createdAt": "2026-04-11"
     },
     {
@@ -1019,7 +1019,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V4",
-      "description": "Zwei Luecken: (1) Es gibt keine Gesamtkalender-Ansicht — aktuell nur Kalender-Panel in Mein Tag mit Tagesansicht. Gebraucht wird eine vollstaendige Kalenderseite mit Wochen-/Monatsansicht, aehnlich Google Calendar. Zeigt alle calendar_events, Meetings, Aufgaben-Deadlines. (2) Kalender fehlt in der Navigation/Verwaltung — keine eigene Route, kein Menue-Eintrag. Spaeter: Sync mit externen Kalendern (Google Cal, Outlook) via Cal.com (BL-205) oder CalDAV.",
+      "description": "Zwei Luecken: (1) Es gibt keine Gesamtkalender-Ansicht â€” aktuell nur Kalender-Panel in Mein Tag mit Tagesansicht. Gebraucht wird eine vollstaendige Kalenderseite mit Wochen-/Monatsansicht, aehnlich Google Calendar. Zeigt alle calendar_events, Meetings, Aufgaben-Deadlines. (2) Kalender fehlt in der Navigation/Verwaltung â€” keine eigene Route, kein Menue-Eintrag. Spaeter: Sync mit externen Kalendern (Google Cal, Outlook) via Cal.com (BL-205) oder CalDAV.",
       "createdAt": "2026-04-11"
     },
     {
@@ -1029,7 +1029,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V3.3",
-      "description": "Intelligente Adress-Autovervollstaendigung: (1) PLZ-Feld: Bei Eingabe von '4' werden alle PLZ mit 4xxx vorgeschlagen, bei '41' nur 41xxx usw. Auswahl fuellt automatisch Ort-Feld. (2) Ort-Feld: Stadtname-Suche mit Vorschlaegen, Auswahl fuellt PLZ. (3) Strasse: Spaetere Phase — benoetigt externe Daten (z.B. OpenStreetMap Nominatim API). Gilt fuer: 'Neue Firma' Formular, PLZ-Kartensuche, ueberall wo Adressen eingegeben werden. PLZ+Stadt-Daten sind bereits lokal vorhanden (8.293 Eintraege mit Stadtnamen). Strassen-Autocomplete ist ein separater Schritt mit API-Abhaengigkeit.",
+      "description": "Intelligente Adress-Autovervollstaendigung: (1) PLZ-Feld: Bei Eingabe von '4' werden alle PLZ mit 4xxx vorgeschlagen, bei '41' nur 41xxx usw. Auswahl fuellt automatisch Ort-Feld. (2) Ort-Feld: Stadtname-Suche mit Vorschlaegen, Auswahl fuellt PLZ. (3) Strasse: Spaetere Phase â€” benoetigt externe Daten (z.B. OpenStreetMap Nominatim API). Gilt fuer: 'Neue Firma' Formular, PLZ-Kartensuche, ueberall wo Adressen eingegeben werden. PLZ+Stadt-Daten sind bereits lokal vorhanden (8.293 Eintraege mit Stadtnamen). Strassen-Autocomplete ist ein separater Schritt mit API-Abhaengigkeit.",
       "createdAt": "2026-04-11"
     },
     {
@@ -1159,7 +1159,7 @@
       "priority": "high",
       "status": "done",
       "version": "V4.2",
-      "description": "FEAT-401a: Automatisches Embedding bei neuen Daten — nach Whisper-Pipeline (Meeting-Transkript), nach IMAP-Sync (E-Mail), bei Activity-Erstellung, bei Dokument-Upload. Asynchron, idempotent, mit Status-Tracking.",
+      "description": "FEAT-401a: Automatisches Embedding bei neuen Daten â€” nach Whisper-Pipeline (Meeting-Transkript), nach IMAP-Sync (E-Mail), bei Activity-Erstellung, bei Dokument-Upload. Asynchron, idempotent, mit Status-Tracking.",
       "createdAt": "2026-04-18"
     },
     {
@@ -1179,7 +1179,7 @@
       "priority": "high",
       "status": "done",
       "version": "V4.2",
-      "description": "FEAT-401b: Query embedden → pgvector Similarity Search → Top-20 Chunks → Context Assembly → Bedrock Claude Sonnet → strukturierte Antwort mit Quellenangaben. Scope-Logik (deal/contact/company/all). Confidence-Level.",
+      "description": "FEAT-401b: Query embedden â†’ pgvector Similarity Search â†’ Top-20 Chunks â†’ Context Assembly â†’ Bedrock Claude Sonnet â†’ strukturierte Antwort mit Quellenangaben. Scope-Logik (deal/contact/company/all). Confidence-Level.",
       "createdAt": "2026-04-18"
     },
     {
@@ -1234,17 +1234,17 @@
     },
     {
       "id": "BL-361",
-      "title": "Meeting-Signal-Extraktion (Summary → Property-Vorschlaege)",
+      "title": "Meeting-Signal-Extraktion (Summary â†’ Property-Vorschlaege)",
       "type": "feature",
       "priority": "high",
       "status": "done",
       "version": "V4.3",
-      "description": "FEAT-412a: Nach Meeting-Summary (Cron) extrahiert ein LLM-Call Signale: stage_suggestion, value_update, tag_addition, priority_change. Jedes Signal → ai_action_queue. RAG-Kontext fuer bessere Qualitaet. Confidence-Score.",
+      "description": "FEAT-412a: Nach Meeting-Summary (Cron) extrahiert ein LLM-Call Signale: stage_suggestion, value_update, tag_addition, priority_change. Jedes Signal â†’ ai_action_queue. RAG-Kontext fuer bessere Qualitaet. Confidence-Score.",
       "createdAt": "2026-04-18"
     },
     {
       "id": "BL-362",
-      "title": "E-Mail-Signal-Extraktion (Classify → Property-Vorschlaege)",
+      "title": "E-Mail-Signal-Extraktion (Classify â†’ Property-Vorschlaege)",
       "type": "feature",
       "priority": "medium",
       "status": "done",
@@ -1329,7 +1329,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V6",
-      "description": "FEAT-603b: Bedrock analysiert Ziel-Delta + Pipeline-Status und gibt konkrete Empfehlung. On-click (DEC-028). Beispiel: 'Du brauchst noch 3 Abschluesse bei 25% Quote → 12 aktive Deals noetig'.",
+      "description": "FEAT-603b: Bedrock analysiert Ziel-Delta + Pipeline-Status und gibt konkrete Empfehlung. On-click (DEC-028). Beispiel: 'Du brauchst noch 3 Abschluesse bei 25% Quote â†’ 12 aktive Deals noetig'.",
       "createdAt": "2026-04-19"
     },
     {
@@ -1339,7 +1339,7 @@
       "priority": "high",
       "status": "done",
       "version": "V6",
-      "description": "FEAT-604: Taeglicher Cron speichert 8+ KPI-Typen (Umsatz, Deal-Count, Quote, Pipeline-Wert gewichtet/ungewichtet, Ø Deal-Wert, Aktivitaeten, Pro-Produkt). Idempotent. Woechentliche/monatliche Aggregation.",
+      "description": "FEAT-604: Taeglicher Cron speichert 8+ KPI-Typen (Umsatz, Deal-Count, Quote, Pipeline-Wert gewichtet/ungewichtet, Ã˜ Deal-Wert, Aktivitaeten, Pro-Produkt). Idempotent. Woechentliche/monatliche Aggregation.",
       "createdAt": "2026-04-19"
     },
     {
@@ -1369,7 +1369,7 @@
       "priority": "high",
       "status": "done",
       "version": "V6",
-      "description": "Tages-Sollwerte fuer Aktivitaeten definierbar: Telefonate/Tag, Meetings/Tag, Deal-Bewegungen (Stage-Wechsel)/Tag, neue Deals/Tag. DB-Tabelle activity_kpi_targets + CRUD. Daten kommen aus bestehenden activities, meetings, deals — kein manuelles Tracking noetig.",
+      "description": "Tages-Sollwerte fuer Aktivitaeten definierbar: Telefonate/Tag, Meetings/Tag, Deal-Bewegungen (Stage-Wechsel)/Tag, neue Deals/Tag. DB-Tabelle activity_kpi_targets + CRUD. Daten kommen aus bestehenden activities, meetings, deals â€” kein manuelles Tracking noetig.",
       "createdAt": "2026-04-20"
     },
     {
@@ -1404,7 +1404,7 @@
     },
     {
       "id": "BL-378",
-      "title": "Label Win-Rate → Abschlussquote",
+      "title": "Label Win-Rate â†’ Abschlussquote",
       "type": "fix",
       "priority": "medium",
       "status": "done",
@@ -1424,7 +1424,7 @@
     },
     {
       "id": "BL-380",
-      "title": "Cadences / Sequences — Follow-up-Automatisierung",
+      "title": "Cadences / Sequences â€” Follow-up-Automatisierung",
       "type": "feature",
       "priority": "high",
       "status": "done",
@@ -1434,7 +1434,7 @@
     },
     {
       "id": "BL-381",
-      "title": "E-Mail Auto-Zuordnung (IMAP → Kontakt-Match)",
+      "title": "E-Mail Auto-Zuordnung (IMAP â†’ Kontakt-Match)",
       "type": "feature",
       "priority": "high",
       "status": "done",
@@ -1504,12 +1504,12 @@
     },
     {
       "id": "BL-389",
-      "title": "Anruf-Aufnahme → Whisper → Summary → Deal-Activity",
+      "title": "Anruf-Aufnahme â†’ Whisper â†’ Summary â†’ Deal-Activity",
       "type": "feature",
       "priority": "high",
       "status": "done",
       "version": "V5.1",
-      "description": "FEAT-513: Audio-Pipeline fuer Telefonate. E2E verifiziert 2026-04-24: Asterisk WAV → Supabase Storage → Whisper Transkript → Bedrock Call-Summary → Deal-Timeline-Activity. Retention-Cron erweitert um Calls.",
+      "description": "FEAT-513: Audio-Pipeline fuer Telefonate. E2E verifiziert 2026-04-24: Asterisk WAV â†’ Supabase Storage â†’ Whisper Transkript â†’ Bedrock Call-Summary â†’ Deal-Timeline-Activity. Retention-Cron erweitert um Calls.",
       "createdAt": "2026-04-22"
     },
     {
@@ -1579,7 +1579,7 @@
       "priority": "high",
       "status": "done",
       "version": "V5.3",
-      "description": "Kompletter Neubau der E-Mail-Erstellungs-Experience als eigene Vollbild-Seite mit 3-Panel-Layout. /requirements V5.3 abgeschlossen 2026-04-26 — aufgeteilt in 4 Features: FEAT-531 Branding-Settings + Mail-Layout-Engine, FEAT-532 3-Panel-Composing-Studio, FEAT-533 Systemvorlagen + KI-Vorlagen-Generator, FEAT-534 Inline-Edit-Diktat. Naechster Schritt: /architecture V5.3. LINKS: Vorlagen-Panel — Systemvorlagen (vorgefertigt) + eigene Vorlagen (CRUD). Vorlagen definieren Layout, Branding (Logo, Font, Farben), Textbausteine. Vorlage erstellen per Text oder KI-Diktat. MITTE: E-Mail-Erfassung — wie bisher (Empfaenger, Betreff, Nachricht), aber mit angewandter Vorlage aus dem linken Panel. Empfaenger + Betreff werden aus Deal-Kontext per KI vorausgefuellt. Persoenliche Ergaenzungen per Text oder Diktat moeglich ('nach dem Satz bitte folgendes einbauen'). KI-Composing integriert. RECHTS: Live-Preview — zeigt die Mail exakt so wie sie rausgeht: Vorlage + Inhalt + Branding + Empfaenger. Aktualisiert sich in Echtzeit bei Aenderungen in der Mitte. Finale Kontrolle vor dem Senden. EINSTIEGSPUNKTE: Aus Deal-Workspace heraus (haeufigster Fall — Deal-Kontext wird mitgegeben), aus Mein Tag heraus, aus E-Mail-Seite heraus. VORLAGEN-MANAGEMENT: Systemvorlagen werden mitgeliefert (z.B. Erstansprache, Follow-up, Angebot, Danke). Eigene Vorlagen per Builder erstellbar. Konsistentes Branding ueber alle Vorlagen (Logo, Font, Farbschema — einmal definiert). ABHAENGIGKEITEN: Bestehende E-Mail-Templates (email_templates Tabelle) als Basis. KI-Composing (SLC-315) als Grundlage fuer Diktat-Integration. Tracking (SLC-502/507) bleibt integriert. Moeglicherweise Zusammenarbeit mit Intelligence Platform fuer erweiterte Vorlagen.",
+      "description": "Kompletter Neubau der E-Mail-Erstellungs-Experience als eigene Vollbild-Seite mit 3-Panel-Layout. /requirements V5.3 abgeschlossen 2026-04-26 â€” aufgeteilt in 4 Features: FEAT-531 Branding-Settings + Mail-Layout-Engine, FEAT-532 3-Panel-Composing-Studio, FEAT-533 Systemvorlagen + KI-Vorlagen-Generator, FEAT-534 Inline-Edit-Diktat. Naechster Schritt: /architecture V5.3. LINKS: Vorlagen-Panel â€” Systemvorlagen (vorgefertigt) + eigene Vorlagen (CRUD). Vorlagen definieren Layout, Branding (Logo, Font, Farben), Textbausteine. Vorlage erstellen per Text oder KI-Diktat. MITTE: E-Mail-Erfassung â€” wie bisher (Empfaenger, Betreff, Nachricht), aber mit angewandter Vorlage aus dem linken Panel. Empfaenger + Betreff werden aus Deal-Kontext per KI vorausgefuellt. Persoenliche Ergaenzungen per Text oder Diktat moeglich ('nach dem Satz bitte folgendes einbauen'). KI-Composing integriert. RECHTS: Live-Preview â€” zeigt die Mail exakt so wie sie rausgeht: Vorlage + Inhalt + Branding + Empfaenger. Aktualisiert sich in Echtzeit bei Aenderungen in der Mitte. Finale Kontrolle vor dem Senden. EINSTIEGSPUNKTE: Aus Deal-Workspace heraus (haeufigster Fall â€” Deal-Kontext wird mitgegeben), aus Mein Tag heraus, aus E-Mail-Seite heraus. VORLAGEN-MANAGEMENT: Systemvorlagen werden mitgeliefert (z.B. Erstansprache, Follow-up, Angebot, Danke). Eigene Vorlagen per Builder erstellbar. Konsistentes Branding ueber alle Vorlagen (Logo, Font, Farbschema â€” einmal definiert). ABHAENGIGKEITEN: Bestehende E-Mail-Templates (email_templates Tabelle) als Basis. KI-Composing (SLC-315) als Grundlage fuer Diktat-Integration. Tracking (SLC-502/507) bleibt integriert. Moeglicherweise Zusammenarbeit mit Intelligence Platform fuer erweiterte Vorlagen.",
       "createdAt": "2026-04-22"
     },
     {
@@ -1589,7 +1589,7 @@
       "priority": "low",
       "status": "done",
       "version": "V5.4",
-      "description": "Pre-existing Tech-Debt entdeckt waehrend /post-launch V5.2 (RPT-219). 4 Coolify-Cron-Befunde, alle nicht V5.2-eingefuehrt: (1) Cron-Duplikate konsolidieren — 'Classify' vs 'classify-emails' (beide 10min), 'embedding-sync' x2 (5min + 15min), 'Recording Retention' (V5.2-neu) vs 'retention' (V4.1-alt, anderer Endpoint /api/cron/retention). (2) Kaputter Cron 'embedding-sync' mit literalem Placeholder 'CRON_SECRET_VALUE' als x-cron-secret-Wert → 401 Unauthorized auf jedem Run. Loeschen oder reparieren. (3) 3 Coolify-Crons mit Klartext-CRON_SECRET in Command (imap-sync, retention, embedding-sync mit altem Schedule) statt process.env.CRON_SECRET-Pattern. Bei naechster CRON_SECRET-Rotation umstellen. (4) Optional: alten 'retention' Cron (V4.1-Whisper-Retention auf /api/cron/retention) pruefen ob noch benoetigt — V5.2 nutzt /api/cron/recording-retention. Falls nicht mehr genutzt: Cron + Endpoint deprecaten. Aufwand ~30 Min, kein User-Impact, aber sauberer Coolify-Stand.",
+      "description": "Pre-existing Tech-Debt entdeckt waehrend /post-launch V5.2 (RPT-219). 4 Coolify-Cron-Befunde, alle nicht V5.2-eingefuehrt: (1) Cron-Duplikate konsolidieren â€” 'Classify' vs 'classify-emails' (beide 10min), 'embedding-sync' x2 (5min + 15min), 'Recording Retention' (V5.2-neu) vs 'retention' (V4.1-alt, anderer Endpoint /api/cron/retention). (2) Kaputter Cron 'embedding-sync' mit literalem Placeholder 'CRON_SECRET_VALUE' als x-cron-secret-Wert â†’ 401 Unauthorized auf jedem Run. Loeschen oder reparieren. (3) 3 Coolify-Crons mit Klartext-CRON_SECRET in Command (imap-sync, retention, embedding-sync mit altem Schedule) statt process.env.CRON_SECRET-Pattern. Bei naechster CRON_SECRET-Rotation umstellen. (4) Optional: alten 'retention' Cron (V4.1-Whisper-Retention auf /api/cron/retention) pruefen ob noch benoetigt â€” V5.2 nutzt /api/cron/recording-retention. Falls nicht mehr genutzt: Cron + Endpoint deprecaten. Aufwand ~30 Min, kein User-Impact, aber sauberer Coolify-Stand.",
       "createdAt": "2026-04-26"
     },
     {
@@ -1599,7 +1599,7 @@
       "priority": "medium",
       "status": "open",
       "version": null,
-      "description": "Aktuell sind 4 GitHub-Repos der Org Strategaize-systems public, weil Coolify (auf beiden Hetzner-Servern: 91.98.20.191 Business + 159.69.207.29 Onboarding/Blueprint) keine Auth-Anbindung an die Org hat. Coolify zieht die Repos derzeit per anonymem HTTPS-Clone. Action: GitHub App auf Org-Ebene installieren, in beiden Coolify-Instanzen unter Sources/GitHub-Integration anbinden, Repo-Sources umkonfigurieren auf authentifizierten Pull. Dann Repos auf Private umstellen. Test: einmal pro Service redeployen. Aufwand ca. 1h. Defensive Massnahme — nicht zeitkritisch, aber Defense-in-Depth gegen versehentliche Credential-Leaks (siehe ISSUE-042). Repos: bussines-system, onboarding-plattform, strategaize-intelligence-studio, strategaize-project-cockpit. strategaize-dev-system ist bereits private (rbellaerts-Org statt Strategaize-systems-Org).",
+      "description": "Aktuell sind 4 GitHub-Repos der Org Strategaize-systems public, weil Coolify (auf beiden Hetzner-Servern: 91.98.20.191 Business + 159.69.207.29 Onboarding/Blueprint) keine Auth-Anbindung an die Org hat. Coolify zieht die Repos derzeit per anonymem HTTPS-Clone. Action: GitHub App auf Org-Ebene installieren, in beiden Coolify-Instanzen unter Sources/GitHub-Integration anbinden, Repo-Sources umkonfigurieren auf authentifizierten Pull. Dann Repos auf Private umstellen. Test: einmal pro Service redeployen. Aufwand ca. 1h. Defensive Massnahme â€” nicht zeitkritisch, aber Defense-in-Depth gegen versehentliche Credential-Leaks (siehe ISSUE-042). Repos: bussines-system, onboarding-plattform, strategaize-intelligence-studio, strategaize-project-cockpit. strategaize-dev-system ist bereits private (rbellaerts-Org statt Strategaize-systems-Org).",
       "createdAt": "2026-04-26"
     },
     {
@@ -1619,7 +1619,7 @@
       "priority": "high",
       "status": "done",
       "version": "V5.3",
-      "description": "FEAT-533: email_templates-Schema-Erweiterung (is_system, category, language, layout — alle nullable, Backwards Compatibility). MIG-023 Teil 2: ALTER + 2 Indizes + Seed-INSERT 6 DE-Systemvorlagen + 1-2 EN/NL (Erstansprache, Follow-up, Danke, Re-Aktivierung etc.). template-actions.ts erweitert: Filter (System/Eigene/Alle), duplicateSystemTemplate, delete-Guard fuer Systemvorlagen. KI-Prompt email-template-generate.ts mit JSON-Output {title, subject, body, suggestedCategory}. Server Action generateEmailTemplate(prompt, language) ruft Bedrock. Smoke-Test mit 3 Test-Prompts. 7 Micro-Tasks, ~1 Tag.",
+      "description": "FEAT-533: email_templates-Schema-Erweiterung (is_system, category, language, layout â€” alle nullable, Backwards Compatibility). MIG-023 Teil 2: ALTER + 2 Indizes + Seed-INSERT 6 DE-Systemvorlagen + 1-2 EN/NL (Erstansprache, Follow-up, Danke, Re-Aktivierung etc.). template-actions.ts erweitert: Filter (System/Eigene/Alle), duplicateSystemTemplate, delete-Guard fuer Systemvorlagen. KI-Prompt email-template-generate.ts mit JSON-Output {title, subject, body, suggestedCategory}. Server Action generateEmailTemplate(prompt, language) ruft Bedrock. Smoke-Test mit 3 Test-Prompts. 7 Micro-Tasks, ~1 Tag.",
       "createdAt": "2026-04-26"
     },
     {
@@ -1639,7 +1639,7 @@
       "priority": "high",
       "status": "done",
       "version": "V5.3",
-      "description": "FEAT-532 Teil 2 von 2: Live-Preview-Komponente mit Debounce 250ms + iframe-Render via renderBrandedHtml (DEC-095 Single-Source-of-Truth). Variablen-Resolver resolveVarsFromDeal Helper. Send-Action sendComposedEmail (Renderer → sendEmailWithTracking). Senden-Button im Compose-Form. Einstiegspunkte umstellen: Deal-Workspace, Mein Tag, Focus → /emails/compose?dealId=...&contactId=... Live-Preview rendert OHNE Tracking-Injection (User-Preview, Bit-Identitaet zur Final-Mail-Logik des Renderers). Tracking + IMAP + Cadences bleiben unbeeintraechtigt (Regression-Check). 8 Micro-Tasks, ~1.5 Tage.",
+      "description": "FEAT-532 Teil 2 von 2: Live-Preview-Komponente mit Debounce 250ms + iframe-Render via renderBrandedHtml (DEC-095 Single-Source-of-Truth). Variablen-Resolver resolveVarsFromDeal Helper. Send-Action sendComposedEmail (Renderer â†’ sendEmailWithTracking). Senden-Button im Compose-Form. Einstiegspunkte umstellen: Deal-Workspace, Mein Tag, Focus â†’ /emails/compose?dealId=...&contactId=... Live-Preview rendert OHNE Tracking-Injection (User-Preview, Bit-Identitaet zur Final-Mail-Logik des Renderers). Tracking + IMAP + Cadences bleiben unbeeintraechtigt (Regression-Check). 8 Micro-Tasks, ~1.5 Tage.",
       "createdAt": "2026-04-26"
     },
     {
@@ -1659,7 +1659,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V5.3",
-      "description": "User-Feedback nach SLC-533 Browser-Smoke 2026-04-27: das aktuelle Look&Feel der /emails/compose-Page wirkt 'zu normal, zu altbacken'. Komplette Page muss auf Style-Guide-V2-Niveau gehoben werden (gleicher Premium-Polish wie Mein Tag / Focus / Performance). Umfasst: TemplatesPanel-Cards (Hover-States, Action-Icon-Discoverability F-3 — Icons aktuell opacity-0 bis hover, fuer neue User unauffindbar), Filter-Tabs-Visual, Default-Filter eventuell auf 'System' statt 'Alle' (F-4), ComposeForm-Spacing+Typografie, KI-Improve-Button-Bar Premium-Look, NewTemplateDialog-Tabs Premium, Live-Preview-Slot-Frame. Nach SLC-534 + SLC-535 als V5.3-Polish oder eigener Mini-Slice. Findings F-3+F-4 aus RPT-229 sind hier subsumiert.",
+      "description": "User-Feedback nach SLC-533 Browser-Smoke 2026-04-27: das aktuelle Look&Feel der /emails/compose-Page wirkt 'zu normal, zu altbacken'. Komplette Page muss auf Style-Guide-V2-Niveau gehoben werden (gleicher Premium-Polish wie Mein Tag / Focus / Performance). Umfasst: TemplatesPanel-Cards (Hover-States, Action-Icon-Discoverability F-3 â€” Icons aktuell opacity-0 bis hover, fuer neue User unauffindbar), Filter-Tabs-Visual, Default-Filter eventuell auf 'System' statt 'Alle' (F-4), ComposeForm-Spacing+Typografie, KI-Improve-Button-Bar Premium-Look, NewTemplateDialog-Tabs Premium, Live-Preview-Slot-Frame. Nach SLC-534 + SLC-535 als V5.3-Polish oder eigener Mini-Slice. Findings F-3+F-4 aus RPT-229 sind hier subsumiert.",
       "createdAt": "2026-04-27"
     },
     {
@@ -1669,7 +1669,7 @@
       "priority": "high",
       "status": "done",
       "version": "V5.5",
-      "description": "Teil 1 (PC-Upload) DONE 2026-04-28 als FEAT-542 / SLC-542 (V5.4 deployed REL-019). Teil 2 (Angebot-Anhang aus System) wird in V5.5 eingeloest als FEAT-555 (Angebot-Anhang im Composing-Studio). URSPRUENGLICHE BESCHREIBUNG: User-Anforderung 2026-04-27 nach SLC-533 Browser-Smoke: Composing-Studio (/emails/compose) muss Anhaenge an ausgehende E-Mails unterstuetzen. ZWEI Versionen: (1) Direkt-Upload vom User-PC — Drag&Drop oder File-Picker, MIME/Size-Whitelist, Storage-Bucket auf self-hosted Supabase, MIME-Validierung App-Level. (2) Angebot-Anhang aus dem System — User waehlt aus seinen erstellten Angeboten (siehe BL-405) ein PDF-Generated-Angebot zum Anhang. Setzt BL-405 (Angebot-Erstellung) voraus.",
+      "description": "Teil 1 (PC-Upload) DONE 2026-04-28 als FEAT-542 / SLC-542 (V5.4 deployed REL-019). Teil 2 (Angebot-Anhang aus System) wird in V5.5 eingeloest als FEAT-555 (Angebot-Anhang im Composing-Studio). URSPRUENGLICHE BESCHREIBUNG: User-Anforderung 2026-04-27 nach SLC-533 Browser-Smoke: Composing-Studio (/emails/compose) muss Anhaenge an ausgehende E-Mails unterstuetzen. ZWEI Versionen: (1) Direkt-Upload vom User-PC â€” Drag&Drop oder File-Picker, MIME/Size-Whitelist, Storage-Bucket auf self-hosted Supabase, MIME-Validierung App-Level. (2) Angebot-Anhang aus dem System â€” User waehlt aus seinen erstellten Angeboten (siehe BL-405) ein PDF-Generated-Angebot zum Anhang. Setzt BL-405 (Angebot-Erstellung) voraus.",
       "createdAt": "2026-04-27"
     },
     {
@@ -1679,7 +1679,7 @@
       "priority": "high",
       "status": "done",
       "version": "V5.5",
-      "description": "V5.5 Requirements done 2026-04-29 (RPT-249). Aufgegliedert in 5 Features: FEAT-551 Angebot-Schema-Erweiterung + Position-Items (MIG-026), FEAT-552 Angebot-Workspace UI (3-Panel), FEAT-553 PDF-Renderer + Branding, FEAT-554 Status-Lifecycle + Versionierung, FEAT-555 Angebot-Anhang im Composing-Studio (BL-404 Teil 2). URSPRUENGLICHE BESCHREIBUNG: User-Anforderung 2026-04-27: das System muss Angebote erstellen koennen — basierend auf den vorhandenen Produkten (siehe /settings/products), zugeordnet zu Firmen (companies-Tabelle) und Deals. Bestehende Stubs zum Anknuepfen: proposals-Tabelle (in 04_v2_migration.sql Z.85+ angelegt mit deal_id/company_id/contact_id/title/version/status/scope_notes/price_range/objections/negotiation_notes/won_lost_reason), /settings/products fuer Produkt-Stammdaten. Scope-Hinweise (vorlaeufig): (a) Position-Items pro Angebot (Produkt + Menge + Preis + Anpassung), (b) Brutto/Netto/Steuer-Berechnung, (c) Standard-Konditionen (Zahlungsfristen, Gueltigkeitszeitraum), (d) PDF-Renderer (analog Branding-Mail-Renderer aus FEAT-531), (e) Status-Lifecycle (draft -> sent -> accepted/rejected/expired), (f) Versionierung (Angebot V1, V2, V3 fuer dasselbe Deal), (g) Anbindung an Deal. Setzt voraus: stabile Produkt-Stammdaten, Deal-Pflicht-Felder. Liefert voraus an: BL-404 Teil 2 (Angebot-Anhang an E-Mail). Naechster Schritt: /architecture V5.5.",
+      "description": "V5.5 Requirements done 2026-04-29 (RPT-249). Aufgegliedert in 5 Features: FEAT-551 Angebot-Schema-Erweiterung + Position-Items (MIG-026), FEAT-552 Angebot-Workspace UI (3-Panel), FEAT-553 PDF-Renderer + Branding, FEAT-554 Status-Lifecycle + Versionierung, FEAT-555 Angebot-Anhang im Composing-Studio (BL-404 Teil 2). URSPRUENGLICHE BESCHREIBUNG: User-Anforderung 2026-04-27: das System muss Angebote erstellen koennen â€” basierend auf den vorhandenen Produkten (siehe /settings/products), zugeordnet zu Firmen (companies-Tabelle) und Deals. Bestehende Stubs zum Anknuepfen: proposals-Tabelle (in 04_v2_migration.sql Z.85+ angelegt mit deal_id/company_id/contact_id/title/version/status/scope_notes/price_range/objections/negotiation_notes/won_lost_reason), /settings/products fuer Produkt-Stammdaten. Scope-Hinweise (vorlaeufig): (a) Position-Items pro Angebot (Produkt + Menge + Preis + Anpassung), (b) Brutto/Netto/Steuer-Berechnung, (c) Standard-Konditionen (Zahlungsfristen, Gueltigkeitszeitraum), (d) PDF-Renderer (analog Branding-Mail-Renderer aus FEAT-531), (e) Status-Lifecycle (draft -> sent -> accepted/rejected/expired), (f) Versionierung (Angebot V1, V2, V3 fuer dasselbe Deal), (g) Anbindung an Deal. Setzt voraus: stabile Produkt-Stammdaten, Deal-Pflicht-Felder. Liefert voraus an: BL-404 Teil 2 (Angebot-Anhang an E-Mail). Naechster Schritt: /architecture V5.5.",
       "createdAt": "2026-04-27"
     },
     {
@@ -1689,7 +1689,7 @@
       "priority": "high",
       "status": "done",
       "version": "V5.4",
-      "description": "FEAT-541 V5.4-Polish — vier zusammenhaengende Hygiene-Themen nach V5.3-Release. (1) ISSUE-043 Color-Picker AC9-Drift Fix: Toggle-Checkbox 'Markenfarbe verwenden' vor jedem Color-Picker auf /settings/branding. Toggle aus → Color-Picker disabled, persistierter Wert NULL. Toggle an → Color-Picker aktiv, persistierter Wert = Hex. AC9 aus FEAT-531 wieder zuverlaessig erfuellt. (2) ESLint Hook-Order Cleanup in cockpit/src/components/email/new-template-dialog.tsx und inline-edit-dialog.tsx — Hooks unconditional am Top-Level. (3) docs/COMPLIANCE.md V5.3-Section: Composing-Studio + Inline-Edit + Branding mit Datenfluessen dokumentieren. (4) Coolify-Cron-Cleanup als User-Aktion mit Klick-Anleitung in REL-019-Notes — Duplikate konsolidieren (Classify, embedding-sync, retention), kaputten embedding-sync-Cron mit Placeholder reparieren oder loeschen, Klartext-CRON_SECRETs auf process.env-Pattern umstellen. Subsumiert BL-396.",
+      "description": "FEAT-541 V5.4-Polish â€” vier zusammenhaengende Hygiene-Themen nach V5.3-Release. (1) ISSUE-043 Color-Picker AC9-Drift Fix: Toggle-Checkbox 'Markenfarbe verwenden' vor jedem Color-Picker auf /settings/branding. Toggle aus â†’ Color-Picker disabled, persistierter Wert NULL. Toggle an â†’ Color-Picker aktiv, persistierter Wert = Hex. AC9 aus FEAT-531 wieder zuverlaessig erfuellt. (2) ESLint Hook-Order Cleanup in cockpit/src/components/email/new-template-dialog.tsx und inline-edit-dialog.tsx â€” Hooks unconditional am Top-Level. (3) docs/COMPLIANCE.md V5.3-Section: Composing-Studio + Inline-Edit + Branding mit Datenfluessen dokumentieren. (4) Coolify-Cron-Cleanup als User-Aktion mit Klick-Anleitung in REL-019-Notes â€” Duplikate konsolidieren (Classify, embedding-sync, retention), kaputten embedding-sync-Cron mit Placeholder reparieren oder loeschen, Klartext-CRON_SECRETs auf process.env-Pattern umstellen. Subsumiert BL-396.",
       "createdAt": "2026-04-28"
     },
     {
@@ -1749,7 +1749,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V5.6",
-      "description": "User-Feedback nach SLC-552 Browser-Smoke 2026-04-30: Zahlungsbedingungen sollen mehr Kontrolle bekommen. Zwei Sub-Themen: (1) VORAUSWAHL — typische Bedingungen als anlegbare Liste (z.B. 30 Tage netto, 60 Tage netto, Vorkasse, Skonto-Varianten), eventuell unter /settings/products oder eigener Settings-Sektion. Im Workspace per Dropdown waehlbar, mit Default aus Branding. Frei-text bleibt moeglich. (2) SPLIT-PLAN — Mehrere Zahlungstermine pro Angebot, z.B. '50 % bei Beauftragung / 50 % nach Fertigstellung' oder '30/30/40 nach Meilensteinen'. Datenmodell: neue Tabelle proposal_payment_milestones (proposal_id, sequence, percent_or_amount, due_trigger:'on_signature'|'on_completion'|'days_after_signature'|'on_milestone', label). UI im Editor-Panel als expandable Sektion mit Sum-Validation (muss 100% sein). Nicht V5.5-Scope (V5.5 fokussiert PDF + Status + Anhang). Vorschlag: V5.6 als FEAT-561 zusammen mit Skonto-Berechnung und Rechnungs-Vorbereitung. Affects: SLC-553 PDF-Renderer muss Split-Plan ausgeben (Konditionen-Block strukturiert), SLC-554 Status-Lifecycle bleibt orthogonal. /requirements V5.6 erweitert um Sub-Theme C (Skonto separates Feld) und Sentinel-Strategy. /architecture V5.6 ausgeplant in 4 Slices SLC-561..564 mit DEC-115..121.",
+      "description": "User-Feedback nach SLC-552 Browser-Smoke 2026-04-30: Zahlungsbedingungen sollen mehr Kontrolle bekommen. Zwei Sub-Themen: (1) VORAUSWAHL â€” typische Bedingungen als anlegbare Liste (z.B. 30 Tage netto, 60 Tage netto, Vorkasse, Skonto-Varianten), eventuell unter /settings/products oder eigener Settings-Sektion. Im Workspace per Dropdown waehlbar, mit Default aus Branding. Frei-text bleibt moeglich. (2) SPLIT-PLAN â€” Mehrere Zahlungstermine pro Angebot, z.B. '50 % bei Beauftragung / 50 % nach Fertigstellung' oder '30/30/40 nach Meilensteinen'. Datenmodell: neue Tabelle proposal_payment_milestones (proposal_id, sequence, percent_or_amount, due_trigger:'on_signature'|'on_completion'|'days_after_signature'|'on_milestone', label). UI im Editor-Panel als expandable Sektion mit Sum-Validation (muss 100% sein). Nicht V5.5-Scope (V5.5 fokussiert PDF + Status + Anhang). Vorschlag: V5.6 als FEAT-561 zusammen mit Skonto-Berechnung und Rechnungs-Vorbereitung. Affects: SLC-553 PDF-Renderer muss Split-Plan ausgeben (Konditionen-Block strukturiert), SLC-554 Status-Lifecycle bleibt orthogonal. /requirements V5.6 erweitert um Sub-Theme C (Skonto separates Feld) und Sentinel-Strategy. /architecture V5.6 ausgeplant in 4 Slices SLC-561..564 mit DEC-115..121.",
       "createdAt": "2026-04-30"
     },
     {
@@ -1779,7 +1779,7 @@
       "priority": "high",
       "status": "done",
       "version": "V5.6",
-      "description": "FEAT-561 SLC-563: SplitPlanSection mit Toggle + Liste + Add/Remove/Reorder via @dnd-kit/sortable + Live-Sum-Indikator (gruen 100/rot Diff). MilestoneRow mit 6-Spalten-Layout (Mobile 2-zeilig). saveProposalPaymentMilestones Server Action mit Sum-Validation strict 100% (DEC-115 — DB-CHECK nicht moeglich, App-Level only). useSkontoMutex-Hook erweitert auf echte Vorkasse-Pruefung (DEC-116 — bei on_signature 100% wird Skonto auto-clear mit Toast). PDF-Renderer Konditionen-Block (Tabelle Teilzahlung+Faelligkeit+Betrag) mit 4 Snapshot-Tests (CRITICAL: ohne beides bit-identisch zu V5.5). Trigger-Label-Helper fuer 4 Enums. 9 Micro-Tasks, ~5-7h.",
+      "description": "FEAT-561 SLC-563: SplitPlanSection mit Toggle + Liste + Add/Remove/Reorder via @dnd-kit/sortable + Live-Sum-Indikator (gruen 100/rot Diff). MilestoneRow mit 6-Spalten-Layout (Mobile 2-zeilig). saveProposalPaymentMilestones Server Action mit Sum-Validation strict 100% (DEC-115 â€” DB-CHECK nicht moeglich, App-Level only). useSkontoMutex-Hook erweitert auf echte Vorkasse-Pruefung (DEC-116 â€” bei on_signature 100% wird Skonto auto-clear mit Toast). PDF-Renderer Konditionen-Block (Tabelle Teilzahlung+Faelligkeit+Betrag) mit 4 Snapshot-Tests (CRITICAL: ohne beides bit-identisch zu V5.5). Trigger-Label-Helper fuer 4 Enums. 9 Micro-Tasks, ~5-7h.",
       "createdAt": "2026-05-01"
     },
     {
@@ -1799,7 +1799,7 @@
       "priority": "high",
       "status": "done",
       "version": "V5.7",
-      "description": "Strategaize Transition GmbH sitzt in NL — Rechnungen muessen NL-Steuerlogik abbilden, nicht deutsche. Inhalt: (1) NL-VAT-Saetze: 21% Standard, 9% reduziert, 0% (statt 19/7/0). Steuersatz-Dropdown im Editor + DB-CHECK + Branding-Default umstellen. (2) Reverse-Charge / Intracommunautaire prestatie (B2B EU-Cross-Border, 'BTW verlegd'): bei B2B-Empfaengern in anderen EU-Laendern wird ohne MwSt fakturiert (0% mit Reverse-Charge-Hinweis), Empfaenger zahlt selbst. Voraussetzungen: USt-IdNr/BTW-Nummer beider Parteien, Hinweis auf Rechnung 'BTW verlegd / Reverse Charge — Article 196 VAT Directive 2006/112/EC', Zusammenfassende Meldung (Opgaaf ICP) in NL. (3) Felder fuer BTW-Nummer Strategaize (Settings) + BTW/USt-IdNr Empfaenger (Contact/Company). (4) PDF-Renderer-Block 'BTW verlegd' wenn Reverse-Charge aktiv + Steuer=0 + beide Nummern vorhanden. (5) Sprache deutsch fuer deutsche Kunden bleibt OK — nur Steuerlogik ist NL-konform. Recherche-Aufgabe: genaue Pflichtformulierung auf Rechnung pruefen + Formular-Pflicht ICP-Meldung. Voraussichtlich V6.0+ Slice (Steuer-Schema-Migration MIG-028 + Editor-Erweiterung + PDF-Block).",
+      "description": "Strategaize Transition GmbH sitzt in NL â€” Rechnungen muessen NL-Steuerlogik abbilden, nicht deutsche. Inhalt: (1) NL-VAT-Saetze: 21% Standard, 9% reduziert, 0% (statt 19/7/0). Steuersatz-Dropdown im Editor + DB-CHECK + Branding-Default umstellen. (2) Reverse-Charge / Intracommunautaire prestatie (B2B EU-Cross-Border, 'BTW verlegd'): bei B2B-Empfaengern in anderen EU-Laendern wird ohne MwSt fakturiert (0% mit Reverse-Charge-Hinweis), Empfaenger zahlt selbst. Voraussetzungen: USt-IdNr/BTW-Nummer beider Parteien, Hinweis auf Rechnung 'BTW verlegd / Reverse Charge â€” Article 196 VAT Directive 2006/112/EC', Zusammenfassende Meldung (Opgaaf ICP) in NL. (3) Felder fuer BTW-Nummer Strategaize (Settings) + BTW/USt-IdNr Empfaenger (Contact/Company). (4) PDF-Renderer-Block 'BTW verlegd' wenn Reverse-Charge aktiv + Steuer=0 + beide Nummern vorhanden. (5) Sprache deutsch fuer deutsche Kunden bleibt OK â€” nur Steuerlogik ist NL-konform. Recherche-Aufgabe: genaue Pflichtformulierung auf Rechnung pruefen + Formular-Pflicht ICP-Meldung. Voraussichtlich V6.0+ Slice (Steuer-Schema-Migration MIG-028 + Editor-Erweiterung + PDF-Block).",
       "createdAt": "2026-05-02"
     },
     {
@@ -1809,7 +1809,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V5.6",
-      "description": "Im PaymentTermsDropdown.tsx zeigt das base-ui Select-Trigger initial den Raw-Value '__custom__' statt des Labels '(eigene Eingabe)'. Ursache: SelectValue-Placeholder greift nur bei value=null, aber wir setzen useState<string>(CUSTOM_VALUE)='__custom__' als Default. Fix 2026-05-02: useState<string>('') als Default — Empty-String matched kein SelectItem, daher greift base-ui-Placeholder korrekt. ISSUE-048 resolved.",
+      "description": "Im PaymentTermsDropdown.tsx zeigt das base-ui Select-Trigger initial den Raw-Value '__custom__' statt des Labels '(eigene Eingabe)'. Ursache: SelectValue-Placeholder greift nur bei value=null, aber wir setzen useState<string>(CUSTOM_VALUE)='__custom__' als Default. Fix 2026-05-02: useState<string>('') als Default â€” Empty-String matched kein SelectItem, daher greift base-ui-Placeholder korrekt. ISSUE-048 resolved.",
       "createdAt": "2026-05-02"
     },
     {
@@ -1834,12 +1834,12 @@
     },
     {
       "id": "BL-421",
-      "title": "DE-Reverse-Charge § 13b UStG + ICP-Equivalent",
+      "title": "DE-Reverse-Charge Â§ 13b UStG + ICP-Equivalent",
       "type": "feature",
       "priority": "medium",
       "status": "done",
       "version": "V6.5",
-      "description": "**Done 2026-05-08 als SLC-656 (RPT-357 backend, code-side).** Neue Pure-Function buildDeReverseChargeBlock(strategaizeVatId, companyVatId) in cockpit/src/lib/pdf/de-reverse-charge-block.ts mit DE-Pflichtformulierung 'Steuerschuldnerschaft des Leistungsempfaengers' + § 13b UStG / Art. 196 VAT Directive-Verweis (PRELIMINARY, Anwaltspruefung deferred per DEC-162). proposal-renderer.ts waehlt zwischen DE/NL/none basierend auf branding.business_country. useReverseChargeEligibility-Hook + validateReverseCharge Server-Validator generalisiert um businessCountry-Parameter (Same-Country-Block jetzt kontextabhaengig DE/NL). reverse-charge-section.tsx zeigt kontextabhaengige Labels + ZM-Pflicht-Hinweis im DE-Mode. 14 neue Vitest-Tests + 2 neue PDF-Snapshots. Vitest 444/444 PASS. Live-Smoke (NL+DE-PDF) wartet auf Coolify-Redeploy.",
+      "description": "**Done 2026-05-08 als SLC-656 (RPT-357 backend, code-side).** Neue Pure-Function buildDeReverseChargeBlock(strategaizeVatId, companyVatId) in cockpit/src/lib/pdf/de-reverse-charge-block.ts mit DE-Pflichtformulierung 'Steuerschuldnerschaft des Leistungsempfaengers' + Â§ 13b UStG / Art. 196 VAT Directive-Verweis (PRELIMINARY, Anwaltspruefung deferred per DEC-162). proposal-renderer.ts waehlt zwischen DE/NL/none basierend auf branding.business_country. useReverseChargeEligibility-Hook + validateReverseCharge Server-Validator generalisiert um businessCountry-Parameter (Same-Country-Block jetzt kontextabhaengig DE/NL). reverse-charge-section.tsx zeigt kontextabhaengige Labels + ZM-Pflicht-Hinweis im DE-Mode. 14 neue Vitest-Tests + 2 neue PDF-Snapshots. Vitest 444/444 PASS. Live-Smoke (NL+DE-PDF) wartet auf Coolify-Redeploy.",
       "createdAt": "2026-05-04"
     },
     {
@@ -1869,7 +1869,7 @@
       "priority": "low",
       "status": "done",
       "version": "V6.5",
-      "description": "**Done 2026-05-08 als SLC-657 (RPT-359 backend).** SQL-Skript-Ansatz statt UI-Tool (DEC-159). Pre-Audit `031_v65_pre_audit.sql` zeigte 0 Legacy-Source-Daten in Production-DB → MIG-031 ist Ready-when-needed (Pfad A): Mapping-JSON-Template + Bulk-UPDATE-SQL existieren als Repo-Artefakt fuer spaetere Anwendung sobald Daten anfallen, kein Production-Apply. contact-form + company-form: Legacy-Felder entfernt, conditional read-only-Display + hidden-input-Preserve damit Updates Werte nicht versehentlich auf NULL setzen (DEC-160). CSV-Export route campaign_name statt source_detail (LEFT JOIN auf campaigns).",
+      "description": "**Done 2026-05-08 als SLC-657 (RPT-359 backend).** SQL-Skript-Ansatz statt UI-Tool (DEC-159). Pre-Audit `031_v65_pre_audit.sql` zeigte 0 Legacy-Source-Daten in Production-DB â†’ MIG-031 ist Ready-when-needed (Pfad A): Mapping-JSON-Template + Bulk-UPDATE-SQL existieren als Repo-Artefakt fuer spaetere Anwendung sobald Daten anfallen, kein Production-Apply. contact-form + company-form: Legacy-Felder entfernt, conditional read-only-Display + hidden-input-Preserve damit Updates Werte nicht versehentlich auf NULL setzen (DEC-160). CSV-Export route campaign_name statt source_detail (LEFT JOIN auf campaigns).",
       "createdAt": "2026-05-05"
     },
     {
@@ -1889,7 +1889,7 @@
       "priority": "low",
       "status": "done",
       "version": "V6.3",
-      "description": "Aus SLC-623 /qa RPT-316 — 3 Low-Findings die fuer V6.2-Release nicht-blocker sind, in V6.3-Polish-Slice gebuendelt: (1) rule-builder.tsx:57 react-hooks/set-state-in-effect Lint-Warning — useState-Initializer-Function statt useEffect bei MQ-Init; (2) Settings-Sub-Nav (Sidebar in /settings/...) zeigt keinen Eintrag fuer 'Workflow-Automation' — nur per /settings-Index-Card-Link erreichbar; (3) Primary-Button-Position-Inkonsistenz: /settings/automation rendert 'Neue Regel' im Page-Header rechts, /settings/payment-terms rendert 'Neue Vorlage' innerhalb der Card-Header. Beide vereinheitlichen. Done 2026-05-06 in SLC-631 MT-1+MT-2+MT-3: useState lazy-init in rule-builder.tsx, Workflow-Automation-Eintrag in settings/layout.tsx Sidebar, payment-terms Page-Header-Refactor mit Wrapper-Component PaymentTermsPageContent + Adjust-State-During-Render-Pattern.",
+      "description": "Aus SLC-623 /qa RPT-316 â€” 3 Low-Findings die fuer V6.2-Release nicht-blocker sind, in V6.3-Polish-Slice gebuendelt: (1) rule-builder.tsx:57 react-hooks/set-state-in-effect Lint-Warning â€” useState-Initializer-Function statt useEffect bei MQ-Init; (2) Settings-Sub-Nav (Sidebar in /settings/...) zeigt keinen Eintrag fuer 'Workflow-Automation' â€” nur per /settings-Index-Card-Link erreichbar; (3) Primary-Button-Position-Inkonsistenz: /settings/automation rendert 'Neue Regel' im Page-Header rechts, /settings/payment-terms rendert 'Neue Vorlage' innerhalb der Card-Header. Beide vereinheitlichen. Done 2026-05-06 in SLC-631 MT-1+MT-2+MT-3: useState lazy-init in rule-builder.tsx, Workflow-Automation-Eintrag in settings/layout.tsx Sidebar, payment-terms Page-Header-Refactor mit Wrapper-Component PaymentTermsPageContent + Adjust-State-During-Render-Pattern.",
       "createdAt": "2026-05-05"
     },
     {
@@ -1929,7 +1929,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V6.4",
-      "description": "FEAT-642: Strukturierter Audit ueber Cron-Jobs (19), AI-Engines, Source-Schema-Inkonsistenzen, tote Server-Actions, tote API-Routes. Output Audit-Report mit Severity-Klassifikation + User-Sign-Off pro Item. Mindest-Quote 3 umgesetzte Items in V6.4. Done 2026-05-07: SLC-642 Inventur (RPT-336, 18 Items klassifiziert) + SLC-643 Cleanup (6 Items abgearbeitet, Mindestquote 3 uebererfuellt) — CA-001 backfill+lib geloescht, CA-002 calcom-sync+sync.ts+api-client.ts geloescht, CA-015 getForecastValue geloescht, CA-016 getReferralsByReferrer geloescht, CA-017 getUnassignedEmailCount geloescht, CA-008 audit_log fuer FollowupEngine + Signal-Extract ergaenzt. Live-Smoke verifiziert: 4 deletion-Endpoints HTTP 404, 2 audit_log-Rows in DB, Vitest 405/405 PASS. ~728 Zeilen tote Code geloescht.",
+      "description": "FEAT-642: Strukturierter Audit ueber Cron-Jobs (19), AI-Engines, Source-Schema-Inkonsistenzen, tote Server-Actions, tote API-Routes. Output Audit-Report mit Severity-Klassifikation + User-Sign-Off pro Item. Mindest-Quote 3 umgesetzte Items in V6.4. Done 2026-05-07: SLC-642 Inventur (RPT-336, 18 Items klassifiziert) + SLC-643 Cleanup (6 Items abgearbeitet, Mindestquote 3 uebererfuellt) â€” CA-001 backfill+lib geloescht, CA-002 calcom-sync+sync.ts+api-client.ts geloescht, CA-015 getForecastValue geloescht, CA-016 getReferralsByReferrer geloescht, CA-017 getUnassignedEmailCount geloescht, CA-008 audit_log fuer FollowupEngine + Signal-Extract ergaenzt. Live-Smoke verifiziert: 4 deletion-Endpoints HTTP 404, 2 audit_log-Rows in DB, Vitest 405/405 PASS. ~728 Zeilen tote Code geloescht.",
       "createdAt": "2026-05-07"
     },
     {
@@ -1939,7 +1939,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V6.4",
-      "description": "FEAT-643: Strukturierter UI-Audit ueber Settings-Landing, Sidebar, Button-Konsistenz, Pipeline-Stages, Page-Header. Output Audit-Report mit Vorher/Nachher pro Item + User-Sign-Off. Done 2026-05-07: SLC-644 Inventur (RPT-338, 13 Items in 6 Bereichen) + SLC-645 Cleanup (5 Klar-Items Pfad-A umgesetzt, Mindestquote 2 uebererfuellt) — UA-001 Settings auf PageHeader, UA-003 Einwilligungstexte bg-rose-50, UA-005 Sidebar Termine→Termine-Liste, UA-006 Primary Green→Blue Pipeline+Proposals, UA-010 Pipeline h1 text-3xl. Build clean, Vitest 405/405 PASS, Live-Image-Tag f99726b deployed. 8 Audit-Items deferred via BL-436..441.",
+      "description": "FEAT-643: Strukturierter UI-Audit ueber Settings-Landing, Sidebar, Button-Konsistenz, Pipeline-Stages, Page-Header. Output Audit-Report mit Vorher/Nachher pro Item + User-Sign-Off. Done 2026-05-07: SLC-644 Inventur (RPT-338, 13 Items in 6 Bereichen) + SLC-645 Cleanup (5 Klar-Items Pfad-A umgesetzt, Mindestquote 2 uebererfuellt) â€” UA-001 Settings auf PageHeader, UA-003 Einwilligungstexte bg-rose-50, UA-005 Sidebar Termineâ†’Termine-Liste, UA-006 Primary Greenâ†’Blue Pipeline+Proposals, UA-010 Pipeline h1 text-3xl. Build clean, Vitest 405/405 PASS, Live-Image-Tag f99726b deployed. 8 Audit-Items deferred via BL-436..441.",
       "createdAt": "2026-05-07"
     },
     {
@@ -1959,7 +1959,7 @@
       "priority": "low",
       "status": "done",
       "version": "V7",
-      "description": "Aus RPT-338 V6.4 UI-Audit (UA-004). VERWALTUNG-Sidebar-Gruppe hat 11 Eintraege, Settings ist Position 10 von 11 — sehr tief vergraben. Vorschlag: Split in 2 Sub-Gruppen 'Meine Daten' + 'Setup' oder Settings als prominenten Footer-Eintrag. Aufwand mittel 1-3h. Deferred wegen V7-Multi-User-Sprint (FEAT-502) Sidebar-Umbau mit Team-Switcher. **Resolved 2026-05-14 in SLC-707 MT-6 (Subagent-Commit a40cf8f):** SIDEBAR_CONFIG splittet VERWALTUNG_MEIN ('Mein Profil') und VERWALTUNG_SETUP ('Setup') als 2 Sub-Groups. Conditional Sub-Header-Render (Muster 1): bei nur 1 sichtbarer Sub-Group (Member) entfaellt der Sub-Header.",
+      "description": "Aus RPT-338 V6.4 UI-Audit (UA-004). VERWALTUNG-Sidebar-Gruppe hat 11 Eintraege, Settings ist Position 10 von 11 â€” sehr tief vergraben. Vorschlag: Split in 2 Sub-Gruppen 'Meine Daten' + 'Setup' oder Settings als prominenten Footer-Eintrag. Aufwand mittel 1-3h. Deferred wegen V7-Multi-User-Sprint (FEAT-502) Sidebar-Umbau mit Team-Switcher. **Resolved 2026-05-14 in SLC-707 MT-6 (Subagent-Commit a40cf8f):** SIDEBAR_CONFIG splittet VERWALTUNG_MEIN ('Mein Profil') und VERWALTUNG_SETUP ('Setup') als 2 Sub-Groups. Conditional Sub-Header-Render (Muster 1): bei nur 1 sichtbarer Sub-Group (Member) entfaellt der Sub-Header.",
       "createdAt": "2026-05-07"
     },
     {
@@ -1979,7 +1979,7 @@
       "priority": "low",
       "status": "deferred",
       "version": null,
-      "description": "RUECKGEZOGEN per V6.6-Discovery 2026-05-09: User-self-served. User macht Pipeline-Stages-Cleanup selbst in Settings → kein V6.6/V7-Slice noetig. Originaler Hintergrund: Aus RPT-338 V6.4 UI-Audit (UA-008). SQL-Live-Daten 2026-05-07: 20 von 22 Pipeline-Stages haben deal_count=0, kein Deal hat je Stage-Position > 1 erreicht. 'Gewonnen/Verloren/Geparkt'-Stages funktional doppelt mit deals.status (V2.1 SLC-201). DEC-133 Stage-Soft-Disable steht weiterhin als Pattern verfuegbar falls noetig.",
+      "description": "RUECKGEZOGEN per V6.6-Discovery 2026-05-09: User-self-served. User macht Pipeline-Stages-Cleanup selbst in Settings â†’ kein V6.6/V7-Slice noetig. Originaler Hintergrund: Aus RPT-338 V6.4 UI-Audit (UA-008). SQL-Live-Daten 2026-05-07: 20 von 22 Pipeline-Stages haben deal_count=0, kein Deal hat je Stage-Position > 1 erreicht. 'Gewonnen/Verloren/Geparkt'-Stages funktional doppelt mit deals.status (V2.1 SLC-201). DEC-133 Stage-Soft-Disable steht weiterhin als Pattern verfuegbar falls noetig.",
       "createdAt": "2026-05-07"
     },
     {
@@ -1989,12 +1989,12 @@
       "priority": "low",
       "status": "done",
       "version": "V6.5",
-      "description": "Aus RPT-338 V6.4 UI-Audit (UA-009). **Done 2026-05-08 als SLC-654 (RPT-353 backend).** PageHeader-Component um optionalen belowHeader-Prop erweitert (additive, backward-kompatibel). Pipeline-View custom h1+p Block durch <PageHeader title subtitle /> ersetzt. Tabs+KPIs+Search bleiben als zweiter shrink-0 Block (volle belowHeader-Migration nicht moeglich wegen max-w-Konflikt zwischen PageHeader-Wrapper 1800px und Pipeline-Tabs-Container 1200px — konservative Decision dokumentiert in RPT-353).",
+      "description": "Aus RPT-338 V6.4 UI-Audit (UA-009). **Done 2026-05-08 als SLC-654 (RPT-353 backend).** PageHeader-Component um optionalen belowHeader-Prop erweitert (additive, backward-kompatibel). Pipeline-View custom h1+p Block durch <PageHeader title subtitle /> ersetzt. Tabs+KPIs+Search bleiben als zweiter shrink-0 Block (volle belowHeader-Migration nicht moeglich wegen max-w-Konflikt zwischen PageHeader-Wrapper 1800px und Pipeline-Tabs-Container 1200px â€” konservative Decision dokumentiert in RPT-353).",
       "createdAt": "2026-05-07"
     },
     {
       "id": "BL-441",
-      "title": "Theming-Sprint — Master (Tracker fuer alle Tranchen)",
+      "title": "Theming-Sprint â€” Master (Tracker fuer alle Tranchen)",
       "type": "improvement",
       "priority": "medium",
       "status": "in_progress",
@@ -2004,7 +2004,7 @@
     },
     {
       "id": "BL-442",
-      "title": "V6.5 Theming Phase A — Brand-Tokens in globals.css @theme inline (SLC-651)",
+      "title": "V6.5 Theming Phase A â€” Brand-Tokens in globals.css @theme inline (SLC-651)",
       "type": "improvement",
       "priority": "medium",
       "status": "done",
@@ -2014,7 +2014,7 @@
     },
     {
       "id": "BL-443",
-      "title": "V6.5 Theming Phase B Tranche 1 — Pipeline + Proposals (SLC-652)",
+      "title": "V6.5 Theming Phase B Tranche 1 â€” Pipeline + Proposals (SLC-652)",
       "type": "improvement",
       "priority": "medium",
       "status": "done",
@@ -2024,12 +2024,12 @@
     },
     {
       "id": "BL-435",
-      "title": "Natural-Language-Regel-Builder (Mein Tag) — User formuliert Automation-Regeln in Klarsprache",
+      "title": "Natural-Language-Regel-Builder (Mein Tag) â€” User formuliert Automation-Regeln in Klarsprache",
       "type": "feature",
       "priority": "high",
       "status": "done",
       "version": "V7.5",
-      "description": "V7.5 FEAT-751 done 2026-05-18. Alle 6 Slices SLC-751..756 done: SLC-751 Middleware-Mitigation (RPT-444), SLC-752 Sculptor-Core + MIG-036 (93 neue Tests), SLC-753 Mein-Tag-NL-Surface + PRICING-Hotfix bafe9ca, SLC-754 Trockenlauf+Apply-Confirm-Modal + End-to-End-V6.2-Trigger (ISSUE-077 entdeckt), SLC-755 Voice-Input via useVoiceCapture-Reuse + Live-Smoke PASS, SLC-756 Inspection-Log Admin-only /settings/workflow-automation/nl-history + Sidebar-Eintrag + Filter-Toggle (RPT-459 Live-Smoke alle 9 ACs PASS gegen BUILD_ID TMIQIfJU1grWcVE8wOR6Z). FEAT-751 Sculptor + FEAT-752 ISSUE-066-Mitigation komplett. MIG-036 additiv `automation_rules.created_via`. Verbleibend V7.5: SLC-757 (ISSUE-077 NL-Rule-Builder State-Reset+Toast Mini-Slice) → Gesamt-/qa V7.5 → /final-check → /go-live → /deploy als REL-032. Inspiriert von Clay 'Sculptor' Mai 2026.",
+      "description": "V7.5 FEAT-751 done 2026-05-18. Alle 6 Slices SLC-751..756 done: SLC-751 Middleware-Mitigation (RPT-444), SLC-752 Sculptor-Core + MIG-036 (93 neue Tests), SLC-753 Mein-Tag-NL-Surface + PRICING-Hotfix bafe9ca, SLC-754 Trockenlauf+Apply-Confirm-Modal + End-to-End-V6.2-Trigger (ISSUE-077 entdeckt), SLC-755 Voice-Input via useVoiceCapture-Reuse + Live-Smoke PASS, SLC-756 Inspection-Log Admin-only /settings/workflow-automation/nl-history + Sidebar-Eintrag + Filter-Toggle (RPT-459 Live-Smoke alle 9 ACs PASS gegen BUILD_ID TMIQIfJU1grWcVE8wOR6Z). FEAT-751 Sculptor + FEAT-752 ISSUE-066-Mitigation komplett. MIG-036 additiv `automation_rules.created_via`. Verbleibend V7.5: SLC-757 (ISSUE-077 NL-Rule-Builder State-Reset+Toast Mini-Slice) â†’ Gesamt-/qa V7.5 â†’ /final-check â†’ /go-live â†’ /deploy als REL-032. Inspiriert von Clay 'Sculptor' Mai 2026.",
       "createdAt": "2026-05-07"
     },
     {
@@ -2039,7 +2039,7 @@
       "priority": "high",
       "status": "done",
       "version": "V7.6",
-      "description": "User-Feedback nach Post-Deploy-UI-Inspektion 2026-05-18: V7.5 hat den NL-Rule-Builder als separate Karte auf /mein-tag platziert (unterhalb des KI-Workspace-Hybrid-Blocks). Das verletzt das V6.6-KI-Workspace-Pattern (siehe Memory feedback_ki_workspace_pattern + feedback_no_extra_cards): 'alles laeuft ueber KI-Workspace, keine extra Cards untereinander'. User-Direktive: NL-Rule-Builder gehoert ALS WORKSPACE-BUTTON in den MeinTagKIWorkspace, rechts neben den existierenden Berichts-Buttons (Tagesanalyse / Gestern / Seit-Login / Wochen-Performance / Pipeline-Risiko) als 6. Button. Klick oeffnet den Sculpt-Workflow (Eingabe → Sculpt → Trockenlauf → Apply-Confirm) im Antwort-Fenster des KI-Workspace, nicht in einer separaten Card daneben. Bedrock-Cost-Display + Modell-Anzeige raus (gehoert nicht ins User-UI, ist Audit-Only). Scope: Refactor MeinTagKIWorkspace-Wrapper + Move nl-rule-builder-card.tsx-Logik ins Workspace + Entferne Cost-Display + Entferne standalone-Card-Render auf /mein-tag. ~1-2 Slices. Keine Schema-Migration. Behaelt FEAT-751-Backend (sculpt/preview/apply Server-Actions) komplett bei. Out-of-Scope V7.5 weil Layout-Aenderung. **Folgt zwingend vor V7.6-Custom-Reports (BL-442)** weil das selbe Workspace-Pattern betrifft.",
+      "description": "User-Feedback nach Post-Deploy-UI-Inspektion 2026-05-18: V7.5 hat den NL-Rule-Builder als separate Karte auf /mein-tag platziert (unterhalb des KI-Workspace-Hybrid-Blocks). Das verletzt das V6.6-KI-Workspace-Pattern (siehe Memory feedback_ki_workspace_pattern + feedback_no_extra_cards): 'alles laeuft ueber KI-Workspace, keine extra Cards untereinander'. User-Direktive: NL-Rule-Builder gehoert ALS WORKSPACE-BUTTON in den MeinTagKIWorkspace, rechts neben den existierenden Berichts-Buttons (Tagesanalyse / Gestern / Seit-Login / Wochen-Performance / Pipeline-Risiko) als 6. Button. Klick oeffnet den Sculpt-Workflow (Eingabe â†’ Sculpt â†’ Trockenlauf â†’ Apply-Confirm) im Antwort-Fenster des KI-Workspace, nicht in einer separaten Card daneben. Bedrock-Cost-Display + Modell-Anzeige raus (gehoert nicht ins User-UI, ist Audit-Only). Scope: Refactor MeinTagKIWorkspace-Wrapper + Move nl-rule-builder-card.tsx-Logik ins Workspace + Entferne Cost-Display + Entferne standalone-Card-Render auf /mein-tag. ~1-2 Slices. Keine Schema-Migration. Behaelt FEAT-751-Backend (sculpt/preview/apply Server-Actions) komplett bei. Out-of-Scope V7.5 weil Layout-Aenderung. **Folgt zwingend vor V7.6-Custom-Reports (BL-442)** weil das selbe Workspace-Pattern betrifft.",
       "createdAt": "2026-05-18"
     },
     {
@@ -2049,37 +2049,37 @@
       "priority": "low",
       "status": "open",
       "version": null,
-      "description": "V7.6-Defer per /requirements V7.6 2026-05-19 (RPT-466): BL-478 wird aus V7.6 herausgenommen, weil V7.6-Scope auf FEAT-761+FEAT-762 fokussiert ist und der Bug funktional unkritisch ist (Card-State-Reset SLC-757 ist aequivalent). Reproducer-Slice fuer V7.6.1 oder V7.7 vorgesehen. Aus SLC-757 MT-6 Live-Smoke abgespaltene Diagnose-Slice: sonner@^2.0.7 + Toaster-Mount im RootLayout (Onboarding-Pattern 1:1) rendert keinen Toast im Cockpit. Sonner-Library wird komplett aus client bundle tree-shaked. 2 Fix-Versuche in SLC-757 (e82bda9 'use client' Zeile 1, cad02d0 Wrapper-Delete + Direct-Import) ohne Effekt. Vermutete Regression Next 16.1.1 → 16.2.3 (Onboarding funktioniert mit 16.1.1). Scope: Reproducer in isoliertem Mini-Next-Repo + Versions-Bisect + ggf. Next.js-Bugreport + Workaround (Toaster-Mount via Client-Component-Wrapper unterhalb (app) layout). RPT-460 dokumentiert die 3 Iterations + Befunde.",
+      "description": "V7.6-Defer per /requirements V7.6 2026-05-19 (RPT-466): BL-478 wird aus V7.6 herausgenommen, weil V7.6-Scope auf FEAT-761+FEAT-762 fokussiert ist und der Bug funktional unkritisch ist (Card-State-Reset SLC-757 ist aequivalent). Reproducer-Slice fuer V7.6.1 oder V7.7 vorgesehen. Aus SLC-757 MT-6 Live-Smoke abgespaltene Diagnose-Slice: sonner@^2.0.7 + Toaster-Mount im RootLayout (Onboarding-Pattern 1:1) rendert keinen Toast im Cockpit. Sonner-Library wird komplett aus client bundle tree-shaked. 2 Fix-Versuche in SLC-757 (e82bda9 'use client' Zeile 1, cad02d0 Wrapper-Delete + Direct-Import) ohne Effekt. Vermutete Regression Next 16.1.1 â†’ 16.2.3 (Onboarding funktioniert mit 16.1.1). Scope: Reproducer in isoliertem Mini-Next-Repo + Versions-Bisect + ggf. Next.js-Bugreport + Workaround (Toaster-Mount via Client-Component-Wrapper unterhalb (app) layout). RPT-460 dokumentiert die 3 Iterations + Befunde.",
       "createdAt": "2026-05-18"
     },
     {
       "id": "BL-477",
-      "title": "ISSUE-077 NL-Rule-Builder Apply-Polish — State-Reset (SLC-757)",
+      "title": "ISSUE-077 NL-Rule-Builder Apply-Polish â€” State-Reset (SLC-757)",
       "type": "improvement",
       "priority": "medium",
       "status": "done",
       "version": "V7.5",
-      "description": "Mini-Polish-Slice fuer ISSUE-077 (SLC-754 Live-Smoke RPT-453 Discovery): Nach erfolgreichem applyNlRule() bleibt die NL-Eingabe-Karte sichtbar (Textarea + Klarsprache + Preview + Apply-Button). DONE 2026-05-18: handleApply Variante A ruft handleNewRule() nach Erfolg — Card komplett zurueckgesetzt (Schema, Preview, Apply-CTA, Banner, Modal alle weg, Textarea leer). Live-Smoke 3 Iterations gegen Coolify-Image (zuletzt cad02d0) bestaetigen Reset-Verhalten. Toast-Teilziel zu ISSUE-078 + BL-478 abgespalten (Turbopack-Sonner-Hydration-Bug, ausser SLC-757-Scope). RPT-460.",
+      "description": "Mini-Polish-Slice fuer ISSUE-077 (SLC-754 Live-Smoke RPT-453 Discovery): Nach erfolgreichem applyNlRule() bleibt die NL-Eingabe-Karte sichtbar (Textarea + Klarsprache + Preview + Apply-Button). DONE 2026-05-18: handleApply Variante A ruft handleNewRule() nach Erfolg â€” Card komplett zurueckgesetzt (Schema, Preview, Apply-CTA, Banner, Modal alle weg, Textarea leer). Live-Smoke 3 Iterations gegen Coolify-Image (zuletzt cad02d0) bestaetigen Reset-Verhalten. Toast-Teilziel zu ISSUE-078 + BL-478 abgespalten (Turbopack-Sonner-Hydration-Bug, ausser SLC-757-Scope). RPT-460.",
       "createdAt": "2026-05-18"
     },
     {
       "id": "BL-476",
-      "title": "ISSUE-066 Middleware-Mitigation (FEAT-752) — Read-Only-Context Defense-in-Depth",
+      "title": "ISSUE-066 Middleware-Mitigation (FEAT-752) â€” Read-Only-Context Defense-in-Depth",
       "type": "improvement",
       "priority": "medium",
       "status": "done",
       "version": "V7.5",
-      "description": "ISSUE-066 schliessen via Middleware-basiertem Pfad-Check (`^\\/team\\/[^/]+\\/`-Regex) der `X-Read-Only-Mode: 1` Request-Header setzt. `assertNotReadOnlyContext()` liest sowohl AsyncLocalStorage als auch den Header. Damit greift der Read-Only-Guard auch bei Direct-Server-Action-Calls aus dem Drilldown — heute nur UX-Hide mitigiert. Plus Vitest-Mock-Test (RED-GREEN, 4 Cases) + Playwright-MCP-Live-Smoke via DevTools-Direct-Server-Action-Call. Pattern war im SLC-706-Quellcode-Kommentar dokumentiert. V7.5 setzt es um. ~1-2h. Slice-Planning done 2026-05-16: implementiert als SLC-751 (Foundation-First per Architecture-Empfehlung, erster V7.5-Slice). Spec /features/FEAT-752-readonly-context-middleware.md + /slices/SLC-751-issue066-middleware-mitigation.md.",
+      "description": "ISSUE-066 schliessen via Middleware-basiertem Pfad-Check (`^\\/team\\/[^/]+\\/`-Regex) der `X-Read-Only-Mode: 1` Request-Header setzt. `assertNotReadOnlyContext()` liest sowohl AsyncLocalStorage als auch den Header. Damit greift der Read-Only-Guard auch bei Direct-Server-Action-Calls aus dem Drilldown â€” heute nur UX-Hide mitigiert. Plus Vitest-Mock-Test (RED-GREEN, 4 Cases) + Playwright-MCP-Live-Smoke via DevTools-Direct-Server-Action-Call. Pattern war im SLC-706-Quellcode-Kommentar dokumentiert. V7.5 setzt es um. ~1-2h. Slice-Planning done 2026-05-16: implementiert als SLC-751 (Foundation-First per Architecture-Empfehlung, erster V7.5-Slice). Spec /features/FEAT-752-readonly-context-middleware.md + /slices/SLC-751-issue066-middleware-mitigation.md.",
       "createdAt": "2026-05-16"
     },
     {
       "id": "BL-442",
-      "title": "Custom-Reports — User legt eigene Berichts-Vorlagen im KI-Workspace an",
+      "title": "Custom-Reports â€” User legt eigene Berichts-Vorlagen im KI-Workspace an",
       "type": "feature",
       "priority": "medium",
       "status": "done",
       "version": "V7.6",
-      "description": "FEAT-762 DONE 2026-05-19. Alle 3 V7.6-Slices (SLC-761 Workspace-Refactor + SLC-762 Backend MIG-037 + 5 Server-Actions + SLC-763 Frontend) implementiert + /qa SLC-763 LIVE-PASS (RPT-471). End-to-End-Live-Smoke gegen Coolify gruen: freie Frage → Save → Dropdown-Eintrag → Klick → usage_count+1 → Rename → Delete → Context-Filter (mein-tag vs cockpit). audit_log Trail komplett: custom_report.created/executed/renamed/deleted alle vorhanden. Bedrock Claude Sonnet eu-central-1 mit Cost-Tracking. Requirements done 2026-05-19 als FEAT-762 (RPT-466 + features/FEAT-762-custom-reports.md). custom_reports-Tabelle mit RLS owner-scope (UNIQUE owner_user_id+name) + 'Meine Berichte'-Dropdown (Type-Ahead-Filter ab 6+ Items). MIG-037 additiv. Naechster Schritt: Gesamt-/qa V7.6 (V7.6-uebergreifend) → /final-check V7.6 → /go-live V7.6 → /deploy als REL-033.",
+      "description": "FEAT-762 DONE 2026-05-19. Alle 3 V7.6-Slices (SLC-761 Workspace-Refactor + SLC-762 Backend MIG-037 + 5 Server-Actions + SLC-763 Frontend) implementiert + /qa SLC-763 LIVE-PASS (RPT-471). End-to-End-Live-Smoke gegen Coolify gruen: freie Frage â†’ Save â†’ Dropdown-Eintrag â†’ Klick â†’ usage_count+1 â†’ Rename â†’ Delete â†’ Context-Filter (mein-tag vs cockpit). audit_log Trail komplett: custom_report.created/executed/renamed/deleted alle vorhanden. Bedrock Claude Sonnet eu-central-1 mit Cost-Tracking. Requirements done 2026-05-19 als FEAT-762 (RPT-466 + features/FEAT-762-custom-reports.md). custom_reports-Tabelle mit RLS owner-scope (UNIQUE owner_user_id+name) + 'Meine Berichte'-Dropdown (Type-Ahead-Filter ab 6+ Items). MIG-037 additiv. Naechster Schritt: Gesamt-/qa V7.6 (V7.6-uebergreifend) â†’ /final-check V7.6 â†’ /go-live V7.6 â†’ /deploy als REL-033.",
       "createdAt": "2026-05-09"
     },
     {
@@ -2189,7 +2189,7 @@
       "priority": "low",
       "status": "done",
       "version": "V8",
-      "description": "DEC-169 (V6.6): SLC-662 macht /performance zur Redirect-Page mit Toast (1 Sprint Bruecke). Nach REL-028 (V6.6-Release) ist die Toast-Bruecke aktiv — User-Migrations-Pfad sichtbar. Nach 1 Sprint (V6.7+) /performance-Datei + Redirect-Logik komplett loeschen. Voraussetzung: Audit dass keine Bookmarks/Verweise mehr auf /performance gehen (audit_log + access-log-Inspection).",
+      "description": "DEC-169 (V6.6): SLC-662 macht /performance zur Redirect-Page mit Toast (1 Sprint Bruecke). Nach REL-028 (V6.6-Release) ist die Toast-Bruecke aktiv â€” User-Migrations-Pfad sichtbar. Nach 1 Sprint (V6.7+) /performance-Datei + Redirect-Logik komplett loeschen. Voraussetzung: Audit dass keine Bookmarks/Verweise mehr auf /performance gehen (audit_log + access-log-Inspection).",
       "createdAt": "2026-05-09"
     },
     {
@@ -2199,7 +2199,7 @@
       "priority": "medium",
       "status": "open",
       "version": null,
-      "description": "Aktuell ist WON_STAGE_NAMES=['Gewonnen'] und LOST_STAGE_NAMES=['Verloren', 'Inaktiv / disqualifiziert'] (cockpit/src/app/(app)/pipeline/actions.ts:49-50). Die Multiplikatoren-Pipeline hat by design kein 'Gewonnen' (Beziehungspflege-Lebenszyklus, kein Deal-Closing) — der semantische Win-State ist 'Strategischer Multiplikator' (probability=95). Konsequenz: Beim Wechsel auf 'Strategischer Multiplikator' feuert auto_winloss_extract NICHT, obwohl es fachlich sinnvoll waere (Multiplikator hat etablierte Beziehung, ggf. erste Empfehlung gegeben — Win/Loss-Bedrock-Analyse waere wertvoll fuer das Wissensmanagement). Lost-Pfad funktioniert bereits (ueber 'Inaktiv / disqualifiziert'). Loesungs-Optionen: (a) WON_STAGE_NAMES erweitern um 'Strategischer Multiplikator', (b) pipeline-spezifisches Mapping Record<pipeline_name, {won_stages, lost_stages}>, (c) Stage-Flag-Feld auf pipeline_stages (is_won, is_lost) + Migration. Bedrock-Prompt FEAT-114 muesste fuer Multiplikatoren-Kontext ggf. angepasst werden (anderer Win/Loss-Begriff). Discovery-Fund aus SLC-665 /qa 2026-05-11. V7-Diskussion empfohlen.",
+      "description": "Aktuell ist WON_STAGE_NAMES=['Gewonnen'] und LOST_STAGE_NAMES=['Verloren', 'Inaktiv / disqualifiziert'] (cockpit/src/app/(app)/pipeline/actions.ts:49-50). Die Multiplikatoren-Pipeline hat by design kein 'Gewonnen' (Beziehungspflege-Lebenszyklus, kein Deal-Closing) â€” der semantische Win-State ist 'Strategischer Multiplikator' (probability=95). Konsequenz: Beim Wechsel auf 'Strategischer Multiplikator' feuert auto_winloss_extract NICHT, obwohl es fachlich sinnvoll waere (Multiplikator hat etablierte Beziehung, ggf. erste Empfehlung gegeben â€” Win/Loss-Bedrock-Analyse waere wertvoll fuer das Wissensmanagement). Lost-Pfad funktioniert bereits (ueber 'Inaktiv / disqualifiziert'). Loesungs-Optionen: (a) WON_STAGE_NAMES erweitern um 'Strategischer Multiplikator', (b) pipeline-spezifisches Mapping Record<pipeline_name, {won_stages, lost_stages}>, (c) Stage-Flag-Feld auf pipeline_stages (is_won, is_lost) + Migration. Bedrock-Prompt FEAT-114 muesste fuer Multiplikatoren-Kontext ggf. angepasst werden (anderer Win/Loss-Begriff). Discovery-Fund aus SLC-665 /qa 2026-05-11. V7-Diskussion empfohlen.",
       "createdAt": "2026-05-11"
     },
     {
@@ -2209,7 +2209,7 @@
       "priority": "high",
       "status": "done",
       "version": "V8",
-      "description": "Aktuell: User dragged Deal auf 'Verloren', moveDealToStage (cockpit/src/app/(app)/pipeline/actions.ts:381-490) prueft STAGE_REQUIRED_FIELDS und blockiert mit error 'Pflichtfelder fuer Verloren: Verlustgrund'. User muss den Move abbrechen, ueber Bearbeitungs-Pencil ins Deal, Verlustgrund eintragen, dann erneut draggen. Hohe Friction, jedes Mal. Gleiche Logik fuer 'Gewonnen' (Deal-Wert), 'Angebot vorbereitet'/'Angebot offen' (Deal-Wert), 'Verhandlung / Einwaende' (Deal-Wert + Kontakt). Loesung: Inline-Modal direkt beim Drop, das die Pflichtfelder abfragt + transaktional speichert + den Move ausfuehrt. UX-Pattern: shadcn Dialog + Form-Felder generisch aus STAGE_REQUIRED_FIELDS gerendert. Beim Cancel: kein Move. Beim Save: Pflichtfelder + Stage-Update in einer Server-Action. Discovery aus SLC-665 /qa 2026-05-11. Voraussetzung fuer BL-456 (KI-Vorschlag fuer Verlustgrund) — die KI-Logik haengt im gleichen Modal.",
+      "description": "Aktuell: User dragged Deal auf 'Verloren', moveDealToStage (cockpit/src/app/(app)/pipeline/actions.ts:381-490) prueft STAGE_REQUIRED_FIELDS und blockiert mit error 'Pflichtfelder fuer Verloren: Verlustgrund'. User muss den Move abbrechen, ueber Bearbeitungs-Pencil ins Deal, Verlustgrund eintragen, dann erneut draggen. Hohe Friction, jedes Mal. Gleiche Logik fuer 'Gewonnen' (Deal-Wert), 'Angebot vorbereitet'/'Angebot offen' (Deal-Wert), 'Verhandlung / Einwaende' (Deal-Wert + Kontakt). Loesung: Inline-Modal direkt beim Drop, das die Pflichtfelder abfragt + transaktional speichert + den Move ausfuehrt. UX-Pattern: shadcn Dialog + Form-Felder generisch aus STAGE_REQUIRED_FIELDS gerendert. Beim Cancel: kein Move. Beim Save: Pflichtfelder + Stage-Update in einer Server-Action. Discovery aus SLC-665 /qa 2026-05-11. Voraussetzung fuer BL-456 (KI-Vorschlag fuer Verlustgrund) â€” die KI-Logik haengt im gleichen Modal.",
       "createdAt": "2026-05-11"
     },
     {
@@ -2219,7 +2219,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V8",
-      "description": "Beim Stage-Move auf 'Verloren' (oder 'Geparkt') haengt der User-Verlustgrund-Eingabe oft an: Was war der konkrete Ausloeser? Meist liegt das in der Activity-History (E-Mail mit Absage, Meeting-Notiz 'will nicht', Call-Recording mit Einwand, Notiz). Idee: Beim Oeffnen des Verlust-Modals (BL-455) laedt eine Server-Action die letzten ~5 Activities (emails, meetings, notes, calls) + macht einen Bedrock-Call (FEAT-114-Pattern, EU-Region Frankfurt) mit Prompt 'Analysiere diese letzten Interaktionen und schlage einen Verlustgrund vor'. Antwort wird im Modal als vorausgefuelltes Textfeld + Button 'Uebernehmen' oder 'Eigenen Grund eingeben' angezeigt. User editierbar, dann Speichern. Audit-Trail: ki_suggested vs user_typed in auto_winloss_runs oder Audit-Log. Voraussetzung: BL-455 (Modal-Container) ist done. Bedrock-Adapter aus FEAT-114/SLC-665 wiederverwendbar — nur Prompt anders. Datenschutz: gleicher Pfad wie Win/Loss-Extract, EU-Region, keine US-Endpoints. Discovery aus SLC-665 /qa 2026-05-11.",
+      "description": "Beim Stage-Move auf 'Verloren' (oder 'Geparkt') haengt der User-Verlustgrund-Eingabe oft an: Was war der konkrete Ausloeser? Meist liegt das in der Activity-History (E-Mail mit Absage, Meeting-Notiz 'will nicht', Call-Recording mit Einwand, Notiz). Idee: Beim Oeffnen des Verlust-Modals (BL-455) laedt eine Server-Action die letzten ~5 Activities (emails, meetings, notes, calls) + macht einen Bedrock-Call (FEAT-114-Pattern, EU-Region Frankfurt) mit Prompt 'Analysiere diese letzten Interaktionen und schlage einen Verlustgrund vor'. Antwort wird im Modal als vorausgefuelltes Textfeld + Button 'Uebernehmen' oder 'Eigenen Grund eingeben' angezeigt. User editierbar, dann Speichern. Audit-Trail: ki_suggested vs user_typed in auto_winloss_runs oder Audit-Log. Voraussetzung: BL-455 (Modal-Container) ist done. Bedrock-Adapter aus FEAT-114/SLC-665 wiederverwendbar â€” nur Prompt anders. Datenschutz: gleicher Pfad wie Win/Loss-Extract, EU-Region, keine US-Endpoints. Discovery aus SLC-665 /qa 2026-05-11.",
       "createdAt": "2026-05-11"
     },
     {
@@ -2229,7 +2229,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V7",
-      "description": "SLC-667 AC13-Gap aus QA RPT-385: Die Sidebar ist auf Viewports ≤768px komplett via `max-md:hidden` ausgeblendet, kein Hamburger-Toggle-Button. Aktuelle Mobile-User haben keinen Sidebar-Zugang — sie navigieren nur via URL oder Action-Buttons in Pages. Pre-existing-Limitation des gesamten Cockpit-Layouts (nicht SLC-667-induziert). V7-Backlog: Hamburger-Button im PageHeader-Bereich (oder eigene mobile top-bar), Sidebar als Sheet/Drawer auf Klick. Sektion-Header (ANALYSE/OPERATIV/ARBEITSBEREICHE/VERWALTUNG) bleiben in Mobile-Drawer sichtbar. Voraussetzung: V6.6 released. Discovery aus SLC-667 /qa 2026-05-11. **Resolved 2026-05-14 in SLC-707 MT-3+MT-5 (Subagent-Commit a40cf8f):** MobileTopBar-Component + Sheet-Drawer (via base-ui Dialog) im (app)/layout.tsx. Memory-only State (useState), Auto-Close bei pathname-Change.",
+      "description": "SLC-667 AC13-Gap aus QA RPT-385: Die Sidebar ist auf Viewports â‰¤768px komplett via `max-md:hidden` ausgeblendet, kein Hamburger-Toggle-Button. Aktuelle Mobile-User haben keinen Sidebar-Zugang â€” sie navigieren nur via URL oder Action-Buttons in Pages. Pre-existing-Limitation des gesamten Cockpit-Layouts (nicht SLC-667-induziert). V7-Backlog: Hamburger-Button im PageHeader-Bereich (oder eigene mobile top-bar), Sidebar als Sheet/Drawer auf Klick. Sektion-Header (ANALYSE/OPERATIV/ARBEITSBEREICHE/VERWALTUNG) bleiben in Mobile-Drawer sichtbar. Voraussetzung: V6.6 released. Discovery aus SLC-667 /qa 2026-05-11. **Resolved 2026-05-14 in SLC-707 MT-3+MT-5 (Subagent-Commit a40cf8f):** MobileTopBar-Component + Sheet-Drawer (via base-ui Dialog) im (app)/layout.tsx. Memory-only State (useState), Auto-Close bei pathname-Change.",
       "createdAt": "2026-05-11"
     },
     {
@@ -2239,7 +2239,7 @@
       "priority": "low",
       "status": "open",
       "version": null,
-      "description": "SLC-667 AC17-Open-Point aus QA RPT-385: Kalender-Mode 'work' rendert aktuell NUR die Working-Hours-Stunden (z.B. 09:00-18:00). Termine ausserhalb (z.B. 07:30 Fruehmeeting, 19:00 Abendkurs) sind ausgeblendet oder verschoben — der User sieht sie nicht. Spec verlangt 'gestauchter Pre/Post-Bereich (1px-Linien-Trenner + reduzierte Hoehe)'. Implementation: kalender-client.tsx DayView/WeekView braucht 3 Render-Bereiche statt 1: Pre-Working-Hours (Stauchung), Working-Hours (normal), Post-Working-Hours (Stauchung). topOffset-Math entsprechend anpassen. Pragmatischer Workaround heute: User wechselt manuell via Toggle auf 'Voller Tag'. Discovery aus SLC-667 /qa 2026-05-11.",
+      "description": "SLC-667 AC17-Open-Point aus QA RPT-385: Kalender-Mode 'work' rendert aktuell NUR die Working-Hours-Stunden (z.B. 09:00-18:00). Termine ausserhalb (z.B. 07:30 Fruehmeeting, 19:00 Abendkurs) sind ausgeblendet oder verschoben â€” der User sieht sie nicht. Spec verlangt 'gestauchter Pre/Post-Bereich (1px-Linien-Trenner + reduzierte Hoehe)'. Implementation: kalender-client.tsx DayView/WeekView braucht 3 Render-Bereiche statt 1: Pre-Working-Hours (Stauchung), Working-Hours (normal), Post-Working-Hours (Stauchung). topOffset-Math entsprechend anpassen. Pragmatischer Workaround heute: User wechselt manuell via Toggle auf 'Voller Tag'. Discovery aus SLC-667 /qa 2026-05-11.",
       "createdAt": "2026-05-11"
     },
     {
@@ -2299,7 +2299,7 @@
       "priority": "high",
       "status": "done",
       "version": "V7",
-      "description": "Aus /qa V7 RPT-408 ISSUE-067: SLC-707 MT-1 fuehrt Raw-pg-Connection-Pfad ein (cockpit/src/lib/db/pg.ts via POSTGRES_URL/DATABASE_URL ENV). Coolify Business-System Resource hat aktuell keine dieser ENV-Variablen gesetzt → Bulk-Reassign-UI in Produktion bricht beim Klick mit Fehlermeldung 'Kein Postgres-Connection-String in POSTGRES_URL oder DATABASE_URL gefunden'. **User-Action (~2 min):** Coolify UI → Business-System Resource → Environment Variables → POSTGRES_URL=postgresql://postgres:${POSTGRES_PASSWORD}@<supabase-db-host>:5432/postgres setzen. Container-Suffix wechselt bei jedem DB-Redeploy (IMP-497), entweder stabilen Service-Alias 'supabase-db' verwenden falls Coolify-Compose das auto-erzeugt, oder ENV nach jedem DB-Redeploy nachziehen. **Alternative (BL-466 falls Drift unhandhabbar): SECURITY DEFINER Postgres-Function + supabase.rpc()-Refactor (~2-3h).** Voraussetzung fuer V7-Release. **Resolved 2026-05-14 via Live-Smoke RPT-409:** ENV gesetzt mit URL-encodetem Password + stabilem DNS-Alias supabase-db (kein Drift-Risk). Bulk-Reassign Preview + Apply LIVE PASS (174 Records, 9 audit_log entries).",
+      "description": "Aus /qa V7 RPT-408 ISSUE-067: SLC-707 MT-1 fuehrt Raw-pg-Connection-Pfad ein (cockpit/src/lib/db/pg.ts via POSTGRES_URL/DATABASE_URL ENV). Coolify Business-System Resource hat aktuell keine dieser ENV-Variablen gesetzt â†’ Bulk-Reassign-UI in Produktion bricht beim Klick mit Fehlermeldung 'Kein Postgres-Connection-String in POSTGRES_URL oder DATABASE_URL gefunden'. **User-Action (~2 min):** Coolify UI â†’ Business-System Resource â†’ Environment Variables â†’ POSTGRES_URL=postgresql://postgres:${POSTGRES_PASSWORD}@<supabase-db-host>:5432/postgres setzen. Container-Suffix wechselt bei jedem DB-Redeploy (IMP-497), entweder stabilen Service-Alias 'supabase-db' verwenden falls Coolify-Compose das auto-erzeugt, oder ENV nach jedem DB-Redeploy nachziehen. **Alternative (BL-466 falls Drift unhandhabbar): SECURITY DEFINER Postgres-Function + supabase.rpc()-Refactor (~2-3h).** Voraussetzung fuer V7-Release. **Resolved 2026-05-14 via Live-Smoke RPT-409:** ENV gesetzt mit URL-encodetem Password + stabilem DNS-Alias supabase-db (kein Drift-Risk). Bulk-Reassign Preview + Apply LIVE PASS (174 Records, 9 audit_log entries).",
       "createdAt": "2026-05-14"
     },
     {
@@ -2309,7 +2309,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V7",
-      "description": "Aus /qa V7 RPT-408 ISSUE-068: cockpit/vitest.config.ts include-Pattern faengt nur src/**/*.test.ts(x), uebersieht root-level cockpit/__tests__/ (RLS-Matrix 96 + Bulk-Reassign 20 + Drilldown 4 + Aggregat-Live-DB 6 = 138+ V7-Tests). npm run test deckt aktuell die V7-Live-DB-Coverage nicht ab. **Resolved 2026-05-14 mit korrigierter Loesung:** Erster Anlauf (include-Pattern in vitest.config.ts erweitern) brach den Default-Lauf — __tests__/ braucht Node-env + TEST_DATABASE_URL, scheitert in jsdom-Default mit 'TEST_DATABASE_URL nicht gesetzt'. Korrekt: Neues npm-Script `test:all` in cockpit/package.json hinzugefuegt, das `test` (src/*, jsdom) gefolgt von `test:rls` (__tests__/*, node-env, Coolify-DB) ausfuehrt. vitest.config.ts auf src-only zurueckgesetzt. /qa-Skill soll zukuenftig `npm run test:all` verwenden (IMP-512 im Dev-System).",
+      "description": "Aus /qa V7 RPT-408 ISSUE-068: cockpit/vitest.config.ts include-Pattern faengt nur src/**/*.test.ts(x), uebersieht root-level cockpit/__tests__/ (RLS-Matrix 96 + Bulk-Reassign 20 + Drilldown 4 + Aggregat-Live-DB 6 = 138+ V7-Tests). npm run test deckt aktuell die V7-Live-DB-Coverage nicht ab. **Resolved 2026-05-14 mit korrigierter Loesung:** Erster Anlauf (include-Pattern in vitest.config.ts erweitern) brach den Default-Lauf â€” __tests__/ braucht Node-env + TEST_DATABASE_URL, scheitert in jsdom-Default mit 'TEST_DATABASE_URL nicht gesetzt'. Korrekt: Neues npm-Script `test:all` in cockpit/package.json hinzugefuegt, das `test` (src/*, jsdom) gefolgt von `test:rls` (__tests__/*, node-env, Coolify-DB) ausfuehrt. vitest.config.ts auf src-only zurueckgesetzt. /qa-Skill soll zukuenftig `npm run test:all` verwenden (IMP-512 im Dev-System).",
       "createdAt": "2026-05-14"
     },
     {
@@ -2319,27 +2319,27 @@
       "priority": "medium",
       "status": "done",
       "version": "V7.1",
-      "description": "Aus /final-check V7 RPT-410: 2 MEDIUM-Findings als Post-Release-Polish gebuendelt (~30 min Aufwand). (1) ISSUE-069 Audit-Doc-Sync: docs/AUDIT_SERVER_ACTIONS_V7.md um Bulk-Reassign-Server-Actions (bulkReassignPreview, bulkReassignApply), bulk-reassign.ts-Audit-Helper, working-hours-actions.ts, winloss.ts persistManualRun, lib/audit.ts logAudit/logAuditWithId erweitern. 1 Fehlklassifizierung von insight-actions.ts:201 korrigieren (steht als 'wrapper', macht aber selbst INSERT). (2) ISSUE-070 4 Defense-in-Depth-Guards: 4× await assertNotReadOnlyContext() als first line in bulk-reassign-actions.ts bulkReassignApply + insight-actions.ts saveInsight + working-hours-actions.ts updateWorkingHoursSettings + winloss.ts persistManualRun. Plus 4 Vitest-Mock-Tests (RED-GREEN-Pattern: Mock setzt Read-Only-Context, Action wird mit Error abgewiesen). Kein aktueller Exploit-Pfad — bei zukuenftiger Drilldown-Erweiterung wichtig.",
+      "description": "Aus /final-check V7 RPT-410: 2 MEDIUM-Findings als Post-Release-Polish gebuendelt (~30 min Aufwand). (1) ISSUE-069 Audit-Doc-Sync: docs/AUDIT_SERVER_ACTIONS_V7.md um Bulk-Reassign-Server-Actions (bulkReassignPreview, bulkReassignApply), bulk-reassign.ts-Audit-Helper, working-hours-actions.ts, winloss.ts persistManualRun, lib/audit.ts logAudit/logAuditWithId erweitern. 1 Fehlklassifizierung von insight-actions.ts:201 korrigieren (steht als 'wrapper', macht aber selbst INSERT). (2) ISSUE-070 4 Defense-in-Depth-Guards: 4Ã— await assertNotReadOnlyContext() als first line in bulk-reassign-actions.ts bulkReassignApply + insight-actions.ts saveInsight + working-hours-actions.ts updateWorkingHoursSettings + winloss.ts persistManualRun. Plus 4 Vitest-Mock-Tests (RED-GREEN-Pattern: Mock setzt Read-Only-Context, Action wird mit Error abgewiesen). Kein aktueller Exploit-Pfad â€” bei zukuenftiger Drilldown-Erweiterung wichtig.",
       "createdAt": "2026-05-14"
     },
     {
       "id": "BL-467",
-      "title": "ISSUE-062 GOTRUE_SMTP_PASS in Coolify-ENV setzen — Invite-Mail-Versand entsperren",
+      "title": "ISSUE-062 GOTRUE_SMTP_PASS in Coolify-ENV setzen â€” Invite-Mail-Versand entsperren",
       "type": "fix",
       "priority": "high",
       "status": "done",
       "version": "V7",
-      "description": "Tracking-BL fuer den User-Manual-Coolify-Fix zu ISSUE-062 (KNOWN_ISSUES.md). Aktueller Zustand: GoTrue-Container hat ENV `GOTRUE_SMTP_PASS=unused` und `SMTP_PASS=unused`, waehrend `SMTP_PASSWORD=aithatworks-01!` korrekt ist. GoTrue liest die `GOTRUE_*`-prefixed Variante → Mail-Versand schlaegt mit `535 Authentication credentials invalid` fehl. Coolify-Supabase-ENV-Wrapper-Mapping-Bug. Blockiert ALLE Auth-Mails (Invite, Password-Reset, Email-Change-Confirmation), inkl. SLC-703 AC3 Live-Verifikation. Fix (~2 Min User-Aktion): Coolify-UI → Business-System Resource → Environment Variables → `GOTRUE_SMTP_PASS=aithatworks-01!` setzen + GoTrue-Container redeployen (alternativ `SMTP_PASS=aithatworks-01!`). Verifikation: Invite an Test-Mail-Adresse via /settings/team → Mail trifft ein, Link funktioniert. Wenn done: ISSUE-062 Status auf resolved setzen + BL-467 auf done.",
+      "description": "Tracking-BL fuer den User-Manual-Coolify-Fix zu ISSUE-062 (KNOWN_ISSUES.md). Aktueller Zustand: GoTrue-Container hat ENV `GOTRUE_SMTP_PASS=unused` und `SMTP_PASS=unused`, waehrend `SMTP_PASSWORD=aithatworks-01!` korrekt ist. GoTrue liest die `GOTRUE_*`-prefixed Variante â†’ Mail-Versand schlaegt mit `535 Authentication credentials invalid` fehl. Coolify-Supabase-ENV-Wrapper-Mapping-Bug. Blockiert ALLE Auth-Mails (Invite, Password-Reset, Email-Change-Confirmation), inkl. SLC-703 AC3 Live-Verifikation. Fix (~2 Min User-Aktion): Coolify-UI â†’ Business-System Resource â†’ Environment Variables â†’ `GOTRUE_SMTP_PASS=aithatworks-01!` setzen + GoTrue-Container redeployen (alternativ `SMTP_PASS=aithatworks-01!`). Verifikation: Invite an Test-Mail-Adresse via /settings/team â†’ Mail trifft ein, Link funktioniert. Wenn done: ISSUE-062 Status auf resolved setzen + BL-467 auf done.",
       "createdAt": "2026-05-14"
     },
     {
       "id": "BL-468",
-      "title": "Drilldown-View Vollausbau: gleiche Toggle-/Filter-/Forecast-Optionen wie /pipeline + /aktivitaeten + /mein-tag — read-only",
+      "title": "Drilldown-View Vollausbau: gleiche Toggle-/Filter-/Forecast-Optionen wie /pipeline + /aktivitaeten + /mein-tag â€” read-only",
       "type": "improvement",
       "priority": "medium",
       "status": "done",
       "version": "V7.1",
-      "description": "User-Feedback waehrend V7-Walkthrough 2026-05-14: Aktuell zeigt `/team/[user_id]/pipeline` nur die Liste der aktiven Deals des Members. Soll: identische Pipeline-Ansicht wie das normale `/pipeline` fuer den Member-Owner, INKL. aller Toggle-Moeglichkeiten (Funnel-View, Filter, Pipeline-Switcher, Stages, Forecast-Modi). Read-Only-Modus bleibt strikt — keine Mutate-Buttons. Implementation-Hint: vermutlich die `/pipeline`-Page-Component mit zusaetzlichem `viewAsUserId`-Prop wiederverwenden statt eigener Drilldown-Variante. Pflicht-Checks: (a) ReadOnlyContext via Layout-Wrap aktiv, (b) alle Stage-Change/Edit/Mutate-Buttons hidden oder disabled, (c) Pipeline-Toggles funktionieren mit Member-Daten (Filter scopen auf owner_user_id = target_user_id), (d) Filter-State persistiert nicht cross-User. Spaeter Erweiterung um analoge Sicht fuer /team/[user_id]/aktivitaeten + /team/[user_id]/mein-tag denkbar.",
+      "description": "User-Feedback waehrend V7-Walkthrough 2026-05-14: Aktuell zeigt `/team/[user_id]/pipeline` nur die Liste der aktiven Deals des Members. Soll: identische Pipeline-Ansicht wie das normale `/pipeline` fuer den Member-Owner, INKL. aller Toggle-Moeglichkeiten (Funnel-View, Filter, Pipeline-Switcher, Stages, Forecast-Modi). Read-Only-Modus bleibt strikt â€” keine Mutate-Buttons. Implementation-Hint: vermutlich die `/pipeline`-Page-Component mit zusaetzlichem `viewAsUserId`-Prop wiederverwenden statt eigener Drilldown-Variante. Pflicht-Checks: (a) ReadOnlyContext via Layout-Wrap aktiv, (b) alle Stage-Change/Edit/Mutate-Buttons hidden oder disabled, (c) Pipeline-Toggles funktionieren mit Member-Daten (Filter scopen auf owner_user_id = target_user_id), (d) Filter-State persistiert nicht cross-User. Spaeter Erweiterung um analoge Sicht fuer /team/[user_id]/aktivitaeten + /team/[user_id]/mein-tag denkbar.",
       "createdAt": "2026-05-14"
     },
     {
@@ -2349,17 +2349,17 @@
       "priority": "high",
       "status": "done",
       "version": "V7.1",
-      "description": "User-Feedback waehrend V7-Walkthrough 2026-05-14: Aktuell ist die Settings-Page /settings frei zugaenglich fuer alle Rollen — jeder Teamlead/Member kann Branding (Logo, Farben, Firma, Webseite, Footer-Text), Zahlungsbedingungen (Steuereinstellungen), Pipeline-Definitionen, E-Mail-Templates, Workflow-Automation, Kampagnen, Produkte aendern. Das ist gefaehrlich — diese Settings sind organisationsweit und sollen nur von Admins veraenderbar sein. **Soll:** Granulares Rollen-Permission-System auf Settings-Sub-Pages. (a) Admin-only: Branding, Payment-Terms (inkl. Steuern), Pipelines/Stages, Templates, Automation, Campaigns, Products, Compliance, IMAP. (b) Alle (inkl. Teamlead/Member): Mein Profil (Name, Telefon, Avatar), Working-Hours (eigene Arbeitszeit), Meeting-Einstellungen + Briefing (eigene). (c) Teamlead bonus: Team-Verwaltung (existiert, ist schon ADMIN_TEAMLEAD). Implementation-Hint: vermutlich `assertRole`-Server-Guard auf jeder Admin-only-Sub-Page + Sidebar-Visibility-Filter aktualisieren (sidebar-config.ts visibleFor). Settings-Landing-Page filtert Kacheln entsprechend Rolle. Wichtig: Brauchbar definieren was 'schaedlich' ist — Vor-Discussion mit User klaeren ob z.B. Workflow-Automation auch nur Admin oder Teamlead+Admin. Pflicht-Verifikation: jede Sub-Page mit Member-Login geladen → 403/Redirect. Audit-Trail bei jeder Branding/Payment-Aenderung (audit_log.action='settings_branding_update' etc.) — vermutlich existiert das schon partiell.",
+      "description": "User-Feedback waehrend V7-Walkthrough 2026-05-14: Aktuell ist die Settings-Page /settings frei zugaenglich fuer alle Rollen â€” jeder Teamlead/Member kann Branding (Logo, Farben, Firma, Webseite, Footer-Text), Zahlungsbedingungen (Steuereinstellungen), Pipeline-Definitionen, E-Mail-Templates, Workflow-Automation, Kampagnen, Produkte aendern. Das ist gefaehrlich â€” diese Settings sind organisationsweit und sollen nur von Admins veraenderbar sein. **Soll:** Granulares Rollen-Permission-System auf Settings-Sub-Pages. (a) Admin-only: Branding, Payment-Terms (inkl. Steuern), Pipelines/Stages, Templates, Automation, Campaigns, Products, Compliance, IMAP. (b) Alle (inkl. Teamlead/Member): Mein Profil (Name, Telefon, Avatar), Working-Hours (eigene Arbeitszeit), Meeting-Einstellungen + Briefing (eigene). (c) Teamlead bonus: Team-Verwaltung (existiert, ist schon ADMIN_TEAMLEAD). Implementation-Hint: vermutlich `assertRole`-Server-Guard auf jeder Admin-only-Sub-Page + Sidebar-Visibility-Filter aktualisieren (sidebar-config.ts visibleFor). Settings-Landing-Page filtert Kacheln entsprechend Rolle. Wichtig: Brauchbar definieren was 'schaedlich' ist â€” Vor-Discussion mit User klaeren ob z.B. Workflow-Automation auch nur Admin oder Teamlead+Admin. Pflicht-Verifikation: jede Sub-Page mit Member-Login geladen â†’ 403/Redirect. Audit-Trail bei jeder Branding/Payment-Aenderung (audit_log.action='settings_branding_update' etc.) â€” vermutlich existiert das schon partiell.",
       "createdAt": "2026-05-14"
     },
     {
       "id": "BL-470",
-      "title": "Invite-Mail-Confirmation-URL nutzt Container-Hostname (supabase-kong) statt Public-Domain — GoTrue-Self-hosted-Issue",
+      "title": "Invite-Mail-Confirmation-URL nutzt Container-Hostname (supabase-kong) statt Public-Domain â€” GoTrue-Self-hosted-Issue",
       "type": "bug",
       "priority": "high",
       "status": "done",
       "version": "V7.1",
-      "description": "User-Walkthrough 2026-05-14: Mail-Versand klappt (SMTP-Fix BL-467 done), aber der Confirmation-Link in der Invite-Mail zeigt auf `http://supabase-kong:8000/auth/v1/verify?token=...` (interner Docker-Container-Hostname) statt auf `https://business.strategaizetransition.com/auth/v1/verify?token=...`. Browser-DNS-Lookup auf `supabase-kong` scheitert mit DNS_PROBE_FINISHED_NXDOMAIN. **Root Cause:** App-Server-Action ruft `supabase.auth.admin.inviteUserByEmail()` ueber Server-Side-Admin-Client mit `SUPABASE_URL=http://supabase-kong:8000` (Container-DNS) auf. GoTrue v2.160.0 in Coolify-Supabase-Stack baut die Confirmation-URL aus dem Request-Host statt aus `GOTRUE_API_EXTERNAL_URL` — bekanntes Self-hosted-Issue. createAdminClient setzt zwar X-Forwarded-Host + X-Forwarded-Proto, GoTrue respektiert sie ohne trusted_proxy-Flag nicht. **Workaround User-Side:** Mail-Link manuell editieren — `http://supabase-kong:8000` → `https://business.strategaizetransition.com`. **Empfohlene Loesung (Code-Fix, ~2-3h):** In `cockpit/src/lib/auth/invite.ts` umbauen auf `admin.auth.admin.generateLink({ type: 'invite', email, options: { redirectTo } })`. Liefert `action_link` mit korrektem Public-Host. Mail-Versand selbst via V5.3 NodeMailer-SMTP-Pipeline mit eigenem Template (Stil im Style-Guide-V2 + Logo). Vorteil: Mail-Template komplett unter Kontrolle, kein GoTrue-Auto-Mail mehr, kein BL-467-SMTP-ENV-Wrapper-Issue mehr. **Alternativen geprueft:** (a) ENV-Tuning GOTRUE_API_TRUSTED_PROXY=1 + GoTrue v2.170-Update — unsicher, Stack-Risk. (b) GoTrue-Image standalone bumpen — Stack-Risk. Code-Fix sauberster Pfad. **Tests:** Vitest invite.test.ts mit gemockter generateLink-Response + NodeMailer-Mock. Live-Smoke: Invite an reale Mail-Adresse, Link klicken, Password setzen, Login erfolgreich.",
+      "description": "User-Walkthrough 2026-05-14: Mail-Versand klappt (SMTP-Fix BL-467 done), aber der Confirmation-Link in der Invite-Mail zeigt auf `http://supabase-kong:8000/auth/v1/verify?token=...` (interner Docker-Container-Hostname) statt auf `https://business.strategaizetransition.com/auth/v1/verify?token=...`. Browser-DNS-Lookup auf `supabase-kong` scheitert mit DNS_PROBE_FINISHED_NXDOMAIN. **Root Cause:** App-Server-Action ruft `supabase.auth.admin.inviteUserByEmail()` ueber Server-Side-Admin-Client mit `SUPABASE_URL=http://supabase-kong:8000` (Container-DNS) auf. GoTrue v2.160.0 in Coolify-Supabase-Stack baut die Confirmation-URL aus dem Request-Host statt aus `GOTRUE_API_EXTERNAL_URL` â€” bekanntes Self-hosted-Issue. createAdminClient setzt zwar X-Forwarded-Host + X-Forwarded-Proto, GoTrue respektiert sie ohne trusted_proxy-Flag nicht. **Workaround User-Side:** Mail-Link manuell editieren â€” `http://supabase-kong:8000` â†’ `https://business.strategaizetransition.com`. **Empfohlene Loesung (Code-Fix, ~2-3h):** In `cockpit/src/lib/auth/invite.ts` umbauen auf `admin.auth.admin.generateLink({ type: 'invite', email, options: { redirectTo } })`. Liefert `action_link` mit korrektem Public-Host. Mail-Versand selbst via V5.3 NodeMailer-SMTP-Pipeline mit eigenem Template (Stil im Style-Guide-V2 + Logo). Vorteil: Mail-Template komplett unter Kontrolle, kein GoTrue-Auto-Mail mehr, kein BL-467-SMTP-ENV-Wrapper-Issue mehr. **Alternativen geprueft:** (a) ENV-Tuning GOTRUE_API_TRUSTED_PROXY=1 + GoTrue v2.170-Update â€” unsicher, Stack-Risk. (b) GoTrue-Image standalone bumpen â€” Stack-Risk. Code-Fix sauberster Pfad. **Tests:** Vitest invite.test.ts mit gemockter generateLink-Response + NodeMailer-Mock. Live-Smoke: Invite an reale Mail-Adresse, Link klicken, Password setzen, Login erfolgreich.",
       "createdAt": "2026-05-14"
     },
     {
@@ -2389,7 +2389,7 @@
       "priority": "high",
       "status": "done",
       "version": "V7.2",
-      "description": "Accepted Risk REL-030: cockpit/__tests__/rls/v7-rls-matrix.test.ts faengt 96 Multi-User-RLS-Cases (8 Tabellen x 3 Rollen x 4 Operationen) — alle SKIPPED weil `npm run seed:multi-user` nicht auf Coolify-DB applied. Fix: (1) Seed-Script gegen Coolify-DB idempotent applicieren (INSERT ON CONFLICT DO NOTHING fuer 3 Test-Owner-Accounts + Daten in 8 Tabellen). (2) Container-Bootstrap einbauen (Dockerfile-Entrypoint oder start.sh) damit nach jedem Coolify-Redeploy idempotent re-applied. UUID-Range 0...000080..0000ba001 (qa-* Prefix, klar von Production-IDs separiert). Verifikation: nach Bootstrap `npm run test:rls -- v7-rls-matrix` = 96 PASS (statt 96 SKIP). Time-Box ~2h Hauptarbeit (Bootstrap-Hook + Seed-Daten-Umfang-Entscheidung). Erwartungs-Outcome 118/118 RLS PASS auf Coolify-DB.",
+      "description": "Accepted Risk REL-030: cockpit/__tests__/rls/v7-rls-matrix.test.ts faengt 96 Multi-User-RLS-Cases (8 Tabellen x 3 Rollen x 4 Operationen) â€” alle SKIPPED weil `npm run seed:multi-user` nicht auf Coolify-DB applied. Fix: (1) Seed-Script gegen Coolify-DB idempotent applicieren (INSERT ON CONFLICT DO NOTHING fuer 3 Test-Owner-Accounts + Daten in 8 Tabellen). (2) Container-Bootstrap einbauen (Dockerfile-Entrypoint oder start.sh) damit nach jedem Coolify-Redeploy idempotent re-applied. UUID-Range 0...000080..0000ba001 (qa-* Prefix, klar von Production-IDs separiert). Verifikation: nach Bootstrap `npm run test:rls -- v7-rls-matrix` = 96 PASS (statt 96 SKIP). Time-Box ~2h Hauptarbeit (Bootstrap-Hook + Seed-Daten-Umfang-Entscheidung). Erwartungs-Outcome 118/118 RLS PASS auf Coolify-DB.",
       "createdAt": "2026-05-16"
     },
     {
@@ -2399,7 +2399,7 @@
       "priority": "medium",
       "status": "done",
       "version": "V7.2",
-      "description": "Accepted Risk REL-030: cockpit/vitest.rls.config.ts hat keinen Path-Alias-Resolver fuer @/-Imports. Folge: cockpit/__tests__/team/bulk-reassign.test.ts importiert `../../src/lib/team/bulk-reassign`, die Source macht `import { getPgClient } from '@/lib/db/pg'` (Z.15) → Resolver kann @/-Aliases nicht aufloesen → 7 Bulk-Reassign-Test-Suites laden mit 0 Tests. Pre-existing seit SLC-707. Fix: `plugins: [tsconfigPaths()]` aus `vite-tsconfig-paths` (bereits in dependencies) ergaenzen, analog cockpit/vitest.config.ts (jsdom-Default). Alternativ: `resolve.alias: { '@': resolve(__dirname, 'src') }`. Pattern-Reuse-Pflicht: Resolver-Setup aus jsdom-Default-Config 1:1 portieren. Verifikation: `npm run test:rls -- bulk-reassign` laedt 7 Suites + alle laufen gegen Coolify-DB. Time-Box ~30 Min.",
+      "description": "Accepted Risk REL-030: cockpit/vitest.rls.config.ts hat keinen Path-Alias-Resolver fuer @/-Imports. Folge: cockpit/__tests__/team/bulk-reassign.test.ts importiert `../../src/lib/team/bulk-reassign`, die Source macht `import { getPgClient } from '@/lib/db/pg'` (Z.15) â†’ Resolver kann @/-Aliases nicht aufloesen â†’ 7 Bulk-Reassign-Test-Suites laden mit 0 Tests. Pre-existing seit SLC-707. Fix: `plugins: [tsconfigPaths()]` aus `vite-tsconfig-paths` (bereits in dependencies) ergaenzen, analog cockpit/vitest.config.ts (jsdom-Default). Alternativ: `resolve.alias: { '@': resolve(__dirname, 'src') }`. Pattern-Reuse-Pflicht: Resolver-Setup aus jsdom-Default-Config 1:1 portieren. Verifikation: `npm run test:rls -- bulk-reassign` laedt 7 Suites + alle laufen gegen Coolify-DB. Time-Box ~30 Min.",
       "createdAt": "2026-05-16"
     },
     {
@@ -2411,6 +2411,36 @@
       "version": "V8",
       "description": "Aus /discovery BS V8 2026-05-19: /settings Landing-Page ist einspaltige Liste aus 10 Tiles ohne Gruppierung, drei Permission-Levels (Admin/Teamlead/Member) sind schwer unterscheidbar. Rollen-Verwaltung existiert bereits in /settings/team/team-members-table.tsx als Inline-Select pro Zeile, aber visuell versteckt. Plus Ghost-Subpages /settings/products und /settings/workflow-automation (kein Tile), Automation-Duplikat automation/ vs workflow-automation/, Doppel-Pfad /team Top-Level vs /settings/team. V8 raeumt strukturell auf via Tile-Gruppierung (3 Sections Persoenlich/Vertrieb/System), Rollen-Verwaltung als eigenes Tile, Ghost-Subpage-Cleanup. Siehe FEAT-801.",
       "createdAt": "2026-05-19"
+    },
+    {
+      "id": "BL-482",
+      "title": "Solopreneur-Mode: Team-Sidebar-Items ausblenden wenn team_size=1",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V8.1",
+      "description": "Sidebar-Items 'Team-Cockpit' + 'Team-Verwaltung' werden automatisch ausgeblendet wenn der eingeloggte Admin der einzige User im Team ist (SELECT COUNT(*) FROM profiles WHERE team_id = X = 1). Bei erstem Invite: Items werden automatisch wieder sichtbar. Override-Toggle in Settings -> Persoenlich -> 'Team-Vorbereitungs-Modus' fuer Admins die die Sektion trotzdem sehen wollen (z.B. zum Vor-Konfigurieren bevor sie jemanden einladen). Solopreneur-User-Story aus Discovery 2026-05-20.",
+      "createdAt": "2026-05-20"
+    },
+    {
+      "id": "BL-483",
+      "title": "Settings/Sidebar Single-Source-of-Truth (Option A) — VERWALTUNG_SETUP zusammenklappen",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V8.1",
+      "description": "Eliminiert 12-Item-Doppelung zwischen Sidebar VERWALTUNG_SETUP und Settings-Page-Tiles. Vorgehensweise: VERWALTUNG_SETUP-Sektion in sidebar-config.ts auf einen einzigen 'Settings'-Eintrag zusammenklappen (haeufig genutzte Items wie Pipelines + Kampagnen + Templates bleiben optional als 'Top-3' direkt erreichbar, Rest nur via /settings-Page). Settings-Page bleibt die Single-Source-of-Truth fuer Config. Audit-Log + Handoffs + Referrals bleiben separate Sidebar-Items (nicht 'Config', sondern 'Tools'). Discovery 2026-05-20.",
+      "createdAt": "2026-05-20"
+    },
+    {
+      "id": "BL-484",
+      "title": "Rollen-Permission-Konsistenz fuer /settings/team Tile in Settings-System-Section",
+      "type": "fix",
+      "priority": "low",
+      "status": "open",
+      "version": "V8.1",
+      "description": "Settings-Tile 'Rollen-Verwaltung' ist aktuell ADMIN_ONLY (settings/page.tsx:187), Sidebar-Link 'Team-Verwaltung' ist ADMIN_TEAMLEAD (sidebar-config.ts:125) - gleiche URL /settings/team, verschiedene Sichtbarkeit. Loesung: Teamlead-Variante des Tiles ergaenzen mit eingeschraenkter Description 'Team-Mitglieder einsehen (read-only)' und visibleFor=ADMIN_TEAMLEAD, oder Permission Layer einheitlich auf ADMIN_TEAMLEAD setzen mit Page-eigener Action-Permission. Discovery 2026-05-20.",
+      "createdAt": "2026-05-20"
     }
   ]
 }

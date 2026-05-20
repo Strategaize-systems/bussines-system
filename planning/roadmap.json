@@ -225,18 +225,25 @@
       "order": 32
     },
     {
+      "id": "v8-1",
+      "name": "V8.1",
+      "status": "planned",
+      "summary": "Settings/Sidebar-Konsolidierung + Solopreneur-Mode (Discovery 2026-05-20). 3 zusammenhaengende Themen: (a) BL-482 Solopreneur-Mode — Auto-Detect bei team=1 + Override-Toggle, blendet Team-Cockpit + Team-Verwaltung Sidebar-Items aus wenn nur 1 User im Team. (b) BL-483 Settings/Sidebar Single-Source-of-Truth (Option A) — VERWALTUNG_SETUP-Sidebar-Sektion zusammenklappen auf 1 'Settings'-Eintrag, alle Config-Items nur noch via /settings-Page erreichbar (eliminiert 12-Item-Doppelung Sidebar vs Tile). (c) BL-484 Rollen-Permission-Konsistenz fuer /settings/team — Teamlead-Tile in Settings-System-Section mit eingeschraenkter Description (aktuell ADMIN_ONLY-Tile, aber Sidebar-Link ADMIN_TEAMLEAD = Inkonsistenz). ~3-4h Code-Side. Vorausgesetzt: V8 deployed + post-launch stable.",
+      "order": 33
+    },
+    {
       "id": "v9",
       "name": "V9",
       "status": "planned",
       "summary": "Offen — wartet auf Real-Use-Erkenntnisse aus Tag-zu-Tag-Vertrieb. Triggert sich sobald User selbst aktiv verkauft oder 1. Multiplikator-Pilot startet.",
-      "order": 33
+      "order": 34
     },
     {
       "id": "v10",
       "name": "V10+",
       "status": "planned",
       "summary": "Autonome AI-Agents (Agentforce-Style: Antwort-Vorschlag → Auto-Reply mit Approval-Workflow), API-Integration externe Kommunikations-Tools (BL-443 Slack/Teams), Multiplikatoren-Bereich-Strategie-Item. Wettbewerbsreaktion auf Salesforce Agentforce oder Kundenwunsch.",
-      "order": 34
+      "order": 35
     }
   ]
 }
