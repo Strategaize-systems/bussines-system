@@ -10808,3 +10808,242 @@ Folgende Punkte bleiben fuer Slice-Planning oder spaeter offen — sie blockiere
 **Naechster Schritt: `/slice-planning` V8.**
 
 **V8 Architecture ready for `/slice-planning`.**
+
+## V8.1 — Solopreneur-Mode + Sidebar-Konsolidierung + Permission-Konsistenz Architecture
+
+### V8.1 Summary
+
+V8.1 ist ein **reiner UI-/Permission-/Sidebar-Filter-Sprint**. Keine Schema-Migration, kein KI-Call, kein neuer Cron, keine neue Stack-Komponente. Der V8-Stack (Image `c5e0f0c`) bleibt deployed und wird um drei orthogonale UI-Aenderungen ergaenzt:
+
+1. **SLC-821 Solopreneur-Mode** — Server-side Helper liest `team_size` (Count Profiles mit gleicher `team_id`) und filtert in der Layout-Render-Phase die `TEAM`-Sidebar-Section weg, wenn der eingeloggte User der einzige in seinem Team ist.
+2. **SLC-822 Sidebar-Konsolidierung Option A** — `VERWALTUNG_SETUP` (12 Eintraege) wird umstrukturiert: 9 Config-Items (Pipelines, Branding, Zahlungsbedingungen, Produkte, Einwilligungstexte, Workflow-Automation, NL-Sculptor-Audit, Templates, Kampagnen, Ziele, Cadences) entfallen vollstaendig aus der Sidebar — nur erreichbar via `/settings`-Tile-Page. Drei operative Tools (`/handoffs`, `/referrals`, `/audit-log`) wandern in eine neue Section `WERKZEUGE`. Der bestehende `/settings`-Sidebar-Eintrag bleibt in `VERWALTUNG_MEIN` (kein neuer Eintrag noetig).
+3. **SLC-823 Teamlead-Tile-Konsistenz** — `/settings/page.tsx` Tile "Rollen-Verwaltung" Permission `ADMIN_ONLY` → `ADMIN_TEAMLEAD`. Die `/settings/team`-Page selbst ist via V7.1-Permission-Layer (DEC-196) bereits rolle-aware und braucht keine UI-Aenderung. Tile-Description wird neutralisiert, sodass sie fuer beide Rollen funktioniert.
+
+### V8.1 Code-Audit-Befunde (vor Architecture-Entscheidung)
+
+**Q1 — team_size-Source (verifiziert):**
+- `profiles.team_id` ist die kanonische Quelle (`cockpit/src/lib/auth/get-profile.ts:28` selektiert `team_id`)
+- `Profile.team_id` ist als `string | null` typisiert — Admin kann `team_id = NULL` haben
+- Edge-Case: Solopreneur-Admin mit `team_id = NULL` soll als Solo gelten (keine TEAM-Section sichtbar). Helper-Logik muss `team_id IS NULL` als "Solo" interpretieren
+
+**Q4 — /settings/team Read-Only-Mode fuer Teamlead (geklaert via Code-Audit):**
+- `team-members-table.tsx` ist bereits `callerIsAdmin`-aware (Z.159 Role-Select disabled, Z.204 Action-Buttons hidden fuer Teamlead)
+- `invite-dialog.tsx` ist `callerRole`-aware (Z.151: Admin-Option nur fuer Admin, Z.163: Team-Auswahl nur fuer Admin)
+- `cockpit/src/lib/team/actions.ts` Server-Actions: `inviteMember` admin+teamlead (Teamlead nur eigenes Team), `changeRole` admin-only, `deleteProfile` admin-only — Defense-in-Depth korrekt
+- `bulk-reassign-actions.ts` blockiert Member (`caller.role === "member"`) — Teamlead darf Bulk-Reassign ausfuehren, was V7-Design ist (Teamlead operiert auf eigenem Team)
+- **Diskrepanz zu User-Discovery-Wording:** User sagte "Read-Only fuer Teamlead". V7-Realitaet: "Limited-Edit fuer Teamlead" (Einladen JA, Role-Change/Delete NEIN). **V8.1-Entscheidung (DEC-229):** V7-Design respektieren — Teamlead darf weiter limited-editieren. "Read-Only"-Wording im Discovery wird als "kein voller Admin-Edit" interpretiert. Wenn User echtes Read-Only will, muss das separat als Backlog-Item dokumentiert werden.
+
+**Q2/Q3/Q5 — Sidebar-Layout (geklaert via Code-Audit):**
+- `sidebar-config.ts:219-225` zeigt: `/settings`-Eintrag existiert bereits in `VERWALTUNG_MEIN` mit `ALL_ROLES`. **Kein neuer Eintrag noetig.**
+- `SidebarSection`-Type hat 6 Sections (Z.44-50): ANALYSE, TEAM, OPERATIV, ARBEITSBEREICHE, VERWALTUNG_MEIN, VERWALTUNG_SETUP
+- `SECTION_PARENT` (Z.69-72): VERWALTUNG_MEIN und VERWALTUNG_SETUP rendern gemeinsam unter Top-Header "VERWALTUNG"
+
+### V8.1 Main Components
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ V8.1 Layer (UI + Permission Filter, kein Schema)            │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│ cockpit/src/lib/team/team-size.ts (NEU, SLC-821)            │
+│   ├── getTeamSize(supabase, profile): Promise<number>       │
+│   │   ├── if profile.team_id IS NULL → return 1 (Solo)      │
+│   │   └── else → SELECT count(*) FROM profiles              │
+│   │              WHERE team_id = profile.team_id            │
+│   └── React-cached pro Request (analog get-profile.ts)      │
+│                                                              │
+│ cockpit/src/app/(app)/layout.tsx (CHANGE, SLC-821)          │
+│   ├── Server-side filter — wenn team_size === 1:            │
+│   │   filter SIDEBAR_CONFIG fuer section !== "TEAM"         │
+│   └── Pass an Sidebar-Component                              │
+│                                                              │
+│ cockpit/src/lib/navigation/sidebar-config.ts (CHANGE,       │
+│ SLC-822)                                                     │
+│   ├── SidebarSection-Type: VERWALTUNG_SETUP → WERKZEUGE     │
+│   ├── SECTION_LABEL.WERKZEUGE = "WERKZEUGE"                 │
+│   ├── SECTION_PARENT entfaellt fuer WERKZEUGE (eigene       │
+│   │   Top-Section, nicht unter "VERWALTUNG")                │
+│   ├── SECTION_ORDER neu: ANALYSE → TEAM → OPERATIV →        │
+│   │   ARBEITSBEREICHE → VERWALTUNG_MEIN → WERKZEUGE         │
+│   ├── 9 Config-Items (Pipelines, Branding, etc.) entfaellt  │
+│   │   aus SIDEBAR_CONFIG-Array                              │
+│   └── 3 Tools-Items (Handoffs, Referrals, Audit-Log) auf    │
+│       section: "WERKZEUGE" gesetzt                           │
+│                                                              │
+│ cockpit/src/app/(app)/settings/page.tsx (CHANGE, SLC-823)   │
+│   └── "Rollen-Verwaltung"-Tile (Z.180-188):                 │
+│       ├── visibleFor: ADMIN_ONLY → ADMIN_TEAMLEAD           │
+│       └── description neutralisiert auf "Team-Mitglieder    │
+│           und Rollen-Zuweisung verwalten"                   │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### V8.1 Component Responsibilities
+
+#### `lib/team/team-size.ts` (NEU)
+
+- **Verantwortung:** Single-Source-of-Truth fuer "Wie viele Profiles sind in meinem Team?"
+- **Signatur:** `export const getTeamSize = cache(async (profile: Profile): Promise<number>)`
+- **Implementation:**
+  - Wenn `profile.team_id === null` → return `1` (Solo-Admin ohne Team-Zuordnung)
+  - Sonst: `SELECT count(*)` ueber `profiles` mit `team_id = profile.team_id`
+  - Per-Request memoized via React `cache()` (Pattern identisch `get-profile.ts`)
+- **Performance:** Einmaliger DB-Roundtrip pro Layout-Render. Bei N-Page-Navigation in SPA-Mode kein zusaetzlicher Roundtrip dank `cache()`-Memoization
+
+#### `app/(app)/layout.tsx` (CHANGE)
+
+- **Verantwortung:** Sidebar-Render-Pipeline um Solopreneur-Filter erweitern
+- **Aenderung:** Nach `getProfile()`-Call zusaetzlich `getTeamSize(profile)` aufrufen. Wenn `teamSize === 1` → Sidebar-Items mit `section === "TEAM"` aus dem gefilterten Array entfernen (vor Pass an Sidebar-Component)
+- **Reihenfolge:** Filter-Layer kommt NACH Permission-Filter (`role`-basiert), aber VOR Render
+- **Nicht-Ziel:** Keine Client-Side-Detection — Server-Side-Filter, kein Flash
+
+#### `lib/navigation/sidebar-config.ts` (CHANGE)
+
+- **Section-Refactor:** `VERWALTUNG_SETUP` → `WERKZEUGE` (Rename, nicht neue Section)
+- **`SECTION_PARENT`-Aenderung:** `WERKZEUGE` wird eigene Top-Section (kein Parent), `VERWALTUNG_MEIN` bleibt unter "VERWALTUNG"-Parent
+- **`SECTION_LABEL.WERKZEUGE = "WERKZEUGE"`** (oder optional "TOOLS" — final in Slice-Planning)
+- **Item-Filtering:** 9 Items entfallen vollstaendig aus `SIDEBAR_CONFIG`-Array. 3 Items behalten + Section-Wechsel:
+  - `/handoffs` → section `WERKZEUGE`
+  - `/referrals` → section `WERKZEUGE`
+  - `/audit-log` → section `WERKZEUGE`
+
+#### `app/(app)/settings/page.tsx` (CHANGE)
+
+- **Eine Zeile aendern:** Tile-Index Z.187: `visibleFor: ADMIN_ONLY` → `ADMIN_TEAMLEAD`
+- **Description-Neutralisierung Z.183:** Aktuell "Team-Mitglieder, Rollen-Zuweisung und Drilldown" — wird zu "Team-Mitglieder, Rollen-Zuweisung und Drilldown verwalten" (sprachlich neutral, Edit-Faehigkeit per Rolle wird auf der Ziel-Page durchgesetzt)
+- **Keine Edit-Logik-Aenderung in `/settings/team`:** Page-Internals bleiben V7-Design (V7.1 DEC-196)
+
+### V8.1 Data Flow
+
+#### Solopreneur-Filter (SLC-821)
+
+```
+1. Request to /any-app-page
+   ↓
+2. layout.tsx Server-Component
+   ├── const profile = await getProfile()
+   ├── const teamSize = await getTeamSize(profile)
+   │     ├── if profile.team_id === null → return 1
+   │     └── else → SELECT count(*) FROM profiles WHERE team_id = X
+   ↓
+3. Sidebar-Filter:
+   ├── Permission-Filter: SIDEBAR_CONFIG.filter(item =>
+   │     item.visibleFor.includes(profile.role))
+   ├── Solopreneur-Filter (NEU): if teamSize === 1 →
+   │     filter(item => item.section !== "TEAM")
+   ↓
+4. Sidebar-Component rendert nur sichtbare Items
+```
+
+#### Sidebar-Konsolidierung (SLC-822) — Render-Pipeline unveraendert
+
+```
+SIDEBAR_CONFIG (statisches Array, nach Refactor):
+  ANALYSE: [Dashboard]
+  TEAM:    [Team-Cockpit, Team-Verwaltung]              ← SLC-821 ausgeblendet bei Solo
+  OPERATIV: [Mein Tag, Focus, Kalender]
+  ARBEITSBEREICHE: [Deals, Pipeline, Firmen, Kontakte, Multiplikatoren]
+  VERWALTUNG_MEIN: [Aufgaben, Termine-Liste, E-Mails, Proposals, Settings,
+                    Arbeitszeit, Meeting-Einstellungen, Briefing]
+  WERKZEUGE (NEU, replaced VERWALTUNG_SETUP):
+                  [Handoffs, Referrals, Audit-Log]      ← 3 statt 12 Items
+
+Render-Reihenfolge (SECTION_ORDER):
+  ANALYSE → TEAM → OPERATIV → ARBEITSBEREICHE → VERWALTUNG_MEIN → WERKZEUGE
+```
+
+#### Permission-Konsistenz (SLC-823) — Tile-Sichtbarkeit
+
+```
+/settings page.tsx:
+  Role: admin → "Rollen-Verwaltung"-Tile sichtbar → /settings/team (Edit-Mode)
+  Role: teamlead → "Rollen-Verwaltung"-Tile sichtbar → /settings/team
+                   (Limited-Edit per V7.1: einladen ja, Role-Change/Delete nein)
+  Role: member → Tile NICHT sichtbar (filter durch visibleFor)
+```
+
+### V8.1 External Dependencies
+
+**Keine** neuen externen Dependencies. Keine npm-Packages, keine API-Calls, keine neue Server-Komponente.
+
+### V8.1 Security / Privacy
+
+**Defense-in-Depth bleibt unveraendert:**
+- Sidebar-Filter ist ein UX-Convenience-Layer, kein Security-Layer
+- Solopreneur-Filter entfernt nur visuelle Items — Server-Actions hinter den Items (`/team`, `/settings/team`) sind durch `assertRole(["admin", "teamlead"])` geschuetzt (existierender Code)
+- Tile-Sichtbarkeit auf `/settings`-Page ist UX-Convenience — Page-Internals haben eigene `assertRole`-Guards (`settings/team/page.tsx:29`)
+- Falls Solopreneur-Filter umgangen wird (z.B. Direkt-Klick auf `/team`-URL): Page wuerde rendern, aber Backend-RLS + Server-Action-Guards bleiben
+
+**Kein neues Audit-Log-Event noetig** — V8.1 macht keine Mutationen.
+
+### V8.1 Constraints & Tradeoffs
+
+**Constraints (bestaetigt aus Requirements):**
+- Keine Schema-Migration
+- Kein KI-Call
+- Kein neuer Cron
+- Internal-Test-Mode bleibt aktiv
+- Mobile (<768px) bleibt funktional
+- URL-Stabilitaet — Direkt-Links auf `/settings/templates`, `/settings/pipelines` bleiben funktional
+
+**Tradeoffs (V8.1-spezifisch):**
+
+| Tradeoff | Entscheidung V8.1 | Begruendung |
+|---|---|---|
+| Solopreneur-Helper als Server-Side oder Client-Side? | Server-Side im layout.tsx | Vermeidet Flash, konsistent mit V7-Sidebar-Pattern (DEC-190) |
+| `team_id IS NULL` als Solo oder als Error? | Als Solo (return 1) | Realistisch fuer V7-Bootstrap-Admin ohne explizite Team-Zuordnung |
+| Bestehender `/settings`-Eintrag vs. neuer "Einstellungen"-Footer-Eintrag? | Bestehender bleibt | Vermeidet Code-Churn, semantisch identisch |
+| `VERWALTUNG_SETUP` umbenennen vs. komplett loeschen? | Umbenennen zu `WERKZEUGE` | Type-Refactor bleibt minimal, 3 Tools-Items haben dann eine sichtbare Heimat |
+| `WERKZEUGE` als eigene Top-Section vs. Sub-Section von `VERWALTUNG`? | Eigene Top-Section | Tools sind nicht "Verwaltung" sondern "operative Hilfsmittel" |
+| Teamlead-Tile mit Read-Only-Description vs. neutralen Description? | Neutralen Description | V7-Verhalten ist Limited-Edit, nicht reines Read-Only |
+| Bulk-Reassign-UI fuer Teamlead disablen (V7-Verhalten anpassen)? | NICHT in V8.1 | V7-Design ist absichtlich Limited-Edit, BL-484 hat das nicht gefordert |
+
+### V8.1 Open Technical Questions
+
+**Alle 5 Requirements-Open-Questions sind hier beantwortet:**
+
+1. ✅ **team_size-Source** — `profiles.team_id` mit `null`-Fallback auf 1. Helper in `lib/team/team-size.ts`.
+2. ✅ **Tools-Section-Naming** — `WERKZEUGE`. Final in Slice-Planning, ob auch "TOOLS" oder "HILFSMITTEL" — Sprachform.
+3. ✅ **Sidebar-Reihenfolge nach Konsolidierung** — ANALYSE → TEAM → OPERATIV → ARBEITSBEREICHE → VERWALTUNG_MEIN → WERKZEUGE.
+4. ✅ **/settings/team Read-Only fuer Teamlead** — V7.1-Permission-Layer reicht aus, V7-Design ist Limited-Edit (DEC-226).
+5. ✅ **Sidebar-Footer-Layout** — Keine Aenderung. Bestehender `/settings`-Eintrag in `VERWALTUNG_MEIN` reicht. Kein sticky-Footer noetig.
+
+**Verbleibende Slice-Planning-Fragen (nicht Architektur-Ebene):**
+- Welche exakte Schreibweise: "WERKZEUGE" / "TOOLS" / "HILFSMITTEL"
+- Soll die Tile-Description "Rollen-Verwaltung" semantisch leicht angepasst werden (z.B. "Team-Mitglieder verwalten") oder bleibt sie wie aktuell?
+- Reihenfolge der Sub-Slices: SLC-821 → SLC-822 → SLC-823 (kleinster Risiko-Item zuerst) oder parallel als Worktrees?
+
+### V8.1 Architecture Decisions
+
+- **DEC-227** — V8.1 Solopreneur-Detection via `profiles.team_id`-Count, kein neues `team_size`-Feld (SLC-821)
+- **DEC-228** — V8.1 Sidebar-Section-Refactor `VERWALTUNG_SETUP` → `WERKZEUGE` (Rename mit Item-Reduktion 12 → 3) (SLC-822)
+- **DEC-229** — V8.1 Teamlead-Tile-Sichtbarkeit ohne `/settings/team`-Page-Refactor: V7-Limited-Edit-Verhalten respektieren (SLC-823)
+
+### V8.1 Slice-Planning Hint
+
+**3 Slices, jeder orthogonal, niedriges Inter-Slice-Risiko:**
+
+- **SLC-821** (~30-60 Min) — Solopreneur-Mode:
+  - `lib/team/team-size.ts` NEU (~30 Zeilen)
+  - `app/(app)/layout.tsx` CHANGE (~10 Zeilen)
+  - Vitest 3-4 Cases (team_id null, team_size 1, team_size >1, cache-memoization)
+
+- **SLC-822** (~1-1.5h) — Sidebar-Konsolidierung Option A:
+  - `lib/navigation/sidebar-config.ts` CHANGE: Type-Refactor + 9 Items entfernen + Section-Rename + Item-Section-Wechsel
+  - Sidebar-Component falls Top-Section "WERKZEUGE" anders gerendert wird (Pruefung in Slice-Planning)
+  - Vitest fuer `filterByRole`-Pattern und Section-Reihenfolge
+
+- **SLC-823** (~30-45 Min) — Teamlead-Tile-Konsistenz:
+  - `app/(app)/settings/page.tsx` CHANGE: 1 Zeile Permission + 1 Zeile Description
+  - Vitest fuer `visibleSections.filter`-Logik (Teamlead sieht jetzt Rollen-Verwaltung)
+
+**Total V8.1-Aufwand: ~2-3h reine Implementation + QA + Live-Smoke.** Kleinster Sprint seit V6.3.
+
+**Reihenfolge-Empfehlung:** SLC-821 → SLC-822 → SLC-823 (vom kleinsten Risiko aufsteigend). Alle 3 Slices koennen sequentiell auf demselben Branch bearbeitet werden — keine Worktree-Isolation noetig (orthogonale Codebereiche).
+
+### V8.1 Delivery Mode
+
+**Internal-Tool, Hygiene-Sprint.** Keine neue Stack-Komponente, keine Schema-Migration, kein neuer Cron, kein KI-Call. Internal-Test-Mode bleibt aktiv. V8.1-Live heisst: V8-Stack (Image `c5e0f0c`) bleibt deployed, 3 Slice-Aenderungen werden kumulativ auf `main` gemerged + Coolify-Redeploy am Slice-Ende.
+
+**V8.1 Architecture ready for `/slice-planning`.**

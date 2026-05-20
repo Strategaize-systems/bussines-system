@@ -9,12 +9,12 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: requirements
-- Current Focus: **V8.1 REQUIREMENTS DONE 2026-05-20 (RPT-490)**. FEAT-811 (Solopreneur-Mode + Sidebar-Konsolidierung + Rollen-Permission-Konsistenz) mit 3 Sub-Slices SLC-821/822/823 ist scope-definiert in `docs/PRD.md` + `features/FEAT-811-v81-solopreneur-sidebar-permission.md`. Alle 4 Discovery-Entscheidungen vom User bestaetigt (alle 4× Recommended): reine Auto-Detection ohne Toggle, Sidebar komplett zusammenklappen, Team-Tile read-only fuer Teamlead, ein FEAT mit 3 Sub-Slices. **V8 (REL-034)** bleibt parallel in Burn-In — /post-launch V8 ist nicht abgeschlossen, aber Code-Side wird parallel weitergetrieben (User-Direktive). Naechster Schritt: `/architecture` V8.1.
-- Current Phase: V8.1 Requirements done. Naechster Schritt: /architecture V8.1.
+- High-Level State: architecture
+- Current Focus: **V8.1 ARCHITECTURE DONE 2026-05-20 (RPT-491)**. Alle 5 Open Questions aus RPT-490 beantwortet via Code-Audit. 3 V8.1-DECs angelegt (DEC-227 team_size-Source via profiles.team_id-Count, DEC-228 Sidebar-Section-Refactor VERWALTUNG_SETUP → WERKZEUGE mit 12→3 Items, DEC-229 Teamlead-Tile-Sichtbarkeit ohne /settings/team-Refactor). **Wichtige Diskrepanz-Klaerung:** V7-Design ist "Limited-Edit fuer Teamlead" (Einladen ja, Role/Delete nein), nicht reines Read-Only. V8.1 respektiert V7-Verhalten und macht nur Tile-Permission ADMIN_ONLY → ADMIN_TEAMLEAD. Naechster Schritt: `/slice-planning` V8.1.
+- Current Phase: V8.1 Architecture done. Naechster Schritt: /slice-planning V8.1.
 
 ## Immediate Next Steps
-1. **(Mainline)** `/architecture` V8.1 — klaeren: (a) `team_size`-Source (`profiles.team_id` Default-Annahme), (b) Tools-Section-Naming und Position (Default `WERKZEUGE`), (c) Sidebar-Reihenfolge nach Konsolidierung, (d) `/settings/team` Read-Only-Mode fuer Teamlead (V7.1-Permission-Layer bereits ausreichend?), (e) Sidebar-Footer-Layout (sticky vs Stream).
+1. **(Mainline)** `/slice-planning` V8.1 — 3 Slices erstellen: SLC-821 Solopreneur-Mode (~30-60 Min, neue Datei lib/team/team-size.ts + layout.tsx Aenderung), SLC-822 Sidebar-Konsolidierung Option A (~1-1.5h, sidebar-config.ts Type-Refactor + 9 Items entfernen + Section-Rename), SLC-823 Teamlead-Tile-Konsistenz (~30-45 Min, settings/page.tsx 2 Zeilen). Reihenfolge SLC-821 → SLC-822 → SLC-823. Total ~2-3h Implementation.
 2. **(Parallel laufend)** `/post-launch` V8 Burn-In-Beobachtungsphase ≥12h. Beobachten: Disk-Trend (stabil bei 82% nach systemd-timer-Test), Bedrock-Cost-Trend (+$0.05-0.10/Tag), Container-Restart-Check, audit_log fuer ki_loss_reason_suggested-Eintraege.
 3. **(Optional, 30 Sek)** Manual-User-Smoke fuer SLC-813 AC11 — Drag-Drop Deal auf "Verloren" mit Activity-History, Modal-Verify, audit_log-Verify mit cost_usd > 0. Skript in RPT-488 dokumentiert.
 3. **(Pre-Customer-Live, nicht zeitkritisch)** BL-480 KI-Provider-Anzeige im User-UI abstrahieren (Bedrock-Strings entfernen). Mini-Slice ~1-2h.
