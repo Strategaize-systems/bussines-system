@@ -66,8 +66,7 @@ export async function upsertActivityKpiTarget(
     });
   }
 
-  revalidatePath("/performance");
-  revalidatePath("/performance/goals");
+  revalidatePath("/settings/goals");
   return {};
 }
 
@@ -91,7 +90,7 @@ export async function toggleActivityKpiTarget(
     .eq("user_id", user.id)
     .eq("kpi_key", kpiKey);
 
-  revalidatePath("/performance");
+  revalidatePath("/settings/goals");
   return {};
 }
 

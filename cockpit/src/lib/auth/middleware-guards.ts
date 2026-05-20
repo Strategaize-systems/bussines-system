@@ -41,8 +41,8 @@ export const ROUTE_GUARDS: readonly RouteGuard[] = [
   // Managerial-Listen — admin + teamlead
   { pattern: /^\/handoffs(\/.*)?$/, allowed: ["admin", "teamlead"] },
   { pattern: /^\/referrals(\/.*)?$/, allowed: ["admin", "teamlead"] },
-  { pattern: /^\/performance(\/.*)?$/, allowed: ["admin", "teamlead"] },
   { pattern: /^\/cadences(\/.*)?$/, allowed: ["admin", "teamlead"] },
+  { pattern: /^\/settings\/goals(\/.*)?$/, allowed: ["admin", "teamlead"] },
 
   // Admin-only Tools
   { pattern: /^\/settings\/products(\/.*)?$/, allowed: ["admin"] },

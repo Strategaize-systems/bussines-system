@@ -107,7 +107,7 @@ export async function createGoal(
     return { error: `Ziel konnte nicht erstellt werden: ${error.message}` };
   }
 
-  revalidatePath("/performance/goals");
+  revalidatePath("/settings/goals");
   return { goal: data as Goal };
 }
 
@@ -156,7 +156,7 @@ export async function updateGoal(
     return { error: `Ziel konnte nicht aktualisiert werden: ${error.message}` };
   }
 
-  revalidatePath("/performance/goals");
+  revalidatePath("/settings/goals");
   return { goal: data as Goal };
 }
 
@@ -186,7 +186,7 @@ export async function cancelGoal(
     return { error: `Ziel konnte nicht storniert werden: ${error.message}` };
   }
 
-  revalidatePath("/performance/goals");
+  revalidatePath("/settings/goals");
   return {};
 }
 
@@ -241,7 +241,7 @@ export async function importGoalsFromCSV(
     }
   }
 
-  revalidatePath("/performance/goals");
+  revalidatePath("/settings/goals");
   return { imported, errors };
 }
 

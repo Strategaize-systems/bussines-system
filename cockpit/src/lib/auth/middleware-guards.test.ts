@@ -81,10 +81,11 @@ describe("evaluateRouteGuard — route patterns", () => {
     expect(evaluateRouteGuard("/cadences", "teamlead")).toBeNull();
   });
 
-  it("/performance/goals blocks member", () => {
-    expect(evaluateRouteGuard("/performance/goals", "member")).toBe(
+  it("/settings/goals blocks member but allows teamlead", () => {
+    expect(evaluateRouteGuard("/settings/goals", "member")).toBe(
       ROLE_REDIRECT_TARGET,
     );
+    expect(evaluateRouteGuard("/settings/goals", "teamlead")).toBeNull();
   });
 
   it("/mein-tag is open to all roles", () => {

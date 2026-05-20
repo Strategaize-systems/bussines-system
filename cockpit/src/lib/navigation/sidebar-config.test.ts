@@ -79,7 +79,7 @@ describe("filterByRole — Role-Matrix", () => {
     expect(hrefs).not.toContain("/settings/team");
     expect(hrefs).not.toContain("/handoffs");
     expect(hrefs).not.toContain("/referrals");
-    expect(hrefs).not.toContain("/performance/goals");
+    expect(hrefs).not.toContain("/settings/goals");
     expect(hrefs).not.toContain("/cadences");
     expect(hrefs).not.toContain("/settings/products");
     expect(hrefs).not.toContain("/audit-log");
@@ -132,7 +132,7 @@ describe("filterByRole — Snapshots", () => {
           "VERWALTUNG_MEIN:/settings/briefing",
           "VERWALTUNG_SETUP:/handoffs",
           "VERWALTUNG_SETUP:/referrals",
-          "VERWALTUNG_SETUP:/performance/goals",
+          "VERWALTUNG_SETUP:/settings/goals",
           "VERWALTUNG_SETUP:/cadences",
           "VERWALTUNG_SETUP:/settings/branding",
           "VERWALTUNG_SETUP:/settings/payment-terms",
@@ -185,7 +185,7 @@ describe("filterByRole — Snapshots", () => {
           "VERWALTUNG_MEIN:/settings/briefing",
           "VERWALTUNG_SETUP:/handoffs",
           "VERWALTUNG_SETUP:/referrals",
-          "VERWALTUNG_SETUP:/performance/goals",
+          "VERWALTUNG_SETUP:/settings/goals",
           "VERWALTUNG_SETUP:/cadences",
           "VERWALTUNG_SETUP:/settings/automation",
           "VERWALTUNG_SETUP:/settings/templates",
