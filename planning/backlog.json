@@ -2207,7 +2207,7 @@
       "title": "Pflichtfelder-Modal beim Stage-Move (Verlustgrund / Deal-Wert) statt Edit-Pencil-Umweg",
       "type": "improvement",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V8",
       "description": "Aktuell: User dragged Deal auf 'Verloren', moveDealToStage (cockpit/src/app/(app)/pipeline/actions.ts:381-490) prueft STAGE_REQUIRED_FIELDS und blockiert mit error 'Pflichtfelder fuer Verloren: Verlustgrund'. User muss den Move abbrechen, ueber Bearbeitungs-Pencil ins Deal, Verlustgrund eintragen, dann erneut draggen. Hohe Friction, jedes Mal. Gleiche Logik fuer 'Gewonnen' (Deal-Wert), 'Angebot vorbereitet'/'Angebot offen' (Deal-Wert), 'Verhandlung / Einwaende' (Deal-Wert + Kontakt). Loesung: Inline-Modal direkt beim Drop, das die Pflichtfelder abfragt + transaktional speichert + den Move ausfuehrt. UX-Pattern: shadcn Dialog + Form-Felder generisch aus STAGE_REQUIRED_FIELDS gerendert. Beim Cancel: kein Move. Beim Save: Pflichtfelder + Stage-Update in einer Server-Action. Discovery aus SLC-665 /qa 2026-05-11. Voraussetzung fuer BL-456 (KI-Vorschlag fuer Verlustgrund) — die KI-Logik haengt im gleichen Modal.",
       "createdAt": "2026-05-11"
@@ -2217,7 +2217,7 @@
       "title": "KI-Vorschlag fuer Verlustgrund aus Activity-History (Bedrock + Aktivitaeten-Snapshot)",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V8",
       "description": "Beim Stage-Move auf 'Verloren' (oder 'Geparkt') haengt der User-Verlustgrund-Eingabe oft an: Was war der konkrete Ausloeser? Meist liegt das in der Activity-History (E-Mail mit Absage, Meeting-Notiz 'will nicht', Call-Recording mit Einwand, Notiz). Idee: Beim Oeffnen des Verlust-Modals (BL-455) laedt eine Server-Action die letzten ~5 Activities (emails, meetings, notes, calls) + macht einen Bedrock-Call (FEAT-114-Pattern, EU-Region Frankfurt) mit Prompt 'Analysiere diese letzten Interaktionen und schlage einen Verlustgrund vor'. Antwort wird im Modal als vorausgefuelltes Textfeld + Button 'Uebernehmen' oder 'Eigenen Grund eingeben' angezeigt. User editierbar, dann Speichern. Audit-Trail: ki_suggested vs user_typed in auto_winloss_runs oder Audit-Log. Voraussetzung: BL-455 (Modal-Container) ist done. Bedrock-Adapter aus FEAT-114/SLC-665 wiederverwendbar — nur Prompt anders. Datenschutz: gleicher Pfad wie Win/Loss-Extract, EU-Region, keine US-Endpoints. Discovery aus SLC-665 /qa 2026-05-11.",
       "createdAt": "2026-05-11"

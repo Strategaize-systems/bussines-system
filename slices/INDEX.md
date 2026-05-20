@@ -354,4 +354,4 @@ V8 = 3 Slices SLC-811..813, Reihenfolge-Empfehlung 812 → 811 → 813 (Risiko a
 |----|-------|---------|--------|----------|---------|
 | SLC-812 | [KI-Provider-Anzeige abstrahieren](SLC-812-ki-provider-abstrahierung.md) | FEAT-802 / BL-480 | done | Medium | 2026-05-20 |
 | SLC-811 | [Settings-Refactor + /performance-Cleanup + Goals-Move + Label-Konsistenz](SLC-811-settings-refactor-hygiene.md) | FEAT-801 + FEAT-803 / BL-481 + BL-453 + BL-459 | done | High | 2026-05-20 |
-| SLC-813 | [Stage-Requirements-Modal + KI-Verlustgrund-Vorschlag](SLC-813-stage-requirements-modal.md) | FEAT-804 / BL-455 + BL-456 | planned | High | 2026-05-20 |
+| SLC-813 | [Stage-Requirements-Modal + KI-Verlustgrund-Vorschlag](SLC-813-stage-requirements-modal.md) | FEAT-804 / BL-455 + BL-456 | done | High | 2026-05-20 |
