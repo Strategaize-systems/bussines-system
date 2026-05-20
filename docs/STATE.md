@@ -9,14 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: **V8 SLC-812 /qa PASS code-side 2026-05-20 (RPT-481)**. 7/8 ACs PASS + 1/8 PARTIAL (AC6 Helper bereit, kein Caller im aktuellen UI mangels Model-ID-Display — V9+-Pattern). Grep-Negativ-Checks AC1 + AC8 → 0 Treffer. Grep-Positiv-Checks AC2..AC5 → bestaetigt. Vitest 989/989 PASS. 0 Stubs in neuen Files. Wiring-Verification N/A (rein UI-String-Substitution). Live-Smoke per User-Direktive `feedback_no_intermediate_coolify_switches.md` deferred zu Gesamt-/qa V8 nach SLC-813. **V7.6 STABLE** Image-Tag `1ffae6e` in Production. Naechster Schritt: `/frontend` SLC-811.
-- Current Phase: V8 SLC-812 /qa PASS. Naechster Schritt: /frontend SLC-811.
+- High-Level State: final-check
+- Current Focus: **V8 /final-check CONDITIONALLY READY 2026-05-20 (RPT-486)**. 0 Blocker, 1 Medium (M-1 SLC-813 AC6-vs-Modal-Section Spec-Inkonsistenz, Resolution-Entscheidung erforderlich), 6 Low + 5 accepted Residual Risks. Combined Build/Test/Lint clean (1031/1031). Probe-Merge SLC-811↔SLC-813 zeigt 0 Code-Konflikte + 2 triviale Records-Konflikte (both-done Resolution). Hetzner-Disk 83% stabil + 14/15 Container healthy. Naechster Schritt: `/go-live` V8 nach M-1 Resolution.
+- Current Phase: V8 /final-check done — CONDITIONALLY READY. Naechster Schritt: /go-live V8.
 
 ## Immediate Next Steps
-1. **(Mainline)** `/frontend` SLC-811 — Settings-Refactor + /performance-Cleanup + Goals-Move + Label-Konsistenz. 8 MTs, ~3-4h. Worktree-Isolation empfohlen. Slice-Spec: [slices/SLC-811-settings-refactor-hygiene.md](slices/SLC-811-settings-refactor-hygiene.md). Bei Context-Druck zuerst Session-Handoff.
-3. **(Nach SLC-811 QA)** `/frontend` + `/backend` SLC-813 — Stage-Requirements-Modal + KI-Verlustgrund-Vorschlag. 7 MTs, ~3-5h. Worktree-Isolation **empfohlen** (groesster V8-Block).
-4. **(Nach SLC-813 QA)** Gesamt-/qa V8 → /final-check → /go-live → /deploy → /post-launch
+1. **(Mainline)** M-1 Resolution-Entscheidung SLC-813 AC6 — Empfehlung Option A (Slice-Spec-1-Zeilen-Update auf "KEIN KI-Suggest", Hint-Klausel akzeptieren). Soft-Gate vor Master-Merge.
+2. **(Nach M-1)** `/go-live` V8 — Decision-Audit ueber V8 Master-Merge-Readiness.
+3. **(Nach /go-live GO)** Master-Merge SLC-811 + SLC-813 → main (both-done Records-Resolution), User-Coolify-Redeploy main, Phase-2 Live-Smoke 3 Items (SLC-811 AC14 + SLC-812 KI-Strings + SLC-813 AC11), `/deploy` Records-Sync REL-034, `/post-launch` V8 Burn-In.
 2. **(Operational, weiterhin offen, nicht-blockierend)** Coolify-Cron fuer Docker-Cleanup einrichten (ISSUE-071 Next-Action #1, Resilience). Aktueller Disk-Druck 83% durch Coolify-Auto-Cleanup unter Kontrolle, Cron-Setup bleibt sinnvoll vor naechstem Redeploy-Zyklus.
 3. **(Pre-Customer-Live, nicht zeitkritisch)** BL-480 KI-Provider-Anzeige im User-UI abstrahieren (Bedrock-Strings entfernen). Mini-Slice ~1-2h.
 4. **(Spaeter)** V7.7-Planning: Tech-Debt-Cleanup-Slice (Pre-Existing-Lint + npm audit Major-Upgrade), Per-User-Bedrock-Cost-Cap, Custom-Reports auf /deal/[id].
