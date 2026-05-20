@@ -257,7 +257,7 @@
 | FEAT-801 | Settings-Layout-Refactor + Rollen-Auffindbarkeit | planned | [Spec](FEAT-801-settings-rollen-refactor.md) | 2026-05-19 |
 | FEAT-802 | KI-Provider-Anzeige im User-UI abstrahieren (BL-480) | done | [Spec](FEAT-802-ki-provider-abstrahierung.md) | 2026-05-19 |
 | FEAT-803 | /performance-Page-Cleanup + Task/Aufgabe-Label-Konsistenz (BL-453 + BL-459) | planned | [Spec](FEAT-803-performance-cleanup-label-konsistenz.md) | 2026-05-19 |
-| FEAT-804 | Pflichtfelder-Modal beim Stage-Move + KI-Verlustgrund-Vorschlag (BL-455 + BL-456) | planned | [Spec](FEAT-804-pflichtfelder-modal-stage-move.md) | 2026-05-19 |
+| FEAT-804 | Pflichtfelder-Modal beim Stage-Move + KI-Verlustgrund-Vorschlag (BL-455 + BL-456) | done | [Spec](FEAT-804-pflichtfelder-modal-stage-move.md) | 2026-05-19 |
 
 ## V6 Features (Zielsetzung + Performance-Tracking — released)
 

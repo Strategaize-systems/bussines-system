@@ -16,9 +16,25 @@ import {
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
-import { moveDealToStage } from "@/app/(app)/pipeline/actions";
+import {
+  moveDealToStage,
+  suggestLossReason,
+  type RequirementValues,
+} from "@/app/(app)/pipeline/actions";
 import type { Deal, PipelineStage } from "@/app/(app)/pipeline/actions";
 import { AlertTriangle, X } from "lucide-react";
+
+// V8 SLC-813 — Pre-Move-Check + StageRequirementsModal-Wiring.
+import {
+  getMissingStageRequirements,
+  type StageRequirementField,
+  type StageRequirementSpec,
+} from "@/lib/pipeline/stage-required-fields";
+import {
+  StageRequirementsModal,
+  type KiLossSuggest,
+  type StageRequirementsContact,
+} from "@/components/pipeline/stage-requirements-modal";
 
 interface KanbanBoardProps {
   stages: PipelineStage[];
@@ -26,13 +42,32 @@ interface KanbanBoardProps {
   onDealClick?: (deal: Deal) => void;
   // V7.1 SLC-712a — Read-Only-Mode fuer Teamlead-Drilldown (kein DnD, keine Mutate-Buttons)
   readOnly?: boolean;
+  // V8 SLC-813 — Kontakte fuer den Stage-Requirements-Modal Contact-Selector.
+  contacts?: readonly StageRequirementsContact[];
 }
 
-export const KanbanBoard = forwardRef<HTMLDivElement, KanbanBoardProps>(function KanbanBoard({ stages, deals: initialDeals, onDealClick, readOnly = false }, ref) {
+interface ModalState {
+  dealId: string;
+  dealTitle: string;
+  oldStageName: string;
+  newStageId: string;
+  newStageName: string;
+  requirements: StageRequirementSpec;
+  currentValues: Partial<Record<StageRequirementField, string | number | null>>;
+  kiSuggest: KiLossSuggest | null;
+  kiSuggestStatus: "loading" | "ready" | "unavailable";
+}
+
+export const KanbanBoard = forwardRef<HTMLDivElement, KanbanBoardProps>(function KanbanBoard({ stages, deals: initialDeals, onDealClick, readOnly = false, contacts = [] }, ref) {
   const [deals, setDeals] = useState(initialDeals);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+
+  // V8 SLC-813 — StageRequirementsModal-State.
+  const [modal, setModal] = useState<ModalState | null>(null);
+  const [modalSubmitting, setModalSubmitting] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -113,20 +148,138 @@ export const KanbanBoard = forwardRef<HTMLDivElement, KanbanBoardProps>(function
 
     // Check if stage actually changed from the initial state
     const originalDeal = initialDeals.find((d) => d.id === deal.id);
-    if (targetStageId && originalDeal && targetStageId !== originalDeal.stage_id) {
-      const targetStage = stages.find((s) => s.id === targetStageId);
-      if (targetStage) {
-        setValidationError(null);
-        startTransition(async () => {
-          const result = await moveDealToStage(deal.id, targetStageId!, targetStage.name);
-          if (result.error) {
-            // Revert optimistic update on validation failure
-            setDeals(initialDeals);
-            setValidationError(result.error);
-          }
-        });
-      }
+    if (!targetStageId || !originalDeal || targetStageId === originalDeal.stage_id) {
+      return;
     }
+
+    const targetStage = stages.find((s) => s.id === targetStageId);
+    if (!targetStage) return;
+
+    // V8 SLC-813 Pre-Move-Check: hat die Ziel-Stage Pflichtfeld-Anforderungen
+    // UND fehlt eines davon im Deal? -> Modal oeffnen, NICHT direkt
+    // moveDealToStage rufen (verhindert Toast-Error-Pfad).
+    const { spec, missing } = getMissingStageRequirements(targetStage.name, {
+      value: originalDeal.value,
+      contact_id: originalDeal.contact_id,
+      won_lost_reason: originalDeal.won_lost_reason,
+    });
+
+    if (spec && missing.length > 0) {
+      void openRequirementsModal(originalDeal, targetStage, spec);
+      return;
+    }
+
+    // Happy-Path: alle Pflichtfelder erfuellt, direkt verschieben.
+    setValidationError(null);
+    startTransition(async () => {
+      const result = await moveDealToStage(
+        deal.id,
+        targetStageId!,
+        targetStage.name
+      );
+      if (result.error) {
+        setDeals(initialDeals);
+        setValidationError(result.error);
+      }
+    });
+  }
+
+  async function openRequirementsModal(
+    originalDeal: Deal,
+    targetStage: PipelineStage,
+    spec: StageRequirementSpec
+  ) {
+    const oldStageName =
+      stages.find((s) => s.id === originalDeal.stage_id)?.name ?? "Unbekannt";
+
+    // Modal sofort mit Pflichtfeldern oeffnen — UI ist responsiv, KI-Call laeuft
+    // async im Hintergrund.
+    const isLossStage = spec.fields.includes("won_lost_reason");
+    const initialState: ModalState = {
+      dealId: originalDeal.id,
+      dealTitle: originalDeal.title,
+      oldStageName,
+      newStageId: targetStage.id,
+      newStageName: targetStage.name,
+      requirements: spec,
+      currentValues: {
+        value: originalDeal.value,
+        contact_id: originalDeal.contact_id,
+        won_lost_reason: originalDeal.won_lost_reason,
+      },
+      kiSuggest: null,
+      kiSuggestStatus: isLossStage ? "loading" : "ready",
+    };
+    setModal(initialState);
+    setModalError(null);
+
+    // Optimistic-Drop wird zurueckgenommen — der Move passiert erst beim
+    // Modal-Confirm, nicht beim Drop selbst.
+    setDeals(initialDeals);
+
+    if (!isLossStage) return;
+
+    // KI-Suggest fuer Verlustgrund laden.
+    try {
+      const suggest = await suggestLossReason(originalDeal.id);
+      setModal((prev) =>
+        prev && prev.dealId === originalDeal.id
+          ? {
+              ...prev,
+              kiSuggest: suggest,
+              kiSuggestStatus: suggest ? "ready" : "unavailable",
+            }
+          : prev
+      );
+    } catch {
+      setModal((prev) =>
+        prev && prev.dealId === originalDeal.id
+          ? { ...prev, kiSuggest: null, kiSuggestStatus: "unavailable" }
+          : prev
+      );
+    }
+  }
+
+  async function handleModalConfirm(
+    values: Partial<Record<StageRequirementField, string | number>>
+  ) {
+    if (!modal) return;
+    setModalSubmitting(true);
+    setModalError(null);
+    try {
+      const result = await moveDealToStage(
+        modal.dealId,
+        modal.newStageId,
+        modal.newStageName,
+        values as RequirementValues
+      );
+      if (result.error) {
+        setModalError(result.error);
+        setModalSubmitting(false);
+        return;
+      }
+      // Success: Modal schliessen, optimistic state aktualisieren.
+      setDeals((prev) =>
+        prev.map((d) =>
+          d.id === modal.dealId
+            ? {
+                ...d,
+                stage_id: modal.newStageId,
+                ...(values as Partial<Deal>),
+              }
+            : d
+        )
+      );
+      setModal(null);
+    } finally {
+      setModalSubmitting(false);
+    }
+  }
+
+  function handleModalCancel() {
+    setModal(null);
+    setModalError(null);
+    setDeals(initialDeals);
   }
 
   // V7.1 SLC-712a — Read-Only-Mode rendert ohne DndContext (kein Drag-Drop, keine Server-Action-Trigger).
@@ -178,6 +331,24 @@ export const KanbanBoard = forwardRef<HTMLDivElement, KanbanBoardProps>(function
       <DragOverlay>
         {activeDeal ? <KanbanCard deal={activeDeal} /> : null}
       </DragOverlay>
+
+      {modal && (
+        <StageRequirementsModal
+          open={modal !== null}
+          dealTitle={modal.dealTitle}
+          oldStageName={modal.oldStageName}
+          newStageName={modal.newStageName}
+          requirements={modal.requirements}
+          currentValues={modal.currentValues}
+          contacts={contacts}
+          kiSuggest={modal.kiSuggest}
+          kiSuggestStatus={modal.kiSuggestStatus}
+          isSubmitting={modalSubmitting}
+          errorMessage={modalError}
+          onConfirm={handleModalConfirm}
+          onCancel={handleModalCancel}
+        />
+      )}
     </DndContext>
   );
 });

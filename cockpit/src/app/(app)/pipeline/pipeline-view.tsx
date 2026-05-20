@@ -256,6 +256,7 @@ export function PipelineView({
                 ref={kanbanRef}
                 stages={stages}
                 deals={filteredDeals}
+                contacts={contacts}
                 onDealClick={(deal) => router.push(`/deals/${deal.id}`)}
                 readOnly={readOnly}
               />

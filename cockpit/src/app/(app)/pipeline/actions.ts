@@ -6,6 +6,23 @@ import { logAudit, logAuditWithId } from "@/lib/audit";
 import { dispatchAutomationTrigger } from "@/lib/automation/dispatcher";
 import { getProfile } from "@/lib/auth/get-profile";
 import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
+import { queryLLM } from "@/lib/ai/bedrock-client";
+import {
+  suggestLossReasonCore,
+  type SuggestLossReasonResult,
+  type SuggestLossReasonAuditContext,
+} from "@/lib/automation/loss-reason-suggester";
+import type {
+  LossReasonActivity,
+  LossReasonDeal,
+  LossReasonEmail,
+} from "@/lib/automation/loss-reason-prompt";
+import {
+  STAGE_REQUIRED_FIELDS,
+  WON_STAGE_NAMES,
+  LOST_STAGE_NAMES,
+  type StageRequirementField,
+} from "@/lib/pipeline/stage-required-fields";
 
 export type Pipeline = {
   id: string;
@@ -47,9 +64,6 @@ export type Deal = {
   contacts?: { id: string; first_name: string; last_name: string } | null;
   companies?: { id: string; name: string } | null;
 };
-
-const WON_STAGE_NAMES = ["Gewonnen"];
-const LOST_STAGE_NAMES = ["Verloren", "Inaktiv / disqualifiziert"];
 
 // ── Pipeline queries ─────────────────────────────────────────────────
 
@@ -326,30 +340,6 @@ export async function updateDeal(id: string, formData: FormData) {
   return { error: "" };
 }
 
-// Required fields per stage (hardcoded mapping)
-const STAGE_REQUIRED_FIELDS: Record<string, { fields: string[]; labels: Record<string, string> }> = {
-  "Angebot vorbereitet": {
-    fields: ["value"],
-    labels: { value: "Deal-Wert" },
-  },
-  "Angebot offen": {
-    fields: ["value"],
-    labels: { value: "Deal-Wert" },
-  },
-  "Verhandlung / Einwände": {
-    fields: ["value", "contact_id"],
-    labels: { value: "Deal-Wert", contact_id: "Kontakt" },
-  },
-  "Gewonnen": {
-    fields: ["value"],
-    labels: { value: "Deal-Wert" },
-  },
-  "Verloren": {
-    fields: ["won_lost_reason"],
-    labels: { won_lost_reason: "Verlustgrund" },
-  },
-};
-
 // SLC-664/MT-3: Inline-editable Deal-Wert im Header (AC1).
 // Eigenstaendige Action statt Form-FormData-Roundtrip — Header-Inline-Edit
 // braucht nur einen Wert + minimalen Audit-Trail.
@@ -397,7 +387,21 @@ export async function updateDealValue(dealId: string, value: number | null) {
   return { error: "" };
 }
 
-export async function moveDealToStage(dealId: string, newStageId: string, stageName: string) {
+// V8 SLC-813 MT-3: optionale `requirementValues` Map fuer Pflichtfeld-Set
+// VOR dem eigentlichen Stage-Move (atomar via 2 sequenzielle DB-Calls). Wird
+// vom Kanban-Drop-Modal befuellt, wenn der User die Pflichtfelder im Modal
+// nachreicht. Backward-compatible: ohne den Parameter laeuft der V7-Pfad
+// unveraendert (UI-Toast bei Pflichtfeld-Luecke).
+export type RequirementValues = Partial<
+  Record<StageRequirementField, string | number | null>
+>;
+
+export async function moveDealToStage(
+  dealId: string,
+  newStageId: string,
+  stageName: string,
+  requirementValues?: RequirementValues
+) {
   await assertNotReadOnlyContext();
   const profile = await getProfile();
   const supabase = await createClient();
@@ -409,12 +413,22 @@ export async function moveDealToStage(dealId: string, newStageId: string, stageN
     .eq("id", dealId)
     .single();
 
-  // Validate required fields for target stage
+  // V8 SLC-813: Merge requirementValues (aus Modal) ueber currentDeal, sodass
+  // die Pflichtfeld-Validation auf der konsolidierten Sicht stattfindet.
   const requirements = STAGE_REQUIRED_FIELDS[stageName];
+  const effectiveDeal: Record<string, unknown> = currentDeal
+    ? { ...(currentDeal as Record<string, unknown>) }
+    : {};
+  if (requirementValues) {
+    for (const [k, v] of Object.entries(requirementValues)) {
+      effectiveDeal[k] = v;
+    }
+  }
+
   if (requirements && currentDeal) {
     const missing: string[] = [];
     for (const field of requirements.fields) {
-      const val = (currentDeal as any)[field];
+      const val = effectiveDeal[field];
       if (val === null || val === undefined || val === "") {
         missing.push(requirements.labels[field] ?? field);
       }
@@ -422,6 +436,48 @@ export async function moveDealToStage(dealId: string, newStageId: string, stageN
     if (missing.length > 0) {
       return { error: `Pflichtfelder für "${stageName}": ${missing.join(", ")}` };
     }
+  }
+
+  // V8 SLC-813: Pflichtfeld-Set-Phase. Persist requirementValues VOR dem
+  // Stage-Move + separater audit_log + activity-Eintrag (analog
+  // updateDealValue-Pattern Zeile 374-397). Wenn dieser Update fehlschlaegt,
+  // wird der Stage-Move abgebrochen — sonst haetten wir ein "Stage gesetzt
+  // ohne Pflichtfeld"-State.
+  if (requirementValues && Object.keys(requirementValues).length > 0 && currentDeal) {
+    const before: Record<string, unknown> = {};
+    const after: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(requirementValues)) {
+      before[k] = (currentDeal as Record<string, unknown>)[k] ?? null;
+      after[k] = v;
+    }
+
+    const { error: reqError } = await supabase
+      .from("deals")
+      .update({ ...requirementValues, updated_at: new Date().toISOString() })
+      .eq("id", dealId);
+
+    if (reqError) return { error: reqError.message };
+
+    await supabase.from("activities").insert({
+      owner_user_id: profile.user_id,
+      contact_id: (currentDeal as { contact_id: string | null }).contact_id,
+      company_id: (currentDeal as { company_id: string | null }).company_id,
+      deal_id: dealId,
+      type: "note",
+      title: `Pflichtfeld-Set bei Stage-Move → ${stageName}: ${Object.keys(requirementValues).join(", ")}`,
+    });
+
+    logAudit({
+      action: "update",
+      entityType: "deal",
+      entityId: dealId,
+      changes: { before, after },
+      context: `Pflichtfeld-Set bei Stage-Move nach "${stageName}"`,
+    }).catch(() => {});
+
+    // Update currentDeal-Snapshot fuer den anschliessenden Activity-Log und
+    // Workflow-Dispatch, sodass die Snapshots die frischen Werte enthalten.
+    Object.assign(currentDeal as Record<string, unknown>, after);
   }
 
   const oldStageName = (currentDeal?.pipeline_stages as any)?.name ?? "Unbekannt";
@@ -931,5 +987,104 @@ export async function deleteStage(id: string) {
     pausedRuleNames:
       dependentRules?.map((r) => (r as { name: string }).name) ?? [],
   };
+}
+
+// ── V8 SLC-813 — KI-Verlustgrund-Vorschlag (FEAT-804) ──────────────────
+//
+// DEC-220 + DEC-225: Thin-Wrapper um `suggestLossReasonCore`. Default-Deps
+// binden queryLLM, Supabase-Reads (deals/activities/email_messages) und
+// einen Best-Effort-Audit-Insert mit action="ki_loss_reason_suggested".
+// Die Pure-Core-Logik (Skip-Heuristik, Bedrock-Invoke, Parse, Audit-Status)
+// lebt in lib/automation/loss-reason-suggester.ts und ist dort getestet.
+
+const SNIPPET_DB_LIMIT = 600;
+
+export async function suggestLossReason(
+  dealId: string
+): Promise<SuggestLossReasonResult | null> {
+  await assertNotReadOnlyContext();
+  const profile = await getProfile();
+  const supabase = await createClient();
+
+  return suggestLossReasonCore(dealId, {
+    invokeLLM: (userPrompt, systemPrompt, options) =>
+      queryLLM(userPrompt, systemPrompt, options),
+    fetchDealSnapshot: async (id): Promise<LossReasonDeal | null> => {
+      const { data } = await supabase
+        .from("deals")
+        .select("title, value, pipeline_stages(name)")
+        .eq("id", id)
+        .single();
+      if (!data) return null;
+      const dealRow = data as unknown as {
+        title: string;
+        value: number | null;
+        pipeline_stages?: { name: string } | { name: string }[] | null;
+      };
+      const stages = dealRow.pipeline_stages;
+      const stageName = Array.isArray(stages)
+        ? stages[0]?.name ?? "Unbekannt"
+        : stages?.name ?? "Unbekannt";
+      return {
+        title: dealRow.title,
+        value: dealRow.value,
+        current_stage: stageName,
+      };
+    },
+    fetchActivities: async (id): Promise<LossReasonActivity[]> => {
+      const { data } = await supabase
+        .from("activities")
+        .select("type, title, created_at")
+        .eq("deal_id", id)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      return (data ?? []).map((row) => {
+        const r = row as { type: string; title: string | null; created_at: string };
+        return {
+          type: r.type,
+          title: r.title ?? "(ohne Titel)",
+          created_at: r.created_at,
+        };
+      });
+    },
+    fetchEmails: async (id): Promise<LossReasonEmail[]> => {
+      const { data } = await supabase
+        .from("email_messages")
+        .select("from_address, subject, body_text, gatekeeper_summary, received_at")
+        .eq("deal_id", id)
+        .order("received_at", { ascending: false })
+        .limit(3);
+      return (data ?? []).map((row) => {
+        const r = row as {
+          from_address: string;
+          subject: string | null;
+          body_text: string | null;
+          gatekeeper_summary: string | null;
+          received_at: string;
+        };
+        const snippetSource = r.gatekeeper_summary ?? r.body_text ?? "";
+        const snippet = snippetSource.slice(0, SNIPPET_DB_LIMIT);
+        return {
+          from_email: r.from_address,
+          subject: r.subject ?? "(ohne Betreff)",
+          snippet,
+          received_at: r.received_at,
+        };
+      });
+    },
+    insertAudit: async (
+      id: string,
+      ctx: SuggestLossReasonAuditContext
+    ): Promise<void> => {
+      await supabase.from("audit_log").insert({
+        actor_id: profile.user_id,
+        action: "ki_loss_reason_suggested",
+        entity_type: "deal",
+        entity_id: id,
+        changes: null,
+        context: JSON.stringify(ctx),
+      });
+    },
+  });
 }
 
