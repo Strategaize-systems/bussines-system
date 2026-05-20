@@ -220,7 +220,7 @@
     {
       "id": "v8",
       "name": "V8",
-      "status": "active",
+      "status": "released",
       "summary": "Hygiene-Sprint (Requirements done 2026-05-19): 4 Features — FEAT-801 Settings-Layout-Refactor + Rollen-Auffindbarkeit (Tile-Gruppierung, Ghost-Subpages weg, Automation-Duplikat aufloesen, Rollen-Verwaltung als eigenes Tile sichtbar), FEAT-802 KI-Provider-Anzeige im UI abstrahieren (BL-480, 'Bedrock arbeitet' → 'KI arbeitet'), FEAT-803 /performance-Page-Cleanup + Task/Aufgabe-Label-Konsistenz (BL-453 + BL-459), FEAT-804 Pflichtfelder-Modal beim Stage-Move + KI-Verlustgrund-Vorschlag aus Activity-History (BL-455 HIGH + BL-456 medium). User-Discovery-Entscheidungen 2026-05-19: WhatsApp + Slack/Teams aus V8 raus → BL-443 nach Parking (no-version), keine 4. Rolle (Steuerberater-Zugang ist OS-Thema). Wettbewerbs-Update kein V8-Druck. Naechster Schritt: /architecture.",
       "order": 32
     },
