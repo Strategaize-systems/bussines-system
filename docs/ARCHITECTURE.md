@@ -10817,7 +10817,8 @@ V8.1 ist ein **reiner UI-/Permission-/Sidebar-Filter-Sprint**. Keine Schema-Migr
 
 1. **SLC-821 Solopreneur-Mode** — Server-side Helper liest `team_size` (Count Profiles mit gleicher `team_id`) und filtert in der Layout-Render-Phase die `TEAM`-Sidebar-Section weg, wenn der eingeloggte User der einzige in seinem Team ist.
 2. **SLC-822 Sidebar-Konsolidierung Option A** — `VERWALTUNG_SETUP` (12 Eintraege) wird umstrukturiert: 9 Config-Items (Pipelines, Branding, Zahlungsbedingungen, Produkte, Einwilligungstexte, Workflow-Automation, NL-Sculptor-Audit, Templates, Kampagnen, Ziele, Cadences) entfallen vollstaendig aus der Sidebar — nur erreichbar via `/settings`-Tile-Page. Drei operative Tools (`/handoffs`, `/referrals`, `/audit-log`) wandern in eine neue Section `WERKZEUGE`. Der bestehende `/settings`-Sidebar-Eintrag bleibt in `VERWALTUNG_MEIN` (kein neuer Eintrag noetig).
-3. **SLC-823 Teamlead-Tile-Konsistenz** — `/settings/page.tsx` Tile "Rollen-Verwaltung" Permission `ADMIN_ONLY` → `ADMIN_TEAMLEAD`. Die `/settings/team`-Page selbst ist via V7.1-Permission-Layer (DEC-196) bereits rolle-aware und braucht keine UI-Aenderung. Tile-Description wird neutralisiert, sodass sie fuer beide Rollen funktioniert.
+3. **SLC-823 Teamlead-Tile-Konsistenz** — `/settings/page.tsx` Tile "Rollen-Verwaltung" Permission `ADMIN_ONLY` → `ADMIN_TEAMLEAD`. Tile-Description wird neutralisiert. **Nur Tile-Sichtbarkeit, kein Edit-Verhalten** — Edit-Erweiterung kommt in SLC-824.
+4. **SLC-824 Teamlead-Edit-Erweiterung (NEU 2026-05-20 nach User-Klaerung)** — Teamlead bekommt **mehr** Edit-Rechte: darf eigene Team-Member loeschen (mit Pflicht-Reassign-Vorbedingung wie V7-Hard-Lock). **Weniger Invite-Rechte:** darf nur noch `member` einladen (heute: `member` + `teamlead`). Rolle-Wechsel bleibt admin-only. Bestaetigt DEC-194-Update + DEC-193-Update via DEC-230.
 
 ### V8.1 Code-Audit-Befunde (vor Architecture-Entscheidung)
 
@@ -10831,7 +10832,7 @@ V8.1 ist ein **reiner UI-/Permission-/Sidebar-Filter-Sprint**. Keine Schema-Migr
 - `invite-dialog.tsx` ist `callerRole`-aware (Z.151: Admin-Option nur fuer Admin, Z.163: Team-Auswahl nur fuer Admin)
 - `cockpit/src/lib/team/actions.ts` Server-Actions: `inviteMember` admin+teamlead (Teamlead nur eigenes Team), `changeRole` admin-only, `deleteProfile` admin-only — Defense-in-Depth korrekt
 - `bulk-reassign-actions.ts` blockiert Member (`caller.role === "member"`) — Teamlead darf Bulk-Reassign ausfuehren, was V7-Design ist (Teamlead operiert auf eigenem Team)
-- **Diskrepanz zu User-Discovery-Wording:** User sagte "Read-Only fuer Teamlead". V7-Realitaet: "Limited-Edit fuer Teamlead" (Einladen JA, Role-Change/Delete NEIN). **V8.1-Entscheidung (DEC-229):** V7-Design respektieren — Teamlead darf weiter limited-editieren. "Read-Only"-Wording im Discovery wird als "kein voller Admin-Edit" interpretiert. Wenn User echtes Read-Only will, muss das separat als Backlog-Item dokumentiert werden.
+- **Diskrepanz zu User-Discovery-Wording (geklaert via Folge-Discovery 2026-05-20):** User sagte initial "Read-Only fuer Teamlead". V7-Realitaet: "Limited-Edit" (Einladen JA, Role-Change/Delete NEIN). Nach Folge-Klaerung User-Direktive: weder reines Read-Only noch V7-Default, sondern **neue Permission-Matrix** — Teamlead darf nur `member` einladen (Restrict), darf eigene Team-Member loeschen mit Pflicht-Reassign (Expand). Rolle-Wechsel bleibt admin-only. Resultiert in **SLC-824 NEU** + **DEC-230** (supersedes DEC-194 + DEC-193). DEC-229 bleibt fuer Tile-Sichtbarkeit (SLC-823), wird aber nicht mehr als "V7-Verhalten respektieren" interpretiert — V7-Verhalten wird in SLC-824 gezielt angepasst.
 
 **Q2/Q3/Q5 — Sidebar-Layout (geklaert via Code-Audit):**
 - `sidebar-config.ts:219-225` zeigt: `/settings`-Eintrag existiert bereits in `VERWALTUNG_MEIN` mit `ALL_ROLES`. **Kein neuer Eintrag noetig.**
@@ -10908,11 +10909,27 @@ V8.1 ist ein **reiner UI-/Permission-/Sidebar-Filter-Sprint**. Keine Schema-Migr
   - `/referrals` → section `WERKZEUGE`
   - `/audit-log` → section `WERKZEUGE`
 
-#### `app/(app)/settings/page.tsx` (CHANGE)
+#### `app/(app)/settings/page.tsx` (CHANGE — SLC-823)
 
 - **Eine Zeile aendern:** Tile-Index Z.187: `visibleFor: ADMIN_ONLY` → `ADMIN_TEAMLEAD`
-- **Description-Neutralisierung Z.183:** Aktuell "Team-Mitglieder, Rollen-Zuweisung und Drilldown" — wird zu "Team-Mitglieder, Rollen-Zuweisung und Drilldown verwalten" (sprachlich neutral, Edit-Faehigkeit per Rolle wird auf der Ziel-Page durchgesetzt)
-- **Keine Edit-Logik-Aenderung in `/settings/team`:** Page-Internals bleiben V7-Design (V7.1 DEC-196)
+- **Description-Neutralisierung Z.183:** Aktuell "Team-Mitglieder, Rollen-Zuweisung und Drilldown" — wird zu "Team-Mitglieder einsehen und verwalten" (sprachlich neutral, Edit-Faehigkeit per Rolle wird auf der Ziel-Page durchgesetzt)
+
+#### `lib/team/actions.ts` (CHANGE — SLC-824)
+
+- **`inviteMember` Server-Action**: zusaetzlicher Guard fuer Teamlead-Caller. Wenn `caller.role === "teamlead"` AND `payload.role !== "member"` → reject mit `INVALID_ROLE_FOR_TEAMLEAD_INVITER`. Teamlead-Caller-Path bleibt sonst unveraendert (Team-Constraint = eigenes Team).
+- **`deleteProfile` Server-Action**: Permission-Layer erweitert von `assertRole(["admin"])` zu rolle-bedingter Logik. Wenn `caller.role === "admin"` → keine Aenderung (V7-Verhalten). Wenn `caller.role === "teamlead"` → zusaetzliche Guards: `target.role === "member"` AND `target.team_id === caller.team_id` AND `target.user_id !== caller.user_id`. Bestehende `countOwnerRecords`-Hard-Lock (Pre-Check) bleibt unveraendert — bei `open_records > 0` throws Error mit Re-Assign-Pflicht-Hinweis.
+- **Audit-Log-Trail**: bestehende `team.member_deleted`-Action bleibt, aber `caller.role` wird im audit_log.context-Feld zusaetzlich gespeichert (Defense-in-Depth fuer forensische Nachvollziehbarkeit).
+
+#### `app/(app)/settings/team/team-members-table.tsx` (CHANGE — SLC-824)
+
+- **Delete-Button-Sichtbarkeit Z.204**: heute `{callerIsAdmin && !isSelf && <DeleteButton>}` — Erweiterung: `{(callerIsAdmin || (callerIsTeamlead && target.role === 'member')) && !isSelf && <DeleteButton>}`.
+- **Neue Prop `callerIsTeamlead: boolean`** ergaenzt zur bestehenden `callerIsAdmin`-Prop (page.tsx leitet beides aus `callerProfile.role` ab).
+- **Role-Select bleibt admin-only** (Z.159 unveraendert) — Teamlead sieht weiterhin nur Role-Badge.
+
+#### `app/(app)/settings/team/invite-dialog.tsx` (CHANGE — SLC-824)
+
+- **Rollen-Dropdown Z.141-152**: aktuell zeigt Teamlead `member` + `teamlead` Optionen. Aenderung: wenn `callerRole === "teamlead"` → nur `member`-Option im Dropdown. SelectItem `teamlead` und `admin` werden hinter `isAdmin`-Gate gestellt (heute nur `admin` hinter Gate).
+- **Description-Anpassung**: kleine Sprach-Korrektur falls noetig (z.B. "Mitglied einladen" fuer Teamlead, "Mitglied oder Teamlead einladen" fuer Admin).
 
 ### V8.1 Data Flow
 
@@ -10957,10 +10974,54 @@ Render-Reihenfolge (SECTION_ORDER):
 
 ```
 /settings page.tsx:
-  Role: admin → "Rollen-Verwaltung"-Tile sichtbar → /settings/team (Edit-Mode)
-  Role: teamlead → "Rollen-Verwaltung"-Tile sichtbar → /settings/team
-                   (Limited-Edit per V7.1: einladen ja, Role-Change/Delete nein)
+  Role: admin → "Rollen-Verwaltung"-Tile sichtbar → /settings/team (voller Edit-Mode)
+  Role: teamlead → "Rollen-Verwaltung"-Tile sichtbar → /settings/team (V8.1-Permission)
   Role: member → Tile NICHT sichtbar (filter durch visibleFor)
+```
+
+#### Teamlead-Edit-Erweiterung (SLC-824) — neue Permission-Matrix
+
+```
+Aktion                                  | Admin | Teamlead V7.1 | Teamlead V8.1
+----------------------------------------|-------|---------------|---------------
+Member sehen (eigenes Team)             |  ✅   |      ✅       |      ✅
+Member sehen (andere Teams)             |  ✅   |      ❌       |      ❌
+Member einladen als 'member'            |  ✅   |      ✅       |      ✅
+Member einladen als 'teamlead'          |  ✅   |      ✅       |      ❌ ← NEU Restrict
+Member einladen als 'admin'             |  ✅   |      ❌       |      ❌
+Role-Wechsel (member↔teamlead)          |  ✅   |      ❌       |      ❌
+Promote zu admin                        |  ✅   |      ❌       |      ❌
+Member loeschen (eigenes Team)          |  ✅*  |      ❌       |      ✅* ← NEU Expand
+Bulk-Reassign-Dialog ausfuehren         |  ✅   |      ✅       |      ✅
+
+(*) Member-Loeschen ist Hard-Lock-gesichert via countOwnerRecords-Pre-Check.
+    Wenn open_deals > 0 OR open_activities > 0 → throws Error mit
+    Re-Assign-Pflicht. Erst nach Bulk-Reassign auf 0 ist Delete moeglich.
+    Daten gehen niemals verloren — V7-DEC-193-Pattern bleibt unveraendert,
+    nur die Caller-Permission wird erweitert.
+```
+
+#### Server-Action-Flow (SLC-824) — deleteProfile mit Teamlead-Caller
+
+```
+Teamlead klickt Delete-Button auf Member-Row (eigenes Team)
+   ↓
+team-members-table.tsx onClick → deleteProfile(target_user_id)
+   ↓
+lib/team/actions.ts deleteProfile:
+   ├── assertRole(["admin", "teamlead"]) ← NEU erweitert
+   ├── if caller.role === "teamlead":
+   │     ├── if target.team_id !== caller.team_id → throw FORBIDDEN_OTHER_TEAM
+   │     ├── if target.role !== "member"          → throw FORBIDDEN_NON_MEMBER
+   │     └── if target.user_id === caller.user_id → throw FORBIDDEN_SELF
+   ├── countOwnerRecords(target_user_id) ← V7-Pattern unveraendert
+   │     ├── deals (status='active' AND owner=target)
+   │     ├── activities (completed_at IS NULL AND owner=target)
+   │     └── 6 weitere Owner-Tabellen
+   │     → if total > 0: throw OPEN_RECORDS_BLOCK_DELETE
+   ├── supabase.auth.admin.deleteUser(target_user_id)
+   ├── profiles DELETE
+   └── audit_log INSERT (action='team.member_deleted', caller_role=teamlead)
 ```
 
 ### V8.1 External Dependencies
@@ -11018,11 +11079,12 @@ Render-Reihenfolge (SECTION_ORDER):
 
 - **DEC-227** — V8.1 Solopreneur-Detection via `profiles.team_id`-Count, kein neues `team_size`-Feld (SLC-821)
 - **DEC-228** — V8.1 Sidebar-Section-Refactor `VERWALTUNG_SETUP` → `WERKZEUGE` (Rename mit Item-Reduktion 12 → 3) (SLC-822)
-- **DEC-229** — V8.1 Teamlead-Tile-Sichtbarkeit ohne `/settings/team`-Page-Refactor: V7-Limited-Edit-Verhalten respektieren (SLC-823)
+- **DEC-229** — V8.1 Teamlead-Tile-Sichtbarkeit ADMIN_ONLY → ADMIN_TEAMLEAD (SLC-823, reine Tile-Permission ohne Page-Refactor)
+- **DEC-230** — V8.1 Teamlead-Permission-Matrix erweitert (SLC-824): Invite-Restriction auf `role='member'` (supersedet DEC-194-Teil), Member-Delete-Allow mit V7-Hard-Lock-Reuse (supersedet DEC-193-Teil). Rolle-Wechsel bleibt admin-only (kein Toggle in V8.1, V8.x+ optional).
 
 ### V8.1 Slice-Planning Hint
 
-**3 Slices, jeder orthogonal, niedriges Inter-Slice-Risiko:**
+**4 Slices, jeder orthogonal, niedriges Inter-Slice-Risiko:**
 
 - **SLC-821** (~30-60 Min) — Solopreneur-Mode:
   - `lib/team/team-size.ts` NEU (~30 Zeilen)
@@ -11034,13 +11096,22 @@ Render-Reihenfolge (SECTION_ORDER):
   - Sidebar-Component falls Top-Section "WERKZEUGE" anders gerendert wird (Pruefung in Slice-Planning)
   - Vitest fuer `filterByRole`-Pattern und Section-Reihenfolge
 
-- **SLC-823** (~30-45 Min) — Teamlead-Tile-Konsistenz:
+- **SLC-823** (~10-15 Min) — Teamlead-Tile-Sichtbarkeit:
   - `app/(app)/settings/page.tsx` CHANGE: 1 Zeile Permission + 1 Zeile Description
   - Vitest fuer `visibleSections.filter`-Logik (Teamlead sieht jetzt Rollen-Verwaltung)
+  - **Reine UI-Sichtbarkeit** — kein Edit-Verhalten (das kommt in SLC-824)
 
-**Total V8.1-Aufwand: ~2-3h reine Implementation + QA + Live-Smoke.** Kleinster Sprint seit V6.3.
+- **SLC-824** (~2-2.5h) — Teamlead-Edit-Erweiterung (NEU 2026-05-20):
+  - `lib/team/actions.ts` `inviteMember`: Guard fuer Teamlead-Caller (role-restriction auf 'member')
+  - `lib/team/actions.ts` `deleteProfile`: Permission-Erweiterung auf Teamlead mit Team+Role+Self-Guards, `countOwnerRecords`-Hard-Lock unveraendert
+  - `app/(app)/settings/team/team-members-table.tsx`: Delete-Button-Sichtbarkeit fuer Teamlead bei target.role==='member'
+  - `app/(app)/settings/team/invite-dialog.tsx`: Rollen-Dropdown Restriction fuer Teamlead
+  - audit_log.context erweitert um caller_role (Defense-in-Depth)
+  - Vitest: 6-8 neue Cases (Teamlead-Invite-Restriction, Teamlead-Delete-Allow, Cross-Team-Block, Self-Delete-Block, Hard-Lock-Pre-Check, Audit-Log)
 
-**Reihenfolge-Empfehlung:** SLC-821 → SLC-822 → SLC-823 (vom kleinsten Risiko aufsteigend). Alle 3 Slices koennen sequentiell auf demselben Branch bearbeitet werden — keine Worktree-Isolation noetig (orthogonale Codebereiche).
+**Total V8.1-Aufwand: ~4-5h reine Implementation + QA + Live-Smoke.** Ein 4-Slice-Sprint, kein reiner Hygiene-Sprint mehr — SLC-824 ist gezielte Permission-Aenderung mit Server-Side- und UI-Aenderungen.
+
+**Reihenfolge-Empfehlung:** SLC-821 → SLC-822 → SLC-823 → SLC-824 (vom kleinsten Risiko aufsteigend). Alle 4 Slices koennen sequentiell auf demselben Branch bearbeitet werden — keine Worktree-Isolation noetig (orthogonale Codebereiche).
 
 ### V8.1 Delivery Mode
 
