@@ -3911,3 +3911,100 @@ Total V8-Aufwand: ~7-11h reine Implementation + QA + Live-Smoke. Schmaler als V7
 **Internal-Tool, Hygiene-Sprint.** Keine neue Stack-Komponente, keine grosse Schema-Migration (max additive Audit-Log-Spalten), kein neuer Provider, kein neuer Cron. Internal-Test-Mode bleibt aktiv. V8-PASS heisst: V7.6-Stack bleibt deployed wie aktuell (Production-Image `1ffae6e` V7.6), plus 3 Slices als kumulative Aenderungen mit Coolify-Redeploy am Slice-Ende.
 
 **V8 Requirements ready for `/architecture`.**
+
+## V8.1 — Solopreneur-Mode + Sidebar-Konsolidierung + Permission-Konsistenz (Requirements done 2026-05-20)
+
+### V8.1 Problem Statement
+
+V8 ist deployed (REL-034) und post-launch laeuft. Im Discovery 2026-05-20 hat der User drei zusammenhaengende Hygiene-Themen priorisiert, die nach V8-Release als Schulden uebrigblieben:
+
+- **Solopreneur-Mode (BL-482):** "Team-Cockpit" und "Team-Verwaltung"-Sidebar-Eintraege sind fuer einen Solo-Admin (team_size=1) visuell wertlos — Aggregate ueber einen einzelnen User. Erstes Onboarding-Erlebnis fuer einen neuen Solo-User: zwei Sidebar-Items, die nichts Sinnvolles zeigen.
+- **Sidebar-Settings-Doppelung (BL-483):** V8 (FEAT-801) hat `/settings` zu einer gegliederten 3-Section-Tile-Page gemacht. Die Sidebar zeigt aber weiter 12 Einzel-Eintraege unter `VERWALTUNG_SETUP` (Pipelines, Kampagnen, Templates, Workflow-Automation, NL-Sculptor-Audit, Branding, Zahlungsbedingungen, Produkte, Einwilligungstexte, Ziele, Cadences/Automatisierung, Audit-Log). Beide Surfaces zeigen dasselbe — keine Single-Source-of-Truth.
+- **Teamlead-Tile-Inkonsistenz (BL-484):** `/settings/team` ist als Sidebar-Eintrag fuer Admin+Teamlead sichtbar (sidebar-config.ts:121-125). Das `/settings`-Tile "Rollen-Verwaltung" ist aber `ADMIN_ONLY` (settings/page.tsx ~Z.187). Same URL, verschiedene Sichtbarkeit. Teamlead findet die Seite nur ueber die Sidebar, nicht ueber die Tile-Page.
+
+### V8.1 Goal / Intended Outcome
+
+Drei Sidebar-/Settings-/Permission-Schulden ausraeumen, ohne neue Features. Nach V8.1: Sidebar ist um 12 Eintraege schlanker, Solopreneur sieht keine wertlosen Team-Items mehr, Teamlead findet `/settings/team` konsistent ueber Sidebar UND Tile-Page (read-only).
+
+### V8.1 Primary Users
+
+Wie BS gesamt: Strategaize-Gruender (Admin, Solo bis aktuell), Strategaize-Verkaufsleiter (Teamlead, ab erstem Mitarbeiter), Strategaize-Verkaeufer (Member).
+
+### V8.1 Scope
+
+**In scope — ein FEAT-811 mit 3 Sub-Slices:**
+
+#### FEAT-811 — Solopreneur-Mode + Sidebar-Konsolidierung + Rollen-Permission-Konsistenz
+
+- **SLC-821 — Solopreneur-Mode (BL-482)** — Reine Auto-Detection bei `team_size = 1`. Sidebar-Eintraege `/team` (Team-Cockpit) und `/settings/team` (Team-Verwaltung) werden ausgeblendet. Bei erstem Invite werden sie automatisch wieder sichtbar. **Kein Override-Toggle** (User-Direktive 2026-05-20).
+- **SLC-822 — Sidebar-Konsolidierung Option A (BL-483)** — Alle 12 `VERWALTUNG_SETUP`-Sidebar-Eintraege werden entfernt. Ein einziger Eintrag `Einstellungen` → `/settings` (ALL_ROLES sichtbar, Permission wirkt in der Page). `/handoffs`, `/referrals`, `/audit-log` (Tools, nicht Config) wandern Default in eine `WERKZEUGE`-Section — finale Loesung in /architecture.
+- **SLC-823 — Teamlead-Tile-Konsistenz (BL-484)** — Tile "Rollen-Verwaltung" / "Team-Mitglieder" im `/settings`-Layout fuer Admin+Teamlead sichtbar machen. Admin: Edit-Mode. Teamlead: Read-Only-Mode (keine Edit-Buttons, Role-Select disabled). Member: weiterhin nicht sichtbar.
+
+**Out of scope:**
+- Override-Toggle "Team-Vorbereitungs-Modus" fuer Solopreneur — explizit verworfen 2026-05-20
+- 4. Rolle / Auditor / Read-Only-Steuerberater
+- Sidebar-Brand-Refresh, Icon-Refactor, Theming (BL-441)
+- Mobile-Hamburger-Restructure
+- Migration der Tools-Section (Handoffs/Referrals/Audit-Log) zu echtem Dashboard
+- Visual-Refactor der `/settings/team`-Page selbst — nur Tile-Sichtbarkeit aendert sich
+- Neue Settings-Tiles, neue Sections
+
+### V8.1 Core Features
+
+| ID | Feature | Backlog-Bezug | Aufwand-Indikator |
+|---|---|---|---|
+| FEAT-811 | Solopreneur-Mode + Sidebar-Konsolidierung + Permission-Konsistenz | BL-482 + BL-483 + BL-484 | 1 FEAT mit 3 Sub-Slices (~3-4h total) |
+
+Voraussichtlich 3 Slices (SLC-821 / SLC-822 / SLC-823), Aufwand-Schaetzung gesamt ~3-4h reine Implementation.
+
+### V8.1 Constraints
+
+- **Keine Schema-Migration** — V8.1 ist pure UI / Permission / Sidebar-Filter
+- **Keine neue Stack-Komponente** — kein neuer Container, kein Cron, kein npm-Package
+- **Bedrock-Region-Pin DEC-211 bleibt** — V8.1 enthaelt keinen KI-Call
+- **Internal-Test-Mode bleibt aktiv**
+- **Mobile-Layout** — neue Sidebar-Struktur muss unter 768px funktionieren
+- **URL-Stabilitaet** — Direkt-Links auf `/settings/templates`, `/settings/pipelines` etc. bleiben funktional (keine URL-Aenderung, nur Sidebar-Sichtbarkeit)
+- **V8.1 startet nur, wenn /post-launch V8 stable** — Burn-In-Beobachtungsphase muss positiv abgeschlossen sein
+
+### V8.1 Risks / Assumptions
+
+- **Risk:** Wenn `VERWALTUNG_SETUP` als Sidebar-Section komplett verschwindet und `/handoffs`/`/referrals`/`/audit-log` ohne Heimat sind, koennen User sie nicht mehr finden. Mitigation: `WERKZEUGE`-Section als Default-Loesung, /architecture finalisiert
+- **Risk:** Wenn Solopreneur-Mode (SLC-821) den `team_size`-Query in jedem Sidebar-Render macht, wird das ein N+1-artiger Aufruf — Mitigation: Helper soll in der Layout-Server-Side-Render-Phase einmal pro Request gecached werden
+- **Risk:** Falls `/settings/team` read-only-Mode fuer Teamlead noch nicht aus V7.1-Permission-Layer (DEC-196) abgedeckt ist, muss SLC-823 das ergaenzen — sonst sieht Teamlead Edit-Buttons, die er nicht klicken darf (UX-Drift)
+- **Assumption:** `profiles.team_id` ist der korrekte Bezugspunkt fuer team_size. /architecture verifiziert oder ersetzt durch korrektes V7-Field
+- **Assumption:** V8-Image (`c5e0f0c`) ist im Burn-In stabil. Falls /post-launch V8 ein Blocker-Issue aufdeckt, V8.1-Start wartet
+
+### V8.1 Success Criteria
+
+- Frischer Admin-Login mit team_size=1: keine `/team` + `/settings/team`-Eintraege in Sidebar
+- Nach erstem Invite: beide Eintraege werden im Layout-Reload wieder sichtbar
+- Sidebar zeigt KEINEN der 12 `VERWALTUNG_SETUP`-Eintraege mehr, nur einen "Einstellungen"-Eintrag
+- `/handoffs`, `/referrals`, `/audit-log` bleiben per Sidebar erreichbar (z.B. in `WERKZEUGE`-Section)
+- `/settings`-Tile-Page zeigt fuer Admin+Teamlead das Tile "Rollen-Verwaltung" / "Team-Mitglieder"
+- Klick als Teamlead → `/settings/team` ohne Edit-Buttons
+- `npm run build`, `npm run lint`, `npm run test` clean
+- Live-Smoke auf business.strategaizetransition.com PASS fuer alle 3 Rollen
+
+### V8.1 Open Questions
+
+- **team_size-Source:** `profiles.team_id` per Default angenommen — /architecture verifiziert
+- **Tools-Section-Naming:** "WERKZEUGE" als Arbeitstitel — /architecture finalisiert
+- **Reihenfolge Sidebar nach Konsolidierung:** ANALYSE → OPERATIV → ARBEITSBEREICHE → VERWALTUNG_MEIN → WERKZEUGE → Einstellungen — /architecture finalisiert
+- **`/settings/team` Read-Only-Mode fuer Teamlead:** Bereits per V7.1 vorhanden, oder muss in SLC-823 ergaenzt werden — Code-Audit in /architecture
+- **Sidebar-Footer-Layout:** Soll "Einstellungen" als visuell abgesetzter Footer-Eintrag erscheinen (sticky bottom) oder als normaler letzter Eintrag im Stream? — Slice-Planning
+
+### V8.1 Slice-Planning Hint
+
+Voraussichtlich 3 Slices:
+- **SLC-821** (~30-60 Min) — FEAT-811 / Solopreneur-Mode: team_size-Helper + Sidebar-Filter-Logik + 2 Vitest-Cases
+- **SLC-822** (~1-2h) — FEAT-811 / Sidebar-Konsolidierung Option A: `VERWALTUNG_SETUP` entfernen, "Einstellungen"-Entry, `WERKZEUGE`-Section fuer Tools, Vitest fuer Sichtbarkeit
+- **SLC-823** (~1-1.5h) — FEAT-811 / Teamlead-Tile-Konsistenz: Tile-Variante fuer Teamlead in `/settings/page.tsx`, optional Read-Only-Refactor in `/settings/team`, Vitest
+
+Total V8.1-Aufwand: ~3-4h reine Implementation + QA + Live-Smoke. Kleinster Sprint seit V6.3 Polish-Sprint.
+
+### V8.1 Delivery Mode
+
+**Internal-Tool, Hygiene-Sprint.** Keine neue Stack-Komponente, keine Schema-Migration, kein neuer Provider, kein neuer Cron, kein Bedrock-Call. Internal-Test-Mode bleibt aktiv. V8.1-PASS heisst: V8-Stack bleibt deployed wie aktuell (Production-Image `c5e0f0c`), plus 3 Slices als kumulative UI-/Permission-Aenderungen mit Coolify-Redeploy am Slice-Ende (Pattern wie V8).
+
+**V8.1 Requirements ready for `/architecture`.**

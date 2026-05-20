@@ -227,8 +227,8 @@
     {
       "id": "v8-1",
       "name": "V8.1",
-      "status": "planned",
-      "summary": "Settings/Sidebar-Konsolidierung + Solopreneur-Mode (Discovery 2026-05-20). 3 zusammenhaengende Themen: (a) BL-482 Solopreneur-Mode — Auto-Detect bei team=1 + Override-Toggle, blendet Team-Cockpit + Team-Verwaltung Sidebar-Items aus wenn nur 1 User im Team. (b) BL-483 Settings/Sidebar Single-Source-of-Truth (Option A) — VERWALTUNG_SETUP-Sidebar-Sektion zusammenklappen auf 1 'Settings'-Eintrag, alle Config-Items nur noch via /settings-Page erreichbar (eliminiert 12-Item-Doppelung Sidebar vs Tile). (c) BL-484 Rollen-Permission-Konsistenz fuer /settings/team — Teamlead-Tile in Settings-System-Section mit eingeschraenkter Description (aktuell ADMIN_ONLY-Tile, aber Sidebar-Link ADMIN_TEAMLEAD = Inkonsistenz). ~3-4h Code-Side. Vorausgesetzt: V8 deployed + post-launch stable.",
+      "status": "active",
+      "summary": "Solopreneur-Mode + Sidebar-Konsolidierung + Permission-Konsistenz (Requirements done 2026-05-20). Ein FEAT-811 mit 3 Sub-Slices SLC-821/822/823, ~3-4h Code-Side. Entscheidungen aus Discovery 2026-05-20 (alle 4 Recommendations bestaetigt): (a) SLC-821 Solopreneur-Mode (BL-482) reine Auto-Detection bei team_size=1, KEIN Override-Toggle, blendet Team-Cockpit + Team-Verwaltung Sidebar-Items aus. (b) SLC-822 Sidebar Option A komplett (BL-483) — 12 VERWALTUNG_SETUP-Eintraege entfernt, ein 'Einstellungen'-Eintrag, /handoffs+/referrals+/audit-log in neue WERKZEUGE-Section. (c) SLC-823 Teamlead-Tile-Konsistenz (BL-484) — Tile sichtbar fuer Admin+Teamlead, Edit nur fuer Admin, Read-Only fuer Teamlead. Keine Schema-Migration, kein KI-Call, kein neuer Cron. Vorausgesetzt: /post-launch V8 stable. Naechster Schritt: /architecture.",
       "order": 33
     },
     {

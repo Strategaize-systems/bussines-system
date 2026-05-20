@@ -9,14 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: deploying
-- Current Focus: **V8 DEPLOYED als REL-034 2026-05-20 (RPT-489)**. Master-Merge SLC-811 + SLC-813 → main clean (3 Records-Konflikte resolved "both done"). Coolify-Redeploy 14:58 UTC, Image-Tag `c5e0f0c` live, 14/15 Container healthy. Phase-2 Live-Smoke 5/9 ACs PASS direct + 4 deferred mit Compensating Controls (RPT-488). **ISSUE-071 RESOLVED in dieser Session** via systemd-timer docker-prune.timer (Sun 03:00 UTC weekly + RandomizedDelaySec 600 + Persistent=true), Test-Lauf 722.4MB reclaimed (88%→82%). V8.1-Discovery angelegt (BL-482 Solopreneur-Mode + BL-483 Settings/Sidebar-Konsolidierung Option A + BL-484 Rollen-Permission-Konsistenz). Naechster Schritt: `/post-launch` V8 Burn-In ≥12h.
-- Current Phase: V8 deployed REL-034. Naechster Schritt: /post-launch V8.
+- High-Level State: requirements
+- Current Focus: **V8.1 REQUIREMENTS DONE 2026-05-20 (RPT-490)**. FEAT-811 (Solopreneur-Mode + Sidebar-Konsolidierung + Rollen-Permission-Konsistenz) mit 3 Sub-Slices SLC-821/822/823 ist scope-definiert in `docs/PRD.md` + `features/FEAT-811-v81-solopreneur-sidebar-permission.md`. Alle 4 Discovery-Entscheidungen vom User bestaetigt (alle 4× Recommended): reine Auto-Detection ohne Toggle, Sidebar komplett zusammenklappen, Team-Tile read-only fuer Teamlead, ein FEAT mit 3 Sub-Slices. **V8 (REL-034)** bleibt parallel in Burn-In — /post-launch V8 ist nicht abgeschlossen, aber Code-Side wird parallel weitergetrieben (User-Direktive). Naechster Schritt: `/architecture` V8.1.
+- Current Phase: V8.1 Requirements done. Naechster Schritt: /architecture V8.1.
 
 ## Immediate Next Steps
-1. **(Mainline)** `/post-launch` V8 Burn-In-Beobachtungsphase ≥12h. Beobachten: Disk-Trend (Erwartung: stabil bei 82% nach systemd-timer-Test, Coolify-Auto-Cleanup als Sicherheits-Netz), Bedrock-Cost-Trend (V8-Erwartung: +$0.05-0.10/Tag bei normaler Verloren-Move-Frequenz), Container-Restart-Check, audit_log fuer ki_loss_reason_suggested-Eintraege (bei manuellem User-Test).
-2. **(Optional, 30 Sek)** Manual-User-Smoke fuer SLC-813 AC11 — Drag-Drop Deal auf "Verloren" mit Activity-History, Modal-Verify, audit_log-Verify mit cost_usd > 0. Skript in RPT-488 dokumentiert. Nicht-blockierend.
-3. **(Nach /post-launch stable)** V8.1-Start — `/requirements` fuer Settings/Sidebar-Konsolidierung + Solopreneur-Mode + Rollen-Permission-Konsistenz (BL-482 + BL-483 + BL-484, ~3-4h Code-Side).
+1. **(Mainline)** `/architecture` V8.1 — klaeren: (a) `team_size`-Source (`profiles.team_id` Default-Annahme), (b) Tools-Section-Naming und Position (Default `WERKZEUGE`), (c) Sidebar-Reihenfolge nach Konsolidierung, (d) `/settings/team` Read-Only-Mode fuer Teamlead (V7.1-Permission-Layer bereits ausreichend?), (e) Sidebar-Footer-Layout (sticky vs Stream).
+2. **(Parallel laufend)** `/post-launch` V8 Burn-In-Beobachtungsphase ≥12h. Beobachten: Disk-Trend (stabil bei 82% nach systemd-timer-Test), Bedrock-Cost-Trend (+$0.05-0.10/Tag), Container-Restart-Check, audit_log fuer ki_loss_reason_suggested-Eintraege.
+3. **(Optional, 30 Sek)** Manual-User-Smoke fuer SLC-813 AC11 — Drag-Drop Deal auf "Verloren" mit Activity-History, Modal-Verify, audit_log-Verify mit cost_usd > 0. Skript in RPT-488 dokumentiert.
 3. **(Pre-Customer-Live, nicht zeitkritisch)** BL-480 KI-Provider-Anzeige im User-UI abstrahieren (Bedrock-Strings entfernen). Mini-Slice ~1-2h.
 4. **(Spaeter)** V7.7-Planning: Tech-Debt-Cleanup-Slice (Pre-Existing-Lint + npm audit Major-Upgrade), Per-User-Bedrock-Cost-Cap, Custom-Reports auf /deal/[id].
 2. **(Parallel User-Pflicht-Action, weniger zeitkritisch nach Disk-Erholung)** ISSUE-071 weekly Cron auf Hetzner einrichten — `docker builder prune -af && docker image prune -af` als Coolify-Cron oder systemd-timer. Snippet in KNOWN_ISSUES.md ISSUE-071 Next-Action #1. **Disk-Trend POSITIV: 91%→82% (6.5G free) durch automatisches Coolify-Image-Cleanup nach ~13h.** Cron weiterhin sinnvoll fuer naechsten Redeploy-Zyklus.
@@ -78,6 +78,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V5.5, V5.5.1, V5.6, V5.7, V6, V6.1, V6.2, V6.3, V6.4, V6.5, **V6.6**
 
 **Active:**
+- **V8.1 (Requirements done 2026-05-20)** — Solopreneur-Mode + Sidebar-Konsolidierung + Permission-Konsistenz, 1 FEAT (FEAT-811) mit 3 Sub-Slices SLC-821/822/823, ~3-4h Code-Side. Discovery-Entscheidungen 2026-05-20 abgeschlossen (alle 4× Recommended). Naechster Schritt: /architecture.
 - **V7 (Requirements done 2026-05-12)** — Multi-User + Teamlead-Sprint, 3 Features (FEAT-502 + 503 + 701), 19 Open Questions warten auf /architecture V7.
 
 **Planned (Reihenfolge):**

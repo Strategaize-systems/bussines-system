@@ -259,6 +259,12 @@
 | FEAT-803 | /performance-Page-Cleanup + Task/Aufgabe-Label-Konsistenz (BL-453 + BL-459) | deployed | [Spec](FEAT-803-performance-cleanup-label-konsistenz.md) | 2026-05-19 |
 | FEAT-804 | Pflichtfelder-Modal beim Stage-Move + KI-Verlustgrund-Vorschlag (BL-455 + BL-456) | deployed | [Spec](FEAT-804-pflichtfelder-modal-stage-move.md) | 2026-05-19 |
 
+## V8.1 Features (Solopreneur + Sidebar-Konsolidierung + Permission-Konsistenz — requirements done 2026-05-20)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-811 | Solopreneur-Mode + Sidebar-Konsolidierung + Rollen-Permission-Konsistenz (BL-482 + BL-483 + BL-484) | planned | [Spec](FEAT-811-v81-solopreneur-sidebar-permission.md) | 2026-05-20 |
+
 ## V6 Features (Zielsetzung + Performance-Tracking — released)
 
 | ID | Feature | Status | Spec | Created |

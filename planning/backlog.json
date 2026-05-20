@@ -2417,7 +2417,7 @@
       "title": "Solopreneur-Mode: Team-Sidebar-Items ausblenden wenn team_size=1",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
+      "status": "in_progress",
       "version": "V8.1",
       "description": "Sidebar-Items 'Team-Cockpit' + 'Team-Verwaltung' werden automatisch ausgeblendet wenn der eingeloggte Admin der einzige User im Team ist (SELECT COUNT(*) FROM profiles WHERE team_id = X = 1). Bei erstem Invite: Items werden automatisch wieder sichtbar. Override-Toggle in Settings -> Persoenlich -> 'Team-Vorbereitungs-Modus' fuer Admins die die Sektion trotzdem sehen wollen (z.B. zum Vor-Konfigurieren bevor sie jemanden einladen). Solopreneur-User-Story aus Discovery 2026-05-20.",
       "createdAt": "2026-05-20"
@@ -2427,7 +2427,7 @@
       "title": "Settings/Sidebar Single-Source-of-Truth (Option A) — VERWALTUNG_SETUP zusammenklappen",
       "type": "improvement",
       "priority": "medium",
-      "status": "open",
+      "status": "in_progress",
       "version": "V8.1",
       "description": "Eliminiert 12-Item-Doppelung zwischen Sidebar VERWALTUNG_SETUP und Settings-Page-Tiles. Vorgehensweise: VERWALTUNG_SETUP-Sektion in sidebar-config.ts auf einen einzigen 'Settings'-Eintrag zusammenklappen (haeufig genutzte Items wie Pipelines + Kampagnen + Templates bleiben optional als 'Top-3' direkt erreichbar, Rest nur via /settings-Page). Settings-Page bleibt die Single-Source-of-Truth fuer Config. Audit-Log + Handoffs + Referrals bleiben separate Sidebar-Items (nicht 'Config', sondern 'Tools'). Discovery 2026-05-20.",
       "createdAt": "2026-05-20"
@@ -2437,7 +2437,7 @@
       "title": "Rollen-Permission-Konsistenz fuer /settings/team Tile in Settings-System-Section",
       "type": "fix",
       "priority": "low",
-      "status": "open",
+      "status": "in_progress",
       "version": "V8.1",
       "description": "Settings-Tile 'Rollen-Verwaltung' ist aktuell ADMIN_ONLY (settings/page.tsx:187), Sidebar-Link 'Team-Verwaltung' ist ADMIN_TEAMLEAD (sidebar-config.ts:125) - gleiche URL /settings/team, verschiedene Sichtbarkeit. Loesung: Teamlead-Variante des Tiles ergaenzen mit eingeschraenkter Description 'Team-Mitglieder einsehen (read-only)' und visibleFor=ADMIN_TEAMLEAD, oder Permission Layer einheitlich auf ADMIN_TEAMLEAD setzen mit Page-eigener Action-Permission. Discovery 2026-05-20.",
       "createdAt": "2026-05-20"
