@@ -10478,3 +10478,333 @@ Alle 7 OQs aus FEAT-761 + FEAT-762 sind in DEC-212..218 entschieden. Keine offen
 - Inspection-Log auf `/settings/workflow-automation/nl-history` (V7.5 SLC-756) bleibt funktional
 
 **V7.6 Architecture ready for `/slice-planning`.**
+
+## V8 — Hygiene-Sprint Architecture (Settings-Refactor + KI-Provider-Abstrahierung + /performance-Cleanup + Pflichtfelder-Modal)
+
+### Architecture Summary
+
+V8 ist ein UI- und Hygiene-orientierter Sprint. **Keine neue Stack-Komponente**, **keine neue Tabelle**, **keine neue Cron-Action**. Bedrock-Client und audit_log bleiben unveraendert; ein neuer Server-Action-Endpoint `suggestLossReason` wird hinzugefuegt. Vier Features, drei Slices:
+
+- **SLC-811** (UI-Hygiene): FEAT-801 Settings-Layout-Refactor + FEAT-803 /performance-Cleanup + Label-Konsistenz
+- **SLC-812** (Provider-Abstrahierung): FEAT-802 KI-Provider-Anzeige neutralisieren
+- **SLC-813** (Pflichtfelder-Modal): FEAT-804 Stage-Move Modal + KI-Verlustgrund-Suggest
+
+Bedrock-Region-Pin DEC-211 (eu-central-1, Claude Sonnet 4.6) und Internal-Test-Mode bleiben. Kein Anbieterwechsel, keine grosse Schema-Migration.
+
+### Code-Inspektion-Korrekturen gegenueber PRD (Findings 2026-05-20)
+
+Die V8-Requirements PRD-Section bezeichnete einige Subpages als "Ghosts" oder "Bruecken", die Code-Inspektion zeigt aber, dass diese voll funktional sind. Architektonisch wird dadurch der Scope leicht verschoben:
+
+| PRD-Annahme | Code-Reality | V8-Architecture-Entscheidung |
+|---|---|---|
+| `/settings/products/` ist Ghost (kein Tile) | Voll funktionale Admin-Produkt-Verwaltung (`ProductList` + `ProductForm`) | Tile in System-Section ergaenzen, kein Delete |
+| `/settings/workflow-automation/` ist Duplikat | Enthaelt `/nl-history/page.tsx` aus V7.6 SLC-756 (Admin-Inspection-Log) | Tile in Vertrieb-Section ergaenzen, kein Delete |
+| `/performance/page.tsx` ist Redirect-Bruecke | Stimmt, geht weg | LOESCHEN |
+| `/performance/goals/page.tsx` ggf. mitloeschen | Voll funktional (`GoalList` + `GoalForm` + `CsvImportDialog` + `ActivityKpiSettings`) | UMZIEHEN nach `/settings/goals/`, Tile in System-Section |
+| `/team/[user_id]` Drilldown-Status unklar | Voll funktional aus V7 (layout + pipeline + aufgaben + mein-tag + tests) | Drilldown-Button in `team-members-table.tsx:198` AKTIVIEREN |
+| STAGE_REQUIRED_FIELDS hat nur "Verloren" | 5 Stages haben Pflichtfelder (Angebot vorbereitet, Angebot offen, Verhandlung / Einwände, Gewonnen, Verloren) | Modal-Pattern fuer alle 5 Stages, KI-Suggest nur fuer Verloren (siehe FEAT-804) |
+
+### Main Components
+
+#### Komponente 1: Settings-Tile-Registry (FEAT-801)
+
+**Datei**: `cockpit/src/app/(app)/settings/page.tsx` — `SETTINGS_TILES`-Konstante
+
+**Struktur-Aenderung**: Aus flacher `readonly SettingsTile[]`-Liste wird eine 3-Section-Struktur:
+
+```typescript
+interface SettingsSection {
+  key: "personal" | "sales" | "system";
+  title: string;       // "Persoenlich" | "Vertrieb" | "System"
+  tiles: SettingsTile[];
+}
+```
+
+**Tile-Section-Zuordnung** (Architektur-Decision, Reihenfolge innerhalb der Sections in Slice-Planning):
+
+| Section | Tile | Pfad | visibleFor |
+|---|---|---|---|
+| Persoenlich | Arbeitszeit | `/settings/working-hours` | ALL_ROLES |
+| Persoenlich | Meeting-Einstellungen | `/settings/meetings` | ALL_ROLES |
+| Persoenlich | Pre-Call Briefing | `/settings/briefing` | ALL_ROLES |
+| Vertrieb | Pipelines & Stages | `/settings/pipelines` | ADMIN_ONLY |
+| Vertrieb | Workflow-Automation | `/settings/automation` | ADMIN_TEAMLEAD |
+| Vertrieb | **NL-Regel-Historie** (NEU) | `/settings/workflow-automation/nl-history` | ADMIN_ONLY |
+| Vertrieb | Kampagnen | `/settings/campaigns` | ADMIN_TEAMLEAD |
+| Vertrieb | E-Mail-Templates | `/settings/templates` | ADMIN_TEAMLEAD |
+| System | Branding | `/settings/branding` | ADMIN_ONLY |
+| System | Zahlungsbedingungen | `/settings/payment-terms` | ADMIN_ONLY |
+| System | Einwilligungstexte | `/settings/compliance` | ADMIN_ONLY |
+| System | **Produkte** (NEU) | `/settings/products` | ADMIN_ONLY |
+| System | **Rollen-Verwaltung** (NEU, Link zu /settings/team) | `/settings/team` | ADMIN_ONLY |
+| System | **Ziele** (NEU, nach Move von /performance/goals/) | `/settings/goals` | ADMIN_TEAMLEAD |
+
+**Rendering-Logik**: Bestehende `visibleTiles.filter(...).map(...)`-Schleife wird zu drei Sections, jede mit Section-Header (h2 + Beschreibung) und Tile-Liste. Wenn fuer eine Rolle in einer Section 0 Tiles uebrig bleiben (z.B. Member sieht keine System-Tiles), wird die Section ausgeblendet.
+
+**Drilldown-Button** in `cockpit/src/app/(app)/settings/team/team-members-table.tsx:198`: `disabled`-Attribut entfernen, `title="Drilldown kommt mit SLC-706"` wegnehmen, `onClick` auf `router.push(`/team/${user.id}`)` setzen.
+
+#### Komponente 2: KI-Provider-Abstrahierungs-Layer (FEAT-802)
+
+**Strategie**: Reine String-Substitution + Component-Display-Label-Wrapper. **Kein Mass-Rename** der Bedrock-Identifier im Code.
+
+**Konkrete Touchpoints** (User-sichtbar, sonst nichts):
+
+| Datei | Symbol | Vorher | Nachher |
+|---|---|---|---|
+| `components/ki-workspace/AnswerPane.tsx:83` | `<span>` im isLoading-Block | "Bedrock arbeitet ..." | "KI arbeitet ..." |
+| `components/item-sheet/ItemSheet.tsx` | `BedrockSection`-Component-Display-Label | "Bedrock-Zusammenfassung" o.ae. | "KI-Zusammenfassung" |
+| `components/nl-builder/nl-builder-inline.tsx` | Error-Toast-Text | "Bedrock-Aufruf fehlgeschlagen" | "KI-Aufruf fehlgeschlagen" |
+| `components/nl-builder/inline-edit-dialog.tsx` | Loading-Label | "Bedrock modifiziert ..." | "KI modifiziert ..." |
+| `lib/automation/sculptor-cost.ts` Display-Wrapper | "Bedrock-Kosten: ~$X" | "KI-Kosten: ~$X" | (in UI-Rendering, nicht im Audit-Log!) |
+
+**Architektur-Decision**: Component-Datei-Namen + Funktions-Namen + Modul-Pfade bleiben (`bedrock-client.ts`, `BedrockSection` Component-Internal-Name). Nur das User-sichtbare Display-Label aendert sich. Audit-Log-Schema bleibt — intern persistiert `audit_log.context.model_id=eu.anthropic.claude-sonnet-4-6` weiter. Falls dies User-sichtbar irgendwo gerendert wird, wird ein neutraler Wrapper `formatModelDisplayName(modelId)` aufgerufen, der "KI Sonnet" oder einfach "KI" zurueckliefert.
+
+**ARIA-Labels**: Walkthrough pruefen, ob `aria-label="Bedrock arbeitet"` o.ae. existiert. Falls ja: dasselbe Substitutions-Pattern.
+
+**Tooltips**: Bedrock-Tooltip-Texte aus Standard-Components ueberpruefen (insb. NL-Builder + Custom-Report-Buttons). Falls vorhanden: Substitution.
+
+#### Komponente 3: /performance Cleanup + Goals-Move (FEAT-803)
+
+**Delete**:
+- `cockpit/src/app/(app)/performance/page.tsx` — Redirect-Bruecke aus V6.6 (DEC-169), 35 Zeilen, ersatzlos weg
+
+**Move**:
+- `cockpit/src/app/(app)/performance/goals/page.tsx` → `cockpit/src/app/(app)/settings/goals/page.tsx`
+- Goals-Components (`@/components/goals/*`) bleiben wo sie sind (keine Verschiebung der Bestandteile, nur der Route)
+- Actions (`@/app/actions/goals` + `@/app/actions/products` + `@/app/actions/activity-kpis`) bleiben
+
+**Link-/Sidebar-Updates** (Inventur in Slice-Planning):
+- `cockpit/src/components/sidebar/*` — falls `/performance`- oder `/performance/goals`-Link existiert: entweder entfernen oder auf `/settings/goals` umstellen
+- Cross-references in Code: `grep -rn "/performance" cockpit/src/` (ausserhalb von Tests + Audit-Doku)
+
+**Label-Vereinheitlichung "Task" → "Aufgabe"**:
+- `cockpit/src/components/mein-tag/quick-actions.tsx` (oder aequivalent SLC-662)
+- `cockpit/src/components/deal-detail/quick-actions.tsx` (SLC-664)
+- `cockpit/src/components/cockpit/quick-actions.tsx` (SLC-666)
+- Schema-Felder (`activities.type='task'`) bleiben unveraendert, nur UI-Label.
+
+#### Komponente 4: StageRequirementsModal + suggestLossReason (FEAT-804)
+
+**Modal-Component**: `cockpit/src/components/pipeline/stage-requirements-modal.tsx` (NEU)
+
+**Props**:
+```typescript
+interface StageRequirementsModalProps {
+  open: boolean;
+  dealId: string;
+  dealTitle: string;
+  oldStageName: string;
+  newStageId: string;
+  newStageName: string;
+  requirements: { fields: string[]; labels: Record<string, string> };  // aus STAGE_REQUIRED_FIELDS
+  currentValues: Record<string, string | number | null>;               // pre-fill aus deals-Row
+  kiSuggest?: { primary: string; alternatives: string[] };             // optional, nur fuer Verloren
+  onConfirm: (values: Record<string, string | number>) => Promise<void>;
+  onCancel: () => void;
+}
+```
+
+**Modal-Render**: Header mit Deal-Title + Stage-Transition-Pfeil. Ein Eingabefeld pro Pflichtfeld in `requirements.fields`. Bei `won_lost_reason` + vorhandenem `kiSuggest`: Textfeld pre-fuelt mit `kiSuggest.primary`, Dropdown "Andere Vorschlaege" zeigt `kiSuggest.alternatives` (falls vorhanden, max 3). Buttons: "Verschieben" (Primary) + "Abbrechen".
+
+**Drop-Event-Wiring**: `cockpit/src/app/(app)/pipeline/pipeline-view.tsx` (oder dort wo `onDragEnd` lebt) bekommt vor dem `moveDealToStage`-Call einen Check:
+
+```typescript
+const requirements = STAGE_REQUIRED_FIELDS[targetStageName];
+if (requirements) {
+  const missing = requirements.fields.filter(f => isEmpty(deal[f]));
+  if (missing.length > 0) {
+    let kiSuggest = undefined;
+    if (targetStageName === "Verloren" && missing.includes("won_lost_reason")) {
+      kiSuggest = await suggestLossReason(dealId);  // KI-Call vor Modal-Open
+    }
+    setStageRequirementsModalState({ open: true, dealId, ..., kiSuggest });
+    return;  // Drop-Event abbrechen, Modal uebernimmt
+  }
+}
+await moveDealToStage(dealId, newStageId, targetStageName);
+```
+
+**Server-Action `suggestLossReason`** (NEU): `cockpit/src/app/(app)/pipeline/actions.ts`
+
+```typescript
+export async function suggestLossReason(dealId: string): Promise<{
+  primary: string;
+  alternatives: string[];
+  costUsd: number;
+} | null>
+```
+
+**Datenfluss**:
+1. Server-Action ladet Deal-Snapshot (`title`, `value`, `won_lost_reason`, `pipeline_stages.name`)
+2. Ladet letzte 10 Activities (`activities` Tabelle, filter `deal_id=$1`, order `created_at DESC limit 10`)
+3. Ladet letzte 3 E-Mail-Threads (`email_messages` join `deal_id`, order `received_at DESC limit 3`)
+4. Baut Bedrock-Prompt (siehe unten), ruft `bedrockClient.invoke(prompt)`
+5. Parsed Response (JSON mit `suggestions`-Array), persistiert audit_log-Eintrag
+6. Returnt `{ primary, alternatives, costUsd }` oder `null` bei Empty-Context / Bedrock-Error (Modal oeffnet trotzdem mit leerem Feld)
+
+**Bedrock-Prompt-Template** (DEC-220):
+
+```
+System-Prompt:
+Du bist Vertriebs-Analyst eines B2B-Beratungsunternehmens. Auf Basis der Activity-History eines Deals sollst du den wahrscheinlichsten Verlustgrund vorschlagen. Antworte ausschliesslich auf Deutsch und ausschliesslich als JSON.
+
+User-Prompt:
+Deal: "{deal.title}" (Wert: {deal.value} EUR, aktuelle Stage: {currentStage})
+
+Activity-History (letzte 10, neueste zuerst):
+{activities.map(a => `- ${a.created_at} | ${a.type} | ${a.title}`).join("\n")}
+
+E-Mail-Threads (letzte 3):
+{emails.map(e => `- ${e.received_at} | von ${e.from_email} | Betreff: ${e.subject} | Snippet: ${e.snippet.slice(0,200)}`).join("\n")}
+
+Aufgabe:
+Schlage 1-3 wahrscheinliche Verlustgruende vor. Jeder Vorschlag muss kurz (max 1 Satz) sein und eine Quelle angeben (welche Activity oder welche E-Mail). Wenn die History keine klaren Hinweise enthaelt, gib genau 1 Vorschlag "Kein klarer Verlustgrund in der Activity-History erkennbar" zurueck.
+
+Antwort-Format (strikt):
+{
+  "suggestions": [
+    { "reason": "...", "source": "..." },
+    ...
+  ]
+}
+```
+
+**Output-Parsing**:
+- `suggestions[0]` → `primary` (mit Source-Suffix in Klammern, z.B. "Budget wurde verschoben (Quelle: E-Mail von 2026-05-15)")
+- `suggestions[1..]` → `alternatives`
+- Bei JSON-Parse-Error → audit_log `ki_loss_reason_suggested` mit `status: "parse_error"`, returnt `null`
+
+**Audit-Log**: `action: "ki_loss_reason_suggested"`, `entity_type: "deal"`, `entity_id: dealId`, `context: JSON-stringified { cost_usd, input_tokens, output_tokens, model_id, status: "succeeded" | "parse_error" | "bedrock_error", suggestion_count }`. Es wird KEIN separater `accepted/edited/rejected`-Eintrag persistiert in V8 — das adressiert eine optionale Erweiterung in V8.x oder V9, nicht-blockierend (siehe Open Question 1 unten).
+
+**Generic Atomare Server-Action `moveDealToStageWithRequirements`** (NEU oder erweitert):
+
+Variante A (empfohlen): bestehende `moveDealToStage` wird um optionalen `requirementValues`-Parameter erweitert:
+
+```typescript
+export async function moveDealToStage(
+  dealId: string,
+  newStageId: string,
+  stageName: string,
+  requirementValues?: Record<string, string | number | null>
+): Promise<{ error: string }>
+```
+
+Wenn `requirementValues` vorhanden ist, wird die Pflichtfeld-Validation auf die merge `{...currentDeal, ...requirementValues}` angewendet (statt nur `currentDeal`). Falls valide: erst `UPDATE deals SET <requirementValues> WHERE id=$1`, dann der bestehende Stage-Move-Path. Bei Server-Action-Fehler in der Pflichtfeld-Phase wird der Stage-Move abgebrochen.
+
+**Audit-Log fuer Stage-Move mit Pflichtfeldern**: Statt der aktuellen einen `stage_change`-Action wird ein zusaetzlicher `update`-Eintrag fuer die Pflichtfeld-Aenderung persistiert (analog `updateDealValue` Audit-Pattern). Der `stage_change`-Eintrag bleibt unveraendert. Kein neuer Audit-Action-Typ.
+
+### Data Model / Storage Direction
+
+**Keine Schema-Migration noetig in V8.** Folgende existierende Strukturen werden genutzt:
+
+| Tabelle | Spalte | Nutzung in V8 |
+|---|---|---|
+| `deals` | `value`, `contact_id`, `won_lost_reason` | Pflichtfeld-Targets in STAGE_REQUIRED_FIELDS |
+| `audit_log` | `action`, `context` (TEXT) | `ki_loss_reason_suggested`-Eintraege + bestehendes `update` + `stage_change`-Pattern |
+| `activities` | `deal_id`, `type`, `title`, `created_at` | Input fuer `suggestLossReason` |
+| `email_messages` | `deal_id`, `from_email`, `subject`, `snippet`, `received_at` | Input fuer `suggestLossReason` |
+
+STAGE_REQUIRED_FIELDS bleibt als hardcoded Konstante in `pipeline/actions.ts`. Eine dynamische DB-gestuetzte Pflichtfeld-Konfiguration ist explizit out-of-scope (siehe FEAT-804 Out-of-Scope).
+
+### Data Flow / Request Flow
+
+#### Stage-Move mit Pflichtfeldern (FEAT-804 Happy Path "Verloren")
+
+```
+1. User dragged Deal D auf Stage "Verloren" in /pipeline-View
+2. Client onDragEnd:
+   - prueft STAGE_REQUIRED_FIELDS["Verloren"] → {fields: ["won_lost_reason"], ...}
+   - prueft Deal-Felder → won_lost_reason ist null
+   - Client-Call: suggestLossReason(dealId)  [via React Server Action]
+3. Server suggestLossReason:
+   - Supabase Query: deal + last 10 activities + last 3 email_messages
+   - Bedrock Invoke (Claude Sonnet eu-central-1) mit Prompt-Template
+   - Parse JSON Response
+   - INSERT audit_log (action='ki_loss_reason_suggested', context.cost_usd=$0.0XX)
+   - Return { primary, alternatives, costUsd }
+4. Client: oeffnet StageRequirementsModal mit pre-filled won_lost_reason
+5. User editiert/akzeptiert/klickt "Verschieben"
+6. Client-Call: moveDealToStage(dealId, newStageId, "Verloren", { won_lost_reason: "User-Final-Text" })
+7. Server moveDealToStage:
+   - UPDATE deals SET won_lost_reason='User-Final-Text' WHERE id=dealId
+   - INSERT audit_log (action='update', context='Pflichtfeld-Set bei Stage-Move')
+   - UPDATE deals SET stage_id, status='lost', closed_at=now() WHERE id=dealId
+   - INSERT activities (stage_change-Entry)
+   - INSERT audit_log (action='stage_change', context='Pipeline Stage: ... → Verloren')
+   - dispatchAutomationTrigger(deal.stage_changed)
+8. Client revalidatePath('/pipeline') + Toast "Deal verschoben"
+```
+
+**Bei Cancel** (Modal-X oder Esc): kein Server-Call, Deal bleibt in Source-Stage (kein optimistic UI-Update).
+
+**Bei Bedrock-Error in suggestLossReason**: Server returnt `null`, Modal oeffnet mit leerem `won_lost_reason`-Feld + Info-Hint "KI-Vorschlag nicht verfuegbar — bitte selbst eintragen". Kein Crash, kein Toast-Error. Audit-Log persistiert `status: "bedrock_error"`.
+
+#### Stage-Move ohne Pflichtfeld-Luecke
+
+Klassischer Pfad bleibt unveraendert: `moveDealToStage` ohne `requirementValues`, alle Pflichtfelder schon gesetzt, Stage-Move geht direkt durch.
+
+### External Dependencies / Integrations
+
+**Keine neuen externen Dependencies**. Bedrock-Client (`@aws-sdk/client-bedrock-runtime` ueber `lib/bedrock-client.ts`) bleibt unveraendert. Region eu-central-1 (DEC-211). Modell `eu.anthropic.claude-sonnet-4-6` (Kurz-Form, siehe ISSUE-076 Alias).
+
+**Token-Budget pro Suggest-Call**: ~500 Input-Tokens (Deal-Meta + 10 Activities + 3 E-Mails-Snippets) + ~300 Output-Tokens (JSON mit 1-3 Suggestions). Cost-Erwartung: $0.005-0.01 pro Call, vergleichbar mit `custom_report.executed` (siehe RPT-477 Cost-Trail).
+
+### Security / Privacy Considerations
+
+- **Bedrock-Region eu-central-1** bleibt — Activity- und E-Mail-Snippets gehen NICHT ueber US-Endpoints (DEC-211, DEC-079).
+- **E-Mail-Snippets**: nur `subject + snippet[0..200]` werden an Bedrock geschickt. Volle Body nicht. Verhindert versehentliche PII-Exfiltration in Anhaengen/Signaturen, ausserdem Token-Cost-Limit.
+- **Audit-Log Cost-Tracking**: `ki_loss_reason_suggested.context.cost_usd` persistiert pro Suggest-Call, ermoeglicht Cost-Cap-Detection in V8.x oder V9.
+- **Read-Only-Context** (DEC-199/200, V7.1 Drilldown): `suggestLossReason` und `moveDealToStage` sind Mutate-Actions → `assertNotReadOnlyContext()` als First-Line (Pattern aus ISSUE-064/070). `suggestLossReason` selbst ist read-only von der DB-Seite, ABER es traegt eine Bedrock-Cost-Aktion ein → muss als Mutate behandelt werden um nicht via Drilldown-Subtree triggerbar zu sein.
+- **Provider-Naming im Audit-Log**: Internal-Tracking persistiert weiterhin `model_id` mit "anthropic"/"bedrock"-Strings. User-sichtbare Audit-Log-Views (sofern existent) bekommen `formatModelDisplayName()`-Wrapper aus FEAT-802.
+
+### Constraints + Tradeoffs
+
+| Decision | Tradeoff |
+|---|---|
+| Modal-Pattern fuer alle 5 Stages, KI-Suggest nur fuer "Verloren" | + Konsistente UX cross-Stage; − User koennten bei Won-Stage einen KI-Vorschlag erwarten den es nicht gibt. Mitigation: Modal-Hint "KI-Vorschlag nur fuer Verlustgrund verfuegbar" sichtbar nur dort |
+| Keine neue Schema-Migration | + Schmaler V8-Scope, kein MIG; − Audit-Log accepted/edited/rejected-Status fuer KI-Suggest nicht persistierbar. Mitigation: Wenn Bedarf, V8.x Add-on |
+| Single Server-Action `moveDealToStage(..., requirementValues?)` statt separate `moveDealToStageWithRequirements` | + Backward-compatible, ein API-Surface fuer Client; − Funktion wird laenger (~120 Zeilen). Mitigation: Helper-Function `applyRequirementValuesAndMove` extrahieren |
+| Goals-Move statt -Delete | + Erhaelt Goal-Verwaltung; − Eine Datei-Verschiebung mehr in SLC-811. Mitigation: einfacher Move ohne Component-Refactor |
+| KI-Naming "KI" statt "Strategaize KI" / "Assistent" | + Kurz, passt zu "KI-Workspace"/"KI-Analyse"; − Generisch, kein Branding. Akzeptiert in /architecture-Decision |
+| String-Substitution statt Mass-Rename | + V8 bleibt schmal, Code-Identifier bleiben verstaendlich (bedrock-client.ts); − Mental Mismatch zwischen Code-Naming ("Bedrock") und UI-Naming ("KI"). Akzeptiert |
+
+### Open Technical Questions
+
+Folgende Punkte bleiben fuer Slice-Planning oder spaeter offen — sie blockieren Implementation nicht:
+
+1. **Accepted/edited/rejected-Tracking fuer KI-Suggest**: PRD wuenscht `audit_log: ki_loss_reason_suggested mit Deal-ID + akzeptiert/editiert/verworfen`. Realisierung erfordert zweiten Audit-Eintrag nach User-Modal-Confirm (`ki_loss_reason_decision` mit Status). V8-Default: nur Suggest-Call wird auditiert. Decision-Tracking als V8.x-Add-on falls relevant. **Default-Empfehlung: defer V9** (Single-User-Internal-Test, Decision-Tracking ohne Business-Value).
+2. **Anzahl Vorschlaege**: Prompt-Template erlaubt 1-3, UI-Modal rendert primary + Dropdown mit alternatives. Konkrete Maximum-Zahl (1, 2 oder 3) in Slice-Planning.
+3. **Empty-Activity-History-Schwelle**: Modal oeffnet trotzdem mit leerem Feld. Aber: Wann sollte `suggestLossReason` gar nicht erst aufgerufen werden (Cost-Sparen)? Heuristik: wenn 0 Activities UND 0 E-Mails → skip Bedrock-Call, Modal direkt mit Empty-Field oeffnen. In Slice-Planning festigen.
+4. **Won-Stage Pre-Fill**: Beim Wechsel auf "Gewonnen" mit fehlendem `value` koennte das letzte Angebot (`proposals.total_gross WHERE deal_id=$1 ORDER BY created_at DESC LIMIT 1`) als Pre-Fill dienen. Out-of-V8-Scope, BL-Kandidat fuer V8.x.
+5. **Modal-Component-Position im Component-Tree**: Page-Level (`/pipeline/page.tsx`) oder Drag-Handler-Level (`pipeline-view.tsx`)? Slice-Planning entscheidet auf Basis State-Management-Pattern (vermutlich pipeline-view.tsx mit lokalem useState).
+
+### Recommended Implementation Direction
+
+**Slice-Cut** (3 Slices, ~7-11h):
+
+- **SLC-811 (~3-4h)** — UI-Hygiene: FEAT-801 + FEAT-803
+  - Settings-Page 3-Section-Refactor mit 3 neuen Tiles (Produkte, NL-History, Rollen-Verwaltung) + Goals-Tile
+  - Drilldown-Button aktivieren
+  - /performance/page.tsx loeschen
+  - /performance/goals/ → /settings/goals/ verschieben
+  - "Task" → "Aufgabe" cross-page
+  - Sidebar-Audit + Link-Bereinigung
+  - Tests: Vitest Component-Tests fuer Settings-Page-Section-Rendering, Live-Smoke 3-Rollen
+- **SLC-812 (~1-2h)** — KI-Provider-Abstrahierung: FEAT-802
+  - String-Substitutionen (AnswerPane, ItemSheet, NL-Builder, Sculptor-Cost-UI)
+  - Component-Display-Label-Updates
+  - ARIA-Label-Walkthrough
+  - Tests: Snapshot-Diff fuer User-sichtbare Labels
+- **SLC-813 (~3-5h)** — Pflichtfelder-Modal: FEAT-804
+  - StageRequirementsModal-Component
+  - suggestLossReason-Server-Action + Bedrock-Prompt-Template (DEC-220)
+  - moveDealToStage-Extension mit requirementValues-Parameter
+  - Drop-Event-Wiring in pipeline-view.tsx
+  - audit_log-Insertions
+  - Tests: Vitest fuer suggestLossReason (Bedrock-Mock), Modal-Component-State, Pflichtfeld-Validation, Live-Smoke alle 5 Stages
+
+**Reihenfolge-Empfehlung**: SLC-812 zuerst (rein UI, Risiko minimal, schnelle V8-Sichtbarkeit), dann SLC-811 (UI-Refactor), dann SLC-813 (groesster Block, KI-Integration). Alternativ: SLC-811 + SLC-812 parallel als Worktrees, SLC-813 separat.
+
+**Naechster Schritt: `/slice-planning` V8.**
+
+**V8 Architecture ready for `/slice-planning`.**

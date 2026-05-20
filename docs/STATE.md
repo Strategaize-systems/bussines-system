@@ -9,12 +9,12 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: stable
-- Current Focus: **V7.6 STABLE 2026-05-20 nach Burn-In PASS (RPT-477)**. Alle 4 Beobachtungspunkte gruen: Disk 88%→83% durch Coolify-Auto-Cleanup (Pattern aus REL-032 bestaetigt), Bedrock-Cost-Trend $0.006/24h (kein Spike), 7/7 BS-Stack healthy, User hat Custom-Reports + NL-Builder CRUD live durchgetestet. Container-Uptime 16h ohne Restart, 0 App-Errors. **V8 Requirements DONE 2026-05-19 (RPT-476)** als Hygiene-Sprint (FEAT-801..804). Naechster Schritt: `/architecture` V8.
-- Current Phase: V7.6 stable, V8 Requirements done. Naechster Schritt: /architecture V8.
+- High-Level State: architecture
+- Current Focus: **V8 Architecture DONE 2026-05-20 (RPT-478)**. 8 DECs gesetzt (DEC-219..226): 3-Section-Settings-Struktur, Bedrock-Prompt-Template fuer Loss-Reason-Suggest, KI-Naming "KI", Modal-Scope alle 5 STAGE_REQUIRED_FIELDS-Stages, PRD-Konflikt-Resolution (products + nl-history als Tiles, goals nach /settings/goals), keine neue Schema-MIG, 3-Slice-Cut SLC-811..813. **V7.6 STABLE 2026-05-20 nach Burn-In PASS (RPT-477)**, Image-Tag `1ffae6e`. Naechster Schritt: `/slice-planning` V8.
+- Current Phase: V8 Architecture done. Naechster Schritt: /slice-planning V8.
 
 ## Immediate Next Steps
-1. **(Mainline)** `/architecture` V8 — FEAT-801..804 architektonisch klaeren (Modal-Pattern fuer Stage-Move, Bedrock-Prompt-Template fuer Loss-Reason-Suggest, KI-Provider-Display-Naming). 7 Open Questions aus PRD V8-Section beantworten.
+1. **(Mainline)** `/slice-planning` V8 — 3 Slices SLC-811..813 detail-planen, MTs definieren, Backlog-Mapping. Reihenfolge-Empfehlung: SLC-812 (KI-Provider-Abstrahierung, schmal, schnelle V8-Sichtbarkeit) → SLC-811 (UI-Hygiene) → SLC-813 (Pflichtfelder-Modal mit KI-Integration).
 2. **(Operational, weiterhin offen, nicht-blockierend)** Coolify-Cron fuer Docker-Cleanup einrichten (ISSUE-071 Next-Action #1, Resilience). Aktueller Disk-Druck 83% durch Coolify-Auto-Cleanup unter Kontrolle, Cron-Setup bleibt sinnvoll vor naechstem Redeploy-Zyklus.
 3. **(Pre-Customer-Live, nicht zeitkritisch)** BL-480 KI-Provider-Anzeige im User-UI abstrahieren (Bedrock-Strings entfernen). Mini-Slice ~1-2h.
 4. **(Spaeter)** V7.7-Planning: Tech-Debt-Cleanup-Slice (Pre-Existing-Lint + npm audit Major-Upgrade), Per-User-Bedrock-Cost-Cap, Custom-Reports auf /deal/[id].
