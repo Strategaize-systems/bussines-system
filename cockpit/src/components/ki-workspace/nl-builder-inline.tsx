@@ -638,7 +638,7 @@ export function NLBuilderInline({ onClose }: Props) {
             className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5"
           >
             <p className="text-[11px] font-semibold text-red-700 uppercase tracking-wide mb-1 flex items-center gap-1.5">
-              <AlertTriangle size={12} /> Bedrock-Aufruf fehlgeschlagen
+              <AlertTriangle size={12} /> KI-Aufruf fehlgeschlagen
             </p>
             <p className="text-sm text-red-800">{sculptResult.infraError}</p>
           </div>

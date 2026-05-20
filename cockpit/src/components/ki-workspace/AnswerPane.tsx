@@ -80,7 +80,7 @@ export function AnswerPane({
           data-testid="ki-workspace-loading"
         >
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span>Bedrock arbeitet ...</span>
+          <span>KI arbeitet ...</span>
         </div>
       )}
 

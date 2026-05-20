@@ -9,13 +9,13 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: **V8 Slice-Planning DONE 2026-05-20 (RPT-479)**. 3 Slices SLC-811..813 mit kompletter MT-Decomposition (8 + 7 + 7 = 22 Micro-Tasks gesamt). Reihenfolge-Empfehlung 812 → 811 → 813. **V7.6 STABLE** Image-Tag `1ffae6e` in Production. **V8 Architecture DONE 2026-05-19** mit 8 DECs (DEC-219..226). Naechster Schritt: `/frontend` SLC-812 (KI-Provider-Abstrahierung, schmalster Slice, ~1-2h).
-- Current Phase: V8 Slice-Planning done. Naechster Schritt: /frontend SLC-812.
+- High-Level State: implementing
+- Current Focus: **V8 SLC-812 /frontend code-side DONE 2026-05-20 (RPT-480)**. 3 User-visible Provider-Strings substituiert (AnswerPane "KI arbeitet ...", nl-builder-inline "KI-Aufruf fehlgeschlagen", inline-edit-dialog "KI modifiziert ..."). Neuer Helper `cockpit/src/lib/llm-display.ts` mit `formatModelDisplayName()` + 7 Vitest-Cases. Build clean, Lint 0 neue Findings, Vitest 989/989 PASS (779 Baseline + 7 V8-Tests + 203 von V7.6-Custom-Reports). FEAT-802 + BL-480 done. **V7.6 STABLE** Image-Tag `1ffae6e` in Production. Naechster Schritt: `/qa` SLC-812 (mandatory per CLAUDE.md).
+- Current Phase: V8 SLC-812 code done. Naechster Schritt: /qa SLC-812.
 
 ## Immediate Next Steps
-1. **(Mainline)** `/frontend` SLC-812 — KI-Provider-Anzeige abstrahieren. 7 MTs, ~1-2h. Worktree-Isolation optional. Start mit MT-1 Audit/Inventur User-sichtbarer Provider-Strings.
-2. **(Nach SLC-812 QA)** `/frontend` SLC-811 — Settings-Refactor + /performance-Cleanup + Goals-Move + Label-Konsistenz. 8 MTs, ~3-4h. Worktree-Isolation empfohlen.
+1. **(Mainline, sofort)** `/qa` SLC-812 — AC1..AC8 verifizieren (visueller Walkthrough Mein-Tag/Deal/Cockpit/Settings/Compose, Vitest, Lint, Build). Live-Smoke gegen Production-Image (V7.6 `1ffae6e`) per Worktree-Build optional, Coolify-Redeploy erst nach Gesamt-/qa V8.
+2. **(Nach SLC-812 /qa OK)** `/frontend` SLC-811 — Settings-Refactor + /performance-Cleanup + Goals-Move + Label-Konsistenz. 8 MTs, ~3-4h. Worktree-Isolation empfohlen.
 3. **(Nach SLC-811 QA)** `/frontend` + `/backend` SLC-813 — Stage-Requirements-Modal + KI-Verlustgrund-Vorschlag. 7 MTs, ~3-5h. Worktree-Isolation **empfohlen** (groesster V8-Block).
 4. **(Nach SLC-813 QA)** Gesamt-/qa V8 → /final-check → /go-live → /deploy → /post-launch
 2. **(Operational, weiterhin offen, nicht-blockierend)** Coolify-Cron fuer Docker-Cleanup einrichten (ISSUE-071 Next-Action #1, Resilience). Aktueller Disk-Druck 83% durch Coolify-Auto-Cleanup unter Kontrolle, Cron-Setup bleibt sinnvoll vor naechstem Redeploy-Zyklus.

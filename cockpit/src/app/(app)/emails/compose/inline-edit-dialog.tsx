@@ -221,7 +221,7 @@ export function InlineEditDialog({
               KI denkt nach…
             </p>
             <p className="text-xs font-medium text-slate-500">
-              Bedrock modifiziert den Body gemaess Anweisung.
+              KI modifiziert den Body gemaess Anweisung.
             </p>
           </div>
         )}
