@@ -10,12 +10,11 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V8 SLC-812 /frontend code-side DONE 2026-05-20 (RPT-480)**. 3 User-visible Provider-Strings substituiert (AnswerPane "KI arbeitet ...", nl-builder-inline "KI-Aufruf fehlgeschlagen", inline-edit-dialog "KI modifiziert ..."). Neuer Helper `cockpit/src/lib/llm-display.ts` mit `formatModelDisplayName()` + 7 Vitest-Cases. Build clean, Lint 0 neue Findings, Vitest 989/989 PASS (779 Baseline + 7 V8-Tests + 203 von V7.6-Custom-Reports). FEAT-802 + BL-480 done. **V7.6 STABLE** Image-Tag `1ffae6e` in Production. Naechster Schritt: `/qa` SLC-812 (mandatory per CLAUDE.md).
-- Current Phase: V8 SLC-812 code done. Naechster Schritt: /qa SLC-812.
+- Current Focus: **V8 SLC-812 /qa PASS code-side 2026-05-20 (RPT-481)**. 7/8 ACs PASS + 1/8 PARTIAL (AC6 Helper bereit, kein Caller im aktuellen UI mangels Model-ID-Display — V9+-Pattern). Grep-Negativ-Checks AC1 + AC8 → 0 Treffer. Grep-Positiv-Checks AC2..AC5 → bestaetigt. Vitest 989/989 PASS. 0 Stubs in neuen Files. Wiring-Verification N/A (rein UI-String-Substitution). Live-Smoke per User-Direktive `feedback_no_intermediate_coolify_switches.md` deferred zu Gesamt-/qa V8 nach SLC-813. **V7.6 STABLE** Image-Tag `1ffae6e` in Production. Naechster Schritt: `/frontend` SLC-811.
+- Current Phase: V8 SLC-812 /qa PASS. Naechster Schritt: /frontend SLC-811.
 
 ## Immediate Next Steps
-1. **(Mainline, sofort)** `/qa` SLC-812 — AC1..AC8 verifizieren (visueller Walkthrough Mein-Tag/Deal/Cockpit/Settings/Compose, Vitest, Lint, Build). Live-Smoke gegen Production-Image (V7.6 `1ffae6e`) per Worktree-Build optional, Coolify-Redeploy erst nach Gesamt-/qa V8.
-2. **(Nach SLC-812 /qa OK)** `/frontend` SLC-811 — Settings-Refactor + /performance-Cleanup + Goals-Move + Label-Konsistenz. 8 MTs, ~3-4h. Worktree-Isolation empfohlen.
+1. **(Mainline)** `/frontend` SLC-811 — Settings-Refactor + /performance-Cleanup + Goals-Move + Label-Konsistenz. 8 MTs, ~3-4h. Worktree-Isolation empfohlen. Slice-Spec: [slices/SLC-811-settings-refactor-hygiene.md](slices/SLC-811-settings-refactor-hygiene.md). Bei Context-Druck zuerst Session-Handoff.
 3. **(Nach SLC-811 QA)** `/frontend` + `/backend` SLC-813 — Stage-Requirements-Modal + KI-Verlustgrund-Vorschlag. 7 MTs, ~3-5h. Worktree-Isolation **empfohlen** (groesster V8-Block).
 4. **(Nach SLC-813 QA)** Gesamt-/qa V8 → /final-check → /go-live → /deploy → /post-launch
 2. **(Operational, weiterhin offen, nicht-blockierend)** Coolify-Cron fuer Docker-Cleanup einrichten (ISSUE-071 Next-Action #1, Resilience). Aktueller Disk-Druck 83% durch Coolify-Auto-Cleanup unter Kontrolle, Cron-Setup bleibt sinnvoll vor naechstem Redeploy-Zyklus.
