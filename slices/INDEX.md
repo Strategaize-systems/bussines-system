@@ -355,3 +355,14 @@ V8 = 3 Slices SLC-811..813, Reihenfolge-Empfehlung 812 → 811 → 813 (Risiko a
 | SLC-812 | [KI-Provider-Anzeige abstrahieren](SLC-812-ki-provider-abstrahierung.md) | FEAT-802 / BL-480 | done | Medium | 2026-05-20 |
 | SLC-811 | [Settings-Refactor + /performance-Cleanup + Goals-Move + Label-Konsistenz](SLC-811-settings-refactor-hygiene.md) | FEAT-801 + FEAT-803 / BL-481 + BL-453 + BL-459 | done | High | 2026-05-20 |
 | SLC-813 | [Stage-Requirements-Modal + KI-Verlustgrund-Vorschlag](SLC-813-stage-requirements-modal.md) | FEAT-804 / BL-455 + BL-456 | done | High | 2026-05-20 |
+
+## V8.1 Slices (Solopreneur + Sidebar-Konsolidierung + Teamlead-Permission-Erweiterung — Slice-Planning done 2026-05-20)
+
+V8.1 = 4 Sub-Slices fuer FEAT-811. Reihenfolge: SLC-821 → SLC-822 → SLC-823 → SLC-824 (vom kleinsten Risiko aufsteigend, sequentiell). Total ~4-5h Code-Side. **SLC-821** (~30-60 Min) Solopreneur-Helper `lib/team/team-size.ts` + Layout-Sidebar-Filter (DEC-227). **SLC-822** (~1-1.5h) Sidebar-Refactor `VERWALTUNG_SETUP` → `WERKZEUGE` mit Item-Reduktion 12 → 3, bestehender `/settings`-Eintrag in `VERWALTUNG_MEIN` bleibt (DEC-228). **SLC-823** (~10-15 Min) Tile-Permission `ADMIN_ONLY` → `ADMIN_TEAMLEAD` in `/settings/page.tsx`, reine UI-Sichtbarkeit (DEC-229). **SLC-824** (~2-2.5h) Teamlead-Edit-Erweiterung: `inviteMember`-Restriction auf `role='member'`, `deleteProfile`-Allow fuer Teamlead bei eigenem Team-Member mit V7-Hard-Lock-Reuse, UI-Anpassungen + 9 neue Vitest-Cases (DEC-230, supersedes DEC-193+DEC-194). Pro Slice: /frontend|/backend → /qa. Gesamt-/qa nach SLC-824. Master-Merge am Slice-Ende per `feedback_slice_merge_at_end`.
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-821 | [Solopreneur-Mode: Team-Sidebar-Items bei team_size=1 ausblenden](SLC-821-solopreneur-mode.md) | FEAT-811 / BL-482 | planned | Medium | 2026-05-20 |
+| SLC-822 | [Sidebar-Konsolidierung Option A: VERWALTUNG_SETUP → WERKZEUGE](SLC-822-sidebar-konsolidierung.md) | FEAT-811 / BL-483 | planned | Medium | 2026-05-20 |
+| SLC-823 | [Teamlead-Tile-Sichtbarkeit in /settings](SLC-823-teamlead-tile-sichtbarkeit.md) | FEAT-811 / BL-484 | planned | Low | 2026-05-20 |
+| SLC-824 | [Teamlead-Edit-Erweiterung: Invite-Restriction + Member-Delete-Allow](SLC-824-teamlead-edit-erweiterung.md) | FEAT-811 / BL-485 | planned | High | 2026-05-20 |

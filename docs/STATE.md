@@ -9,12 +9,16 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: architecture
-- Current Focus: **V8.1 ARCHITECTURE EXTENDED 2026-05-20** (RPT-491 + Permission-Klaerung). Diskrepanz-Klaerung Discovery vs V7-Code aufgedeckt eine neue Permission-Matrix-Anforderung. **4 V8.1-DECs final** (DEC-227 team_size-Source, DEC-228 Sidebar-Refactor, DEC-229 Tile-Sichtbarkeit ohne Page-Refactor, **DEC-230 NEU** Teamlead-Permission-Matrix erweitert mit Invite-Restriction auf 'member' + Member-Delete-Allow mit V7-Hard-Lock-Reuse, supersedes DEC-193 + DEC-194). **SLC-824 NEU** als 4. Sub-Slice (~2-2.5h, Server-Actions + UI-Refactor + audit_log.context + 6-8 Vitest-Cases). BL-485 angelegt. Naechster Schritt: `/slice-planning` V8.1 mit 4 Slices.
-- Current Phase: V8.1 Architecture done (extended). Naechster Schritt: /slice-planning V8.1.
+- High-Level State: slice-planning
+- Current Focus: **V8.1 SLICE-PLANNING DONE 2026-05-20 (RPT-492)**. 4 Slice-Files SLC-821..824 angelegt mit MT-Decomposition (MT-1 bis MT-7 je Slice), Acceptance Criteria, Open Points, Risks, Dependencies. /slices/INDEX.md V8.1-Section ergaenzt mit allen 4 Slices als `planned`. Reihenfolge: SLC-821 (~30-60 Min) → SLC-822 (~1-1.5h) → SLC-823 (~10-15 Min) → SLC-824 (~2-2.5h). Total ~4-5h Code-Side. Naechster Schritt: `/frontend` SLC-821 mit Worktree-Isolation optional.
+- Current Phase: V8.1 Slice-Planning done. Naechster Schritt: /frontend SLC-821.
 
 ## Immediate Next Steps
-1. **(Mainline)** `/slice-planning` V8.1 — 4 Slices erstellen: SLC-821 Solopreneur-Mode (~30-60 Min, lib/team/team-size.ts + layout.tsx), SLC-822 Sidebar-Konsolidierung (~1-1.5h, sidebar-config.ts Type-Refactor + 9 Items entfernen + Section-Rename), SLC-823 Teamlead-Tile-Sichtbarkeit (~10-15 Min, settings/page.tsx 2 Zeilen), SLC-824 Teamlead-Edit-Erweiterung (~2-2.5h, actions.ts Permission-Guards + team-members-table.tsx + invite-dialog.tsx + audit_log + 6-8 Vitest-Cases). Reihenfolge SLC-821 → SLC-822 → SLC-823 → SLC-824. Total ~4-5h Implementation.
+1. **(Mainline)** `/frontend` SLC-821 Solopreneur-Mode — Worktree optional. Implementiert: `lib/team/team-size.ts` NEU (~30 Zeilen, React `cache()`-Pattern), `app/(app)/layout.tsx` CHANGE (~10 Zeilen Solopreneur-Filter), Vitest 3-4 Cases. ~30-60 Min Code + ~15 Min /qa.
+2. **(Sequential nach SLC-821 /qa PASS)** `/frontend` SLC-822 Sidebar-Konsolidierung — `sidebar-config.ts` Type-Refactor + Item-Reduktion. ~1-1.5h Code.
+3. **(Sequential nach SLC-822 /qa PASS)** `/frontend` SLC-823 Teamlead-Tile-Sichtbarkeit — `settings/page.tsx` 2 Zeilen. ~10-15 Min Code.
+4. **(Sequential nach SLC-823 /qa PASS)** `/backend` SLC-824 Teamlead-Edit-Erweiterung — Server-Actions + UI + 9 Vitest-Cases. ~2-2.5h Code.
+5. **(Nach allen 4 Slices)** Gesamt-/qa V8.1 + /final-check + /go-live + /deploy.
 2. **(Parallel laufend)** `/post-launch` V8 Burn-In-Beobachtungsphase ≥12h. Beobachten: Disk-Trend (stabil bei 82% nach systemd-timer-Test), Bedrock-Cost-Trend (+$0.05-0.10/Tag), Container-Restart-Check, audit_log fuer ki_loss_reason_suggested-Eintraege.
 3. **(Optional, 30 Sek)** Manual-User-Smoke fuer SLC-813 AC11 — Drag-Drop Deal auf "Verloren" mit Activity-History, Modal-Verify, audit_log-Verify mit cost_usd > 0. Skript in RPT-488 dokumentiert.
 3. **(Pre-Customer-Live, nicht zeitkritisch)** BL-480 KI-Provider-Anzeige im User-UI abstrahieren (Bedrock-Strings entfernen). Mini-Slice ~1-2h.
