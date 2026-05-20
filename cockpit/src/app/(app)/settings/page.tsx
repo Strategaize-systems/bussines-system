@@ -15,6 +15,7 @@ import {
   Package,
   History,
   Users,
+  Target,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -184,6 +185,15 @@ const SETTINGS_SECTIONS: readonly SettingsSection[] = [
         iconWrapperClasses: "bg-slate-100",
         iconClasses: "text-slate-700",
         visibleFor: ADMIN_ONLY,
+      },
+      {
+        href: "/settings/goals",
+        label: "Ziele",
+        description: "Vertriebsziele verwalten, importieren und KPIs pflegen",
+        icon: Target,
+        iconWrapperClasses: "bg-orange-50",
+        iconClasses: "text-orange-600",
+        visibleFor: ADMIN_TEAMLEAD,
       },
     ],
   },
