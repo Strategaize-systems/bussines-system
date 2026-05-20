@@ -263,7 +263,7 @@ export const SIDEBAR_CONFIG: readonly SidebarItem[] = [
     visibleFor: ADMIN_TEAMLEAD,
   },
   {
-    href: "/performance/goals",
+    href: "/settings/goals",
     label: "Ziele",
     icon: Target,
     section: "VERWALTUNG_SETUP",

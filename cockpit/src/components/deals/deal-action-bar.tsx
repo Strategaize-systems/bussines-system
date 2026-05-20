@@ -153,14 +153,14 @@ export function DealActionBar({ deal, contacts, companies, dealsForSelect }: Dea
   return (
     <div className="bg-white rounded-xl border-2 border-slate-200 shadow-lg p-3 sm:p-4">
       <div className="flex items-center justify-center sm:justify-start gap-3 sm:gap-4 flex-wrap">
-        {/* 1. Task */}
+        {/* 1. Aufgabe */}
         <TaskSheet
           contacts={contacts}
           companies={companies}
           deals={dealsForSelect}
           defaultDealId={deal.id}
           defaultTitle={prefill.suggestedTaskTitle}
-          trigger={<QuickButton icon={ListTodo} label="Task" color="from-orange-500 to-amber-400" />}
+          trigger={<QuickButton icon={ListTodo} label="Aufgabe" color="from-orange-500 to-amber-400" />}
         />
 
         {/* 2. E-Mail */}

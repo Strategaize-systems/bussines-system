@@ -2187,7 +2187,7 @@
       "title": "/performance-Page komplette Loeschung (Cleanup nach REL-028 1-Sprint-Toast)",
       "type": "improvement",
       "priority": "low",
-      "status": "open",
+      "status": "done",
       "version": "V8",
       "description": "DEC-169 (V6.6): SLC-662 macht /performance zur Redirect-Page mit Toast (1 Sprint Bruecke). Nach REL-028 (V6.6-Release) ist die Toast-Bruecke aktiv — User-Migrations-Pfad sichtbar. Nach 1 Sprint (V6.7+) /performance-Datei + Redirect-Logik komplett loeschen. Voraussetzung: Audit dass keine Bookmarks/Verweise mehr auf /performance gehen (audit_log + access-log-Inspection).",
       "createdAt": "2026-05-09"
@@ -2247,7 +2247,7 @@
       "title": "Quick-Action-Label-Konsistenz: 'Task' (Mein-Tag/Deal-Detail) vs 'Aufgabe' (Cockpit) vereinheitlichen",
       "type": "improvement",
       "priority": "low",
-      "status": "open",
+      "status": "done",
       "version": "V8",
       "description": "Gesamt-/qa V6.6 RPT-386 Low-Finding L-1: Cockpit (SLC-666) verwendet 'Aufgabe' als Label fuer den Task-Button, Mein-Tag (SLC-662) und Deal-Detail (SLC-664) verwenden 'Task'. Funktional identisch, aber UI-Wording-Drift zwischen den drei KI-Workspace-Callern. Empfehlung fuer V6.7-Polish: kanonische Variante festlegen (deutsch konsequent: 'Aufgabe' empfohlen, da andere Quick-Actions auch deutsch sind: E-Mail, Meeting, Anruf, Notiz, Angebot) und auf Mein-Tag + Deal-Detail einheitlich anwenden. Pre-existing Label aus V3-Cockpit-Pattern (Mein-Tag). Nicht V6.6-Release-blockierend. Discovery aus Gesamt-/qa V6.6 2026-05-11.",
       "createdAt": "2026-05-11"
@@ -2407,7 +2407,7 @@
       "title": "Settings-Layout-Refactor + Rollen-Auffindbarkeit",
       "type": "improvement",
       "priority": "medium",
-      "status": "open",
+      "status": "done",
       "version": "V8",
       "description": "Aus /discovery BS V8 2026-05-19: /settings Landing-Page ist einspaltige Liste aus 10 Tiles ohne Gruppierung, drei Permission-Levels (Admin/Teamlead/Member) sind schwer unterscheidbar. Rollen-Verwaltung existiert bereits in /settings/team/team-members-table.tsx als Inline-Select pro Zeile, aber visuell versteckt. Plus Ghost-Subpages /settings/products und /settings/workflow-automation (kein Tile), Automation-Duplikat automation/ vs workflow-automation/, Doppel-Pfad /team Top-Level vs /settings/team. V8 raeumt strukturell auf via Tile-Gruppierung (3 Sections Persoenlich/Vertrieb/System), Rollen-Verwaltung als eigenes Tile, Ghost-Subpage-Cleanup. Siehe FEAT-801.",
       "createdAt": "2026-05-19"

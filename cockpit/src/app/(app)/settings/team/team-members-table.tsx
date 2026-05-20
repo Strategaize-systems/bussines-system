@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -117,6 +118,7 @@ function MemberRow({
 }) {
   const [isPending, startTransition] = useTransition();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const router = useRouter();
 
   function handleRoleChange(newRole: Role) {
     if (newRole === row.role) return;
@@ -193,8 +195,9 @@ function MemberRow({
           <Button
             variant="ghost"
             size="sm"
-            disabled
-            title="Drilldown kommt mit SLC-706"
+            title="Drilldown zu User-Cockpit"
+            aria-label={`Drilldown zu Cockpit von ${row.display_name ?? row.email ?? row.user_id}`}
+            onClick={() => router.push(`/team/${row.user_id}`)}
           >
             <ExternalLink className="h-4 w-4" />
           </Button>
