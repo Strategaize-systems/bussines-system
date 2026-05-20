@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V8 SLC-812 /qa PASS code-side 2026-05-20 (RPT-481)**. 7/8 ACs PASS + 1/8 PARTIAL (AC6 Helper bereit, kein Caller im aktuellen UI mangels Model-ID-Display — V9+-Pattern). Grep-Negativ-Checks AC1 + AC8 → 0 Treffer. Grep-Positiv-Checks AC2..AC5 → bestaetigt. Vitest 989/989 PASS. 0 Stubs in neuen Files. Wiring-Verification N/A (rein UI-String-Substitution). Live-Smoke per User-Direktive `feedback_no_intermediate_coolify_switches.md` deferred zu Gesamt-/qa V8 nach SLC-813. **V7.6 STABLE** Image-Tag `1ffae6e` in Production. Naechster Schritt: `/frontend` SLC-811.
-- Current Phase: V8 SLC-812 /qa PASS. Naechster Schritt: /frontend SLC-811.
+- Current Focus: **V8 SLC-811 /frontend code-side DONE 2026-05-20** (Branch `slc-811-settings-refactor`, Worktree `../strategaize-business-system-slc-811`). 8 MTs durchlaufen, 6 atomare Commits. Settings 3-Section-Struktur (Persoenlich/Vertrieb/System) + 4 neue Tiles (Produkte, NL-Regel-Historie, Rollen-Verwaltung, Ziele). Drilldown-Button in team-members-table aktiviert. `/performance/page.tsx` + `/performance/goals/page.tsx` Move nach `/settings/goals/page.tsx` + Performance-Folder geloescht. Sidebar-Link + Middleware-Guards + revalidatePath konsistent auf `/settings/goals`. `Task`→`Aufgabe` Label-Fix in deal-action-bar. Build PASS (Next.js 16.2.6 Turbopack, /settings/goals als ƒ Dynamic Route, kein /performance/* mehr). Vitest 989/989 PASS. Lint: keine neuen Findings (200 pre-existing). **V7.6 STABLE** Image-Tag `1ffae6e` in Production. Naechster Schritt: `/qa` SLC-811.
+- Current Phase: V8 SLC-811 /frontend done. Naechster Schritt: /qa SLC-811.
 
 ## Immediate Next Steps
-1. **(Mainline)** `/frontend` SLC-811 — Settings-Refactor + /performance-Cleanup + Goals-Move + Label-Konsistenz. 8 MTs, ~3-4h. Worktree-Isolation empfohlen. Slice-Spec: [slices/SLC-811-settings-refactor-hygiene.md](slices/SLC-811-settings-refactor-hygiene.md). Bei Context-Druck zuerst Session-Handoff.
-3. **(Nach SLC-811 QA)** `/frontend` + `/backend` SLC-813 — Stage-Requirements-Modal + KI-Verlustgrund-Vorschlag. 7 MTs, ~3-5h. Worktree-Isolation **empfohlen** (groesster V8-Block).
-4. **(Nach SLC-813 QA)** Gesamt-/qa V8 → /final-check → /go-live → /deploy → /post-launch
+1. **(Mainline)** `/qa` SLC-811 — Live-Smoke gegen Worktree-Build mit Playwright-MCP fuer AC1..AC14. Cross-Role-Smoke (qa-admin/teamlead/member) der 14 Settings-Tiles + 3 Sections. Per Strategaize-Workflow zwingend vor Master-Merge + Coolify-Redeploy.
+2. **(Nach SLC-811 QA)** `/frontend` + `/backend` SLC-813 — Stage-Requirements-Modal + KI-Verlustgrund-Vorschlag. 7 MTs, ~3-5h. Worktree-Isolation **empfohlen** (groesster V8-Block).
+3. **(Nach SLC-813 QA)** Gesamt-/qa V8 → /final-check → /go-live → /deploy → /post-launch
 2. **(Operational, weiterhin offen, nicht-blockierend)** Coolify-Cron fuer Docker-Cleanup einrichten (ISSUE-071 Next-Action #1, Resilience). Aktueller Disk-Druck 83% durch Coolify-Auto-Cleanup unter Kontrolle, Cron-Setup bleibt sinnvoll vor naechstem Redeploy-Zyklus.
 3. **(Pre-Customer-Live, nicht zeitkritisch)** BL-480 KI-Provider-Anzeige im User-UI abstrahieren (Bedrock-Strings entfernen). Mini-Slice ~1-2h.
 4. **(Spaeter)** V7.7-Planning: Tech-Debt-Cleanup-Slice (Pre-Existing-Lint + npm audit Major-Upgrade), Per-User-Bedrock-Cost-Cap, Custom-Reports auf /deal/[id].
