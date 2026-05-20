@@ -9,9 +9,9 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: final-check
-- Current Focus: **V8 /final-check CONDITIONALLY READY 2026-05-20 (RPT-486)**. 0 Blocker, 1 Medium (M-1 SLC-813 AC6-vs-Modal-Section Spec-Inkonsistenz, Resolution-Entscheidung erforderlich), 6 Low + 5 accepted Residual Risks. Combined Build/Test/Lint clean (1031/1031). Probe-Merge SLC-811↔SLC-813 zeigt 0 Code-Konflikte + 2 triviale Records-Konflikte (both-done Resolution). Hetzner-Disk 83% stabil + 14/15 Container healthy. Naechster Schritt: `/go-live` V8 nach M-1 Resolution.
-- Current Phase: V8 /final-check done — CONDITIONALLY READY. Naechster Schritt: /go-live V8.
+- High-Level State: go-live
+- Current Focus: **V8 /go-live GO 2026-05-20 (RPT-487)**. M-1 resolved per Option A (SLC-813 AC6 Slice-Spec-Update, Hint-Klausel akzeptiert). 0 Blocker, 5 accepted Residual Risks dokumentiert (ISSUE-071 Disk-stable 83%, Live-Smoke deferred 3 Items, Compliance-Defer, npm audit pre-V8, Pre-Existing-Lint). Master-Merge-Sequenz + Coolify-Redeploy-Procedure + Live-Smoke-Plan + Rollback-Plan in RPT-487 dokumentiert. Naechster Schritt: Master-Merge SLC-811 + SLC-813 → main → User-Coolify-Redeploy → Phase-2 Live-Smoke (9 Test-Cases) → /deploy V8.
+- Current Phase: V8 /go-live GO. Naechster Schritt: Master-Merge + Coolify-Redeploy.
 
 ## Immediate Next Steps
 1. **(Mainline)** M-1 Resolution-Entscheidung SLC-813 AC6 — Empfehlung Option A (Slice-Spec-1-Zeilen-Update auf "KEIN KI-Suggest", Hint-Klausel akzeptieren). Soft-Gate vor Master-Merge.

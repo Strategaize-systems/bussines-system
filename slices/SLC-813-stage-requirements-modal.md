@@ -178,7 +178,7 @@ Code-Inspektion-Befunde:
 - **AC3**: Bei leerer Activity-History UND leerer E-Mail-History oeffnet Modal mit leerem Feld + Info-Hint "KI-Vorschlag mangels Activity-History nicht verfuegbar". audit_log persistiert `status: "skipped_empty_context"`.
 - **AC4**: Bei Bedrock-Error/Parse-Error oeffnet Modal mit leerem Feld + Info-Hint, kein Crash. audit_log persistiert `status: "bedrock_error"` oder `"parse_error"`.
 - **AC5**: User kann Vorschlag akzeptieren, editieren oder verwerfen — alle drei Pfade fuehren zu erfolgreichem Stage-Move via `moveDealToStage(..., { won_lost_reason: ... })`
-- **AC6**: Drag-Drop von Deal mit fehlendem `value` auf "Gewonnen" / "Angebot offen" / "Angebot vorbereitet" oeffnet Modal mit Deal-Wert-Input (Number-EUR), KEIN KI-Suggest, kein Info-Hint "KI nur fuer Verloren"
+- **AC6**: Drag-Drop von Deal mit fehlendem `value` auf "Gewonnen" / "Angebot offen" / "Angebot vorbereitet" oeffnet Modal mit Deal-Wert-Input (Number-EUR), KEIN KI-Suggest. Info-Hint "KI-Vorschlag nur fuer Verlustgrund verfuegbar" wird gerendert (User-Aufklaerung, konsistent mit Modal-Section Z.65). [M-1 Resolution 2026-05-20: Option A — Hint-Klausel akzeptiert per User-Direktive /go-live V8.]
 - **AC7**: Drag-Drop von Deal mit fehlendem `value` UND `contact_id` auf "Verhandlung / Einwände" oeffnet Modal mit 2 Eingabefeldern (Deal-Wert + Kontakt-Selector). Confirm setzt beide atomar.
 - **AC8**: Modal-Cancel: Deal bleibt in Source-Stage. Kein DB-Touch, kein audit_log-Eintrag (ausser ggf. KI-Suggest-Insert wenn der bereits gelaufen ist).
 - **AC9**: audit_log enthaelt nach Confirm: 1x `ki_loss_reason_suggested` (nur Verloren-Path), 1x `update` (Pflichtfeld-Set), 1x `stage_change`, plus die bestehenden Audit-Side-Effects in `moveDealToStage`.
