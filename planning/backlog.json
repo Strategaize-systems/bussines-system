@@ -2437,7 +2437,7 @@
       "title": "Teamlead-Edit-Erweiterung: Invite-Restriction auf member + Member-Delete-Allow mit V7-Hard-Lock (V8.1 SLC-824)",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.1",
       "description": "Nach Diskrepanz-Klaerung Discovery vs V7-Code 2026-05-20: User-Direktive ist neue Permission-Matrix fuer Teamlead — operatives Team aufbauen ja, Org-Struktur-Aenderungen nein. Konkret: (1) inviteMember Server-Action verengen — Teamlead-Caller darf nur role='member' einladen (heute auch role='teamlead' erlaubt, supersedet DEC-194); (2) deleteProfile Server-Action erweitern — Teamlead-Caller darf eigene Team-Member loeschen mit Guards (target.role==='member' AND target.team_id===caller.team_id AND target.user_id !== caller.user_id), Hard-Lock-Pattern aus DEC-193 bleibt unveraendert (open_records > 0 → reject mit Re-Assign-Pflicht); (3) UI: Delete-Button in team-members-table.tsx auch fuer Teamlead bei target.role==='member', Rollen-Dropdown in invite-dialog.tsx fuer Teamlead nur 'member'; (4) audit_log.context erweitert um caller_role. Vitest fuer 6-8 neue Permission-Cases. ~2-2.5h. Resolves: BL-484-Scope-Erweiterung nach User-Klaerung. DEC-230 supersedet DEC-193+DEC-194.",
       "createdAt": "2026-05-20"
