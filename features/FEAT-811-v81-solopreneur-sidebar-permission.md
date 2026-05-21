@@ -14,7 +14,7 @@ Vier zusammenhaengende UI-/Sidebar-/Settings-/Permission-Themen, die nach V8-Rel
 
 1. **Solopreneur-Mode (BL-482)** — In V7 wurde "Team-Cockpit" und "Team-Verwaltung" als Admin/Teamlead-Funktion eingefuehrt. Solange der eingeloggte Admin der einzige User im Tenant ist (`team_size = 1`), zeigen diese Sidebar-Eintraege Aggregate ueber genau einen User — visuell wertlos und User-Story-fremd fuer Solopreneure. Erstes Onboarding-Erlebnis fuer einen neuen Solo-User: zwei Sidebar-Items, die nichts Sinnvolles zeigen.
 
-2. **Sidebar/Settings-Doppelung (BL-483)** — V8 (FEAT-801) hat `/settings` zu einer gegliederten 3-Section-Tile-Page (Persoenlich / Vertrieb / System) gemacht. **Aber die Sidebar zeigt parallel weiterhin 12 Einzel-Eintraege** unter `VERWALTUNG_SETUP` — Pipelines, Kampagnen, Templates, Workflow-Automation, NL-Sculptor-Audit, Branding, Zahlungsbedingungen, Produkte, Einwilligungstexte, Ziele, Cadences/Automatisierung, Audit-Log. Beide Surfaces (Sidebar + Tile-Page) zeigen dasselbe — keine Single-Source-of-Truth, kognitive Last hoch, Sidebar lang.
+2. **Sidebar/Settings-Doppelung (BL-483)** — V8 (FEAT-801) hat `/settings` zu einer gegliederten 3-Section-Tile-Page (Persoenlich / Vertrieb / System) gemacht. **Aber die Sidebar zeigt parallel weiterhin 14 Einzel-Eintraege** unter `VERWALTUNG_SETUP` — Pipelines, Kampagnen, Templates, Workflow-Automation, NL-Sculptor-Audit, Branding, Zahlungsbedingungen, Produkte, Einwilligungstexte, Ziele, Cadences/Automatisierung, Audit-Log. Beide Surfaces (Sidebar + Tile-Page) zeigen dasselbe — keine Single-Source-of-Truth, kognitive Last hoch, Sidebar lang.
 
 3. **Teamlead-Tile-Inkonsistenz (BL-484)** — `/settings/team` ist als Sidebar-Eintrag fuer **Admin + Teamlead** sichtbar (sidebar-config.ts:121-125). Aber das `/settings`-Tile "Rollen-Verwaltung" ist `ADMIN_ONLY` (settings/page.tsx ~Z.187). Same URL, verschiedene Sichtbarkeit.
 
@@ -41,10 +41,10 @@ User-Direktiven Discovery 2026-05-20:
 
 #### Sub-Slice 2 — SLC-822: Sidebar-Konsolidierung Option A (BL-483)
 
-- Alle 12 `VERWALTUNG_SETUP`-Sidebar-Eintraege aus der `SIDEBAR_CONFIG`-Array entfernen
+- Alle 14 `VERWALTUNG_SETUP`-Sidebar-Eintraege aus der `SIDEBAR_CONFIG`-Array entfernen
 - Einen einzigen neuen Eintrag `/settings` → "Einstellungen" hinzufuegen, sichtbar fuer ALL_ROLES (Permission innerhalb der Settings-Page wirkt weiter, jeder sieht seine erlaubten Tiles)
 - **Sonderfall Tools-vs-Settings**: `/handoffs`, `/referrals`, `/audit-log` sind aktuell in `VERWALTUNG_SETUP`, sind aber funktional eher "operative Tools" als "Config". /architecture klaert, ob sie in eine neue `WERKZEUGE`-Section gehen, in `VERWALTUNG_MEIN` einziehen, oder als eigene Mini-Section bleiben. **Default-Annahme fuer V8.1:** sie wandern in eine kleine `WERKZEUGE`-Section, damit der Sidebar-Footer nicht leer ist
-- `VERWALTUNG_SETUP` als Sidebar-Section-Konstante kann komplett geloescht werden, falls keine Eintraege uebrig bleiben (die 12 Items entfallen alle aus Sidebar)
+- `VERWALTUNG_SETUP` als Sidebar-Section-Konstante kann komplett geloescht werden, falls keine Eintraege uebrig bleiben (die 14 Items entfallen alle aus Sidebar)
 - Settings-Tile-Page bleibt unveraendert (in V8 fertig refactored) — Settings-Tile ist die einzige Surface fuer Config
 - Vorhandene Direkt-Links auf z.B. `/settings/pipelines` aus anderen Komponenten bleiben funktional (URLs aendern sich nicht)
 
@@ -105,7 +105,7 @@ User-Direktiven Discovery 2026-05-20:
 - Kein neues Setting, kein neuer Toggle, keine neue Migration
 
 ### SLC-822 Sidebar-Konsolidierung
-- Sidebar zeigt KEINEN der 12 VERWALTUNG_SETUP-Eintraege mehr
+- Sidebar zeigt KEINEN der 14 VERWALTUNG_SETUP-Eintraege mehr
 - Ein neuer Eintrag "Einstellungen" → `/settings` ist fuer ALL_ROLES sichtbar
 - `/settings`-Tile-Page rendert weiterhin korrekt mit ihren 3 Sections und allen Tiles entsprechend Permission
 - `/handoffs`, `/referrals`, `/audit-log` bleiben per Sidebar erreichbar (Default in `WERKZEUGE`-Section, /architecture finalisiert)
@@ -154,7 +154,7 @@ Alle 5 Architecture-Open-Questions sind in RPT-491 + DEC-227/228/229/230 geklaer
 ## Success Criteria (Mapping auf Goal)
 
 - Solopreneur startet das System und sieht keine wertlosen Team-Items mehr (BL-482 closed)
-- Sidebar ist um 12 Eintraege schlanker, eine einzige Surface fuer Config ist `/settings` (BL-483 closed)
+- Sidebar ist um 11 Eintraege schlanker, eine einzige Surface fuer Config ist `/settings` (BL-483 closed)
 - Teamlead-Sichtbarkeit von `/settings/team` ist konsistent zwischen Sidebar und Tile-Page (BL-484 closed)
 - Teamlead kann eigene Member einladen (nur als 'member') und loeschen (mit Pflicht-Reassign-Vorbedingung) — operatives Team-Management ohne Admin-Eingriff (BL-485 closed)
 - Daten bleiben bei jedem Delete erhalten — Hard-Lock-Pre-Check verhindert versehentliche Loeschung
@@ -171,7 +171,7 @@ Alle 5 Architecture-Open-Questions sind in RPT-491 + DEC-227/228/229/230 geklaer
 - FEAT-701 (Multi-User-UX aus V7)
 - V8.1 Discovery 2026-05-20 (RPT-490) + Architecture (RPT-491) + Teamlead-Permission-Klaerung (in dieser Conversation 2026-05-20)
 - BL-482, BL-483, BL-484, BL-485 (Backlog-Items, V8.1)
-- `sidebar-config.ts` aktuell 12 VERWALTUNG_SETUP-Eintraege (sidebar-config.ts:250-354)
+- `sidebar-config.ts` aktuell 14 VERWALTUNG_SETUP-Eintraege (sidebar-config.ts:250-354)
 - `/settings/page.tsx` aktuell `ADMIN_ONLY`-Rollen-Verwaltung-Tile (~Z.187)
 - `/settings/team/team-members-table.tsx` `callerIsAdmin && !isSelf` Z.159/204
 - `/settings/team/invite-dialog.tsx` Rollen-Dropdown Z.141-152

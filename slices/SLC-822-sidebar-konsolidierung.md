@@ -16,9 +16,9 @@
 
 ## Why
 
-Aktuell zeigt Sidebar 12 `VERWALTUNG_SETUP`-Eintraege (Pipelines, Kampagnen, Templates, Workflow-Automation, NL-Sculptor-Audit, Branding, Zahlungsbedingungen, Produkte, Einwilligungstexte, Ziele, Cadences/Automatisierung, Audit-Log/Handoffs/Referrals). Doppelung zur V8-`/settings`-Tile-Page (FEAT-801). User-Direktive 2026-05-20: "Sidebar Option A komplett zusammenklappen".
+Aktuell zeigt Sidebar 14 `VERWALTUNG_SETUP`-Eintraege (Pipelines, Kampagnen, Templates, Workflow-Automation, NL-Sculptor-Audit, Branding, Zahlungsbedingungen, Produkte, Einwilligungstexte, Ziele, Cadences/Automatisierung, Audit-Log/Handoffs/Referrals). Doppelung zur V8-`/settings`-Tile-Page (FEAT-801). User-Direktive 2026-05-20: "Sidebar Option A komplett zusammenklappen".
 
-DEC-228: `VERWALTUNG_SETUP` umbenennen zu `WERKZEUGE`, 9 Config-Items entfernen, 3 Tools (`/handoffs`, `/referrals`, `/audit-log`) bleiben in `WERKZEUGE`. Bestehender `/settings`-Eintrag in `VERWALTUNG_MEIN` bleibt unveraendert.
+DEC-228: `VERWALTUNG_SETUP` umbenennen zu `WERKZEUGE`, 11 Config-Items entfernen, 3 Tools (`/handoffs`, `/referrals`, `/audit-log`) bleiben in `WERKZEUGE`. Bestehender `/settings`-Eintrag in `VERWALTUNG_MEIN` bleibt unveraendert.
 
 ## Scope
 
@@ -31,7 +31,7 @@ DEC-228: `VERWALTUNG_SETUP` umbenennen zu `WERKZEUGE`, 9 Config-Items entfernen,
 - `SECTION_ORDER`-Konstante Z.74-81: `"VERWALTUNG_SETUP"` → `"WERKZEUGE"`
 
 ### Item-Reduktion in SIDEBAR_CONFIG-Array
-**ENTFERNEN (9 Items):**
+**ENTFERNEN (11 Items):**
 - `/handoffs` ← VERSCHIEBEN nach WERKZEUGE (siehe unten)
 - `/referrals` ← VERSCHIEBEN nach WERKZEUGE (siehe unten)
 - `/settings/goals` (Ziele)
@@ -68,7 +68,7 @@ DEC-228: `VERWALTUNG_SETUP` umbenennen zu `WERKZEUGE`, 9 Config-Items entfernen,
 - **AC1** — `SidebarSection`-Type enthaelt `WERKZEUGE` statt `VERWALTUNG_SETUP`
 - **AC2** — `SECTION_PARENT.WERKZEUGE` ist undefined (eigene Top-Section, kein Parent)
 - **AC3** — `SECTION_ORDER` ist neu: `ANALYSE → TEAM → OPERATIV → ARBEITSBEREICHE → VERWALTUNG_MEIN → WERKZEUGE`
-- **AC4** — Sidebar-Array enthaelt KEINEN der 9 entfernten Eintraege (Pipelines, Kampagnen, Templates, Workflow-Automation, NL-Sculptor-Audit, Branding, Zahlungsbedingungen, Produkte, Einwilligungstexte, Ziele, Cadences)
+- **AC4** — Sidebar-Array enthaelt KEINEN der 11 entfernten Eintraege (Pipelines, Kampagnen, Templates, Workflow-Automation, NL-Sculptor-Audit, Branding, Zahlungsbedingungen, Produkte, Einwilligungstexte, Ziele, Cadences)
 - **AC5** — Sidebar-Array enthaelt `/handoffs`, `/referrals`, `/audit-log` mit `section: "WERKZEUGE"`
 - **AC6** — Bestehender `/settings`-Eintrag in `VERWALTUNG_MEIN` (Z.219-225) unveraendert
 - **AC7** — Live-Smoke: User sieht WERKZEUGE-Section als eigene Top-Section unter VERWALTUNG_MEIN
@@ -91,10 +91,10 @@ DEC-228: `VERWALTUNG_SETUP` umbenennen zu `WERKZEUGE`, 9 Config-Items entfernen,
 - **Dependencies:** keine
 
 ### MT-2: SIDEBAR_CONFIG-Array reduzieren + Section-Wechsel
-- **Goal:** 9 Config-Items entfernen, 3 Tools-Items von `VERWALTUNG_SETUP` auf `WERKZEUGE` umstellen
+- **Goal:** 11 Config-Items entfernen, 3 Tools-Items von `VERWALTUNG_SETUP` auf `WERKZEUGE` umstellen
 - **Files:** `cockpit/src/lib/navigation/sidebar-config.ts` (modify)
 - **Expected behavior:**
-  - 9 Eintraege loeschen (siehe Item-Liste oben)
+  - 11 Eintraege loeschen (siehe Item-Liste oben)
   - 3 verbleibende Eintraege (`/handoffs`, `/referrals`, `/audit-log`) `section: "VERWALTUNG_SETUP"` → `section: "WERKZEUGE"`
   - Reihenfolge der 3 WERKZEUGE-Items: alphabetisch (Audit-Log, Handoffs, Referrals) ODER beibehalten — entscheiden bei MT-Start
 - **Verification:** TypeScript-Compile clean + visueller Browser-Check

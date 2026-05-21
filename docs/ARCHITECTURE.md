@@ -10816,7 +10816,7 @@ Folgende Punkte bleiben fuer Slice-Planning oder spaeter offen — sie blockiere
 V8.1 ist ein **reiner UI-/Permission-/Sidebar-Filter-Sprint**. Keine Schema-Migration, kein KI-Call, kein neuer Cron, keine neue Stack-Komponente. Der V8-Stack (Image `c5e0f0c`) bleibt deployed und wird um drei orthogonale UI-Aenderungen ergaenzt:
 
 1. **SLC-821 Solopreneur-Mode** — Server-side Helper liest `team_size` (Count Profiles mit gleicher `team_id`) und filtert in der Layout-Render-Phase die `TEAM`-Sidebar-Section weg, wenn der eingeloggte User der einzige in seinem Team ist.
-2. **SLC-822 Sidebar-Konsolidierung Option A** — `VERWALTUNG_SETUP` (12 Eintraege) wird umstrukturiert: 9 Config-Items (Pipelines, Branding, Zahlungsbedingungen, Produkte, Einwilligungstexte, Workflow-Automation, NL-Sculptor-Audit, Templates, Kampagnen, Ziele, Cadences) entfallen vollstaendig aus der Sidebar — nur erreichbar via `/settings`-Tile-Page. Drei operative Tools (`/handoffs`, `/referrals`, `/audit-log`) wandern in eine neue Section `WERKZEUGE`. Der bestehende `/settings`-Sidebar-Eintrag bleibt in `VERWALTUNG_MEIN` (kein neuer Eintrag noetig).
+2. **SLC-822 Sidebar-Konsolidierung Option A** — `VERWALTUNG_SETUP` (14 Eintraege) wird umstrukturiert: 11 Config-Items (Pipelines, Branding, Zahlungsbedingungen, Produkte, Einwilligungstexte, Workflow-Automation, NL-Sculptor-Audit, Templates, Kampagnen, Ziele, Cadences) entfallen vollstaendig aus der Sidebar — nur erreichbar via `/settings`-Tile-Page. Drei operative Tools (`/handoffs`, `/referrals`, `/audit-log`) wandern in eine neue Section `WERKZEUGE`. Der bestehende `/settings`-Sidebar-Eintrag bleibt in `VERWALTUNG_MEIN` (kein neuer Eintrag noetig).
 3. **SLC-823 Teamlead-Tile-Konsistenz** — `/settings/page.tsx` Tile "Rollen-Verwaltung" Permission `ADMIN_ONLY` → `ADMIN_TEAMLEAD`. Tile-Description wird neutralisiert. **Nur Tile-Sichtbarkeit, kein Edit-Verhalten** — Edit-Erweiterung kommt in SLC-824.
 4. **SLC-824 Teamlead-Edit-Erweiterung (NEU 2026-05-20 nach User-Klaerung)** — Teamlead bekommt **mehr** Edit-Rechte: darf eigene Team-Member loeschen (mit Pflicht-Reassign-Vorbedingung wie V7-Hard-Lock). **Weniger Invite-Rechte:** darf nur noch `member` einladen (heute: `member` + `teamlead`). Rolle-Wechsel bleibt admin-only. Bestaetigt DEC-194-Update + DEC-193-Update via DEC-230.
 
@@ -10866,7 +10866,7 @@ V8.1 ist ein **reiner UI-/Permission-/Sidebar-Filter-Sprint**. Keine Schema-Migr
 │   │   Top-Section, nicht unter "VERWALTUNG")                │
 │   ├── SECTION_ORDER neu: ANALYSE → TEAM → OPERATIV →        │
 │   │   ARBEITSBEREICHE → VERWALTUNG_MEIN → WERKZEUGE         │
-│   ├── 9 Config-Items (Pipelines, Branding, etc.) entfaellt  │
+│   ├── 11 Config-Items (Pipelines, Branding, etc.) entfaellt │
 │   │   aus SIDEBAR_CONFIG-Array                              │
 │   └── 3 Tools-Items (Handoffs, Referrals, Audit-Log) auf    │
 │       section: "WERKZEUGE" gesetzt                           │
@@ -10904,7 +10904,7 @@ V8.1 ist ein **reiner UI-/Permission-/Sidebar-Filter-Sprint**. Keine Schema-Migr
 - **Section-Refactor:** `VERWALTUNG_SETUP` → `WERKZEUGE` (Rename, nicht neue Section)
 - **`SECTION_PARENT`-Aenderung:** `WERKZEUGE` wird eigene Top-Section (kein Parent), `VERWALTUNG_MEIN` bleibt unter "VERWALTUNG"-Parent
 - **`SECTION_LABEL.WERKZEUGE = "WERKZEUGE"`** (oder optional "TOOLS" — final in Slice-Planning)
-- **Item-Filtering:** 9 Items entfallen vollstaendig aus `SIDEBAR_CONFIG`-Array. 3 Items behalten + Section-Wechsel:
+- **Item-Filtering:** 11 Items entfallen vollstaendig aus `SIDEBAR_CONFIG`-Array. 3 Items behalten + Section-Wechsel:
   - `/handoffs` → section `WERKZEUGE`
   - `/referrals` → section `WERKZEUGE`
   - `/audit-log` → section `WERKZEUGE`
@@ -11078,7 +11078,7 @@ lib/team/actions.ts deleteProfile:
 ### V8.1 Architecture Decisions
 
 - **DEC-227** — V8.1 Solopreneur-Detection via `profiles.team_id`-Count, kein neues `team_size`-Feld (SLC-821)
-- **DEC-228** — V8.1 Sidebar-Section-Refactor `VERWALTUNG_SETUP` → `WERKZEUGE` (Rename mit Item-Reduktion 12 → 3) (SLC-822)
+- **DEC-228** — V8.1 Sidebar-Section-Refactor `VERWALTUNG_SETUP` → `WERKZEUGE` (Rename mit Item-Reduktion 14 → 3) (SLC-822)
 - **DEC-229** — V8.1 Teamlead-Tile-Sichtbarkeit ADMIN_ONLY → ADMIN_TEAMLEAD (SLC-823, reine Tile-Permission ohne Page-Refactor)
 - **DEC-230** — V8.1 Teamlead-Permission-Matrix erweitert (SLC-824): Invite-Restriction auf `role='member'` (supersedet DEC-194-Teil), Member-Delete-Allow mit V7-Hard-Lock-Reuse (supersedet DEC-193-Teil). Rolle-Wechsel bleibt admin-only (kein Toggle in V8.1, V8.x+ optional).
 
@@ -11092,7 +11092,7 @@ lib/team/actions.ts deleteProfile:
   - Vitest 3-4 Cases (team_id null, team_size 1, team_size >1, cache-memoization)
 
 - **SLC-822** (~1-1.5h) — Sidebar-Konsolidierung Option A:
-  - `lib/navigation/sidebar-config.ts` CHANGE: Type-Refactor + 9 Items entfernen + Section-Rename + Item-Section-Wechsel
+  - `lib/navigation/sidebar-config.ts` CHANGE: Type-Refactor + 11 Items entfernen + Section-Rename + Item-Section-Wechsel
   - Sidebar-Component falls Top-Section "WERKZEUGE" anders gerendert wird (Pruefung in Slice-Planning)
   - Vitest fuer `filterByRole`-Pattern und Section-Reihenfolge
 
