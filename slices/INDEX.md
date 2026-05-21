@@ -362,7 +362,7 @@ V8.1 = 4 Sub-Slices fuer FEAT-811. Reihenfolge: SLC-821 → SLC-822 → SLC-823 
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-821 | [Solopreneur-Mode: Team-Sidebar-Items bei team_size=1 ausblenden](SLC-821-solopreneur-mode.md) | FEAT-811 / BL-482 | done | Medium | 2026-05-20 |
-| SLC-822 | [Sidebar-Konsolidierung Option A: VERWALTUNG_SETUP → WERKZEUGE](SLC-822-sidebar-konsolidierung.md) | FEAT-811 / BL-483 | done | Medium | 2026-05-20 |
-| SLC-823 | [Teamlead-Tile-Sichtbarkeit in /settings](SLC-823-teamlead-tile-sichtbarkeit.md) | FEAT-811 / BL-484 | done | Low | 2026-05-20 |
-| SLC-824 | [Teamlead-Edit-Erweiterung: Invite-Restriction + Member-Delete-Allow](SLC-824-teamlead-edit-erweiterung.md) | FEAT-811 / BL-485 | done | High | 2026-05-20 |
+| SLC-821 | [Solopreneur-Mode: Team-Sidebar-Items bei team_size=1 ausblenden](SLC-821-solopreneur-mode.md) | FEAT-811 / BL-482 | deployed | Medium | 2026-05-20 |
+| SLC-822 | [Sidebar-Konsolidierung Option A: VERWALTUNG_SETUP → WERKZEUGE](SLC-822-sidebar-konsolidierung.md) | FEAT-811 / BL-483 | deployed | Medium | 2026-05-20 |
+| SLC-823 | [Teamlead-Tile-Sichtbarkeit in /settings](SLC-823-teamlead-tile-sichtbarkeit.md) | FEAT-811 / BL-484 | deployed | Low | 2026-05-20 |
+| SLC-824 | [Teamlead-Edit-Erweiterung: Invite-Restriction + Member-Delete-Allow](SLC-824-teamlead-edit-erweiterung.md) | FEAT-811 / BL-485 | deployed | High | 2026-05-20 |
