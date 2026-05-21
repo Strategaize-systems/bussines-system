@@ -49,10 +49,16 @@ const ROLE_TONE: Record<Role, string> = {
 interface Props {
   rows: TeamMemberRow[];
   callerIsAdmin: boolean;
+  callerIsTeamlead: boolean;
   callerUserId: string;
 }
 
-export function TeamMembersTable({ rows, callerIsAdmin, callerUserId }: Props) {
+export function TeamMembersTable({
+  rows,
+  callerIsAdmin,
+  callerIsTeamlead,
+  callerUserId,
+}: Props) {
   const [actionError, setActionError] = useState<string | null>(null);
 
   if (rows.length === 0) {
@@ -91,6 +97,7 @@ export function TeamMembersTable({ rows, callerIsAdmin, callerUserId }: Props) {
                 key={row.user_id}
                 row={row}
                 callerIsAdmin={callerIsAdmin}
+                callerIsTeamlead={callerIsTeamlead}
                 isSelf={row.user_id === callerUserId}
                 onError={setActionError}
                 onSuccess={() => setActionError(null)}
@@ -106,16 +113,22 @@ export function TeamMembersTable({ rows, callerIsAdmin, callerUserId }: Props) {
 function MemberRow({
   row,
   callerIsAdmin,
+  callerIsTeamlead,
   isSelf,
   onError,
   onSuccess,
 }: {
   row: TeamMemberRow;
   callerIsAdmin: boolean;
+  callerIsTeamlead: boolean;
   isSelf: boolean;
   onError: (msg: string) => void;
   onSuccess: () => void;
 }) {
+  // DEC-230: Delete fuer Admin auf alle, fuer Teamlead nur auf Member-Rows.
+  // Self-Delete bleibt fuer beide blockiert.
+  const canDelete =
+    !isSelf && (callerIsAdmin || (callerIsTeamlead && row.role === "member"));
   const [isPending, startTransition] = useTransition();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const router = useRouter();
@@ -201,7 +214,7 @@ function MemberRow({
           >
             <ExternalLink className="h-4 w-4" />
           </Button>
-          {callerIsAdmin && !isSelf && (
+          {canDelete && (
             <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
               <DialogTrigger
                 render={

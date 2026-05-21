@@ -246,6 +246,68 @@ describe("inviteMember", () => {
       expect(result.error).toMatch(/already registered/);
     }
   });
+
+  // DEC-230 (V8.1 SLC-824): Teamlead darf nur 'member' einladen.
+
+  it("DEC-230: teamlead can invite member into own team", async () => {
+    vi.mocked(assertRole).mockResolvedValue(TEAMLEAD_PROFILE);
+    vi.mocked(inviteUserAndCreateProfile).mockResolvedValue({
+      user_id: VALID_UUID_A,
+      email: "new-member@strategaize.dev",
+    });
+    const mock = makeAdminMock({});
+    vi.mocked(createAdminClient).mockReturnValue(mock.client as never);
+
+    const result = await inviteMember({
+      email: "new-member@strategaize.dev",
+      role: "member",
+      team_id: TEAM_A_UUID,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.user_id).toBe(VALID_UUID_A);
+    }
+    const auditCall = mock.insertCalls.find((c) => c.table === "audit_log");
+    expect(auditCall?.payload).toMatchObject({
+      action: "invite_sent",
+      actor_id: TEAMLEAD_PROFILE.user_id,
+      changes: { role: "member", team_id: TEAM_A_UUID },
+    });
+  });
+
+  it("DEC-230: teamlead cannot invite role=teamlead (rejects INVALID_ROLE_FOR_TEAMLEAD_INVITER)", async () => {
+    vi.mocked(assertRole).mockResolvedValue(TEAMLEAD_PROFILE);
+    const mock = makeAdminMock({});
+    vi.mocked(createAdminClient).mockReturnValue(mock.client as never);
+
+    const result = await inviteMember({
+      email: "would-be-teamlead@strategaize.dev",
+      role: "teamlead",
+      team_id: TEAM_A_UUID,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toMatch(/INVALID_ROLE_FOR_TEAMLEAD_INVITER/);
+    }
+    expect(vi.mocked(inviteUserAndCreateProfile)).not.toHaveBeenCalled();
+  });
+
+  it("DEC-230: teamlead cannot invite role=admin (rejects INVALID_ROLE_FOR_TEAMLEAD_INVITER)", async () => {
+    vi.mocked(assertRole).mockResolvedValue(TEAMLEAD_PROFILE);
+    const mock = makeAdminMock({});
+    vi.mocked(createAdminClient).mockReturnValue(mock.client as never);
+
+    const result = await inviteMember({
+      email: "would-be-admin@strategaize.dev",
+      role: "admin",
+      team_id: TEAM_A_UUID,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toMatch(/INVALID_ROLE_FOR_TEAMLEAD_INVITER/);
+    }
+    expect(vi.mocked(inviteUserAndCreateProfile)).not.toHaveBeenCalled();
+  });
 });
 
 describe("changeRole", () => {
@@ -340,7 +402,7 @@ describe("deleteProfile", () => {
     vi.mocked(createAdminClient).mockReset();
   });
 
-  it("redirects teamlead trying to delete (admin-only)", async () => {
+  it("redirects member trying to delete (admin+teamlead only)", async () => {
     vi.mocked(assertRole).mockRejectedValue(new Error("NEXT_REDIRECT:/mein-tag"));
     await expect(deleteProfile({ user_id: VALID_UUID_A })).rejects.toThrow(
       "NEXT_REDIRECT:/mein-tag",
@@ -422,5 +484,136 @@ describe("deleteProfile", () => {
     if (!result.ok) {
       expect(result.error).toMatch(/GoTrue/);
     }
+  });
+
+  // DEC-230 (V8.1 SLC-824): Teamlead-Permission-Matrix.
+
+  it("DEC-230: teamlead deletes member in own team (open_records=0) + audit caller_role='teamlead'", async () => {
+    vi.mocked(assertRole).mockResolvedValue(TEAMLEAD_PROFILE);
+    const mock = makeAdminMock({
+      countsByTable: {},
+      profileRow: {
+        role: "member",
+        display_name: "Member von Teamlead A",
+        team_id: TEAM_A_UUID,
+      },
+    });
+    vi.mocked(createAdminClient).mockReturnValue(mock.client as never);
+
+    const result = await deleteProfile({ user_id: VALID_UUID_B });
+    expect(result.ok).toBe(true);
+    expect(mock.adminAuth.admin.deleteUser).toHaveBeenCalledWith(VALID_UUID_B);
+
+    const auditCall = mock.insertCalls.find((c) => c.table === "audit_log");
+    expect(auditCall?.payload).toMatchObject({
+      action: "profile_deleted",
+      entity_type: "profile",
+      entity_id: VALID_UUID_B,
+      actor_id: TEAMLEAD_PROFILE.user_id,
+      changes: {
+        display_name_backup: "Member von Teamlead A",
+        role_backup: "member",
+        team_id_backup: TEAM_A_UUID,
+        caller_role: "teamlead",
+      },
+    });
+  });
+
+  it("DEC-230: teamlead cannot delete teamlead target (rejects FORBIDDEN_NON_MEMBER)", async () => {
+    vi.mocked(assertRole).mockResolvedValue(TEAMLEAD_PROFILE);
+    const mock = makeAdminMock({
+      countsByTable: {},
+      profileRow: {
+        role: "teamlead",
+        display_name: "Anderer Teamlead",
+        team_id: TEAM_A_UUID,
+      },
+    });
+    vi.mocked(createAdminClient).mockReturnValue(mock.client as never);
+
+    const result = await deleteProfile({ user_id: VALID_UUID_B });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toMatch(/FORBIDDEN_NON_MEMBER/);
+    }
+    expect(mock.adminAuth.admin.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it("DEC-230: teamlead cannot delete member in other team (rejects FORBIDDEN_OTHER_TEAM)", async () => {
+    vi.mocked(assertRole).mockResolvedValue(TEAMLEAD_PROFILE);
+    const mock = makeAdminMock({
+      countsByTable: {},
+      profileRow: {
+        role: "member",
+        display_name: "Member im Fremd-Team",
+        team_id: TEAM_B_UUID,
+      },
+    });
+    vi.mocked(createAdminClient).mockReturnValue(mock.client as never);
+
+    const result = await deleteProfile({ user_id: VALID_UUID_B });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toMatch(/FORBIDDEN_OTHER_TEAM/);
+    }
+    expect(mock.adminAuth.admin.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it("DEC-230: teamlead cannot delete self (rejects FORBIDDEN_SELF)", async () => {
+    vi.mocked(assertRole).mockResolvedValue(TEAMLEAD_PROFILE);
+    const mock = makeAdminMock({});
+    vi.mocked(createAdminClient).mockReturnValue(mock.client as never);
+
+    const result = await deleteProfile({ user_id: TEAMLEAD_PROFILE.user_id });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toMatch(/FORBIDDEN_SELF/);
+    }
+    expect(mock.adminAuth.admin.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it("DEC-230: hard-lock pre-check fires for teamlead too (open_records > 0)", async () => {
+    vi.mocked(assertRole).mockResolvedValue(TEAMLEAD_PROFILE);
+    const mock = makeAdminMock({
+      countsByTable: { deals: 5 },
+      profileRow: {
+        role: "member",
+        display_name: "Member mit offenen Deals",
+        team_id: TEAM_A_UUID,
+      },
+    });
+    vi.mocked(createAdminClient).mockReturnValue(mock.client as never);
+
+    const result = await deleteProfile({ user_id: VALID_UUID_B });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toMatch(/aktive Records/);
+      expect(result.error).toMatch(/deals: 5/);
+      expect(result.error).toMatch(/Bulk-Reassign/);
+    }
+    expect(mock.adminAuth.admin.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it("DEC-230: admin delete audit_log entry carries caller_role='admin' (regression)", async () => {
+    vi.mocked(assertRole).mockResolvedValue(ADMIN_PROFILE);
+    const mock = makeAdminMock({
+      countsByTable: {},
+      profileRow: {
+        role: "member",
+        display_name: "Admin-Delete-Target",
+        team_id: TEAM_A_UUID,
+      },
+    });
+    vi.mocked(createAdminClient).mockReturnValue(mock.client as never);
+
+    const result = await deleteProfile({ user_id: VALID_UUID_B });
+    expect(result.ok).toBe(true);
+
+    const auditCall = mock.insertCalls.find((c) => c.table === "audit_log");
+    expect(auditCall?.payload).toMatchObject({
+      changes: {
+        caller_role: "admin",
+      },
+    });
   });
 });

@@ -9,15 +9,17 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Role } from "@/lib/auth/types";
 
 /**
- * V7 SLC-703 — Team-Verwaltung Server Actions.
+ * V7 SLC-703 + V8.1 SLC-824 — Team-Verwaltung Server Actions.
  *
  * 3 Actions:
- *  - inviteMember:  admin + teamlead (Teamlead nur eigenes Team), DEC-194
- *  - changeRole:    admin only,                                   DEC-181
- *  - deleteProfile: admin only, Hard-Lock bei Owner-Records,       DEC-193
+ *  - inviteMember:  admin + teamlead (Teamlead nur eigenes Team + nur role='member'),  DEC-230
+ *  - changeRole:    admin only,                                                          DEC-181
+ *  - deleteProfile: admin + teamlead (Teamlead nur eigene Team-Member), Hard-Lock bei
+ *                   Owner-Records bleibt fuer beide,                                     DEC-230
  *
  * Alle 3 schreiben audit_log mit entity_type='profile', entity_id=target user_id,
- * actor_id=caller (auth.uid()), changes=Payload.
+ * actor_id=caller (auth.uid()), changes=Payload (inkl. caller_role bei delete fuer
+ * forensische Nachvollziehbarkeit).
  */
 
 const ROLE_VALUES: readonly [Role, ...Role[]] = ["admin", "teamlead", "member"];
@@ -87,6 +89,16 @@ export async function inviteMember(input: {
     return {
       ok: false,
       error: "Teamlead darf nur das eigene Team einladen.",
+    };
+  }
+
+  // DEC-230 (supersedes DEC-194): Teamlead darf nur Mitglieder mit Rolle
+  // 'member' einladen. Org-Struktur-Aenderungen (Teamlead/Admin anlegen)
+  // bleiben Admin-only.
+  if (profile.role === "teamlead" && role !== "member") {
+    return {
+      ok: false,
+      error: "INVALID_ROLE_FOR_TEAMLEAD_INVITER: Teamlead darf nur Mitglieder mit Rolle 'member' einladen.",
     };
   }
 
@@ -173,7 +185,7 @@ export async function changeRole(input: {
 export async function deleteProfile(input: {
   user_id: string;
 }): Promise<ActionResult> {
-  const profile = await assertRole(["admin"]);
+  const profile = await assertRole(["admin", "teamlead"]);
   await assertNotReadOnlyContext();
 
   const parsed = deleteProfileSchema.safeParse(input);
@@ -182,16 +194,56 @@ export async function deleteProfile(input: {
   }
   const { user_id } = parsed.data;
 
+  // DEC-230: Self-Delete fuer alle Rollen blockiert.
   if (user_id === profile.user_id) {
     return {
       ok: false,
-      error: "Eigenes Profil kann nicht geloescht werden.",
+      error: profile.role === "teamlead"
+        ? "FORBIDDEN_SELF: Eigenes Profil kann nicht geloescht werden."
+        : "Eigenes Profil kann nicht geloescht werden.",
     };
   }
 
   const admin = createAdminClient();
 
+  // Target-Profile-Read VORGEZOGEN: wird fuer Teamlead-Guards (DEC-230) und
+  // spaeter fuer Audit-Backup gebraucht. Eine Query reicht.
+  const { data: targetProfileRaw } = await admin
+    .from("profiles")
+    .select("display_name, role, team_id")
+    .eq("id", user_id)
+    .maybeSingle();
+
+  const targetProfile = targetProfileRaw as
+    | { display_name: string | null; role: Role; team_id: string | null }
+    | null;
+
+  // DEC-230 (supersedes DEC-193 fuer Permission-Layer): Teamlead-Caller darf
+  // nur eigene Team-Member loeschen. Hard-Lock (DEC-193 Mechanik) bleibt
+  // unveraendert und greift fuer beide Rollen.
+  if (profile.role === "teamlead") {
+    if (!targetProfile) {
+      return {
+        ok: false,
+        error: "Profil nicht gefunden.",
+      };
+    }
+    if (targetProfile.role !== "member") {
+      return {
+        ok: false,
+        error: "FORBIDDEN_NON_MEMBER: Teamlead darf nur Mitglieder mit Rolle 'member' loeschen.",
+      };
+    }
+    if (targetProfile.team_id !== profile.team_id) {
+      return {
+        ok: false,
+        error: "FORBIDDEN_OTHER_TEAM: Teamlead darf nur Mitglieder des eigenen Teams loeschen.",
+      };
+    }
+  }
+
   // Hard-Lock (DEC-193): COUNT pro Tabelle WHERE owner_user_id = user_id.
+  // Greift fuer Admin UND Teamlead unveraendert.
   const counts = await countOwnerRecords(admin, user_id);
   const totalOpen = counts.reduce((sum, c) => sum + c.count, 0);
   if (totalOpen > 0) {
@@ -205,13 +257,6 @@ export async function deleteProfile(input: {
     };
   }
 
-  // Display-Name-Backup im Audit-Payload (DSGVO-Trail) BEVOR Delete.
-  const { data: targetProfile } = await admin
-    .from("profiles")
-    .select("display_name, role, team_id")
-    .eq("id", user_id)
-    .maybeSingle();
-
   const { error: deleteAuthError } = await admin.auth.admin.deleteUser(user_id);
   if (deleteAuthError) {
     return {
@@ -224,19 +269,21 @@ export async function deleteProfile(input: {
   // hier explizit geloescht (CASCADE faengt auth-User-Delete sicher ab).
   await admin.from("profiles").delete().eq("id", user_id);
 
+  // DEC-230: caller_role im changes-Payload (Defense-in-Depth, forensisch).
+  // Schema-Realitaet: audit_log.context ist TEXT (nicht JSONB wie DEC-230 wortwoertlich
+  // beschreibt), deshalb caller_role als Feld in der bestehenden changes-JSONB.
   await admin.from("audit_log").insert({
     actor_id: profile.user_id,
     action: "profile_deleted",
     entity_type: "profile",
     entity_id: user_id,
     changes: {
-      display_name_backup:
-        (targetProfile as { display_name?: string | null } | null)?.display_name ?? null,
-      role_backup: (targetProfile as { role?: Role } | null)?.role ?? null,
-      team_id_backup:
-        (targetProfile as { team_id?: string | null } | null)?.team_id ?? null,
+      display_name_backup: targetProfile?.display_name ?? null,
+      role_backup: targetProfile?.role ?? null,
+      team_id_backup: targetProfile?.team_id ?? null,
+      caller_role: profile.role,
     },
-    context: "V7 SLC-703 profile delete (DSGVO display_name backup)",
+    context: "V8.1 SLC-824 profile delete (DSGVO display_name backup)",
   });
 
   revalidatePath("/settings/team");

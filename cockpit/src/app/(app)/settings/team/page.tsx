@@ -128,6 +128,7 @@ export default async function TeamSettingsPage() {
   const totalOpenActivities = rows.reduce((s, r) => s + r.open_activities, 0);
 
   const callerIsAdmin = callerProfile.role === "admin";
+  const callerIsTeamlead = callerProfile.role === "teamlead";
 
   return (
     <>
@@ -171,6 +172,7 @@ export default async function TeamSettingsPage() {
           <TeamMembersTable
             rows={rows}
             callerIsAdmin={callerIsAdmin}
+            callerIsTeamlead={callerIsTeamlead}
             callerUserId={callerProfile.user_id}
           />
         </section>

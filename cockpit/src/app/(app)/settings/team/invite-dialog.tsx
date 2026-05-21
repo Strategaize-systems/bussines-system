@@ -146,8 +146,10 @@ export function InviteDialog({ callerRole, callerTeamId, teams }: Props) {
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
+                {/* DEC-230: Teamlead darf nur 'member' einladen, Org-Struktur
+                    (Teamlead/Admin anlegen) bleibt admin-only. */}
                 <SelectItem value="member">Member</SelectItem>
-                <SelectItem value="teamlead">Teamlead</SelectItem>
+                {isAdmin && <SelectItem value="teamlead">Teamlead</SelectItem>}
                 {isAdmin && <SelectItem value="admin">Admin</SelectItem>}
               </SelectContent>
             </Select>
