@@ -10,13 +10,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V8.1 SLC-821 SOLOPRENEUR-MODE /frontend DONE Code-Side 2026-05-21 (RPT-494)**. team-size.ts Helper angelegt + Layout-Filter aktiviert. Scope-Drift vs Spec: Filter-Layer muss durch MobileLayoutShell+Sidebar+sidebar-config propagieren (Sidebar ist Client-Component), daher 4 zusaetzliche File-Touches per Deviation Rule 3. 5/5 Vitest PASS, Sidebar/Navigation 34/34 regression-frei, Build clean. Naechster Schritt: `/qa` SLC-821.
-- Current Phase: V8.1 Implementing. SLC-821 done code-side, /qa pending.
+- Current Focus: **V8.1 SLC-822 SIDEBAR-KONSOLIDIERUNG /frontend DONE Code-Side 2026-05-21 (Commit `05b9478` gepusht)**. `VERWALTUNG_SETUP` → `WERKZEUGE` Type-Refactor + 11 Config-Items entfernt + 3 Tools-Items (`/handoffs`, `/referrals`, `/audit-log`) auf `WERKZEUGE` umgestellt + 7 unused Lucide-Icons entfernt. Tests: 1035/1035 PASS (sidebar.test.tsx Z.43 pre-V8.1-Annahme korrigiert nach Audit-Log-Migration in eigene Top-Section). Build clean. URL-Stabilitaet via Build-Routing-Liste verifiziert. M-1 Counting-Fix vorher in 8 Files mit 18 Edits durchgezogen (Commit `b3e6f7a`). Naechster Schritt: `/qa` SLC-822 (Playwright-MCP-Live-Smoke auf business.strategaizetransition.com nach Coolify-Redeploy).
+- Current Phase: V8.1 Implementing. SLC-821 done. SLC-822 done code-side, /qa pending. SLC-823+SLC-824 planned.
 
 ## Immediate Next Steps
-1. **(Mandatory direkt)** `/qa` SLC-821 — Audit-basiert: Code-Diff-Verifikation, Test-Lauf, Pattern-Compliance (React cache()-Pattern), Live-Smoke optional. Erwartetes Output: RPT-495.
-2. **(Sequential nach SLC-821 /qa PASS, M-1-Fix vorher)** `/frontend` SLC-822 Sidebar-Konsolidierung — vor Start: ARCHITECTURE.md Z.10819/Z.10869 + SLC-822 Z.33/AC4 Count-Korrektur 9→11. Dann `sidebar-config.ts` Type-Refactor + Item-Reduktion. ~1-1.5h Code.
-3. **(Sequential nach SLC-822 /qa PASS)** `/frontend` SLC-823 Teamlead-Tile-Sichtbarkeit — `settings/page.tsx` 2 Zeilen. ~10-15 Min Code.
+1. **(Mandatory direkt)** `/qa` SLC-822 — Audit-basiert: Code-Diff-Verifikation, Test-Lauf (1035/1035 PASS), Playwright-MCP-Live-Smoke auf business.strategaizetransition.com nach Coolify-Redeploy (AC7 + AC9 Mobile). Erwartetes Output: RPT-496 oder RPT-497.
+2. **(Sequential nach SLC-822 /qa PASS)** `/frontend` SLC-823 Teamlead-Tile-Sichtbarkeit — `settings/page.tsx` 2 Zeilen. ~10-15 Min Code.
 4. **(Sequential nach SLC-823 /qa PASS)** `/backend` SLC-824 Teamlead-Edit-Erweiterung — Server-Actions + UI + 9 Vitest-Cases. ~2-2.5h Code.
 5. **(Nach allen 4 Slices)** Gesamt-/qa V8.1 + /final-check + /go-live + /deploy.
 2. **(Parallel laufend)** `/post-launch` V8 Burn-In-Beobachtungsphase ≥12h. Beobachten: Disk-Trend (stabil bei 82% nach systemd-timer-Test), Bedrock-Cost-Trend (+$0.05-0.10/Tag), Container-Restart-Check, audit_log fuer ki_loss_reason_suggested-Eintraege.
@@ -82,7 +81,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V5.5, V5.5.1, V5.6, V5.7, V6, V6.1, V6.2, V6.3, V6.4, V6.5, **V6.6**
 
 **Active:**
-- **V8.1 (Implementing 2026-05-21)** — Solopreneur-Mode + Sidebar-Konsolidierung + Teamlead-Permission-Erweiterung, 1 FEAT (FEAT-811) mit 4 Sub-Slices SLC-821/822/823/824. **SLC-821 done code-side** (5/5 Vitest, RPT-494). SLC-822/823/824 planned. 4 V8.1-DECs (DEC-227/228/229/230). BL-482 done, BL-483/484/485 in_progress.
+- **V8.1 (Implementing 2026-05-21)** — Solopreneur-Mode + Sidebar-Konsolidierung + Teamlead-Permission-Erweiterung, 1 FEAT (FEAT-811) mit 4 Sub-Slices SLC-821/822/823/824. **SLC-821 done** (RPT-494/495). **SLC-822 done code-side** (1035/1035 Vitest, Commit `05b9478`), /qa pending. SLC-823/824 planned. 4 V8.1-DECs (DEC-227/228/229/230). BL-482 done, BL-483/484/485 in_progress.
 - **V7 (Requirements done 2026-05-12)** — Multi-User + Teamlead-Sprint, 3 Features (FEAT-502 + 503 + 701), 19 Open Questions warten auf /architecture V7.
 
 **Planned (Reihenfolge):**
