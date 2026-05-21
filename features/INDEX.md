@@ -263,7 +263,7 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-811 | Solopreneur-Mode + Sidebar-Konsolidierung + Rollen-Permission-Konsistenz (BL-482 + BL-483 + BL-484) | planned | [Spec](FEAT-811-v81-solopreneur-sidebar-permission.md) | 2026-05-20 |
+| FEAT-811 | Solopreneur-Mode + Sidebar-Konsolidierung + Rollen-Permission-Konsistenz (BL-482 + BL-483 + BL-484) | in_progress | [Spec](FEAT-811-v81-solopreneur-sidebar-permission.md) | 2026-05-20 |
 
 ## V6 Features (Zielsetzung + Performance-Tracking — released)
 

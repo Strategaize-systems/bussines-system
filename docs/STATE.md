@@ -9,13 +9,13 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: **V8.1 SLICE-PLANNING DONE 2026-05-20 (RPT-492)**. 4 Slice-Files SLC-821..824 angelegt mit MT-Decomposition (MT-1 bis MT-7 je Slice), Acceptance Criteria, Open Points, Risks, Dependencies. /slices/INDEX.md V8.1-Section ergaenzt mit allen 4 Slices als `planned`. Reihenfolge: SLC-821 (~30-60 Min) → SLC-822 (~1-1.5h) → SLC-823 (~10-15 Min) → SLC-824 (~2-2.5h). Total ~4-5h Code-Side. Naechster Schritt: `/frontend` SLC-821 mit Worktree-Isolation optional.
-- Current Phase: V8.1 Slice-Planning done. Naechster Schritt: /frontend SLC-821.
+- High-Level State: implementing
+- Current Focus: **V8.1 SLC-821 SOLOPRENEUR-MODE /frontend DONE Code-Side 2026-05-21 (RPT-494)**. team-size.ts Helper angelegt + Layout-Filter aktiviert. Scope-Drift vs Spec: Filter-Layer muss durch MobileLayoutShell+Sidebar+sidebar-config propagieren (Sidebar ist Client-Component), daher 4 zusaetzliche File-Touches per Deviation Rule 3. 5/5 Vitest PASS, Sidebar/Navigation 34/34 regression-frei, Build clean. Naechster Schritt: `/qa` SLC-821.
+- Current Phase: V8.1 Implementing. SLC-821 done code-side, /qa pending.
 
 ## Immediate Next Steps
-1. **(Mainline)** `/frontend` SLC-821 Solopreneur-Mode — Worktree optional. Implementiert: `lib/team/team-size.ts` NEU (~30 Zeilen, React `cache()`-Pattern), `app/(app)/layout.tsx` CHANGE (~10 Zeilen Solopreneur-Filter), Vitest 3-4 Cases. ~30-60 Min Code + ~15 Min /qa.
-2. **(Sequential nach SLC-821 /qa PASS)** `/frontend` SLC-822 Sidebar-Konsolidierung — `sidebar-config.ts` Type-Refactor + Item-Reduktion. ~1-1.5h Code.
+1. **(Mandatory direkt)** `/qa` SLC-821 — Audit-basiert: Code-Diff-Verifikation, Test-Lauf, Pattern-Compliance (React cache()-Pattern), Live-Smoke optional. Erwartetes Output: RPT-495.
+2. **(Sequential nach SLC-821 /qa PASS, M-1-Fix vorher)** `/frontend` SLC-822 Sidebar-Konsolidierung — vor Start: ARCHITECTURE.md Z.10819/Z.10869 + SLC-822 Z.33/AC4 Count-Korrektur 9→11. Dann `sidebar-config.ts` Type-Refactor + Item-Reduktion. ~1-1.5h Code.
 3. **(Sequential nach SLC-822 /qa PASS)** `/frontend` SLC-823 Teamlead-Tile-Sichtbarkeit — `settings/page.tsx` 2 Zeilen. ~10-15 Min Code.
 4. **(Sequential nach SLC-823 /qa PASS)** `/backend` SLC-824 Teamlead-Edit-Erweiterung — Server-Actions + UI + 9 Vitest-Cases. ~2-2.5h Code.
 5. **(Nach allen 4 Slices)** Gesamt-/qa V8.1 + /final-check + /go-live + /deploy.
@@ -82,7 +82,7 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - V2..V4.3, V5, V5.1, V5.2, V5.3, V5.4, V5.5, V5.5.1, V5.6, V5.7, V6, V6.1, V6.2, V6.3, V6.4, V6.5, **V6.6**
 
 **Active:**
-- **V8.1 (Architecture done 2026-05-20, erweitert um SLC-824)** — Solopreneur-Mode + Sidebar-Konsolidierung + Teamlead-Permission-Erweiterung, 1 FEAT (FEAT-811) mit 4 Sub-Slices SLC-821/822/823/824, ~4-5h Code-Side. 4 V8.1-DECs (DEC-227/228/229/230). BL-482+483+484+485 in_progress. Naechster Schritt: /slice-planning.
+- **V8.1 (Implementing 2026-05-21)** — Solopreneur-Mode + Sidebar-Konsolidierung + Teamlead-Permission-Erweiterung, 1 FEAT (FEAT-811) mit 4 Sub-Slices SLC-821/822/823/824. **SLC-821 done code-side** (5/5 Vitest, RPT-494). SLC-822/823/824 planned. 4 V8.1-DECs (DEC-227/228/229/230). BL-482 done, BL-483/484/485 in_progress.
 - **V7 (Requirements done 2026-05-12)** — Multi-User + Teamlead-Sprint, 3 Features (FEAT-502 + 503 + 701), 19 Open Questions warten auf /architecture V7.
 
 **Planned (Reihenfolge):**

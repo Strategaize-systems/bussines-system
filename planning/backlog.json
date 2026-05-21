@@ -2417,7 +2417,7 @@
       "title": "Solopreneur-Mode: Team-Sidebar-Items ausblenden wenn team_size=1",
       "type": "feature",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.1",
       "description": "Sidebar-Items 'Team-Cockpit' + 'Team-Verwaltung' werden automatisch ausgeblendet wenn der eingeloggte Admin der einzige User im Team ist (SELECT COUNT(*) FROM profiles WHERE team_id = X = 1). Bei erstem Invite: Items werden automatisch wieder sichtbar. Override-Toggle in Settings -> Persoenlich -> 'Team-Vorbereitungs-Modus' fuer Admins die die Sektion trotzdem sehen wollen (z.B. zum Vor-Konfigurieren bevor sie jemanden einladen). Solopreneur-User-Story aus Discovery 2026-05-20.",
       "createdAt": "2026-05-20"

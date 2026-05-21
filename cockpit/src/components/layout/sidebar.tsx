@@ -41,12 +41,18 @@ export interface SidebarProps {
   variant?: "desktop" | "mobile";
   /** Wird nach Item-Click ausgeloest (z.B. fuer Drawer-Close). Mobile-only. */
   onItemClick?: () => void;
+  /**
+   * SLC-821 (DEC-227): Solopreneur-Mode. Wenn `true`, werden TEAM-Items aus
+   * der Sidebar entfernt. Server-side bestimmt via `getTeamSize(profile) === 1`.
+   */
+  hideTeamSection?: boolean;
 }
 
 export function Sidebar({
   role,
   variant = "desktop",
   onItemClick,
+  hideTeamSection = false,
 }: SidebarProps) {
   const pathname = usePathname();
   const isMobile = variant === "mobile";
@@ -54,8 +60,8 @@ export function Sidebar({
   const [collapsed, setCollapsed] = useState(false);
 
   const topGroups = useMemo(
-    () => groupWithSubGroups(filterByRole(role)),
-    [role],
+    () => groupWithSubGroups(filterByRole(role, { hideTeamSection })),
+    [role, hideTeamSection],
   );
 
   const [groupOpen, setGroupOpen] = useState<Record<string, boolean>>(() => {

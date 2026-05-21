@@ -357,9 +357,19 @@ export const SIDEBAR_CONFIG: readonly SidebarItem[] = [
 /**
  * Pure filter: returnt nur die Eintraege die `role` sehen darf, in der
  * SECTION_ORDER-Reihenfolge der `SIDEBAR_CONFIG`.
+ *
+ * SLC-821 (DEC-227): Wenn `opts.hideTeamSection === true`, werden zusaetzlich
+ * alle Items mit `section === "TEAM"` entfernt (Solopreneur-Mode).
  */
-export function filterByRole(role: Role): SidebarItem[] {
-  return SIDEBAR_CONFIG.filter((item) => item.visibleFor.includes(role));
+export function filterByRole(
+  role: Role,
+  opts?: { hideTeamSection?: boolean },
+): SidebarItem[] {
+  return SIDEBAR_CONFIG.filter((item) => {
+    if (!item.visibleFor.includes(role)) return false;
+    if (opts?.hideTeamSection && item.section === "TEAM") return false;
+    return true;
+  });
 }
 
 /**

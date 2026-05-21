@@ -25,9 +25,12 @@ import type { Role } from "@/lib/auth/types";
  */
 export function MobileLayoutShell({
   role,
+  hideTeamSection = false,
   children,
 }: {
   role: Role;
+  /** SLC-821: Solopreneur-Mode. Propagiert an Sidebar (Desktop + Mobile). */
+  hideTeamSection?: boolean;
   children: React.ReactNode;
 }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -41,7 +44,11 @@ export function MobileLayoutShell({
   return (
     <>
       {/* Desktop-Sidebar (max-md:hidden intern, fixed). */}
-      <Sidebar role={role} variant="desktop" />
+      <Sidebar
+        role={role}
+        variant="desktop"
+        hideTeamSection={hideTeamSection}
+      />
 
       {/* Mobile-Drawer (md:hidden). */}
       <Dialog.Root open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
@@ -59,6 +66,7 @@ export function MobileLayoutShell({
             <Sidebar
               role={role}
               variant="mobile"
+              hideTeamSection={hideTeamSection}
               onItemClick={() => setMobileSidebarOpen(false)}
             />
           </Dialog.Popup>
