@@ -10,12 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V8.1 Gesamt-/qa PASS 2026-05-21 (RPT-500)**. Integration-Smoke ueber alle 4 Sub-Slices (SLC-821 + SLC-822 + SLC-823 + SLC-824) als zusammenhaengendes Feature gegen Coolify-Container `4bf5de7`. 4 Live-Browser-Pfade: (A) Solopreneur (qa-solo, team_id=NULL): TEAM-Sidebar fehlt, WERKZEUGE bleibt. (B) Admin Team-Mode (qa-admin): 6 Sections inkl. TEAM, 22 Sidebar-Links, 14 Tiles, Invite-Dropdown 3 Rollen. (C) Teamlead (qa-teamlead): 6 Sections, 21 Sidebar-Links (kein Audit-Log), 8 Tiles inkl. Team-Tile, Invite-Dropdown **nur Member**. (D) Member (qa-member): 3 Sections, 16 Sidebar-Links, 1 Tile-Section "Persoenlich" mit 3 Tiles. 12/12 Integration-Aspekte PASS. Keine Findings. FEAT-811 → `done`. **Naechster Schritt: `/final-check` V8.1.**
-- Current Phase: V8.1 Implementing. Alle 4 Sub-Slices done code-side + alle Sub-Slice-/qa PASS + Gesamt-/qa V8.1 PASS. Ready fuer /final-check + /go-live + /deploy als REL-035.
+- Current Focus: **V8.1 /final-check CONDITIONALLY READY 2026-05-21 (RPT-501)**. Pre-Release-Audit ueber 7 Dimensionen PASS — Code-Quality (V8.1-Files Lint-clean), Security (Defense-in-Depth 8-Layer in SLC-824 verifiziert), Compliance (Internal-Test-Mode-Defer), Testing (Vitest 1054/1054 + Live-Integration RPT-500), CI-CD (Build PASS, alle Stack-Container healthy ausser pre-existing supabase-studio), Observability (audit_log + systemd-timer aktiv), Post-Go-Live (REL-035 vorbereitet). **CONDITIONAL ASPEKT**: Disk 90% (3.9G free) auf 91.98.20.191 → Pre-/deploy MANDATORY Action `docker builder prune -af && docker image prune -af` ausfuehren. **Naechster Schritt: `/go-live` V8.1.**
+- Current Phase: V8.1 Implementing. Alle 4 Sub-Slices done + Gesamt-/qa PASS + /final-check CONDITIONALLY READY. Bereit fuer /go-live + Pre-/deploy-Disk-Cleanup + /deploy als REL-035.
 
 ## Immediate Next Steps
-1. **(Mandatory direkt)** `/final-check` V8.1 — Pre-Release-Audit: TSC + Vitest 1054/1054 + Build + Lint + npm audit + Security-Review der Permission-Layer-Aenderungen (SLC-824) + DSGVO-Backup-Felder-Konsistenz. ~30 Min.
-2. **(Nach /final-check PASS)** `/go-live` V8.1 + `/deploy` V8.1 als REL-035. Master ist bereits auf `main` (Commit `351fdf3`), nur Coolify-Redeploy noetig.
+1. **(Mandatory direkt)** `/go-live` V8.1 — Schnelle Go/No-Go-Entscheidung mit dokumentierter Pre-Action.
+2. **(Nach /go-live PASS — User-Pflicht-Action)** `ssh root@91.98.20.191 'docker builder prune -af && docker image prune -af && df -h /'` ausfuehren. Erwartet: Disk 90% → ~82% (~6G free).
+3. **(Nach Disk-Cleanup-Verifikation)** `/deploy` V8.1 als REL-035 — Coolify-Redeploy ueber `main` HEAD `b377baa`. Image-Tag wird automatisch gepullt.
 2. **(Parallel laufend)** `/post-launch` V8 Burn-In-Beobachtungsphase ≥12h. Beobachten: Disk-Trend (stabil bei 82% nach systemd-timer-Test), Bedrock-Cost-Trend (+$0.05-0.10/Tag), Container-Restart-Check, audit_log fuer ki_loss_reason_suggested-Eintraege.
 3. **(Optional, 30 Sek)** Manual-User-Smoke fuer SLC-813 AC11 — Drag-Drop Deal auf "Verloren" mit Activity-History, Modal-Verify, audit_log-Verify mit cost_usd > 0. Skript in RPT-488 dokumentiert.
 3. **(Pre-Customer-Live, nicht zeitkritisch)** BL-480 KI-Provider-Anzeige im User-UI abstrahieren (Bedrock-Strings entfernen). Mini-Slice ~1-2h.
