@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V8.1 /final-check CONDITIONALLY READY 2026-05-21 (RPT-501)**. Pre-Release-Audit ueber 7 Dimensionen PASS — Code-Quality (V8.1-Files Lint-clean), Security (Defense-in-Depth 8-Layer in SLC-824 verifiziert), Compliance (Internal-Test-Mode-Defer), Testing (Vitest 1054/1054 + Live-Integration RPT-500), CI-CD (Build PASS, alle Stack-Container healthy ausser pre-existing supabase-studio), Observability (audit_log + systemd-timer aktiv), Post-Go-Live (REL-035 vorbereitet). **CONDITIONAL ASPEKT**: Disk 90% (3.9G free) auf 91.98.20.191 → Pre-/deploy MANDATORY Action `docker builder prune -af && docker image prune -af` ausfuehren. **Naechster Schritt: `/go-live` V8.1.**
-- Current Phase: V8.1 Implementing. Alle 4 Sub-Slices done + Gesamt-/qa PASS + /final-check CONDITIONALLY READY. Bereit fuer /go-live + Pre-/deploy-Disk-Cleanup + /deploy als REL-035.
+- Current Focus: **V8.1 /go-live GO 2026-05-21 (RPT-502)** — Auto-Deploy hat `6168b5d` bereits live deployt (Container `154101454109`, 10min Uptime, healthy). Code-Diff `4bf5de7` → `6168b5d` = **0 .ts/.tsx-Aenderungen** (3 reine Records-Commits), Live-Smokes aus RPT-499 + RPT-500 1:1 valide. Spot-Check qa-teamlead Live-Sidebar 6 Sections + WERKZEUGE 2 Items + /settings HTTP 200 PASS. Disk 90% (3.8G free) stabil seit Redeploy (Coolify-Auto-Cleanup-Pattern wirkt). **Naechster Schritt: `/deploy` V8.1 zur formellen REL-035-Dokumentation.**
+- Current Phase: V8.1 effektiv deployed. Pending: REL-035 in RELEASES.md, SLC-INDEX `deployed`, FEAT-INDEX `deployed`, roadmap.json V8.1 `released`, /post-launch Burn-In ≥12h.
 
 ## Immediate Next Steps
-1. **(Mandatory direkt)** `/go-live` V8.1 — Schnelle Go/No-Go-Entscheidung mit dokumentierter Pre-Action.
-2. **(Nach /go-live PASS — User-Pflicht-Action)** `ssh root@91.98.20.191 'docker builder prune -af && docker image prune -af && df -h /'` ausfuehren. Erwartet: Disk 90% → ~82% (~6G free).
-3. **(Nach Disk-Cleanup-Verifikation)** `/deploy` V8.1 als REL-035 — Coolify-Redeploy ueber `main` HEAD `b377baa`. Image-Tag wird automatisch gepullt.
+1. **(Mandatory direkt)** `/deploy` V8.1 als REL-035 — formelle Release-Dokumentation (RELEASES.md + INDEX-Updates + roadmap-Status), Coolify-Redeploy NICHT noetig (Auto-Deploy ist gelaufen).
+2. **(Parallel zu /deploy)** Disk-Trend beobachten: aktueller Stand 90% → erwarte Sinken auf ~82-83% binnen 12-17h durch Coolify-Auto-Cleanup-Pattern (konsistent zu REL-030/032/033). Falls NICHT unter 85% binnen 4-6h: manuell `docker builder prune -af && docker image prune -af`.
+3. **(Nach /deploy)** `/post-launch` V8.1 Burn-In ≥12h.
 2. **(Parallel laufend)** `/post-launch` V8 Burn-In-Beobachtungsphase ≥12h. Beobachten: Disk-Trend (stabil bei 82% nach systemd-timer-Test), Bedrock-Cost-Trend (+$0.05-0.10/Tag), Container-Restart-Check, audit_log fuer ki_loss_reason_suggested-Eintraege.
 3. **(Optional, 30 Sek)** Manual-User-Smoke fuer SLC-813 AC11 — Drag-Drop Deal auf "Verloren" mit Activity-History, Modal-Verify, audit_log-Verify mit cost_usd > 0. Skript in RPT-488 dokumentiert.
 3. **(Pre-Customer-Live, nicht zeitkritisch)** BL-480 KI-Provider-Anzeige im User-UI abstrahieren (Bedrock-Strings entfernen). Mini-Slice ~1-2h.
