@@ -9,8 +9,8 @@ import {
 import type { Role } from "@/lib/auth/types";
 
 describe("SIDEBAR_CONFIG", () => {
-  it("contains the V6.6-baseline + V7 TEAM-stubs + SLC-711 settings subs (>=32 items)", () => {
-    expect(SIDEBAR_CONFIG.length).toBeGreaterThanOrEqual(32);
+  it("contains baseline items after SLC-822 (>=21 items)", () => {
+    expect(SIDEBAR_CONFIG.length).toBeGreaterThanOrEqual(21);
   });
 
   it("every item has a non-empty visibleFor", () => {
@@ -40,7 +40,7 @@ describe("filterByRole — Role-Matrix", () => {
     expect(items.length).toBe(SIDEBAR_CONFIG.length);
   });
 
-  it("teamlead sees ANALYSE + TEAM + OPERATIV + ARBEITSBEREICHE + VERWALTUNG (ohne admin-only)", () => {
+  it("teamlead sees ANALYSE + TEAM + OPERATIV + ARBEITSBEREICHE + VERWALTUNG + WERKZEUGE (ohne admin-only)", () => {
     const items = filterByRole("teamlead");
     const hrefs = items.map((i) => i.href);
     // Sichtbar:
@@ -50,13 +50,12 @@ describe("filterByRole — Role-Matrix", () => {
     expect(hrefs).toContain("/mein-tag");
     expect(hrefs).toContain("/deals");
     expect(hrefs).toContain("/handoffs");
-    expect(hrefs).toContain("/cadences");
+    expect(hrefs).toContain("/referrals");
     // NICHT sichtbar (admin-only):
-    expect(hrefs).not.toContain("/settings/products");
     expect(hrefs).not.toContain("/audit-log");
   });
 
-  it("member sieht KEIN /dashboard, KEIN /team, KEIN admin-Tool", () => {
+  it("member sieht KEIN /dashboard, KEIN /team, KEIN WERKZEUGE-Item", () => {
     const items = filterByRole("member");
     const hrefs = items.map((i) => i.href);
     // Member-sichtbar:
@@ -79,9 +78,6 @@ describe("filterByRole — Role-Matrix", () => {
     expect(hrefs).not.toContain("/settings/team");
     expect(hrefs).not.toContain("/handoffs");
     expect(hrefs).not.toContain("/referrals");
-    expect(hrefs).not.toContain("/settings/goals");
-    expect(hrefs).not.toContain("/cadences");
-    expect(hrefs).not.toContain("/settings/products");
     expect(hrefs).not.toContain("/audit-log");
   });
 
@@ -95,9 +91,9 @@ describe("filterByRole — Role-Matrix", () => {
     expect(items.filter((i) => i.section === "TEAM")).toHaveLength(0);
   });
 
-  it("member sees no VERWALTUNG_SETUP-section items", () => {
+  it("member sees no WERKZEUGE-section items", () => {
     const items = filterByRole("member");
-    expect(items.filter((i) => i.section === "VERWALTUNG_SETUP")).toHaveLength(0);
+    expect(items.filter((i) => i.section === "WERKZEUGE")).toHaveLength(0);
   });
 });
 
@@ -130,20 +126,9 @@ describe("filterByRole — Snapshots", () => {
           "VERWALTUNG_MEIN:/settings/working-hours",
           "VERWALTUNG_MEIN:/settings/meetings",
           "VERWALTUNG_MEIN:/settings/briefing",
-          "VERWALTUNG_SETUP:/handoffs",
-          "VERWALTUNG_SETUP:/referrals",
-          "VERWALTUNG_SETUP:/settings/goals",
-          "VERWALTUNG_SETUP:/cadences",
-          "VERWALTUNG_SETUP:/settings/branding",
-          "VERWALTUNG_SETUP:/settings/payment-terms",
-          "VERWALTUNG_SETUP:/settings/pipelines",
-          "VERWALTUNG_SETUP:/settings/products",
-          "VERWALTUNG_SETUP:/settings/compliance",
-          "VERWALTUNG_SETUP:/settings/automation",
-          "VERWALTUNG_SETUP:/settings/workflow-automation/nl-history",
-          "VERWALTUNG_SETUP:/settings/templates",
-          "VERWALTUNG_SETUP:/settings/campaigns",
-          "VERWALTUNG_SETUP:/audit-log",
+          "WERKZEUGE:/handoffs",
+          "WERKZEUGE:/referrals",
+          "WERKZEUGE:/audit-log",
         ],
         "member": [
           "OPERATIV:/mein-tag",
@@ -183,117 +168,70 @@ describe("filterByRole — Snapshots", () => {
           "VERWALTUNG_MEIN:/settings/working-hours",
           "VERWALTUNG_MEIN:/settings/meetings",
           "VERWALTUNG_MEIN:/settings/briefing",
-          "VERWALTUNG_SETUP:/handoffs",
-          "VERWALTUNG_SETUP:/referrals",
-          "VERWALTUNG_SETUP:/settings/goals",
-          "VERWALTUNG_SETUP:/cadences",
-          "VERWALTUNG_SETUP:/settings/automation",
-          "VERWALTUNG_SETUP:/settings/templates",
-          "VERWALTUNG_SETUP:/settings/campaigns",
+          "WERKZEUGE:/handoffs",
+          "WERKZEUGE:/referrals",
         ],
       }
     `);
   });
 });
 
-describe("SLC-711 — Settings-Sub-Page Sidebar-Items (DEC-196 Permission-Matrix)", () => {
-  const SETTINGS_SUB_PAGES_ADMIN_ONLY = [
-    "/settings/branding",
-    "/settings/payment-terms",
-    "/settings/pipelines",
-    "/settings/compliance",
-  ] as const;
-
-  const SETTINGS_SUB_PAGES_ADMIN_TEAMLEAD = [
-    "/settings/automation",
-    "/settings/templates",
-    "/settings/campaigns",
-  ] as const;
-
+describe("SLC-711 / SLC-822 — Persoenliche Settings-Sub-Pages (ALL_ROLES)", () => {
+  // SLC-822 (DEC-228): Die managerial Settings-Sub-Pages (branding, pipelines,
+  // payment-terms, compliance, automation, templates, campaigns, goals,
+  // workflow-automation/nl-history) wurden aus der Sidebar entfernt — nur
+  // erreichbar via /settings-Tile-Page. Die persoenlichen ALL_ROLES-Settings
+  // bleiben unter VERWALTUNG_MEIN sichtbar.
   const SETTINGS_SUB_PAGES_ALL_ROLES = [
     "/settings/working-hours",
     "/settings/meetings",
     "/settings/briefing",
   ] as const;
 
-  it("alle 10 neuen Settings-Sub-Page-Items existieren in SIDEBAR_CONFIG", () => {
+  it("alle 3 persoenlichen Settings-Sub-Page-Items existieren in SIDEBAR_CONFIG", () => {
     const hrefs = SIDEBAR_CONFIG.map((i) => i.href);
-    for (const sub of [
-      ...SETTINGS_SUB_PAGES_ADMIN_ONLY,
-      ...SETTINGS_SUB_PAGES_ADMIN_TEAMLEAD,
-      ...SETTINGS_SUB_PAGES_ALL_ROLES,
-    ]) {
-      expect(hrefs).toContain(sub);
-    }
-  });
-
-  it("Admin sieht alle 10 neuen Settings-Sub-Pages (admin-only + admin-teamlead + all-roles)", () => {
-    const hrefs = filterByRole("admin").map((i) => i.href);
-    for (const sub of [
-      ...SETTINGS_SUB_PAGES_ADMIN_ONLY,
-      ...SETTINGS_SUB_PAGES_ADMIN_TEAMLEAD,
-      ...SETTINGS_SUB_PAGES_ALL_ROLES,
-    ]) {
-      expect(hrefs).toContain(sub);
-    }
-  });
-
-  it("Teamlead sieht admin-teamlead + all-roles, KEINE admin-only Settings-Sub-Pages", () => {
-    const hrefs = filterByRole("teamlead").map((i) => i.href);
-    for (const sub of [
-      ...SETTINGS_SUB_PAGES_ADMIN_TEAMLEAD,
-      ...SETTINGS_SUB_PAGES_ALL_ROLES,
-    ]) {
-      expect(hrefs).toContain(sub);
-    }
-    for (const sub of SETTINGS_SUB_PAGES_ADMIN_ONLY) {
-      expect(hrefs).not.toContain(sub);
-    }
-  });
-
-  it("Member sieht NUR all-roles Settings-Sub-Pages (working-hours/meetings/briefing)", () => {
-    const hrefs = filterByRole("member").map((i) => i.href);
     for (const sub of SETTINGS_SUB_PAGES_ALL_ROLES) {
       expect(hrefs).toContain(sub);
     }
-    for (const sub of [
-      ...SETTINGS_SUB_PAGES_ADMIN_ONLY,
-      ...SETTINGS_SUB_PAGES_ADMIN_TEAMLEAD,
-    ]) {
-      expect(hrefs).not.toContain(sub);
+  });
+
+  it("alle Rollen sehen die 3 persoenlichen Settings-Sub-Pages", () => {
+    for (const role of ["admin", "teamlead", "member"] as const) {
+      const hrefs = filterByRole(role).map((i) => i.href);
+      for (const sub of SETTINGS_SUB_PAGES_ALL_ROLES) {
+        expect(hrefs).toContain(sub);
+      }
     }
   });
 
-  it("DEC-196b Slug-Filter: nur /settings/*-Pages pro Rolle (Settings-Sub-Sidebar-Quelle)", () => {
-    const adminSlugItems = filterByRole("admin").filter((i) =>
-      i.href.startsWith("/settings/"),
-    );
-    const teamleadSlugItems = filterByRole("teamlead").filter((i) =>
-      i.href.startsWith("/settings/"),
-    );
+  it("Member sieht NUR die 3 persoenlichen /settings/*-Pages (keine managerial Sub-Pages mehr)", () => {
     const memberSlugItems = filterByRole("member").filter((i) =>
       i.href.startsWith("/settings/"),
     );
-
-    // Admin: alle 10 neuen + /settings/products + /settings/team = 12
-    expect(adminSlugItems.length).toBeGreaterThanOrEqual(10);
-    expect(adminSlugItems.map((i) => i.href)).toContain("/settings/branding");
-    expect(adminSlugItems.map((i) => i.href)).toContain("/settings/team");
-
-    // Teamlead: 6 (3 admin-teamlead + 3 all-roles) + /settings/team = 7
-    expect(teamleadSlugItems.length).toBeGreaterThanOrEqual(6);
-    expect(teamleadSlugItems.map((i) => i.href)).not.toContain(
-      "/settings/branding",
-    );
-    expect(teamleadSlugItems.map((i) => i.href)).toContain(
-      "/settings/automation",
-    );
-
-    // Member: nur 3 persoenliche Settings (working-hours/meetings/briefing)
     expect(memberSlugItems.length).toBe(3);
     expect(memberSlugItems.map((i) => i.href).sort()).toEqual(
       [...SETTINGS_SUB_PAGES_ALL_ROLES].sort(),
     );
+  });
+
+  it("Sidebar enthaelt keine der SLC-822-entfernten managerial Sub-Pages", () => {
+    const hrefs = SIDEBAR_CONFIG.map((i) => i.href);
+    const REMOVED_BY_SLC_822 = [
+      "/settings/goals",
+      "/cadences",
+      "/settings/branding",
+      "/settings/payment-terms",
+      "/settings/pipelines",
+      "/settings/products",
+      "/settings/compliance",
+      "/settings/automation",
+      "/settings/workflow-automation/nl-history",
+      "/settings/templates",
+      "/settings/campaigns",
+    ] as const;
+    for (const removed of REMOVED_BY_SLC_822) {
+      expect(hrefs).not.toContain(removed);
+    }
   });
 });
 
@@ -306,34 +244,45 @@ describe("groupBySection / groupVisualMerged", () => {
       "OPERATIV",
       "ARBEITSBEREICHE",
       "VERWALTUNG_MEIN",
-      "VERWALTUNG_SETUP",
+      "WERKZEUGE",
     ]);
   });
 
-  it("groupBySection skips sections without items (member sieht keine ANALYSE/TEAM)", () => {
+  it("groupBySection skips sections without items (member sieht keine ANALYSE/TEAM/WERKZEUGE)", () => {
     const groups = groupBySection(filterByRole("member"));
     const sections = groups.map((g) => g.section);
     expect(sections).not.toContain("ANALYSE");
     expect(sections).not.toContain("TEAM");
-    expect(sections).not.toContain("VERWALTUNG_SETUP");
+    expect(sections).not.toContain("WERKZEUGE");
     expect(sections).toContain("OPERATIV");
     expect(sections).toContain("ARBEITSBEREICHE");
     expect(sections).toContain("VERWALTUNG_MEIN");
   });
 
-  it("groupVisualMerged kollabiert VERWALTUNG_MEIN + _SETUP zu einer VERWALTUNG-Gruppe (Admin)", () => {
+  it("groupVisualMerged: VERWALTUNG enthaelt nur _MEIN-Items, WERKZEUGE ist eigene Top-Gruppe (Admin)", () => {
+    // SLC-822 (DEC-228): _SETUP-Sub-Group wurde zur eigenen WERKZEUGE-Top-
+    // Section umgebaut. VERWALTUNG hat post-V8.1 nur noch _MEIN-Items.
     const groups = groupVisualMerged(filterByRole("admin"));
     const labels = groups.map((g) => g.label);
-    // VERWALTUNG taucht nur einmal auf
+    // VERWALTUNG taucht genau einmal auf (nur _MEIN-Sub-Group)
     expect(labels.filter((l) => l === "VERWALTUNG")).toHaveLength(1);
-    // Items beider Sub-Sections sind drin
+    // WERKZEUGE ist eigene Top-Gruppe
+    expect(labels).toContain("WERKZEUGE");
+
     const verwGroup = groups.find((g) => g.label === "VERWALTUNG")!;
     const verwHrefs = verwGroup.items.map((i) => i.href);
-    expect(verwHrefs).toContain("/aufgaben"); // _MEIN
-    expect(verwHrefs).toContain("/audit-log"); // _SETUP
+    expect(verwHrefs).toContain("/aufgaben");
+    // /audit-log gehoert jetzt zu WERKZEUGE, nicht mehr zu VERWALTUNG
+    expect(verwHrefs).not.toContain("/audit-log");
+
+    const werkzeugeGroup = groups.find((g) => g.label === "WERKZEUGE")!;
+    const werkzeugeHrefs = werkzeugeGroup.items.map((i) => i.href);
+    expect(werkzeugeHrefs).toContain("/handoffs");
+    expect(werkzeugeHrefs).toContain("/referrals");
+    expect(werkzeugeHrefs).toContain("/audit-log");
   });
 
-  it("groupVisualMerged fuer Member hat eine VERWALTUNG-Gruppe ohne _SETUP-items", () => {
+  it("groupVisualMerged fuer Member: VERWALTUNG-Gruppe vorhanden, KEINE WERKZEUGE-Gruppe", () => {
     const groups = groupVisualMerged(filterByRole("member"));
     const verwGroup = groups.find((g) => g.label === "VERWALTUNG");
     expect(verwGroup).toBeDefined();
@@ -341,5 +290,8 @@ describe("groupBySection / groupVisualMerged", () => {
     expect(verwHrefs).toContain("/aufgaben");
     expect(verwHrefs).not.toContain("/audit-log");
     expect(verwHrefs).not.toContain("/handoffs");
+
+    // Member sieht KEINE WERKZEUGE-Top-Gruppe
+    expect(groups.find((g) => g.label === "WERKZEUGE")).toBeUndefined();
   });
 });

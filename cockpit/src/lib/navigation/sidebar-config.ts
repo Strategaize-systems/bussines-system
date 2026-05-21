@@ -15,16 +15,9 @@ import {
   Shield,
   Briefcase,
   Target,
-  Package,
-  Zap,
   UserCog,
-  Palette,
-  Receipt,
-  GitBranch,
-  Megaphone,
   Clock,
   Bell,
-  ScrollText,
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@/lib/auth/types";
@@ -35,7 +28,7 @@ import type { Role } from "@/lib/auth/types";
  * Server-Side-Filter im (app)/layout.tsx liest dieses Array und filtert nach
  * `profile.role`. Kein Client-Flash, kein useEffect-Filter.
  *
- * Reihenfolge: ANALYSE → TEAM → OPERATIV → ARBEITSBEREICHE → VERWALTUNG_*
+ * Reihenfolge: ANALYSE → TEAM → OPERATIV → ARBEITSBEREICHE → VERWALTUNG_MEIN → WERKZEUGE
  *
  * Admin-Sicht = V6.6-1:1 plus die 2 TEAM-Stubs (Risk R1: Visual-Diff via
  * Playwright validiert keine Regression in Admin-Layout).
@@ -47,28 +40,28 @@ export type SidebarSection =
   | "OPERATIV"
   | "ARBEITSBEREICHE"
   | "VERWALTUNG_MEIN"
-  | "VERWALTUNG_SETUP";
+  | "WERKZEUGE";
 
 export const SECTION_LABEL: Record<SidebarSection, string> = {
   ANALYSE: "ANALYSE",
   TEAM: "TEAM",
   OPERATIV: "OPERATIV",
   ARBEITSBEREICHE: "ARBEITSBEREICHE",
-  // SLC-707 MT-6: VERWALTUNG-Split mit Sub-Group-Headers. Der Top-Section-
-  // Header "VERWALTUNG" wird in der Sidebar separat (parentLabel) gerendert,
-  // diese Labels sind die Sub-Group-Header.
+  // SLC-822 (DEC-228): VERWALTUNG_MEIN bleibt unter "VERWALTUNG"-Parent
+  // (Sub-Group-Header). WERKZEUGE ist eigene Top-Section ohne Parent.
   VERWALTUNG_MEIN: "Mein Profil",
-  VERWALTUNG_SETUP: "Setup",
+  WERKZEUGE: "WERKZEUGE",
 };
 
 /**
  * SLC-707 MT-6: Top-Section-Parent-Label fuer Sections die unter einem
  * gemeinsamen Top-Header gerendert werden. Sections ohne Parent rendern
  * direkt mit ihrem eigenen Label als Top-Header.
+ *
+ * SLC-822 (DEC-228): WERKZEUGE bekommt KEINEN Parent — eigene Top-Section.
  */
 export const SECTION_PARENT: Partial<Record<SidebarSection, string>> = {
   VERWALTUNG_MEIN: "VERWALTUNG",
-  VERWALTUNG_SETUP: "VERWALTUNG",
 };
 
 export const SECTION_ORDER: SidebarSection[] = [
@@ -77,7 +70,7 @@ export const SECTION_ORDER: SidebarSection[] = [
   "OPERATIV",
   "ARBEITSBEREICHE",
   "VERWALTUNG_MEIN",
-  "VERWALTUNG_SETUP",
+  "WERKZEUGE",
 ];
 
 export interface SidebarItem {
@@ -247,109 +240,28 @@ export const SIDEBAR_CONFIG: readonly SidebarItem[] = [
     visibleFor: ALL_ROLES,
   },
 
-  // VERWALTUNG_SETUP — managerial Tools, admin/teamlead-only.
+  // WERKZEUGE — operative Tools, admin/teamlead-only.
+  // SLC-822 (DEC-228): 11 Config-Items aus diesem Block entfernt (nur via
+  // /settings-Tile-Page erreichbar). 3 operative Tools bleiben hier.
   {
     href: "/handoffs",
     label: "Handoffs",
     icon: ArrowRightLeft,
-    section: "VERWALTUNG_SETUP",
+    section: "WERKZEUGE",
     visibleFor: ADMIN_TEAMLEAD,
   },
   {
     href: "/referrals",
     label: "Referrals",
     icon: Award,
-    section: "VERWALTUNG_SETUP",
-    visibleFor: ADMIN_TEAMLEAD,
-  },
-  {
-    href: "/settings/goals",
-    label: "Ziele",
-    icon: Target,
-    section: "VERWALTUNG_SETUP",
-    visibleFor: ADMIN_TEAMLEAD,
-  },
-  {
-    href: "/cadences",
-    label: "Automatisierung",
-    icon: Zap,
-    section: "VERWALTUNG_SETUP",
-    visibleFor: ADMIN_TEAMLEAD,
-  },
-  // SLC-711: managerial Settings-Sub-Pages.
-  // Admin-only (organisationsweite Tiefe): branding, payment-terms, pipelines,
-  // products (existing), compliance. Admin+Teamlead (team-operativ): automation,
-  // templates, campaigns. Permission-Matrix per DEC-196.
-  {
-    href: "/settings/branding",
-    label: "Branding",
-    icon: Palette,
-    section: "VERWALTUNG_SETUP",
-    visibleFor: ADMIN_ONLY,
-  },
-  {
-    href: "/settings/payment-terms",
-    label: "Zahlungsbedingungen",
-    icon: Receipt,
-    section: "VERWALTUNG_SETUP",
-    visibleFor: ADMIN_ONLY,
-  },
-  {
-    href: "/settings/pipelines",
-    label: "Pipelines & Stages",
-    icon: GitBranch,
-    section: "VERWALTUNG_SETUP",
-    visibleFor: ADMIN_ONLY,
-  },
-  {
-    href: "/settings/products",
-    label: "Produkte",
-    icon: Package,
-    section: "VERWALTUNG_SETUP",
-    visibleFor: ADMIN_ONLY,
-  },
-  {
-    href: "/settings/compliance",
-    label: "Einwilligungstexte",
-    icon: FileText,
-    section: "VERWALTUNG_SETUP",
-    visibleFor: ADMIN_ONLY,
-  },
-  {
-    href: "/settings/automation",
-    label: "Workflow-Automation",
-    icon: Zap,
-    section: "VERWALTUNG_SETUP",
-    visibleFor: ADMIN_TEAMLEAD,
-  },
-  // SLC-756 V7.5: Admin-Inspection-Log fuer NL-Workflow-Sculptor-Versuche
-  // (audit_log.action='automation_rule.sculpt_attempt'). Admin-only.
-  {
-    href: "/settings/workflow-automation/nl-history",
-    label: "NL-Sculptor-Audit",
-    icon: ScrollText,
-    section: "VERWALTUNG_SETUP",
-    visibleFor: ADMIN_ONLY,
-  },
-  {
-    href: "/settings/templates",
-    label: "E-Mail-Templates",
-    icon: Mail,
-    section: "VERWALTUNG_SETUP",
-    visibleFor: ADMIN_TEAMLEAD,
-  },
-  {
-    href: "/settings/campaigns",
-    label: "Kampagnen",
-    icon: Megaphone,
-    section: "VERWALTUNG_SETUP",
+    section: "WERKZEUGE",
     visibleFor: ADMIN_TEAMLEAD,
   },
   {
     href: "/audit-log",
     label: "Audit-Log",
     icon: Shield,
-    section: "VERWALTUNG_SETUP",
+    section: "WERKZEUGE",
     visibleFor: ADMIN_ONLY,
   },
 ];
@@ -396,16 +308,17 @@ export function groupBySection(
  * SLC-707 MT-6: Visual-Split mit Sub-Group-Headers.
  *
  * Rendert eine zweistufige Struktur:
- * - Top-Sections wie ANALYSE / TEAM / OPERATIV / ARBEITSBEREICHE: 1 Gruppe ohne
- *   Sub-Groups (`subGroups.length === 1`, subGroup hat `label = null`).
- * - VERWALTUNG: 1 Top-Gruppe (`parentLabel = "VERWALTUNG"`) mit bis zu 2 Sub-
- *   Groups (`Mein Profil`, `Setup`).
+ * - Top-Sections wie ANALYSE / TEAM / OPERATIV / ARBEITSBEREICHE / WERKZEUGE:
+ *   1 Gruppe ohne Sub-Groups (`subGroups.length === 1`, subGroup hat
+ *   `label = null`).
+ * - VERWALTUNG: 1 Top-Gruppe (`parentLabel = "VERWALTUNG"`) mit aktuell
+ *   einer Sub-Group (`Mein Profil`). Nach SLC-822 (DEC-228) ist die alte
+ *   `Setup`-Sub-Group zur eigenen Top-Section `WERKZEUGE` geworden.
  *
  * **Conditional Sub-Header (Muster 1, AC6):** Bei nur **einer** sichtbaren
- * Sub-Group fuer eine Rolle (Member-Fall: nur VERWALTUNG_MEIN) ist
- * `subGroup.label = null` — der Sub-Header wird nicht gerendert, Items
- * erscheinen direkt unter dem Top-Header. Bei ≥2 sichtbaren Sub-Groups
- * behalten alle Sub-Groups ihr Label.
+ * Sub-Group ist `subGroup.label = null` — der Sub-Header wird nicht
+ * gerendert, Items erscheinen direkt unter dem Top-Header. Bei ≥2 sichtbaren
+ * Sub-Groups behalten alle Sub-Groups ihr Label.
  */
 export interface SidebarSubGroup {
   /** Section-Key des ersten Sub-Group-Items (fuer React-keys). */

@@ -92,7 +92,7 @@
  *         Erwartung: changes JSONB = {"old_role": "teamlead", "new_role":
  *         "member"}, actor_id = Admin-User.
  *      d) Reload als Test-User → Sidebar reduziert sich auf Member-Sicht
- *         (keine ANALYSE, keine TEAM, keine VERWALTUNG_SETUP-Items).
+ *         (keine ANALYSE, keine TEAM, keine WERKZEUGE-Items).
  *
  *   5. TEAMLEAD-CROSS-TEAM-BLOCK-Smoke
  *

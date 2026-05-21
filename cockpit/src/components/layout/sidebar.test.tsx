@@ -33,22 +33,30 @@ describe("isItemActive — pure logic", () => {
 });
 
 describe("Sidebar — role-based render", () => {
-  it("admin sees Dashboard + Team-Cockpit (non-collapsed sections)", () => {
+  it("admin sees Dashboard + Team-Cockpit + WERKZEUGE-items (non-collapsed sections)", () => {
     render(<Sidebar role="admin" />);
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
     expect(screen.getByText("Team-Cockpit")).toBeInTheDocument();
     expect(screen.getByText("Team-Verwaltung")).toBeInTheDocument();
-    // VERWALTUNG section header rendered, items collapsed by default
+    // VERWALTUNG section header rendered, _MEIN items collapsed by default
     expect(screen.getByText("VERWALTUNG")).toBeInTheDocument();
-    expect(screen.queryByText("Audit-Log")).toBeNull(); // default collapsed
+    expect(screen.queryByText("Aufgaben")).toBeNull(); // VERWALTUNG default collapsed
+    // SLC-822 (DEC-228): WERKZEUGE ist eigene Top-Section, NICHT collapsible
+    // → Audit-Log + Handoffs sind fuer Admin direkt sichtbar
+    expect(screen.getByText("WERKZEUGE")).toBeInTheDocument();
+    expect(screen.getByText("Audit-Log")).toBeInTheDocument();
+    expect(screen.getByText("Handoffs")).toBeInTheDocument();
   });
 
-  it("teamlead sees TEAM-section but no Produkte/Audit-Log when expanded", () => {
+  it("teamlead sees TEAM-section + WERKZEUGE without Audit-Log (admin-only)", () => {
     render(<Sidebar role="teamlead" />);
     expect(screen.getByText("Team-Cockpit")).toBeInTheDocument();
-    // Items in collapsed VERWALTUNG are not in DOM regardless of role
+    // SLC-822: WERKZEUGE-Section ist eigene Top-Section (nicht collapsible)
+    expect(screen.getByText("WERKZEUGE")).toBeInTheDocument();
+    expect(screen.getByText("Handoffs")).toBeInTheDocument();
+    expect(screen.getByText("Referrals")).toBeInTheDocument();
+    // /audit-log ist admin-only → Teamlead sieht es nicht
     expect(screen.queryByText("Audit-Log")).toBeNull();
-    expect(screen.queryByText("Produkte")).toBeNull();
   });
 
   it("member sees no Dashboard / no Team / no Automatisierung / no Audit-Log", () => {
@@ -108,21 +116,29 @@ describe("Sidebar — role-based render", () => {
     expect(aside?.getAttribute("data-role")).toBe("member");
   });
 
-  it("when VERWALTUNG is expanded, admin sees Audit-Log but member does not see Handoffs", () => {
+  it("VERWALTUNG-Expand zeigt _MEIN-Items; WERKZEUGE bleibt eigene Top-Section (SLC-822)", () => {
+    // SLC-822 (DEC-228): Audit-Log + Handoffs + Referrals sind in WERKZEUGE
+    // (eigene Top-Section, nicht collapsible). VERWALTUNG enthaelt nur noch
+    // _MEIN-Items und ist weiterhin collapsible.
     const { unmount } = render(<Sidebar role="admin" />);
-    const adminVerwBtn = screen.getByRole("button", { name: /VERWALTUNG/i });
-    fireEvent.click(adminVerwBtn);
+    // WERKZEUGE-Items sind direkt sichtbar (kein Click noetig)
     expect(screen.getByText("Audit-Log")).toBeInTheDocument();
     expect(screen.getByText("Handoffs")).toBeInTheDocument();
+    // VERWALTUNG-Expand zeigt _MEIN-Items
+    const adminVerwBtn = screen.getByRole("button", { name: /VERWALTUNG/i });
+    fireEvent.click(adminVerwBtn);
+    expect(screen.getByText("Aufgaben")).toBeInTheDocument();
+    expect(screen.getByText("Settings")).toBeInTheDocument();
     unmount();
 
     render(<Sidebar role="member" />);
-    const memberVerwBtn = screen.getByRole("button", { name: /VERWALTUNG/i });
-    fireEvent.click(memberVerwBtn);
+    // Member sieht keine WERKZEUGE-Section
+    expect(screen.queryByText("WERKZEUGE")).toBeNull();
     expect(screen.queryByText("Audit-Log")).toBeNull();
     expect(screen.queryByText("Handoffs")).toBeNull();
-    expect(screen.queryByText("Produkte")).toBeNull();
-    // But member-allowed VERWALTUNG_MEIN items appear:
+    // VERWALTUNG-Expand zeigt nur _MEIN-Items fuer Member
+    const memberVerwBtn = screen.getByRole("button", { name: /VERWALTUNG/i });
+    fireEvent.click(memberVerwBtn);
     expect(screen.getByText("Aufgaben")).toBeInTheDocument();
     expect(screen.getByText("Settings")).toBeInTheDocument();
   });
