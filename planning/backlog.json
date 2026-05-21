@@ -1997,9 +1997,9 @@
       "title": "Theming-Sprint â€” Master (Tracker fuer alle Tranchen)",
       "type": "improvement",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "deferred",
       "version": null,
-      "description": "Aus RPT-338 V6.4 UI-Audit (UA-011 + UA-012 + UA-013). Style-Guide-V2-Drift systemisch: 73 arbitrary [#xxxxxx] Color-Klassen + 41 arbitrary Spacing + 64 arbitrary Gradient-Hex ueber 30 Files. **Sub-Items zur Sichtbarkeit:** BL-442 Phase A done (SLC-651, V6.5), BL-443 Phase B Tranche 1 done (SLC-652, V6.5). Naechste Tranche = BL-460 V6.7-Polish (4 V6.6-Files mit Hex-Hardcodes). **Update 2026-05-11**: Version auf null gesetzt (war faelschlich V6.6, hat V6.6-Cockpit-Counter blockiert). Master ist Cross-Version-Tracker ohne festen V-Slot, schliesst wenn alle Tranchen done sind.",
+      "description": "Aus RPT-338 V6.4 UI-Audit (UA-011 + UA-012 + UA-013). Style-Guide-V2-Drift systemisch. **Aktueller Stand 2026-05-21 (V8.1)**: 452 arbitrary Hex-Color-Klassen + 61 arbitrary Spacing ueber 88 Files. 84% der Treffer sind die zwei Strategaize-Blautoene (#4454b8 280x + #120774 102x). **Sub-Items done:** BL-442 Phase A Tokens-Setup (SLC-651, V6.5), BL-443 Phase B Tranche 1 Pipeline+Proposals (SLC-652, V6.5). **Status-Update 2026-05-21**: in_progress -> deferred. Begruendung: kein konkreter Trigger, kosmetisches Tech-Debt, App funktional. **Trigger-Bedingung fuer Re-Aktivierung**: (a) Strategaize-Brand-Refresh mit Farb-Aenderung, (b) Customer-Live-Vorbereitung mit visueller Politur, (c) Light/Dark-Mode-Support oder Tenant-Branding. **Aufwand-Schaetzung (V8.1-Stand)**: Option A nur Brand-Blautoene (84% der Treffer) ~4-6h Single-Slice. Option B inkl. Accent-Farben ~8-10h 2 Sessions. Option C vollstaendig inkl. Spacing ~12-15h 3 Sessions.",
       "createdAt": "2026-05-07"
     },
     {
