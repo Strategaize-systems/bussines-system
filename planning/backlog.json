@@ -2447,7 +2447,7 @@
       "title": "Rollen-Permission-Konsistenz fuer /settings/team Tile in Settings-System-Section",
       "type": "fix",
       "priority": "low",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.1",
       "description": "Settings-Tile 'Rollen-Verwaltung' ist aktuell ADMIN_ONLY (settings/page.tsx:187), Sidebar-Link 'Team-Verwaltung' ist ADMIN_TEAMLEAD (sidebar-config.ts:125) - gleiche URL /settings/team, verschiedene Sichtbarkeit. Loesung: Teamlead-Variante des Tiles ergaenzen mit eingeschraenkter Description 'Team-Mitglieder einsehen (read-only)' und visibleFor=ADMIN_TEAMLEAD, oder Permission Layer einheitlich auf ADMIN_TEAMLEAD setzen mit Page-eigener Action-Permission. Discovery 2026-05-20.",
       "createdAt": "2026-05-20"
