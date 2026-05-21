@@ -10,14 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V8.1 SLC-822 SIDEBAR-KONSOLIDIERUNG /frontend DONE Code-Side 2026-05-21 (Commit `05b9478` gepusht)**. `VERWALTUNG_SETUP` → `WERKZEUGE` Type-Refactor + 11 Config-Items entfernt + 3 Tools-Items (`/handoffs`, `/referrals`, `/audit-log`) auf `WERKZEUGE` umgestellt + 7 unused Lucide-Icons entfernt. Tests: 1035/1035 PASS (sidebar.test.tsx Z.43 pre-V8.1-Annahme korrigiert nach Audit-Log-Migration in eigene Top-Section). Build clean. URL-Stabilitaet via Build-Routing-Liste verifiziert. M-1 Counting-Fix vorher in 8 Files mit 18 Edits durchgezogen (Commit `b3e6f7a`). Naechster Schritt: `/qa` SLC-822 (Playwright-MCP-Live-Smoke auf business.strategaizetransition.com nach Coolify-Redeploy).
-- Current Phase: V8.1 Implementing. SLC-821 done. SLC-822 done code-side, /qa pending. SLC-823+SLC-824 planned.
+- Current Focus: **V8.1 SLC-822 SIDEBAR-KONSOLIDIERUNG LIVE & /qa PASS 2026-05-21 (Container `app-k9f5pn5upfq7etoefb5ukbcg-081708754094` 08:19 UTC, RPT-496)**. `VERWALTUNG_SETUP` → `WERKZEUGE` Type-Refactor + 11 Config-Items entfernt + 3 Tools-Items (`/handoffs`, `/referrals`, `/audit-log`) auf `WERKZEUGE` umgestellt. Live-Smoke alle 11 ACs PASS: Code-Audit AC1-AC3 + AC10/11 (1035/1035 Vitest), Live Desktop AC4 (22 Sidebar-Links, 0 von 11 entfernten Items), AC5 (3 WERKZEUGE-Items), AC6 (`/settings` in `VERWALTUNG_MEIN` unveraendert), AC7 (WERKZEUGE als eigene Top-Section unter VERWALTUNG), AC8 (alle 11 entfernten Direkt-URLs HTTP 200), AC9 (Mobile 375x667 Drawer rendert WERKZEUGE korrekt). Naechster Schritt: `/frontend` SLC-823 Teamlead-Tile-Sichtbarkeit (~10-15 Min).
+- Current Phase: V8.1 Implementing. SLC-821 done. SLC-822 done + LIVE-/qa PASS. SLC-823+SLC-824 planned.
 
 ## Immediate Next Steps
-1. **(Mandatory direkt)** `/qa` SLC-822 — Audit-basiert: Code-Diff-Verifikation, Test-Lauf (1035/1035 PASS), Playwright-MCP-Live-Smoke auf business.strategaizetransition.com nach Coolify-Redeploy (AC7 + AC9 Mobile). Erwartetes Output: RPT-496 oder RPT-497.
-2. **(Sequential nach SLC-822 /qa PASS)** `/frontend` SLC-823 Teamlead-Tile-Sichtbarkeit — `settings/page.tsx` 2 Zeilen. ~10-15 Min Code.
-4. **(Sequential nach SLC-823 /qa PASS)** `/backend` SLC-824 Teamlead-Edit-Erweiterung — Server-Actions + UI + 9 Vitest-Cases. ~2-2.5h Code.
-5. **(Nach allen 4 Slices)** Gesamt-/qa V8.1 + /final-check + /go-live + /deploy.
+1. **(Mandatory direkt)** `/frontend` SLC-823 Teamlead-Tile-Sichtbarkeit — `settings/page.tsx` 2 Zeilen, `ADMIN_ONLY` → `ADMIN_TEAMLEAD` (DEC-229). ~10-15 Min Code, ~15 Min /qa.
+2. **(Sequential nach SLC-823 /qa PASS)** `/backend` SLC-824 Teamlead-Edit-Erweiterung — `inviteMember`-Restriction auf `role='member'`, `deleteProfile`-Allow fuer Teamlead bei eigenem Team-Member mit V7-Hard-Lock-Reuse, UI-Anpassungen + 9 neue Vitest-Cases (DEC-230). ~2-2.5h Code.
+3. **(Nach allen 4 Slices)** Gesamt-/qa V8.1 + /final-check + /go-live + /deploy.
 2. **(Parallel laufend)** `/post-launch` V8 Burn-In-Beobachtungsphase ≥12h. Beobachten: Disk-Trend (stabil bei 82% nach systemd-timer-Test), Bedrock-Cost-Trend (+$0.05-0.10/Tag), Container-Restart-Check, audit_log fuer ki_loss_reason_suggested-Eintraege.
 3. **(Optional, 30 Sek)** Manual-User-Smoke fuer SLC-813 AC11 — Drag-Drop Deal auf "Verloren" mit Activity-History, Modal-Verify, audit_log-Verify mit cost_usd > 0. Skript in RPT-488 dokumentiert.
 3. **(Pre-Customer-Live, nicht zeitkritisch)** BL-480 KI-Provider-Anzeige im User-UI abstrahieren (Bedrock-Strings entfernen). Mini-Slice ~1-2h.

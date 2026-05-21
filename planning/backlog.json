@@ -2427,7 +2427,7 @@
       "title": "Settings/Sidebar Single-Source-of-Truth (Option A) — VERWALTUNG_SETUP zusammenklappen",
       "type": "improvement",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.1",
       "description": "Eliminiert 14-Item-Doppelung zwischen Sidebar VERWALTUNG_SETUP und Settings-Page-Tiles. Vorgehensweise: VERWALTUNG_SETUP-Sektion in sidebar-config.ts auf einen einzigen 'Settings'-Eintrag zusammenklappen (haeufig genutzte Items wie Pipelines + Kampagnen + Templates bleiben optional als 'Top-3' direkt erreichbar, Rest nur via /settings-Page). Settings-Page bleibt die Single-Source-of-Truth fuer Config. Audit-Log + Handoffs + Referrals bleiben separate Sidebar-Items (nicht 'Config', sondern 'Tools'). Discovery 2026-05-20.",
       "createdAt": "2026-05-20"
