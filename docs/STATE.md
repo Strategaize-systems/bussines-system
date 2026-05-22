@@ -9,17 +9,17 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: stable
-- Current Focus: **V8.2 DEPLOYED als REL-036 2026-05-22 (RPT-509)** — Image-Tag `fad6654` Container `app-k9f5pn5...-083236381348` healthy 1 Min+. Initial-Deploy `c2f1ae1` zeigte HTTP 307 Redirect auf `/login` (Middleware-Public-Whitelist-Bug), Hotfix `fad6654` cockpit/src/lib/supabase/middleware.ts publicPaths um `/datenschutz` + `/impressum` ergaenzt. Re-Deploy PASS. Live-HTTP-Smoke AC1+AC2+AC5+AC8+AC9+AC10+AC11 PASS. AC6+AC7 code-side+indirekt verifiziert (Browser-MCP-Konflikt). RELEASES.md REL-036 + roadmap V8.2 released + FEAT-821 deployed. **Naechster Schritt: Theme 2 `/user-guide` ODER `/post-launch` Burn-In V8.2 (~15 Min, niedrig-Prio).**
-- Current Phase: V8.2 Released + initial Live-Smoke PASS. Hotfix-Learning IMP-Kandidat fuer Dev-System (Middleware-Public-Whitelist-Check in /qa).
+- High-Level State: docs
+- Current Focus: **Theme 2a /user-guide DONE 2026-05-22 (RPT-510)** — 26 Files in `/deliverables/user-guide/`: 12 Feature-Guides + INDEX + 12 Voice-Over-Skripte + Voice-INDEX + Playwright screencaps.spec.ts (12 Lektionen + Bonus-Public-Pages). Alle Drafts, Pre-Production-Output. V8.2 ist deployed als REL-036 + Hotfix-Lehre IMP-736 im Dev-System. **Naechster Schritt: V8.3-Slice Hilfe-Section (`/help`-Route + Tile-Page + Markdown-Renderer-Reuse), ~3-4h.**
+- Current Phase: V8.2 Released + Theme 2a Skill-Output DONE. Pending: V8.3-Slice Implementation + Theme 3 Praesentationsvideo (manuell, spaeter).
 
 ## Immediate Next Steps
-1. **(Nachmittag, Theme 2a)** `/user-guide` Skill-Output (~30 Min) — Markdown-Guides pro Hauptfeature + Playwright-Screencap-Skripte + Voice-Over-Skripte. Foundation fuer V8.3-Slice Hilfe-Section.
-2. **(danach, Theme 2b)** V8.3-Slice Hilfe-Section (~3-4h) — `/help`-Route + Tile-Page + Sidebar-Eintrag.
-3. **(Optional, ~15 Min)** `/post-launch` V8.2 Burn-In nach ≥12h (niedrig-Prio, V8.2 ist additive UI-Aenderung, kein Schema-Migration → niedriges Risk-Profil).
-4. **(Optional, User-Action, ~10 Min)** Browser-Verify AC6 + AC7 (Footer-Sichtbarkeit auf logged-in /mein-tag + Back-Button-Flow). Code-side+Container-Healthy ist Risk-niedrig, aber Browser-Verify komplettiert /qa-Trail.
-5. **(User-Action, niedrig-Prio, asynchron)** Adress-/KvK-/BTW-Daten in Markdown-Files ergaenzen (`cockpit/src/content/legal/datenschutz.md` + `impressum.md`). Plus Coolify Auto-Deploy-Toggle pruefen (IMP-725).
-6. **(Spaeter)** Theme 3 Praesentations-/Werbevideo (~2h manuell, Marketing-Output, kein neuer App-Slice).
+1. **(Mandatory next, Theme 2b)** V8.3-Slice Hilfe-Section — `/slice-planning` ausfuehren fuer FEAT-823 `/help`-Route + Tile-Page (1 Tile pro Guide-Markdown) + Sidebar-Eintrag. Markdown-Renderer kann aus V8.2 reused werden. Aufwand ~3-4h Code-Side.
+2. **(Optional vorher, ~15 Min)** `/post-launch` V8.2 Burn-In nach ≥12h (V8.2 ist additive UI, kein Schema-Migration → niedrig-Prio).
+3. **(Optional, User-Action, ~10 Min)** Playwright-Capture-Run von `deliverables/user-guide/screencaps.spec.ts` — `npx playwright test` mit Test-Credentials. Liefert Screenshots + Videos fuer Voice-Over-Production.
+4. **(User-Action, niedrig-Prio, asynchron)** Adress-/KvK-/BTW-Daten in Markdown-Files ergaenzen. Plus Coolify Auto-Deploy-Toggle pruefen (IMP-725).
+5. **(Spaeter, Theme 3)** Praesentations-/Werbevideo (~2h manuell, Marketing-Output, kein neuer App-Slice). Wiederverwendung der Voice-Over-Voice + Screencap-Screens.
+6. **(Polish, vor Customer-Live)** User-Guide-Polish-Pass — Text-Refinement, Konsistenz-Check, Anwalts-Pruefung der Datenschutz-bezogenen Sections.
 2. **(Parallel laufend)** `/post-launch` V8 Burn-In-Beobachtungsphase ≥12h. Beobachten: Disk-Trend (stabil bei 82% nach systemd-timer-Test), Bedrock-Cost-Trend (+$0.05-0.10/Tag), Container-Restart-Check, audit_log fuer ki_loss_reason_suggested-Eintraege.
 3. **(Optional, 30 Sek)** Manual-User-Smoke fuer SLC-813 AC11 — Drag-Drop Deal auf "Verloren" mit Activity-History, Modal-Verify, audit_log-Verify mit cost_usd > 0. Skript in RPT-488 dokumentiert.
 3. **(Pre-Customer-Live, nicht zeitkritisch)** BL-480 KI-Provider-Anzeige im User-UI abstrahieren (Bedrock-Strings entfernen). Mini-Slice ~1-2h.
