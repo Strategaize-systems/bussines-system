@@ -9,15 +9,15 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: stable
-- Current Focus: **V8.3 DEPLOYED 2026-05-22 als REL-037 (Image-Tag `e2fac23`) + Phase 2 Live-Browser-Smoke PASS (RPT-515)** — Hilfe-Section LIVE + voll validiert. Phase 1 HTTP-Smoke 4/4 PASS + Phase 2 Playwright-MCP-Smoke **10/10 ACs visual verified**: 12 Tiles in 4 Sections mit Badges, Markdown-Render mit korrekten CSS-Werten (h1 30px/700, h2 24px/600, p 26px line-height, ul disc), 404-Pfad, Back-Link, Sidebar HILFE-Section sichtbar zwischen VERWALTUNG_MEIN und WERKZEUGE. V8.3 ist released-stable. **Optionale Naechste Schritte: /post-launch Burn-In nach ≥12h, Polish der Markdown-Content-Files pre-Customer-Live, oder neue Themen.**
-- Current Phase: V8.3 RELEASED + fully validated. Optional: Burn-In + Polish.
+- High-Level State: requirements
+- Current Focus: **V8.4 Customer-DSE Requirements DONE 2026-05-22 (RPT-516)** — FEAT-824 spec'd: Multi-Tenant-Ready Customer-Facing Datenschutzerklaerung (Editor + Public-Route + Consent-Form-Link + Mail-Footer-Auto-Insert). User-Entscheidungen: team_id-reuse fuer Tenant-Scope, "Tenant-Admin entscheidet pro Publish" als Versionierungs-Regel, /p/[tenant-slug]/datenschutz als URL-Schema, Mail-Footer-Auto-Insert in V1. 7 Open Questions fuer /architecture (vor allem: Versionierung-V1-vs-V2). V8.3 (Hilfe-Section) bleibt released-stable in Last Stable Version. **Naechster Schritt: `/architecture FEAT-824` — Open Questions klaeren, Schema-Decision, Slice-Aufteilung.**
+- Current Phase: V8.4 Requirements DONE. Pending: /architecture -> /slice-planning -> /backend + /frontend -> /qa -> /deploy.
 
 ## Immediate Next Steps
-1. **(Optional, ~15 Min)** `/post-launch` V8.3 + V8.2 Burn-In nach ≥12h (beide additive UI, kein Schema-Migration → niedrig-Prio).
-2. **(User-Action, niedrig-Prio, asynchron)** Adress-/KvK-/BTW-Daten in Markdown-Files ergaenzen. Plus Coolify Auto-Deploy-Toggle pruefen (IMP-725).
-3. **(Polish, vor Customer-Live)** User-Guide-Polish-Pass — Text-Refinement, Konsistenz-Check, Anwalts-Pruefung der Datenschutz-bezogenen Sections.
-4. **(Optional, Visual-Verifikation Teamlead+Member)** Browser-Walk fuer Teamlead + Member-Account um Sidebar HILFE-Sichtbarkeit visuell zu bestaetigen (Vitest hat es bereits deterministisch verifiziert).
+1. **(Mandatory next)** `/architecture FEAT-824` — 7 Open Questions klaeren, primaere Entscheidung: Versionierung-V1-vs-V2 (KISS-Empfehlung Single-Row), Schema-Migration-Plan fuer `legal_documents` + `teams.slug`-Spalte. ~30-45 Min.
+2. **(After /architecture)** `/slice-planning V8.4` — ~6-10 Slices skizzieren. Empfohlene Reihenfolge: SLC-XXX Migration -> Slug-Generator -> Default-Seed -> Editor -> Public-Route -> Consent-Form-Patch -> Mail-Composer-Patch -> Tests.
+3. **(Optional, niedrig-Prio)** `/post-launch` V8.3 + V8.2 Burn-In nach ≥12h.
+4. **(User-Action, asynchron)** Adress-/KvK-/BTW-Daten in V8.2-Markdown-Files ergaenzen (kommt im V8.4-Default-Seed wieder hoch).
 5. **(Spaeter, Theme 3)** Praesentations-/Werbevideo (~2h manuell, Marketing-Output).
 2. **(Optional vorher, ~15 Min)** `/post-launch` V8.2 Burn-In nach ≥12h (V8.2 ist additive UI, kein Schema-Migration → niedrig-Prio).
 3. **(Optional, User-Action, ~10 Min)** Playwright-Capture-Run von `deliverables/user-guide/screencaps.spec.ts` — `npx playwright test` mit Test-Credentials. Liefert Screenshots + Videos fuer Voice-Over-Production.

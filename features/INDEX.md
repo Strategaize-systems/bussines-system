@@ -265,6 +265,12 @@
 |----|---------|--------|------|---------|
 | FEAT-811 | Solopreneur-Mode + Sidebar-Konsolidierung + Rollen-Permission-Konsistenz (BL-482 + BL-483 + BL-484 + BL-485) | deployed | [Spec](FEAT-811-v81-solopreneur-sidebar-permission.md) | 2026-05-20 |
 
+## V8.4 Features (Customer-Facing DSE — Requirements done 2026-05-22)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-824 | Customer-Facing Datenschutzerklaerung (Multi-Tenant-Ready, Public-Route + Editor + Consent-Form-Link + Mail-Footer, BL-488) | planned | [Spec](FEAT-824-customer-dse.md) | 2026-05-22 |
+
 ## V8.3 Features (Hilfe-Section — RELEASED 2026-05-22 als REL-037)
 
 | ID | Feature | Status | Spec | Created |
