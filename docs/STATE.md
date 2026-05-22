@@ -10,14 +10,15 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: stable
-- Current Focus: **V8.3 DEPLOYED 2026-05-22 als REL-037 (Image-Tag `e2fac23`)** — Hilfe-Section LIVE auf `business.strategaizetransition.com`. Live HTTP-Smoke 4/4 PASS: `/help` + `/help/[slug]` + `/help/unknown` alle HTTP 307 → `/login` (Auth-Wand wirkt, Routes existieren), `/login` HTTP 200. Phase 1 Code-Side: 10/10 ACs PASS, Vitest 1079/1079, Lint 142e/57w EXACT V8.1-Baseline, 0 Blocker. **Naechster Schritt: Phase 2 Live-Browser-Smoke post-Login (User-Action oder Playwright-MCP) — `/help` Tile-Page-Rendering, `/help/mein-tag` Markdown-Style, `/help/unknown` 404 nach Login, Sidebar HILFE-Section visuell sichtbar in 3 Rollen.**
-- Current Phase: V8.3 RELEASED. Pending: Phase 2 Browser-Smoke + Burn-In-Beobachtung ≥12h.
+- Current Focus: **V8.3 DEPLOYED 2026-05-22 als REL-037 (Image-Tag `e2fac23`) + Phase 2 Live-Browser-Smoke PASS (RPT-515)** — Hilfe-Section LIVE + voll validiert. Phase 1 HTTP-Smoke 4/4 PASS + Phase 2 Playwright-MCP-Smoke **10/10 ACs visual verified**: 12 Tiles in 4 Sections mit Badges, Markdown-Render mit korrekten CSS-Werten (h1 30px/700, h2 24px/600, p 26px line-height, ul disc), 404-Pfad, Back-Link, Sidebar HILFE-Section sichtbar zwischen VERWALTUNG_MEIN und WERKZEUGE. V8.3 ist released-stable. **Optionale Naechste Schritte: /post-launch Burn-In nach ≥12h, Polish der Markdown-Content-Files pre-Customer-Live, oder neue Themen.**
+- Current Phase: V8.3 RELEASED + fully validated. Optional: Burn-In + Polish.
 
 ## Immediate Next Steps
-1. **(Optional, User-Action, ~5 Min)** Phase 2 Live-Browser-Smoke auf `business.strategaizetransition.com/help` post-Login. Rollen-Walk: admin → /help (12 Tiles?), Klick mein-tag → /help/mein-tag (Markdown-Render?), URL-Edit /help/unknown (404?), Sidebar HILFE-Section sichtbar zwischen "Mein Profil" und WERKZEUGE? Optional via Playwright-MCP-Skript.
-2. **(Optional, ~15 Min)** `/post-launch` V8.3 + V8.2 Burn-In nach ≥12h (beide additive UI, kein Schema-Migration → niedrig-Prio).
-3. **(User-Action, niedrig-Prio, asynchron)** Adress-/KvK-/BTW-Daten in Markdown-Files ergaenzen. Plus Coolify Auto-Deploy-Toggle pruefen (IMP-725).
-4. **(Polish, vor Customer-Live)** User-Guide-Polish-Pass — Text-Refinement, Konsistenz-Check, Anwalts-Pruefung der Datenschutz-bezogenen Sections.
+1. **(Optional, ~15 Min)** `/post-launch` V8.3 + V8.2 Burn-In nach ≥12h (beide additive UI, kein Schema-Migration → niedrig-Prio).
+2. **(User-Action, niedrig-Prio, asynchron)** Adress-/KvK-/BTW-Daten in Markdown-Files ergaenzen. Plus Coolify Auto-Deploy-Toggle pruefen (IMP-725).
+3. **(Polish, vor Customer-Live)** User-Guide-Polish-Pass — Text-Refinement, Konsistenz-Check, Anwalts-Pruefung der Datenschutz-bezogenen Sections.
+4. **(Optional, Visual-Verifikation Teamlead+Member)** Browser-Walk fuer Teamlead + Member-Account um Sidebar HILFE-Sichtbarkeit visuell zu bestaetigen (Vitest hat es bereits deterministisch verifiziert).
+5. **(Spaeter, Theme 3)** Praesentations-/Werbevideo (~2h manuell, Marketing-Output).
 2. **(Optional vorher, ~15 Min)** `/post-launch` V8.2 Burn-In nach ≥12h (V8.2 ist additive UI, kein Schema-Migration → niedrig-Prio).
 3. **(Optional, User-Action, ~10 Min)** Playwright-Capture-Run von `deliverables/user-guide/screencaps.spec.ts` — `npx playwright test` mit Test-Credentials. Liefert Screenshots + Videos fuer Voice-Over-Production.
 4. **(User-Action, niedrig-Prio, asynchron)** Adress-/KvK-/BTW-Daten in Markdown-Files ergaenzen. Plus Coolify Auto-Deploy-Toggle pruefen (IMP-725).
