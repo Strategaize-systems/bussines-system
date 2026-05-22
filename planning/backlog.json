@@ -2467,7 +2467,7 @@
       "title": "V8.3 Hilfe-Section — Authenticated /help-Route + Tile-Page + Detail-Pages + Sidebar HILFE-Section",
       "type": "feature",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.3",
       "description": "Theme 2b nach /user-guide-Output (RPT-510). Authenticated /help-Route mit Tile-Layout fuer 12 Feature-Guides (4 Sections analog INDEX.md aus /deliverables/user-guide/: Erste Schritte / Verwaltung / KI-Werkzeuge / Spezial-Themen), /help/[slug]-Detail-Pages mit Markdown-Rendering (Reuse renderLegalMarkdown aus V8.2), eigene .help-content-CSS-Schicht in globals.css, eigene Sidebar Top-Section HILFE zwischen VERWALTUNG_MEIN und WERKZEUGE. SLC-826 mit 4 MTs (Catalog + Content-Files / Tile-Page / Detail-Page + CSS / Sidebar). KEINE Schema-Migration, KEINE neuen DECs. Aufwand ~3-4h Code-Side. User-Entscheidungen: (1) Authenticated statt Public, (2) eigene Top-Section HILFE, (3) eigene .help-content-CSS-Schicht statt Tailwind-Typography-Plugin.",
       "createdAt": "2026-05-22"

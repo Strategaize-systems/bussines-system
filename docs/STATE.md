@@ -9,14 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: implementing
-- Current Focus: **V8.3 SLC-826 /frontend Code-Side DONE 2026-05-22 (RPT-512)** — Hilfe-Section vollstaendig implementiert auf Worktree-Branch `slc-826-help-section` (4 MTs atomic-committed). Verify: Vitest 1079/1079 PASS (+20 vs V8.2 Baseline 1059), Lint 142e/57w EXACT V8.1-Baseline, Build PASS im main-Repo via detached-HEAD-Checkout. **Naechster Schritt: `/qa` Gesamt-Slice-QA mit Live-Smoke (3 Rollen + Detail-Page + 404 + Sidebar).**
-- Current Phase: V8.3 /frontend Code-Side DONE. Pending: /qa → Master-Merge → /deploy als V8.3 REL-037.
+- High-Level State: deploy-pending
+- Current Focus: **V8.3 SLC-826 /qa PASS Phase 1 + Master-Merge DONE 2026-05-22 (RPT-513 + main HEAD `ca6866f`)** — Hilfe-Section vollstaendig implementiert, getestet und auf main gemerged. 10/10 ACs erfuellt, 0 Blocker, 0 High, 2 Low (Build-Workaround Windows-Junction + 8 pre-existing TSC-Errors auf unrelated Test-Files). Vitest 1079/1079 PASS, Lint 142e/57w EXACT V8.1-Baseline. **Naechster Schritt: `/deploy` V8.3 als REL-037 via Coolify-Redeploy main HEAD, anschliessend Phase 2 Live-Browser-Smoke auf `business.strategaizetransition.com/help`.**
+- Current Phase: V8.3 Code-Side DONE, /qa PASS, Master-Merge DONE. Pending: /deploy als REL-037 + Phase 2 Live-Smoke.
 
 ## Immediate Next Steps
-1. **(Mandatory next)** `/qa SLC-826` als Gesamt-Slice-QA. Browser-Smoke /help (Tile-Page) + /help/[slug] (Detail-Page) + /help/unknown (404) + Sidebar HILFE-Section in 3 Rollen. Bei PASS: User-Approval fuer Master-Merge.
-2. **(After /qa PASS)** Master-Merge des Branch `slc-826-help-section` in main, Push main.
-3. **(After Master-Merge)** `/deploy` V8.3 als REL-037 via Coolify-Redeploy main HEAD.
+1. **(Mandatory next)** `/deploy SLC-826` V8.3 als REL-037 via Coolify-Redeploy main HEAD `ca6866f`. KEINE Schema-Migration. Coolify-Build-Container nicht von Worktree-Junction-Limitation betroffen.
+2. **(After /deploy)** Phase 2 Live-Browser-Smoke auf `business.strategaizetransition.com/help` via Playwright-MCP — 3 Rollen + Tile-Page + Detail-Page + 404-Pfad + Sidebar HILFE-Sichtbarkeit.
+3. **(After Phase 2 PASS)** Burn-In-Beobachtungsphase + ggf. /post-launch nach ≥12h.
 2. **(Optional vorher, ~15 Min)** `/post-launch` V8.2 Burn-In nach ≥12h (V8.2 ist additive UI, kein Schema-Migration → niedrig-Prio).
 3. **(Optional, User-Action, ~10 Min)** Playwright-Capture-Run von `deliverables/user-guide/screencaps.spec.ts` — `npx playwright test` mit Test-Credentials. Liefert Screenshots + Videos fuer Voice-Over-Production.
 4. **(User-Action, niedrig-Prio, asynchron)** Adress-/KvK-/BTW-Daten in Markdown-Files ergaenzen. Plus Coolify Auto-Deploy-Toggle pruefen (IMP-725).

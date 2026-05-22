@@ -367,11 +367,11 @@ V8.1 = 4 Sub-Slices fuer FEAT-811. Reihenfolge: SLC-821 → SLC-822 → SLC-823 
 | SLC-823 | [Teamlead-Tile-Sichtbarkeit in /settings](SLC-823-teamlead-tile-sichtbarkeit.md) | FEAT-811 / BL-484 | deployed | Low | 2026-05-20 |
 | SLC-824 | [Teamlead-Edit-Erweiterung: Invite-Restriction + Member-Delete-Allow](SLC-824-teamlead-edit-erweiterung.md) | FEAT-811 / BL-485 | deployed | High | 2026-05-20 |
 
-## V8.3 Slices (Hilfe-Section — /frontend code-side done 2026-05-22)
+## V8.3 Slices (Hilfe-Section — /qa PASS + Master-Merge done 2026-05-22)
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-826 | [Hilfe-Section (Authenticated /help)](SLC-826-help-section.md) | FEAT-823 / BL-487 | in_progress | High | 2026-05-22 |
+| SLC-826 | [Hilfe-Section (Authenticated /help)](SLC-826-help-section.md) | FEAT-823 / BL-487 | done | High | 2026-05-22 |
 
 ## V8.2 Slices (DSGVO-Public Routen — Slice-Planning done 2026-05-22)
 
