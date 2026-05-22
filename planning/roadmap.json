@@ -234,7 +234,7 @@
     {
       "id": "v8-2",
       "name": "V8.2",
-      "status": "active",
+      "status": "released",
       "summary": "DSGVO-Public Foundation: 2 Public-Routes /datenschutz + /impressum mit Markdown-Renderer + LegalFooter-Component. Voraussetzung fuer Aussen-Sichtbarkeit. Anwaltspruefung Pre-Customer-Live.",
       "order": 34
     },
