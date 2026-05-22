@@ -9,16 +9,17 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: stable
-- Current Focus: **V8.1 STABLE nach Burn-In 15h PASS 2026-05-22 (RPT-504)** — Container RestartCount=0, Disk 83% (Plan-Match 82-83%), Stack 15/16 healthy (1 pre-existing supabase-studio unhealthy), 0 errors/exceptions in App-Logs, 181 saubere ai_signal_extract_run Cron-Runs, 0 Bedrock-Cost-Drift (kein User-LLM-Touch in 15h). Verdict STABLE, keine Hotfix-Pflicht. **Naechste 3 Themen vom User vorgegeben (DSGVO + Hilfe + Praesentationsvideo). Naechster Schritt: `/compliance` (Theme 1a Skill-Output).**
-- Current Phase: V8.1 Released + Burn-In PASS. Pending: 3 neue Themen — Theme 1 DSGVO+Impressum (heute), Theme 2 Hilfe+Onboarding-Videos (heute/morgen), Theme 3 Praesentationsvideo (spaeter manuell).
+- High-Level State: slice-planning
+- Current Focus: **V8.2 Slice-Planning DONE 2026-05-22 (RPT-506)** — Theme 1 DSGVO ist Code-Side im Anlauf. /post-launch V8.1 PASS (RPT-504), /compliance Theme 1a DONE (RPT-505 COMPLIANCE.md V8.1-Stand + 2 Public-Page-Drafts in /deliverables/). Slice SLC-825 mit 4 MTs angelegt (Markdown-Renderer-Helper + Content-Files + 2 Public-Routes + Footer). **Naechster Schritt: `/frontend` SLC-825 (~2-3h Implementation).**
+- Current Phase: V8.2 Theme 1 DSGVO-Public — Slice-Planning done, Implementation pending. V8.1 ist released-stable im Hintergrund.
 
 ## Immediate Next Steps
-1. **(Mandatory jetzt)** `/compliance` Skill-Output (Theme 1a, ~15 Min) — COMPLIANCE.md auf V8.1-Stand bringen (V7.5/V7.6/V8/V8.1-Sections nachtragen) + Entwurf Datenschutz-Erklaerung + Entwurf Impressum + DSGVO-Datenfluss-Liste (Bedrock-Frankfurt, Whisper, Postmark, Hetzner, Coolify, Jitsi).
-2. **(danach)** `/slice-planning` V8.2 "DSGVO-Public" + `/frontend` Implementation (Theme 1b, ~2-3h) — `/datenschutz`-Route + `/impressum`-Route + Footer-Component + ggf. Cookie-Banner.
-3. **(Nachmittag)** `/user-guide` Skill-Output (Theme 2a, ~30 Min) — Markdown-Guides pro Hauptfeature + Playwright-Screencap-Skripte + Voice-Over-Skripte.
-4. **(spaeter)** V8.3-Slice Hilfe-Section (Theme 2b, ~3-4h) — `/help`-Route + Tile-Page + Sidebar-Eintrag.
-5. **(User-Action, niedrige Prio)** Coolify-App-Resource → Settings → Source → "Automatic Deployments" Toggle pruefen. Entscheidung dokumentieren in Memory `feedback_manual_deploy.md`. Hintergrund: IMP-725.
+1. **(Mandatory jetzt)** `/frontend` SLC-825 DSGVO-Public Implementation (~2-3h) — 4 MTs: Markdown-Renderer-Helper (`remark@15+remark-html@16`) + Content-Files in `cockpit/src/content/legal/` + 2 Public-Routes `/datenschutz` + `/impressum` + LegalFooter-Component in 3 Layouts. Markdown-Drafts liegen in `/deliverables/` (RPT-505).
+2. **(direkt nach SLC-825 /frontend)** `/qa` SLC-825 (per mandatory-completion-report Pflicht nach /frontend).
+3. **(danach)** `/deploy` SLC-825 + V8.2 als REL-036 (Master-Merge + Auto-Deploy oder Manual-Redeploy per `feedback_manual_deploy`).
+4. **(Nachmittag)** `/user-guide` Skill-Output (Theme 2a, ~30 Min) — Markdown-Guides pro Hauptfeature + Playwright-Screencap-Skripte + Voice-Over-Skripte.
+5. **(spaeter)** V8.3-Slice Hilfe-Section (Theme 2b, ~3-4h) — `/help`-Route + Tile-Page + Sidebar-Eintrag.
+6. **(User-Action, niedrig-Prio, asynchron)** Adress-/KvK-/BTW-Daten in Markdown-Files ergaenzen (TODO-Marker in `cockpit/src/content/legal/datenschutz.md` + `impressum.md`). Plus Coolify Auto-Deploy-Toggle pruefen (IMP-725).
 2. **(Parallel laufend)** `/post-launch` V8 Burn-In-Beobachtungsphase ≥12h. Beobachten: Disk-Trend (stabil bei 82% nach systemd-timer-Test), Bedrock-Cost-Trend (+$0.05-0.10/Tag), Container-Restart-Check, audit_log fuer ki_loss_reason_suggested-Eintraege.
 3. **(Optional, 30 Sek)** Manual-User-Smoke fuer SLC-813 AC11 — Drag-Drop Deal auf "Verloren" mit Activity-History, Modal-Verify, audit_log-Verify mit cost_usd > 0. Skript in RPT-488 dokumentiert.
 3. **(Pre-Customer-Live, nicht zeitkritisch)** BL-480 KI-Provider-Anzeige im User-UI abstrahieren (Bedrock-Strings entfernen). Mini-Slice ~1-2h.

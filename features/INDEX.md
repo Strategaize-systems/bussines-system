@@ -265,6 +265,12 @@
 |----|---------|--------|------|---------|
 | FEAT-811 | Solopreneur-Mode + Sidebar-Konsolidierung + Rollen-Permission-Konsistenz (BL-482 + BL-483 + BL-484 + BL-485) | deployed | [Spec](FEAT-811-v81-solopreneur-sidebar-permission.md) | 2026-05-20 |
 
+## V8.2 Features (DSGVO-Public Foundation — slice-planning done 2026-05-22)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-821 | DSGVO-Public-Foundation (Datenschutz + Impressum + Footer, BL-486) | planned | — | 2026-05-22 |
+
 ## V6 Features (Zielsetzung + Performance-Tracking — released)
 
 | ID | Feature | Status | Spec | Created |

@@ -2451,6 +2451,16 @@
       "version": "V8.1",
       "description": "Settings-Tile 'Rollen-Verwaltung' ist aktuell ADMIN_ONLY (settings/page.tsx:187), Sidebar-Link 'Team-Verwaltung' ist ADMIN_TEAMLEAD (sidebar-config.ts:125) - gleiche URL /settings/team, verschiedene Sichtbarkeit. Loesung: Teamlead-Variante des Tiles ergaenzen mit eingeschraenkter Description 'Team-Mitglieder einsehen (read-only)' und visibleFor=ADMIN_TEAMLEAD, oder Permission Layer einheitlich auf ADMIN_TEAMLEAD setzen mit Page-eigener Action-Permission. Discovery 2026-05-20.",
       "createdAt": "2026-05-20"
+    },
+    {
+      "id": "BL-486",
+      "title": "DSGVO-Public Routen (/datenschutz + /impressum + Footer)",
+      "type": "feature",
+      "priority": "high",
+      "status": "open",
+      "version": "V8.2",
+      "description": "Public-Pages fuer Datenschutz und Impressum mit Markdown-Renderer (remark@15+remark-html@16 per Strategaize-Standard), LegalFooter-Component in 3 Layouts integriert. Drafts liegen in /deliverables/ (RPT-505 /compliance Theme 1a). Voraussetzung fuer Aussen-Sichtbarkeit. Pre-Customer-Live-Anwaltspruefung deferred.",
+      "createdAt": "2026-05-22"
     }
   ]
 }
