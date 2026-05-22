@@ -241,8 +241,8 @@
     {
       "id": "v8-3",
       "name": "V8.3",
-      "status": "active",
-      "summary": "Hilfe-Section: Authenticated /help-Route mit Tile-Page (12 Feature-Guides) + /help/[slug] Detail-Pages mit Markdown-Rendering (Reuse renderLegalMarkdown aus V8.2) + eigene Sidebar Top-Section HILFE. Foundation Theme 2b nach /user-guide-Output (RPT-510). 1 Slice SLC-826 mit 4 MTs. KEINE Schema-Migration, KEINE neuen DECs.",
+      "status": "released",
+      "summary": "Hilfe-Section RELEASED 2026-05-22 als REL-037 (Image-Tag e2fac23). Authenticated /help-Route mit Tile-Page (12 Feature-Guides in 4 Sections) + /help/[slug] Detail-Pages mit Markdown-Rendering (Reuse renderLegalMarkdown aus V8.2) + eigene Sidebar Top-Section HILFE zwischen VERWALTUNG_MEIN und WERKZEUGE. 1 Slice SLC-826 mit 4 MTs atomic-committed. Vitest 1079/1079 PASS (+20). Lint 142e/57w EXACT V8.1-Baseline. KEINE Schema-Migration, KEINE neuen DECs. Live HTTP-Smoke: 3 /help-Pfade auf 307 → /login (Auth-Wand wirkt), /login auf 200. Phase 2 Browser-Smoke post-Login optional via User oder Playwright-MCP.",
       "order": 35
     },
     {
