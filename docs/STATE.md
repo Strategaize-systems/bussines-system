@@ -9,17 +9,17 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: slice-planning
-- Current Focus: **V8.2 Slice-Planning DONE 2026-05-22 (RPT-506)** — Theme 1 DSGVO ist Code-Side im Anlauf. /post-launch V8.1 PASS (RPT-504), /compliance Theme 1a DONE (RPT-505 COMPLIANCE.md V8.1-Stand + 2 Public-Page-Drafts in /deliverables/). Slice SLC-825 mit 4 MTs angelegt (Markdown-Renderer-Helper + Content-Files + 2 Public-Routes + Footer). **Naechster Schritt: `/frontend` SLC-825 (~2-3h Implementation).**
-- Current Phase: V8.2 Theme 1 DSGVO-Public — Slice-Planning done, Implementation pending. V8.1 ist released-stable im Hintergrund.
+- High-Level State: qa
+- Current Focus: **V8.2 SLC-825 /qa PASS 2026-05-22 (RPT-508)** — Branch `slc-825-dsgvo-public` 4 atomic commits. Vitest 1059/1059 (V8.1-Baseline 1054 + 5 neue). Lint 142e/57w EXACT V8.1-Baseline (V8.2-Files clean). Build 67/67 Pages, `/datenschutz` + `/impressum` als ○ Static prerendered. Stub-Scan 0 Treffer. AC1-AC11: 7/11 statisch PASS, 4/11 DEFERRED-LIVE bis Master-Merge + Deploy. **Naechster Schritt: Master-Merge → `/deploy` als V8.2 REL-036.**
+- Current Phase: V8.2 Theme 1 DSGVO-Public — /qa PASS, Master-Merge + Deploy ausstehend.
 
 ## Immediate Next Steps
-1. **(Mandatory jetzt)** `/frontend` SLC-825 DSGVO-Public Implementation (~2-3h) — 4 MTs: Markdown-Renderer-Helper (`remark@15+remark-html@16`) + Content-Files in `cockpit/src/content/legal/` + 2 Public-Routes `/datenschutz` + `/impressum` + LegalFooter-Component in 3 Layouts. Markdown-Drafts liegen in `/deliverables/` (RPT-505).
-2. **(direkt nach SLC-825 /frontend)** `/qa` SLC-825 (per mandatory-completion-report Pflicht nach /frontend).
-3. **(danach)** `/deploy` SLC-825 + V8.2 als REL-036 (Master-Merge + Auto-Deploy oder Manual-Redeploy per `feedback_manual_deploy`).
+1. **(Mandatory jetzt)** Master-Merge `slc-825-dsgvo-public` → `main` (4 commits, /qa PASS RPT-508). Per `feedback_slice_merge_at_end`: Merge erst nach Gesamt-/qa. Empfohlen `git checkout main && git merge --ff-only slc-825-dsgvo-public && git push origin main`.
+2. **(direkt nach Merge)** `/deploy` SLC-825 + V8.2 als REL-036 (Coolify-Auto-Deploy auf main-Push, oder Manual-Redeploy per `feedback_manual_deploy`).
+3. **(nach Deploy)** Live-Smoke via chrome-devtools MCP — 4 DEFERRED-LIVE-ACs aus RPT-508 abhaken: AC1 `/datenschutz` HTTP 200, AC2 `/impressum` HTTP 200, AC5+AC6 Footer-Sichtbarkeit auf /login + logged-in App, AC7 Browser-Back-Button ohne Re-Login.
 4. **(Nachmittag)** `/user-guide` Skill-Output (Theme 2a, ~30 Min) — Markdown-Guides pro Hauptfeature + Playwright-Screencap-Skripte + Voice-Over-Skripte.
 5. **(spaeter)** V8.3-Slice Hilfe-Section (Theme 2b, ~3-4h) — `/help`-Route + Tile-Page + Sidebar-Eintrag.
-6. **(User-Action, niedrig-Prio, asynchron)** Adress-/KvK-/BTW-Daten in Markdown-Files ergaenzen (TODO-Marker in `cockpit/src/content/legal/datenschutz.md` + `impressum.md`). Plus Coolify Auto-Deploy-Toggle pruefen (IMP-725).
+6. **(User-Action, niedrig-Prio, asynchron)** Adress-/KvK-/BTW-Daten in Markdown-Files ergaenzen (`cockpit/src/content/legal/datenschutz.md` + `impressum.md`). Plus Coolify Auto-Deploy-Toggle pruefen (IMP-725).
 2. **(Parallel laufend)** `/post-launch` V8 Burn-In-Beobachtungsphase ≥12h. Beobachten: Disk-Trend (stabil bei 82% nach systemd-timer-Test), Bedrock-Cost-Trend (+$0.05-0.10/Tag), Container-Restart-Check, audit_log fuer ki_loss_reason_suggested-Eintraege.
 3. **(Optional, 30 Sek)** Manual-User-Smoke fuer SLC-813 AC11 — Drag-Drop Deal auf "Verloren" mit Activity-History, Modal-Verify, audit_log-Verify mit cost_usd > 0. Skript in RPT-488 dokumentiert.
 3. **(Pre-Customer-Live, nicht zeitkritisch)** BL-480 KI-Provider-Anzeige im User-UI abstrahieren (Bedrock-Strings entfernen). Mini-Slice ~1-2h.

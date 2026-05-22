@@ -373,4 +373,4 @@ V8.2 = 1 Slice fuer FEAT-821 DSGVO-Public-Foundation. ~2-3h Code-Side, 4 MTs. Pu
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-825 | [DSGVO-Public Routen (Datenschutz + Impressum + Footer)](SLC-825-dsgvo-public.md) | FEAT-821 / BL-486 | planned | High | 2026-05-22 |
+| SLC-825 | [DSGVO-Public Routen (Datenschutz + Impressum + Footer)](SLC-825-dsgvo-public.md) | FEAT-821 / BL-486 | done | High | 2026-05-22 |

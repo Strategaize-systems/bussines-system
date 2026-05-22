@@ -2457,7 +2457,7 @@
       "title": "DSGVO-Public Routen (/datenschutz + /impressum + Footer)",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V8.2",
       "description": "Public-Pages fuer Datenschutz und Impressum mit Markdown-Renderer (remark@15+remark-html@16 per Strategaize-Standard), LegalFooter-Component in 3 Layouts integriert. Drafts liegen in /deliverables/ (RPT-505 /compliance Theme 1a). Voraussetzung fuer Aussen-Sichtbarkeit. Pre-Customer-Live-Anwaltspruefung deferred.",
       "createdAt": "2026-05-22"

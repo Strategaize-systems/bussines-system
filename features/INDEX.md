@@ -269,7 +269,7 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-821 | DSGVO-Public-Foundation (Datenschutz + Impressum + Footer, BL-486) | planned | — | 2026-05-22 |
+| FEAT-821 | DSGVO-Public-Foundation (Datenschutz + Impressum + Footer, BL-486) | done | — | 2026-05-22 |
 
 ## V6 Features (Zielsetzung + Performance-Tracking — released)
 
