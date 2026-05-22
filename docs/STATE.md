@@ -9,12 +9,14 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: docs
-- Current Focus: **Theme 2a /user-guide DONE 2026-05-22 (RPT-510)** — 26 Files in `/deliverables/user-guide/`: 12 Feature-Guides + INDEX + 12 Voice-Over-Skripte + Voice-INDEX + Playwright screencaps.spec.ts (12 Lektionen + Bonus-Public-Pages). Alle Drafts, Pre-Production-Output. V8.2 ist deployed als REL-036 + Hotfix-Lehre IMP-736 im Dev-System. **Naechster Schritt: V8.3-Slice Hilfe-Section (`/help`-Route + Tile-Page + Markdown-Renderer-Reuse), ~3-4h.**
-- Current Phase: V8.2 Released + Theme 2a Skill-Output DONE. Pending: V8.3-Slice Implementation + Theme 3 Praesentationsvideo (manuell, spaeter).
+- High-Level State: slice-planning
+- Current Focus: **V8.3 SLC-826 Slice-Planning DONE 2026-05-22 (RPT-511)** — Hilfe-Section: Authenticated `/help`-Route + Tile-Page (12 Feature-Guides in 4 Sections) + `/help/[slug]` Detail-Pages mit Markdown-Rendering (Reuse `renderLegalMarkdown` aus V8.2) + eigene `.help-content`-CSS-Schicht + eigene Sidebar Top-Section `HILFE`. 1 Slice SLC-826 mit 4 MTs. KEINE Schema-Migration, KEINE neuen DECs. Aufwand ~3-4h Code-Side. **Naechster Schritt: `/frontend SLC-826` mit Worktree-Isolation (Branch `slc-826-help-section`).**
+- Current Phase: V8.3 Slice-Planning DONE. Implementation pending: /frontend SLC-826 → /qa → /deploy als V8.3 REL-037.
 
 ## Immediate Next Steps
-1. **(Mandatory next, Theme 2b)** V8.3-Slice Hilfe-Section — `/slice-planning` ausfuehren fuer FEAT-823 `/help`-Route + Tile-Page (1 Tile pro Guide-Markdown) + Sidebar-Eintrag. Markdown-Renderer kann aus V8.2 reused werden. Aufwand ~3-4h Code-Side.
+1. **(Mandatory next)** `/frontend SLC-826` Hilfe-Section mit Worktree-Isolation (Branch `slc-826-help-section`). 4 MTs sequenziell MT-1 → MT-2 → MT-3 → MT-4. Aufwand ~3-4h Code-Side.
+2. **(After /frontend)** `/qa` als Gesamt-Slice-QA mit Live-Smoke (3 Rollen + Detail-Page + 404-Pfad + Sidebar-Sichtbarkeit). Bei PASS: Master-Merge.
+3. **(After /qa PASS)** `/deploy` V8.3 als REL-037 via Coolify-Redeploy.
 2. **(Optional vorher, ~15 Min)** `/post-launch` V8.2 Burn-In nach ≥12h (V8.2 ist additive UI, kein Schema-Migration → niedrig-Prio).
 3. **(Optional, User-Action, ~10 Min)** Playwright-Capture-Run von `deliverables/user-guide/screencaps.spec.ts` — `npx playwright test` mit Test-Credentials. Liefert Screenshots + Videos fuer Voice-Over-Production.
 4. **(User-Action, niedrig-Prio, asynchron)** Adress-/KvK-/BTW-Daten in Markdown-Files ergaenzen. Plus Coolify Auto-Deploy-Toggle pruefen (IMP-725).

@@ -367,6 +367,12 @@ V8.1 = 4 Sub-Slices fuer FEAT-811. Reihenfolge: SLC-821 → SLC-822 → SLC-823 
 | SLC-823 | [Teamlead-Tile-Sichtbarkeit in /settings](SLC-823-teamlead-tile-sichtbarkeit.md) | FEAT-811 / BL-484 | deployed | Low | 2026-05-20 |
 | SLC-824 | [Teamlead-Edit-Erweiterung: Invite-Restriction + Member-Delete-Allow](SLC-824-teamlead-edit-erweiterung.md) | FEAT-811 / BL-485 | deployed | High | 2026-05-20 |
 
+## V8.3 Slices (Hilfe-Section — Slice-Planning done 2026-05-22)
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-826 | [Hilfe-Section (Authenticated /help)](SLC-826-help-section.md) | FEAT-823 / BL-487 | planned | High | 2026-05-22 |
+
 ## V8.2 Slices (DSGVO-Public Routen — Slice-Planning done 2026-05-22)
 
 V8.2 = 1 Slice fuer FEAT-821 DSGVO-Public-Foundation. ~2-3h Code-Side, 4 MTs. Public-Pages `/datenschutz` + `/impressum` mit Markdown-Renderer (`remark@15 + remark-html@16` per Strategaize-Standard) + LegalFooter-Component in 3 Layouts integriert. Markdown-Drafts liegen bereits in `/deliverables/` (RPT-505 /compliance Theme 1a). Konkrete Adress-/KvK-/BTW-Daten sind Platzhalter — User reicht User-Action ein. Pre-Customer-Live-Anwaltspruefung deferred per `feedback_compliance_gate_later`. Pro Slice: /frontend → /qa → Master-Merge → Live-Smoke.

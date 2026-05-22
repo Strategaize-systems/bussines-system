@@ -239,18 +239,25 @@
       "order": 34
     },
     {
+      "id": "v8-3",
+      "name": "V8.3",
+      "status": "active",
+      "summary": "Hilfe-Section: Authenticated /help-Route mit Tile-Page (12 Feature-Guides) + /help/[slug] Detail-Pages mit Markdown-Rendering (Reuse renderLegalMarkdown aus V8.2) + eigene Sidebar Top-Section HILFE. Foundation Theme 2b nach /user-guide-Output (RPT-510). 1 Slice SLC-826 mit 4 MTs. KEINE Schema-Migration, KEINE neuen DECs.",
+      "order": 35
+    },
+    {
       "id": "v9",
       "name": "V9",
       "status": "planned",
       "summary": "Offen — wartet auf Real-Use-Erkenntnisse aus Tag-zu-Tag-Vertrieb. Triggert sich sobald User selbst aktiv verkauft oder 1. Multiplikator-Pilot startet.",
-      "order": 35
+      "order": 36
     },
     {
       "id": "v10",
       "name": "V10+",
       "status": "planned",
       "summary": "Autonome AI-Agents (Agentforce-Style: Antwort-Vorschlag → Auto-Reply mit Approval-Workflow), API-Integration externe Kommunikations-Tools (BL-443 Slack/Teams), Multiplikatoren-Bereich-Strategie-Item. Wettbewerbsreaktion auf Salesforce Agentforce oder Kundenwunsch.",
-      "order": 36
+      "order": 37
     }
   ]
 }
