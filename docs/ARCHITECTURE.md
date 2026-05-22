@@ -11118,3 +11118,337 @@ lib/team/actions.ts deleteProfile:
 **Internal-Tool, Hygiene-Sprint.** Keine neue Stack-Komponente, keine Schema-Migration, kein neuer Cron, kein KI-Call. Internal-Test-Mode bleibt aktiv. V8.1-Live heisst: V8-Stack (Image `c5e0f0c`) bleibt deployed, 3 Slice-Aenderungen werden kumulativ auf `main` gemerged + Coolify-Redeploy am Slice-Ende.
 
 **V8.1 Architecture ready for `/slice-planning`.**
+
+## V8.4 — Customer-Facing Datenschutzerklaerung (Multi-Tenant-Ready) Architecture
+
+### V8.4 Summary
+
+V8.4 etabliert die rechtliche Foundation fuer Customer-Kommunikation: jeder Plattform-Tenant bekommt eine eigene Customer-Facing DSE unter `/p/[tenant-slug]/datenschutz`, die im Consent-Form vor Grant/Decline verlinkt wird und im Footer jeder Kunden-Mail auto-eingefuegt wird. Multi-Tenant via `team_id`-Reuse (V7 RLS-Helper), keine neue Stack-Komponente, kein neuer Cron, keine LLM-Calls.
+
+**Reuse-Foundation:**
+- V8.2 `renderLegalMarkdown` (`lib/legal/markdown.ts`) — remark@15 + remark-html@16 + remark-gfm@4 (`feedback_email_render_remark_pattern`)
+- V8.2 `LegalPageShell`-Pattern (`components/layout/legal-page-shell.tsx`) — Style-Guide-V2 Container
+- OP-V7 SLC-131 Slug-Pattern (`reference_partner_slug_pattern`) — 6 Bausteine: Migration mit Backfill + DEFAULT-Patch + Reserved-Slugs + TS-Generator + Public-Endpoint + Rate-Limiter
+- V7 RLS-Helper (`get_my_team_id()`, `is_admin()`) — MIG-035
+- V5.2 `ComplianceTemplateBlock`-Pattern (`components/settings/ComplianceTemplateBlock.tsx`) — Markdown-Editor mit Live-Preview + Reset-to-Default
+- V8.2 Middleware-Whitelist-Pattern — `lib/supabase/middleware.ts:48`
+
+### V8.4 Main Components
+
+```
+Browser (HTTPS, KEIN Cookie noetig)
+  │
+  ├─ business.strategaizetransition.com/p/[slug]/datenschutz  ← V8.4 Public-Route NEU
+  │
+Coolify / Caddy → Next.js App
+  │
+  ├── /p/[tenant-slug]/datenschutz/page.tsx (Server-Component, public)
+  │     ↓
+  │     ├── isReservedSlug(slug) → notFound
+  │     ├── createAdminClient → teams.select(...).ilike("slug", $1)
+  │     ├── legal_documents.select("content_md").eq("tenant_team_id", team.id).eq("kind", "customer-dse")
+  │     ├── renderLegalMarkdown(content_md)  (V8.2 Reuse)
+  │     └── <CustomerDsePageShell html tenantName />
+  │
+  ├── /settings/compliance/customer-dse/page.tsx (Server-Component, admin-only)
+  │     ↓ assertRole(["admin"])
+  │     ├── Lookup team_id via get_my_team_id() RPC
+  │     ├── legal_documents.select(...) eq("tenant_team_id", team_id)
+  │     └── <CustomerDseEditor onSave={updateCustomerDse} initialBody initialPreviewHtml />
+  │           (Reuse-Pattern: ComplianceTemplateBlock-Layout)
+  │
+  ├── /consent/[token]/page.tsx (PATCH, existing)
+  │     ↓
+  │     ├── contacts.select(... owner_user_id) where consent_token=$1
+  │     ├── NEU: profiles.select(team_id).eq("id", owner_user_id) → team.slug-Lookup
+  │     └── Link "Datenschutzerklaerung lesen" target="_blank" /p/[slug]/datenschutz
+  │
+  └── lib/email/render.ts renderBrandedHtml (PATCH, existing)
+        ├── Neuer Param: tenantSlug?: string
+        ├── Auto-Footer-Block: "Datenschutzerklaerung: https://.../p/[slug]/datenschutz"
+        └── Single-Choke-Point — alle Caller (send.ts, send-consent-mail.ts, briefing) reichen tenantSlug durch
+
+Supabase / Postgres (Schema-Erweiterung V8.4):
+  ├── teams (V7 bestehend, +1 Spalte): slug TEXT NOT NULL UNIQUE
+  │     ↑ Backfill aus teams.name via Slugify + NFD-Decompose (OP-V7-Pattern)
+  │
+  └── legal_documents (V8.4 NEU):
+        id              UUID PK
+        tenant_team_id  UUID FK teams(id) ON DELETE CASCADE
+        kind            TEXT CHECK IN ('customer-dse')
+        content_md      TEXT NOT NULL
+        updated_by      UUID FK profiles(id) ON DELETE SET NULL
+        updated_at      TIMESTAMPTZ DEFAULT now()
+        created_at      TIMESTAMPTZ DEFAULT now()
+        UNIQUE(tenant_team_id, kind)  -- V1: 1 Row pro Tenant pro Kind
+        RLS: scoped auf team_id via V7-Helper
+```
+
+### V8.4 Component Responsibilities
+
+| Component | Verantwortung |
+|---|---|
+| **`/p/[tenant-slug]/datenschutz/page.tsx`** (NEU) | Public-Route, Server-Component, kein Auth. Slug-Lookup, DSE-Rendering, 404 bei unknown/reserved slug. |
+| **`/settings/compliance/customer-dse/page.tsx`** (NEU) | Admin-only Editor mit Live-Preview, Markdown-Editor, Reset-to-Default. |
+| **`actions.ts` customer-dse** (NEU) | Server-Actions: `getCustomerDse(team_id)`, `updateCustomerDse(team_id, content_md)`, `resetCustomerDseToDefault(team_id)`. Audit-Log-Insert bei Save. |
+| **`lib/team/slug.ts`** (NEU, 1:1 OP-V7 Reuse) | Pure-Function `generateSlug(displayName)` + `generateUniqueSlug(displayName, existingSlugs)`. |
+| **`lib/team/reserved-slugs.ts`** (NEU) | Reserved-Slug-Liste + `isReservedSlug(slug)`. Mindest-Set: admin, api, public, p, partner, strategaize, auth, assets, _next, favicon.ico + BS-Top-Level (dashboard, login, datenschutz, impressum, settings, help, consent, deals, ...). |
+| **`lib/email/render.ts`** (PATCH) | `renderBrandedHtml(body, branding, vars, tenantSlug?)` — Auto-Footer-Block mit DSE-URL bei tenantSlug-Wert. Bit-fuer-Bit identisches Verhalten bei `tenantSlug=undefined` (Regression-Safety). |
+| **`lib/email/send.ts`** (PATCH) | Reicht `tenantSlug` durch — Resolution aus `ownerUserId → profiles.team_id → teams.slug` (1 zusaetzlicher DB-Hit pro Mail, gecached pro Request). |
+| **`lib/legal/customer-dse-default.md`** (NEU, Asset-File) | Default-Seed-Markdown mit Platzhaltern `{{tenant_name}}, {{tenant_address}}, {{kvk_or_handelsregister}}, {{contact_email}}, {{auftragsverarbeiter_liste}}`. Tenant-Admin ersetzt manuell. |
+| **`components/layout/customer-dse-page-shell.tsx`** (NEU) | Server-Component-Shell analog `LegalPageShell`, mit `tenantName`-Header. |
+| **`globals.css` `.customer-dse-content`** (NEU) | Eigene CSS-Schicht analog `.legal-content` und V8.3 `.help-content`. ~30 Zeilen h1/h2/h3/p/ul/ol-Selectors. |
+| **`lib/supabase/middleware.ts`** (PATCH) | `publicPaths` Array um `"/p/"` ergaenzen — Pflicht-Check IMP-736-Lehre. |
+| **`legal_documents`-Tabelle** (Schema NEU) | Speichert 1 Row pro (team_id, kind='customer-dse'). RLS via V7-Helper. |
+| **`teams.slug`-Spalte** (Schema PATCH) | URL-Identifier. UNIQUE-Index lower(slug). DEFAULT fuer Legacy-Test-Inserts ('t-' || gen_random_uuid()). |
+
+### V8.4 Data Model
+
+**MIG-038 `legal_documents`-Tabelle:**
+
+```sql
+CREATE TABLE IF NOT EXISTS legal_documents (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_team_id  UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  kind            TEXT NOT NULL CHECK (kind IN ('customer-dse')),
+  content_md      TEXT NOT NULL,
+  updated_by      UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(tenant_team_id, kind)
+);
+
+ALTER TABLE legal_documents ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY legal_documents_select_team ON legal_documents
+  FOR SELECT TO authenticated
+  USING (is_admin() OR tenant_team_id = get_my_team_id());
+
+CREATE POLICY legal_documents_admin_mutate ON legal_documents
+  FOR ALL TO authenticated
+  USING (is_admin() AND tenant_team_id = get_my_team_id())
+  WITH CHECK (is_admin() AND tenant_team_id = get_my_team_id());
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON legal_documents TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON legal_documents TO service_role;
+
+NOTIFY pgrst, 'reload schema';
+```
+
+**MIG-038 `teams.slug`-Spalte (OP-V7-Pattern):**
+
+```sql
+-- Phase 1: Spalte nullable hinzufuegen
+ALTER TABLE teams ADD COLUMN IF NOT EXISTS slug TEXT;
+
+-- Phase 2: Backfill mit Kollisions-Loop (Slugify + Suffix-Strategie)
+DO $$
+DECLARE r record; base_slug text; candidate text; suffix int;
+BEGIN
+  FOR r IN SELECT id, name FROM teams WHERE slug IS NULL ORDER BY created_at LOOP
+    base_slug := lower(translate(r.name,
+      'aeoeueAOEUEss ', 'aoeAOEss-'));
+    base_slug := regexp_replace(base_slug, '[^a-z0-9-]+', '-', 'g');
+    base_slug := regexp_replace(base_slug, '-+', '-', 'g');
+    base_slug := regexp_replace(base_slug, '^-+|-+$', '', 'g');
+    base_slug := left(base_slug, 60);
+    IF base_slug = '' THEN
+      base_slug := 't-' || substring(r.id::text, 1, 8);
+    END IF;
+    candidate := base_slug;
+    suffix := 2;
+    WHILE EXISTS (SELECT 1 FROM teams WHERE slug = candidate) LOOP
+      candidate := base_slug || '-' || suffix;
+      suffix := suffix + 1;
+    END LOOP;
+    UPDATE teams SET slug = candidate WHERE id = r.id;
+  END LOOP;
+END$$;
+
+-- Phase 3: NOT NULL + UNIQUE lower-Index
+ALTER TABLE teams ALTER COLUMN slug SET NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS teams_slug_lower_unique ON teams (lower(slug));
+
+-- Phase 4: DEFAULT fuer Legacy-Test-Inserts
+ALTER TABLE teams ALTER COLUMN slug SET DEFAULT ('t-' || replace(gen_random_uuid()::text, '-', ''));
+
+-- Phase 5: Default-Seed legal_documents fuer alle existierenden teams
+INSERT INTO legal_documents (tenant_team_id, kind, content_md)
+SELECT t.id, 'customer-dse', '<Default-Markdown aus lib/legal/customer-dse-default.md>'
+FROM teams t
+ON CONFLICT (tenant_team_id, kind) DO NOTHING;
+
+NOTIFY pgrst, 'reload schema';
+```
+
+**Erwartete Wirkung Post-Apply:**
+- `teams`-Tabelle hat 1 zusaetzliche Spalte `slug`
+- Aktuell 1 Team `Strategaize Transition BV` → Slug `strategaize-transition-bv`
+- `legal_documents` enthaelt 1 Row pro Team mit Default-Markdown
+- Tenant-Admin muss Platzhalter im Editor manuell ersetzen
+
+### V8.4 Data Flow
+
+**Flow 1 — Public Read (Kunde liest DSE):**
+
+```
+Kunde klickt Link "Datenschutzerklaerung lesen" im Consent-Form
+   ↓
+GET /p/strategaize-transition-bv/datenschutz   (KEIN Cookie noetig)
+   ↓
+Middleware: pathname.startsWith("/p/") → publicPaths-Whitelist → pass-through
+   ↓
+app/p/[tenant-slug]/datenschutz/page.tsx (Server-Component)
+   ├── isReservedSlug("strategaize-transition-bv") → false
+   ├── admin.from("teams").select("id, name").ilike("slug", "strategaize-transition-bv").maybeSingle()
+   │     → { id: <uuid>, name: "Strategaize Transition BV" }
+   ├── admin.from("legal_documents").select("content_md").eq("tenant_team_id", <uuid>).eq("kind", "customer-dse").maybeSingle()
+   │     → { content_md: "# Datenschutzerklaerung..." }
+   ├── renderLegalMarkdown(content_md) → HTML
+   └── <CustomerDsePageShell html tenantName="Strategaize Transition BV" />
+   ↓
+HTTP 200 + HTML (article.customer-dse-content + Tenant-Header)
+```
+
+**Flow 2 — Editor-Write (Admin pflegt DSE):**
+
+```
+Admin oeffnet /settings/compliance/customer-dse
+   ↓
+Server-Component-Page (admin-only via assertRole)
+   ├── team_id := get_my_team_id() RPC
+   ├── legal_documents.select(content_md, updated_at).eq("tenant_team_id", team_id).eq("kind", "customer-dse")
+   └── <CustomerDseEditor initialBody initialPreviewHtml />
+   ↓
+Admin editiert Markdown → onSave klick
+   ↓
+Server-Action updateCustomerDse(team_id, content_md):
+   ├── assertRole(["admin"])
+   ├── RLS-Check (V7-Helper): is_admin() AND tenant_team_id = get_my_team_id()
+   ├── UPDATE legal_documents SET content_md=$1, updated_by=auth.uid(), updated_at=now() WHERE tenant_team_id=$2 AND kind='customer-dse'
+   └── audit_log INSERT: action='customer_dse.updated', actor_id=auth.uid(), context='V8.4 Editor-Save'
+   ↓
+Live-Preview rendert renderLegalMarkdown(content_md) clientseitig (parallel zur Server-Render)
+```
+
+**Flow 3 — Mail-Footer-Auto-Insert (System haengt DSE-URL an Mail-Footer an):**
+
+```
+sendEmailWithTracking({ to, body, ownerUserId, ... })
+   ↓
+lib/email/send.ts
+   ├── Lookup tenantSlug aus ownerUserId:
+   │     ├── profiles.select(team_id).eq("id", ownerUserId)
+   │     └── teams.select(slug).eq("id", team_id)
+   │     → tenantSlug = "strategaize-transition-bv"
+   ├── const branding = await getBrandingForSend(ownerUserId)
+   └── const html = renderBrandedHtml(body, branding, vars, tenantSlug)
+   ↓
+lib/email/render.ts renderBrandedHtml(body, branding, vars, tenantSlug)
+   ├── Build body-block, contact-block, footerMarkdown-block wie heute
+   ├── NEU: dseLinkBlock = tenantSlug
+   │     ? `<tr><td>Datenschutzerklaerung: <a href="${BASE_URL}/p/${tenantSlug}/datenschutz">${BASE_URL}/p/${tenantSlug}/datenschutz</a></td></tr>`
+   │     : ""
+   └── Append nach footerText (Reihenfolge: logoBlock → bodyBlock → footerLine → contactRows → footerText → dseLinkBlock)
+   ↓
+Mail-HTML enthaelt Auto-Footer mit DSE-URL
+   ↓
+Bei tenantSlug=undefined (Legacy-Caller): Output bit-identisch zu V8.3 (Regression-Safety)
+```
+
+### V8.4 External Dependencies
+
+**Keine neuen.** Bestehende: `remark@15 + remark-html@16 + remark-gfm@4` (V8.2 Standard, `feedback_email_render_remark_pattern`). Kein npm-Install noetig.
+
+### V8.4 Security / Privacy
+
+- **RLS scoped auf `tenant_team_id`** via V7-Helper `get_my_team_id()`. Tenant-A-Admin kann NICHT Tenant-B-DSE lesen oder editieren.
+- **Public-Route ohne Auth** durch Middleware-Whitelist `/p/` (Pflicht-Lehre IMP-736). Reservierter-Slug-Pre-Check spart DB-Hit + verhindert URL-Path-Hijack.
+- **Audit-Log bei Editor-Save** (`audit_log INSERT action='customer_dse.updated'`). Kein eigenes Schema, bestehende Tabelle.
+- **DSGVO-Compliance** durch Auto-Footer in Mail-Renderer: jede Kunden-Mail enthaelt DSE-Link → Art. 13 Informations-Pflicht erfuellt. Pre-Existing Consents (status=`granted` vor V8.4-Live) bleiben unangetastet — entsprechen alter Sachlage. Neue Consents ab Live-Date sehen DSE-Verlinkung.
+- **Rate-Limit auf Public-Route** ist V1 NICHT erforderlich (Internal-Test-Mode, 1 Tenant). V2 mit Pen-Test-Befund optional ergaenzbar via OP-V7-Pattern (`partnerResolveLimiter` 60/h/IP).
+
+### V8.4 Constraints & Tradeoffs
+
+**Constraints (bestaetigt aus Requirements):**
+- Multi-Tenant via `team_id`-Reuse, kein eigenes `tenant_id`-Schema-Refactor
+- Default-Seed-Text ist Entwurf; Anwalts-Pruefung deferred Pre-Customer-Live (`feedback_compliance_gate_later`)
+- Internal-Test-Mode bleibt aktiv
+- Keine Schema-Refactors auf bestehenden Tabellen (additive Migration)
+- Stack: Next.js 16 + Supabase + Server-Components, kein neuer Container
+
+**Tradeoffs:**
+
+| Tradeoff | Entscheidung V8.4 | Begruendung |
+|---|---|---|
+| Versionierung mit History V1 oder V2? | V1 KISS Single-Row, V2 History | YAGNI bei Internal-Test-Mode, V2-Pfad ist additive ALTER TABLE + neue Tabelle |
+| Schema-Wahl: `compliance_templates` erweitern oder neue Tabelle? | Eigene `legal_documents` Tabelle | compliance_templates ist Single-Tenant (kein team_id), Cross-Konzept-Mix waere Pollution |
+| Public-Route unter `(app)`-Layout oder Root? | Root (`app/p/...`) | V8.2-Pattern (`/datenschutz` ist auch unter Root) — kein Auth, kein Sidebar |
+| Mail-Footer-Auto-Insert: zentral oder per Call-Site? | Zentral in `render.ts` | Single-Choke-Point sauberer als 5 Patch-Punkte, Regression-Risk minimal via Optional-Param |
+| CSS-Schicht: Reuse `.legal-content` oder eigene? | Eigene `.customer-dse-content` | V8.3-Pattern (eigene `.help-content`), Tenant-Branding-Future-Ready |
+| Auftragsverarbeiter: Markdown-Block oder DB-Tabelle? | Markdown-Block V1, Tabelle V2 | 1 Tenant heute, zentrale Liste in Markdown easy maintainable |
+| Tenant-Slug: aus `teams.name` oder onboarding-explizit? | Slugify aus `teams.name` mit Suffix-Loop | OP-V7-Pattern 1:1, Backfill deckt alle existierenden Teams ab |
+| Reserved-Slugs-Defense: App-Layer oder DB-CHECK? | App-Layer V1, V2 optional DB-CHECK | V7-Reuse + Defense-in-Depth-Pattern aus OP-V7 |
+| Rate-Limit auf Public-Route? | NEIN in V1 | Internal-Test-Mode, 1 Tenant. V2 wenn Pen-Test Volumen zeigt. |
+
+### V8.4 Open Technical Questions
+
+**Alle 7 FEAT-824 Open Questions sind hier beantwortet:**
+
+1. ✅ **O1 Versionierung V1 vs V2** — V1 KISS Single-Row `legal_documents` mit UNIQUE(team_id, kind). V2 additive `legal_document_versions`-History-Tabelle. Siehe DEC-231.
+2. ✅ **O2 Initialer Tenant-Slug fuer immo@bellaerts.de** — `strategaize-transition-bv` via Slugify-Backfill aus existing `teams.name='Strategaize Transition BV'`. Siehe DEC-232.
+3. ✅ **O3 Re-Consent-Cron-Integration** — out-of-scope V1 (folgt aus O1). Bestehender `pending-consent-renewal`-Cron unveraendert. V2 zusammen mit Versionierung.
+4. ✅ **O4 Mail-Composer-Touchpoints** — Inventur ergibt **1 zentraler Patch in `lib/email/render.ts`**. 3 Caller (`send.ts`, `send-consent-mail.ts`, `meeting-briefing`-Cron) reichen `tenantSlug` durch. Siehe DEC-235.
+5. ✅ **O5 Auftragsverarbeiter-Liste** — Markdown-Block in `customer-dse-default.md` (V1). V2 separate `auftragsverarbeiter`-Tabelle mit Cross-Tenant-Sharing. Siehe DEC-237.
+6. ✅ **O6 `.customer-dse-content` CSS-Schicht** — Eigene Schicht analog V8.3 `.help-content`. Siehe DEC-236.
+7. ✅ **O7 Slug-Aufloesung Public-Route + Hairpin** — `app/p/[tenant-slug]/datenschutz/page.tsx` direkt unter App-Router-Root (NICHT unter `(app)`). Server-Component liest `teams` und `legal_documents` via `createAdminClient`. Middleware-Whitelist `/p/` erweitern (IMP-736-Pflicht). Siehe DEC-234.
+
+**Verbleibende Slice-Planning-Fragen (nicht Architektur-Ebene):**
+- Exakte Default-Seed-Markdown-Vorlage (90% Reuse aus `content/legal/datenschutz.md` + Anpassung Verantwortliche-Stelle + Add-on Auftragsverarbeiter)
+- Editor-UI: Custom-Komponente oder ComplianceTemplateBlock-Reuse mit minimaler Adapter-Schicht? (Empfehlung: Reuse)
+- Slug-Generator-Tests: 9 Mindest-Cases aus OP-V7-Pattern direkt portieren oder erweitern (z.B. fuer `Strategaize Transition B.V.` mit Dot-Edge-Case)
+- Vitest-Coverage fuer `renderBrandedHtml` Snapshot-Tests: bestehende Snapshots (`render.test.ts.snap`) muessen Regression-Safety belegen wenn `tenantSlug=undefined`
+
+### V8.4 Architecture Decisions
+
+- **DEC-231** — V8.4 Versionierung-Strategie: V1 Single-Row, V2 History-Tabelle (FEAT-824 O1)
+- **DEC-232** — V8.4 Tenant-Slug-Initialwert via Slugify-Backfill aus `teams.name` (FEAT-824 O2)
+- **DEC-233** — V8.4 Schema-Wahl: eigene `legal_documents`-Tabelle (NICHT `compliance_templates` erweitern) (FEAT-824 Multi-Tenant-Konsequenz)
+- **DEC-234** — V8.4 Public-Route `/p/[tenant-slug]/datenschutz` outside `(app)`-Layout + Middleware-Whitelist (FEAT-824 O7)
+- **DEC-235** — V8.4 Mail-Footer-Auto-Insert zentral in `lib/email/render.ts` statt 5 Call-Sites (FEAT-824 O4)
+- **DEC-236** — V8.4 CSS-Schicht `.customer-dse-content` eigene Layer analog V8.3 `.help-content` (FEAT-824 O6)
+- **DEC-237** — V8.4 Auftragsverarbeiter-Liste als Markdown-Block in V1, Tabellen-DB in V2 (FEAT-824 O5)
+- **DEC-238** — V8.4 Slice-Cut: 7 Slices SLC-841..847 strikt sequenziell
+
+### V8.4 Slice-Planning Hint
+
+**7 Slices, strikt sequenziell wegen Inter-Slice-Dependencies:**
+
+| Slice | Scope | Aufwand | Depends-On |
+|---|---|---|---|
+| **SLC-841** | Schema-Migration MIG-038 (legal_documents + teams.slug + Backfill) + RLS-Tests | ~1.5h | — |
+| **SLC-842** | Slug-Generator-TS (1:1 OP-V7 Reuse) + Reserved-Slugs + Default-Seed-Markdown-File | ~2h | SLC-841 |
+| **SLC-843** | Public-Route `/p/[slug]/datenschutz` + CustomerDsePageShell + .customer-dse-content CSS + Middleware-Whitelist | ~1h | SLC-841, SLC-842 |
+| **SLC-844** | Markdown-Editor `/settings/compliance/customer-dse` + Server-Actions + Audit-Log | ~2h | SLC-841, SLC-842 |
+| **SLC-845** | Consent-Form-Verlinkung (`consent/[token]/page.tsx` Patch mit team-slug-Lookup) | ~1h | SLC-841, SLC-842, SLC-843 |
+| **SLC-846** | Mail-Footer-Auto-Insert via `render.ts` + `send.ts` + `send-consent-mail.ts` Patches | ~1.5h | SLC-841, SLC-842, SLC-843 |
+| **SLC-847** | Gesamt-QA + Master-Merge + Coolify-Redeploy + Live-Smoke 8/8 ACs | ~1.5h | alle vorher |
+
+**Gesamt-Aufwand V8.4: ~10.5h Code-Side + ~1h /qa pro Slice = ~12-13h verteilt ueber 2-3 Sessions.**
+
+**Optional parallelisierbar (Worktrees):** SLC-845 und SLC-846 nach Abschluss SLC-843 — orthogonale Codebereiche (Consent-Page vs. Mail-Renderer). Bei sequentiellem Vorgehen: 845 → 846 → 847.
+
+**Pflicht-Reihenfolge** (BLOCKING):
+1. SLC-841 ZUERST (Schema-Foundation — alle anderen Slices brauchen DB-Spalten + Tabelle)
+2. SLC-842 NACH 841 (Slug-Generator + Default-Seed sind Voraussetzung fuer Public-Route + Editor)
+3. SLC-843 + SLC-844 sind orthogonal nach 842 (koennen parallel in Worktrees, aber 843 ist niedrigeres Risiko zuerst)
+4. SLC-845 + SLC-846 sind orthogonal nach 843+844
+5. SLC-847 ZULETZT (Gesamt-QA + Deploy)
+
+### V8.4 Delivery Mode
+
+**Internal-Tool, Compliance-Foundation.** Keine neue Stack-Komponente, kein neuer Container, kein neuer Cron, kein KI-Call. Eine additive Schema-Migration (MIG-038), keine Schema-Refactors. Internal-Test-Mode bleibt aktiv bis Anwalts-Pruefung Pre-Customer-Live (`feedback_compliance_gate_later`).
+
+**V8.4-Live heisst:** MIG-038 wird auf Hetzner via `sql-migration-hetzner.md`-Procedure angewandt (`postgres`-User, base64-Pipe, idempotent IF NOT EXISTS). Image-Tag-Bump nach SLC-847-Master-Merge. Coolify-Redeploy auf `main`. Live-HTTP-Smoke: `/p/strategaize-transition-bv/datenschutz` HTTP 200, `/settings/compliance/customer-dse` admin-only, Consent-Token-URL zeigt DSE-Link, Test-Mail-Render enthaelt Auto-Footer mit DSE-URL.
+
+**V8.4 Architecture ready for `/slice-planning`.**

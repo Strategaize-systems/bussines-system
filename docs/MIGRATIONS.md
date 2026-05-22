@@ -1,5 +1,106 @@
 # Migrations
 
+### MIG-038 — V8.4 SLC-841 legal_documents + teams.slug (PLANNED)
+- Date: not yet applied (geplant fuer V8.4 SLC-841 nach /slice-planning + /backend)
+- Scope: 1 neue Tabelle `legal_documents` + 1 ALTER `teams.slug` + Backfill + DEFAULT + UNIQUE-Index + RLS-Policies + Default-Seed in `038_v84_customer_dse.sql`:
+  - **Phase 1 — legal_documents Table:**
+    ```sql
+    CREATE TABLE IF NOT EXISTS legal_documents (
+      id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      tenant_team_id  UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+      kind            TEXT NOT NULL CHECK (kind IN ('customer-dse')),
+      content_md      TEXT NOT NULL,
+      updated_by      UUID REFERENCES profiles(id) ON DELETE SET NULL,
+      updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE(tenant_team_id, kind)
+    );
+    ALTER TABLE legal_documents ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS legal_documents_select_team ON legal_documents;
+    CREATE POLICY legal_documents_select_team ON legal_documents
+      FOR SELECT TO authenticated
+      USING (is_admin() OR tenant_team_id = get_my_team_id());
+    DROP POLICY IF EXISTS legal_documents_admin_mutate ON legal_documents;
+    CREATE POLICY legal_documents_admin_mutate ON legal_documents
+      FOR ALL TO authenticated
+      USING (is_admin() AND tenant_team_id = get_my_team_id())
+      WITH CHECK (is_admin() AND tenant_team_id = get_my_team_id());
+    GRANT SELECT, INSERT, UPDATE, DELETE ON legal_documents TO authenticated;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON legal_documents TO service_role;
+    ```
+  - **Phase 2 — teams.slug ADD COLUMN + Backfill (OP-V7-Pattern):**
+    ```sql
+    ALTER TABLE teams ADD COLUMN IF NOT EXISTS slug TEXT;
+    DO $$
+    DECLARE r record; base_slug text; candidate text; suffix int;
+    BEGIN
+      FOR r IN SELECT id, name FROM teams WHERE slug IS NULL ORDER BY created_at LOOP
+        base_slug := lower(translate(r.name, 'aeoeueAOEUEss ', 'aoeAOEss-'));
+        base_slug := regexp_replace(base_slug, '[^a-z0-9-]+', '-', 'g');
+        base_slug := regexp_replace(base_slug, '-+', '-', 'g');
+        base_slug := regexp_replace(base_slug, '^-+|-+$', '', 'g');
+        base_slug := left(base_slug, 60);
+        IF base_slug = '' THEN
+          base_slug := 't-' || substring(r.id::text, 1, 8);
+        END IF;
+        candidate := base_slug;
+        suffix := 2;
+        WHILE EXISTS (SELECT 1 FROM teams WHERE slug = candidate) LOOP
+          candidate := base_slug || '-' || suffix;
+          suffix := suffix + 1;
+        END LOOP;
+        UPDATE teams SET slug = candidate WHERE id = r.id;
+      END LOOP;
+    END$$;
+    ```
+  - **Phase 3 — NOT NULL + UNIQUE lower-Index:**
+    ```sql
+    ALTER TABLE teams ALTER COLUMN slug SET NOT NULL;
+    CREATE UNIQUE INDEX IF NOT EXISTS teams_slug_lower_unique ON teams (lower(slug));
+    ```
+  - **Phase 4 — DEFAULT fuer Legacy-Test-Inserts (Migration-aa-Pattern):**
+    ```sql
+    ALTER TABLE teams ALTER COLUMN slug SET DEFAULT ('t-' || replace(gen_random_uuid()::text, '-', ''));
+    ```
+  - **Phase 5 — Default-Seed legal_documents fuer alle bestehenden teams:**
+    ```sql
+    INSERT INTO legal_documents (tenant_team_id, kind, content_md)
+    SELECT t.id, 'customer-dse', '<Default-Markdown aus cockpit/src/content/legal/customer-dse-default.md>'
+    FROM teams t
+    ON CONFLICT (tenant_team_id, kind) DO NOTHING;
+    ```
+  - **Phase 6 — Schema-Reload:**
+    ```sql
+    NOTIFY pgrst, 'reload schema';
+    ```
+- Reason: FEAT-824 Customer-Facing DSE Multi-Tenant-Foundation. Pro Tenant (`team_id`-scoped) eigene Customer-DSE editierbar in `/settings/compliance/customer-dse`, lesbar via Public-Route `/p/[tenant-slug]/datenschutz`. RLS via V7-Helper (`is_admin`, `get_my_team_id`). Tenant-Slug aus `teams.name` via Slugify-Backfill (OP-V7 SLC-131 Reuse). V1 Single-Row pro Tenant-Kind (DEC-231), V2 ergaenzt History additive.
+- Affected Areas:
+  - Neue Tabelle `legal_documents` mit RLS-Scope auf team_id + 2 Policies (SELECT-team + admin_mutate).
+  - `teams`-Tabelle bekommt 1 neue Spalte `slug` mit Backfill + UNIQUE-Index + DEFAULT-Patch.
+  - Bestehende `teams`-Row `Strategaize Transition BV` → erwarteter Slug `strategaize-transition-bv`.
+  - `legal_documents` enthaelt 1 Default-Seed-Row pro existing team nach Apply.
+  - Neue Server-Actions (`getCustomerDse`, `updateCustomerDse`, `resetCustomerDseToDefault`) bauen darauf auf.
+  - `audit_log` bekommt 1 neue Action `customer_dse.updated` — keine Schema-Aenderung am audit_log.
+- Risk: niedrig-mittel. Additive Migration. Risiken: (1) Slug-Backfill-Empty-Edge-Case fuer Teams mit nur Sonderzeichen — durch Pflicht-Empty-Fallback (`t-<uuid8>`) abgedeckt. (2) Default-Seed muss vor Phase 5 als Markdown-File existieren in `cockpit/src/content/legal/customer-dse-default.md` — SLC-842 erstellt das. Bei fehlendem File: Phase 5 muss als Placeholder-Text laufen, Tenant-Admin muss spaeter manuell DSE editieren. (3) RLS-Policy-Pflicht GRANTs vorhanden (`feedback_migration_rls_needs_grants`-Compliance). (4) NOTIFY pgrst Pflicht.
+- Rollback Notes:
+  ```sql
+  -- Roll-Back-Reihenfolge (idempotent):
+  DROP TABLE IF EXISTS legal_documents CASCADE;
+  DROP INDEX IF EXISTS teams_slug_lower_unique;
+  ALTER TABLE teams ALTER COLUMN slug DROP NOT NULL;
+  ALTER TABLE teams ALTER COLUMN slug DROP DEFAULT;
+  ALTER TABLE teams DROP COLUMN IF EXISTS slug;
+  NOTIFY pgrst, 'reload schema';
+  ```
+  Backup vor Rollback Pflicht falls legal_documents-Rows manuell editiert wurden: `pg_dump --table=legal_documents > legal_documents_backup.sql`.
+- Verification (post-Apply, geplant in SLC-841 MT-3):
+  - `\d legal_documents` zeigt 7 Spalten, RLS=ENABLED, 2 Policies, UNIQUE(tenant_team_id, kind), FK auf teams(id) ON DELETE CASCADE.
+  - `\d teams` zeigt neue `slug`-Spalte, NOT NULL, DEFAULT-Expression.
+  - `SELECT id, name, slug FROM teams;` zeigt 1 Row mit `slug='strategaize-transition-bv'` (oder Backfill-Ergebnis).
+  - `SELECT COUNT(*) FROM legal_documents WHERE kind='customer-dse';` muss = `COUNT(*) FROM teams` sein.
+  - PostgREST-Smoke: `GET /rest/v1/legal_documents?limit=1` HTTP 401 (RLS aktiv ohne JWT), NICHT 404 = Schema-Cache aktiv.
+  - RLS-Live-DB-Tests via node:20 im Coolify-Net (`coolify-test-setup.md`): Cross-Tenant-Isolation, Admin-only-Mutate, anonyme-SELECT-blocked.
+
 ### MIG-037 — V7.6 SLC-762 custom_reports
 - Date: 2026-05-19 (applied via SSH+base64 in SLC-762 MT-1 — postgres-User, idempotent)
 - Scope: 1 neue Tabelle `custom_reports` + 2 Indizes + 4 RLS-Policies + 2 GRANTs in `037_v76_custom_reports.sql`:

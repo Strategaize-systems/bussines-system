@@ -2477,7 +2477,7 @@
       "title": "V8.4 Customer-Facing Datenschutzerklaerung (Multi-Tenant-Ready) — Editor + Public-Route + Consent-Form-Link + Mail-Footer",
       "type": "feature",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V8.4",
       "description": "Pro Tenant editierbare DSE die Kunden im Consent-Form + Mail-Footer sehen. Multi-Tenant via team_id-reuse (V7-RLS-Helper). 6 Bausteine: (1) DB-Tabelle legal_documents mit RLS team_id-scoped, (2) Default-Seed bei Migration fuer alle teams, (3) Markdown-Editor in /settings/compliance/customer-dse, (4) Public-Route /p/[tenant-slug]/datenschutz (Middleware publicPaths-Whitelist), (5) Verlinkung im consent-form.tsx (target=_blank), (6) Mail-Footer-Auto-Insert mit DSE-URL des sendenden Tenants. Slug-Generator + Eindeutigkeit (Pattern reusen aus reference_partner_slug_pattern). Reuse: renderLegalMarkdown + LegalPageShell-Variante (V8.2-Pattern). 7 Open Questions fuer /architecture u.a. Versionierung-V1-vs-V2 (User waehlte 'Tenant-Admin entscheidet pro Publish' als Regel, V1-Scope nicht angekreuzt -> KISS-Empfehlung Single-Row). Aufwand ~6-10h Code-Side, ~6-10 Slices. Spec siehe features/FEAT-824-customer-dse.md. RPT-516.",
       "createdAt": "2026-05-22"

@@ -269,7 +269,7 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-824 | Customer-Facing Datenschutzerklaerung (Multi-Tenant-Ready, Public-Route + Editor + Consent-Form-Link + Mail-Footer, BL-488) | planned | [Spec](FEAT-824-customer-dse.md) | 2026-05-22 |
+| FEAT-824 | Customer-Facing Datenschutzerklaerung (Multi-Tenant-Ready, Public-Route + Editor + Consent-Form-Link + Mail-Footer, BL-488) | in_progress | [Spec](FEAT-824-customer-dse.md) | 2026-05-22 |
 
 ## V8.3 Features (Hilfe-Section — RELEASED 2026-05-22 als REL-037)
 

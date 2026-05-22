@@ -380,3 +380,17 @@ V8.2 = 1 Slice fuer FEAT-821 DSGVO-Public-Foundation. ~2-3h Code-Side, 4 MTs. Pu
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-825 | [DSGVO-Public Routen (Datenschutz + Impressum + Footer)](SLC-825-dsgvo-public.md) | FEAT-821 / BL-486 | done | High | 2026-05-22 |
+
+## V8.4 Slices (Customer-Facing DSE Multi-Tenant — Slice-Planning done 2026-05-22)
+
+V8.4 = 7 Slices SLC-841..847, strikt sequenziell wegen Inter-Slice-Dependencies (DEC-238). Reihenfolge zwingend: SLC-841 (Schema-Foundation) → SLC-842 (Slug-Gen + Default-Seed) → SLC-843 (Public-Route) + SLC-844 (Editor) (beide nach 842, orthogonal in Worktrees) → SLC-845 (Consent-Patch) + SLC-846 (Mail-Footer-Patch) (beide nach 843+844, orthogonal in Worktrees) → SLC-847 (Gesamt-QA + Master-Merge + Deploy). Pro Slice: /backend|/frontend → /qa → Slice-Branch-Ready. Master-Merge erst am Slice-Ende SLC-847 (`feedback_slice_merge_at_end`). Pattern-Reuse-Heavy: V8.2 renderLegalMarkdown + LegalPageShell + Middleware-Whitelist (IMP-736), V7 RLS-Helper, OP-V7 SLC-131 Slug-Pattern 1:1, V5.2 ComplianceTemplateBlock. Mail-Footer-Auto-Insert zentral in lib/email/render.ts (Single-Choke-Point statt 5 Call-Sites). Gesamt ~10.5h Code-Side + ~1h /qa pro Slice = ~12-13h verteilt ueber 2-3 Sessions.
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-841 | [Schema-Migration MIG-038 (legal_documents + teams.slug)](SLC-841-customer-dse-schema-migration.md) | FEAT-824 / BL-488 | planned | Blocker | 2026-05-22 |
+| SLC-842 | [Slug-Generator + Reserved-Slugs + Default-Seed-Markdown + Phase-5-Apply](SLC-842-tenant-slug-generator-default-seed.md) | FEAT-824 / BL-488 | planned | Blocker | 2026-05-22 |
+| SLC-843 | [Public-Route /p/[tenant-slug]/datenschutz + Shell + CSS + Middleware-Whitelist](SLC-843-customer-dse-public-route.md) | FEAT-824 / BL-488 | planned | Blocker | 2026-05-22 |
+| SLC-844 | [Editor /settings/compliance/customer-dse (Admin-only) + Server-Actions + Audit](SLC-844-customer-dse-editor.md) | FEAT-824 / BL-488 | planned | High | 2026-05-22 |
+| SLC-845 | [Consent-Form DSE-Link (consent/[token]/page.tsx Patch)](SLC-845-consent-form-dse-link.md) | FEAT-824 / BL-488 | planned | High | 2026-05-22 |
+| SLC-846 | [Mail-Footer-Auto-Insert (render.ts + send.ts + send-consent-mail.ts Patches)](SLC-846-mail-footer-auto-insert.md) | FEAT-824 / BL-488 | planned | High | 2026-05-22 |
+| SLC-847 | [V8.4 Gesamt-QA + Master-Merge + Coolify-Redeploy](SLC-847-v84-gesamt-qa-deploy.md) | FEAT-824 / BL-488 | planned | Blocker | 2026-05-22 |

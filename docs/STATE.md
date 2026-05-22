@@ -9,13 +9,16 @@
 Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsintensives B2B-Geschaeft. Kontextzentriert, prozesszentriert, KI-unterstuetzt. Steuert Multiplikatoren, Leads, Gespraeche, Angebote und Uebergaben datenfundiert. KEIN klassisches Feature-CRM, sondern Workspace-basiertes Arbeitssystem.
 
 ## Current State
-- High-Level State: requirements
-- Current Focus: **V8.4 Customer-DSE Requirements DONE 2026-05-22 (RPT-516)** — FEAT-824 spec'd: Multi-Tenant-Ready Customer-Facing Datenschutzerklaerung (Editor + Public-Route + Consent-Form-Link + Mail-Footer-Auto-Insert). User-Entscheidungen: team_id-reuse fuer Tenant-Scope, "Tenant-Admin entscheidet pro Publish" als Versionierungs-Regel, /p/[tenant-slug]/datenschutz als URL-Schema, Mail-Footer-Auto-Insert in V1. 7 Open Questions fuer /architecture (vor allem: Versionierung-V1-vs-V2). V8.3 (Hilfe-Section) bleibt released-stable in Last Stable Version. **Naechster Schritt: `/architecture FEAT-824` — Open Questions klaeren, Schema-Decision, Slice-Aufteilung.**
-- Current Phase: V8.4 Requirements DONE. Pending: /architecture -> /slice-planning -> /backend + /frontend -> /qa -> /deploy.
+- High-Level State: slice-planning
+- Current Focus: **V8.4 Customer-DSE Slice-Planning DONE 2026-05-22 (RPT-518)** — 7 Slice-Files SLC-841..847 angelegt mit MTs + ACs + DEC-Referenzen + Pattern-Reuse-Verweise. FEAT-824 → in_progress, BL-488 → in_progress, V8.4 → active. Strikt sequenzielle Reihenfolge per DEC-238 (Schema-Foundation → Slug-Gen+Seed → Public-Route + Editor parallel → Consent-Patch + Mail-Footer parallel → Gesamt-QA+Deploy). Erwarteter Vitest-Zugewinn ~25-30 neue Tests (RLS + Slug-Generator + Editor-Actions + Lookup-Helper + Render-Snapshots). Master-Merge erst am Slice-Ende SLC-847. V8.3 (Hilfe-Section) bleibt released-stable in Last Stable Version. **Naechster Schritt: `/backend SLC-841` — MIG-038 Schema-Migration auf Hetzner via SSH-base64-Procedure + RLS-Live-Tests via node:20 im Coolify-Net.**
+- Current Phase: V8.4 Slice-Planning DONE. Pending: /backend SLC-841 (MIG-038 + RLS-Tests, ~1.5h) → /qa → /backend SLC-842 (Slug-Gen + Default-Seed, ~2h) → /qa → /frontend SLC-843 (Public-Route, ~1h) → /qa → /frontend SLC-844 (Editor, ~2h) → /qa → /frontend SLC-845 (Consent-Patch, ~1h) → /qa → /backend SLC-846 (Mail-Footer-Patch, ~1.5h) → /qa → /qa SLC-847 (Gesamt-QA + Deploy, ~1.5h).
 
 ## Immediate Next Steps
-1. **(Mandatory next)** `/architecture FEAT-824` — 7 Open Questions klaeren, primaere Entscheidung: Versionierung-V1-vs-V2 (KISS-Empfehlung Single-Row), Schema-Migration-Plan fuer `legal_documents` + `teams.slug`-Spalte. ~30-45 Min.
-2. **(After /architecture)** `/slice-planning V8.4` — ~6-10 Slices skizzieren. Empfohlene Reihenfolge: SLC-XXX Migration -> Slug-Generator -> Default-Seed -> Editor -> Public-Route -> Consent-Form-Patch -> Mail-Composer-Patch -> Tests.
+1. **(Mandatory next)** `/backend SLC-841` — Migration-File `sql/migrations/038_v84_customer_dse.sql` schreiben (Phase 1-4 ohne Default-Seed), via SSH-base64-Procedure auf Hetzner `postgres`-User anwenden, RLS-Live-Tests via node:20 im Coolify-Net (`coolify-test-setup.md` Pattern, SAVEPOINT um expected RLS-Rejections). Worktree-Branch `slc-841-customer-dse-schema-migration` empfohlen. ~1.5h. Spec siehe `slices/SLC-841-customer-dse-schema-migration.md`.
+2. **(After SLC-841)** `/qa SLC-841` — RLS-Tests + DB-Verifikation + Cockpit-Records.
+3. **(After QA)** `/backend SLC-842` — `lib/team/slug.ts` (1:1 OP-V7 Reuse) + `lib/team/reserved-slugs.ts` + `cockpit/src/content/legal/customer-dse-default.md` + MIG-038 Phase 5 Apply. ~2h.
+4. **(After SLC-842)** Sequenz SLC-843 (Public-Route, ~1h) + SLC-844 (Editor, ~2h) parallel in Worktrees moeglich; danach SLC-845 (Consent-Patch, ~1h) + SLC-846 (Mail-Footer-Patch, ~1.5h) parallel in Worktrees moeglich.
+5. **(SLC-847 ZULETZT)** Gesamt-QA + Master-Merge ALLER vorherigen Slice-Branches + Coolify-Redeploy + Live-Smoke 8/8 Success-Criteria (S1-S8 aus FEAT-824). ~1.5h.
 3. **(Optional, niedrig-Prio)** `/post-launch` V8.3 + V8.2 Burn-In nach ≥12h.
 4. **(User-Action, asynchron)** Adress-/KvK-/BTW-Daten in V8.2-Markdown-Files ergaenzen (kommt im V8.4-Default-Seed wieder hoch).
 5. **(Spaeter, Theme 3)** Praesentations-/Werbevideo (~2h manuell, Marketing-Output).
