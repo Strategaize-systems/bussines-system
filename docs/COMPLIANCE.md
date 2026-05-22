@@ -763,19 +763,326 @@ Diese Diskrepanzen sind im AUDIT-Spreadsheet `docs/AUDIT_SERVER_ACTIONS_V7.md` S
 
 ---
 
+---
+
+## V7.1 — Settings-Permission-Layer + Drilldown-Polish (2026-05-16, REL-030)
+
+V7.1 fuegt **keine neue personenbezogene Datenkategorie und keinen neuen Drittanbieter-Pfad hinzu**. Es haertet die in V7 eingefuehrte Multi-User-Berechtigungslogik und schliesst zwei Defense-in-Depth-Gaps (ISSUE-069 + ISSUE-070).
+
+### Erweiterte Berechtigungslogik
+- **Settings-Permission-Matrix:** 11 Subpages unter `/settings/*` erhalten eine 3-Rollen-Matrix (Admin/Teamlead/Member). Jede Server-Action prueft `assertRole(...)` als First-Line. Audit-Doc `/docs/AUDIT_SERVER_ACTIONS_V7.md` synchronisiert (DEC-196).
+- **Filter-Scope im Drilldown:** Filter-State-Storage-Key haengt `viewAsUserId` an, sodass ein Admin im Read-Only-Drilldown nicht versehentlich seinen eigenen Filter auf die Drilldown-View sieht (DEC-200).
+- **First-Line-Guards (4 Stellen):** `assertNotReadOnlyContext()` wurde an 4 weiteren Mutate-Stellen ergaenzt, die in V7 vergessen wurden (ISSUE-070, resolved).
+
+### Datenschutzliche Einordnung
+Keine neuen Daten. Bestehende DSGVO-Datenfluesse bleiben unveraendert. Die Aenderungen reduzieren das Risiko unbeabsichtigter Datenzugriffe oder versehentlicher Mutationen im Read-Only-Drilldown auf NULL. ISSUE-069 + ISSUE-070 resolved.
+
+### Architektur-Entscheidungen V7.1
+- DEC-196 — Settings-Permission-Matrix.
+- DEC-200 — Filter-State-Storage-Key mit viewAsUserId-Postfix.
+- DEC-201 — Vitest-Pattern fuer runWithReadOnlyContext-Wrapper.
+
+---
+
+## V7.2 — Test-Infrastruktur-Cleanup (2026-05-16, REL-031, data-only)
+
+V7.2 ist ein **Test-Infrastruktur-Sprint ohne Production-Code-Aenderung** (data-only). Es fuehrt **keine neue personenbezogene Datenkategorie** ein. Der Production-Image bleibt der V7.1-Stand (`770dd55`).
+
+### Was V7.2 macht
+- Test-Seed (`seed:multi-user`) legt 7 `qa-*`-Test-Profile in der Coolify-Datenbank an plus 3 `qa-*`-Eintraege in `auth.users` plus 882 Seed-Rows (Demo-Activities/Deals/Companies/Contacts). Dies sind **synthetische Test-Daten**, keine realen Personendaten.
+- Container-Bootstrap-Pattern dokumentiert (DEC-202): Test-Seed wird per `docker exec` manuell angewendet, kein Dockerfile-Hook.
+- Vitest-RLS-Config-Cleanup (DEC-203).
+- ISSUE-073 + ISSUE-074 resolved.
+
+### Datenschutzliche Einordnung
+Synthetische Test-Daten ohne realen Personenbezug. Test-Profile (`qa-admin`, `qa-teamlead-*`, `qa-member-*`) verwenden Fake-Mail-Adressen `qa-*@example.com` und Demo-Strings. **Keine echten Kundendaten in Test-Datenbank**. Internal-Test-Mode bleibt aktiv.
+
+### Architektur-Entscheidungen V7.2
+- DEC-202 — Test-Bootstrap via Manual-Apply.
+- DEC-203 — Vitest-RLS-Config-Resolver.
+- DEC-204 — qa-admin-UUID-Konvention.
+
+---
+
+## V7.5 — Natural-Language-Automation-Sculptor (2026-05-17, REL-032)
+
+V7.5 fuehrt den **NL-Sculptor** ein — ein KI-Werkzeug, das Klartext-Eingaben des Admins in strukturierte Workflow-Automation-Regeln umsetzt (V6.2 FEAT-621-Erweiterung). Dies **erweitert die KI-Verarbeitung um eine neue Input-Quelle (Admin-Eigen-Eingaben)** ohne neue Drittanbieter.
+
+### Neue Datenverarbeitung
+
+**Was an Bedrock geht:**
+- Klartext-Eingabe des Admins (z.B. "Bei Stage-Wechsel zu Verloren: Erstelle Activity mit Notiz")
+- System-Prompt + 8 Few-Shot-Examples (statisch, repository-kontrolliert)
+- Keine Activity-/Deal-/Kontakt-/Email-Daten als Context
+
+**Wer:** Ausschliesslich Admin-Rolle (Permission-Layer in `applyNlRule()`-Server-Action).
+
+**Was zurueck kommt:** Strukturiertes JSON (Trigger-Event + Conditions + Actions) gemaess `FIELD_WHITELIST` aus bestehender V6.2-Workflow-Logik. Re-Prompt-Loop max 2 Versuche bei Validation-Fail.
+
+### Persistierung
+
+- **`audit_log` mit `action='automation_rule.sculpt_attempt'`** (DEC-206): jeder Sculpt-Versuch wird persistiert mit JSONB-Metadata `{nl_input, sculptor_model_id, sculptor_cost_usd, attempt_count, result_status, result_payload}`. Reuse statt eigener Tabelle.
+- **`audit_log` mit `action='automation_rule.create_via_nl'`** beim Apply: Verlinkung zur ursprunglichen Sculpt-Attempt-Audit-ID fuer DSGVO-Traceability.
+
+### Cost-Audit (Datenfluss)
+
+`audit_log` haelt explizit `cost_usd` pro Bedrock-Call. Cost-Calc-Formel basiert auf Bedrock-Response-Usage (`input_tokens` + `output_tokens`), keine Schaetzung (DEC-208). Real-Cost-Logging als Cross-Audit fuer Provider-Abrechnung.
+
+### Region-Pin (DEC-211)
+
+Bedrock-Client `cockpit/src/lib/llm/bedrock-client.ts:createBedrockClient()` wirft Exception wenn `BEDROCK_REGION !== "eu-central-1"`. **Strikte EU-Pin** — Region-Drift durch Mis-Config oder Provider-Wechsel wird Code-seitig verhindert. Dies haertet `data-residency.md`-Pflicht auf Code-Ebene.
+
+### Apply-Confirmation (DEC-207)
+
+Apply-Klick erfordert Modal-Confirm mit Pflicht-Checkbox ("Ich bestaetige: Diese Regel wird ab jetzt auf alle neuen <trigger_event>-Events angewandt") vor INSERT in `automation_rules`-Tabelle. Klick-Drift-Schutz gegen unbeabsichtigte Live-Schaltung von Regeln.
+
+### Architektur-Entscheidungen V7.5
+- DEC-205 — Single-Shot-Sculptor mit zod-Validate + 1x Re-Prompt.
+- DEC-206 — NL-History via audit_log-Reuse.
+- DEC-207 — Apply-Confirm-Modal mit Pflicht-Checkbox.
+- DEC-208 — Real-Cost-Display nach Bedrock-Call.
+- DEC-209 — Sculptor-File-Layout (6 Files unter `cockpit/src/lib/automation/`).
+- DEC-210 — Middleware-Pfad-Regex `/^\/team\/[^/]+\//` fuer Drilldown-Header-Set.
+- **DEC-211 — Bedrock-Region-Pin (compliance-relevant).**
+
+---
+
+## V7.6 — Custom-Reports + NL-Builder-Integration (2026-05-20, REL-033)
+
+V7.6 fuehrt **user-gespeicherte Berichts-Vorlagen** ein. Ein Admin kann eine Free-Form-Frage im KI-Workspace stellen, das Ergebnis pruefen und die Frage als wiederverwendbare Vorlage abspeichern.
+
+### Neue Datenobjekte
+
+**`custom_reports`-Tabelle (MIG-037):**
+
+| Spalte | Typ | Beschreibung |
+|---|---|---|
+| `id` | UUID | Primary Key |
+| `name` | TEXT (UNIQUE pro user_id) | Anzeigename ("Meine Berichte" Dropdown) |
+| `description` | TEXT (NULL) | Optionale Erklaerung |
+| `prompt_template` | TEXT | User-formulierte Frage (z.B. "Welche Deals stagnieren seit 14 Tagen ueber 50k Wert?") |
+| `context_type` | TEXT | `'mein-tag'` oder `'cockpit'` (entscheidet Default-Daten-Loader) |
+| `owner_user_id` | UUID | RLS-Owner |
+| `created_at` / `updated_at` | TIMESTAMPTZ | Lifecycle |
+
+**RLS-Policy:** Custom-Reports sind **pro Owner sichtbar/editierbar** (`auth.uid() = owner_user_id`). Admin sieht zusaetzlich alle (RLS-Switch-Spec aus MIG-035).
+
+### Datenfluss
+
+```
+User-Frage (Free-Form) → KIWorkspace.handleSendFreeForm() →
+  custom-report-runner.runCustomReportCore({ promptTemplate, contextType }) →
+    Loader nach contextType:
+      'mein-tag' → loadMeinTagContext (Activities heute + offene Tasks + aktive Deals last 30d)
+      'cockpit' → loadCockpitContext (Pipeline-Aggregate + Top-10-stagnierend + Win/Loss last 30d)
+    Bedrock-Call (claude-sonnet-4-6, eu-central-1) mit Pure-Function-System-Prompt →
+  AnswerPane rendert MarkdownView mit "Als Bericht speichern"-Button →
+  Save-Modal → saveCustomReport-Server-Action → custom_reports INSERT
+```
+
+### Was an Bedrock geht
+
+Bei Custom-Report-Run werden **Geschaeftsdaten** des Owners als Context an Bedrock geschickt:
+- Activities, Tasks, Deals des Owners (RLS-gefiltert)
+- Pipeline-Aggregate fuer `context_type='cockpit'`
+- Win/Loss-Stats last 30 Days
+
+Persoenliche Stammdaten (Vor-/Nachname von Kontakten, Email-Adressen) sind **Teil des Activity-Context** und gehen mit. Bedrock-Region weiterhin `eu-central-1` (Region-Pin per DEC-211).
+
+### Audit-Log
+
+- `audit_log` mit `action='custom_report.created'` beim Save (Owner-ID, Name, prompt_template-Hash zur DSGVO-Auskunft).
+- `audit_log` mit `action='custom_report.executed'` bei jedem Run inkl. `cost_usd`.
+- `audit_log` mit `action='custom_report.renamed'` / `'.deleted'` bei Edits.
+
+### Retention
+
+- `custom_reports`-Rows: permanent bis User loescht.
+- ON DELETE CASCADE bei Profile-Loeschung: User-eigene Custom-Reports werden mitgeloescht (DSGVO-Art-17-konform).
+
+### Architektur-Entscheidungen V7.6
+- DEC-212..214 — NL-Builder UX-Polish (kein neuer Daten-Pfad).
+- DEC-215 — Context-Type-Default-Loader (Reuse bestehender V6.6-Loader).
+- DEC-216 — Save-Trigger nur nach Bedrock-Result + nur bei Free-Form-Frage.
+- DEC-217 — AnswerPane Discriminator (kein RenderRegistry-Refactor).
+- DEC-218 — Slice-Cut.
+
+---
+
+## V8 — Hygiene-Sprint + KI-Verlustgrund-Vorschlag (2026-05-20, REL-034)
+
+V8 ist ein **Hygiene-Sprint** mit 3 Slices ohne Schema-Migration (DEC-225). Es fuehrt **eine neue KI-Verarbeitung** ein (Verlustgrund-Vorschlag) und einen UI-konsistenten Provider-Naming-Refactor (Vendor-Lock-in-Vermeidung).
+
+### Neue KI-Verarbeitung: Verlustgrund-Vorschlag (FEAT-804, SLC-813)
+
+**Wann:** User zieht Deal in Stage "Verloren". Pflichtfeld `won_lost_reason` ist leer → StageRequirementsModal oeffnet mit Pre-Fill-Vorschlag.
+
+**Was an Bedrock geht:**
+- Deal-Stammdaten (ID, Titel, Wert, Stage-History)
+- **Letzte 10 Activities** des Deals (Notizen, Anruf-Outcomes, Meeting-Summaries, Stage-Wechsel)
+- **Letzte 3 Email-Threads** mit Snippet (200 Zeichen) je Mail
+- System-Prompt mit JSON-Schema-Constraint (DEC-220)
+
+**Was zurueck kommt:** Bis zu 3 strukturierte Verlustgrund-Vorschlaege mit Source-Angabe ("aus Mail vom DD.MM."), User waehlt einen oder schreibt eigenen.
+
+**Cost:** ~$0.005-0.01 pro Call. audit_log `action='ki_loss_reason_suggested'` mit Status (`succeeded`/`skipped_empty_context`/`bedrock_error`/`parse_error`/`schema_error`/`deal_not_found`).
+
+**Empty-Context-Heuristik:** Wenn 0 Activities UND 0 Emails → skip Bedrock-Call, return null sofort. Cost-Sparen + saubere "Kein KI-Vorschlag moeglich"-UI.
+
+### KI-Provider-Naming-Abstrahierung (FEAT-802, SLC-812, DEC-221)
+
+User-sichtbare Strings wie "Bedrock arbeitet", "Bedrock-Aufruf fehlgeschlagen", "Bedrock modifiziert" wurden auf neutrales "KI" substituiert. **0 Bedrock-/Claude-/Anthropic-/AWS-Strings im User-UI** (Grep-verifiziert).
+
+**Datenschutzliche Einordnung:** Reine UI-Aenderung. Provider, Region, Model-ID bleiben unveraendert (Bedrock Claude Sonnet eu-central-1). Im audit_log wird weiter der vollstaendige `model_id`-String persistiert fuer technische Traceability. `formatModelDisplayName()`-Helper exportiert fuer kuenftige Multi-Provider-Anzeige.
+
+### Stage-Requirements-Modal-Erweiterung (FEAT-804, SLC-813)
+
+Drag-Drop auf eine der 5 Stages mit Pflichtfeldern (Angebot vorbereitet / Angebot offen / Verhandlung / Gewonnen / Verloren) oeffnet jetzt ein Modal statt Toast-Error (vorher: Stage-Wechsel blockiert ohne Self-Service-Pfad). User kann Pflichtfeld inline ausfuellen und bestaetigen → Stage-Wechsel + Activity-Log + ggf. audit_log `ki_loss_reason_suggested` in einer Transaktion.
+
+`moveDealToStage`-Server-Action erweitert um 4. Parameter `requirementValues` (backward-compatible). Bei "Verloren": KI-Vorschlag-Loader laeuft inline im Modal.
+
+### Architektur-Entscheidungen V8
+- DEC-219 — Settings-3-Section-Refactor (UI-Hygiene).
+- DEC-220 — Bedrock-Prompt-Template fuer Verlustgrund.
+- DEC-221 — KI-Provider-Naming "KI" (Vendor-Lock-in-Vermeidung).
+- DEC-222 — Modal-Scope (alle 5 Stages, KI-Suggest nur Verloren).
+- DEC-223..224 — PRD-Konflikt-Resolution + Goals-Move.
+- DEC-225 — Keine Schema-Migration, keine neue Cron.
+- DEC-226 — Slice-Cut.
+
+---
+
+## V8.1 — Solopreneur-Mode + Sidebar-Konsolidierung + Teamlead-Permission-Erweiterung (2026-05-22, REL-035 stable)
+
+V8.1 ist ein **Pre-Customer-Live-Hygiene-Sprint** ohne Schema-Migration und ohne neuen Bedrock-Pfad. Es **erweitert die V7-Audit-Trail-Erfassung** um ein forensisches Feld (`caller_role` im audit_log JSONB) und schliesst eine V7-Inkonsistenz in der Teamlead-Permission-Matrix.
+
+### Solopreneur-Mode (FEAT-811, SLC-821)
+Layout-Server-Side filtert TEAM-Sidebar-Section wenn `team_size === 1`. Helper `cockpit/src/lib/team/team-size.ts` berechnet `team_size` per Server-Side-Aggregat (`COUNT(*) FROM profiles WHERE team_id = X`) statt neuer denormalisierter Spalte (DEC-227). React `cache()`-Memoization pro Request.
+
+**Keine neue Datenkategorie.** Reine Sidebar-Filterung fuer Solo-Admins ohne Team-Aggregat-Mitglieder.
+
+### Sidebar-Konsolidierung (FEAT-811, SLC-822, DEC-228)
+`VERWALTUNG_SETUP`-Section (14 Items) → `WERKZEUGE`-Section (3 Items: Handoffs / Referrals / Audit-Log). Die 11 entfernten Items bleiben als Tiles auf `/settings` erreichbar (Tile-Page-Konzept aus V8 wirkt). **Keine Daten- oder Permission-Aenderung.**
+
+### Teamlead-Tile-Sichtbarkeit (FEAT-811, SLC-823, DEC-229)
+`/settings/team`-Tile-Permission `ADMIN_ONLY` → `ADMIN_TEAMLEAD`. Inkonsistenz zur Sidebar-Eintrag-Permission geschlossen (Teamlead findet die Seite jetzt sowohl via Sidebar als auch via Tile).
+
+### Teamlead-Edit-Erweiterung (FEAT-811, SLC-824, DEC-230 — supersedes DEC-193 + DEC-194)
+
+**Permission-Matrix-Erweiterung:**
+
+| Vorgang | V7 (DEC-193+194) | V8.1 (DEC-230) |
+|---|---|---|
+| Admin invitiert beliebige Rolle | erlaubt | erlaubt (unveraendert) |
+| Admin loescht beliebigen Member | erlaubt mit Hard-Lock | erlaubt mit Hard-Lock (unveraendert) |
+| Teamlead invitiert | erlaubt (member + teamlead + admin) | **erlaubt nur fuer `role='member'`** (`INVALID_ROLE_FOR_TEAMLEAD_INVITER`) |
+| Teamlead loescht Member | **verboten** (admin-only) | **erlaubt** wenn `target.role='member'` AND `target.team_id=caller.team_id` AND nicht-self, Hard-Lock weiter aktiv |
+
+**Defense-in-Depth-Layer (8 Layer):**
+1. `assertRole(["admin","teamlead"])` Server-Action-Gate
+2. `assertNotReadOnlyContext()` Drilldown-Mutation-Lockdown (V7.1)
+3. Zod-Schema-Validierung Input
+4. `INVALID_ROLE_FOR_TEAMLEAD_INVITER` Guard
+5. `FORBIDDEN_NON_MEMBER` Guard
+6. `FORBIDDEN_OTHER_TEAM` Guard
+7. `FORBIDDEN_SELF` Guard
+8. Hard-Lock-Pre-Check (DEC-193-Mechanik unveraendert, `countOwnerRecords > 0` → reject)
+
+### caller_role-Audit (DEC-230, forensische DSGVO-Verstaerkung)
+
+`audit_log.changes`-JSONB enthaelt jetzt bei `action='profile_deleted'` zusaetzlich `caller_role` (`'admin'` oder `'teamlead'`). Damit ist nachvollziehbar, **wer mit welcher Rolle** das Profil geloescht hat — forensische Auskunfts- und Loeschungsnachweis-Pflicht aus Art. 15 + 30 DSGVO. Keine Schema-Aenderung (TEXT context bleibt, caller_role im bestehenden JSONB-Feld).
+
+### DSGVO-Backup-Felder im Audit-Trail
+
+Bei `profile_deleted` werden weiterhin (wie V7) folgende Backup-Felder im audit_log persistiert:
+- `display_name_backup`
+- `role_backup`
+- `team_id_backup`
+
+Plus neu in V8.1:
+- `caller_role` (Wer hat geloescht — Admin oder Teamlead?)
+
+Damit ist die DSGVO-Auskunfts- und Nachweis-Pflicht des Verantwortlichen (Art. 15 + Art. 30 DSGVO) auch nach Profil-Loeschung erfuellbar — ein DSB kann auf Basis des Audit-Trails rekonstruieren, wer wann mit welcher Rolle welche Personenangabe entfernt hat.
+
+### Architektur-Entscheidungen V8.1
+- DEC-227 — Solopreneur-Detection ohne Schema-Touch.
+- DEC-228 — Sidebar-Konsolidierung.
+- DEC-229 — Teamlead-Tile-Sichtbarkeit.
+- **DEC-230 — Teamlead-Permission-Matrix-Erweiterung + caller_role-Audit (supersedes DEC-193 + DEC-194).**
+
+---
+
+## Konsolidierte Drittanbieter-Liste (V8.1-Stand 2026-05-22)
+
+| # | Anbieter | Zweck | Region / Hosting | DPA | Aktiv? |
+|---|---|---|---|---|---|
+| 1 | **Hetzner Online GmbH** | Hosting Cockpit + Supabase + Cal.com + Asterisk + Jitsi (alles self-hosted) | Falkenstein/Nuernberg (DE) | ja | aktiv |
+| 2 | **AWS Bedrock** | Claude Sonnet 4.6 (LLM), Titan V2 (Embeddings), KI-Verlustgrund, KI-Workspace, NL-Sculptor, Custom-Reports | **eu-central-1 (Frankfurt) — Region-Pin enforced (DEC-211)** | ja | aktiv |
+| 3 | **IONOS SE** | IMAP/SMTP fuer Geschaefts-E-Mail | DE | ja | aktiv |
+| 4 | **OpenAI** *(US, Internal-Test-Mode)* | Whisper Speech-to-Text (Default-Adapter) | US | **nein** | **aktiv im Internal-Test-Mode**, Switch auf Azure-EU Code-Ready (ISSUE-042 Pre-Customer-Live-Pflicht) |
+| 5 | Azure OpenAI *(geplant)* | Whisper EU-Hosting | `westeurope` oder `germanywestcentral` | abzuschliessen vor Customer-Live | code-ready, ENV-Switch erforderlich |
+| 6 | SMAO GmbH *(Berlin)* | KI-Voice-Agent eingehende Anrufe | DE | abzuschliessen vor Aktivierung | vorbereitet, `SMAO_ENABLED=false` |
+| 7 | SIP-Trunk-Provider *(tbd)* | Telefonie eingehend/ausgehend | EU-Anforderung | abzuschliessen vor Customer-Live | nicht aktiv |
+| 8 | **Cal.com** *(self-hosted)* | Terminbuchung | self-hosted (DE) | n/a | aktiv |
+| 9 | **Asterisk PBX** *(self-hosted)* | Telefonie-Layer | self-hosted (DE) | n/a | aktiv |
+| 10 | **Jitsi + Jibri** *(self-hosted, shared mit Blueprint, DEC-036)* | Video-Meetings + Recording | self-hosted (DE) | n/a | aktiv |
+
+**Wichtige V7.5+ Compliance-Verstaerkung (DEC-211):** Bedrock-Region-Pin auf `eu-central-1` enforced im Code — Region-Drift wirft Startup-Exception. Anwendungs-seitige Garantie zusaetzlich zur ENV-Konfiguration.
+
+---
+
+## Konsolidierter DSGVO-Datenfluss-Ueberblick (V8.1-Stand)
+
+Diese Tabelle ist eine kompakte Strukturuebersicht. Detaillierte Beschreibungen pro Sub-System siehe Sektionen 2.x und die V5.3..V8.1-Abschnitte oben.
+
+### Datenkategorien
+
+| Kategorie | Quelle | Verarbeitung | Speicherort | Drittanbieter | Retention |
+|---|---|---|---|---|---|
+| Kontakt-Stammdaten | User-UI / Lead-Intake | RLS-Owner-isoliert | Postgres `contacts` (Hetzner DE) | keine | permanent bis Manual-Delete (Art. 17 DSGVO) |
+| Firmen-Stammdaten | User-UI | RLS-Owner-isoliert | Postgres `companies` (Hetzner DE) | keine | permanent |
+| Deal-Daten | User-UI | RLS-Owner-isoliert | Postgres `deals` (Hetzner DE) | keine | permanent |
+| E-Mail eingehend | IMAP-Sync (IONOS DE) | KI-Klassifikation (Bedrock EU) | Postgres `email_messages` | IONOS (DPA), Bedrock eu-central-1 (DPA) | 90 Tage Auto-Delete |
+| E-Mail ausgehend | Composing-Studio | SMTP-Send + Pixel/Link-Tracking | Postgres `emails` | SMTP-Provider (EU) | permanent + Tracking-Events |
+| E-Mail-Anhaenge | User-Upload PC | Whitelist + Bucket | Supabase Storage `email-attachments` (Hetzner DE) | keine | gekoppelt an Email-Row (`ON DELETE CASCADE`) |
+| Anruf-Audio | Asterisk MixMonitor | Whisper-Provider (US/EU) → Bedrock EU → Summary | Supabase Storage `call-recordings` (Hetzner DE) | OpenAI US (Internal-Test) oder Azure EU (geplant), Bedrock EU | **7 Tage Auto-Delete via Cron** (DEC-043) |
+| Meeting-Audio/Video | Jitsi+Jibri (self-hosted) | Whisper → Bedrock → Summary | Supabase Storage `meeting-recordings` (Hetzner DE) | Whisper (s.o.), Bedrock EU | 7 Tage Auto-Delete |
+| Anruf-Transkripte / Meeting-Transkripte | Whisper-Output | KI-Auswertung Bedrock | Postgres `calls.transcript` / `meetings.transcript` | Bedrock EU | permanent (datenarmere Repraesentation) |
+| KI-Zusammenfassungen | Bedrock EU | nicht weiter verarbeitet | Postgres `*.ai_summary` | Bedrock EU | permanent |
+| Vektor-Embeddings (RAG) | Bedrock Titan V2 EU | pgvector Similarity | Postgres `knowledge_chunks` (Hetzner DE) | Bedrock EU | gekoppelt an Quell-Entity |
+| Workflow-Automation-Regeln (Klick) | User-UI | nicht-KI | Postgres `automation_rules` | keine | permanent bis Manual-Delete |
+| **NL-Sculpt-Versuche (V7.5)** | **User-Klartext-Eingabe (Admin)** | **Bedrock EU** | **`audit_log` JSONB (`action='automation_rule.sculpt_attempt'`)** | **Bedrock EU** | **permanent (audit-Retention)** |
+| **Custom-Reports-Vorlagen (V7.6)** | **User-Save** | **RLS-Owner-isoliert** | **Postgres `custom_reports` (Hetzner DE)** | **Bedrock EU bei Run** | **permanent bis Manual-Delete + CASCADE bei Profil-Loeschung** |
+| **Custom-Report-Runs (V7.6)** | **User-Klick** | **Bedrock EU + Geschaeftsdaten-Context** | **`audit_log` (`action='custom_report.executed'`)** | **Bedrock EU** | **permanent (audit-Retention)** |
+| **KI-Verlustgrund-Vorschlag (V8)** | **Drag-Drop "Verloren"-Stage** | **Bedrock EU + Activity-/Email-Context** | **`audit_log` (`action='ki_loss_reason_suggested'`)** | **Bedrock EU** | **permanent (audit-Retention)** |
+| Audit-Log (alle KI- und Lifecycle-Aktionen) | System | nur Lese-Zugriff Admin | Postgres `audit_log` (Hetzner DE) | keine | permanent + `actor_id` + V8.1-`caller_role`-Feld |
+| Consent-Records | Public-Consent-Page | IP/UA-Hash (SHA-256) | Postgres `consent` | keine | permanent + Widerrufs-Trail |
+| Branding-Logo + Settings | User-UI | Server-Proxy | Postgres + Supabase Storage `branding` (Hetzner DE) | keine | bis Manual-Delete |
+| Angebot-PDFs (V5.5+) | pdfmake Server-Side | RLS-Owner-isoliert | Supabase Storage `proposal-pdfs` (Hetzner DE) | keine | bis Manual-Delete |
+| Profile-Lifecycle (V7) | Admin/Teamlead-Action | GoTrue + audit_log | Postgres `profiles` + `auth.users` + `audit_log` | keine | DSGVO-Loeschpflicht-konform + audit-Backup-Felder + V8.1-`caller_role` |
+
+### V7.5+ neue Datenfluss-Typen im Ueberblick
+
+1. **NL-Sculpt-Versuch** (V7.5): Admin-Klartext → Bedrock EU → strukturiertes JSON → audit_log JSONB. Cost-Tracking per Bedrock-Response-Usage.
+2. **Custom-Report-Run** (V7.6): User-Frage + Geschaeftsdaten-Context → Bedrock EU → Markdown-Antwort → optional Save als `custom_reports`-Row.
+3. **KI-Verlustgrund-Vorschlag** (V8): Drag-Drop-Trigger → Bedrock EU mit Activity+Email-Context → JSON-Vorschlaege → User waehlt manuell.
+4. **caller_role-Audit-Verstaerkung** (V8.1): Profile-Delete loggt zusaetzlich, ob Admin oder Teamlead geloescht hat — forensische DSGVO-Auskunft.
+
+---
+
 ## Disclaimer
 
-Diese Dokumentation beschreibt den **technischen** Datenschutz-Stand des Systems zum Zeitpunkt **2026-05-04 (V5.7-Stand SLC-571 done)**. Sie ist eine **pragmatische Standardvorlage** und stellt **keine Rechtsberatung** dar. Insbesondere ersetzt sie nicht:
+Diese Dokumentation beschreibt den **technischen** Datenschutz-Stand des Systems zum Zeitpunkt **2026-05-22 (V8.1-Stand REL-035 stable)**. Sie ist eine **pragmatische Standardvorlage** und stellt **keine Rechtsberatung** dar. Insbesondere ersetzt sie nicht:
 
 - die **anwaltliche Pruefung** der Einwilligungstexte und der Privacy Policy
 - die formale **Einsetzung einer/eines Datenschutzbeauftragten** (sofern erforderlich)
 - die **DSFA (Datenschutz-Folgenabschaetzung)** fuer die Audio-Aufnahme- und KI-Auswertungs-Pipelines (Art. 35 DSGVO)
-- die **Auftragsverarbeitungsvertraege** mit allen aktiven Drittanbietern, insbesondere mit dem geplanten Azure-OpenAI-EU-Provider und dem SIP-Trunk-Provider vor Go-Live
-- die **steuerrechtliche Pruefung** der Reverse-Charge-Konformitaet (V5.7) durch eine NL-Steuerberatung, insbesondere fuer die Pflicht zur quartalsweisen ICP-Meldung (Opgaaf ICP)
+- die **Auftragsverarbeitungsvertraege** mit allen aktiven Drittanbietern, insbesondere mit dem geplanten Azure-OpenAI-EU-Provider und dem SIP-Trunk-Provider vor Customer-Live
+- die **steuerrechtliche Pruefung** der Reverse-Charge-Konformitaet (V5.7) durch eine NL-Steuerberatung (Pflicht zur quartalsweisen ICP-Meldung "Opgaaf ICP")
 
 Vor produktivem Einsatz mit echten Kunden- oder Interessentendaten sind diese Punkte zu klaeren. Die Dokumentation ist **manuell zu aktualisieren** bei wesentlichen Schema-, Provider- oder Region-Aenderungen — kein Auto-Refresh-Mechanismus implementiert.
 
 ---
 
-**Letzte Aktualisierung:** 2026-05-12 (V7-Section ergaenzt — Multi-User Profile-Lifecycle, Invite/Role-Change/Delete-Audit-Trail, Hard-Lock-Pattern fuer DSGVO-konforme Profil-Loeschung + V7-Owner-Wiring-Section: Insert-Owner-Defaults auf 8 Kerntabellen, Cron-Inheritance, Workflow-Engine-Owner-Pass, Mutate-Lockdown via assertNotReadOnlyContext fuer SLC-706-Drilldown)
-**Naechste empfohlene Pruefung:** Pre-Production-Compliance-Gate vor V7 — Anwalts-Pruefung gesamte COMPLIANCE.md, NL-Steuerberatung-Pruefung der V5.7-Section, Switch auf Azure-OpenAI-EU-Whisper, ISSUE-042-Schliessung
+**Letzte Aktualisierung:** 2026-05-22 (V7.1+V7.2+V7.5+V7.6+V8+V8.1-Sections ergaenzt — Settings-Permission-Haertung, Test-Infra-Cleanup, NL-Sculptor mit Bedrock-EU-Region-Pin, Custom-Reports User-Vorlagen, KI-Verlustgrund-Vorschlag, Vendor-Lock-in-Vermeidung KI-Provider-Naming, Solopreneur-Mode, Teamlead-Permission-Matrix mit caller_role-Audit-Verstaerkung. Konsolidierte Drittanbieter-Liste + Datenfluss-Ueberblick als kompakte Strukturuebersicht. V8.1 als released-stable nach Burn-In 15h PASS RPT-504.)
+**Naechste empfohlene Pruefung:** Pre-Customer-Live-Compliance-Gate — Anwalts-Pruefung gesamte COMPLIANCE.md (insbesondere V7.5 NL-Sculptor + V7.6 Custom-Reports + V8 KI-Verlustgrund), NL-Steuerberatung-Pruefung V5.7, Switch auf Azure-OpenAI-EU-Whisper, ISSUE-042 (OpenAI-Key-Datei) schliessen, DPA-Abschluss mit Azure + SMAO + SIP-Trunk-Provider.
