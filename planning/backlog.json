@@ -2463,6 +2463,16 @@
       "createdAt": "2026-05-22"
     },
     {
+      "id": "BL-489",
+      "title": "V8.5+ Hilfe-Section Visual-Upgrade — Style-Guide-V2-Konformitaet + Screenshots + Walkthrough-Videos",
+      "type": "improvement",
+      "priority": "high",
+      "status": "open",
+      "version": null,
+      "description": "V8.3 SLC-826 hat /help + /help/[slug] mit Plain-Markdown-Typography gebaut. User-Inspection 2026-05-22 zeigt 3 strukturelle Maengel die als eigene Version (V8.5 oder spaeter) addressiert werden: (1) Visual-Polish: .help-content CSS-Schicht muss Style-Guide-V2 atmen (Brand-Tokens, Card-Wrapper um Sections, Visual-Hierarchie passend zum App-Look, NICHT generische h1/h2-Typography). (2) Screenshots: jeder Guide muss Screenshots der referenzierten App-Bildschirme an passenden Stellen embeddet haben. Playwright-Capture-Script existiert (deliverables/user-guide/screencaps.spec.ts) aber Capture-Run wurde nicht ausgefuehrt + Screenshots nicht in Markdown-Files eingebaut. (3) Walkthrough-Videos: pro Guide ein 2-3 Min Walkthrough-Video (Voice-Over-Skripte existieren in deliverables/user-guide/voice-over/). Embed-Slot in jedem Markdown-File. Cross-Project-Skill-Lehre: IMP-740 (/user-guide + /frontend + /qa muessen all-of-this-Phase als Pflicht-Teil machen, nicht Nachtraeglich). Slice-Aufwand: ~4-6h Code-Side fuer Visual-CSS + Capture-Run + Image-Embed (Videos sind User-Action manuell danach). Vor V8.4 oder nach V8.4 schedulen — Reihenfolge offen.",
+      "createdAt": "2026-05-22"
+    },
+    {
       "id": "BL-488",
       "title": "V8.4 Customer-Facing Datenschutzerklaerung (Multi-Tenant-Ready) — Editor + Public-Route + Consent-Form-Link + Mail-Footer",
       "type": "feature",
