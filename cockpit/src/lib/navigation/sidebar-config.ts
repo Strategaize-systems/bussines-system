@@ -18,6 +18,7 @@ import {
   UserCog,
   Clock,
   Bell,
+  HelpCircle,
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@/lib/auth/types";
@@ -40,6 +41,7 @@ export type SidebarSection =
   | "OPERATIV"
   | "ARBEITSBEREICHE"
   | "VERWALTUNG_MEIN"
+  | "HILFE"
   | "WERKZEUGE";
 
 export const SECTION_LABEL: Record<SidebarSection, string> = {
@@ -50,6 +52,9 @@ export const SECTION_LABEL: Record<SidebarSection, string> = {
   // SLC-822 (DEC-228): VERWALTUNG_MEIN bleibt unter "VERWALTUNG"-Parent
   // (Sub-Group-Header). WERKZEUGE ist eigene Top-Section ohne Parent.
   VERWALTUNG_MEIN: "Mein Profil",
+  // SLC-826 (V8.3): HILFE ist eigene Top-Section ohne Parent, zwischen
+  // VERWALTUNG_MEIN und WERKZEUGE in SECTION_ORDER.
+  HILFE: "HILFE",
   WERKZEUGE: "WERKZEUGE",
 };
 
@@ -70,6 +75,7 @@ export const SECTION_ORDER: SidebarSection[] = [
   "OPERATIV",
   "ARBEITSBEREICHE",
   "VERWALTUNG_MEIN",
+  "HILFE",
   "WERKZEUGE",
 ];
 
@@ -237,6 +243,16 @@ export const SIDEBAR_CONFIG: readonly SidebarItem[] = [
     label: "Briefing",
     icon: Bell,
     section: "VERWALTUNG_MEIN",
+    visibleFor: ALL_ROLES,
+  },
+
+  // HILFE — V8.3 SLC-826 Hilfe-Section. Eigene Top-Section zwischen
+  // VERWALTUNG_MEIN und WERKZEUGE. Sichtbar fuer alle 3 Rollen.
+  {
+    href: "/help",
+    label: "Hilfe & Anleitungen",
+    icon: HelpCircle,
+    section: "HILFE",
     visibleFor: ALL_ROLES,
   },
 

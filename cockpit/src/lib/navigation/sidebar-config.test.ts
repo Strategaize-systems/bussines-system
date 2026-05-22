@@ -4,13 +4,14 @@ import {
   filterByRole,
   groupBySection,
   groupVisualMerged,
+  groupWithSubGroups,
   SECTION_ORDER,
 } from "./sidebar-config";
 import type { Role } from "@/lib/auth/types";
 
 describe("SIDEBAR_CONFIG", () => {
-  it("contains baseline items after SLC-822 (>=21 items)", () => {
-    expect(SIDEBAR_CONFIG.length).toBeGreaterThanOrEqual(21);
+  it("contains baseline items after SLC-822 + SLC-826 HILFE (>=22 items)", () => {
+    expect(SIDEBAR_CONFIG.length).toBeGreaterThanOrEqual(22);
   });
 
   it("every item has a non-empty visibleFor", () => {
@@ -55,7 +56,7 @@ describe("filterByRole — Role-Matrix", () => {
     expect(hrefs).not.toContain("/audit-log");
   });
 
-  it("member sieht KEIN /dashboard, KEIN /team, KEIN WERKZEUGE-Item", () => {
+  it("member sieht KEIN /dashboard, KEIN /team, KEIN WERKZEUGE-Item, aber HILFE", () => {
     const items = filterByRole("member");
     const hrefs = items.map((i) => i.href);
     // Member-sichtbar:
@@ -72,6 +73,7 @@ describe("filterByRole — Role-Matrix", () => {
     expect(hrefs).toContain("/emails");
     expect(hrefs).toContain("/proposals");
     expect(hrefs).toContain("/settings");
+    expect(hrefs).toContain("/help");
     // Member-NICHT sichtbar:
     expect(hrefs).not.toContain("/dashboard");
     expect(hrefs).not.toContain("/team");
@@ -126,6 +128,7 @@ describe("filterByRole — Snapshots", () => {
           "VERWALTUNG_MEIN:/settings/working-hours",
           "VERWALTUNG_MEIN:/settings/meetings",
           "VERWALTUNG_MEIN:/settings/briefing",
+          "HILFE:/help",
           "WERKZEUGE:/handoffs",
           "WERKZEUGE:/referrals",
           "WERKZEUGE:/audit-log",
@@ -147,6 +150,7 @@ describe("filterByRole — Snapshots", () => {
           "VERWALTUNG_MEIN:/settings/working-hours",
           "VERWALTUNG_MEIN:/settings/meetings",
           "VERWALTUNG_MEIN:/settings/briefing",
+          "HILFE:/help",
         ],
         "teamlead": [
           "ANALYSE:/dashboard",
@@ -168,6 +172,7 @@ describe("filterByRole — Snapshots", () => {
           "VERWALTUNG_MEIN:/settings/working-hours",
           "VERWALTUNG_MEIN:/settings/meetings",
           "VERWALTUNG_MEIN:/settings/briefing",
+          "HILFE:/help",
           "WERKZEUGE:/handoffs",
           "WERKZEUGE:/referrals",
         ],
@@ -244,11 +249,12 @@ describe("groupBySection / groupVisualMerged", () => {
       "OPERATIV",
       "ARBEITSBEREICHE",
       "VERWALTUNG_MEIN",
+      "HILFE",
       "WERKZEUGE",
     ]);
   });
 
-  it("groupBySection skips sections without items (member sieht keine ANALYSE/TEAM/WERKZEUGE)", () => {
+  it("groupBySection skips sections without items (member sieht keine ANALYSE/TEAM/WERKZEUGE, aber HILFE)", () => {
     const groups = groupBySection(filterByRole("member"));
     const sections = groups.map((g) => g.section);
     expect(sections).not.toContain("ANALYSE");
@@ -257,6 +263,7 @@ describe("groupBySection / groupVisualMerged", () => {
     expect(sections).toContain("OPERATIV");
     expect(sections).toContain("ARBEITSBEREICHE");
     expect(sections).toContain("VERWALTUNG_MEIN");
+    expect(sections).toContain("HILFE");
   });
 
   it("groupVisualMerged: VERWALTUNG enthaelt nur _MEIN-Items, WERKZEUGE ist eigene Top-Gruppe (Admin)", () => {
@@ -293,5 +300,38 @@ describe("groupBySection / groupVisualMerged", () => {
 
     // Member sieht KEINE WERKZEUGE-Top-Gruppe
     expect(groups.find((g) => g.label === "WERKZEUGE")).toBeUndefined();
+  });
+});
+
+describe("SLC-826 — HILFE-Section (V8.3)", () => {
+  it("HILFE-Section is visible for all 3 roles", () => {
+    for (const role of ["admin", "teamlead", "member"] as const) {
+      const items = filterByRole(role);
+      const helpItems = items.filter((i) => i.section === "HILFE");
+      expect(helpItems.length).toBeGreaterThan(0);
+      expect(helpItems.some((i) => i.href === "/help")).toBe(true);
+    }
+  });
+
+  it("SECTION_ORDER positions HILFE between VERWALTUNG_MEIN and WERKZEUGE", () => {
+    const verwIdx = SECTION_ORDER.indexOf("VERWALTUNG_MEIN");
+    const helpIdx = SECTION_ORDER.indexOf("HILFE");
+    const werkzeugeIdx = SECTION_ORDER.indexOf("WERKZEUGE");
+    expect(verwIdx).toBeGreaterThanOrEqual(0);
+    expect(helpIdx).toBe(verwIdx + 1);
+    expect(werkzeugeIdx).toBe(helpIdx + 1);
+  });
+
+  it("HILFE has no SECTION_PARENT (eigene Top-Section)", () => {
+    // Per groupWithSubGroups-Behavior: Sections ohne Parent rendern als Top-
+    // Header mit sub-Group.label = null. Hier nur ueber Admin-Output verifiziert.
+    const groups = groupWithSubGroups(filterByRole("admin"));
+    const helpGroup = groups.find((g) => g.parentLabel === "HILFE");
+    expect(helpGroup).toBeDefined();
+    expect(helpGroup!.subGroups).toHaveLength(1);
+    expect(helpGroup!.subGroups[0].label).toBeNull();
+    expect(helpGroup!.subGroups[0].items.map((i) => i.href)).toEqual([
+      "/help",
+    ]);
   });
 });
