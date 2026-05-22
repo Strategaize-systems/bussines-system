@@ -1,3 +1,4 @@
+import { LegalFooter } from "@/components/layout/legal-footer";
 import { MobileLayoutShell } from "@/components/layout/mobile-layout-shell";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getProfile } from "@/lib/auth/get-profile";
@@ -13,13 +14,20 @@ export default async function AppLayout({
 
   return (
     <TooltipProvider>
-      <div className="flex min-h-screen bg-slate-50">
-        <MobileLayoutShell
-          role={profile.role}
-          hideTeamSection={teamSize === 1}
-        >
-          {children}
-        </MobileLayoutShell>
+      <div className="flex min-h-screen flex-col bg-slate-50">
+        <div className="flex flex-1">
+          <MobileLayoutShell
+            role={profile.role}
+            hideTeamSection={teamSize === 1}
+          >
+            {children}
+          </MobileLayoutShell>
+        </div>
+        {/* SLC-825 V8.2 — DSGVO-Public Footer-Links auch in logged-in App.
+            md:pl-64 verschiebt den Footer rechts neben die fixed Sidebar. */}
+        <div className="md:pl-64">
+          <LegalFooter />
+        </div>
       </div>
     </TooltipProvider>
   );
