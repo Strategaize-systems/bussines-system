@@ -1,5 +1,16 @@
 # Known Issues
 
+### ISSUE-082 — V8.4 emails.owner_user_id Spalte fehlte (MIG-033 hat outgoing-emails-Tabelle vergessen) [RESOLVED 2026-05-23]
+- Status: resolved
+- Severity: Blocker (Production-Mail-Send seit V8.4-Deploy 2026-05-23 09:18 UTC bis ~14:08 UTC komplett broken)
+- Area: Backend / V7 SLC-704 Migration-Drift / V8.4 SLC-846-Trigger
+- Summary: MIG-033 (V7 SLC-704, 2026-05-14) hat `owner_user_id`-Spalte auf 8 Kerntabellen ergaenzt (companies, contacts, deals, activities, meetings, proposals, email_messages, calls). Die outgoing-Mail-Tabelle `emails` (separate Tabelle von `email_messages`!) wurde dabei vergessen — keine ALTER TABLE-Anweisung in `033_v7_schema.sql`. Code in `cockpit/src/lib/email/send.ts` Zeilen 133+232 inserted aber `owner_user_id` wenn `params.ownerUserId` truthy. Vor V8.4: kein Compose-Caller setzte ownerUserId → INSERT-Spread `...(params.ownerUserId ? { owner_user_id: ... } : {})` liess die Spalte einfach weg → kein DB-Error, alle Mails gingen durch. **Mit V8.4 SLC-846** ergaenzte sendComposedEmail um `ownerUserId` (Pflicht-Param fuer tenantSlug-Lookup im DSE-Footer-Render-Pfad). Ab V8.4-Redeploy (2026-05-23 09:18 UTC) failt jeder Mail-Send aus dem Composing-Studio mit roter Fehlermeldung `Could not find the 'owner_user_id' column of 'emails' in the schema cache`. **0 emails-Rows insert.** SMTP wird gar nicht erst aufgerufen (Insert vor Send).
+- Impact: BLOCKER. Alle outgoing-Mails via Composing-Studio (Compose-Form, Follow-up-Templates, KI-Verbesserung) gingen 5h lang gar nicht raus. Cadence-Mails + Cron-Pfade (meeting-briefing, automation-runner) sind nur dann betroffen, wenn diese sendEmailWithTracking mit ownerUserId aufrufen — siehe Code-Audit-Followup.
+- Workaround: Keiner. User hat zwischen 09:18 UTC und 14:08 UTC vermutlich keine Mail versandt — anders waere der Fehler frueher entdeckt worden.
+- Discovery: User-Browser-Smoke im Composing-Studio 2026-05-23 ~14:05 UTC. User schickte gerade einen Test-Send mit angewendeter Template, roter Banner ueber Senden-Button zeigte den Schema-Fehler. Screenshot via User-Message in der Smoke-Session.
+- Resolution: MIG-040 angelegt + auf Production appliziert 2026-05-23 ~14:08 UTC via SSH+base64. ALTER TABLE emails ADD COLUMN IF NOT EXISTS owner_user_id UUID REFERENCES profiles(id) ON DELETE SET NULL + CREATE INDEX + NOTIFY pgrst. Verify-Block PASS. Code blieb unveraendert.
+- Next Action: (a) Re-Smoke S4 vom User: nochmal Mail via Composing-Studio senden, jetzt sollte INSERT durchgehen. (b) Code-Audit: pruefen ob weitere Tabellen aus V7-Owner-Scope vergessen wurden (`grep -rE "owner_user_id" cockpit/src/lib | awk` gegen `\\d <table>` auf der DB). (c) Skill-Improvement im Dev-System: `feedback_migration_must_cover_all_writes` — bei Owner-Scope-Migrationen MUSS jeder `INSERT/UPDATE`-Site mit der Spalte gegen die Migration-File verifiziert werden.
+
 ### ISSUE-081 — Composing-Studio Live-Preview ruft renderBrandedHtml ohne tenantSlug (Pre-Drift Preview vs. Send)
 - Status: open
 - Severity: Medium

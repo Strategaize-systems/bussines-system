@@ -1,5 +1,21 @@
 # Migrations
 
+### MIG-040 — V8.4 Hotfix emails.owner_user_id (APPLIED 2026-05-23 via SSH+base64)
+- Date: 2026-05-23 (~14:08 UTC, postgres-User, idempotent ADD COLUMN IF NOT EXISTS + CREATE INDEX IF NOT EXISTS + NOTIFY pgrst, Verify-Block PASS).
+- Scope: 1 ALTER `emails` + 1 INDEX + 1 NOTIFY pgrst.
+  ```sql
+  ALTER TABLE emails
+    ADD COLUMN IF NOT EXISTS owner_user_id UUID
+      REFERENCES profiles(id) ON DELETE SET NULL;
+  CREATE INDEX IF NOT EXISTS idx_emails_owner_user_id ON emails(owner_user_id);
+  NOTIFY pgrst, 'reload schema';
+  ```
+- Reason: MIG-033 (V7 SLC-704, 2026-05-14) ergaenzte owner_user_id auf 8 Kerntabellen (companies, contacts, deals, activities, meetings, proposals, email_messages, calls), aber die outgoing-Mail-Tabelle `emails` wurde vergessen. Code in `cockpit/src/lib/email/send.ts` Zeilen 133+232 inserted `owner_user_id` wenn `params.ownerUserId` truthy ist. Vor V8.4 SLC-846: Compose-Caller setzte ownerUserId nicht → INSERT-Spread liess die Spalte weg → kein DB-Error. Mit V8.4 SLC-846 ergaenzte sendComposedEmail um ownerUserId (fuer tenantSlug-Lookup im DSE-Footer-Render). Ab V8.4-Deploy (2026-05-23 09:18 UTC) failt jeder Compose-Send mit `Could not find the 'owner_user_id' column of 'emails' in the schema cache`.
+- Affected Areas: emails-Tabelle, RLS-Policies fuer V7-Owner-Scope (V7-RLS-Helper greift jetzt auch auf outgoing-mails), PostgREST Schema-Cache.
+- Risk: Niedrig — ADD COLUMN IF NOT EXISTS ist idempotent. Bestehende rows haben owner_user_id=NULL (FK ON DELETE SET NULL erlaubt). Keine Daten-Migration noetig.
+- Rollback Notes: Falls noetig: `ALTER TABLE emails DROP COLUMN IF EXISTS owner_user_id; NOTIFY pgrst, 'reload schema';` — aber waere nicht sinnvoll, da Code dann wieder failt sobald ownerUserId truthy ist.
+- Discovery: User-Browser-Smoke 2026-05-23 ~14:05 UTC im Composing-Studio. Roter Error-Banner "Could not find the 'owner_user_id' column of 'emails' in the schema cache" oberhalb des Senden-Buttons sichtbar. Cross-Check vorher via psql `SELECT owner_user_id FROM emails` bestaetigte `column does not exist`. RPT-533.
+
 ### MIG-038 — V8.4 SLC-841 legal_documents + teams.slug (Phase 1-4 APPLIED 2026-05-23, Phase 5 APPLIED 2026-05-23 via SLC-842)
 - Date: 2026-05-23 (Phase 1-4 applied via SSH+base64 in SLC-841 MT-2 — postgres-User, idempotent. Phase 5 applied via SSH+base64 in SLC-842 MT-4b — `038_v84_customer_dse_phase5.sql` mit base64-embedded customer-dse-default.md content, INSERT 0 2 fuer 2 Teams, content_md length 10205 chars verifiziert).
 - Scope: 1 neue Tabelle `legal_documents` + 1 ALTER `teams.slug` + Backfill + DEFAULT + UNIQUE-Index + RLS-Policies + Default-Seed in `038_v84_customer_dse.sql`:
