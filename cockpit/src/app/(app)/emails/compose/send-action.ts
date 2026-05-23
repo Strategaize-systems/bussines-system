@@ -21,6 +21,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getBrandingForSend } from "@/app/(app)/settings/branding/actions";
 import { renderBrandedHtml } from "@/lib/email/render";
 import { sendEmailWithTracking } from "@/lib/email/send";
+import { getTenantSlugByOwnerUserId } from "@/lib/team/lookup-slug";
 import { resolveVarsFromDeal } from "@/lib/email/variables";
 import { createFollowUpTask } from "@/app/(app)/aufgaben/actions";
 import {
@@ -97,7 +98,14 @@ export async function sendComposedEmail(
 
   const branding = await getBrandingForSend();
   const vars = input.dealId ? (await loadVarsForDeal(input.dealId)) ?? {} : {};
-  const html = renderBrandedHtml(body, branding, vars);
+  // SLC-846: tenantSlug-Resolution aus dem aktuellen Composing-User fuer
+  // DSE-Footer-Auto-Insert in renderBrandedHtml. Pre-Render-Pfad (params.html)
+  // umgeht den Lookup in send.ts, deshalb hier explizit aufloesen.
+  // Bei missing team_id: undefined → kein Auto-Footer, graceful Fallback.
+  const tenantSlug = profile.user_id
+    ? (await getTenantSlugByOwnerUserId(profile.user_id)) ?? undefined
+    : undefined;
+  const html = renderBrandedHtml(body, branding, vars, tenantSlug);
 
   // SLC-542 + SLC-555: Anhang-Liste defensiv re-validieren (Server-Trust
   // nicht 100% Client). Diskriminator-Pattern (DEC-108):
