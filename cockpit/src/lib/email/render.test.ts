@@ -136,23 +136,27 @@ describe("renderBrandedHtml — SLC-846 DSE-Footer-Block", () => {
     process.env.NEXT_PUBLIC_APP_URL = ORIGINAL_APP_URL;
   });
 
-  it("appends DSE-Footer-Block when tenantSlug is set", () => {
+  it("appends DSE-Footer-Block when tenantSlug is set (word-as-link, no URL-text)", () => {
     const rendered = renderBrandedHtml(
       SAMPLE_BODY,
       FULL_BRANDING,
       SAMPLE_VARS,
       "strategaize-transition-bv",
     );
+    // URL ist im href attribute, NICHT im sichtbaren Text
     expect(rendered).toContain(
-      "https://business.strategaizetransition.com/p/strategaize-transition-bv/datenschutz",
+      'href="https://business.strategaizetransition.com/p/strategaize-transition-bv/datenschutz"',
     );
-    expect(rendered).toContain("Datenschutzerklaerung:");
+    // Sichtbarer Link-Text ist NUR das Wort "Datenschutzerklaerung" (UX-Verbesserung 2026-05-23)
+    expect(rendered).toContain(">Datenschutzerklaerung</a>");
+    // Anti-Regression: KEIN "Datenschutzerklaerung: <URL>"-Praefix mehr (alter Output)
+    expect(rendered).not.toContain("Datenschutzerklaerung: ");
   });
 
   it("omits DSE-Footer-Block when tenantSlug is undefined (regression-safety)", () => {
     const rendered = renderBrandedHtml(SAMPLE_BODY, FULL_BRANDING, SAMPLE_VARS);
     expect(rendered).not.toContain("/datenschutz");
-    expect(rendered).not.toContain("Datenschutzerklaerung:");
+    expect(rendered).not.toContain("Datenschutzerklaerung");
   });
 
   it("omits DSE-Footer-Block when NEXT_PUBLIC_APP_URL is not set (graceful fallback)", () => {

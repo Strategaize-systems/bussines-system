@@ -62,7 +62,8 @@ function footerToHtml(markdown: string): string {
  * Verwendet `NEXT_PUBLIC_APP_URL` als Base-URL. Falls die ENV-Variable leer ist,
  * wird kein Footer-Block angehaengt (graceful Fallback).
  *
- * Output-Format: zusaetzlicher `<tr>`-Block am Ende des Mail-Tables. Bei
+ * Output-Format: zusaetzlicher `<tr>`-Block am Ende des Mail-Tables mit dem
+ * Wort "Datenschutzerklaerung" als unterstrichener Link. Bei
  * `tenantSlug=undefined` ist der Output ein leerer String — Bit-fuer-Bit-
  * Regression-Safety fuer bestehende Snapshots.
  */
@@ -78,8 +79,7 @@ function buildDseFooterBlock(
   const safePrimary = escapeHtml(primary);
   return (
     `<tr><td style="padding:16px 0 0 0;font-size:11px;line-height:1.4;color:#6b7280;">` +
-    `Datenschutzerklaerung: ` +
-    `<a href="${safeUrl}" style="color:${safePrimary};text-decoration:underline;">${safeUrl}</a>` +
+    `<a href="${safeUrl}" style="color:${safePrimary};text-decoration:underline;">Datenschutzerklaerung</a>` +
     `</td></tr>`
   );
 }
