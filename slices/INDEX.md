@@ -387,7 +387,7 @@ V8.4 = 7 Slices SLC-841..847, strikt sequenziell wegen Inter-Slice-Dependencies 
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-841 | [Schema-Migration MIG-038 (legal_documents + teams.slug)](SLC-841-customer-dse-schema-migration.md) | FEAT-824 / BL-488 | planned | Blocker | 2026-05-22 |
+| SLC-841 | [Schema-Migration MIG-038 (legal_documents + teams.slug)](SLC-841-customer-dse-schema-migration.md) | FEAT-824 / BL-488 | done | Blocker | 2026-05-22 |
 | SLC-842 | [Slug-Generator + Reserved-Slugs + Default-Seed-Markdown + Phase-5-Apply](SLC-842-tenant-slug-generator-default-seed.md) | FEAT-824 / BL-488 | planned | Blocker | 2026-05-22 |
 | SLC-843 | [Public-Route /p/[tenant-slug]/datenschutz + Shell + CSS + Middleware-Whitelist](SLC-843-customer-dse-public-route.md) | FEAT-824 / BL-488 | planned | Blocker | 2026-05-22 |
 | SLC-844 | [Editor /settings/compliance/customer-dse (Admin-only) + Server-Actions + Audit](SLC-844-customer-dse-editor.md) | FEAT-824 / BL-488 | planned | High | 2026-05-22 |

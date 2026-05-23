@@ -1,7 +1,7 @@
 # Migrations
 
-### MIG-038 — V8.4 SLC-841 legal_documents + teams.slug (PLANNED)
-- Date: not yet applied (geplant fuer V8.4 SLC-841 nach /slice-planning + /backend)
+### MIG-038 — V8.4 SLC-841 legal_documents + teams.slug (Phase 1-4 APPLIED 2026-05-23, Phase 5 pending SLC-842)
+- Date: 2026-05-23 (Phase 1-4 applied via SSH+base64 in SLC-841 MT-2 — postgres-User, idempotent). Phase 5 (Default-Seed-INSERT) defer auf SLC-842.
 - Scope: 1 neue Tabelle `legal_documents` + 1 ALTER `teams.slug` + Backfill + DEFAULT + UNIQUE-Index + RLS-Policies + Default-Seed in `038_v84_customer_dse.sql`:
   - **Phase 1 — legal_documents Table:**
     ```sql
@@ -93,13 +93,16 @@
   NOTIFY pgrst, 'reload schema';
   ```
   Backup vor Rollback Pflicht falls legal_documents-Rows manuell editiert wurden: `pg_dump --table=legal_documents > legal_documents_backup.sql`.
-- Verification (post-Apply, geplant in SLC-841 MT-3):
-  - `\d legal_documents` zeigt 7 Spalten, RLS=ENABLED, 2 Policies, UNIQUE(tenant_team_id, kind), FK auf teams(id) ON DELETE CASCADE.
-  - `\d teams` zeigt neue `slug`-Spalte, NOT NULL, DEFAULT-Expression.
-  - `SELECT id, name, slug FROM teams;` zeigt 1 Row mit `slug='strategaize-transition-bv'` (oder Backfill-Ergebnis).
-  - `SELECT COUNT(*) FROM legal_documents WHERE kind='customer-dse';` muss = `COUNT(*) FROM teams` sein.
-  - PostgREST-Smoke: `GET /rest/v1/legal_documents?limit=1` HTTP 401 (RLS aktiv ohne JWT), NICHT 404 = Schema-Cache aktiv.
-  - RLS-Live-DB-Tests via node:20 im Coolify-Net (`coolify-test-setup.md`): Cross-Tenant-Isolation, Admin-only-Mutate, anonyme-SELECT-blocked.
+- Implementation-Notes (SLC-841 MT-1, 2026-05-23):
+  - Phase 2 Slugify nutzt **chained `replace()` statt `translate()`** — translate() kann 1→2-Char-Umlaut-Mappings (ä→ae) nicht abbilden, daher in der ausgefuehrten Migration durch 7 explizite replace()-Calls ersetzt (ä/ö/ü/Ä/Ö/Ü/ß). Funktionsidentisch fuer reine ASCII-Namen, korrekt fuer Umlaut-Namen.
+  - **Phase 5 NICHT enthalten** (sliced auf SLC-842 nach Default-Markdown-Anlage). legal_documents bleibt nach SLC-841 LEER. Public-Route SLC-843 wuerde dann 404 zurueck geben — Reihenfolge SLC-842 vor SLC-843 ist Pflicht (DEC-238).
+- Verification (Post-Apply 2026-05-23):
+  - **AC1 PASS** — `\d legal_documents`: 7 Spalten (id/tenant_team_id/kind/content_md/updated_by/updated_at/created_at), RLS=ENABLED, 2 Policies (legal_documents_admin_mutate fuer ALL, legal_documents_select_team fuer SELECT), UNIQUE(tenant_team_id, kind), FK legal_documents_tenant_team_id_fkey REFERENCES teams(id) ON DELETE CASCADE, FK legal_documents_updated_by_fkey REFERENCES profiles(id) ON DELETE SET NULL.
+  - **AC2 PASS** — `\d teams`: neue Spalte `slug` TEXT NOT NULL, DEFAULT `'t-'::text || replace(gen_random_uuid()::text, '-'::text, ''::text)`, UNIQUE-Index `teams_slug_lower_unique` btree (lower(slug)).
+  - **AC3 PARTIAL** — Spec-Erwartung `strategaize-transition-bv` ist outdated (Team wurde zu "Strategaize" zurueckumbenannt). Tatsaechliche Backfill-Ergebnisse: `Strategaize` → `strategaize`, `[TEST] Test-Team` → `test-test-team`. Funktional erfuellt — Slugs sind unique, lowercase, deterministisch.
+  - **AC4 PASS** — `information_schema.role_table_grants` fuer `legal_documents`: `authenticated` hat SELECT/INSERT/UPDATE/DELETE, `service_role` hat SELECT/INSERT/UPDATE/DELETE. 8 Eintraege total.
+  - **AC5 PASS** — PostgREST-Smoke via Kong-Container interner Aufruf von `http://supabase-rest:3000/legal_documents?limit=1` ohne JWT: HTTP/1.1 401 Unauthorized. NICHT 404 → Schema-Cache geladen, RLS aktiv.
+  - **AC6 PASS** — RLS-Live-DB-Tests `cockpit/__tests__/rls/legal-documents-rls.test.ts` via node:20 im k9f5pn5upfq7etoefb5ukbcg_business-net: 7/7 Tests PASS in 87ms. Tenant-A-Admin INSERT erlaubt, Member INSERT geblockt (RLS-Policy-Error), Cross-Tenant-Isolation Member-A sieht NICHT Tenant-B-DSE (0 Rows), Member UPDATE 0 affected, UNIQUE-Violation 23505, FK ON DELETE CASCADE bestaetigt (confdeltype='c').
 
 ### MIG-037 — V7.6 SLC-762 custom_reports
 - Date: 2026-05-19 (applied via SSH+base64 in SLC-762 MT-1 — postgres-User, idempotent)
