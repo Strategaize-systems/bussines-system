@@ -58,13 +58,45 @@ function footerToHtml(markdown: string): string {
 }
 
 /**
+ * Baut einen optionalen DSE-Link-Block fuer den Mail-Footer (SLC-846, DEC-235).
+ * Verwendet `NEXT_PUBLIC_APP_URL` als Base-URL. Falls die ENV-Variable leer ist,
+ * wird kein Footer-Block angehaengt (graceful Fallback).
+ *
+ * Output-Format: zusaetzlicher `<tr>`-Block am Ende des Mail-Tables. Bei
+ * `tenantSlug=undefined` ist der Output ein leerer String — Bit-fuer-Bit-
+ * Regression-Safety fuer bestehende Snapshots.
+ */
+function buildDseFooterBlock(
+  tenantSlug: string | undefined,
+  primary: string,
+): string {
+  if (!tenantSlug) return "";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "");
+  if (!baseUrl) return "";
+  const dseUrl = `${baseUrl}/p/${tenantSlug}/datenschutz`;
+  const safeUrl = escapeHtml(dseUrl);
+  const safePrimary = escapeHtml(primary);
+  return (
+    `<tr><td style="padding:16px 0 0 0;font-size:11px;line-height:1.4;color:#6b7280;">` +
+    `Datenschutzerklaerung: ` +
+    `<a href="${safeUrl}" style="color:${safePrimary};text-decoration:underline;">${safeUrl}</a>` +
+    `</td></tr>`
+  );
+}
+
+/**
  * Haupt-Renderer. Bei leerem Branding faellt auf textToHtml zurueck —
  * AC4 + AC9 verlangen Bit-fuer-Bit-Identitaet zum V5.2-Output.
+ *
+ * SLC-846: optionaler `tenantSlug`-Param. Bei gesetztem Wert wird ein
+ * DSE-Link-Footer-Block am Ende angehaengt. Bei `tenantSlug=undefined` ist
+ * Output bit-identisch zu V8.3 (Snapshot-Regression-Safety).
  */
 export function renderBrandedHtml(
   body: string,
   branding: Branding | null,
   vars: RenderVars = {},
+  tenantSlug?: string,
 ): string {
   const resolvedBody = applyVars(body, vars);
 
@@ -101,6 +133,8 @@ export function renderBrandedHtml(
     ? buildContactRows(b.contactBlock, primary)
     : "";
 
+  const dseLinkBlock = buildDseFooterBlock(tenantSlug, primary);
+
   return (
     `<!DOCTYPE html>` +
     `<html><head><meta charset="utf-8" /></head>` +
@@ -111,6 +145,7 @@ export function renderBrandedHtml(
     footerLine +
     contactRows +
     footerText +
+    dseLinkBlock +
     `</table>` +
     `</body></html>`
   );

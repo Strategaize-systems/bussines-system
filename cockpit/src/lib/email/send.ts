@@ -10,6 +10,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { injectTracking } from "./tracking";
 import { renderBrandedHtml, type RenderVars } from "./render";
 import { getBrandingForSend } from "@/app/(app)/settings/branding/actions";
+import { getTenantSlugByOwnerUserId } from "@/lib/team/lookup-slug";
 
 export type SendEmailAttachment = {
   storagePath: string;
@@ -104,7 +105,18 @@ export async function sendEmailWithTracking(params: SendEmailParams): Promise<Se
     htmlContent = params.html;
   } else {
     const branding = await getBrandingForSend();
-    htmlContent = renderBrandedHtml(params.body, branding, params.vars ?? {});
+    // SLC-846: tenantSlug-Resolution via ownerUserId fuer DSE-Footer-Auto-Insert.
+    // Bei legacy-Callern ohne ownerUserId bleibt tenantSlug=undefined und der
+    // Footer-Block wird nicht angehaengt (Bit-fuer-Bit-Regression-Safety).
+    const tenantSlug = params.ownerUserId
+      ? (await getTenantSlugByOwnerUserId(params.ownerUserId)) ?? undefined
+      : undefined;
+    htmlContent = renderBrandedHtml(
+      params.body,
+      branding,
+      params.vars ?? {},
+      tenantSlug,
+    );
   }
 
   // Inject tracking if enabled

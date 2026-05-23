@@ -10,7 +10,7 @@
  * und Variablen-Ersetzung.
  */
 
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { renderBrandedHtml } from "./render";
 import { textToHtml } from "./tracking";
 import type { Branding } from "@/types/branding";
@@ -122,5 +122,58 @@ describe("renderBrandedHtml", () => {
     expect(rendered).not.toContain("<script>alert(1)</script>");
     expect(rendered).not.toContain("<b>fett</b>");
     expect(rendered).toContain("&lt;b&gt;fett&lt;/b&gt;");
+  });
+});
+
+describe("renderBrandedHtml — SLC-846 DSE-Footer-Block", () => {
+  const ORIGINAL_APP_URL = process.env.NEXT_PUBLIC_APP_URL;
+
+  beforeEach(() => {
+    process.env.NEXT_PUBLIC_APP_URL = "https://business.strategaizetransition.com";
+  });
+
+  afterEach(() => {
+    process.env.NEXT_PUBLIC_APP_URL = ORIGINAL_APP_URL;
+  });
+
+  it("appends DSE-Footer-Block when tenantSlug is set", () => {
+    const rendered = renderBrandedHtml(
+      SAMPLE_BODY,
+      FULL_BRANDING,
+      SAMPLE_VARS,
+      "strategaize-transition-bv",
+    );
+    expect(rendered).toContain(
+      "https://business.strategaizetransition.com/p/strategaize-transition-bv/datenschutz",
+    );
+    expect(rendered).toContain("Datenschutzerklaerung:");
+  });
+
+  it("omits DSE-Footer-Block when tenantSlug is undefined (regression-safety)", () => {
+    const rendered = renderBrandedHtml(SAMPLE_BODY, FULL_BRANDING, SAMPLE_VARS);
+    expect(rendered).not.toContain("/datenschutz");
+    expect(rendered).not.toContain("Datenschutzerklaerung:");
+  });
+
+  it("omits DSE-Footer-Block when NEXT_PUBLIC_APP_URL is not set (graceful fallback)", () => {
+    delete process.env.NEXT_PUBLIC_APP_URL;
+    const rendered = renderBrandedHtml(
+      SAMPLE_BODY,
+      FULL_BRANDING,
+      SAMPLE_VARS,
+      "strategaize-transition-bv",
+    );
+    expect(rendered).not.toContain("/p/strategaize-transition-bv/datenschutz");
+  });
+
+  it("escapes tenantSlug in DSE-URL to prevent XSS via slug", () => {
+    const rendered = renderBrandedHtml(
+      SAMPLE_BODY,
+      FULL_BRANDING,
+      SAMPLE_VARS,
+      'evil"><script>alert(1)</script>',
+    );
+    expect(rendered).not.toContain("<script>alert(1)</script>");
+    expect(rendered).toContain("&quot;&gt;&lt;script&gt;");
   });
 });
