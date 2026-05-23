@@ -1,5 +1,15 @@
 # Known Issues
 
+### ISSUE-080 — V8.4 SLC-841 Backfill ignoriert reserved-slugs.ts Liste (Slug-Collision-Bug)
+- Status: open
+- Severity: Medium
+- Area: Backend / V8.4 Customer-DSE / Slug-Generator
+- Summary: MIG-038 Phase 2 Backfill (SLC-841 SQL `DO $$ ... lower(replace(...)) ... $$`) prueft NICHT gegen die TypeScript-Reserved-Liste `cockpit/src/lib/team/reserved-slugs.ts`. Bei V8.4 Live-Smoke 2026-05-23 trat der erste Real-Fall auf: Team "Strategaize" wurde via Backfill zu Slug `strategaize` — aber `strategaize` ist in RESERVED_SLUGS (Strategaize-Common-Reserved). Public-Route `/p/strategaize/datenschutz` ruft `isReservedSlug("strategaize") → true → notFound()` → HTTP 404 statt 200. Slug-Generator-TS (SLC-842 `generateUniqueSlug`) haette beim Neuanlegen `strategaize-2` erzeugt — der Backfill-SQL-Pfad ist eine separate Implementierung ohne diese Defense.
+- Impact: Bei Tenant-Onboarding-Flow ab V8.5+ (Multi-Tenant) wuerden Team-Namen die exakt Reserved-Slugs matchen falsch backfilled. Workaround fuer V8.4: Single-Tenant (1 Team) — manueller SQL-UPDATE auf neuen Slug `strategaize-transition-bv`. RLS + Public-Route + Editor funktionieren danach normal.
+- Workaround: V8.4 Live-Fix 2026-05-23: `UPDATE teams SET slug='strategaize-transition-bv' WHERE slug='strategaize'; NOTIFY pgrst, 'reload schema';` — danach Public-Route HTTP 200, alle Live-Smokes PASS.
+- Discovery: V8.4 SLC-847 MT-3 Live-Smoke S2 — curl `/p/strategaize/datenschutz` returnt HTTP 404 trotz korrekt-existing DB-Row + content_md=10205. HTML-Inspect zeigte `NEXT_HTTP_ERROR_FALLBACK;404` aus notFound()-Branch. Root-Cause via Code-Walkthrough: `isReservedSlug(tenantSlug)`-Check vor DB-Lookup.
+- Next Action: V8.5 Backlog (BL-490): Folge-Migration `MIG-039` die (a) reserved-slugs-Liste in PL/pgSQL portiert ODER (b) Trigger BEFORE INSERT/UPDATE auf teams.slug der Reserved-Check enforced. Empfehlung: Single-Source-of-Truth — Reserved-Liste in DB-Function `is_reserved_slug(text)` + Backfill-SQL + Slug-Trigger ruft sie. TypeScript-Liste wird daraus generiert oder spiegelt sie. Plus Skill-Improvement-Eintrag im Dev-System (`feedback_sql_translate_no_multi_char_expansion` ergaenzen um Reserved-Check).
+
 ### ISSUE-079 — Duplicate Backlog-ID BL-442 in planning/backlog.json (V6.5 + V7.6 beide ID BL-442)
 - Status: open
 - Severity: Low

@@ -248,8 +248,8 @@
     {
       "id": "v8-4",
       "name": "V8.4",
-      "status": "active",
-      "summary": "Customer-Facing Datenschutzerklaerung (Multi-Tenant-Ready) — Requirements done 2026-05-22 (RPT-516). FEAT-824 / BL-488. Pro Tenant editierbare DSE in /settings/compliance + Public-Route /p/[tenant-slug]/datenschutz + Verlinkung im Consent-Form + Mail-Footer-Auto-Insert mit DSE-URL. Multi-Tenant via team_id-reuse (V7 RLS-Helper). Versionierung mit Publish-Choice ist Open-Question fuer /architecture (V1 KISS Single-Row empfohlen, History V2). Default-Seed bei Migration mit Platzhaltern (Tenant-Admin ergaenzt). 7 Open Questions fuer /architecture. Aufwand-Schaetzung: ~6-10h Code-Side, ~6-10 Slices. Pre-Customer-Live-Compliance-Gate-Foundation.",
+      "status": "released",
+      "summary": "Customer-Facing Datenschutzerklaerung (Multi-Tenant-Ready) RELEASED 2026-05-23 als REL-038 (Image-Tag aus Merge 9f21569). FEAT-824 / BL-488 deployed. 7 Slices SLC-841..847, MIG-038 Phase 1-5 LIVE, legal_documents-Tabelle mit RLS + Default-Seed fuer alle Teams + teams.slug + Public-Route /p/[slug]/datenschutz + Admin-Editor /settings/compliance/customer-dse mit Save+Reset+Audit + Consent-Form DSE-Link + Mail-Footer-Auto-Insert in renderBrandedHtml. Gesamt-QA: Vitest 1116/1116 PASS (+37 vs V8.3), Lint 142e/57w EXACT V8.3-Baseline, Build clean. Live-Smokes S2/S5/S6/S7/S8/AC12 PASS (HTTP-Routes + DB-Counts + Vitest-RLS + Container-Health). S1/S3/S4 (Editor-Roundtrip + Consent-Token + Test-Mail-Footer) deferred zu /post-launch. ISSUE-080 entdeckt + dokumentiert: Backfill-Slug-Collision mit Reserved-Liste (Live-Fix via SQL UPDATE strategaize-transition-bv). RPT-517..530 + RPT-531.",
       "order": 36
     },
     {
