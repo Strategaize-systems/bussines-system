@@ -165,6 +165,16 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
         visibleFor: ADMIN_ONLY,
       },
       {
+        href: "/settings/compliance/customer-dse",
+        label: "Datenschutzerklaerung fuer Kunden",
+        description:
+          "Vor Customer-Live editieren — wird im Consent-Form und Mail-Footer angezeigt",
+        icon: FileText,
+        iconWrapperClasses: "bg-rose-50",
+        iconClasses: "text-rose-700",
+        visibleFor: ADMIN_ONLY,
+      },
+      {
         href: "/settings/products",
         label: "Produkte",
         description: "Produkt-Katalog fuer Goals und Forecast-Auswahl",
