@@ -1,5 +1,15 @@
 # Known Issues
 
+### ISSUE-081 — Composing-Studio Live-Preview ruft renderBrandedHtml ohne tenantSlug (Pre-Drift Preview vs. Send)
+- Status: open
+- Severity: Medium
+- Area: Frontend / V8.4 Composing-Studio / SLC-846
+- Summary: Die Live-Preview im `/emails/compose` Composing-Studio (compose-studio.tsx + render.ts) ruft `renderBrandedHtml(body, branding, vars)` ohne den `tenantSlug`-Param auf. Folge: Die Preview zeigt KEIN DSE-Footer-Block ("Datenschutzerklaerung: <URL>"), obwohl der echte Send-Pfad (`lib/email/send.ts` Zeilen 111-118) den tenantSlug aus `params.ownerUserId` aufloest und an renderBrandedHtml uebergibt. User sieht in der Preview einen anderen HTML-Output als die tatsaechlich versendete Mail. SLC-846 R1 ("Bit-fuer-Bit-Regression-Safety") hat den Drift-Pfad explizit so ausgelegt — der DSE-Footer ist optional bei tenantSlug=undefined — aber die Preview wurde nicht analog erweitert.
+- Impact: Vertrauen in die Preview wird reduziert. User kann Footer-Wirkung nicht visuell pruefen vor Send. Funktional unkritisch: der echte Send-Pfad hat den Footer (per render.test.ts Vitest 11/11 PASS in /qa SLC-846 RPT-528). Risiko: User koennte den Eindruck haben, der Footer fehle in der Mail.
+- Workaround: Vor Customer-Live einfach 1x echte Test-Mail an sich selbst senden und HTML-Source pruefen — bestaetigt den Send-Pfad. Preview als Layout/Body-Vorschau verstehen, nicht als 1:1-Send-Vorschau.
+- Discovery: V8.4 RPT-532 Playwright-Smoke 2026-05-23: iframe-Inhalt der Compose-Preview ausgelesen via `document.querySelector('iframe').contentDocument.documentElement.outerHTML.slice(-500)` — letzte 500 Zeichen enden mit `Strategaize Transition GmbH | Am Markt 19 | Swalmen | NL</td></tr></tbody></table></body></html>` ohne DSE-Footer-Block.
+- Next Action: V8.5 Backlog BL-491: Preview-Aufruf in compose-studio.tsx auf `renderBrandedHtml(body, branding, vars, currentUserTenantSlug)` erweitern. Quelle fuer `currentUserTenantSlug`: Server-Component-Page kann via `getTenantSlugByOwnerUserId(currentUserId)` aufloesen und als Prop in compose-studio.tsx reichen. Plus IMP-Kandidat (Dev-System): `feedback_render_preview_vs_send_drift_check` — bei Render-Function-Signatur-Erweiterung MUSS Preview-Aufruf auch geupdated werden.
+
 ### ISSUE-080 — V8.4 SLC-841 Backfill ignoriert reserved-slugs.ts Liste (Slug-Collision-Bug)
 - Status: open
 - Severity: Medium
