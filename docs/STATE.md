@@ -10,13 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V8.4 SLC-845 Consent-Form DSE-Link DONE code-side 2026-05-23 (RPT-527)** — 2 neue Files (`lib/team/lookup-slug.ts` Helper + `lookup-slug.test.ts` Vitest) + 1 PATCH (`app/consent/[token]/page.tsx` mit `owner_user_id`-Select + Slug-Lookup + DSE-Link). Lookup-Helper `getTenantSlugByOwnerUserId(ownerUserId)` resolved via 2-Step (profiles.team_id → teams.slug), graceful-null Fallback bei jeder Miss-Stufe. JSX-Link in `consent/[token]/page.tsx` zwischen `<p>wir speichern...</p>` und `<ConsentForm>`: `<a href={/p/{slug}/datenschutz} target=_blank rel=noopener noreferrer>Datenschutzerklaerung lesen ↗</a>`. Vitest 6/6 PASS (Happy + Empty-Input + Profile-Missing + Team_Id-Null + Team-Missing + Slug-Null). TSC clean fuer SLC-845, ESLint clean. AC1-AC3 + AC6 (Code-Side) alle PASS, AC4+AC5 (Browser-Smoke Live-Token + Edge-Case ownerless) deferred bis SLC-847. Branch `slc-841-customer-dse-schema-migration` haelt SLC-841 + 842 + 843 + 844 + 845. **Naechster Schritt: `/qa SLC-845` als Skill.**
-- Current Phase: V8.4 SLC-841 + SLC-842 + SLC-843 + SLC-844 + SLC-845 DONE code-side. Pending: /qa SLC-845 → /backend SLC-846 (Mail-Footer-Patch, ~1.5h) → /qa → /qa SLC-847 (Gesamt-QA + Master-Merge + Deploy + Live-Smokes, ~1.5h).
+- Current Focus: **V8.4 SLC-845 Consent-Form DSE-Link + /qa PASS code-side 2026-05-23 (RPT-527+528)** — AC1-AC3 + AC6 (Code-Side) alle PASS, Vitest 6/6 PASS re-run, TSC clean fuer SLC-845 (8 pre-existing unrelated), ESLint clean, Stub-Detection clean, Wiring konsistent (URL → Token → contacts → owner_user_id → lookup → profiles → teams → Public-Route /p/[slug]/datenschutz), Pattern-Reuse 6/6 compliant inkl. target=_blank rel=noopener noreferrer Strategaize-Security-Standard. Schema-Sanity Hetzner-verifiziert: `contacts.owner_user_id uuid` + FK auf profiles(id) + Index + RLS-Refs (V3+ Standard). AC4+AC5 (Browser-Smoke) deferred bis SLC-847. Branch `slc-841-customer-dse-schema-migration` haelt SLC-841 + 842 + 843 + 844 + 845. **Naechster Schritt: `/backend SLC-846` (Mail-Footer-Patch, ~1.5h).**
+- Current Phase: V8.4 SLC-841 + 842 + 843 + 844 + 845 DONE + /qa PASS code-side. Pending: /backend SLC-846 (Mail-Footer-Patch, ~1.5h) → /qa → /qa SLC-847 (Gesamt-QA + Master-Merge + Deploy + Live-Smokes, ~1.5h).
 
 ## Immediate Next Steps
-1. **(Mandatory next)** `/qa SLC-845` als Skill — Lookup-Helper-Vitest 6/6 verifizieren, Stub-Detection, Pattern-Reuse (createAdminClient + graceful-null), Page-Patch-Sanity (owner_user_id-Column existiert in contacts-Schema, target=_blank-Sicherheit, conditional Render).
-2. **(After /qa SLC-845)** `/backend SLC-846` (Mail-Footer-Patch, ~1.5h).
-3. **(SLC-847 als Gesamt-QA-Slice)** Master-Merge ALLER vorherigen Slice-Branches + Coolify-Redeploy + Live-Smoke.
+1. **(Mandatory next)** `/backend SLC-846` — Mail-Footer-Auto-Insert mit DSE-URL des sendenden Tenants. ~1.5h. Branch weiter auf `slc-841-customer-dse-schema-migration`.
+2. **(After SLC-846)** `/qa SLC-846` als Skill.
+3. **(SLC-847 als Gesamt-QA-Slice)** Master-Merge ALLER vorherigen Slice-Branches + Coolify-Redeploy + Live-Smoke (AC5-AC8 SLC-843 + AC8 SLC-844 + AC4-AC5 SLC-845 + AC fuer SLC-846).
 4. **(After SLC-842)** Sequenz SLC-843 (Public-Route, ~1h) + SLC-844 (Editor, ~2h) parallel in Worktrees moeglich; danach SLC-845 (Consent-Patch, ~1h) + SLC-846 (Mail-Footer-Patch, ~1.5h) parallel in Worktrees moeglich.
 5. **(SLC-847 ZULETZT)** Gesamt-QA + Master-Merge ALLER vorherigen Slice-Branches + Coolify-Redeploy + Live-Smoke 8/8 Success-Criteria (S1-S8 aus FEAT-824). ~1.5h.
 3. **(Optional, niedrig-Prio)** `/post-launch` V8.3 + V8.2 Burn-In nach ≥12h.
