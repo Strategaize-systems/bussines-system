@@ -1,7 +1,7 @@
 # Migrations
 
-### MIG-038 — V8.4 SLC-841 legal_documents + teams.slug (Phase 1-4 APPLIED 2026-05-23, Phase 5 pending SLC-842)
-- Date: 2026-05-23 (Phase 1-4 applied via SSH+base64 in SLC-841 MT-2 — postgres-User, idempotent). Phase 5 (Default-Seed-INSERT) defer auf SLC-842.
+### MIG-038 — V8.4 SLC-841 legal_documents + teams.slug (Phase 1-4 APPLIED 2026-05-23, Phase 5 APPLIED 2026-05-23 via SLC-842)
+- Date: 2026-05-23 (Phase 1-4 applied via SSH+base64 in SLC-841 MT-2 — postgres-User, idempotent. Phase 5 applied via SSH+base64 in SLC-842 MT-4b — `038_v84_customer_dse_phase5.sql` mit base64-embedded customer-dse-default.md content, INSERT 0 2 fuer 2 Teams, content_md length 10205 chars verifiziert).
 - Scope: 1 neue Tabelle `legal_documents` + 1 ALTER `teams.slug` + Backfill + DEFAULT + UNIQUE-Index + RLS-Policies + Default-Seed in `038_v84_customer_dse.sql`:
   - **Phase 1 — legal_documents Table:**
     ```sql
