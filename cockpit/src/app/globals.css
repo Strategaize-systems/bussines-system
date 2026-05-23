@@ -368,6 +368,101 @@
   font-style: italic;
 }
 
+/* Customer-DSE-Content (SLC-843 V8.4 Public-Route /p/[tenant-slug]/datenschutz)
+   — typography fuer Markdown-Renderer. Eigene Schicht parallel zu .legal-content
+   und .help-content (User-Direktive: keine Reuse, damit Bereiche unabhaengig
+   polierbar). Tabellen-Styling Pflicht fuer Auftragsverarbeiter-Markdown-Tabelle
+   (remark-gfm). */
+.customer-dse-content h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+.customer-dse-content h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+.customer-dse-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+.customer-dse-content p {
+  margin-bottom: 0.875rem;
+  line-height: 1.625;
+}
+.customer-dse-content ul,
+.customer-dse-content ol {
+  padding-left: 1.5rem;
+  margin-bottom: 0.875rem;
+}
+.customer-dse-content ul {
+  list-style: disc;
+}
+.customer-dse-content ol {
+  list-style: decimal;
+}
+.customer-dse-content li {
+  margin-bottom: 0.25rem;
+  line-height: 1.5;
+}
+.customer-dse-content a {
+  color: var(--color-brand-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.customer-dse-content a:hover {
+  color: var(--color-brand-primary-dark);
+}
+.customer-dse-content table {
+  border-collapse: collapse;
+  margin: 1rem 0;
+  width: 100%;
+  font-size: 0.875rem;
+}
+.customer-dse-content th,
+.customer-dse-content td {
+  border: 1px solid var(--color-border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+.customer-dse-content th {
+  background: var(--color-muted);
+  font-weight: 600;
+}
+.customer-dse-content blockquote {
+  border-left: 4px solid var(--color-border);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: var(--color-muted-foreground);
+}
+.customer-dse-content code {
+  background: var(--color-muted);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+}
+.customer-dse-content hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 2rem 0;
+}
+.customer-dse-content strong {
+  font-weight: 600;
+}
+.customer-dse-content em {
+  font-style: italic;
+}
+
 /* Help-Content (SLC-826 V8.3 Hilfe-Section) — typography fuer Markdown-Renderer
    in /help/[slug]. Eigene Schicht parallel zu .legal-content (User-Direktive:
    keine Reuse, damit beide Bereiche unabhaengig poliert werden koennen). */
