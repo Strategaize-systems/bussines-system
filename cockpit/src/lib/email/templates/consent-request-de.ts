@@ -34,7 +34,22 @@ export function consentRequestText(input: TemplateInput): string {
   ].join("\n");
 }
 
-export function consentRequestHtml(input: TemplateInput): string {
+/**
+ * Rendert die Consent-Request-Mail als HTML.
+ *
+ * SLC-853 (DEC-239): optionaler `dseFooterHtml`-Param. Bei nicht-leerem Wert
+ * wird der vorgerenderte Paragraph-Block (via `buildDseFooterParagraph` aus
+ * `lib/email/render.ts`) vor `</body>` eingefuegt. Bei leerem Default-Wert ist
+ * Output bit-identisch zu V8.4 (Snapshot-Regression-Safety).
+ *
+ * Der Caller (`send-consent-mail.ts`) ist fuer die tenantSlug-Resolution und
+ * das Footer-Building zustaendig — der Renderer ist eine reine Funktion ohne
+ * ENV-Zugriff und ohne DB-Lookup (besser testbar + caching-freundlich).
+ */
+export function consentRequestHtml(
+  input: TemplateInput,
+  dseFooterHtml: string = "",
+): string {
   const name = `${input.firstName} ${input.lastName}`.trim();
   return `<!DOCTYPE html>
 <html lang="de">
@@ -62,7 +77,7 @@ export function consentRequestHtml(input: TemplateInput): string {
     Wenn Sie keine Einwilligung erteilen, speichern wir nur, dass Sie angefragt wurden,
     und kontaktieren Sie nicht weiter.
   </p>
-  <p>Viele Gr&uuml;&szlig;e<br>Immo Bellaerts</p>
+  <p>Viele Gr&uuml;&szlig;e<br>Immo Bellaerts</p>${dseFooterHtml}
 </body>
 </html>`;
 }

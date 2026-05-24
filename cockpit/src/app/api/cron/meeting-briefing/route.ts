@@ -28,6 +28,8 @@ import { parseLLMResponse, validateDealBriefing } from "@/lib/ai/parser";
 import { loadDealBriefingContext } from "@/lib/ai/deal-context-loader";
 import { sendPushNotification } from "@/lib/push/send";
 import { renderBriefingEmail } from "@/lib/email/templates/briefing-html";
+import { buildDseFooterParagraph } from "@/lib/email/render";
+import { getTenantSlugByOwnerUserId } from "@/lib/team/lookup-slug";
 import { MAX_BRIEFING_RETRIES } from "@/lib/types/briefing";
 import nodemailer from "nodemailer";
 
@@ -255,6 +257,15 @@ export async function POST(request: NextRequest) {
                 (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/+$/, "") ||
                 "https://business.strategaizetransition.com";
 
+              // SLC-853 (DEC-239): tenantSlug-Resolution aus meeting-owner_user_id
+              // fuer DSE-Footer-Auto-Insert. Bei missing owner_user_id (Legacy-
+              // Meetings vor V7 SLC-704) oder missing team_id: tenantSlug=undefined
+              // → buildDseFooterParagraph gibt "" zurueck → Mail bit-identisch zu V8.4.
+              const tenantSlug = meeting.owner_user_id
+                ? (await getTenantSlugByOwnerUserId(meeting.owner_user_id)) ?? undefined
+                : undefined;
+              const dseFooterHtml = buildDseFooterParagraph(tenantSlug);
+
               const rendered = renderBriefingEmail({
                 meetingTitle: meeting.title ?? "Meeting",
                 meetingScheduledAt: new Date(meeting.scheduled_at),
@@ -262,6 +273,7 @@ export async function POST(request: NextRequest) {
                 dealId: meeting.deal_id,
                 briefing,
                 baseUrl,
+                dseFooterHtml,
               });
 
               await mailer.transporter.sendMail({

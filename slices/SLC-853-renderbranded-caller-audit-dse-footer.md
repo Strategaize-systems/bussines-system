@@ -2,7 +2,7 @@
 
 - **Feature:** BL-492
 - **Version:** V8.5
-- **Status:** planned
+- **Status:** done
 - **Priority:** Medium
 - **Created:** 2026-05-24
 - **Estimated:** ~2-3h Code-Side

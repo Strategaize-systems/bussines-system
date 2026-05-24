@@ -91,3 +91,63 @@ describe("renderBriefingEmail", () => {
     expect(out.text).toContain("(keine)");
   });
 });
+
+describe("renderBriefingEmail — SLC-853 DSE-Footer-Insertion", () => {
+  const DSE_FOOTER_HTML =
+    '<p style="margin:16px 0 0 0;font-size:11px;line-height:1.4;color:#6b7280;">' +
+    '<a href="https://business.strategaizetransition.com/p/strategaize-transition-bv/datenschutz" ' +
+    'style="color:#4454b8;text-decoration:underline;">Datenschutzerklaerung</a>' +
+    "</p>";
+
+  it("ohne dseFooterHtml: Output enthaelt KEINEN DSE-Link (V8.4-Regression-Safety)", () => {
+    const out = renderBriefingEmail({ ...baseInput, briefing: baseBriefing });
+    expect(out.html).not.toContain("Datenschutzerklaerung");
+    expect(out.html).not.toContain("/p/");
+    expect(out.html).not.toContain("/datenschutz");
+  });
+
+  it("mit dseFooterHtml: Block wird vor </body> in die Card eingefuegt", () => {
+    const out = renderBriefingEmail({
+      ...baseInput,
+      briefing: baseBriefing,
+      dseFooterHtml: DSE_FOOTER_HTML,
+    });
+    expect(out.html).toContain("Datenschutzerklaerung");
+    expect(out.html).toContain(
+      "/p/strategaize-transition-bv/datenschutz",
+    );
+    // Position: nach "Briefing automatisch generiert", vor </div></body>
+    const confidence = out.html.indexOf("Konfidenz");
+    const footer = out.html.indexOf("Datenschutzerklaerung");
+    const bodyClose = out.html.indexOf("</body>");
+    expect(footer).toBeGreaterThan(confidence);
+    expect(footer).toBeLessThan(bodyClose);
+  });
+
+  it("mit dseFooterHtml: bestehender Body-Content bleibt bit-identisch ohne Footer", () => {
+    const withFooter = renderBriefingEmail({
+      ...baseInput,
+      briefing: baseBriefing,
+      dseFooterHtml: DSE_FOOTER_HTML,
+    });
+    const withoutFooter = renderBriefingEmail({
+      ...baseInput,
+      briefing: baseBriefing,
+    });
+    const stripped = withFooter.html.replace(DSE_FOOTER_HTML, "");
+    expect(stripped).toBe(withoutFooter.html);
+  });
+
+  it("dseFooterHtml='' (explicit empty) bit-identisch zu Default-Call", () => {
+    const withEmpty = renderBriefingEmail({
+      ...baseInput,
+      briefing: baseBriefing,
+      dseFooterHtml: "",
+    });
+    const withoutParam = renderBriefingEmail({
+      ...baseInput,
+      briefing: baseBriefing,
+    });
+    expect(withEmpty.html).toBe(withoutParam.html);
+  });
+});

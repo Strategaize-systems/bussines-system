@@ -123,6 +123,10 @@ export async function createConsentRequest(contactId: string) {
     firstName: contact.first_name,
     lastName: contact.last_name,
     token,
+    // SLC-853 (DEC-239): tenantSlug-Resolution fuer DSE-Footer-Auto-Insert.
+    // Bei missing user.id (sollte nach getUser-Check oben nicht passieren)
+    // bleibt der Footer aus.
+    ownerUserId: user.id,
   });
 
   revalidatePath(`/contacts/${contactId}`);

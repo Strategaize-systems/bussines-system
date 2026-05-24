@@ -2487,7 +2487,7 @@
       "title": "V8.5 SLC-853 renderBrandedHtml-Caller-Audit + DSE-Footer fuer send-consent-mail + meeting-briefing",
       "type": "improvement",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.5",
       "description": "V8.4-Hotfix-Lehre (ISSUE-083): SLC-846 hat DSE-Footer nur fuer renderBrandedHtml-Pfad implementiert. send-consent-mail.ts + meeting-briefing/route.ts nutzen eigene HTML-Builder (consentRequestHtml + briefing-Renderer) und reichen das Ergebnis als params.html — DSE-Footer fehlt komplett. SLC-853 implementiert Option A: buildDseFooterBlock aus render.ts exportieren + in beide Custom-Renderer einbauen. tenantSlug-Resolution via getTenantSlugByOwnerUserId. Alternative B (komplette renderBrandedHtml-Migration) ist V9+ Roadmap-Item. DEC-239 dokumentiert die Wahl. Aufwand: ~2-3h. Plus docs/AUDIT_MAIL_RENDERERS_V85.md mit Caller-Grep-Liste.",
       "createdAt": "2026-05-24"

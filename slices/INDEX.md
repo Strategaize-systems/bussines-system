@@ -403,4 +403,4 @@ V8.5 = 3 Slices SLC-851..853, parallel-ausfuehrbar (geringe Inter-Slice-Dependen
 |----|-------|---------|--------|----------|---------|
 | SLC-851 | [Backfill-Reserved-Slug-Enforcement (MIG-039 PL/pgSQL-Trigger)](SLC-851-backfill-reserved-slug-enforcement.md) | BL-490 / ISSUE-080 | done | High | 2026-05-24 |
 | SLC-852 | [Compose-Preview tenantSlug-Drift-Fix](SLC-852-compose-preview-tenantslug-fix.md) | BL-491 / ISSUE-081 | done | Medium | 2026-05-24 |
-| SLC-853 | [renderBrandedHtml-Caller-Audit + DSE-Footer fuer Consent + Briefing-Mails](SLC-853-renderbranded-caller-audit-dse-footer.md) | BL-492 | planned | Medium | 2026-05-24 |
+| SLC-853 | [renderBrandedHtml-Caller-Audit + DSE-Footer fuer Consent + Briefing-Mails](SLC-853-renderbranded-caller-audit-dse-footer.md) | BL-492 | done | Medium | 2026-05-24 |

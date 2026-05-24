@@ -15,6 +15,15 @@ export interface BriefingEmailInput {
   briefing: BriefingPayload;
   /** Absolute base URL for the click-through link, e.g. https://business.strategaizetransition.com */
   baseUrl: string;
+  /**
+   * V8.5 SLC-853 (DEC-239): vorgerenderter DSE-Footer-Paragraph (via
+   * `buildDseFooterParagraph` aus `lib/email/render.ts`). Wird im Cron
+   * (`api/cron/meeting-briefing/route.ts`) aus `meeting.owner_user_id`
+   * + `getTenantSlugByOwnerUserId` aufgeloest und durchgereicht. Bei
+   * leerem Default-Wert ist Output bit-identisch zu V8.4
+   * (Snapshot-Regression-Safety).
+   */
+  dseFooterHtml?: string;
 }
 
 export interface BriefingEmailOutput {
@@ -101,7 +110,7 @@ export function renderBriefingEmail(input: BriefingEmailInput): BriefingEmailOut
     <div style="margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;">
       <a href="${escapeHtml(dealUrl)}" style="display:inline-block;padding:10px 18px;background:#4f46e5;color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:500;">Deal-Workspace oeffnen</a>
     </div>
-    <p style="margin:16px 0 0 0;font-size:11px;color:#94a3b8;">Briefing automatisch generiert &middot; Konfidenz ${input.briefing.confidence}%</p>
+    <p style="margin:16px 0 0 0;font-size:11px;color:#94a3b8;">Briefing automatisch generiert &middot; Konfidenz ${input.briefing.confidence}%</p>${input.dseFooterHtml ?? ""}
   </div>
 </body>
 </html>`;

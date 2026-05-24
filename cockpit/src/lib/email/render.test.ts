@@ -11,7 +11,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { renderBrandedHtml } from "./render";
+import { renderBrandedHtml, buildDseFooterBlock, buildDseFooterParagraph } from "./render";
 import { textToHtml } from "./tracking";
 import type { Branding } from "@/types/branding";
 
@@ -225,5 +225,58 @@ describe("renderBrandedHtml — SLC-852 Preview-vs-Send Bit-Identity", () => {
     expect(previewHtml).toBe(sendHtml);
     // Plus: ohne tenantSlug KEIN DSE-Footer (graceful Fallback, konsistent)
     expect(previewHtml).not.toContain("/datenschutz");
+  });
+});
+
+describe("buildDseFooterBlock + buildDseFooterParagraph — SLC-853 Export", () => {
+  const ORIGINAL_APP_URL = process.env.NEXT_PUBLIC_APP_URL;
+
+  beforeEach(() => {
+    process.env.NEXT_PUBLIC_APP_URL = "https://business.strategaizetransition.com";
+  });
+
+  afterEach(() => {
+    process.env.NEXT_PUBLIC_APP_URL = ORIGINAL_APP_URL;
+  });
+
+  it("buildDseFooterBlock: rendert <tr>-Block fuer Table-Layouts", () => {
+    const block = buildDseFooterBlock("strategaize-transition-bv", "#4454b8");
+    expect(block).toContain("<tr>");
+    expect(block).toContain("</tr>");
+    expect(block).toContain(
+      'href="https://business.strategaizetransition.com/p/strategaize-transition-bv/datenschutz"',
+    );
+    expect(block).toContain(">Datenschutzerklaerung</a>");
+  });
+
+  it("buildDseFooterParagraph: rendert <p>-Block fuer Non-Table-Layouts (DEC-239 R1)", () => {
+    const block = buildDseFooterParagraph("strategaize-transition-bv");
+    expect(block).toContain("<p ");
+    expect(block).toContain("</p>");
+    expect(block).not.toContain("<tr>");
+    expect(block).toContain(
+      'href="https://business.strategaizetransition.com/p/strategaize-transition-bv/datenschutz"',
+    );
+    expect(block).toContain(">Datenschutzerklaerung</a>");
+  });
+
+  it("buildDseFooterParagraph: leerer String bei tenantSlug=undefined (graceful fallback)", () => {
+    expect(buildDseFooterParagraph(undefined)).toBe("");
+  });
+
+  it("buildDseFooterParagraph: leerer String bei NEXT_PUBLIC_APP_URL=missing", () => {
+    delete process.env.NEXT_PUBLIC_APP_URL;
+    expect(buildDseFooterParagraph("strategaize-transition-bv")).toBe("");
+  });
+
+  it("buildDseFooterParagraph: nutzt Default-Primary-Color (#4454b8) wenn nicht uebergeben", () => {
+    const block = buildDseFooterParagraph("strategaize-transition-bv");
+    expect(block).toContain("color:#4454b8;text-decoration:underline");
+  });
+
+  it("buildDseFooterParagraph: escaped tenantSlug gegen XSS", () => {
+    const block = buildDseFooterParagraph('evil"><script>alert(1)</script>');
+    expect(block).not.toContain("<script>alert(1)</script>");
+    expect(block).toContain("&quot;&gt;&lt;script&gt;");
   });
 });

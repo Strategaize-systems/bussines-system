@@ -4,12 +4,21 @@ import {
   consentRequestSubject,
   consentRequestText,
 } from "./templates/consent-request-de";
+import { buildDseFooterParagraph } from "./render";
+import { getTenantSlugByOwnerUserId } from "@/lib/team/lookup-slug";
 
 type SendConsentMailInput = {
   toEmail: string;
   firstName: string;
   lastName: string;
   token: string;
+  /**
+   * V8.5 SLC-853 (DEC-239): Owner = auslesender User der den Consent-Request
+   * angestossen hat. Wird fuer die tenantSlug-Resolution + DSE-Footer-Render
+   * verwendet. Bei `undefined` bleibt die Mail bit-identisch zu V8.4
+   * (graceful Fallback — kein Footer, keine Mail-Send-Blockade).
+   */
+  ownerUserId?: string;
 };
 
 type Result = { ok: true } | { ok: false; error: string };
@@ -44,6 +53,14 @@ export async function sendConsentRequestMail(
     revokeUrl,
   };
 
+  // SLC-853: tenantSlug-Resolution + DSE-Footer-Paragraph. Bei missing
+  // ownerUserId oder team_id: tenantSlug=undefined → buildDseFooterParagraph
+  // gibt "" zurueck → consentRequestHtml ist bit-identisch zu V8.4.
+  const tenantSlug = input.ownerUserId
+    ? (await getTenantSlugByOwnerUserId(input.ownerUserId)) ?? undefined
+    : undefined;
+  const dseFooterHtml = buildDseFooterParagraph(tenantSlug);
+
   try {
     const transporter = nodemailer.createTransport({
       host: smtpHost,
@@ -57,7 +74,7 @@ export async function sendConsentRequestMail(
       to: input.toEmail,
       subject: consentRequestSubject(),
       text: consentRequestText(templateInput),
-      html: consentRequestHtml(templateInput),
+      html: consentRequestHtml(templateInput, dseFooterHtml),
     });
 
     return { ok: true };

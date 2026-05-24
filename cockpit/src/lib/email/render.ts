@@ -66,8 +66,13 @@ function footerToHtml(markdown: string): string {
  * Wort "Datenschutzerklaerung" als unterstrichener Link. Bei
  * `tenantSlug=undefined` ist der Output ein leerer String — Bit-fuer-Bit-
  * Regression-Safety fuer bestehende Snapshots.
+ *
+ * SLC-853 (DEC-239): von `function` zu `export function`, damit andere
+ * Table-basierte Renderer den gleichen Footer-Block einsetzen koennen.
+ * Fuer Paragraph-basierte Renderer (consent-request, briefing-html) siehe
+ * `buildDseFooterParagraph` unten.
  */
-function buildDseFooterBlock(
+export function buildDseFooterBlock(
   tenantSlug: string | undefined,
   primary: string,
 ): string {
@@ -81,6 +86,34 @@ function buildDseFooterBlock(
     `<tr><td style="padding:16px 0 0 0;font-size:11px;line-height:1.4;color:#6b7280;">` +
     `<a href="${safeUrl}" style="color:${safePrimary};text-decoration:underline;">Datenschutzerklaerung</a>` +
     `</td></tr>`
+  );
+}
+
+/**
+ * Paragraph-Variante des DSE-Link-Footers fuer Renderer die KEINE
+ * Table-Struktur nutzen (SLC-853, DEC-239 R1-Mitigation).
+ *
+ * Wird verwendet von:
+ * - `templates/consent-request-de.ts` (Customer-Consent-Request)
+ * - `templates/briefing-html.ts` (Pre-Call Briefing)
+ *
+ * Verhalten identisch zu `buildDseFooterBlock`: ohne tenantSlug oder
+ * NEXT_PUBLIC_APP_URL → leerer String (Bit-Regression-Safety).
+ */
+export function buildDseFooterParagraph(
+  tenantSlug: string | undefined,
+  primaryColor: string = DEFAULT_PRIMARY_COLOR,
+): string {
+  if (!tenantSlug) return "";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "");
+  if (!baseUrl) return "";
+  const dseUrl = `${baseUrl}/p/${tenantSlug}/datenschutz`;
+  const safeUrl = escapeHtml(dseUrl);
+  const safePrimary = escapeHtml(primaryColor);
+  return (
+    `<p style="margin:16px 0 0 0;font-size:11px;line-height:1.4;color:#6b7280;">` +
+    `<a href="${safeUrl}" style="color:${safePrimary};text-decoration:underline;">Datenschutzerklaerung</a>` +
+    `</p>`
   );
 }
 
