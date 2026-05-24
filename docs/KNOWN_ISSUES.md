@@ -32,9 +32,10 @@
 - Discovery: V8.4 RPT-532 Playwright-Smoke 2026-05-23: iframe-Inhalt der Compose-Preview ausgelesen via `document.querySelector('iframe').contentDocument.documentElement.outerHTML.slice(-500)` — letzte 500 Zeichen enden mit `Strategaize Transition GmbH | Am Markt 19 | Swalmen | NL</td></tr></tbody></table></body></html>` ohne DSE-Footer-Block.
 - Next Action: V8.5 Backlog BL-491: Preview-Aufruf in compose-studio.tsx auf `renderBrandedHtml(body, branding, vars, currentUserTenantSlug)` erweitern. Quelle fuer `currentUserTenantSlug`: Server-Component-Page kann via `getTenantSlugByOwnerUserId(currentUserId)` aufloesen und als Prop in compose-studio.tsx reichen. Plus IMP-Kandidat (Dev-System): `feedback_render_preview_vs_send_drift_check` — bei Render-Function-Signatur-Erweiterung MUSS Preview-Aufruf auch geupdated werden.
 
-### ISSUE-080 — V8.4 SLC-841 Backfill ignoriert reserved-slugs.ts Liste (Slug-Collision-Bug)
-- Status: open
+### ISSUE-080 — V8.4 SLC-841 Backfill ignoriert reserved-slugs.ts Liste (Slug-Collision-Bug) [RESOLVED 2026-05-24]
+- Status: resolved
 - Severity: Medium
+- Resolution: V8.5 SLC-851 / MIG-039 (APPLIED 2026-05-24). PL/pgSQL Function `public.is_reserved_slug(text)` + Trigger `teams_reserved_slug_guard BEFORE INSERT OR UPDATE OF slug ON teams` wirft RAISE EXCEPTION ERRCODE 23514 bei Reserved-Treffer. Reserved-Liste in der DB-Function ist Mirror von `reserved-slugs.ts` (38 Strings). Sync-Pflicht TS↔SQL dokumentiert in Memory `feedback_reserved_slug_sst_pattern.md`. Vitest 4/4 PASS gegen Coolify-DB.
 - Area: Backend / V8.4 Customer-DSE / Slug-Generator
 - Summary: MIG-038 Phase 2 Backfill (SLC-841 SQL `DO $$ ... lower(replace(...)) ... $$`) prueft NICHT gegen die TypeScript-Reserved-Liste `cockpit/src/lib/team/reserved-slugs.ts`. Bei V8.4 Live-Smoke 2026-05-23 trat der erste Real-Fall auf: Team "Strategaize" wurde via Backfill zu Slug `strategaize` — aber `strategaize` ist in RESERVED_SLUGS (Strategaize-Common-Reserved). Public-Route `/p/strategaize/datenschutz` ruft `isReservedSlug("strategaize") → true → notFound()` → HTTP 404 statt 200. Slug-Generator-TS (SLC-842 `generateUniqueSlug`) haette beim Neuanlegen `strategaize-2` erzeugt — der Backfill-SQL-Pfad ist eine separate Implementierung ohne diese Defense.
 - Impact: Bei Tenant-Onboarding-Flow ab V8.5+ (Multi-Tenant) wuerden Team-Namen die exakt Reserved-Slugs matchen falsch backfilled. Workaround fuer V8.4: Single-Tenant (1 Team) — manueller SQL-UPDATE auf neuen Slug `strategaize-transition-bv`. RLS + Public-Route + Editor funktionieren danach normal.

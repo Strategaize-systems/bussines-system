@@ -10,12 +10,12 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V8.5 Slice-Planning DONE 2026-05-24** — 3-Slice Hygiene-Bundle nach V8.4 Stable. SLC-851 (BL-490 Backfill-Reserved-Slug-Enforcement via MIG-039 PL/pgSQL-Trigger, High, ~1.5-2h) + SLC-852 (BL-491 Compose-Preview tenantSlug-Drift-Fix, Medium, ~1-1.5h) + SLC-853 (BL-492 renderBrandedHtml-Caller-Audit + DSE-Footer fuer send-consent-mail + meeting-briefing, Medium, ~2-3h). Gesamt ~7-9h. DEC-239 (NEU) wird in SLC-853 angelegt: Helper-Export statt komplette renderBrandedHtml-Migration. Slices parallel-ausfuehrbar (geringe Inter-Slice-Dependencies). Master-Merge-Strategie per-Slice oder am Bundle-Ende (User entscheidet beim ersten Slice-Start). V8.4 bleibt STABLE (Burn-In 16h PASS RPT-535).
-- Current Phase: V8.5 Implementation-Ready. Naechster Schritt: /backend SLC-851 (kleinste Risk + DB-Layer-Foundation).
+- Current Focus: **V8.5 SLC-851 DONE 2026-05-24** — MIG-039 Reserved-Slug-Trigger LIVE auf Hetzner. PL/pgSQL Function `is_reserved_slug(text)` + Trigger `teams_reserved_slug_guard BEFORE INSERT OR UPDATE OF slug ON teams` aktiv. ISSUE-080 RESOLVED. Vitest 4/4 PASS gegen Coolify-DB (positive INSERT + negative INSERT + negative UPDATE + Function-Sanity). Idempotenz-Re-Apply PASS. Memory `feedback_reserved_slug_sst_pattern.md` im Dev-System angelegt. Naechster /qa, dann SLC-852 (Compose-Preview-Drift-Fix). V8.5-Bundle Progress: 1/3 done. V8.4 bleibt STABLE.
+- Current Phase: V8.5 in_progress. SLC-851 done, SLC-852 + SLC-853 planned.
 
 ## Immediate Next Steps
-1. **(Next Action)** `/backend` SLC-851 Backfill-Reserved-Slug-Enforcement — MIG-039 SQL-Migration mit PL/pgSQL Function `is_reserved_slug(text)` + Trigger BEFORE INSERT/UPDATE OF slug ON teams. Apply auf Hetzner via SSH+base64. Vitest RLS-Suite. ~1.5-2h. Sliceabschluss → /qa.
-2. **(Nach SLC-851)** `/frontend` SLC-852 Compose-Preview tenantSlug-Drift-Fix — Server-Component-Page resolved getTenantSlugByOwnerUserId, Prop-Chain durch compose-studio.tsx → live-preview.tsx → 4. Param fuer renderBrandedHtml. Vitest Preview-vs-Send-Bit-Identity-Test. ~1-1.5h. → /qa.
+1. **(Next Action)** `/qa` SLC-851 — MIG-039 Reserved-Slug-Trigger ist live, Vitest 4/4 PASS. QA-Schritt verifiziert AC1..AC8 systematisch + ggf. Test-Coverage-Gap-Pruefung.
+2. **(Nach /qa SLC-851)** `/frontend` SLC-852 Compose-Preview tenantSlug-Drift-Fix — Server-Component-Page resolved getTenantSlugByOwnerUserId, Prop-Chain durch compose-studio.tsx → live-preview.tsx → 4. Param fuer renderBrandedHtml. Vitest Preview-vs-Send-Bit-Identity-Test. ~1-1.5h. → /qa.
 3. **(Nach SLC-852)** `/backend` SLC-853 renderBrandedHtml-Caller-Audit + DSE-Footer fuer send-consent-mail + meeting-briefing. MT-1 Audit-Report + DEC-239, MT-2 buildDseFooterBlock-Export, MT-3+4 Consent + Briefing-Renderer erweitern. ~2-3h. → /qa.
 4. **(Nach allen 3 Slices)** Master-Merge + Coolify-Redeploy + /post-launch V8.5 Burn-In.
 5. **(Optional, User-Action)** V8.4 S4 Live-Smoke (Re-Run Test-Mail an immo@bellaerts.de via Composing-Studio) — Code-Side bereits verifiziert, Live-Browser-Smoke ist optionaler Bestaetigungs-Schritt.

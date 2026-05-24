@@ -1,5 +1,17 @@
 # Migrations
 
+### MIG-039 — V8.5 SLC-851 Reserved-Slug-Trigger auf teams.slug (APPLIED 2026-05-24 via SSH+base64)
+- Date: 2026-05-24 (~08:07 UTC, postgres-User, idempotent CREATE OR REPLACE FUNCTION + DROP TRIGGER IF EXISTS, 3 Self-Tests im DO-Block PASS, NOTIFY pgrst).
+- Scope: 2 Functions + 1 Trigger auf bestehender `teams`-Tabelle.
+  - `public.is_reserved_slug(text) RETURNS boolean` — IMMUTABLE PARALLEL SAFE SQL Function. Case-insensitive Compare gegen 38-String Reserved-Liste (Mirror von `cockpit/src/lib/team/reserved-slugs.ts` Stand 2026-05-24): Strategaize-Common (`admin`, `api`, `public`, `p`, `partner`, `strategaize`, `auth`, `assets`, `_next`, `favicon.ico`) + BS-App-Top-Level (`actions`, `consent`, `datenschutz`, `impressum`, `r`, `login`, `audit-log`, `aufgaben`, `cadences`, `calls`, `campaigns`, `companies`, `contacts`, `dashboard`, `deals`, `emails`, `fit-assessment`, `focus`, `handoffs`, `help`, `kalender`, `calendar`, `meetings`, `mein-tag`, `multiplikatoren`, `pipeline`, `proposals`, `referrals`, `settings`, `team`, `termine`).
+  - `public.teams_reserved_slug_guard_fn() RETURNS trigger` — PL/pgSQL, wirft `RAISE EXCEPTION 'slug "%" is reserved (V8.5 MIG-039)' USING ERRCODE='23514'` (CHECK_VIOLATION) wenn `is_reserved_slug(NEW.slug)` true.
+  - Trigger `teams_reserved_slug_guard BEFORE INSERT OR UPDATE OF slug ON public.teams FOR EACH ROW`.
+- Reason: V8.4 ISSUE-080 — Reserved-Slug-Defense war nur in TS-Layer (`isReservedSlug` + `generateUniqueSlug`). MIG-038 Phase 2 Backfill setzte Team "Strategaize" auf Slug `strategaize` (= Reserved) → Public-Route `/p/strategaize/datenschutz` HTTP 404 weil `isReservedSlug`-Check pre-DB-Lookup. Live-Fix per SQL-UPDATE. MIG-039 schliesst die Defense-Luecke auf DB-Layer fuer kuenftige direkte SQL-Updates auf teams.slug + neue Tenant-Onboarding-Anlagen.
+- Affected Areas: teams-Tabelle (Trigger-only, kein Schema-Aenderung), Tenant-Slug-Generation-Pfad (DB-Layer-Defense ergaenzt zu Application-Layer-Defense). Application-Code `generateUniqueSlug` ist primaere Quelle der Slug-Wahl, MIG-039 ist hard-rejected-Backstop falls Code-Pfad umgangen wird.
+- Risk: Niedrig — IMMUTABLE Function + O(1) Set-Lookup, Trigger-Overhead <1ms pro INSERT/UPDATE-of-slug. Idempotent (CREATE OR REPLACE + DROP IF EXISTS), Re-Apply ohne Side-Effects (verifiziert 2026-05-24). Vorbedingungs-Check auf `teams.slug` (MIG-038 Phase 2) verhindert Apply auf falschem Schema-Stand. Risiko bei TS↔SQL-Reserved-Liste-Drift: kuenftige Aenderungen muessen an BEIDEN Stellen erfolgen (Memory `feedback_reserved_slug_sst_pattern.md` im Dev-System dokumentiert SST-Praxis). Build-Time-Codegen TS→SQL ist V9+ Discovery-Item.
+- Rollback Notes: `DROP TRIGGER IF EXISTS teams_reserved_slug_guard ON public.teams; DROP FUNCTION IF EXISTS public.teams_reserved_slug_guard_fn(); DROP FUNCTION IF EXISTS public.is_reserved_slug(text); NOTIFY pgrst, 'reload schema';` — bestehende Slugs bleiben unangetastet, nur die DB-Layer-Defense entfaellt. Reversibel ohne Daten-Verlust.
+- Verify: `SELECT is_reserved_slug('admin')` → true, `SELECT is_reserved_slug('strategaize-transition-bv')` → false. INSERT ('Test', 'admin') wirft `23514`. Vitest `cockpit/__tests__/team/reserved-slug-trigger.test.ts` 4/4 PASS gegen Coolify-DB.
+
 ### MIG-040 — V8.4 Hotfix emails.owner_user_id (APPLIED 2026-05-23 via SSH+base64)
 - Date: 2026-05-23 (~14:08 UTC, postgres-User, idempotent ADD COLUMN IF NOT EXISTS + CREATE INDEX IF NOT EXISTS + NOTIFY pgrst, Verify-Block PASS).
 - Scope: 1 ALTER `emails` + 1 INDEX + 1 NOTIFY pgrst.

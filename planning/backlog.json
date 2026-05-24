@@ -2477,7 +2477,7 @@
       "title": "V8.5 SLC-851 Backfill-Reserved-Slug-Enforcement (ISSUE-080-Fix via MIG-039 PL/pgSQL-Trigger)",
       "type": "fix",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.5",
       "description": "ISSUE-080 Live-Findung 2026-05-23: MIG-038 Phase 2 Backfill setzte Slug 'strategaize' (= Reserved) auf Team 'Strategaize'. Public-Route HTTP 404 statt 200. Live-Fix per SQL UPDATE. SLC-851 implementiert Permanent-Fix als Option A (DB-Layer-Enforcement): PL/pgSQL Function is_reserved_slug(text) + Trigger BEFORE INSERT/UPDATE OF slug ON teams. Reserved-Liste in der DB-Function ist Spiegelung der TS-Liste reserved-slugs.ts (Maintenance an 2 Stellen, Memory-File feedback_reserved_slug_sst_pattern.md dokumentiert SST-Praxis). Build-Time-Codegen TS→SQL ist V9+ Discovery. Aufwand: ~1.5-2h.",
       "createdAt": "2026-05-23"
