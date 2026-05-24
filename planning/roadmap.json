@@ -256,7 +256,7 @@
       "id": "v8-5",
       "name": "V8.5",
       "status": "active",
-      "summary": "Hygiene-Bundle nach V8.4 Stable (Slice-Planning 2026-05-24). 3 Slices SLC-851..853 aus V8.4-Burn-In-Followups: SLC-851 BL-490 Backfill-Reserved-Slug-Enforcement (MIG-039 PL/pgSQL-Trigger gegen ISSUE-080), SLC-852 BL-491 Compose-Preview tenantSlug-Drift-Fix (gegen ISSUE-081 Preview-vs-Send-Drift), SLC-853 BL-492 renderBrandedHtml-Caller-Audit + DSE-Footer fuer send-consent-mail + meeting-briefing (V8.4-Risk-Block-Followup). DEC-239 (NEU) Helper-Export statt Migration. Pattern-Reuse-Heavy: V8.4 buildDseFooterBlock + getTenantSlugByOwnerUserId + MIG-Pattern. Geschaetzt ~7-9h. Naechster Schritt: /backend SLC-851.",
+      "summary": "Hygiene-Bundle nach V8.4 Stable (Slice-Planning 2026-05-24). 3 Slices SLC-851..853 aus V8.4-Burn-In-Followups: SLC-851 BL-490 Backfill-Reserved-Slug-Enforcement DONE 2026-05-24 (MIG-039 PL/pgSQL-Trigger gegen ISSUE-080), SLC-852 BL-491 Compose-Preview tenantSlug-Drift-Fix DONE 2026-05-24 RPT-539 (gegen ISSUE-081 Preview-vs-Send-Drift), SLC-853 BL-492 renderBrandedHtml-Caller-Audit + DSE-Footer fuer send-consent-mail + meeting-briefing (V8.4-Risk-Block-Followup). DEC-239 (NEU) Helper-Export statt Migration. Pattern-Reuse-Heavy: V8.4 buildDseFooterBlock + getTenantSlugByOwnerUserId + MIG-Pattern. Progress: 2/3 done. Naechster Schritt: /qa SLC-852, dann /backend SLC-853.",
       "order": 37
     },
     {

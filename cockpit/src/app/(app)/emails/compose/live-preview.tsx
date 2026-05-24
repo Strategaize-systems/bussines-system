@@ -29,6 +29,11 @@ type LivePreviewProps = {
   senderFromAddress: string | null;
   /** Anhang-Liste fuer Read-only-Anzeige unterhalb der Body-Preview. */
   attachments?: AttachmentMeta[];
+  /**
+   * SLC-852 (ISSUE-081): Tenant-Slug fuer DSE-Footer-Block-Symmetrie mit Send-Pfad.
+   * Undefined → kein DSE-Footer (graceful Fallback, konsistent mit Send-Verhalten).
+   */
+  tenantSlug?: string;
 };
 
 export function LivePreview({
@@ -39,12 +44,13 @@ export function LivePreview({
   vars,
   senderFromAddress,
   attachments = [],
+  tenantSlug,
 }: LivePreviewProps) {
   const debouncedBody = useDebouncedValue(body, 250);
 
   const html = useMemo(
-    () => renderBrandedHtml(debouncedBody, branding, vars),
-    [debouncedBody, branding, vars],
+    () => renderBrandedHtml(debouncedBody, branding, vars, tenantSlug),
+    [debouncedBody, branding, vars, tenantSlug],
   );
 
   return (

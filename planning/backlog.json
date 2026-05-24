@@ -2467,9 +2467,9 @@
       "title": "V8.5 SLC-852 Composing-Studio Preview tenantSlug-Drift-Fix (ISSUE-081)",
       "type": "fix",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.5",
-      "description": "Composing-Studio Live-Preview zeigt KEIN DSE-Footer-Block, weil renderBrandedHtml client-side ohne tenantSlug-Param aufgerufen wird. Send-Pfad (lib/email/send.ts) hat den tenantSlug per ownerUserId-Lookup und render-Output enthaelt den Footer korrekt (Vitest 11/11 PASS) — nur die Preview drifted. Fix: Server-Component-Page (cockpit/src/app/(app)/emails/compose/page.tsx) loest currentUserTenantSlug per getTenantSlugByOwnerUserId(currentUserId) auf und reicht den als Prop in compose-studio.tsx + ComposeForm + Preview-Call. ENV NEXT_PUBLIC_APP_URL als BASE_URL ist client-side per next.js automatic exposure verfuegbar. Aufwand: ~1h Code-Side + Snapshot-Test. Cross-Project-Lehre (Dev-System-IMP): bei Render-Function-Signatur-Erweiterung MUSS Preview-Aufruf mitgeupdated werden.",
+      "description": "Composing-Studio Live-Preview zeigt KEIN DSE-Footer-Block, weil renderBrandedHtml client-side ohne tenantSlug-Param aufgerufen wird. Send-Pfad (lib/email/send.ts) hat den tenantSlug per ownerUserId-Lookup und render-Output enthaelt den Footer korrekt (Vitest 11/11 PASS) — nur die Preview drifted. Fix: Server-Component-Page (cockpit/src/app/(app)/emails/compose/page.tsx) loest currentUserTenantSlug per getTenantSlugByOwnerUserId(currentUserId) auf und reicht den als Prop in compose-studio.tsx + ComposeForm + Preview-Call. ENV NEXT_PUBLIC_APP_URL als BASE_URL ist client-side per next.js automatic exposure verfuegbar. Aufwand: ~1h Code-Side + Snapshot-Test. Cross-Project-Lehre (Dev-System-IMP): bei Render-Function-Signatur-Erweiterung MUSS Preview-Aufruf mitgeupdated werden. DONE 2026-05-24 RPT-539: page.tsx + compose-studio.tsx + live-preview.tsx + render.test.ts (+2 Cases) — Vitest 13/13 PASS, TSC clean SLC-852-files, Build clean. Live-Smoke deferred bis Coolify-Redeploy.",
       "createdAt": "2026-05-23"
     },
     {

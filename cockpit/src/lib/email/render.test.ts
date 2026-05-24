@@ -181,3 +181,49 @@ describe("renderBrandedHtml — SLC-846 DSE-Footer-Block", () => {
     expect(rendered).toContain("&quot;&gt;&lt;script&gt;");
   });
 });
+
+describe("renderBrandedHtml — SLC-852 Preview-vs-Send Bit-Identity", () => {
+  // SLC-852 (ISSUE-081): Live-Preview (compose-studio LivePreview) und Send-Pfad
+  // (send-action.ts → send.ts) rufen beide renderBrandedHtml mit identischen
+  // (body, branding, vars, tenantSlug)-Argumenten. Output muss bit-identisch sein
+  // (DEC-095 Single-Source-of-Truth, Tracking-Layer wird erst danach im Send-Pfad
+  // appliziert und ist hier nicht im Scope).
+
+  const ORIGINAL_APP_URL = process.env.NEXT_PUBLIC_APP_URL;
+
+  beforeEach(() => {
+    process.env.NEXT_PUBLIC_APP_URL = "https://business.strategaizetransition.com";
+  });
+
+  afterEach(() => {
+    process.env.NEXT_PUBLIC_APP_URL = ORIGINAL_APP_URL;
+  });
+
+  it("Preview = Send: bit-identical output with tenantSlug (DEC-095 SST)", () => {
+    const previewHtml = renderBrandedHtml(
+      SAMPLE_BODY,
+      FULL_BRANDING,
+      SAMPLE_VARS,
+      "strategaize-transition-bv",
+    );
+    const sendHtml = renderBrandedHtml(
+      SAMPLE_BODY,
+      FULL_BRANDING,
+      SAMPLE_VARS,
+      "strategaize-transition-bv",
+    );
+    expect(previewHtml).toBe(sendHtml);
+    // Plus: Preview-Output enthaelt DSE-URL (Drift-Safety)
+    expect(previewHtml).toContain(
+      "/p/strategaize-transition-bv/datenschutz",
+    );
+  });
+
+  it("Preview = Send: bit-identical output without tenantSlug (Solopreneur-Fallback)", () => {
+    const previewHtml = renderBrandedHtml(SAMPLE_BODY, FULL_BRANDING, SAMPLE_VARS);
+    const sendHtml = renderBrandedHtml(SAMPLE_BODY, FULL_BRANDING, SAMPLE_VARS);
+    expect(previewHtml).toBe(sendHtml);
+    // Plus: ohne tenantSlug KEIN DSE-Footer (graceful Fallback, konsistent)
+    expect(previewHtml).not.toContain("/datenschutz");
+  });
+});

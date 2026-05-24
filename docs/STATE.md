@@ -10,14 +10,13 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 
 ## Current State
 - High-Level State: implementing
-- Current Focus: **V8.5 SLC-851 DONE 2026-05-24** — MIG-039 Reserved-Slug-Trigger LIVE auf Hetzner. PL/pgSQL Function `is_reserved_slug(text)` + Trigger `teams_reserved_slug_guard BEFORE INSERT OR UPDATE OF slug ON teams` aktiv. ISSUE-080 RESOLVED. Vitest 4/4 PASS gegen Coolify-DB (positive INSERT + negative INSERT + negative UPDATE + Function-Sanity). Idempotenz-Re-Apply PASS. Memory `feedback_reserved_slug_sst_pattern.md` im Dev-System angelegt. Naechster /qa, dann SLC-852 (Compose-Preview-Drift-Fix). V8.5-Bundle Progress: 1/3 done. V8.4 bleibt STABLE.
-- Current Phase: V8.5 in_progress. SLC-851 done, SLC-852 + SLC-853 planned.
+- Current Focus: **V8.5 SLC-852 DONE 2026-05-24 RPT-539** — Compose-Preview tenantSlug-Drift-Fix code-side komplett. Server-Component `compose/page.tsx` resolved `currentUserTenantSlug` per `getTenantSlugByOwnerUserId(user.id)` (Mirror des V8.4 send-action.ts Patterns), Prop-Chain durch `compose-studio.tsx` (`currentUserTenantSlug?: string`) → `live-preview.tsx` (`tenantSlug?: string`) → 4. Param `renderBrandedHtml(debouncedBody, branding, vars, tenantSlug)` mit useMemo-Dep-Array. Vitest render.test.ts +2 Cases (13/13 PASS): Preview = Send bit-identical with tenantSlug + Solopreneur-Fallback ohne tenantSlug. TSC clean fuer SLC-852-Files. Build clean (Route-Table generiert). ISSUE-081 RESOLVED. Live-Smoke deferred bis Coolify-Redeploy. V8.5-Bundle Progress: 2/3 done. V8.4 bleibt STABLE.
+- Current Phase: V8.5 in_progress. SLC-851 + SLC-852 done, SLC-853 planned.
 
 ## Immediate Next Steps
-1. **(Next Action)** `/qa` SLC-851 — MIG-039 Reserved-Slug-Trigger ist live, Vitest 4/4 PASS. QA-Schritt verifiziert AC1..AC8 systematisch + ggf. Test-Coverage-Gap-Pruefung.
-2. **(Nach /qa SLC-851)** `/frontend` SLC-852 Compose-Preview tenantSlug-Drift-Fix — Server-Component-Page resolved getTenantSlugByOwnerUserId, Prop-Chain durch compose-studio.tsx → live-preview.tsx → 4. Param fuer renderBrandedHtml. Vitest Preview-vs-Send-Bit-Identity-Test. ~1-1.5h. → /qa.
-3. **(Nach SLC-852)** `/backend` SLC-853 renderBrandedHtml-Caller-Audit + DSE-Footer fuer send-consent-mail + meeting-briefing. MT-1 Audit-Report + DEC-239, MT-2 buildDseFooterBlock-Export, MT-3+4 Consent + Briefing-Renderer erweitern. ~2-3h. → /qa.
-4. **(Nach allen 3 Slices)** Master-Merge + Coolify-Redeploy + /post-launch V8.5 Burn-In.
+1. **(Next Action)** `/qa` SLC-852 — Code-Side ist abgeschlossen, Vitest 13/13 PASS. QA verifiziert AC1..AC8 systematisch (Server-Resolve + Prop-Chain + Bit-Identity + Lint/Build/TSC).
+2. **(Nach /qa SLC-852)** `/backend` SLC-853 renderBrandedHtml-Caller-Audit + DSE-Footer fuer send-consent-mail + meeting-briefing. MT-1 Audit-Report + DEC-239, MT-2 buildDseFooterBlock-Export, MT-3+4 Consent + Briefing-Renderer erweitern. ~2-3h. → /qa.
+3. **(Nach allen 3 Slices)** Master-Merge (Worktree-frei, ist alles auf main) + Coolify-Redeploy + Live-Smoke SLC-852 AC7 (Compose-Studio Preview-iframe enthaelt DSE-Footer-Block) + /post-launch V8.5 Burn-In.
 5. **(Optional, User-Action)** V8.4 S4 Live-Smoke (Re-Run Test-Mail an immo@bellaerts.de via Composing-Studio) — Code-Side bereits verifiziert, Live-Browser-Smoke ist optionaler Bestaetigungs-Schritt.
 4. **(After SLC-842)** Sequenz SLC-843 (Public-Route, ~1h) + SLC-844 (Editor, ~2h) parallel in Worktrees moeglich; danach SLC-845 (Consent-Patch, ~1h) + SLC-846 (Mail-Footer-Patch, ~1.5h) parallel in Worktrees moeglich.
 5. **(SLC-847 ZULETZT)** Gesamt-QA + Master-Merge ALLER vorherigen Slice-Branches + Coolify-Redeploy + Live-Smoke 8/8 Success-Criteria (S1-S8 aus FEAT-824). ~1.5h.

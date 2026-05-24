@@ -14,6 +14,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getBranding } from "@/app/(app)/settings/branding/actions";
 import { getEmailTemplates } from "@/app/(app)/settings/template-actions";
+import { getTenantSlugByOwnerUserId } from "@/lib/team/lookup-slug";
 import { ComposeStudio } from "./compose-studio";
 import { PageHeader } from "@/components/ui/page-header";
 
@@ -101,6 +102,18 @@ type ComposePageProps = {
 export default async function ComposePage({ searchParams }: ComposePageProps) {
   const params = await searchParams;
 
+  // SLC-852 (ISSUE-081) — currentUserTenantSlug fuer Live-Preview-DSE-Footer-Symmetrie
+  // mit Send-Pfad. Mirror des Patterns aus send-action.ts (V8.4 SLC-846).
+  // Null bei Solopreneur ohne team_id → graceful Fallback (kein DSE-Footer in Preview,
+  // konsistent mit Send-Verhalten).
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const currentUserTenantSlug = user
+    ? ((await getTenantSlugByOwnerUserId(user.id)) ?? undefined)
+    : undefined;
+
   const [branding, templates, dealContext] = await Promise.all([
     getBranding().catch(() => null),
     getEmailTemplates({ filter: "all" }),
@@ -127,6 +140,7 @@ export default async function ComposePage({ searchParams }: ComposePageProps) {
         senderFromAddress={
           process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || null
         }
+        currentUserTenantSlug={currentUserTenantSlug}
       />
     </div>
   );

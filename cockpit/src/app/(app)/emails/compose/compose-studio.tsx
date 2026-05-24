@@ -35,6 +35,14 @@ type ComposeStudioProps = {
   initialCompanyId: string | null;
   initialTemplateId: string | null;
   senderFromAddress: string | null;
+  /**
+   * SLC-852 (ISSUE-081): Tenant-Slug des eingeloggten Users.
+   * Vom Server-Loader resolved (getTenantSlugByOwnerUserId). Wird an LivePreview
+   * als `tenantSlug` durchgereicht, damit Preview den DSE-Footer-Block bit-identisch
+   * zur tatsaechlich versendeten Mail rendert (DEC-095 Single-Source-of-Truth).
+   * Undefined bei Solopreneur ohne team_id → kein DSE-Footer (graceful Fallback).
+   */
+  currentUserTenantSlug?: string;
 };
 
 export function ComposeStudio({
@@ -45,6 +53,7 @@ export function ComposeStudio({
   initialCompanyId,
   initialTemplateId,
   senderFromAddress,
+  currentUserTenantSlug,
 }: ComposeStudioProps) {
   const router = useRouter();
 
@@ -159,6 +168,7 @@ export function ComposeStudio({
       vars={renderVars}
       senderFromAddress={senderFromAddress}
       attachments={attachments}
+      tenantSlug={currentUserTenantSlug}
     />
   );
 
