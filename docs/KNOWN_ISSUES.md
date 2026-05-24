@@ -1,5 +1,20 @@
 # Known Issues
 
+### ISSUE-085 — 8 TSC-Errors in 4 unrelated Test-Files (pre-existing nach Next 16 / TypeScript-Major-Upgrade)
+- Status: open
+- Severity: Medium
+- Area: Test-Infra / TypeScript-Hygiene
+- Summary: `npx tsc --noEmit` produziert 8 Errors in 4 Test-Files die NICHT im SLC-852-Scope liegen. Errors sind pre-existing, vermutlich nach Next.js 16 + TypeScript-Major-Upgrade ohne Test-Folge-Anpassung. Production-Build (`npm run build`) skipt Test-Files via `tsconfig.json` `exclude`-Pattern → kein Production-Code-Bug. Vitest (`npm run test`) laeuft via ESBuild/Vite ohne TSC-strict-Check und ist 1118/1118 PASS.
+  Betroffen:
+  - `cockpit/src/components/ki-workspace/hooks/__tests__/useVoiceCapture.test.tsx(69,36)` TS2493 Tuple type '[]' of length '0' has no element at index '0'
+  - `cockpit/src/lib/proposal/reverse-charge-revert.test.ts(16,38)` TS2559 Type '{ title?: string }' has no properties in common with type 'ReverseChargeTouchingPatch'
+  - `cockpit/src/lib/proposal/skonto-revert.test.ts(19,31)` TS2559 (gleicher Mechanismus)
+  - `cockpit/src/lib/validation/vies-client.test.ts` (5 Errors auf Zeilen 13/17/21/105/224) TS2345 + TS2741 NODE_ENV-Drift in ProcessEnv-Argument-Type
+- Impact: KEIN Production-Code-Bug. KEIN Test-Coverage-Loss (Vitest laeuft, alle Tests PASS). NUR `npx tsc --noEmit`-Lauf zeigt Errors — bei einem hypothetischen Pre-Commit-Hook auf `tsc --noEmit` waere das blockierend.
+- Workaround: Keiner noetig — Production-Pipeline (Build + Vitest) ist clean. `npx tsc --noEmit` ist kein Mandatory-Step im /qa-Flow (Build + Vitest reichen).
+- Discovery: V8.5 SLC-852 /frontend (RPT-539) 2026-05-24 — `npx tsc --noEmit` als Sanity-Check, 8 unrelated Errors aufgefallen. NICHT durch SLC-852 verursacht (per `git diff --name-only HEAD`-Vergleich verifiziert: nur 4 Files im Slice-Scope, alle 4 erscheinen NICHT in den 8 Error-Stacks).
+- Next Action: V8.6 Test-Hygiene-Slice mit ISSUE-084 bundeln (~30-45 Min). Konkret: (a) useVoiceCapture.test.tsx Tuple-Initialisierung mit Length>0, (b) reverse-charge-revert.test.ts + skonto-revert.test.ts Patch-Object-Typing-Fix (vermutlich Touching-Patch-Type-Drift), (c) vies-client.test.ts ProcessEnv-Mock mit NODE_ENV='test' ergaenzen. Plus: in vitest.config.ts oder package.json einen `test:tsc`-Script ergaenzen der `tsc --noEmit` haengt → automatische Detection bei naechstem CI/QA-Lauf.
+
 ### ISSUE-084 — V8.4 legal-documents-rls.test.ts 4 Tests UNIQUE-Konflikt mit MIG-038 Phase-5 Default-Seed (pre-existing V8.4)
 - Status: open
 - Severity: Medium
