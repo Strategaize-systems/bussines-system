@@ -2464,23 +2464,33 @@
     },
     {
       "id": "BL-491",
-      "title": "V8.5 Composing-Studio Preview ruft renderBrandedHtml mit tenantSlug (Preview-vs-Send-Drift-Fix, ISSUE-081)",
+      "title": "V8.5 SLC-852 Composing-Studio Preview tenantSlug-Drift-Fix (ISSUE-081)",
       "type": "fix",
       "priority": "medium",
-      "status": "open",
+      "status": "in_progress",
       "version": "V8.5",
       "description": "Composing-Studio Live-Preview zeigt KEIN DSE-Footer-Block, weil renderBrandedHtml client-side ohne tenantSlug-Param aufgerufen wird. Send-Pfad (lib/email/send.ts) hat den tenantSlug per ownerUserId-Lookup und render-Output enthaelt den Footer korrekt (Vitest 11/11 PASS) — nur die Preview drifted. Fix: Server-Component-Page (cockpit/src/app/(app)/emails/compose/page.tsx) loest currentUserTenantSlug per getTenantSlugByOwnerUserId(currentUserId) auf und reicht den als Prop in compose-studio.tsx + ComposeForm + Preview-Call. ENV NEXT_PUBLIC_APP_URL als BASE_URL ist client-side per next.js automatic exposure verfuegbar. Aufwand: ~1h Code-Side + Snapshot-Test. Cross-Project-Lehre (Dev-System-IMP): bei Render-Function-Signatur-Erweiterung MUSS Preview-Aufruf mitgeupdated werden.",
       "createdAt": "2026-05-23"
     },
     {
       "id": "BL-490",
-      "title": "V8.5 SLC-841 Backfill-Reserved-Check-Enforcement (ISSUE-080-Fix, Single-Source-of-Truth Reserved-Slugs)",
+      "title": "V8.5 SLC-851 Backfill-Reserved-Slug-Enforcement (ISSUE-080-Fix via MIG-039 PL/pgSQL-Trigger)",
       "type": "fix",
-      "priority": "medium",
-      "status": "open",
+      "priority": "high",
+      "status": "in_progress",
       "version": "V8.5",
-      "description": "ISSUE-080 Live-Findung 2026-05-23: MIG-038 Phase 2 Backfill setzte Slug 'strategaize' (= Reserved) auf Team 'Strategaize'. Public-Route HTTP 404 statt 200. Live-Fix per SQL UPDATE. Permanent-Fix Optionen: (a) MIG-039 Folge-Migration die Backfill-SQL um Reserved-Check ergaenzt + Trigger BEFORE INSERT/UPDATE auf teams.slug der Reserved-Check enforced. (b) DB-Function is_reserved_slug(text) + TS-Liste reserved-slugs.ts generiert daraus (Single-Source-of-Truth). Empfehlung: Option b (langfristig sauberer). Aufwand: ~3-4h. Plus Skill-Improvement im Dev-System (feedback_slug_backfill_reserved_enforcement.md).",
+      "description": "ISSUE-080 Live-Findung 2026-05-23: MIG-038 Phase 2 Backfill setzte Slug 'strategaize' (= Reserved) auf Team 'Strategaize'. Public-Route HTTP 404 statt 200. Live-Fix per SQL UPDATE. SLC-851 implementiert Permanent-Fix als Option A (DB-Layer-Enforcement): PL/pgSQL Function is_reserved_slug(text) + Trigger BEFORE INSERT/UPDATE OF slug ON teams. Reserved-Liste in der DB-Function ist Spiegelung der TS-Liste reserved-slugs.ts (Maintenance an 2 Stellen, Memory-File feedback_reserved_slug_sst_pattern.md dokumentiert SST-Praxis). Build-Time-Codegen TS→SQL ist V9+ Discovery. Aufwand: ~1.5-2h.",
       "createdAt": "2026-05-23"
+    },
+    {
+      "id": "BL-492",
+      "title": "V8.5 SLC-853 renderBrandedHtml-Caller-Audit + DSE-Footer fuer send-consent-mail + meeting-briefing",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "in_progress",
+      "version": "V8.5",
+      "description": "V8.4-Hotfix-Lehre (ISSUE-083): SLC-846 hat DSE-Footer nur fuer renderBrandedHtml-Pfad implementiert. send-consent-mail.ts + meeting-briefing/route.ts nutzen eigene HTML-Builder (consentRequestHtml + briefing-Renderer) und reichen das Ergebnis als params.html — DSE-Footer fehlt komplett. SLC-853 implementiert Option A: buildDseFooterBlock aus render.ts exportieren + in beide Custom-Renderer einbauen. tenantSlug-Resolution via getTenantSlugByOwnerUserId. Alternative B (komplette renderBrandedHtml-Migration) ist V9+ Roadmap-Item. DEC-239 dokumentiert die Wahl. Aufwand: ~2-3h. Plus docs/AUDIT_MAIL_RENDERERS_V85.md mit Caller-Grep-Liste.",
+      "createdAt": "2026-05-24"
     },
     {
       "id": "BL-489",

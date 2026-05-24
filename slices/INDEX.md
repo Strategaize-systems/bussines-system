@@ -394,3 +394,13 @@ V8.4 = 7 Slices SLC-841..847, strikt sequenziell wegen Inter-Slice-Dependencies 
 | SLC-845 | [Consent-Form DSE-Link (consent/[token]/page.tsx Patch)](SLC-845-consent-form-dse-link.md) | FEAT-824 / BL-488 | deployed | High | 2026-05-22 |
 | SLC-846 | [Mail-Footer-Auto-Insert (render.ts + send.ts + send-consent-mail.ts Patches)](SLC-846-mail-footer-auto-insert.md) | FEAT-824 / BL-488 | deployed | High | 2026-05-22 |
 | SLC-847 | [V8.4 Gesamt-QA + Master-Merge + Coolify-Redeploy](SLC-847-v84-gesamt-qa-deploy.md) | FEAT-824 / BL-488 | deployed | Blocker | 2026-05-22 |
+
+## V8.5 Slices (Hygiene-Bundle nach V8.4 Stable)
+
+V8.5 = 3 Slices SLC-851..853, parallel-ausfuehrbar (geringe Inter-Slice-Dependencies). Bundle aus V8.4-Burn-In-Followups + Compliance-Hygiene. SLC-851 ist DB-Layer (Migration + Trigger), SLC-852 ist Frontend (Compose-Preview-Drift), SLC-853 ist Mail-Renderer-Audit + DSE-Footer-Erweiterung fuer Consent + Briefing. Pro Slice: /backend|/frontend → /qa → Slice-Branch-Ready. Master-Merge entweder per-Slice oder am V8.5-Bundle-Ende (User entscheidet beim ersten Slice). Pattern-Reuse: V8.4 buildDseFooterBlock + getTenantSlugByOwnerUserId + MIG-Pattern aus MIG-038. Gesamt ~5-6h Code-Side + ~1h /qa pro Slice = ~7-9h verteilt ueber 1-2 Sessions.
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-851 | [Backfill-Reserved-Slug-Enforcement (MIG-039 PL/pgSQL-Trigger)](SLC-851-backfill-reserved-slug-enforcement.md) | BL-490 / ISSUE-080 | planned | High | 2026-05-24 |
+| SLC-852 | [Compose-Preview tenantSlug-Drift-Fix](SLC-852-compose-preview-tenantslug-fix.md) | BL-491 / ISSUE-081 | planned | Medium | 2026-05-24 |
+| SLC-853 | [renderBrandedHtml-Caller-Audit + DSE-Footer fuer Consent + Briefing-Mails](SLC-853-renderbranded-caller-audit-dse-footer.md) | BL-492 | planned | Medium | 2026-05-24 |

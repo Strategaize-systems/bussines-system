@@ -253,18 +253,25 @@
       "order": 36
     },
     {
+      "id": "v8-5",
+      "name": "V8.5",
+      "status": "active",
+      "summary": "Hygiene-Bundle nach V8.4 Stable (Slice-Planning 2026-05-24). 3 Slices SLC-851..853 aus V8.4-Burn-In-Followups: SLC-851 BL-490 Backfill-Reserved-Slug-Enforcement (MIG-039 PL/pgSQL-Trigger gegen ISSUE-080), SLC-852 BL-491 Compose-Preview tenantSlug-Drift-Fix (gegen ISSUE-081 Preview-vs-Send-Drift), SLC-853 BL-492 renderBrandedHtml-Caller-Audit + DSE-Footer fuer send-consent-mail + meeting-briefing (V8.4-Risk-Block-Followup). DEC-239 (NEU) Helper-Export statt Migration. Pattern-Reuse-Heavy: V8.4 buildDseFooterBlock + getTenantSlugByOwnerUserId + MIG-Pattern. Geschaetzt ~7-9h. Naechster Schritt: /backend SLC-851.",
+      "order": 37
+    },
+    {
       "id": "v9",
       "name": "V9",
       "status": "planned",
       "summary": "Offen — wartet auf Real-Use-Erkenntnisse aus Tag-zu-Tag-Vertrieb. Triggert sich sobald User selbst aktiv verkauft oder 1. Multiplikator-Pilot startet.",
-      "order": 37
+      "order": 38
     },
     {
       "id": "v10",
       "name": "V10+",
       "status": "planned",
       "summary": "Autonome AI-Agents (Agentforce-Style: Antwort-Vorschlag → Auto-Reply mit Approval-Workflow), API-Integration externe Kommunikations-Tools (BL-443 Slack/Teams), Multiplikatoren-Bereich-Strategie-Item. Wettbewerbsreaktion auf Salesforce Agentforce oder Kundenwunsch.",
-      "order": 38
+      "order": 39
     }
   ]
 }
