@@ -1,5 +1,15 @@
 # Known Issues
 
+### ISSUE-084 — V8.4 legal-documents-rls.test.ts 4 Tests UNIQUE-Konflikt mit MIG-038 Phase-5 Default-Seed (pre-existing V8.4)
+- Status: open
+- Severity: Medium
+- Area: Test-Infra / V8.4 / legal_documents RLS-Suite
+- Summary: `cockpit/__tests__/rls/legal-documents-rls.test.ts` (V8.4 SLC-841 MT-3) failt 4/7 mit `duplicate key value violates unique constraint "legal_documents_tenant_team_id_kind_key"` beim Tenant-A-Admin-INSERT. Root-Cause: MIG-038 Phase 5 (SLC-842) seedete fuer alle existing Teams 1 Default-customer-dse-Row (Team-077 + Strategaize-Team). Test-Suite `beforeEach`-Cleanup hat Filter `content_md LIKE '[TEST-SLC-841]%'` und faengt den Seed-Row NICHT — UNIQUE(tenant_team_id, kind)-Constraint blockt jeden weiteren INSERT customer-dse fuer Tenant-A. Pre-existing seit V8.4 Phase-5-Apply 2026-05-23, in V8.4 /qa (RPT-528) nicht entdeckt weil Gesamt-RLS-Suite damals nicht gelaufen ist. Discovery in V8.5 SLC-851 /qa (RPT-538) 2026-05-24.
+- Impact: RLS-Coverage-Gap fuer V8.4 legal_documents-Feature in Live-DB-Tests — 4 von 7 Tests koennen nicht beweisen was sie sollten (Admin-INSERT, Member-SELECT, Member-UPDATE-blocked, UNIQUE-Constraint-Wirkung). Kein Production-Code-Bug — die V8.4-Live-Smokes haben das Feature E2E verifiziert (RPT-531+532). Tests sind FALSE-NEGATIVE wegen Test-Hygiene-Drift, nicht weil das Feature broken ist.
+- Workaround: Vor Test-Run manuell `DELETE FROM legal_documents WHERE tenant_team_id IN ('00000000-0000-0000-0000-000000000077', '<strategaize-team-uuid>');` — aber das zerstoert den Default-Seed-State, daher nicht empfohlen fuer Multi-Run-Szenarien.
+- Discovery: V8.5 SLC-851 /qa (RPT-538) 2026-05-24 — Gesamt-RLS-Suite-Run gegen Coolify-DB zeigte 163 Tests gesamt, 4 failed im legal-documents-rls.test.ts. Stack-Trace verifizierte UNIQUE-Konflikt mit Default-Seed-Row.
+- Next Action: V8.6+ Backlog-Item Test-Hygiene-Slice: (a) Test-Tenant-IDs verwenden die NICHT im V7-Seed enthalten sind (z.B. nur `00000000-0000-0000-0000-0000000b8841` Tenant-B fuer alle Operations + cleanup via CASCADE-on-team-DELETE), ODER (b) `beforeEach`-Cleanup um Default-Seed-Rows fuer Test-Tenant erweitern + nach Tests Default-Seed restaurieren via Re-Insert. Aufwand: ~30-45 Min Test-Refactor. Plus: `npm run test:all` sollte in CI/Pre-Deploy laufen — V8.4 hat das uebersehen.
+
 ### ISSUE-083 — V8.4 sendComposedEmail rendert HTML ohne tenantSlug + reicht als params.html (SLC-846 Patch-Gap auf Compose-Pfad) [RESOLVED 2026-05-23]
 - Status: resolved
 - Severity: High (V8.4-Feature broken: DSE-Footer-Auto-Insert fehlt komplett in allen Composing-Studio-Mails)
