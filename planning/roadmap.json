@@ -255,8 +255,8 @@
     {
       "id": "v8-5",
       "name": "V8.5",
-      "status": "active",
-      "summary": "Hygiene-Bundle nach V8.4 Stable (Slice-Planning 2026-05-24). 3 Slices SLC-851..853 aus V8.4-Burn-In-Followups: SLC-851 BL-490 Backfill-Reserved-Slug-Enforcement DONE 2026-05-24 (MIG-039 PL/pgSQL-Trigger gegen ISSUE-080), SLC-852 BL-491 Compose-Preview tenantSlug-Drift-Fix DONE 2026-05-24 RPT-539 (gegen ISSUE-081 Preview-vs-Send-Drift), SLC-853 BL-492 renderBrandedHtml-Caller-Audit + DSE-Footer fuer send-consent-mail + meeting-briefing (V8.4-Risk-Block-Followup). DEC-239 (NEU) Helper-Export statt Migration. Pattern-Reuse-Heavy: V8.4 buildDseFooterBlock + getTenantSlugByOwnerUserId + MIG-Pattern. Progress: 2/3 done. Naechster Schritt: /qa SLC-852, dann /backend SLC-853.",
+      "status": "released",
+      "summary": "Hygiene-Bundle RELEASED 2026-05-25 als REL-039 (Image-Tag cc6fcd4). 3 Slices SLC-851..853 aus V8.4-Burn-In-Followups deployed. **MIG-039 LIVE** (Reserved-Slug-Trigger gegen ISSUE-080). DEC-239 Helper-Export-Strategie. SLC-851 BL-490 Backfill-Reserved-Slug-Enforcement via PL/pgSQL is_reserved_slug() + teams_reserved_slug_guard Trigger. SLC-852 BL-491 Compose-Preview tenantSlug-Drift-Fix (gegen ISSUE-081 Preview-vs-Send-Drift). SLC-853 BL-492 renderBrandedHtml-Caller-Audit + buildDseFooterParagraph-Export + DSE-Footer fuer send-consent-mail + meeting-briefing. Vitest 1135/1135 PASS (+17 vs V8.4-Baseline 1118). Live-Smoke 3/3 PASS post-Coolify-Redeploy (RPT-542): AC7 Compose-Preview iframe DSE-Link, AC11-Consent Mail an immo@bellaerts.de DSE-Footer User-Inbox-bestaetigt, AC11-Briefing Mail an richard@bellaerts.de DSE-Footer User-Inbox-bestaetigt. ISSUE-080+081 resolved Live-verified. /post-launch Burn-In ausstehend.",
       "order": 37
     },
     {
