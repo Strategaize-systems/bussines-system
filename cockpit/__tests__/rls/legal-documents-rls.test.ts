@@ -43,6 +43,24 @@ const DSE_TEXT_B = "[TEST-SLC-841] DSE-Markdown von Tenant B";
 
 let client: Client;
 
+// V8.6 SLC-861 MT-1 (ISSUE-084-Fix): MIG-038 Phase-5 Default-Seed legt fuer
+// jedes existierende Team eine `customer-dse`-Row in legal_documents an. Diese
+// Default-Seed-Rows kollidieren in den Tests mit `UNIQUE(tenant_team_id, kind)`
+// wenn der Test einen weiteren INSERT versucht (4 false-negative-FAILs).
+//
+// Loesung: Default-Seed-Rows fuer beide Test-Tenants in beforeAll backuppen,
+// in beforeEach komplett wegloeschen (Test-Tx sieht leeren State), in afterAll
+// die Backup-Rows idempotent re-inserten → Production-Default-Seed restauriert.
+type DefaultSeedRow = {
+  id: string;
+  tenant_team_id: string;
+  kind: string;
+  content_md: string;
+  updated_by: string | null;
+  updated_at: Date;
+};
+let defaultSeedRows: DefaultSeedRow[] = [];
+
 beforeAll(async () => {
   const url = process.env.TEST_DATABASE_URL;
   if (!url) {
@@ -60,22 +78,44 @@ beforeAll(async () => {
      ON CONFLICT (id) DO NOTHING`,
     [TENANT_B_TEAM_ID, TENANT_B_TEAM_NAME]
   );
+
+  // Default-Seed-Rows beider Test-Tenants backuppen (MIG-038 Phase 5).
+  const backup = await client.query(
+    `SELECT id, tenant_team_id, kind, content_md, updated_by, updated_at
+       FROM legal_documents
+      WHERE tenant_team_id IN ($1, $2)`,
+    [TENANT_A_TEAM_ID, TENANT_B_TEAM_ID]
+  );
+  defaultSeedRows = backup.rows;
 });
 
 afterAll(async () => {
   if (!client) return;
-  // Cleanup: CASCADE entfernt zugehoerige legal_documents-Rows.
-  await client.query("DELETE FROM teams WHERE id = $1", [TENANT_B_TEAM_ID]);
+  // Test-Markierte Rows weg (idempotent, falls Tests sie liegen liessen).
   await client.query(
     "DELETE FROM legal_documents WHERE content_md LIKE '[TEST-SLC-841]%'"
   );
+  // Default-Seed-Rows restaurieren (idempotent via ON CONFLICT DO NOTHING).
+  for (const row of defaultSeedRows) {
+    await client.query(
+      `INSERT INTO legal_documents
+         (id, tenant_team_id, kind, content_md, updated_by, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (id) DO NOTHING`,
+      [row.id, row.tenant_team_id, row.kind, row.content_md, row.updated_by, row.updated_at]
+    );
+  }
+  // Cleanup Tenant-B (CASCADE entfernt evtl. nicht-restaurierte Test-DSE-Rows).
+  await client.query("DELETE FROM teams WHERE id = $1", [TENANT_B_TEAM_ID]);
   await client.end();
 });
 
 beforeEach(async () => {
-  // Test-Pollution-Schutz: alle Test-Markierte legal_documents weg.
+  // V8.6 SLC-861: leeren State herstellen — Default-Seed-Rows + Test-Rows
+  // beider Test-Tenants weg. afterAll restauriert die Default-Seeds idempotent.
   await client.query(
-    "DELETE FROM legal_documents WHERE content_md LIKE '[TEST-SLC-841]%'"
+    "DELETE FROM legal_documents WHERE tenant_team_id IN ($1, $2)",
+    [TENANT_A_TEAM_ID, TENANT_B_TEAM_ID]
   );
 });
 

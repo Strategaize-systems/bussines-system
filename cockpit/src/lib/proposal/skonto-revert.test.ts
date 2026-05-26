@@ -15,7 +15,11 @@ describe("patchTouchesSkonto", () => {
     // EditorPatch baut Skonto-Patches immer mit beiden Keys explizit
     // gesetzt, also testen wir hier nur den Fall "Keys gar nicht im Objekt"
     // (z.B. ein reiner Title- oder PaymentTerms-Save).
-    const titlePatch: { title?: string } = { title: "neu" };
+    // V8.6 SLC-861 MT-3 (ISSUE-085-Fix): Structural-Cast wegen strikten
+    // SkontoTouchingPatch-Type (TS2559 gleicher Mechanismus wie RC).
+    const titlePatch = { title: "neu" } as unknown as Parameters<
+      typeof patchTouchesSkonto
+    >[0];
     expect(patchTouchesSkonto(titlePatch)).toBe(false);
   });
 

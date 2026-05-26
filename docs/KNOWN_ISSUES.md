@@ -1,8 +1,9 @@
 # Known Issues
 
-### ISSUE-085 — 8 TSC-Errors in 4 unrelated Test-Files (pre-existing nach Next 16 / TypeScript-Major-Upgrade)
-- Status: open
+### ISSUE-085 — 8 TSC-Errors in 4 unrelated Test-Files (pre-existing nach Next 16 / TypeScript-Major-Upgrade) [RESOLVED 2026-05-26]
+- Status: resolved
 - Severity: Medium
+- Resolution: V8.6 SLC-861 MT-2..MT-5 (2026-05-26). (a) useVoiceCapture.test.tsx Z.69 mock.calls-Cast per `feedback_vitest_mock_calls_typescript_cast`-Pattern. (b) reverse-charge-revert + skonto-revert.test.ts Patch-Object-Cast via `Parameters<typeof patchTouches...>[0]`. (c) vies-client.ts Source-Side-Loosening: `isViesEnabled(env: Record<string, string | undefined>)` + `lookupVatId({env?: Record<string, string | undefined>})` statt `NodeJS.ProcessEnv` — `process.env` als Default bleibt structural-compatible. (d) `package.json scripts.test:tsc = "tsc --noEmit"` + Erweiterung `test:all`-Script. Verifikation: `npm run test:tsc` exit 0 (8 Errors → 0), `npm run test` 1135/1135 PASS unveraendert, `npm run lint` 142e/57w EXACT V8.5-Baseline.
 - Area: Test-Infra / TypeScript-Hygiene
 - Summary: `npx tsc --noEmit` produziert 8 Errors in 4 Test-Files die NICHT im SLC-852-Scope liegen. Errors sind pre-existing, vermutlich nach Next.js 16 + TypeScript-Major-Upgrade ohne Test-Folge-Anpassung. Production-Build (`npm run build`) skipt Test-Files via `tsconfig.json` `exclude`-Pattern → kein Production-Code-Bug. Vitest (`npm run test`) laeuft via ESBuild/Vite ohne TSC-strict-Check und ist 1118/1118 PASS.
   Betroffen:
@@ -15,9 +16,10 @@
 - Discovery: V8.5 SLC-852 /frontend (RPT-539) 2026-05-24 — `npx tsc --noEmit` als Sanity-Check, 8 unrelated Errors aufgefallen. NICHT durch SLC-852 verursacht (per `git diff --name-only HEAD`-Vergleich verifiziert: nur 4 Files im Slice-Scope, alle 4 erscheinen NICHT in den 8 Error-Stacks).
 - Next Action: V8.6 Test-Hygiene-Slice mit ISSUE-084 bundeln (~30-45 Min). Konkret: (a) useVoiceCapture.test.tsx Tuple-Initialisierung mit Length>0, (b) reverse-charge-revert.test.ts + skonto-revert.test.ts Patch-Object-Typing-Fix (vermutlich Touching-Patch-Type-Drift), (c) vies-client.test.ts ProcessEnv-Mock mit NODE_ENV='test' ergaenzen. Plus: in vitest.config.ts oder package.json einen `test:tsc`-Script ergaenzen der `tsc --noEmit` haengt → automatische Detection bei naechstem CI/QA-Lauf.
 
-### ISSUE-084 — V8.4 legal-documents-rls.test.ts 4 Tests UNIQUE-Konflikt mit MIG-038 Phase-5 Default-Seed (pre-existing V8.4)
-- Status: open
+### ISSUE-084 — V8.4 legal-documents-rls.test.ts 4 Tests UNIQUE-Konflikt mit MIG-038 Phase-5 Default-Seed (pre-existing V8.4) [RESOLVED 2026-05-26]
+- Status: resolved
 - Severity: Medium
+- Resolution: V8.6 SLC-861 MT-1 (2026-05-26). Default-Seed-Backup-Restore-Pattern in `__tests__/rls/legal-documents-rls.test.ts`: `beforeAll` backuppt alle existing legal_documents-Rows fuer Tenant-A + Tenant-B in `defaultSeedRows`-Variable, `beforeEach` DELETEs alle Rows beider Test-Tenants (leeren State pre-Test), `afterAll` Re-INSERTed Default-Seed-Rows idempotent via `ON CONFLICT (id) DO NOTHING`. Test-Lauf auf Coolify-DB via node:22 + business-net: 7/7 PASS (vs Baseline 3/7 PASS + 4/7 FAIL). Default-Seed-State Production-DB post-Test verifiziert restauriert (2 Rows mit original updated_at, 0 Test-Pollution-Rest). Full RLS-Suite 121/121 PASS (4 Test-Files: legal-documents-rls + custom-reports-rls + helper-functions + v7-rls-matrix).
 - Area: Test-Infra / V8.4 / legal_documents RLS-Suite
 - Summary: `cockpit/__tests__/rls/legal-documents-rls.test.ts` (V8.4 SLC-841 MT-3) failt 4/7 mit `duplicate key value violates unique constraint "legal_documents_tenant_team_id_kind_key"` beim Tenant-A-Admin-INSERT. Root-Cause: MIG-038 Phase 5 (SLC-842) seedete fuer alle existing Teams 1 Default-customer-dse-Row (Team-077 + Strategaize-Team). Test-Suite `beforeEach`-Cleanup hat Filter `content_md LIKE '[TEST-SLC-841]%'` und faengt den Seed-Row NICHT — UNIQUE(tenant_team_id, kind)-Constraint blockt jeden weiteren INSERT customer-dse fuer Tenant-A. Pre-existing seit V8.4 Phase-5-Apply 2026-05-23, in V8.4 /qa (RPT-528) nicht entdeckt weil Gesamt-RLS-Suite damals nicht gelaufen ist. Discovery in V8.5 SLC-851 /qa (RPT-538) 2026-05-24.
 - Impact: RLS-Coverage-Gap fuer V8.4 legal_documents-Feature in Live-DB-Tests — 4 von 7 Tests koennen nicht beweisen was sie sollten (Admin-INSERT, Member-SELECT, Member-UPDATE-blocked, UNIQUE-Constraint-Wirkung). Kein Production-Code-Bug — die V8.4-Live-Smokes haben das Feature E2E verifiziert (RPT-531+532). Tests sind FALSE-NEGATIVE wegen Test-Hygiene-Drift, nicht weil das Feature broken ist.

@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:rls": "vitest run --config vitest.rls.config.ts",
-    "test:all": "npm run test && npm run test:rls",
+    "test:tsc": "tsc --noEmit",
+    "test:all": "npm run test && npm run test:rls && npm run test:tsc",
     "seed:multi-user": "tsx scripts/seed-multi-user.ts"
   },
   "dependencies": {

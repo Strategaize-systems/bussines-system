@@ -2467,7 +2467,7 @@
       "title": "V8.6 SLC-861 Test-Hygiene-Bundle (ISSUE-084 legal-documents-rls Default-Seed-Konflikt + ISSUE-085 8 pre-existing TSC-Errors in 4 Test-Files + test:tsc-Drift-Detection-Script)",
       "type": "fix",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.6",
       "description": "Test-Layer-Hygiene-Bundle nach V8.5 Stable. 6 Micro-Tasks: (1) legal-documents-rls.test.ts Default-Seed-Backup-Restore-Pattern in beforeAll/afterAll, (2) useVoiceCapture.test.tsx Mock-Calls-Cast, (3) reverse-charge-revert + skonto-revert.test.ts Patch-Object-Cast, (4) vies-client.test.ts Process.env-Type-Loosening, (5) package.json scripts.test:tsc + tsconfig.test.json fuer kuenftige TSC-Drift-Detection, (6) Records-Update + Verification-Aggregat. Kein Production-Code-Touch, kein Deploy noetig, kein Worktree. Estimate ~45-60 Min Implementation + ~30 Min /qa.",
       "createdAt": "2026-05-26"

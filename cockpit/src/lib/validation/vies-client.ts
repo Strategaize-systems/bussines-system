@@ -41,8 +41,15 @@ const VIES_REST_URL = "https://ec.europa.eu/taxation_customs/vies/rest-api/ms/{c
 /**
  * Pure helper: returns true when ENV `VIES_ENABLED` is not explicitly set to "false".
  * Default behavior is enabled.
+ *
+ * V8.6 SLC-861 MT-4 (ISSUE-085-Fix): Parameter-Type von `NodeJS.ProcessEnv` auf
+ * `Record<string, string | undefined>` gelockert — matched ProcessEnv structural
+ * (Index-Signature) UND Test-side `{}` / `{VIES_ENABLED: "..."}`-Mocks ohne
+ * NODE_ENV-Required-Field-Drift (Next.js 16 / TS major).
  */
-export function isViesEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+export function isViesEnabled(
+  env: Record<string, string | undefined> = process.env
+): boolean {
   return env.VIES_ENABLED !== "false";
 }
 
@@ -181,7 +188,8 @@ export async function lookupVatId(args: {
   is_format_valid: boolean;
   supabase: SupabaseClient;
   fetcher?: typeof fetch;
-  env?: NodeJS.ProcessEnv;
+  // V8.6 SLC-861 MT-4 (ISSUE-085-Fix): Record-Type statt NodeJS.ProcessEnv.
+  env?: Record<string, string | undefined>;
 }): Promise<ViesLookupResult> {
   const { country, number, is_format_valid, supabase, fetcher = fetch, env = process.env } = args;
   const validated_at = new Date();

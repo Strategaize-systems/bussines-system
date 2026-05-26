@@ -66,7 +66,12 @@ describe("useVoiceCapture", () => {
     expect(transcript).toBe("transkribierter Text");
     expect(result.current.isRecording).toBe(false);
     expect(fetchMock).toHaveBeenCalledOnce();
-    expect(fetchMock.mock.calls[0][0]).toBe("/api/transcribe");
+    // V8.6 SLC-861 MT-2 (ISSUE-085-Fix): Vitest leitet bei `vi.fn(async () => ...)`
+    // keine Args ab, mock.calls ist Tuple-Type Length=0 → TS2493 ohne Cast.
+    // Pattern per feedback_vitest_mock_calls_typescript_cast (OP V7.2 SLC-141).
+    expect((fetchMock.mock.calls as unknown as Array<Array<string>>)[0][0]).toBe(
+      "/api/transcribe"
+    );
   });
 
   it("denied permission: sets error, isRecording stays false", async () => {

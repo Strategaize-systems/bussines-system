@@ -411,4 +411,4 @@ V8.6 = 1 Slice SLC-861, 6 Micro-Tasks, ~45-60 Min. Reine Test-Layer-Hygiene ohne
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-861 | [Test-Hygiene-Bundle (ISSUE-084 + ISSUE-085)](SLC-861-test-hygiene-bundle.md) | BL-493 / ISSUE-084 + ISSUE-085 | planned | Medium | 2026-05-26 |
+| SLC-861 | [Test-Hygiene-Bundle (ISSUE-084 + ISSUE-085)](SLC-861-test-hygiene-bundle.md) | BL-493 / ISSUE-084 + ISSUE-085 | done | Medium | 2026-05-26 |

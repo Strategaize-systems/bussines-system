@@ -12,7 +12,13 @@ describe("patchTouchesReverseCharge", () => {
   });
 
   it("returns false for a patch object without RC keys", () => {
-    const titlePatch: { title?: string } = { title: "neu" };
+    // V8.6 SLC-861 MT-3 (ISSUE-085-Fix): ReverseChargeTouchingPatch ist strikt
+    // auf {reverse_charge?, tax_rate?} typisiert → {title:'neu'} matched 0
+    // properties (TS2559). Test-Intent (Patch ohne RC-Keys → false) bleibt
+    // erhalten via expliziten Structural-Cast.
+    const titlePatch = { title: "neu" } as unknown as Parameters<
+      typeof patchTouchesReverseCharge
+    >[0];
     expect(patchTouchesReverseCharge(titlePatch)).toBe(false);
   });
 
