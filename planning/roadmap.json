@@ -262,8 +262,8 @@
     {
       "id": "v8-6",
       "name": "V8.6",
-      "status": "active",
-      "summary": "Test-Hygiene-Bundle nach V8.5 Stable (Slice-Planning 2026-05-26). 1 Slice SLC-861, 6 Micro-Tasks, ~45-60 Min. BL-493: ISSUE-084 legal-documents-rls.test.ts UNIQUE-Konflikt mit MIG-038-Default-Seed (4 false-negative-FAILs) + ISSUE-085 8 pre-existing TSC-Errors in 4 Test-Files (useVoiceCapture + reverse-charge-revert + skonto-revert + vies-client) + Prevention via package.json scripts.test:tsc Drift-Detection-Script. Kein Production-Code-Touch, kein Deploy noetig (Test-Only), kein Worktree (Internal-Tool + 0 Production-Risk). Pattern-Reuse: feedback_vitest_mock_calls_typescript_cast (OP V7.2 SLC-141) + reference_coolify_test_setup. Naechster Schritt: /backend SLC-861 oder /frontend SLC-861 (technisch /backend wegen DB-Test-Touch).",
+      "status": "released",
+      "summary": "Test-Hygiene-Bundle RELEASED 2026-05-26 als REL-040 (Image-Tag c9a40e7). 1 Slice SLC-861 mit 6 Micro-Tasks deployed. BL-493 done. ISSUE-084 + ISSUE-085 resolved. **Keine Schema-Migration**, minimaler Production-Code-Touch (vies-client.ts Type-Signatur, Runtime unveraendert). MT-1 legal-documents-rls Default-Seed-Backup-Restore (4 false-negative-FAILs → 7/7 PASS), MT-2..4 TSC-Cast-Fixes per feedback_vitest_mock_calls_typescript_cast, MT-5 package.json scripts.test:tsc + test:all-Erweiterung als Drift-Detection-Prevention. Verification-Aggregat: Vitest 1135/1135, test:tsc 0 Errors (vs 8 Baseline), RLS 121/121 PASS, build clean, lint 142e/57w EXACT V8.5-Baseline, Default-Seed-Restore verifiziert. Post-Deploy-HTTP-Smoke 3/3 200 OK. /post-launch Burn-In optional (Test-Only-Slice, kein Runtime-Effekt zu beobachten). RPT-544/545/546.",
       "order": 38
     },
     {

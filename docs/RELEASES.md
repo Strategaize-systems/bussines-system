@@ -1,5 +1,22 @@
 # Releases
 
+### REL-040 — V8.6 Test-Hygiene-Bundle (ISSUE-084 + ISSUE-085 resolved + test:tsc Drift-Detection)
+- Date: 2026-05-26
+- Image-Tag: `c9a40e7` (= `c9a40e7608a2456da733818f574f54960cd070b3`). Coolify-Redeploy manuell via User-Coolify-UI (`feedback_manual_deploy`). Beide Container (app + supabase-db) frisch hoch mit identischem Image-Hash, healthy.
+- Scope: V8.6 Test-Hygiene-Bundle. 1 Slice SLC-861, 6 Micro-Tasks, BL-493. **Keine MIG, kein neues DEC, kein Schema-Touch.** Minimaler Production-Code-Touch in 1 File (vies-client.ts Type-Signatur, **Runtime-Verhalten 100% unveraendert**).
+  - **MT-1** legal-documents-rls.test.ts: Default-Seed-Backup-Restore-Pattern in beforeAll/beforeEach/afterAll (idempotent via ON CONFLICT DO NOTHING). 4 false-negative-FAILs gruen.
+  - **MT-2** useVoiceCapture.test.tsx: mock.calls-Cast per `feedback_vitest_mock_calls_typescript_cast` (OP V7.2 SLC-141).
+  - **MT-3** reverse-charge-revert + skonto-revert.test.ts: `Parameters<typeof patchTouches...>[0]`-Cast (TS2559-Fix).
+  - **MT-4** vies-client.ts: `NodeJS.ProcessEnv` → `Record<string, string | undefined>` Source-Side-Loosening. process.env-Default + Production-Caller (vies-actions.ts:39) structural-compatible.
+  - **MT-5** package.json: `scripts.test:tsc = "tsc --noEmit"` + `test:all` erweitert. CI-/Pre-Commit-Drift-Detection.
+  - **MT-6** Records: ISSUE-084 + ISSUE-085 resolved 2026-05-26, SLC-861 done, BL-493 done.
+- Summary: V8.6 schliesst 2 Test-Hygiene-Issues + erweitert um Drift-Detection-Script. Reine Test-Layer-Hygiene + 1 Type-Loosening ohne Runtime-Effekt. Pattern-Reuse-Heavy. Verification-Aggregat: Vitest 1135/1135 PASS, test:tsc exit 0 (8 → 0), RLS-Suite 121/121 PASS gegen Coolify-DB inkl. legal-documents-rls 7/7 (vs Baseline 3/7+4-FAIL), build clean, lint 142e/57w EXACT V8.5-Baseline. Default-Seed-Restore post-RLS-Lauf verifiziert (2 Rows mit original updated_at, 0 Test-Pollution). Internal-Test-Mode bleibt aktiv. Post-Deploy-Smoke: 3/3 HTTP 200 OK (login 114ms + /p/strategaize-transition-bv/datenschutz 310ms + /datenschutz 133ms). RPT-544/545/546.
+- Risks:
+  - **R1 (Very Low)** Production-Code-Touch in vies-client.ts ist Type-Signature-only — Runtime-Verhalten unveraendert. Caller `vies-actions.ts:39` ruft ohne env-Argument → kein Break. Test verifiziert.
+  - **L-1 (Low)** AC9-Annahme-Drift in Slice-Spec (erwartete 163 RLS-Tests, tatsaechlich 121). Keine Behavior-Drift, nur Schaetzung. Nicht-blockierend, Spec-Update optional.
+  - **L-2 (Low)** RLS-Test-Repo-Sync-Friction: `/opt/business-system-test/cockpit` muss vor kuenftigen RLS-Test-File-Changes via tar-pipe gesynct werden. Skill-Improvement-Kandidat fuer Sync-Helper-Script.
+- Rollback Notes: V8.6 hat **0 Schema-Migration**. Rollback per Coolify-Image-History → REL-039 (`cc6fcd4`) ist trivial. Bei Rollback: vies-client.ts Type-Signatur kehrt zu NodeJS.ProcessEnv zurueck (Runtime unbeeinflusst). Test-Hygiene-Verbesserungen leben in der Repo-History, nicht im Production-Image. RTO: 3 Min Image-Rollback.
+
 ### REL-039 — V8.5 Hygiene-Bundle (Reserved-Slug-Trigger + Compose-Preview-Fix + DSE-Footer-Coverage Consent+Briefing)
 - Date: 2026-05-25
 - Image-Tag: `cc6fcd4` (= main HEAD post-Master-Merge nach SLC-853 /qa Records-Update). Coolify-Redeploy manuell via User-Coolify-UI (`feedback_manual_deploy`) — beide Container (app + supabase-db) frisch hoch mit Image-Hash `cc6fcd40b77f46123b3912a655d80d844cc77043`, healthy.
