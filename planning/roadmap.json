@@ -260,18 +260,25 @@
       "order": 37
     },
     {
+      "id": "v8-6",
+      "name": "V8.6",
+      "status": "active",
+      "summary": "Test-Hygiene-Bundle nach V8.5 Stable (Slice-Planning 2026-05-26). 1 Slice SLC-861, 6 Micro-Tasks, ~45-60 Min. BL-493: ISSUE-084 legal-documents-rls.test.ts UNIQUE-Konflikt mit MIG-038-Default-Seed (4 false-negative-FAILs) + ISSUE-085 8 pre-existing TSC-Errors in 4 Test-Files (useVoiceCapture + reverse-charge-revert + skonto-revert + vies-client) + Prevention via package.json scripts.test:tsc Drift-Detection-Script. Kein Production-Code-Touch, kein Deploy noetig (Test-Only), kein Worktree (Internal-Tool + 0 Production-Risk). Pattern-Reuse: feedback_vitest_mock_calls_typescript_cast (OP V7.2 SLC-141) + reference_coolify_test_setup. Naechster Schritt: /backend SLC-861 oder /frontend SLC-861 (technisch /backend wegen DB-Test-Touch).",
+      "order": 38
+    },
+    {
       "id": "v9",
       "name": "V9",
       "status": "planned",
       "summary": "Offen — wartet auf Real-Use-Erkenntnisse aus Tag-zu-Tag-Vertrieb. Triggert sich sobald User selbst aktiv verkauft oder 1. Multiplikator-Pilot startet.",
-      "order": 38
+      "order": 39
     },
     {
       "id": "v10",
       "name": "V10+",
       "status": "planned",
       "summary": "Autonome AI-Agents (Agentforce-Style: Antwort-Vorschlag → Auto-Reply mit Approval-Workflow), API-Integration externe Kommunikations-Tools (BL-443 Slack/Teams), Multiplikatoren-Bereich-Strategie-Item. Wettbewerbsreaktion auf Salesforce Agentforce oder Kundenwunsch.",
-      "order": 39
+      "order": 40
     }
   ]
 }

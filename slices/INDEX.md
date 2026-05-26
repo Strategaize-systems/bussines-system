@@ -404,3 +404,11 @@ V8.5 = 3 Slices SLC-851..853, parallel-ausfuehrbar (geringe Inter-Slice-Dependen
 | SLC-851 | [Backfill-Reserved-Slug-Enforcement (MIG-039 PL/pgSQL-Trigger)](SLC-851-backfill-reserved-slug-enforcement.md) | BL-490 / ISSUE-080 | done | High | 2026-05-24 |
 | SLC-852 | [Compose-Preview tenantSlug-Drift-Fix](SLC-852-compose-preview-tenantslug-fix.md) | BL-491 / ISSUE-081 | done | Medium | 2026-05-24 |
 | SLC-853 | [renderBrandedHtml-Caller-Audit + DSE-Footer fuer Consent + Briefing-Mails](SLC-853-renderbranded-caller-audit-dse-footer.md) | BL-492 | done | Medium | 2026-05-24 |
+
+## V8.6 Slices (Test-Hygiene-Bundle)
+
+V8.6 = 1 Slice SLC-861, 6 Micro-Tasks, ~45-60 Min. Reine Test-Layer-Hygiene ohne Production-Code-Touch. ISSUE-084 (legal-documents-rls.test.ts UNIQUE-Konflikt mit MIG-038-Default-Seed) + ISSUE-085 (8 TSC-Errors in 4 unrelated Test-Files) + Prevention via `test:tsc`-Script. Kein Deploy noetig (Test-Only), kein Worktree (Internal-Tool + 0 Production-Risk). Pattern-Reuse: `feedback_vitest_mock_calls_typescript_cast` (OP V7.2 SLC-141) + Coolify-Test-Setup (`reference_coolify_test_setup`).
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-861 | [Test-Hygiene-Bundle (ISSUE-084 + ISSUE-085)](SLC-861-test-hygiene-bundle.md) | BL-493 / ISSUE-084 + ISSUE-085 | planned | Medium | 2026-05-26 |
