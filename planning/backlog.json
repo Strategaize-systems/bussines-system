@@ -2531,6 +2531,16 @@
       "version": "V8.3",
       "description": "Theme 2b nach /user-guide-Output (RPT-510). Authenticated /help-Route mit Tile-Layout fuer 12 Feature-Guides (4 Sections analog INDEX.md aus /deliverables/user-guide/: Erste Schritte / Verwaltung / KI-Werkzeuge / Spezial-Themen), /help/[slug]-Detail-Pages mit Markdown-Rendering (Reuse renderLegalMarkdown aus V8.2), eigene .help-content-CSS-Schicht in globals.css, eigene Sidebar Top-Section HILFE zwischen VERWALTUNG_MEIN und WERKZEUGE. SLC-826 mit 4 MTs (Catalog + Content-Files / Tile-Page / Detail-Page + CSS / Sidebar). KEINE Schema-Migration, KEINE neuen DECs. Aufwand ~3-4h Code-Side. User-Entscheidungen: (1) Authenticated statt Public, (2) eigene Top-Section HILFE, (3) eigene .help-content-CSS-Schicht statt Tailwind-Typography-Plugin.",
       "createdAt": "2026-05-22"
+    },
+    {
+      "id": "BL-494",
+      "title": "SLC-355 BS->IS Verdichtungs-Cron + KI-Workspace IS-RAG-Erweiterung",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V8.7",
+      "description": "Zwei Teile: (1) Weekly Cron Sonntag 02:00 /api/cron/push-knowledge-to-is. Aggregiert Win/Loss-Reasons aus auto_winloss_runs (V6.6 SLC-665) und Einwand-Behandlungen aus Activity-Logs nach Branchen-Bucket + Deal-Groessen-Bucket. Vor Push: Bedrock-Klassifikations-Pass extrahiert strukturierte Einwand-Typen aus Freitext-Notizen. Aggregation: keine Einzel-Kunden, keine Personen-Namen. HTTP-POST zu IS-Knowledge-API mit Service-Key, aggregation_level='aggregated', kein source_tenant_id. ENV: STRATEGAIZE_KNOWLEDGE_API_BASE_URL, STRATEGAIZE_KNOWLEDGE_SERVICE_KEY, KNOWLEDGE_PUSH_CRON_SECRET, KNOWLEDGE_PUSH_ENABLED (default false bis Anwalt). (2) KI-Workspace-Erweiterung — bestehender Workspace aus V6.6 SLC-661..666 (Mein Tag, Deal-Detail, KI-Analyse-Cockpit) bekommt zusaetzliche optionale RAG-Quelle: IS-Knowledge-API. Beispiel-Frage 'wie haben andere diesen Einwand behandelt?' kann auf Strategaize-Wissensbasis zugreifen. Acceptance: Cron laeuft wochentlich, Win-Reasons aggregiert nach Branche in IS sichtbar, Einwand-Klassifikation funktioniert, Workspace-Frage 'Standard-Einwand-Behandlungen fuer Branche X?' liefert sinnvolle Antwort. Aufwand 1-2 Tage (Cron) + 0,5-1 Tag (Workspace-Erweiterung). Pattern P-019 + P-020 + P-032 + P-010 (Workspace) + P-004 (RAG-Konsument). Pre-Condition: IS V3.5 SLC-352 (Knowledge-API) live. **Anwalt-Gate:** Workspace-Erweiterung ohne Anwalt live. Cron-Live-Schaltung erst nach DSGVO-Sign-off. Cross-Repo-Plan: c:/strategaize/strategaize-dev-system/docs/PATTERN_LIBRARY/CROSS_REPO_IMPLEMENTATION_PLAN.md",
+      "createdAt": "2026-05-27"
     }
   ]
 }
