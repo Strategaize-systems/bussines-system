@@ -2504,11 +2504,11 @@
     },
     {
       "id": "BL-489",
-      "title": "V8.5 Hilfe-Section Redesign — Annotated Screenshots mit klickbaren Hotspots + Style-Guide-V2-Look + optionale Videos pro Hotspot",
+      "title": "V8.8 Hilfe-Section Redesign — Annotated Screenshots mit klickbaren Hotspots + Style-Guide-V2-Look + optionale Videos pro Hotspot",
       "type": "feature",
       "priority": "high",
       "status": "open",
-      "version": "V8.5",
+      "version": "V8.8",
       "description": "User-Klaerung 2026-05-22 nach V8.3-Live-Inspection: das aktuelle /help/[slug] mit Plain-Markdown-Text ist unzureichend. NEUES KONZEPT: Help-Detail-Page pro Slug zeigt einen echten Screenshot der App-Seite (z.B. /mein-tag) MIT klickbaren Hotspots an den UI-Elementen (Buttons, Cards, KPI-Bereiche). Klick auf Hotspot oeffnet Popover/Modal mit Erklaerung des Elements + optional eingebettetes Walkthrough-Video (~30-60 Sek). Wichtige Abgrenzungen aus User-Direktive: (a) KEINE permanenten Help-Icons/Tooltips in der echten App (zu intrusiv). (b) Help-Section bleibt der dedizierte Bereich. (c) Aber Help-Pages selbst muessen visuell den App-Look (Style-Guide-V2) atmen, nicht Plain-Markdown-Typography. Konzept-Bausteine: (1) Screenshot-Capture-Pipeline per Playwright (Pattern existiert: deliverables/user-guide/screencaps.spec.ts), (2) Hotspot-Definition pro Slug als JSON oder DB-Tabelle (id + x/y/w/h-Koordinaten + title + body_md + optional video_url), (3) <HotspotImage>-React-Component mit Overlays + Click-State, (4) Modal/Popover-Component fuer Hotspot-Detail, (5) Video-Embed-Slot pro Hotspot (manuell vom User erstellt), (6) Tile-Page /help bleibt als Browse-Index. /help/[slug]-Detail-Page wird komplett umgebaut. Markdown-Files bleiben als Fallback-Content fuer Intro/Text, aber Hauptdarstellung ist der annotated Screenshot. Slice-Aufwand: ~8-12h Code-Side fuer Foundation (Hotspot-Component + 1-2 Pilot-Pages mein-tag/compose), dann iteratives Ausbauen pro weiterem Guide. Videos sind manuelle User-Production-Action danach. Vergleichbar mit interaktiven Image-Maps oder Pendo-Walkthroughs aber in dedizierter Help-Section statt im App-Frame. Cross-Project-Skill-Lehre: IMP-740 (/user-guide-Skill muss Hotspot-Definition als Pflicht-Output haben, nicht nur Markdown-Text).",
       "createdAt": "2026-05-22"
     },
