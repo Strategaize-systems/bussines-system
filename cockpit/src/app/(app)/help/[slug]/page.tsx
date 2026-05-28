@@ -4,7 +4,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { renderLegalMarkdown } from "@/lib/legal/markdown";
 import { HelpPageShell } from "@/components/help/help-page-shell";
+import { HotspotImage } from "@/components/help/hotspot-image";
 import { getHelpGuideBySlug, listHelpSlugs } from "@/lib/help/catalog";
+import { loadHotspotPage } from "@/lib/help/hotspot-loader";
 
 export async function generateMetadata({
   params,
@@ -51,5 +53,14 @@ export default async function HelpGuidePage({
   }
 
   const html = await renderLegalMarkdown(markdown);
-  return <HelpPageShell html={html} />;
+  const hotspotData = await loadHotspotPage(slug);
+
+  return (
+    <HelpPageShell
+      html={html}
+      imageBlock={
+        hotspotData ? <HotspotImage data={hotspotData} /> : undefined
+      }
+    />
+  );
 }

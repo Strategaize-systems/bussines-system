@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 
 /**
@@ -7,8 +8,19 @@ import { ArrowLeft } from "lucide-react";
  * Eigene Schicht parallel zu LegalPageShell (V8.2): kein LegalFooter, dafuer
  * Back-Link "Zurueck zur Uebersicht" zu /help. Inhalt wird in einen
  * `.help-content`-Wrapper gerendert (CSS in globals.css analog `.legal-content`).
+ *
+ * V8.8 SLC-881 — optional imageBlock rendered above the article. When the
+ * page has an annotated screenshot (HotspotImage), it sits between the
+ * back-link and the markdown body. Slugs without hotspots leave imageBlock
+ * undefined and the page falls back to V8.3 plain markdown.
  */
-export function HelpPageShell({ html }: { html: string }) {
+export function HelpPageShell({
+  html,
+  imageBlock,
+}: {
+  html: string;
+  imageBlock?: ReactNode;
+}) {
   return (
     <main className="px-8 py-8">
       <div className="max-w-[900px] mx-auto">
@@ -19,6 +31,7 @@ export function HelpPageShell({ html }: { html: string }) {
           <ArrowLeft aria-hidden="true" className="size-4" />
           Zurueck zur Uebersicht
         </Link>
+        {imageBlock ? <div className="mb-8">{imageBlock}</div> : null}
         <article
           className="help-content"
           dangerouslySetInnerHTML={{ __html: html }}
