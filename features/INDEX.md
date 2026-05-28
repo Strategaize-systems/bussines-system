@@ -271,6 +271,12 @@
 |----|---------|--------|------|---------|
 | FEAT-824 | Customer-Facing Datenschutzerklaerung (Multi-Tenant-Ready, Public-Route + Editor + Consent-Form-Link + Mail-Footer, BL-488) | deployed | [Spec](FEAT-824-customer-dse.md) | 2026-05-22 |
 
+## V8.8 Features (Help-System Redesign Foundation — Requirements done 2026-05-28)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-881 | Help-System Redesign mit Annotated-Screenshot-Hotspots (Foundation Slice + Pilot mein-tag, BL-489) | planned | [Spec](FEAT-881-v88-help-hotspots.md) | 2026-05-28 |
+
 ## V8.3 Features (Hilfe-Section — RELEASED 2026-05-22 als REL-037)
 
 | ID | Feature | Status | Spec | Created |

@@ -1,6 +1,36 @@
 {
   "items": [
     {
+      "id": "BL-495",
+      "title": "V8.8 Help-Hotspot-Content Iter 2 — pipeline + compose + deal-detail Slugs",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": "V8.8",
+      "description": "Iterative Folgearbeit nach BL-489 Foundation. Wenn HotspotImage + HotspotModal + Schema stehen, koennen weitere Slugs in ~30-60 Min pro Page mit Hotspots versehen werden. Iter 2 Scope: die 3 weiteren 'Erste Schritte'-Pages aus dem Help-Catalog (pipeline, compose, deal-detail). Pro Page: (1) Screenshot via deliverables/user-guide/screencaps.spec.ts produzieren, (2) cockpit/src/content/help/hotspots/<slug>.json mit min. 3-5 Hotspots schreiben, (3) Visual-Check im Browser, (4) ggf. Hotspot-Koordinaten nachjustieren. Aufwand: ~2-3h gesamt (3 Pages x 30-60 Min). Trigger: BL-489 Foundation deployed + stabil. Nicht V8.8-Foundation-Blocking — kann als V8.8.1-Punkt-Release oder als Teil von V8.9 laufen.",
+      "createdAt": "2026-05-28"
+    },
+    {
+      "id": "BL-496",
+      "title": "V8.8 Help-Hotspot-Content Iter 3 — restliche 8 Slugs (Verwaltung, KI, Spezial)",
+      "type": "feature",
+      "priority": "low",
+      "status": "open",
+      "version": null,
+      "description": "Verbleibende 8 Help-Slugs nach Iter 2 (BL-495): settings, team-verwaltung, ki-usage, workflow-automation, custom-reports, kampagnen, zahlungsbedingungen, vat-reverse-charge. Niedrige Prio weil weniger Onboarding-kritisch als Erste-Schritte-Pages. Aufwand: ~4-6h gesamt (8 Pages x ~30 Min). Version=null bis konkreter Trigger (User-Bereitschaft fuer Full-Coverage). Kann als Pre-Customer-Live-Polish-Item gepullt werden.",
+      "createdAt": "2026-05-28"
+    },
+    {
+      "id": "BL-497",
+      "title": "V8.8 Walkthrough-Videos pro Hotspot — manuelle Produktion",
+      "type": "feature",
+      "priority": "low",
+      "status": "open",
+      "version": null,
+      "description": "Schema-Slot fuer video_url existiert ab BL-489 V1. User produziert Walkthrough-Videos (~30-60 Sek pro Hotspot) manuell mit Voice-Over. Storage-Optionen: (a) Self-hosted MP4 im public-Folder, (b) Loom-Embed, (c) YouTube unlisted. Architektur-Entscheidung kommt bei Trigger. Pro Video Aufwand: ~10-15 Min Screencap + Edit + Voice-Over. Foundation 5-10 Videos fuer kritische Hotspots der mein-tag-Pilot-Page. Iterativ erweiterbar. Version=null bis User-Bereitschaft. Cross-Project-Lehre: Voice-Over-Voice + Style aus deliverables/user-guide kann reused werden.",
+      "createdAt": "2026-05-28"
+    },
+    {
       "id": "BL-480",
       "title": "KI-Provider-Anzeige im User-UI abstrahieren (kein 'Bedrock' / 'Claude Sonnet' / Hersteller-Branding sichtbar)",
       "type": "improvement",
@@ -2504,12 +2534,12 @@
     },
     {
       "id": "BL-489",
-      "title": "V8.8 Hilfe-Section Redesign — Annotated Screenshots mit klickbaren Hotspots + Style-Guide-V2-Look + optionale Videos pro Hotspot",
+      "title": "V8.8 Help-System Foundation — HotspotImage + HotspotModal + Pilot mein-tag (FEAT-881)",
       "type": "feature",
       "priority": "high",
       "status": "open",
       "version": "V8.8",
-      "description": "User-Klaerung 2026-05-22 nach V8.3-Live-Inspection: das aktuelle /help/[slug] mit Plain-Markdown-Text ist unzureichend. NEUES KONZEPT: Help-Detail-Page pro Slug zeigt einen echten Screenshot der App-Seite (z.B. /mein-tag) MIT klickbaren Hotspots an den UI-Elementen (Buttons, Cards, KPI-Bereiche). Klick auf Hotspot oeffnet Popover/Modal mit Erklaerung des Elements + optional eingebettetes Walkthrough-Video (~30-60 Sek). Wichtige Abgrenzungen aus User-Direktive: (a) KEINE permanenten Help-Icons/Tooltips in der echten App (zu intrusiv). (b) Help-Section bleibt der dedizierte Bereich. (c) Aber Help-Pages selbst muessen visuell den App-Look (Style-Guide-V2) atmen, nicht Plain-Markdown-Typography. Konzept-Bausteine: (1) Screenshot-Capture-Pipeline per Playwright (Pattern existiert: deliverables/user-guide/screencaps.spec.ts), (2) Hotspot-Definition pro Slug als JSON oder DB-Tabelle (id + x/y/w/h-Koordinaten + title + body_md + optional video_url), (3) <HotspotImage>-React-Component mit Overlays + Click-State, (4) Modal/Popover-Component fuer Hotspot-Detail, (5) Video-Embed-Slot pro Hotspot (manuell vom User erstellt), (6) Tile-Page /help bleibt als Browse-Index. /help/[slug]-Detail-Page wird komplett umgebaut. Markdown-Files bleiben als Fallback-Content fuer Intro/Text, aber Hauptdarstellung ist der annotated Screenshot. Slice-Aufwand: ~8-12h Code-Side fuer Foundation (Hotspot-Component + 1-2 Pilot-Pages mein-tag/compose), dann iteratives Ausbauen pro weiterem Guide. Videos sind manuelle User-Production-Action danach. Vergleichbar mit interaktiven Image-Maps oder Pendo-Walkthroughs aber in dedizierter Help-Section statt im App-Frame. Cross-Project-Skill-Lehre: IMP-740 (/user-guide-Skill muss Hotspot-Definition als Pflicht-Output haben, nicht nur Markdown-Text).",
+      "description": "Foundation-Slice fuer V8.8 Help-Redesign. Requirements done 2026-05-28 (FEAT-881). Scope: 1 Pilot-Page (mein-tag) bekommt Hotspot-annotated Screenshot, andere 11 Slugs bleiben auf V8.3 Plain-Markdown bis BL-495/BL-496/BL-497 iterativ. Bausteine: (1) cockpit/src/lib/help/hotspot-schema.ts zod-Schema (x/y/w/h Prozent 0-100, title, body_md, optional video_url). (2) cockpit/src/content/help/hotspots/mein-tag.json mit min. 3 Hotspots. (3) cockpit/public/help/screenshots/mein-tag.webp via Playwright deliverables/user-guide/screencaps.spec.ts produziert. (4) <HotspotImage>-Client-Component mit absolute-positionierten Overlays + Border-Highlight on Hover/Focus + Keyboard-Accessible. (5) <HotspotModal> via shadcn Dialog Reuse + Markdown-Body-Render + optional <video> wenn URL gesetzt. (6) /help/[slug]-Page-Umbau: wenn hotspots/[slug].json existiert → HotspotImage rendern + Markdown als Intro-Block darunter; sonst Plain-Markdown-Fallback (V8.3-Verhalten bleibt). (7) Mobile < 768px: keine klickbaren Hotspots, stattdessen <ol> mit Hotspot-Titles+Bodies unter dem Image. (8) ContentCard-Wrapper + Style-Guide-V2-Tokens fuer App-Look. Acceptance: /help/mein-tag zeigt Screenshot mit min. 3 klickbaren Hotspots, Modal oeffnet bei Klick, Mobile-Fallback funktioniert, andere 11 Slugs unveraendert, Vitest >=1135 Baseline, build clean, lint EXACT V8.6-Baseline. Naechster Schritt: /architecture. Aufwand: ~8-12h. Cross-Project-Skill-Lehre: IMP-740 (/user-guide-Skill muss Hotspot-Definition als Pflicht-Output haben).",
       "createdAt": "2026-05-22"
     },
     {
