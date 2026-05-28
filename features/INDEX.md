@@ -275,7 +275,7 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-881 | Help-System Redesign mit Annotated-Screenshot-Hotspots (Foundation Slice + Pilot mein-tag, BL-489) | in_progress | [Spec](FEAT-881-v88-help-hotspots.md) | 2026-05-28 |
+| FEAT-881 | Help-System Redesign mit Annotated-Screenshot-Hotspots (Foundation Slice + Pilot mein-tag, BL-489) | done | [Spec](FEAT-881-v88-help-hotspots.md) | 2026-05-28 |
 
 ## V8.3 Features (Hilfe-Section — RELEASED 2026-05-22 als REL-037)
 

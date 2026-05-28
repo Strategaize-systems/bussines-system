@@ -3,8 +3,17 @@
   "imageUrl": "/help/screenshots/mein-tag.webp",
   "imageWidth": 2560,
   "imageHeight": 2112,
-  "imageAlt": "Screenshot der Seite Mein Tag mit Hotspots an KI-Workspace und Aufgaben-Karte.",
+  "imageAlt": "Screenshot der Seite Mein Tag mit Hotspots an Schnellaktionen, Aufgaben-Karte und KI-Workspace.",
   "hotspots": [
+    {
+      "id": "schnellaktionen",
+      "x": 12,
+      "y": 6,
+      "w": 85,
+      "h": 5,
+      "title": "Schnellaktionen",
+      "body_md": "Die Symbolleiste am oberen Rand bietet **Direkt-Erfassung** der wichtigsten CRM-Objekte: **Aufgabe**, **E-Mail**, **Meeting**, **Termin**, **Anruf**, **Neuer Deal**, **Neuer Kontakt**, **Neue Firma** und **Multiplikator**.\n\nEin Klick oeffnet das jeweilige Compose-Modal mit vorbelegten Feldern (z.B. heutigem Datum oder dem zuletzt geoeffneten Deal). So koennen Sie ohne Seitenwechsel neue Eintraege erstellen — die Liste auf Mein Tag aktualisiert sich automatisch.\n\n**Tipp:** Nutzen Sie diese Leiste fuer den schnellen Daily-Catchup nach einem Telefonat oder Meeting, statt zur jeweiligen Modulseite zu navigieren."
+    },
     {
       "id": "ki-workspace",
       "x": 11,
