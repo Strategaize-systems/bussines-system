@@ -5,9 +5,9 @@
       "title": "V8.8 Help-Hotspot-Content Iter 2 — pipeline + compose + deal-detail Slugs",
       "type": "feature",
       "priority": "medium",
-      "status": "open",
-      "version": "V8.8",
-      "description": "Iterative Folgearbeit nach BL-489 Foundation. Wenn HotspotImage + HotspotModal + Schema stehen, koennen weitere Slugs in ~30-60 Min pro Page mit Hotspots versehen werden. Iter 2 Scope: die 3 weiteren 'Erste Schritte'-Pages aus dem Help-Catalog (pipeline, compose, deal-detail). Pro Page: (1) Screenshot via deliverables/user-guide/screencaps.spec.ts produzieren, (2) cockpit/src/content/help/hotspots/<slug>.json mit min. 3-5 Hotspots schreiben, (3) Visual-Check im Browser, (4) ggf. Hotspot-Koordinaten nachjustieren. Aufwand: ~2-3h gesamt (3 Pages x 30-60 Min). Trigger: BL-489 Foundation deployed + stabil. Nicht V8.8-Foundation-Blocking — kann als V8.8.1-Punkt-Release oder als Teil von V8.9 laufen.",
+      "status": "deferred",
+      "version": null,
+      "description": "DEFERRED 2026-05-28 — wartet auf IS Content Authoring Studio Phase 1 (siehe IS Repo Backlog). Begruendung: Hotspot-Koordinaten von Hand zu pflegen ist 3-Iter-Frust pro Page (BL-489 mein-tag-Pilot brauchte 3 Coord-Iterationen). IS Content Studio liefert visuellen Hotspot-Editor (Screenshot hochladen + Rechtecke ziehen + JSON-Export + GitHub-Push-API), der die Iter-Last fuer alle 11 BS-Help-Pages + alle OP/ImSch/IS-Help-Pages auf ~1 Min pro Hotspot reduziert. Original-Scope unveraendert: die 3 weiteren 'Erste Schritte'-Pages aus dem Help-Catalog (pipeline, compose, deal-detail). Pro Page: min. 3-5 Hotspots. Trigger: IS Content Studio Phase 1 live + getestet (~12-16h Build-Aufwand dort).",
       "createdAt": "2026-05-28"
     },
     {
@@ -15,9 +15,9 @@
       "title": "V8.8 Help-Hotspot-Content Iter 3 — restliche 8 Slugs (Verwaltung, KI, Spezial)",
       "type": "feature",
       "priority": "low",
-      "status": "open",
+      "status": "deferred",
       "version": null,
-      "description": "Verbleibende 8 Help-Slugs nach Iter 2 (BL-495): settings, team-verwaltung, ki-usage, workflow-automation, custom-reports, kampagnen, zahlungsbedingungen, vat-reverse-charge. Niedrige Prio weil weniger Onboarding-kritisch als Erste-Schritte-Pages. Aufwand: ~4-6h gesamt (8 Pages x ~30 Min). Version=null bis konkreter Trigger (User-Bereitschaft fuer Full-Coverage). Kann als Pre-Customer-Live-Polish-Item gepullt werden.",
+      "description": "DEFERRED 2026-05-28 — wartet auf IS Content Authoring Studio Phase 1 (siehe IS Repo Backlog). Sobald Studio live ist, alle 8 Slugs (settings, team-verwaltung, ki-usage, workflow-automation, custom-reports, kampagnen, zahlungsbedingungen, vat-reverse-charge) in 1 Nachmittag durchklickbar statt 4-6h Manual-Iterations. Niedrige Prio weil weniger Onboarding-kritisch als Erste-Schritte-Pages. Trigger: IS Content Studio Phase 1 + BL-495 erfolgreich abgeschlossen.",
       "createdAt": "2026-05-28"
     },
     {
