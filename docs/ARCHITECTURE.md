@@ -11452,3 +11452,283 @@ Bei tenantSlug=undefined (Legacy-Caller): Output bit-identisch zu V8.3 (Regressi
 **V8.4-Live heisst:** MIG-038 wird auf Hetzner via `sql-migration-hetzner.md`-Procedure angewandt (`postgres`-User, base64-Pipe, idempotent IF NOT EXISTS). Image-Tag-Bump nach SLC-847-Master-Merge. Coolify-Redeploy auf `main`. Live-HTTP-Smoke: `/p/strategaize-transition-bv/datenschutz` HTTP 200, `/settings/compliance/customer-dse` admin-only, Consent-Token-URL zeigt DSE-Link, Test-Mail-Render enthaelt Auto-Footer mit DSE-URL.
 
 **V8.4 Architecture ready for `/slice-planning`.**
+
+## V8.8 — Help-System Redesign mit Annotated-Screenshot-Hotspots Architecture
+
+### V8.8 Architecture Summary
+
+V8.8 erweitert die V8.3-Plain-Markdown-Help-Foundation um **annotierte Screenshots mit klickbaren Hotspots**. Eine Pilot-Page (`mein-tag`) bekommt ein echtes App-Screenshot mit absolute-positionierten Hotspot-Buttons; Klick oeffnet ein Modal mit Title + Markdown-Body + optional Video-Slot. Mobile (<768px) faellt auf eine begleitende Markdown-Liste zurueck.
+
+**Stack-Erweiterung: 0** — kein neuer Container, keine Schema-Migration, keine externen APIs, kein Cron, kein KI-Call. Reine Frontend-Erweiterung mit Asset-Pflege. JSON-Storage statt DB-Tabelle. Bestehender `renderLegalMarkdown` + `Dialog` (Base UI) + `HelpPageShell` werden 1:1 wiederverwendet.
+
+**Pattern-Reuse-Check:** Cross-Repo-Search (BS / OP / IS / ImSch / Blueprint-Plattform) ergab **kein bestehendes Hotspot-/Annotated-Screenshot-Pattern**. V8.8 wird die **canonical-first Implementation** fuer alle Strategaize-Repos. Nach V8.8-Release als Memory-File dokumentieren (Pfad + Snippet) fuer naechste Repos.
+
+**Pattern-Reuse innerhalb BS:** `renderLegalMarkdown` (V8.2, V8.3, V8.4 erprobt), `HelpPageShell` (V8.3), `Dialog` aus `cockpit/src/components/ui/dialog.tsx` (Base UI, App-Standard), `deliverables/user-guide/screencaps.spec.ts` Playwright-Pipeline fuer Screenshots.
+
+### V8.8 Main Components
+
+```
+Browser (Desktop, viewport >= 768px)
+  │
+  └─ /help/mein-tag
+       │
+       ├─ HelpPageShell (existing, +1 optional prop "imageBlock")
+       │    ├─ Back-Link "Zurueck zur Uebersicht"
+       │    └─ <article.help-content>
+       │         ├─ [NEW: imageBlock] <HotspotImageClient>  (Client Component)
+       │         │    ├─ <figure>
+       │         │    │    ├─ <img src="/help/screenshots/mein-tag.webp"
+       │         │    │    │     alt="..." className="w-full h-auto" loading="lazy" />
+       │         │    │    └─ <button> overlays (absolute, x/y/w/h in %)
+       │         │    │         on click → setOpenHotspotId
+       │         │    └─ <HotspotModal hotspot={current} open={...} onClose={...}>
+       │         │         ├─ Dialog (Base UI)
+       │         │         │    ├─ DialogTitle = hotspot.title
+       │         │         │    ├─ <div dangerouslySetInnerHTML={{__html: hotspot.bodyHtml}}>
+       │         │         │    └─ optional <video controls src={hotspot.videoUrl}>
+       │         │         └─ Backdrop + ESC + Close-Button (Base UI native)
+       │         └─ Intro-Markdown (existing, V8.3-rendered HTML)
+       │
+Browser (Mobile, viewport < 768px)
+  │
+  └─ /help/mein-tag
+       │
+       └─ HelpPageShell
+            └─ <article.help-content>
+                 ├─ <HotspotImageClient>
+                 │    ├─ <img> (no overlays, not interactive)
+                 │    └─ <ol class="hotspot-list">
+                 │         └─ <li> per hotspot
+                 │              ├─ <strong>{title}</strong>
+                 │              └─ <div dangerouslySetInnerHTML>{bodyHtml}</div>
+                 └─ Intro-Markdown
+```
+
+### V8.8 Responsibilities
+
+| Component | Verantwortung | Datei |
+|---|---|---|
+| **Hotspot-Schema** | zod-Schema fuer Hotspot-Page-JSON (id/x/y/w/h/title/body_md/video_url + Bounds-Refine) | `cockpit/src/lib/help/hotspot-schema.ts` (NEU) |
+| **Hotspot-Loader** | Liest JSON, parst via zod, pre-renderst `body_md` per Hotspot via `renderLegalMarkdown`, gibt typisierte `HotspotPageData` zurueck | `cockpit/src/lib/help/hotspot-loader.ts` (NEU) |
+| **HelpPageShell** | Wrapper-Komponente, +1 optional Prop `imageBlock?: ReactNode` (rendert oberhalb des Article-Bodies wenn gesetzt) | `cockpit/src/components/help/help-page-shell.tsx` (modify) |
+| **HotspotImageClient** | Client-Component, `useMediaQuery("(min-width: 768px)")`, Desktop: figure+img+button-Overlays; Mobile: img+ol-Liste; State `openHotspotId` | `cockpit/src/components/help/hotspot-image.tsx` (NEU) |
+| **HotspotModal** | Client-Component, wraps Base-UI Dialog + DialogContent + DialogTitle + Body via dangerouslySetInnerHTML + optional video | `cockpit/src/components/help/hotspot-modal.tsx` (NEU) |
+| **Page-Component** | Server-Component, liest catalog + intro-md + optional hotspot-json, pre-rendert, uebergibt pre-rendered Data an HotspotImageClient | `cockpit/src/app/(app)/help/[slug]/page.tsx` (modify) |
+
+### V8.8 Data Flow
+
+```
+Request: GET /help/mein-tag
+  │
+  ▼
+Server (page.tsx):
+  1. await params → slug = "mein-tag"
+  2. getHelpGuideBySlug(slug) → guide (Title, Section, Roles, DurationMinutes)
+  3. readFile(src/content/help/mein-tag.md) → markdown
+  4. renderLegalMarkdown(markdown) → introHtml
+  5. tryReadHotspotJson(slug):
+       try readFile(src/content/help/hotspots/mein-tag.json) → raw
+       parseHotspotPageJson(raw, slug) → HotspotPage (zod-validated)
+       for each hotspot:
+         hotspot.bodyHtml = await renderLegalMarkdown(hotspot.body_md)
+       return HotspotPageData
+     catch ENOENT: return null
+  6. if HotspotPageData != null:
+       return <HelpPageShell html={introHtml} imageBlock={<HotspotImageClient data={pageData} />} />
+     else:
+       return <HelpPageShell html={introHtml} />  // V8.3 fallback
+  │
+  ▼
+Browser hydrates HotspotImageClient
+  - useMediaQuery checks viewport
+  - Renders Desktop (overlays) or Mobile (list) variant
+  - User clicks hotspot → state update → Modal opens
+```
+
+**Critical:** Per `feedback_rsc_no_function_props`, Server→Client Props sind nur Primitive/Plain-Objects. `HotspotPageData` enthaelt nur `string`/`number` Felder + Array von Plain-Objects mit `bodyHtml: string`. Keine Functions, keine React-Elements als Props.
+
+### V8.8 Data Model (JSON Files, kein DB-Schema)
+
+**Storage-Format:** JSON-Files unter `cockpit/src/content/help/hotspots/<slug>.json`. Parallel zur bestehenden Markdown-Convention `cockpit/src/content/help/<slug>.md`.
+
+**zod-Schema-Konkretisierung:**
+
+```typescript
+// cockpit/src/lib/help/hotspot-schema.ts
+import { z } from "zod";
+
+const HotspotIdSchema = z.string()
+  .min(1).max(50)
+  .regex(/^[a-z0-9-]+$/, "Hotspot-ID must be kebab-case (lowercase, digits, hyphens)");
+
+const PercentSchema = z.number().min(0).max(100);
+
+export const HotspotSchema = z.object({
+  id: HotspotIdSchema,
+  x: PercentSchema,         // Origin top-left (0,0); Prozent relativ zum Image
+  y: PercentSchema,
+  w: PercentSchema,
+  h: PercentSchema,
+  title: z.string().min(1).max(80),
+  body_md: z.string().min(1).max(2000),  // Safety-Net, Empfehlung 400-800
+  video_url: z.string().url().optional(), // V1 ungenutzt, Schema-Slot
+}).refine((h) => h.x + h.w <= 100, { message: "Hotspot would clip horizontally" })
+  .refine((h) => h.y + h.h <= 100, { message: "Hotspot would clip vertically" });
+
+export const HotspotPageSchema = z.object({
+  slug: z.string().min(1),
+  imageUrl: z.string()
+    .regex(/^\/help\/screenshots\/[a-z0-9-]+\.webp$/, "Path must be /help/screenshots/<slug>.webp"),
+  imageWidth: z.number().int().positive(),    // Natural width in source pixels
+  imageHeight: z.number().int().positive(),
+  imageAlt: z.string().min(1).max(160),       // a11y pflicht
+  hotspots: z.array(HotspotSchema).min(1).max(20),
+});
+```
+
+**Pilot-JSON-Beispiel (`hotspots/mein-tag.json`):**
+
+```json
+{
+  "slug": "mein-tag",
+  "imageUrl": "/help/screenshots/mein-tag.webp",
+  "imageWidth": 2560,
+  "imageHeight": 1800,
+  "imageAlt": "Screenshot der Seite Mein Tag mit annotierten Hotspots an KI-Workspace, Aufgabenliste und Wiedervorlagen-Bereich.",
+  "hotspots": [
+    { "id": "ki-workspace", "x": 6, "y": 5, "w": 88, "h": 18, "title": "KI-Workspace", "body_md": "Hier finden Sie die KI-Berichts-Buttons..." },
+    { "id": "aufgaben-heute", "x": 6, "y": 26, "w": 60, "h": 25, "title": "Offene Aufgaben heute", "body_md": "Liste der heute zu erledigenden Aufgaben..." },
+    { "id": "wiedervorlagen", "x": 6, "y": 54, "w": 60, "h": 30, "title": "Wiedervorlagen", "body_md": "KI-Vorschlaege fuer Deals..." }
+  ]
+}
+```
+
+**Backward-Compatibility:**
+- Slugs ohne `hotspots/<slug>.json` rendern V8.3-Plain-Markdown weiter (Fallback in page.tsx via try/catch ENOENT).
+- Bestehendes `cockpit/src/content/help/<slug>.md` bleibt unangetastet — Intro-Markdown wird weiterhin gerendert.
+- Bestehende Catalog-Tests (`listHelpSlugs` invariant: 12 Slugs/12 MD-Files) bleiben gruen.
+
+### V8.8 Open-Questions Closure
+
+Alle 7 Open Questions aus FEAT-881 sind beantwortet:
+
+1. **OQ-1 Hotspot-Asset-Pfad** → DEC-241: V1 Flat `cockpit/public/help/screenshots/<slug>.webp`. Folder-pro-Slug deferred bis Variant-Bedarf (Dark-Mode V2) eintritt.
+2. **OQ-2 Modal-Library** → DEC-242: Bestehender `Dialog` aus `cockpit/src/components/ui/dialog.tsx` (Base UI, kein Radix). Scroll-Lock + Long-Body Edge-Cases via `max-h-[80vh] overflow-y-auto` in unserem Wrapper.
+3. **OQ-3 Numbered-Badges** → DEC-243: V1 nur Border-Highlight + Cursor-Pointer + sr-only-Number fuer Accessibility. Visuelle Numbered-Badges deferred V2 BL-Followup.
+4. **OQ-4 Markdown-Renderer** → DEC-244: Server-pre-render via `renderLegalMarkdown` zur Page-Load-Zeit. Kein react-markdown im Client-Bundle. Pre-rendered `bodyHtml` wird als String an Client-Component uebergeben.
+5. **OQ-5 Body-Length** → DEC-245: zod `.max(2000)` als Safety-Net (Schutz vor Layout-Bruch). Doku-Empfehlung 400-800 Zeichen fuer UX.
+6. **OQ-6 Dark-Mode-Screenshots** → DEC-246: BS hat (Stand V8.7) **keinen Dark-Mode-Toggle**. V1 = Single Light-Image. Falls BS Dark-Mode bekommt, wird Schema spaeter um `image_variants` erweitert.
+7. **OQ-7 Image-Resolution** → DEC-247: 2x Retina-Standard (capture viewport 1280x900 mit `deviceScaleFactor: 2` → 2560x1800), WebP-Format (Quality 82-85%, ~250-400KB), DOM-Render `<img className="w-full h-auto" loading="lazy">` (Browser-Downscale automatisch).
+
+### V8.8 Folder-Struktur (Files Created/Modified)
+
+```
+cockpit/
+├── public/
+│   └── help/
+│       └── screenshots/
+│           └── mein-tag.webp                          [NEW asset, ~250-400KB]
+└── src/
+    ├── app/(app)/help/[slug]/page.tsx                 [MODIFY: try-read hotspot-json + pre-render]
+    ├── components/help/
+    │   ├── help-page-shell.tsx                        [MODIFY: +1 optional imageBlock prop]
+    │   ├── hotspot-image.tsx                          [NEW Client-Component]
+    │   └── hotspot-modal.tsx                          [NEW Client-Component]
+    ├── content/help/
+    │   ├── mein-tag.md                                [UNCHANGED]
+    │   └── hotspots/                                  [NEW directory]
+    │       └── mein-tag.json                          [NEW]
+    └── lib/help/
+        ├── catalog.ts                                 [UNCHANGED]
+        ├── hotspot-schema.ts                          [NEW zod-Schema]
+        └── hotspot-loader.ts                          [NEW: readFile + parse + pre-render]
+```
+
+**Test-Files (Vitest):**
+```
+cockpit/src/lib/help/
+  ├── hotspot-schema.test.ts                          [NEW: zod-Validation + Refine-Cases]
+  └── hotspot-loader.test.ts                          [NEW: ENOENT-Fallback + Happy-Path + Drift-Errors]
+```
+
+### V8.8 Security / Privacy
+
+- **Keine User-Daten in Hotspots.** Pilot-Screenshot `mein-tag` zeigt UI-Layout, keine echten Kunden-/Deal-Daten. Capture in einer Demo-Tenant-Umgebung mit `qa-admin` Seed-Account.
+- **Authenticated-only Route.** `/help/[slug]` liegt under `(app)`-Layout-Group, ist NICHT in `publicPaths`-Whitelist der `middleware.ts`. Kein anonymer Zugriff auf Hotspots. Public-Path-Whitelist-Patch ist hier NICHT erforderlich (anders als V8.2/V8.4).
+- **Assets oeffentlich abrufbar.** Static-Assets unter `public/help/screenshots/` sind technisch ohne Auth abrufbar (Next.js-Standard fuer `public/`). Risk-Akzeptanz: Screenshots zeigen keinen sensiblen User-Daten-Inhalt, das Risiko ist marginal. Falls spaeter sensitive Screenshots (Customer-Daten-Demo) benoetigt werden, muessen sie ausserhalb von `public/` liegen und via Server-Route ausgeliefert werden.
+- **dangerouslySetInnerHTML.** `body_md` ist Strategaize-internal-authored Content (kein User-Input). renderLegalMarkdown nutzt `remark-html` mit `sanitize: false` (akzeptiert, weil Author-Content = Trusted, wie schon V8.3 Help + V8.4 Customer-DSE). Kein XSS-Risiko bei diesem Threat-Model.
+
+### V8.8 Constraints & Tradeoffs
+
+| Constraint | Konsequenz |
+|---|---|
+| Hotspot-Koordinaten in Prozent | Robust bei Image-Resize, aber: bei Page-UI-Layout-Aenderungen werden Koordinaten stale → Re-Capture + Re-Edit JSON noetig. Mitigation: Visual-Sichtpruefung der Pilot-Page bei jedem Major-Release. |
+| Server-Pre-Rendering aller Hotspot-Bodies | Page-Load liest + rendert eager auch wenn User keine Hotspots klickt. Tradeoff: 3-10 Hotspots × ~500 Bytes HTML = vernachlaessigbarer Page-Weight-Anstieg (~5KB), aber Zero-Bundle-Cost auf Client (kein react-markdown). |
+| zod `.max(2000)` body_md | Verhindert Layout-Bruch, aber kein hartes UX-Limit. Doku-Empfehlung 400-800 reicht in 95% der Faelle. |
+| WebP-only Image-Format | Alle modernen Browser supporten WebP (2026-Standard). Fallback auf PNG nur, falls Browser-Compat-Issue konkret auftritt. |
+| Mobile-Fallback ist statisch | Touchscreen-User auf Tablet (>=768px) sehen Hotspots, aber Touch-Targets sind nur durch CSS-Hover-Style markiert (kein Touch-Feedback). Akzeptierbar fuer V1, V2 koennte tap-active-state ergaenzen. |
+| Pre-rendered HTML in Server-zu-Client-Props | Wenn ein Hotspot 10 zeilen Markdown hat, dann ist `bodyHtml` auch in Page-Source-HTML als String enthalten. Page-Weight steigt linear mit Anzahl Hotspots. Bei 20 Hotspots × 2KB = 40KB. Akzeptierbar fuer V1 mit 3-5 Hotspots in der Pilot-Page. |
+| Folder vs Flat Image-Path | V1 Flat (`screenshots/<slug>.webp`). Migration zu Folder (`screenshots/<slug>/screenshot.webp`) ist trivial wenn V2 Variants kommen (1 Mv-Command + 1 Schema-Update). |
+
+### V8.8 Technische Risiken
+
+| ID | Risk | Impact | Mitigation |
+|---|---|---|---|
+| R-V88-1 | Screenshot-Drift bei UI-Layout-Aenderung | Medium | Re-Capture-Workflow per Playwright (`deliverables/user-guide/screencaps.spec.ts`) ist <30 Min. /post-launch-Check pruefen, ob Pilot-Page noch matched. |
+| R-V88-2 | Base UI Dialog-Verhalten bei verschachtelten Modals (Hotspot-Click → 2. Hotspot-Click) | Low | Single-Instance-State (`openHotspotId: string \| null`); neues Klick ersetzt openHotspotId, nur 1 Modal sichtbar. Base UI handelt Backdrop-Replacement nativ. |
+| R-V88-3 | useMediaQuery SSR-Hydration-Mismatch | Low-Medium | Standard-Pattern: useSyncExternalStore-basierter useMediaQuery-Hook (analog `feedback_react19_use_mounted_pattern`). Initial-Render = Desktop (>=768px), Client-Hydrate korrigiert bei Mobile. |
+| R-V88-4 | dangerouslySetInnerHTML XSS | Low | body_md ist Trusted-Author-Content (Strategaize-Internal). Threat-Model = identisch V8.3 Help, V8.4 Customer-DSE. Akzeptiert. |
+| R-V88-5 | Image-File-Size 12 Pages × 300KB = 3.6MB | Low | V1 hat nur 1 Image. Bei Iter 2 (BL-495/496): WebP @ Quality 80 + `loading="lazy"`. CDN-Optionen V2. |
+| R-V88-6 | Hotspot Hit-Area zu klein auf Touch | Low | Min-Hit-Area-Empfehlung 5% Breite UND 5% Hoehe = ca. 100×100px bei 2K-Source. Doku als JSON-Author-Guideline. |
+
+### V8.8 Recommended Implementation Direction
+
+**Single-Slice-Approach (Empfehlung):**
+
+| Slice | Scope | Aufwand |
+|---|---|---|
+| **SLC-881** | zod-Schema + Loader + 2 Client-Components + Page-Modify + Pilot-Screenshot + JSON | ~8-10h |
+| (im Slice) | Vitest fuer Schema (Validation + Refine), Vitest fuer Loader (ENOENT + Happy + Drift), Build-Smoke clean | inkl. |
+| (im Slice) | Playwright-Screencap fuer `mein-tag.webp` (single-shot via bestehende Pipeline) | inkl. |
+| (im Slice) | Live-Smoke `/help/mein-tag` Desktop + Mobile-Viewport-Simulation | inkl. |
+
+**Optional Phase-A/B-Split** (bei Context-Pressure oder fuer Worktree-Parallelitaet):
+- **SLC-881a:** Schema + Loader + 2 Components + Vitest — pure Logic, kein Asset
+- **SLC-881b:** Page-Modify + Pilot-Screenshot-Capture + JSON + Live-Smoke
+
+Begruendung gegen Phase-Split per Default: Slice ist klein genug fuer 1 Session (~8-10h). Components sind klein (~150 Zeilen pro Component). Phase-Split nur, wenn explizit Worktree-Parallelitaet gewuenscht ist.
+
+### V8.8 Architecture Decisions
+
+- **DEC-240** — V8.8 Hotspot-Storage-Format: JSON-Files unter `cockpit/src/content/help/hotspots/<slug>.json`, zod-validiert, server-pre-rendered (FEAT-881)
+- **DEC-241** — V8.8 Hotspot-Asset-Path: V1 Flat `cockpit/public/help/screenshots/<slug>.webp`, Folder-pro-Slug deferred bis Variant-Bedarf (FEAT-881 OQ-1)
+- **DEC-242** — V8.8 Modal-Library: Reuse `cockpit/src/components/ui/dialog.tsx` (Base UI), keine neue Library (FEAT-881 OQ-2)
+- **DEC-243** — V8.8 Hotspot-Numbering: V1 Border-Highlight + sr-only-Number, Numbered-Badges deferred V2 (FEAT-881 OQ-3)
+- **DEC-244** — V8.8 Markdown-Render-Strategie: Server-pre-render via renderLegalMarkdown, keine react-markdown Client-Bundle-Erweiterung (FEAT-881 OQ-4)
+- **DEC-245** — V8.8 body_md Length-Constraint: zod `.max(2000)` Safety-Net, Doku-Empfehlung 400-800 Zeichen (FEAT-881 OQ-5)
+- **DEC-246** — V8.8 Dark-Mode-Screenshot: V1 Single Light-Image, Schema-Erweiterung erst wenn BS Dark-Mode bekommt (FEAT-881 OQ-6)
+- **DEC-247** — V8.8 Image-Resolution + Format: 2x Retina via Playwright deviceScaleFactor=2, WebP Quality 82-85%, DOM-Downscale via w-full (FEAT-881 OQ-7)
+
+### V8.8 Slice-Planning Hint
+
+**1 Slice empfohlen (SLC-881), optional Phase-A/B-Split bei Bedarf.**
+
+Pre-Requirements fuer /slice-planning:
+- FEAT-881 V1-Scope bestaetigt (1 Pilot-Page `mein-tag`, F1-F8 IN, BL-495/496/497 OOS)
+- 7 OQs alle beantwortet (DEC-240..247)
+- Component-Tree + Schema + Folder-Struktur konkret
+- Pattern-Reuse-Check abgeschlossen (kein bestehendes Pattern, V8.8 = Canonical-First)
+
+Open fuer /slice-planning (nicht Architecture-Ebene):
+- Konkrete Mindest-Anzahl Hotspots fuer Pilot (Empfehlung 3-5, FEAT-881 fordert "min 3")
+- Genaue Body-Texte fuer die 3+ Pilot-Hotspots (Content-Authoring)
+- Playwright-Capture-Aufruf konkretisieren (welcher Login-State, welche Test-Daten in `mein-tag`-View)
+- /qa AC-Liste finalisieren (Desktop + Mobile-Viewport-Switch + Tab-Keyboard-Nav + Long-Body-Scroll)
+
+### V8.8 Delivery Mode
+
+**Internal-Tool, Frontend-Erweiterung.** Keine Schema-Migration. Keine neuen Dependencies. Keine KI-Pfade. Kein Cron. Kein Asset-Service (Assets liegen unter `public/`). 1 Pilot-Screenshot (~300KB). Vitest +2 Test-Files. Internal-Test-Mode bleibt aktiv.
+
+**V8.8-Live heisst:** Master-Merge nach SLC-881 done + Coolify-Redeploy auf `main`. Image-Tag-Bump. Live-Smoke: `/help/mein-tag` HTTP 200 (authenticated), Screenshot rendert, min. 3 Hotspots klickbar, Modal oeffnet mit Title + Body, ESC + Backdrop-Click schliessen, Mobile-Viewport (<768px) zeigt Liste. Andere 11 Slugs (`/help/pipeline` etc.) unveraendert Plain-Markdown-Rendering.
+
+**V8.8 Architecture ready for `/slice-planning`.**

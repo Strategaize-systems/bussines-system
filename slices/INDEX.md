@@ -412,3 +412,11 @@ V8.6 = 1 Slice SLC-861, 6 Micro-Tasks, ~45-60 Min. Reine Test-Layer-Hygiene ohne
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-861 | [Test-Hygiene-Bundle (ISSUE-084 + ISSUE-085)](SLC-861-test-hygiene-bundle.md) | BL-493 / ISSUE-084 + ISSUE-085 | done | Medium | 2026-05-26 |
+
+## V8.8 Slices (Help-System Redesign Foundation)
+
+V8.8 = 1 Slice SLC-881, 7 Micro-Tasks, ~8-10h Code + ~30-45 Min /qa. Frontend-only, 0 Schema-Migration, 0 KI-Pfade, 0 Cron, 0 API-Routes. Canonical-First-Implementation (Cross-Repo-Pattern-Reuse-Check ergab kein Hotspot-Pattern in Strategaize). Architektur: zod-Schema + Server-Loader (pre-render via renderLegalMarkdown) + 2 Client-Components (HotspotImage + HotspotModal) + Page-Modify mit V8.3-Fallback. Pilot-Page `mein-tag` mit min. 3 Hotspots. 11 nicht-migrierte Slugs bleiben V8.3-Plain-Markdown. Mobile-Fallback via Tailwind CSS-only (`hidden md:block` + `md:hidden`), kein useMediaQuery-Hook. Architecture: DEC-240..247 (RPT-549). Pattern-Reuse: bestehender `renderLegalMarkdown` (V8.3+) + `HelpPageShell` (V8.3) + `Dialog` aus `cockpit/src/components/ui/dialog.tsx` (Base UI) + bestehende Playwright-Screencap-Pipeline. Single-Branch ohne Worktree-Isolation, Master-Merge nach /qa PASS.
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-881 | [Help-Annotated-Screenshots Foundation (Pilot mein-tag)](SLC-881-help-hotspots-foundation.md) | FEAT-881 / BL-489 | planned | High | 2026-05-28 |
