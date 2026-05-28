@@ -1,5 +1,14 @@
 # Known Issues
 
+### ISSUE-086 — Help-Hotspot-Screenshot enthaelt User-Name (Pre-Customer-Live)
+- Status: open
+- Severity: Low
+- Area: Compliance / DSGVO
+- Summary: Pilot-Screenshot `/help/screenshots/mein-tag.webp` zeigt User-eigene Daten — Tasks mit Titel "Follow-up: Richard Bellaerts (Betr.: Test 3Test neuer Look)" + Tenant-Sidebar "Business Dev CRM". Kein Customer-PII, aber User-Name visible fuer alle Logged-In-User der Plattform.
+- Impact: Niedrig in Internal-Test-Mode (nur User selbst sieht). Pre-Customer-Live-relevant: bei Multi-Tenant-Production-Go-Live muss Screenshot mit anonymisierten Dummy-Daten ersetzt werden.
+- Workaround: Aktuell kein Handlungsbedarf (Internal-Test-Mode aktiv per STATE.md). Zukuenftig: bei IS Content Studio Phase 1 (BL-105) Screenshots aus dedicated qa-admin-Tenant mit Seed-Dummy-Daten generieren.
+- Next Action: Wird automatisch geloest bei BL-495/BL-496 Iter-2/3 via IS Content Studio (BL-105). Falls Customer-Go-Live frueher kommt: Manual-Re-Capture mit anonymisiertem Test-Account.
+
 ### ISSUE-085 — 8 TSC-Errors in 4 unrelated Test-Files (pre-existing nach Next 16 / TypeScript-Major-Upgrade) [RESOLVED 2026-05-26]
 - Status: resolved
 - Severity: Medium
