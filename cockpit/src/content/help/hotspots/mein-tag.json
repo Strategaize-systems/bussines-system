@@ -7,28 +7,28 @@
   "hotspots": [
     {
       "id": "schnellaktionen",
-      "x": 12,
-      "y": 6,
-      "w": 85,
-      "h": 5,
+      "x": 18,
+      "y": 18,
+      "w": 76,
+      "h": 10,
       "title": "Schnellaktionen",
       "body_md": "Die Symbolleiste am oberen Rand bietet **Direkt-Erfassung** der wichtigsten CRM-Objekte: **Aufgabe**, **E-Mail**, **Meeting**, **Termin**, **Anruf**, **Neuer Deal**, **Neuer Kontakt**, **Neue Firma** und **Multiplikator**.\n\nEin Klick oeffnet das jeweilige Compose-Modal mit vorbelegten Feldern (z.B. heutigem Datum oder dem zuletzt geoeffneten Deal). So koennen Sie ohne Seitenwechsel neue Eintraege erstellen — die Liste auf Mein Tag aktualisiert sich automatisch.\n\n**Tipp:** Nutzen Sie diese Leiste fuer den schnellen Daily-Catchup nach einem Telefonat oder Meeting, statt zur jeweiligen Modulseite zu navigieren."
     },
     {
       "id": "ki-workspace",
-      "x": 11,
-      "y": 55,
-      "w": 61,
-      "h": 34,
+      "x": 20,
+      "y": 56,
+      "w": 43,
+      "h": 36,
       "title": "KI-Workspace",
       "body_md": "Im KI-Workspace finden Sie mehrere **Berichts-Buttons** (Tagesanalyse, Gestern, Seit Login, Wochen-Performance, Pipeline-Risiko, Workflow bauen) und eine freie Eingabezeile.\n\n**Empfohlener Tagesstart:** Klicken Sie morgens einmal auf **Tagesanalyse**. Die KI analysiert Ihre offenen Aufgaben, aktiven Deals und die Activities-Historie und erzeugt in ~5-15 Sekunden einen kurzen Bericht mit Ihren Top-3-Prioritaeten fuer heute.\n\nFuer freie Fragen tippen Sie unten ins Feld **Frage stellen ...** — z.B. *\"Welche Deals haben seit 14 Tagen keine Aktivitaet?\"* — oder diktieren ueber das Mikro-Symbol (Whisper).\n\nDie KI laeuft **on-click**, nicht im Hintergrund. Pro Bericht oder Frage entstehen ein paar Cent Kosten (~$0.005-0.015)."
     },
     {
       "id": "aufgaben-heute",
-      "x": 11,
-      "y": 11,
-      "w": 29,
-      "h": 16,
+      "x": 20,
+      "y": 30,
+      "w": 22,
+      "h": 32,
       "title": "Offene Aufgaben",
       "body_md": "Die Karte **AUFGABEN** zeigt Ihre offenen To-dos mit Faelligkeit und Prioritaet. Ueberfaellige Aufgaben sind rot markiert.\n\nKlicken Sie auf eine Aufgabe, um Detail-Informationen (verknuepfter Deal, Notizen, Faelligkeitsdatum) zu sehen. Mit dem **Check-Symbol** markieren Sie eine Aufgabe als erledigt. Ueber **Abarbeiten** oeffnen Sie den Fokus-Modus, ueber **Alle Aufgaben** den vollstaendigen Aufgaben-Bereich.\n\n**Tipp:** Arbeiten Sie zuerst die ueberfaelligen Aufgaben ab. Sie blockieren oft Folge-Schritte in der Pipeline und werden umso schwerer aufzuholen, je laenger sie liegen bleiben."
     }
