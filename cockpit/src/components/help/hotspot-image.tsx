@@ -30,6 +30,7 @@ export function HotspotImage({ data }: HotspotImageProps) {
   return (
     <>
       <figure className="relative">
+        {/* eslint-disable-next-line @next/next/no-img-element -- absolute-positioned overlays rely on the figure being the positioning context with the exact rendered width of <img>; next/image would wrap in its own container and break the layout. */}
         <img
           src={data.imageUrl}
           alt={data.imageAlt}

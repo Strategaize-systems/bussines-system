@@ -60,10 +60,18 @@ export async function loadHotspotPage(
   const page = parseHotspotPageJson(json, slug);
 
   const hotspots: HotspotData[] = await Promise.all(
-    page.hotspots.map(async (h) => {
+    page.hotspots.map(async (h): Promise<HotspotData> => {
       const bodyHtml = await renderLegalMarkdown(h.body_md);
-      const { body_md: _bodyMd, ...rest } = h;
-      return { ...rest, bodyHtml };
+      return {
+        id: h.id,
+        x: h.x,
+        y: h.y,
+        w: h.w,
+        h: h.h,
+        title: h.title,
+        video_url: h.video_url,
+        bodyHtml,
+      };
     }),
   );
 

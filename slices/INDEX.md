@@ -419,4 +419,4 @@ V8.8 = 1 Slice SLC-881, 7 Micro-Tasks, ~8-10h Code + ~30-45 Min /qa. Frontend-on
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-881 | [Help-Annotated-Screenshots Foundation (Pilot mein-tag)](SLC-881-help-hotspots-foundation.md) | FEAT-881 / BL-489 | planned | High | 2026-05-28 |
+| SLC-881 | [Help-Annotated-Screenshots Foundation (Pilot mein-tag)](SLC-881-help-hotspots-foundation.md) | FEAT-881 / BL-489 | in_progress | High | 2026-05-28 |
