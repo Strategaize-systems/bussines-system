@@ -1,5 +1,23 @@
 # Releases
 
+### REL-041 — V8.8 Help-Annotated-Screenshots Foundation (Pilot mein-tag)
+- Date: 2026-05-28
+- Image-Tag: `226b599` (= `226b5992a0ebf297a057cb5cd7e7316f6d682d36`). Coolify-Redeploy manuell via User-Coolify-UI (`feedback_manual_deploy`). Container `app-k9f5pn5upfq7etoefb5ukbcg-172443124322` + Full-Supabase-Stack healthy seit Deploy. Stack 15/16 healthy (supabase-studio pre-existing unhealthy, unrelated zu V8.8 — siehe V8.1-STATE.md-Notes).
+- Scope: V8.8 Help-System Redesign Foundation. 1 Slice SLC-881, 7 Micro-Tasks, BL-489 done. **0 Schema-Migration**, **0 ENV-Aenderung**, **0 Compose-Aenderung**, **0 Cron-Aenderung**, **0 KI-Pfad-Aenderung**. Frontend-only-Slice.
+  - **MT-1** `cockpit/src/lib/help/hotspot-schema.ts` — zod-Schema mit Bounds-Refine (x+w<=100, y+h<=100), 12 Vitest-Cases.
+  - **MT-2** `cockpit/src/lib/help/hotspot-loader.ts` — Server-Function: readFile → parseHotspotPageJson → pre-render bodyHtml via renderLegalMarkdown. ENOENT-Fallback gibt null fuer V8.3-Backward-Compat. 5 Vitest-Cases.
+  - **MT-3** `cockpit/src/components/help/hotspot-modal.tsx` — Base UI Dialog-Wrapper, `.help-content` CSS-Reuse, max-h-[80vh] overflow-y-auto fuer Long-Body.
+  - **MT-4** `cockpit/src/components/help/hotspot-image.tsx` — Client-Component: Desktop-Overlays + Mobile `<ol>` Liste via Tailwind CSS-only (`hidden md:block` + `md:hidden`, kein useMediaQuery, kein Hydration-Mismatch per DEC-247).
+  - **MT-5** `cockpit/src/app/(app)/help/[slug]/page.tsx` + `cockpit/src/components/help/help-page-shell.tsx` — Server-Component liest hotspotData, uebergibt als imageBlock-Prop wenn vorhanden, V8.3-Markdown-only-Fallback bei ENOENT.
+  - **MT-6** `cockpit/src/content/help/hotspots/mein-tag.json` + `cockpit/public/help/screenshots/mein-tag.webp` (2560×2112, 129KB) — Pilot mit 3 Hotspots (schnellaktionen + ki-workspace + aufgaben-heute). 3 Iter-Fixes nach Live-Smoke fuer Coord-Genauigkeit.
+  - **MT-7** Verification-Aggregat + Cockpit-Records-Update.
+- Summary: V8.8 ist die Foundation fuer das Help-System-Redesign. Pilot-Page `/help/mein-tag` zeigt echtes Screenshot der App-Seite mit 3 klickbaren Hotspots. Klick oeffnet Modal mit Markdown-Body. Mobile faellt auf nummerierte Liste zurueck. Die 11 nicht-migrierten Slugs bleiben unveraendert auf V8.3-Plain-Markdown. **Verification-Aggregat:** Vitest 1152/1152 PASS (V8.6 1135 + 17 neu), TSC exit 0, Build exit 0, Lint EXACT V8.6-Baseline 142e/57w. **Live-Smoke User-bestaetigt:** Hover-Border + Click-Modal + ESC/Backdrop + Mobile-Viewport iPhone-SE 5/5. **Backward-Compat User-bestaetigt:** /help/pipeline + /help/settings + /help/kampagnen 3/3 Plain-Markdown unveraendert. **Post-Deploy-HTTP-Smoke:** 4/4 200/307 OK (login 200 + /help/mein-tag 307 auth + /help/screenshots/mein-tag.webp 200 + /datenschutz 200). 3 V8.8-Coord-Iter-Fixes nach erster Live-Smoke-Iteration — Lehre: Hotspot-Coord-Estimation aus Browser-Screenshots stackt 3 Error-Sources (browser-px → image-px → percent). Direct-WebP-Inspection-Pattern besser fuer Single-Shot-Genauigkeit. **Strategische Folge-Entscheidung:** BL-495 + BL-496 deferred — IS BL-105 Content Authoring Studio (visueller Hotspot-Editor) wird in IS gebaut, BS-Repo konsumiert die JSON+WebP-Outputs als Build-Time-Artefakte. Cross-Product-Content-Foundation-Pattern etabliert (`feedback_is_content_studio_strategic`).
+- Risks:
+  - **L-1 (Low)** Markdown-Renderer `sanitize: false` in `cockpit/src/lib/legal/markdown.ts:16`. Aktuell OK (Admin-only-Content im Repo, kein Runtime-User-Input). Wird relevant bei IS BL-105 Content Studio (User-editable Hotspots) — dokumentiert in BL-105-Beschreibung als /architecture-Concern.
+  - **L-2 (Low)** ISSUE-086: Pilot-Screenshot `mein-tag.webp` zeigt User-Name "Richard Bellaerts" in Task-Titel. OK in Internal-Test-Mode (User selbst). Pre-Customer-Live muss anonymisiert werden — Auto-Fix via BL-495 + IS BL-105.
+  - **L-3 (Low)** Bestehende ISSUE-058 postcss + fast-uri + 4 weitere npm-audit-Findings pre-existing V8.6-Baseline, akzeptiert per DEC-161. Kein neuer Vuln durch V8.8/sharp.
+- Rollback Notes: V8.8 hat **0 Schema-Migration** + **0 ENV-Aenderung**. Rollback per Coolify-Image-History → REL-040 (`c9a40e7`) ist trivial. Bei Rollback verschwinden Hotspot-Foundation + Pilot-Mein-Tag, /help-Pages fallen auf V8.3-Plain-Markdown zurueck. Keine Datenmigration noetig. RTO: 3 Min Image-Rollback.
+
 ### REL-040 — V8.6 Test-Hygiene-Bundle (ISSUE-084 + ISSUE-085 resolved + test:tsc Drift-Detection)
 - Date: 2026-05-26
 - Image-Tag: `c9a40e7` (= `c9a40e7608a2456da733818f574f54960cd070b3`). Coolify-Redeploy manuell via User-Coolify-UI (`feedback_manual_deploy`). Beide Container (app + supabase-db) frisch hoch mit identischem Image-Hash, healthy.
