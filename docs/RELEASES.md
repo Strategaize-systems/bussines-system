@@ -17,6 +17,7 @@
   - **L-2 (Low)** ISSUE-086: Pilot-Screenshot `mein-tag.webp` zeigt User-Name "Richard Bellaerts" in Task-Titel. OK in Internal-Test-Mode (User selbst). Pre-Customer-Live muss anonymisiert werden — Auto-Fix via BL-495 + IS BL-105.
   - **L-3 (Low)** Bestehende ISSUE-058 postcss + fast-uri + 4 weitere npm-audit-Findings pre-existing V8.6-Baseline, akzeptiert per DEC-161. Kein neuer Vuln durch V8.8/sharp.
 - Rollback Notes: V8.8 hat **0 Schema-Migration** + **0 ENV-Aenderung**. Rollback per Coolify-Image-History → REL-040 (`c9a40e7`) ist trivial. Bei Rollback verschwinden Hotspot-Foundation + Pilot-Mein-Tag, /help-Pages fallen auf V8.3-Plain-Markdown zurueck. Keine Datenmigration noetig. RTO: 3 Min Image-Rollback.
+- Post-Launch (RPT-556, 2026-05-29): **STABLE bestaetigt via /post-launch Light-Touch.** Burn-In 13h: App-Container `app-k9f5pn5upfq7etoefb5ukbcg-172443124322` durchgehend healthy, RestartCount=0. 0 errors/exceptions/stack/unhandled/uncaught in 1886 App-Log-Zeilen. Stack 16/17 healthy (supabase-studio pre-existing). Disk 83% stabil zur V8.6-Baseline. HTTP-Smoke intern via Coolify-Proxy → App: HTTP 200 mit erwartetem Login-HTML + `x-nextjs-cache: HIT`. Keine Hotfix-/Rollback-Pflicht. ISSUE-086 weiter pre-Customer-Live-Pflicht.
 
 ### REL-040 — V8.6 Test-Hygiene-Bundle (ISSUE-084 + ISSUE-085 resolved + test:tsc Drift-Detection)
 - Date: 2026-05-26
