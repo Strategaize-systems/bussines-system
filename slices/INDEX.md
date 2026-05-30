@@ -420,3 +420,11 @@ V8.8 = 1 Slice SLC-881, 7 Micro-Tasks, ~8-10h Code + ~30-45 Min /qa. Frontend-on
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-881 | [Help-Annotated-Screenshots Foundation (Pilot mein-tag)](SLC-881-help-hotspots-foundation.md) | FEAT-881 / BL-489 | done | High | 2026-05-28 |
+
+## V8.9 Slices (Security Quick-Wins Sprint 1)
+
+V8.9 = 1 Slice SLC-891, 6 Micro-Tasks, ~3-4h Code + ~1h /qa + Coolify-Redeploy. Schliesst 5 hoch-prioritisierte Security-Findings aus Cross-Repo-Audit 2026-05-30 (`docs/SECURITY_AUDIT_2026-05-30.md`): SEC-001..004 (4 IDOR-Routes mit `createAdminClient` ohne User-Client-Vor-Check, **aktiv exploitable** fuer Cross-Owner-Bedrock-Cost + PII-Verarbeitung) + SEC-010 (17 Cron-Endpoints + 6 Export-Routes nutzen `!==` statt `crypto.timingSafeEqual`). 0 Schema-Migration. Pattern-Reuse aus `cockpit/src/lib/calcom/webhook-handler.ts:61-67` (timing-safe etabliert) + bestehendes User-Client-Pattern via `createServerClient()` aus den 4 Routes. Single-Branch, kein Worktree (Internal-Tool-Mode). Audit-Doc `docs/AUDIT_SERVER_ACTIONS_V7.md` erweitert. Out-of-Scope: SEC-005..020 → Sprint 2-4. Reihenfolge MT-1..MT-5 parallel-ausfuehrbar, MT-6 zuletzt.
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-891 | [BS Security Quick-Wins (4 IDOR + timing-safe Cron-Secret)](SLC-891-bs-security-quick-wins.md) | FEAT-891 / BL-497 | planned | High | 2026-05-30 |

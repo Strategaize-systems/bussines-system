@@ -293,6 +293,13 @@
       "status": "released",
       "summary": "**RELEASED 2026-05-28 als REL-041, Image-Tag 226b599.** Help-System Redesign Foundation. 1 Slice SLC-881, 7 Micro-Tasks, BL-489 done. 0 Schema-Migration, 0 ENV-Change, 0 KI-Pfad. Frontend-only-Slice. Pilot-Page /help/mein-tag mit 3 klickbaren Hotspots (schnellaktionen + ki-workspace + aufgaben-heute), Modal mit Markdown-Body, Mobile-Fallback via Tailwind CSS-only. Bausteine: zod-Schema + Server-Loader (pre-render via renderLegalMarkdown) + 2 Client-Components (HotspotImage + HotspotModal) + Page-Modify mit V8.3-Fallback. 11 nicht-migrierte Slugs bleiben V8.3-Plain-Markdown bis BL-495/BL-496 via IS BL-105 Content Authoring Studio (DEFERRED). Vitest 1152/1152 (+17), Lint EXACT V8.6-Baseline 142e/57w, Live-Smoke User-bestaetigt 5/5 + Backward-Compat 3/3 + Post-Deploy-HTTP-Smoke 4/4. RPT-548..555. Burn-In ~12h startet 2026-05-28 ab Deploy. Lehre: 3 Coord-Iter via Browser-Screenshot-Estimation → Direct-WebP-Inspection-Pattern als Single-Shot-Loesung dokumentiert.",
       "order": 38.8
+    },
+    {
+      "id": "v8-9",
+      "name": "V8.9",
+      "status": "active",
+      "summary": "**Security Quick-Wins Sprint 1 — geplant 2026-05-30 nach Cross-Repo-Audit (docs/SECURITY_AUDIT_2026-05-30.md, docs/SECURITY_AUDIT_SUMMARY_2026-05-30.md im Dev-System).** 1 Slice SLC-891, 6 Micro-Tasks, ~3-4h Code + ~1h /qa + Coolify-Redeploy. Schliesst 5 hoechst-priorisierte Findings: SEC-001..004 (4 IDOR-API-Routes mit createAdminClient ohne User-Client-Vor-Check, aktiv exploitable fuer Cross-Owner-Bedrock-Cost + PII-Verarbeitung) + SEC-010 (17 Cron-Endpoints + 6 Export-Routes nutzen '!==' statt crypto.timingSafeEqual). 0 Schema-Migration. 1 doc-update (AUDIT_SERVER_ACTIONS_V7.md). Single-Branch, kein Worktree (Internal-Tool-Mode). Pattern-Reuse aus cockpit/src/lib/calcom/webhook-handler.ts:61-67 (timing-safe) + bestehendes User-Client-Pattern via createServerClient() in den 4 Routes. Sprint-1-Cross-Repo-Sequenz: BS V8.9 zuerst (groesster Impact), dann OP V8.0.1, dann IS V1.1.1. Out-of-Scope SEC-005..020 → Sprint 2-4 (Email-DOMPurify, search_knowledge_chunks-RPC-Hardening, documents-Storage user-scoped, 25-Tabellen-RLS-Sweep V8.10+). BL-497.",
+      "order": 38.9
     }
   ]
 }
