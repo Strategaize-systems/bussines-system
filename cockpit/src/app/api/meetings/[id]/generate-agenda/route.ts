@@ -48,6 +48,20 @@ export async function POST(
     );
   }
 
+  // ── SEC-891 IDOR-Mitigation: User-Client-Vor-Check via RLS ──
+  // Verifiziert dass der Caller das Meeting via Owner-/Team-RLS sehen darf,
+  // BEVOR admin (BYPASSRLS) angerufen wird. Sonst koennte ein Member
+  // Cross-Owner-Bedrock-Cost + Cross-Owner-Agenda-Persistenz auf fremden
+  // Meetings ausloesen. Audit RPT-Cross-Repo 2026-05-30 SEC-001.
+  const { data: ownedMeeting } = await supabase
+    .from("meetings")
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!ownedMeeting) {
+    return NextResponse.json({ error: "Meeting nicht gefunden" }, { status: 404 });
+  }
+
   // ── Fetch meeting ──
   const { data: meeting } = await admin
     .from("meetings")
