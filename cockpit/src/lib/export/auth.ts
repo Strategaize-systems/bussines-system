@@ -3,8 +3,14 @@
  *
  * Prueft Bearer Token gegen EXPORT_API_KEY ENV.
  * Wird von allen /api/export/* Endpoints verwendet.
+ *
+ * SEC-891 SEC-010: Uses crypto.timingSafeEqual to prevent timing-side-channel
+ * attacks that could leak the API key one byte at a time via response-latency
+ * differences. Pattern reused from cockpit/src/lib/calcom/webhook-handler.ts:61-67.
+ * Signature unchanged for caller compatibility (6 export routes).
  */
 
+import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 
 export function verifyExportApiKey(request: Request): NextResponse | null {
@@ -30,7 +36,7 @@ export function verifyExportApiKey(request: Request): NextResponse | null {
     ? authHeader.slice(7)
     : authHeader;
 
-  if (token !== expectedKey) {
+  if (!timingSafeStringEqual(token, expectedKey)) {
     return NextResponse.json(
       { error: "Invalid API key" },
       { status: 401 }
@@ -38,4 +44,11 @@ export function verifyExportApiKey(request: Request): NextResponse | null {
   }
 
   return null; // Auth OK
+}
+
+function timingSafeStringEqual(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a);
+  const bBuf = Buffer.from(b);
+  if (aBuf.length !== bBuf.length) return false;
+  return crypto.timingSafeEqual(aBuf, bBuf);
 }
