@@ -75,6 +75,23 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // ── SEC-891 IDOR-Mitigation: User-Client-Vor-Check via RLS ──
+  // Verifiziert dass der Caller den Deal via Owner-/Team-RLS sehen darf,
+  // BEVOR admin (BYPASSRLS) angerufen wird. Sonst koennte ein Member
+  // Cross-Owner-Bedrock-Cost + Cross-Owner-Signal-Persistenz auf fremden
+  // Deals ausloesen. Audit RPT-Cross-Repo 2026-05-30 SEC-002.
+  const { data: ownedDeal } = await supabase
+    .from("deals")
+    .select("id")
+    .eq("id", body.deal_id)
+    .maybeSingle();
+  if (!ownedDeal) {
+    return NextResponse.json(
+      { success: false, signalCount: 0, error: "Deal nicht gefunden" } satisfies ExtractResponse,
+      { status: 404 },
+    );
+  }
+
   // ── 4. Load deal context ───────────────────────────────────
   const admin = createAdminClient();
 
