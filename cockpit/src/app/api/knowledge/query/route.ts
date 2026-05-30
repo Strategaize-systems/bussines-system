@@ -95,9 +95,22 @@ export async function POST(request: NextRequest) {
   }
 
   // 4. Optional: Load deal context for richer LLM answers
+  //    ── SEC-891 IDOR-Mitigation (SEC-003) ──
+  //    loadDealContext nutzt jetzt User-Client (RLS aktiv). Wenn der Caller
+  //    den Deal nicht sehen darf, returnt loadDealContext null und wir returnen
+  //    HTTP 404 BEVOR queryKnowledge() das Admin-Client (BYPASSRLS)
+  //    search_knowledge_chunks-RPC aufruft. Partial-Mitigation; tieferer RPC-
+  //    Fix (caller_uid-Filter, SEC-007) ist Sprint 2.
+  //    Audit RPT-Cross-Repo 2026-05-30 SEC-003.
   let dealContext: { dealName?: string; stage?: string; contactName?: string; companyName?: string } | undefined;
   if (dealId) {
-    dealContext = await loadDealContext(dealId);
+    dealContext = await loadDealContext(supabase, dealId);
+    if (!dealContext) {
+      return NextResponse.json(
+        { error: "Deal nicht gefunden" },
+        { status: 404 },
+      );
+    }
   }
 
   // 5. Execute RAG pipeline
@@ -143,12 +156,16 @@ function validateScope(value: unknown): SearchScope {
   return "deal"; // Default
 }
 
-async function loadDealContext(dealId: string) {
+async function loadDealContext(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  dealId: string,
+) {
   try {
-    const { createAdminClient } = await import("@/lib/supabase/admin");
-    const admin = createAdminClient();
-
-    const { data: deal } = await admin
+    // SEC-891 SEC-003: User-Client (RLS aktiv) statt Admin-Client (BYPASSRLS).
+    // Wenn der Caller den Deal nicht sehen kann, filtert RLS die Row weg →
+    // maybeSingle() returnt null → wir returnen undefined → Caller-Handler
+    // returnt 404 vor admin-RPC search_knowledge_chunks.
+    const { data: deal } = await supabase
       .from("deals")
       .select(`
         title,
@@ -157,7 +174,7 @@ async function loadDealContext(dealId: string) {
         companies(name)
       `)
       .eq("id", dealId)
-      .single();
+      .maybeSingle();
 
     if (!deal) return undefined;
 
