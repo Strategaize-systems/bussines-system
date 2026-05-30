@@ -454,3 +454,79 @@ Pfad: `cockpit/src/lib/custom-reports/actions/*.ts`. Runner-Helper: `cockpit/src
 - UNIQUE-409-Symmetrie: `(owner_user_id, name)` UNIQUE in MIG-037 verhindert Duplikate. Save + Rename mappen Postgres `23505` auf `{ ok:false, code:"duplicate_name" }` — keine Tx-Abort, keine Stale-Cache.
 - audit_log-Forensik: 4 neue Actions decken den kompletten Lifecycle ab. `cost_usd` + `model_id` + Token-Counts in `custom_report.executed` ermoeglichen Cost-Anomalien-Detection (analog V7.5 Sculptor-Cost-Tracking).
 - Cascade-Schutz: FK `owner_user_id` → `auth.users(id) ON DELETE CASCADE` (verifiziert via `pg_constraint.confdeltype='c'`). Bei User-Loeschung gehen alle Custom-Reports automatisch mit.
+
+
+## V8.9 SLC-891 — Security Quick-Wins Sprint 1
+
+**Datum:** 2026-05-30
+**Slice:** SLC-891 (BS Security Quick-Wins)
+**Ziel:** Schliesst 5 hoch-prioritisierte Findings aus Cross-Repo-Audit 2026-05-30 (`docs/SECURITY_AUDIT_2026-05-30.md`).
+
+### IDOR-Mitigations (SEC-001..004): 4 API-Routes
+
+**Pattern:** User-Client-Vor-Check via RLS BEFORE `createAdminClient()` (BYPASSRLS).
+
+```typescript
+const supabase = await createClient();             // RLS-active
+// auth/rate-limit/body-validation...
+const { data: owned } = await supabase             // RLS filtert per V7-Policy
+  .from("<table>")
+  .select("id")
+  .eq("id", id)
+  .maybeSingle();
+if (!owned) return 404;                            // pre-admin abort
+const admin = createAdminClient();                 // BYPASSRLS, jetzt safe
+// ...
+```
+
+| Route | SEC-Finding | Datei | Vitest |
+|---|---|---|---|
+| `POST /api/meetings/[id]/generate-agenda` | SEC-001 (MT-1) | `cockpit/src/app/api/meetings/[id]/generate-agenda/route.ts:51-63` | `cockpit/__tests__/rls/sec-891-idor-meetings-generate-agenda.test.ts` |
+| `POST /api/signals/extract` | SEC-002 (MT-2) | `cockpit/src/app/api/signals/extract/route.ts:78-93` | `cockpit/__tests__/rls/sec-891-idor-signals-extract.test.ts` |
+| `POST /api/knowledge/query` | SEC-003 (MT-3) | `cockpit/src/app/api/knowledge/query/route.ts:97-114,146-184` (loadDealContext auf User-Client) | `cockpit/__tests__/rls/sec-891-idor-knowledge-query.test.ts` |
+| `POST /api/meetings/[id]/retry-summary` | SEC-004 (MT-4) | `cockpit/src/app/api/meetings/[id]/retry-summary/route.ts:18-32` | `cockpit/__tests__/rls/sec-891-idor-meetings-retry.test.ts` |
+| `POST /api/meetings/[id]/retry-transcript` | SEC-004 (MT-4) | `cockpit/src/app/api/meetings/[id]/retry-transcript/route.ts:18-32` | (gemeinsame Test-File mit retry-summary) |
+
+**Partial-Mitigation (Sprint 2):** SEC-003 (knowledge/query) schliesst nur den `loadDealContext`-Pfad. Der `search_knowledge_chunks`-RPC (SEC-007) bleibt unveraendert — tieferer Fix mit `caller_uid`-Filter ist Out-of-Scope (SLC-891 R-1).
+
+### Timing-Safe Secret-Compare (SEC-010): 2 Helper
+
+**Pattern:** `crypto.timingSafeEqual` mit Buffer-Length-Check (Reuse aus `cockpit/src/lib/calcom/webhook-handler.ts:61-67`, DEC-029).
+
+```typescript
+function timingSafeStringEqual(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a);
+  const bBuf = Buffer.from(b);
+  if (aBuf.length !== bBuf.length) return false;  // prevent timingSafeEqual throw
+  return crypto.timingSafeEqual(aBuf, bBuf);
+}
+```
+
+| Helper | Datei | Caller-Routes | Vitest |
+|---|---|---|---|
+| `verifyCronSecret` | `cockpit/src/app/api/cron/verify-cron-secret.ts` | 17 `/api/cron/*` Routes | `cockpit/__tests__/lib/sec-891-timing-safe.test.ts` (3 Cases) |
+| `verifyExportApiKey` | `cockpit/src/lib/export/auth.ts` | 6 `/api/export/*` Routes | `cockpit/__tests__/lib/sec-891-timing-safe.test.ts` (4 Cases) |
+
+Signatur beider Helper unveraendert — alle 23 Caller-Routes kompatibel ohne Anpassung.
+
+### Sicherheitsmodell V8.9
+
+- **IDOR-Defense-Layer:** Jede Route mit `createAdminClient()` macht Owner-Visibility-Check via User-Client BEVOR admin-Pfad triggert. Cross-Tenant-Bedrock-Cost (extractSignals/queryKnowledge/generateAgenda/whisper-retry) verhindert.
+- **RLS-Reuse:** Kein neues Policy-Code. V7-Owner-/Team-RLS auf `meetings` + `deals` traegt den Vor-Check.
+- **Timing-Safe-Symmetrie:** 17 Cron + 6 Export-Routes nutzen jetzt das gleiche Pattern wie der Cal.com-Webhook-Verifier (DEC-029). Kein One-off-Krypto-Code in der Codebase.
+- **Audit-Log unveraendert:** Keine neuen Events. SEC-001..004 verhindern stille Cross-Tenant-Persistenz in `audit_log` (z.B. retry-summary haette `event: "retry_summary"` mit fremder `entity_id` injizieren koennen).
+
+### Out-of-Scope (Sprint 2+)
+
+- **SEC-005** (Email-HTML DOMPurify-Sanitize) → Sprint 2 (~3h, eigener Slice)
+- **SEC-006** (25-Tabellen-RLS-Sweep) → V8.10/V9-Foundation (1-2 Wochen)
+- **SEC-007** (`search_knowledge_chunks` RPC `caller_uid`-Filter) → Sprint 2 (~2h)
+- **SEC-008** (documents-Storage user-scoped) → Sprint 2
+- **SEC-009..020** → V8.10 oder spaeter
+
+### Verification
+
+- TSC EXIT=0, ESLint EXIT=0 (auf alle 8 Touched-Files)
+- Vitest MT-5 lokal 7/7 PASS
+- IDOR-Vitest (MT-1..MT-4): 4 Test-Files, je 2 Cases (positive + negative) → 8 Cases gegen Coolify-DB im Slice-Schluss-`/qa`
+- Audit-Quelle: `docs/SECURITY_AUDIT_2026-05-30.md` SEC-001..004 + SEC-010

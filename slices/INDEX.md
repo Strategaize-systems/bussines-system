@@ -427,4 +427,4 @@ V8.9 = 1 Slice SLC-891, 6 Micro-Tasks, ~3-4h Code + ~1h /qa + Coolify-Redeploy. 
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-891 | [BS Security Quick-Wins (4 IDOR + timing-safe Cron-Secret)](SLC-891-bs-security-quick-wins.md) | FEAT-891 / BL-497 | planned | High | 2026-05-30 |
+| SLC-891 | [BS Security Quick-Wins (4 IDOR + timing-safe Cron-Secret)](SLC-891-bs-security-quick-wins.md) | FEAT-891 / BL-497 | in_progress | High | 2026-05-30 |
