@@ -300,6 +300,27 @@
       "status": "active",
       "summary": "**Security Quick-Wins Sprint 1 — geplant 2026-05-30 nach Cross-Repo-Audit (docs/SECURITY_AUDIT_2026-05-30.md, docs/SECURITY_AUDIT_SUMMARY_2026-05-30.md im Dev-System).** 1 Slice SLC-891, 6 Micro-Tasks, ~3-4h Code + ~1h /qa + Coolify-Redeploy. Schliesst 5 hoechst-priorisierte Findings: SEC-001..004 (4 IDOR-API-Routes mit createAdminClient ohne User-Client-Vor-Check, aktiv exploitable fuer Cross-Owner-Bedrock-Cost + PII-Verarbeitung) + SEC-010 (17 Cron-Endpoints + 6 Export-Routes nutzen '!==' statt crypto.timingSafeEqual). 0 Schema-Migration. 1 doc-update (AUDIT_SERVER_ACTIONS_V7.md). Single-Branch, kein Worktree (Internal-Tool-Mode). Pattern-Reuse aus cockpit/src/lib/calcom/webhook-handler.ts:61-67 (timing-safe) + bestehendes User-Client-Pattern via createServerClient() in den 4 Routes. Sprint-1-Cross-Repo-Sequenz: BS V8.9 zuerst (groesster Impact), dann OP V8.0.1, dann IS V1.1.1. Out-of-Scope SEC-005..020 → Sprint 2-4 (Email-DOMPurify, search_knowledge_chunks-RPC-Hardening, documents-Storage user-scoped, 25-Tabellen-RLS-Sweep V8.10+). BL-497.",
       "order": 38.9
+    },
+    {
+      "id": "v8-10",
+      "name": "V8.10",
+      "status": "planned",
+      "summary": "**Security Sprint 2 BS — PRE-LIVE PFLICHT vor erstem Customer-Onboarding.** Schliesst 2 verbleibende High-Findings aus Cross-Repo-Audit 2026-05-30 die nicht in V8.9 Quick-Wins passten. **BL-498 SEC-005 Email-HTML DOMPurify-Sanitize** (~3h): cockpit/src/app/(app)/emails/email-detail.tsx:331 nutzt 4-Zeilen-Regex fuer IMAP-Email-Body-Sanitization. Trivial via <svg onload>, <img onerror>, HTML-Entity-Encoding umgehbar. **Stored-XSS-Pfad bei jedem Inbound-Email-Open.** Fix: isomorphic-dompurify + iframe-Sandbox-Pattern. **BL-499 SEC-008 documents-Storage user-scoped + Backfill** (~3-4h): sql/02_rls.sql:47-57 Policies fuer documents-Bucket haben keinen first-path-segment-Filter. Jeder authenticated User kann jedes Storage-Object lesen/schreiben/loeschen. **Cross-Tenant-Exfiltration moeglich.** Fix: (auth.uid())::text = (storage.foldername(name))[1] analog proposal_pdfs_user_select Pattern + Doc-Upload-Code-Refactor + Backfill bestehender Files. Geschaetzter Gesamt-Aufwand: 1 Tag verteilt auf 2 separate Slices SLC-892 + SLC-893. Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-005 + SEC-008.",
+      "order": 39.0
+    },
+    {
+      "id": "v8-11",
+      "name": "V8.11",
+      "status": "planned",
+      "summary": "**Security Sprint 3 BS RLS-Sweep — PRE-LIVE PFLICHT (kritischster Brocken) vor Multi-User-Onboarding.** Schliesst BS SEC-006 — die ~25 Zweittabellen die nach V7-RLS-Switch (MIG-035, nur 8 Kerntabellen + profiles + teams umgestellt) weiter auf der V1-`authenticated_full_access`-Policy stehen geblieben sind. Tabellen: user_settings, audit_log, emails (Outbound), automation_rules, campaigns, knowledge_chunks, kpi_snapshots, calendar_events, tasks, signals, branding_settings, email_templates, cadences + Sub-Tabellen, email_threads, email_sync_state, ai_action_queue, ai_feedback, compliance_templates, vat_id_validations, auto_winloss_runs, email_attachments, payment_terms_templates, proposal_payment_milestones, proposal_items, activity_kpi_targets. **Bei 2. User sofort Cross-Tenant-Reads.** 4 Sub-Slices empfohlen: SLC-901 per-User-Stammdaten (user_id = auth.uid()) / SLC-902 team-bezogene Konfiguration (Admin-mutate, alle-read) / SLC-903 abgeleitete Records (JOIN auf Parent mit can_see_owner()) / SLC-904 Audit/Logging. Pro Sub-Slice Migration + Backfill + RLS-Test-Matrix-Erweiterung + /qa gegen Coolify-DB. Aufwand-Geschaetzt ~1-2 Wochen Single-Dev. **Dominanter Aufwand des gesamten BS-Security-Plans (~60%). Ergebnis: BS ist multi-tenant-tauglich → Customer-Onboarding kann starten.** BL-500. Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-006.",
+      "order": 39.1
+    },
+    {
+      "id": "v8-12",
+      "name": "V8.12",
+      "status": "planned",
+      "summary": "**Security Sprint 4 BS-Anteil — Defense-in-Depth-Bundle (NICE-TO-HAVE vor Live, NICHT blockierend).** 4 Cross-Repo-Patterns die ueber BS+OP+IS gleich auftreten — werden hier BS-spezifisch implementiert. **BL-501 CSP-Headers** (~M-Aufwand, iterativer Smoke-Test wegen Inline-Scripts-Inventur): next.config.ts Content-Security-Policy-Layer reduziert XSS-Risk strukturell (mitigiert SEC-005, SEC-014 indirekt). **BL-502 Passwort-Policy 12+ Zeichen + zxcvbn-Score** (~S-Aufwand): set-password/actions.ts + accept-invitation. Ideal als Dev-System-Helper-Lib mit Pattern-Reuse-Pflicht. **BL-503 Logger-Redaction-Layer** (~Lib-Aufwand): Helper redactSecrets(obj) der password|token|secret|api_key|email-Keys auf [REDACTED] setzt. Mitigiert PII-in-Logs (SEC-011 indirekt). **BL-504 LLM-Cost-Cap** als Bedrock-Adapter-Helper (~M-Aufwand): Pre-flight SUM(cost_eur) > DAILY_CAP → Job auf failed mit Slack-Alert. Mitigiert SEC-013. Aufwand-Geschaetzt: ~1-2 Sessions pro Pattern, kann parallel zu V8.11 laufen. **Bundling-Strategie:** Optional als 1 V8.12-Sprint oder als 4 separate Mini-Slices in Backlog-Slots verteilt. Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md + docs/SECURITY_AUDIT_SUMMARY_2026-05-30.md Sprint-4-Section. Pre-Live-Status: Defense-in-Depth — Live-Gang ist auch ohne moeglich, aber empfohlen vor Skalierung.",
+      "order": 39.2
     }
   ]
 }

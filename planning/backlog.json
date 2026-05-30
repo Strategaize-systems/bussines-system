@@ -2573,6 +2573,76 @@
       "createdAt": "2026-05-30"
     },
     {
+      "id": "BL-498",
+      "title": "V8.10 SEC-005 Email-HTML DOMPurify-Sanitize (PRE-LIVE PFLICHT) — Sprint 2 Slice 1",
+      "type": "fix",
+      "priority": "high",
+      "status": "open",
+      "version": "V8.10",
+      "description": "**PRE-LIVE PFLICHT — Stored-XSS-Pfad bei jedem Inbound-Email-Open.** Aktuelle Sanitization in cockpit/src/app/(app)/emails/email-detail.tsx:331 ist ein 4-Zeilen-Regex (entfernt nur <script> + on-Attributes). Trivial umgehbar via: (a) <svg onload='alert(1)'> (svg-Tag nicht blockiert), (b) <img src=x onerror='alert(1)'> (img onerror nicht erkannt wenn anders gequotet), (c) HTML-Entity-Encoding wie &#x6F;n&#x65;rror=, (d) data:text/html-URLs in href. Jeder maliziose Inbound-Email-Sender kann beliebigen JS-Code im Kontext der BS-App ausfuehren -> Session-Cookies + LocalStorage + DOM-Access. Fix-Pattern: (1) isomorphic-dompurify dependency hinzufuegen, (2) DOMPurify.sanitize(html, {ALLOWED_TAGS:..., ALLOWED_ATTR:...}) mit strikter Whitelist (kein script/iframe/object/embed/svg + nur href/src/alt/title-Attribs), (3) Render in iframe sandbox='' (extra Defense-in-Depth gegen residuale CSS-Injection), (4) Vitest-Suite mit OWASP-XSS-Cheatsheet-Vectors (mind. 20 Cases). Aufwand: ~3h Code + ~30 Min /qa. Quality-Gates: Vitest XSS-Vectors PASS, Lint EXAKT V8.9-Baseline, Live-Smoke mit ein paar Production-IMAP-Mails (Render-Regression-Check). Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-005. Slice-Name: SLC-892.",
+      "createdAt": "2026-05-30"
+    },
+    {
+      "id": "BL-499",
+      "title": "V8.10 SEC-008 documents-Storage user-scoped + Backfill (PRE-LIVE PFLICHT) — Sprint 2 Slice 2",
+      "type": "fix",
+      "priority": "high",
+      "status": "open",
+      "version": "V8.10",
+      "description": "**PRE-LIVE PFLICHT — Cross-Tenant-Exfiltration aus documents-Bucket moeglich.** Aktuelle RLS in sql/02_rls.sql:47-57 fuer documents-Bucket (storage.objects WHERE bucket_id='documents') hat KEINEN first-path-segment-Filter. Jeder authenticated User kann via Storage-API: (a) jedes Storage-Object lesen (SELECT), (b) jedes Object ueberschreiben (UPDATE), (c) jedes Object loeschen (DELETE), unabhaengig vom Pfad. Bei 2. User sind alle bisher hochgeladenen Documents (PDFs, Anhaenge, Notizen-Attachments) sofort cross-tenant-lesbar. Fix-Pattern: (1) Pattern-Reuse aus proposal_pdfs_user_select (das hat den richtigen Filter): (auth.uid())::text = (storage.foldername(name))[1] als USING-Clause auf alle 4 Storage-Policies fuer documents-Bucket, (2) Code-Refactor in jedem documents-Upload-Aufrufer: Pfad auf <user-uuid>/<filename> normalisieren statt z.B. nur <filename>, (3) Backfill-Migration: bestehende Objects deren Pfad nicht mit user-uuid beginnt entweder verschieben (bei eindeutigem Owner ermittelbar) oder zur User-Aktion markieren, (4) RLS-Test-Suite-Erweiterung: 2 User, jeder uploaded Doc, User-B kann User-A's Doc NICHT lesen/schreiben/loeschen. Aufwand: ~3-4h Code (Migration + Code-Refactor + Backfill-Script + Tests). Quality-Gates: RLS-Tests gegen Coolify-DB PASS, kein bestehendes Doc unzugaenglich nach Backfill, Live-Smoke Upload+Read+Delete-Flow mit 2 Usern. Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-008. Slice-Name: SLC-893.",
+      "createdAt": "2026-05-30"
+    },
+    {
+      "id": "BL-500",
+      "title": "V8.11 SEC-006 RLS-Sweep 25 Zweittabellen (PRE-LIVE PFLICHT — kritischster Brocken) — Sprint 3",
+      "type": "fix",
+      "priority": "high",
+      "status": "open",
+      "version": "V8.11",
+      "description": "**PRE-LIVE PFLICHT — bei 2. User sofort Cross-Tenant-Reads auf 25 Tabellen.** Nach V7-RLS-Switch (MIG-035) wurden nur 8 Kerntabellen + profiles + teams auf Owner-/Team-RLS umgestellt. Die folgenden 25 Zweittabellen stehen weiter auf der V1-`authenticated_full_access`-Policy: user_settings, audit_log, emails (Outbound), automation_rules, campaigns, knowledge_chunks, kpi_snapshots, calendar_events, tasks, signals, branding_settings, email_templates, cadences, cadence_steps, cadence_executions, email_threads, email_sync_state, ai_action_queue, ai_feedback, compliance_templates, vat_id_validations, auto_winloss_runs, email_attachments, payment_terms_templates, proposal_payment_milestones, proposal_items, activity_kpi_targets. **Bedeutung:** ein User mit 'authenticated' role kann alle Rows dieser Tabellen lesen+modifizieren — egal welchem owner_user_id oder team_id sie gehoeren. Bei Customer-Onboarding bedeutet das sofortige PII-Exposition + Datenintegritaets-Risiko. **Fix in 4 Sub-Slices empfohlen** wegen dominantem Aufwand: (1) **SLC-901 per-User-Stammdaten** (user_settings, kpi_snapshots, ggf goals): Policy user_id = auth.uid() simple owner-Filter. (2) **SLC-902 team-bezogene Konfiguration** (branding_settings, email_templates, payment_terms_templates, automation_rules, compliance_templates, cadences + cadence_steps): Admin-mutate-Pattern, alle Team-User-read. (3) **SLC-903 abgeleitete Records** (tasks, signals, calendar_events, email_attachments, proposal_items, proposal_payment_milestones, cadence_executions, ai_action_queue, ai_feedback, auto_winloss_runs, email_threads, email_sync_state, knowledge_chunks, kpi_snapshots, vat_id_validations, activity_kpi_targets): JOIN auf Parent-Tabelle mit can_see_owner()-Helper aus V7. (4) **SLC-904 Audit/Logging** (audit_log, emails-outbound): Admin-only-read oder Actor-own-Rows-Policy. **Pro Sub-Slice:** Migration mit Policy-Drop + neue Policy + Backfill + V7-RLS-Test-Matrix-Erweiterung (mind. 2 Tests pro Tabelle: same-owner sees / foreign-owner blocked) + /qa gegen Coolify-DB. **Aufwand-Geschaetzt: ~1-2 Wochen Single-Dev verteilt.** Trigger: V8.10 STABLE. **Ergebnis: BS ist multi-tenant-tauglich -> Customer-Onboarding kann starten.** Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-006. Slice-Familie: SLC-901..904.",
+      "createdAt": "2026-05-30"
+    },
+    {
+      "id": "BL-501",
+      "title": "V8.12 CSP-Headers (NICE-TO-HAVE vor Live) — Sprint 4 BS-Anteil",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V8.12",
+      "description": "**NICE-TO-HAVE vor Live, NICHT blockierend.** Content-Security-Policy-Layer in cockpit/next.config.ts ergaenzen. Aktuell: keine CSP — alle Inline-Scripts/Styles/Image-Sources/Fetches sind erlaubt. Mit CSP: strikte Whitelist fuer script-src (self + 'nonce-' fuer Next.js Inline-Scripts), img-src (self + data: + Supabase-Storage-Domain), connect-src (self + Bedrock-AWS-Endpoint + Supabase-API + Coolify-Storage), style-src (self + 'unsafe-inline' fuer Tailwind-Generated falls noch nicht nonce-faehig). **Mitigiert strukturell:** Stored-XSS (Defense-in-Depth zu V8.10 SEC-005), DOM-XSS, Clickjacking (frame-ancestors 'none'), MITM-Exfil-via-WebSocket. **Aufwand: ~M (iterativer Smoke-Test pflicht).** Kritischer Pflicht-Test: alle 80 statischen Pages + alle dynamischen Dialogues + KI-Workspace-Streaming + Cal.com-Webhook + Supabase-Auth-Callback. Vermutlich 3-5 iter-Fixes wegen Inline-Scripts. Aufwand: ~2-3h Code + ~2-3h iter-Smoke. Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md (Cross-Repo Sprint-4-Pattern). Cross-Repo-Hinweis: identisches Pattern auch in OP V8.0.3 BL-138 + IS V1.2 BL-115. Dev-System sollte CSP-Pattern als Pattern-Library-Entry aufnehmen.",
+      "createdAt": "2026-05-30"
+    },
+    {
+      "id": "BL-502",
+      "title": "V8.12 Passwort-Policy 12+ Zeichen + zxcvbn (NICE-TO-HAVE vor Live) — Sprint 4 BS-Anteil",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V8.12",
+      "description": "**NICE-TO-HAVE vor Live, NICHT blockierend.** Aktuell: BS Set-Password-Page + Accept-Invitation akzeptieren Passwoerter ab 6 Zeichen (Supabase-Default). Risiko: Brute-Force-Attack auf interne User-Accounts. Fix-Pattern: (1) zxcvbn dependency hinzufuegen (Standard-Lib fuer Passwort-Strength-Scoring), (2) Server-Action validatePasswordStrength: min 12 chars + zxcvbn-Score >= 3 (mind. 'good'), (3) Client-Side Visual-Indicator (Tailwind Progress-Bar mit zxcvbn-Score) im set-password.tsx + accept-invitation.tsx, (4) Reject mit deutscher Fehlermeldung wenn unzureichend. **Aufwand: ~S (~1-2h Code + 30 Min /qa).** Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md (Cross-Repo Sprint-4-Pattern). Cross-Repo-Hinweis: identisches Pattern in OP V8.0.3 BL-139 + IS V1.2 BL-116. **Ideal als Dev-System-Helper-Lib mit Pattern-Reuse-Pflicht** — sonst drift gleicher Bug in 3 Repos.",
+      "createdAt": "2026-05-30"
+    },
+    {
+      "id": "BL-503",
+      "title": "V8.12 Logger-Redaction-Layer (NICE-TO-HAVE vor Live) — Sprint 4 BS-Anteil",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V8.12",
+      "description": "**NICE-TO-HAVE vor Live, NICHT blockierend (DSGVO-Posture-Verbesserung).** Aktuelle BS-Logs enthalten Klartext: Email-Adressen, Bedrock-Cost-Argumente mit Customer-Strings, Whisper-Transcripts in console.log()-Calls in Cron-Loops, Cal.com-Webhook-Payloads mit Calendar-Event-Subjects. **Risiko:** Coolify-Container-Logs gehen an Hetzner-Log-Aggregation + an Coolify-UI ohne Redaction — Admin-User mit Coolify-Zugang sieht Klartext-PII. Fix-Pattern: (1) Helper-Lib `src/lib/logger/redact.ts` mit `redactSecrets(obj, opts)` der rekursiv durch Object/Array geht und Keys matching /password|token|secret|api_key|email|bearer|authorization/i auf `[REDACTED]` setzt, plus Values matching Email-Regex/Bearer-Token-Regex/UUID-im-PII-Kontext maskiert. (2) Wrapper `logSafe(level, ...args)` der die Helper-Lib vor JSON.stringify ruft. (3) Existing console.log/console.error-Calls in 10-15 critical Files (cron-loops, webhook-handlers, Bedrock-adapter) auf logSafe umstellen. (4) Vitest mit Mock-Patterns: Email/Token/Secret/Customer-Name-Redaction. **Aufwand: ~M (~3-4h Code + 1h /qa) — die Lib selbst ist klein, die Migrations-Arbeit braucht Zeit.** Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-011 indirekt + Cross-Repo-Pattern. Cross-Repo-Hinweis: identisches Pattern in OP V8.0.3 BL-140 + IS V1.2 BL-117. **Ideal als Dev-System-Lib** (siehe BL-501-Hinweis).",
+      "createdAt": "2026-05-30"
+    },
+    {
+      "id": "BL-504",
+      "title": "V8.12 LLM-Cost-Cap im Bedrock-Adapter (NICE-TO-HAVE vor Live) — Sprint 4 BS-Anteil",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "open",
+      "version": "V8.12",
+      "description": "**NICE-TO-HAVE vor Live (Cost-Protection bei Misuse/Bug).** Aktuell: keine Pre-flight-Cost-Limit in cockpit/src/lib/ai/bedrock-client.ts. Bei Bug (Endlos-Loop, Stuck-Cron) oder Misuse (User dreht durch) kann Bedrock-Cost auf $X.XX/Tag explodieren ohne Bremse. Fix-Pattern: (1) Pre-flight in queryLLM(): SELECT SUM(cost_eur) FROM ai_cost_ledger WHERE created_at >= NOW() - INTERVAL '1 day' — wenn > DAILY_LLM_CAP (default 5.00 EUR via ENV) → throw Error('LLM Daily Cap Exceeded'). (2) Job/Cron faengt Error ab + setzt z.B. ai_jobs.status='failed' mit Reason 'daily_cap_exceeded'. (3) Optional: Slack-Webhook-Alert bei Cap-Hit (ENV SLACK_ALERT_WEBHOOK_URL). (4) ENV-Vars: DAILY_LLM_CAP_EUR (default 5.00), MONTHLY_LLM_CAP_EUR (default 100.00 — Pre-flight checkt beide). (5) Vitest: cap reached -> reject, cap not reached -> pass, ENV missing -> default-werte. **Aufwand: ~M (~3h Code + 1h /qa).** Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-013 + Cross-Repo-Pattern. Cross-Repo-Hinweis: identisches Pattern in OP V8.0.3 BL-140 + IS V1.2 BL-117 (alle 3 Repos haben Bedrock-Adapter).",
+      "createdAt": "2026-05-30"
+    },
+    {
       "id": "BL-494",
       "title": "SLC-355 BS->IS Verdichtungs-Cron + KI-Workspace IS-RAG-Erweiterung",
       "type": "feature",

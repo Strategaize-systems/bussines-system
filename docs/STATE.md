@@ -27,6 +27,21 @@ Operatives Business-Development-Betriebssystem mit CRM-Unterbau fuer beratungsin
 - BL-397 GitHub-App Org-Anbindung (Infra-Hygiene)
 - V7 — reduziert auf Multi-User + Teamlead (FEAT-502/503)
 
+## Pre-Live Security Hausaufgaben (Master-Plan 5 Sprints)
+
+Aus Cross-Repo-Audit 2026-05-30 (siehe `docs/SECURITY_AUDIT_2026-05-30.md` + Cross-Repo-Summary im Dev-System). Reihenfolge fuer Customer-Live-Bereitschaft:
+
+| Version | Scope | Aufwand | Pre-Live-Status |
+|---|---|---|---|
+| **V8.9** | Sprint 1 — 4 IDOR + timing-safe Cron-Secret (BL-497, SLC-891) | ~4h | **Code+QA DONE, Burn-In laeuft** |
+| **V8.10** | Sprint 2 — Email-DOMPurify (BL-498) + documents-Storage user-scoped (BL-499) | ~1 Tag | **PRE-LIVE PFLICHT** |
+| **V8.11** | Sprint 3 — RLS-Sweep 25 Zweittabellen in 4 Sub-Slices (BL-500, SLC-901..904) | ~1-2 Wochen | **PRE-LIVE PFLICHT — kritischster Brocken vor Multi-User-Onboarding** |
+| **V8.12** | Sprint 4 BS-Anteil — CSP-Headers (BL-501) + Passwort-Policy 12+ (BL-502) + Logger-Redaction (BL-503) + LLM-Cost-Cap (BL-504) | ~2-3 Sessions parallel | **NICE-TO-HAVE vor Live** (Defense-in-Depth) |
+
+**Logik:** Sprint 1+2+3 sind Pflicht bevor BS jemals Internal-Test-Mode verlaesst. Sprint 3 ist der entscheidende — sobald 2. echter User dazukommt sind die 25 ungeschuetzten Tabellen sofort Cross-Tenant-Reads. Sprint 4 ist Defense-in-Depth — gut zu haben, aber kein Customer-Block. Sprint 5 (IS V8 Single-User-vs-Multi-Tenant) betrifft BS nicht.
+
+**Cross-Repo-Status zum 2026-05-30:** OP V8.0.1 (Sprint 1 OP) + IS V1.1.1 (Sprint 1 IS) sind als Slice-Files + Backlog-Items vorbereitet aber NICHT begonnen — Feature-Arbeit laeuft dort aktuell (OP V8 SLC-148, ImSch V3.2, IS V1.3.1-Followup). Werden angefasst sobald Feature-Stack ruhig ist. **BS arbeitet als erstes Repo sauber durch** (Reihenfolge V8.9 → V8.10 → V8.11 → optional V8.12), DANN OP, DANN IS.
+
 ## Active Scope
 **V6.4 — Hygiene-Sprint (RELEASED 2026-05-07 als REL-026, Image-Tag `f99726b`):**
 - FEAT-641 System-Stabilitaet & DSGVO-Hygiene (deployed 2026-05-07): ISSUE-057 FollowupEngine `proposals.value -> total_gross` Fix (3 Stellen, Spec sagte 2). BL-423 DSGVO 90-Tage-Retention `/api/cron/click-log-cleanup` neu (Pure-Function `runClickLogCleanup` + verifyCronSecret + audit_log-Trail mit run_id-as-entity_id). Vitest +12 Tests. SLC-641.
