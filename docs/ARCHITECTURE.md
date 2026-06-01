@@ -11732,3 +11732,208 @@ Open fuer /slice-planning (nicht Architecture-Ebene):
 **V8.8-Live heisst:** Master-Merge nach SLC-881 done + Coolify-Redeploy auf `main`. Image-Tag-Bump. Live-Smoke: `/help/mein-tag` HTTP 200 (authenticated), Screenshot rendert, min. 3 Hotspots klickbar, Modal oeffnet mit Title + Body, ESC + Backdrop-Click schliessen, Mobile-Viewport (<768px) zeigt Liste. Andere 11 Slugs (`/help/pipeline` etc.) unveraendert Plain-Markdown-Rendering.
 
 **V8.8 Architecture ready for `/slice-planning`.**
+
+## V8.7-A — KI-Workspace IS-Knowledge-API-RAG-Erweiterung Architecture (Addendum 2026-06-01)
+
+V8.7-A erweitert den bestehenden V6.6 KI-Workspace (`cockpit/src/components/ki-workspace/`) um eine zweite, orthogonale RAG-Quelle: die IS-Knowledge-API (live seit IS REL-016 + REL-017 2026-06-01). Read-only Konsument. Kein Push, kein Cron, kein Anwalt-Gate. Push-Pfad ist V8.7-B (SLC-355, deferred). Architektur-Addendum statt Voll-Rewrite per Addendum-Section-Pattern (ARCHITECTURE.md = 11.734 Zeilen).
+
+### Architecture Summary
+
+```
+User-Frage im Deal-Detail-Workspace
+        |
+        v
+KIWorkspace.tsx (Client-Component, V6.6)
+        |  (Free-Question-Pfad oder risiken-einwaende-Report)
+        v
+Server-Action / Report-Runner (Server-Side)
+        |  +-- BS-eigene RAG (existing /api/knowledge/query)
+        |  +-- NEU: isKnowledgeClient.searchKnowledge(q)
+        |              |
+        |              v
+        |       cockpit/src/lib/is-knowledge/client.ts
+        |              |  (PII-Redact -> fetch IS -> audit_log)
+        |              v
+        |       https://is.strategaizetransition.com/api/knowledge/search
+        |              |  Headers: x-strategaize-service-key + x-strategaize-consumer
+        |              v
+        |       IS V3.5 Knowledge-API (DEC-085..090)
+        |
+        v
+AnswerPane.tsx Render mit IS-Treffer-Block "Aus Strategaize-Wissens-Basis"
+        |
+        v
+audit_log Event `is_knowledge_queried` mit Cost + Workspace-Page
+```
+
+### V8.7-A Hauptkomponenten
+
+#### 1. IS-Knowledge-API-Konsumenten-Adapter (`cockpit/src/lib/is-knowledge/client.ts`)
+
+Server-Side-only Module. Mirror der IS-Auth-Header-Mechanik. Pure-funktionale Public-API:
+
+```typescript
+export async function searchKnowledge(
+  q: string,
+  opts?: { domain?: "sales" | "onboarding" | "general"; limit?: number; signal?: AbortSignal }
+): Promise<IsKnowledgeSearchResult>;
+
+export async function getKnowledgeItem(
+  id: string,
+  opts?: { signal?: AbortSignal }
+): Promise<IsKnowledgeItem>;
+```
+
+Verhalten:
+- `q` wird transparent durch `redactPiiFromQ(q)` (Email + Phone-Pattern -> `[email]`/`[phone]`) — DEC-250
+- Auth-Header: `x-strategaize-service-key: <env>`, `x-strategaize-consumer: business-system`
+- Timeout 4s (Default), Abortable via `AbortSignal`
+- Error-Klasse `IsKnowledgeError` mit `{ kind: "auth"|"rate_limit"|"timeout"|"server"|"network", retryAfterSeconds?: number, status?: number }`
+- Bei 401/429/500/timeout/network -> wirft `IsKnowledgeError`; Caller entscheidet Graceful-Degradation (DEC-256)
+- Schreibt audit_log via existierender `cockpit/src/lib/audit.ts` (Erweiterung um Action + EntityType in V8.7-A noetig — siehe DEC-258)
+
+#### 2. Free-Question-Integration (KIWorkspace.tsx)
+
+Free-Question-Pfad (existing constant `FREE_QUESTION_REPORT_ID = "freie-frage"`) bekommt ein zusaetzliches Server-Action-Wrapping:
+
+- Existing: Free-Question -> Bedrock-Call mit BS-lokalem RAG-Context
+- V8.7-A: Free-Question -> parallel Bedrock-Call MIT IS-Search-Hits als zusaetzlichem Context-Block. Wenn IS-Aufruf fehlschlaegt (IsKnowledgeError): Bedrock-Call laeuft trotzdem mit BS-only-Context + AnswerPane zeigt "Strategaize-Wissens-Basis aktuell nicht erreichbar".
+
+#### 3. risiken-einwaende-Report-Integration (`cockpit/src/lib/ki-workspace/reports/risiken.ts`)
+
+Bestehender Report bekommt IS-Knowledge-Hits als zweiten Context. Begruendung: dieser Report behandelt explizit Einwand-Behandlungen — genau die Domain wo Strategaize-Foundation-Wissen (Pitches, Einwand-Pattern) Mehrwert liefert. Andere Reports (briefing, signale, naechster-schritt, winloss) bekommen V8.7-A KEINE IS-Integration — DEC-248.
+
+#### 4. AnswerPane-Erweiterung (`cockpit/src/components/ki-workspace/AnswerPane.tsx`)
+
+Neue optionale Section unter der Haupt-Antwort:
+
+```
++- Antwort (Bedrock-Output) -----------------------+
+| ...                                              |
++--------------------------------------------------+
++- Aus Strategaize-Wissens-Basis -------------- NEU V8.7-A
+| - Pattern "Einwand 'zu teuer' bei StB"  (95%)   |
+| - Pattern "Pitch fuer DSB"              (87%)   |
+| - Pattern "Branchen-Anker Kanzlei"      (72%)   |
++--------------------------------------------------+
+Diese Antwort nutzt Strategaize-Wissen + Mandanten-Daten   <- Footer-Hinweis
+```
+
+DEC-255 — Block-Rendering mit Item-Titel + Similarity-Score (als Prozent) + Footer-Hinweis fuer Transparenz.
+
+#### 5. Cost-Cap pro Workspace-Session (sessionStorage)
+
+Client-Side-Counter in KIWorkspace.tsx via `sessionStorage["isKnowledgeCallCount"]`. Per Workspace-Session max 20 IS-Calls. Bei Ueberschreiten:
+
+- IS-Calls werden uebersprungen
+- UI-Hinweis "Strategaize-Wissens-Quote fuer diese Session aufgebraucht (20/20). Frage trotzdem stellen — Antwort basiert nur auf Mandanten-Daten."
+- Free-Question + Report-Runs laufen weiter, nur IS-Hits ausgeblendet
+
+DEC-252.
+
+### Data Model / Storage
+
+**V8.7-A hat 0 Schema-Migrationen.** Keine neue Tabelle, keine ALTER, keine Indexe. Audit-Log nutzt existierende `audit_log`-Tabelle aus V6.4 — nur Schema-konformer neuer Event-Type.
+
+audit_log Event-Schema fuer `is_knowledge_queried` (DEC-258):
+
+```
+event_type:    'is_knowledge_queried'
+entity_type:   'is_knowledge_api'    -- konzeptuell, kein DB-FK
+entity_id:     <workspace-session-uuid>  -- generiert pro Workspace-Mount
+changes_after: {
+  workspace_page: 'deal-detail' | 'mein-tag' | 'cockpit' | 'team-cockpit',
+  consumer:       'business-system',
+  query_excerpt:  <PII-redacted q, max 200 chars>,
+  cost_usd:       <IS-returned query_embedding_cost_usd>,
+  item_count:     <number of hits returned>,
+  similarity_top: <highest similarity in result set>,
+  is_response_ms: <IS-returned total_ms>,
+}
+```
+
+### Data Flow
+
+#### Free-Question-Pfad (V8.7-A enriched)
+
+1. User tippt Frage in `KIWorkspace.tsx` Frage-Input und klickt Send
+2. KIWorkspace ruft Server-Action `runFreeQuestion(question, scope)` (existing, wird erweitert)
+3. Server-Action parallelisiert:
+   - Promise 1: BS-lokale RAG (`loadDealContext` + `queryKnowledge` per V8.9 IDOR-Pattern)
+   - Promise 2: `isKnowledgeClient.searchKnowledge(question, { domain: "sales", limit: 5 })` (V8.7-A neu)
+4. Server-Action wartet auf beide (Promise.allSettled — Graceful-Degradation auf IS-Failure)
+5. Server-Action ruft Bedrock mit kombiniertem Context: BS-Hits (max 10) + IS-Hits (max 5)
+6. Server-Action returnt `{ answer, isKnowledgeHits: [], isError: null | string }`
+7. KIWorkspace cached Result (existing `setCached`), AnswerPane rendert Hits-Block
+
+#### risiken-einwaende-Report-Pfad (V8.7-A enriched)
+
+Analoge Erweiterung in `risiken.ts`. Der Report-Runner ruft die Free-Question-Logik intern auf, just mit fixem `report.id="risiken-einwaende"`.
+
+### External Dependencies
+
+**Neu in V8.7-A:** Eine externe HTTP-Abhaengigkeit — die IS-Knowledge-API auf `https://is.strategaizetransition.com`.
+
+- Health-Implikationen: BS bleibt funktional bei IS-Downtime (Graceful-Degradation, DEC-256)
+- Rate-Limit: 100/min Consumer-wide (von IS gesetzt), BS-seitiger Soft-Cap 20/Session (DEC-252)
+- Cost-Impact: pro Search ~$0.0001 Titan-Embedding-Cost (IS-getragen, in audit_log gespiegelt)
+
+**Keine neuen npm-Packages.** Standard `fetch` reicht. Existing zod-Schemas fuer Response-Validation.
+
+### Security / Privacy Considerations
+
+#### Service-Key-Schutz
+
+`STRATEGAIZE_KNOWLEDGE_SERVICE_KEY` ist Server-Side-only. ENV-Naming **ohne `NEXT_PUBLIC_`-Prefix** (DEC-253). Client-Component referenziert den Key NIE — alle Aufrufe gehen ueber Server-Actions oder API-Routes. Verifikation in `/qa`:
+
+- Build-Time-Check: `grep "STRATEGAIZE_KNOWLEDGE_SERVICE_KEY" .next/static/` muss leer sein
+- Code-Audit: Adapter darf nicht in einem File mit `"use client"`-Direktive referenziert werden
+
+#### PII-Schutz
+
+q-Param wird transparent gefiltert (DEC-250). Pattern:
+
+- Email `\S+@\S+\.\S+` -> `[email]`
+- Phone `\+?\d{6,}` -> `[phone]`
+
+Eigennamen (Mandanten) werden in V8.7-A **NICHT** redacted — komplexer NER-Aufwand. UI-Hinweis im Workspace-Footer macht User-Awareness sichtbar ("Diese Frage wird teilweise an Strategaize-Wissens-Basis weitergeleitet"). V8.7.1-Polish koennte NER-Redact ergaenzen.
+
+#### audit_log Coverage
+
+Jeder IS-Call wird mit cost + redacted query_excerpt geloggt (DEC-258). Fuer DSGVO-Compliance + Cost-Tracking.
+
+#### Cross-Repo-Auth-Mechanik
+
+Service-Key-Rotation:
+- Schritt 1: neuen Key generieren via `openssl rand -hex 32`
+- Schritt 2: IS-Coolify-ENV updaten + Redeploy
+- Schritt 3: BS-Coolify-ENV updaten + Redeploy (Window kurz halten — IS akzeptiert nur 1 Key)
+- Doku in `qa/SLC-871-coolify-env-setup.md` analog `qa/SLC-352-coolify-env-setup.md` aus IS
+
+### Constraints and Tradeoffs
+
+**Constraints:**
+- IS V3.5 muss online bleiben — bei IS-Down ist V8.7-A-Block leer + Footer-Hinweis (kein Hard-Fail)
+- Rate-Limit 100/min Consumer-wide ist hart gesetzt durch IS. BS-Soft-Cap 20/Workspace-Session entlastet das, aber 5+ parallele Workspace-Sessions koennen den Limit erreichen
+- Service-Key-Sync zwischen IS+BS-Coolify-ENV erforderlich
+
+**Tradeoffs:**
+- **Pro-Report-Integration vs zentrales IS-Context-Layer**: V8.7-A waehlt nur Free-Question + risiken-einwaende (DEC-248) statt aller 5 Reports — kleinerer Touch, schnellere Iteration, V8.7.1 kann nachziehen wenn nuetzlich
+- **Workspace-Scope Deal-Detail only (DEC-249) vs alle 4 Workspaces**: kleinerer Scope, Deal-Detail ist Wissens-relevantester Workspace. Mein Tag + Cockpit + Team koennen V8.7.1
+- **Kein Caching (DEC-254) vs Result-Cache**: Cost vernachlaessigbar ($0.0001), Cache-Invalidation komplex. V8.7-A bleibt lean
+- **Soft-Cap 20/Session vs Hard-Cap**: Soft erlaubt User Frage-Flow weiterzufuehren mit klarem Hinweis, Hard waere harter Block. V8.7-A waehlt Soft fuer UX
+
+### Recommended Implementation Direction
+
+`/slice-planning V8.7-A` -> SLC-871 mit ~7-8 Micro-Tasks:
+
+- **MT-1** Adapter `cockpit/src/lib/is-knowledge/client.ts` + Types + zod-Response-Validation + Vitest (8-10 Tests)
+- **MT-2** PII-Redact-Funktion `redactPiiFromQ()` + Vitest (4-6 Tests)
+- **MT-3** Audit-Log-Erweiterung in `cockpit/src/lib/audit.ts` (neuer AuditAction + EntityType) + Vitest (DEC-258)
+- **MT-4** Server-Action-Wrapping fuer Free-Question + risiken-Report (DEC-248) + Vitest
+- **MT-5** AnswerPane-Erweiterung Hits-Block-Rendering + Footer-Hinweis (DEC-255)
+- **MT-6** Soft-Cap-Counter in KIWorkspace.tsx via sessionStorage (DEC-252)
+- **MT-7** ENV-Setup-Doku `qa/SLC-871-coolify-env-setup.md` + Live-Smoke-Spec `qa/SLC-871-live-smoke.md`
+- Optional **MT-8** Build-Time-Service-Key-Leak-Check (grep-Test als Vitest-Smoke)
+
+**V8.7-A Architecture ready for `/slice-planning V8.7-A`.**
