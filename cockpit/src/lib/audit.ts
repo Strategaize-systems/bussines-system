@@ -10,7 +10,9 @@ export type AuditAction =
   | "delete"
   // V5.7 SLC-571 MT-7 — explizites Audit fuer Reverse-Charge-Status-Aenderung
   // (DEC-126). Action-Wert wird vom Cockpit-Audit-Log ausgewertet.
-  | "reverse_charge_toggled";
+  | "reverse_charge_toggled"
+  // V8.7-A SLC-871 MT-3 — IS-Knowledge-API-Aufruf vom KI-Workspace (DEC-257).
+  | "knowledge_queried";
 
 export type AuditEntityType =
   | "deal"
@@ -24,7 +26,10 @@ export type AuditEntityType =
   // V6.2 SLC-621 — Workflow-Automation Rule-CRUD
   | "automation_rule"
   // V6.2 SLC-624 — Campaign-CRUD (FEAT-622)
-  | "campaign";
+  | "campaign"
+  // V8.7-A SLC-871 MT-3 — Konzeptueller Entity-Type fuer IS-Knowledge-API,
+  // kein DB-FK (DEC-257 + DEC-258).
+  | "is_knowledge_api";
 
 export interface AuditParams {
   action: AuditAction;
@@ -112,6 +117,27 @@ export async function logAuditWithId(
   } catch {
     return null;
   }
+}
+
+// V8.7-A SLC-871 MT-3 — logIsKnowledgeQuery Wrapper (DEC-258).
+//
+// Schreibt einen audit_log-Eintrag bei jedem ERFOLGREICHEN IS-Knowledge-
+// Search. Failure-Pfade (auth/rate_limit/timeout/network/server) werden
+// NICHT geloggt — sie sind Connection-Probleme, kein Knowledge-Query-Event.
+//
+// Der reine Payload-Builder lebt in src/lib/audit-is-knowledge.ts (ohne
+// "use server"-Direktive), damit er pure und ohne Supabase-Mock einzeln
+// testbar bleibt. Hier nur der async-Wrapper, der ueber logAudit schreibt.
+
+import {
+  buildIsKnowledgeQueryAuditParams,
+  type IsKnowledgeQueryAuditParams,
+} from "./audit-is-knowledge";
+
+export async function logIsKnowledgeQuery(
+  params: IsKnowledgeQueryAuditParams
+): Promise<void> {
+  await logAudit(buildIsKnowledgeQueryAuditParams(params));
 }
 
 /**
