@@ -2644,13 +2644,23 @@
     },
     {
       "id": "BL-494",
-      "title": "SLC-355 BS->IS Verdichtungs-Cron + KI-Workspace IS-RAG-Erweiterung",
+      "title": "V8.7-B SLC-355 BS->IS Verdichtungs-Cron (deferred bis nach V8.10 + V8.11 + Anwalt-Sign-off)",
       "type": "feature",
-      "priority": "medium",
+      "priority": "low",
       "status": "open",
       "version": "V8.7",
-      "description": "Zwei Teile: (1) Weekly Cron Sonntag 02:00 /api/cron/push-knowledge-to-is. Aggregiert Win/Loss-Reasons aus auto_winloss_runs (V6.6 SLC-665) und Einwand-Behandlungen aus Activity-Logs nach Branchen-Bucket + Deal-Groessen-Bucket. Vor Push: Bedrock-Klassifikations-Pass extrahiert strukturierte Einwand-Typen aus Freitext-Notizen. Aggregation: keine Einzel-Kunden, keine Personen-Namen. HTTP-POST zu IS-Knowledge-API mit Service-Key, aggregation_level='aggregated', kein source_tenant_id. ENV: STRATEGAIZE_KNOWLEDGE_API_BASE_URL, STRATEGAIZE_KNOWLEDGE_SERVICE_KEY, KNOWLEDGE_PUSH_CRON_SECRET, KNOWLEDGE_PUSH_ENABLED (default false bis Anwalt). (2) KI-Workspace-Erweiterung — bestehender Workspace aus V6.6 SLC-661..666 (Mein Tag, Deal-Detail, KI-Analyse-Cockpit) bekommt zusaetzliche optionale RAG-Quelle: IS-Knowledge-API. Beispiel-Frage 'wie haben andere diesen Einwand behandelt?' kann auf Strategaize-Wissensbasis zugreifen. Acceptance: Cron laeuft wochentlich, Win-Reasons aggregiert nach Branche in IS sichtbar, Einwand-Klassifikation funktioniert, Workspace-Frage 'Standard-Einwand-Behandlungen fuer Branche X?' liefert sinnvolle Antwort. Aufwand 1-2 Tage (Cron) + 0,5-1 Tag (Workspace-Erweiterung). Pattern P-019 + P-020 + P-032 + P-010 (Workspace) + P-004 (RAG-Konsument). Pre-Condition: IS V3.5 SLC-352 (Knowledge-API) live. **Anwalt-Gate:** Workspace-Erweiterung ohne Anwalt live. Cron-Live-Schaltung erst nach DSGVO-Sign-off. Cross-Repo-Plan: c:/strategaize/strategaize-dev-system/docs/PATTERN_LIBRARY/CROSS_REPO_IMPLEMENTATION_PLAN.md",
+      "description": "V8.7-B Cron-Pfad nach Split V8.7-A/V8.7-B 2026-06-01 (Option C). Weekly Sonntag-Nacht Cron der Win/Loss-Reasons aus auto_winloss_runs + Einwand-Behandlungen aus Activity-Logs aggregiert nach Branche + Deal-Groesse-Bucket und an IS-Knowledge-API POSTet mit aggregation_level=aggregated, kein source_tenant_id. KNOWLEDGE_PUSH_ENABLED=false als Master-Switch bis DSGVO-Sign-off. Pre-Conditions: V8.10 + V8.11 fertig + Anwalt-Pruefung der Aggregations-Pipeline. Aufwand ~1-2 Tage Code. FEAT-872.",
       "createdAt": "2026-05-27"
+    },
+    {
+      "id": "BL-505",
+      "title": "V8.7-A KI-Workspace IS-Knowledge-API-RAG-Erweiterung (FEAT-871, SLC-871)",
+      "type": "feature",
+      "priority": "medium",
+      "status": "in_progress",
+      "version": "V8.7",
+      "description": "Cross-Repo-RAG-Konsument. BS-KI-Workspace bekommt IS-Knowledge-API als zweite RAG-Quelle (orthogonal zur lokalen BS-Knowledge). 3 Endpoints konsumiert: /api/knowledge/{search,item/[id],health}. Service-Key-Auth via STRATEGAIZE_KNOWLEDGE_SERVICE_KEY (Server-Side-only), x-strategaize-consumer=business-system Header, q-Param PII-Pre-Redact (Email/Phone) per IS RPT-275 O-1, audit_log-Event is_knowledge_queried mit Cost, Graceful-Degradation bei IS-Down/429. Mindest-Integration Deal-Detail-Workspace, weitere Workspaces (Mein Tag, KI-Cockpit, Team) per /architecture-Entscheidung. Aufwand ~0,5-1 Tag Code + Live-Smoke. Read-only, kein Anwalt-Gate. Pre-Condition: IS V3.5 live (erfuellt seit REL-016 + REL-017 2026-06-01). User-Pflicht: STRATEGAIZE_KNOWLEDGE_SERVICE_KEY in BS-Coolify-ENV setzen (identischer Wert wie IS-Coolify).",
+      "createdAt": "2026-06-01"
     }
   ]
 }

@@ -3912,6 +3912,74 @@ Total V8-Aufwand: ~7-11h reine Implementation + QA + Live-Smoke. Schmaler als V7
 
 **V8 Requirements ready for `/architecture`.**
 
+## V8.7 — Knowledge Foundation BS Konsument (Split V8.7-A / V8.7-B, Requirements done 2026-06-01)
+
+### V8.7 Problem Statement
+
+IS V3.5 ist released (REL-016 + REL-017 am 2026-06-01) und stellt die Cross-Repo-Knowledge-API zur Verfuegung: 39 Foundation-Items aus `CUSTOMER_FACING.md` durchsuchbar via pgvector + HNSW, Service-Key-Auth (timingSafeEqual), Rate-Limit (100/min), Defense-Filter raw-Items, Audit-Log. BS hat einen aktiven KI-Workspace seit V6.6 auf 4 Pages (Mein Tag, Deal-Detail, KI-Cockpit, Team-Cockpit) mit BS-eigener RAG-Quelle, aber Strategaize-Foundation-Wissen ist nicht angeschlossen.
+
+Beispiel-Fragen, die heute im BS-Workspace nicht beantwortbar sind:
+- "Wie haben wir den Einwand 'zu teuer' bei vergleichbaren StB-Kanzleien geloest?"
+- "Welcher Pitch fuer Datenschutz-Beauftragte hat in 2025 am besten konvertiert?"
+
+V8.7 schliesst genau diese Luecke.
+
+### V8.7 Goal
+
+BS-KI-Workspace bekommt eine **zweite, orthogonale RAG-Quelle**: die IS-Knowledge-API. Antworten kombinieren BS-eigene Deal-/Kontakt-/Activity-Daten mit Strategaize-Foundation-Wissen, ohne dass der Berater das IS-Backend kennen muss.
+
+### V8.7 Scope-Split per User-Direktive 2026-06-01 (Option C)
+
+V8.7 ist bewusst in zwei Versionen aufgeteilt, damit Pre-Live-Sicherheits-Sprints nicht blockiert werden und die Push-Seite den DSGVO-Sign-off abwartet:
+
+**V8.7-A (JETZT, FEAT-871, BL-505)** = Read-only KI-Workspace-RAG-Erweiterung
+- Konsument der IS-Knowledge-API: 3 Endpoints `search` / `item/[id]` / `health`
+- Service-Key-Auth via `STRATEGAIZE_KNOWLEDGE_SERVICE_KEY` (Server-Side-only)
+- Integration in mind. Deal-Detail-Workspace, optional weitere
+- q-Param PII-Pre-Redact (Email/Phone) per IS RPT-275 O-1
+- Graceful-Degradation bei IS-Down / 429
+- audit_log-Event `is_knowledge_queried` mit Cost-Tracking
+- Coolify-ENV-Setup-Doku
+- Aufwand: ~0,5-1 Tag Code + Live-Smoke
+- Kein Anwalt-Gate, kein Cross-Tenant-Risiko, kein Push
+
+**V8.7-B (deferred, FEAT-872, BL-494)** = SLC-355 BS->IS Verdichtungs-Cron
+- Weekly Sonntag-Nacht Cron
+- Win/Loss-Reasons + Einwand-Behandlungen aus BS aggregiert nach Branche + Deal-Groesse-Bucket
+- HTTP-POST an IS-Knowledge-API mit `aggregation_level='aggregated'`, kein `source_tenant_id`
+- `KNOWLEDGE_PUSH_ENABLED=false` als Master-Switch bis Anwalt
+- Aufwand: ~1-2 Tage Code
+- **Pre-Conditions:** V8.10 + V8.11 + Anwalt-Sign-off — startet erst danach
+
+### V8.7-A Out-of-Scope
+
+- SLC-355 BS→IS Cron (komplett V8.7-B)
+- Multi-User-RLS-Hardening (V8.11)
+- Workspace-UI-Redesign (Layout bleibt V6.6)
+- OP V7.6 Workspace-RAG (paralleler Track im OP-Repo)
+- PII-Redaction von Mandanten-Eigennamen (komplex, V8.x+)
+- Mehrere Sprachen (IS-Knowledge ist DE-only)
+
+### V8.7-A Open Questions (fuer `/architecture`)
+
+8 OQs adressiert in FEAT-871 Spec:
+- OQ-A1 Integrations-Modell (4 Optionen, Empfehlung Mix aus a+c)
+- OQ-A2 Workspace-Scope (3 Optionen, Empfehlung Deal-Detail + Mein Tag)
+- OQ-A3 PII-Redact-Position (Adapter-intern empfohlen)
+- OQ-A4 Health-Endpoint (YAGNI, weglassen)
+- OQ-A5 Cost-Cap pro Workspace-Session
+- OQ-A6 Browser-Bundle-Sicherheit (Server-Actions, ENV-Naming)
+- OQ-A7 Caching (V8.7-A nicht, V8.7.1-Polish wenn noetig)
+- OQ-A8 Antwort-Rendering im AnswerPane
+
+Volle Details: [FEAT-871-v87-knowledge-rag-workspace.md](../features/FEAT-871-v87-knowledge-rag-workspace.md).
+
+### V8.7 Delivery Mode
+
+**Internal-tool**, Internal-Test-Mode bleibt aktiv, Read-only-Bridge fuer V8.7-A, Push-Pfad in V8.7-B abgesichert via Master-Switch + Anwalt-Gate.
+
+**V8.7-A Requirements ready for `/architecture V8.7-A`.**
+
 ## V8.1 — Solopreneur-Mode + Sidebar-Konsolidierung + Teamlead-Permission-Erweiterung (Requirements done 2026-05-20, erweitert 2026-05-20)
 
 ### V8.1 Problem Statement

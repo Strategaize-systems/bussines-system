@@ -271,11 +271,24 @@
 |----|---------|--------|------|---------|
 | FEAT-824 | Customer-Facing Datenschutzerklaerung (Multi-Tenant-Ready, Public-Route + Editor + Consent-Form-Link + Mail-Footer, BL-488) | deployed | [Spec](FEAT-824-customer-dse.md) | 2026-05-22 |
 
+## V8.7 Features (Knowledge Foundation BS Konsument — Requirements done 2026-06-01)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-871 | V8.7-A KI-Workspace IS-Knowledge-API-RAG-Erweiterung (Read-only Konsument, BL-505) | planned | [Spec](FEAT-871-v87-knowledge-rag-workspace.md) | 2026-06-01 |
+| FEAT-872 | V8.7-B BS->IS Verdichtungs-Cron (SLC-355, deferred bis nach V8.10+V8.11+Anwalt, BL-494) | deferred | — | 2026-06-01 |
+
 ## V8.8 Features (Help-System Redesign Foundation — Requirements done 2026-05-28)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
 | FEAT-881 | Help-System Redesign mit Annotated-Screenshot-Hotspots (Foundation Slice + Pilot mein-tag, BL-489) | deployed | [Spec](FEAT-881-v88-help-hotspots.md) | 2026-05-28 |
+
+## V8.9 Features (Security Quick-Wins Sprint 1 — RELEASED 2026-06-01 als REL-042)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-891 | Security Quick-Wins Sprint 1 (4 IDOR + timing-safe Cron/Export, SLC-891, BL-497) | deployed | — | 2026-05-30 |
 
 ## V8.3 Features (Hilfe-Section — RELEASED 2026-05-22 als REL-037)
 
