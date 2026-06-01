@@ -42,7 +42,12 @@ describe("useReportRun", () => {
     });
 
     expect(runner).toHaveBeenCalledTimes(1);
-    expect(runner.mock.calls[0][0]).toEqual({ reportId: "tagesanalyse", scope: SCOPE });
+    // V8.7-A SLC-871 MT-4 — useReportRun forwards optional question/
+    // softCapReached/workspaceSessionId. objectContaining bleibt
+    // robust gegen kuenftige additive Optionen.
+    expect(runner.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ reportId: "tagesanalyse", scope: SCOPE })
+    );
     expect(result.current.result?.markdown).toBe("# fresh");
     expect(result.current.error).toBeNull();
     expect(result.current.isLoading).toBe(false);

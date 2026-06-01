@@ -9,11 +9,22 @@ import type {
 } from "../types";
 import { getCached, makeCacheKey, setCached } from "@/lib/ki-workspace/cache";
 
+export interface UseReportRunOpts {
+  bypassCache?: boolean;
+  // V8.7-A SLC-871 MT-4 — Free-Question-Pfad reicht inputText durch.
+  question?: string;
+  // V8.7-A SLC-871 MT-6 — true wenn sessionStorage["isKnowledgeCallCount"]
+  // >= 20; Server-Action ueberspringt dann den IS-Call.
+  softCapReached?: boolean;
+  // V8.7-A SLC-871 MT-3 — workspace-session-uuid fuer audit_log.entity_id.
+  workspaceSessionId?: string;
+}
+
 export interface UseReportRunResult {
   run: (
     report: KIWorkspaceReport,
     scope: KIWorkspaceScope,
-    opts?: { bypassCache?: boolean },
+    opts?: UseReportRunOpts,
   ) => Promise<ReportResult | null>;
   isLoading: boolean;
   error: string | null;
@@ -47,7 +58,7 @@ export function useReportRun(options: UseReportRunOptions = {}): UseReportRunRes
     async (
       report: KIWorkspaceReport,
       scope: KIWorkspaceScope,
-      opts?: { bypassCache?: boolean },
+      opts?: UseReportRunOpts,
     ): Promise<ReportResult | null> => {
       setError(null);
       const key = makeCacheKey(report.id, scope);
@@ -67,6 +78,9 @@ export function useReportRun(options: UseReportRunOptions = {}): UseReportRunRes
           reportId: report.id,
           scope,
           bypassCache: opts?.bypassCache,
+          question: opts?.question,
+          softCapReached: opts?.softCapReached,
+          workspaceSessionId: opts?.workspaceSessionId,
         });
         if (report.cacheable) {
           setCached(key, fresh);

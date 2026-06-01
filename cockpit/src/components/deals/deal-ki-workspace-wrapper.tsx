@@ -16,6 +16,8 @@ const REPORT_PATHS = [
   "@/lib/ki-workspace/reports/risiken",
   "@/lib/ki-workspace/reports/naechster-schritt",
   "@/lib/ki-workspace/reports/winloss",
+  // V8.7-A SLC-871 MT-4 — Free-Question Server-Action
+  "@/lib/ki-workspace/free-question",
 ] as const;
 
 type ReportPath = (typeof REPORT_PATHS)[number];
@@ -49,6 +51,10 @@ export function DealKIWorkspace({ userId, dealId }: Props) {
       case "@/lib/ki-workspace/reports/winloss": {
         const m = await import("@/lib/ki-workspace/reports/winloss");
         return m.runReport;
+      }
+      case "@/lib/ki-workspace/free-question": {
+        const m = await import("@/lib/ki-workspace/free-question");
+        return m.runFreeQuestion;
       }
     }
   }, []);

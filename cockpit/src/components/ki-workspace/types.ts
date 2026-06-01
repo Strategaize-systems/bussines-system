@@ -21,11 +21,27 @@ export interface KIWorkspaceProps {
   voiceEnabled: boolean;
 }
 
+/**
+ * V8.7-A SLC-871 MT-4 — additive optionale Felder fuer IS-Knowledge-Block
+ * in AnswerPane (DEC-255). Existing Reports liefern diese Felder nicht;
+ * KIWorkspace.tsx setzt zusaetzlich `showIsFooter` nur fuer Reports im
+ * DEC-249-Scope (= Deal-Detail-Workspace + Free-Question/risiken-einwaende).
+ */
+export interface IsKnowledgeHit {
+  id: string;
+  title: string;
+  similarity: number;
+}
+
 export interface ReportResult {
   markdown: string;
   completedAt: string;
   model: string;
   refreshable: boolean;
+  // V8.7-A SLC-871 MT-4 (DEC-255/256)
+  isKnowledgeHits?: IsKnowledgeHit[];
+  isKnowledgeError?: string | null;
+  showIsFooter?: boolean;
 }
 
 export interface RunReportArgs {
@@ -37,6 +53,15 @@ export interface RunReportArgs {
    * sondern auch DB-Caches wie den 24h-Win/Loss-Auto-Run-Cache.
    */
   bypassCache?: boolean;
+  // V8.7-A SLC-871 MT-4 — optional. Wird vom KIWorkspace gesetzt bei
+  // Free-Question-Klick (User-Input ist die eigentliche Frage).
+  question?: string;
+  // V8.7-A SLC-871 MT-6 — wenn true, IS-Knowledge-Call wird vom Server-
+  // Action uebersprungen (DEC-252 Soft-Cap-Schutz).
+  softCapReached?: boolean;
+  // V8.7-A SLC-871 MT-3 — workspace-session-uuid fuer audit_log.entity_id
+  // (DEC-258). Wird vom KIWorkspace.tsx pro Mount generiert.
+  workspaceSessionId?: string;
 }
 
 export type ReportRunner = (args: RunReportArgs) => Promise<ReportResult>;
