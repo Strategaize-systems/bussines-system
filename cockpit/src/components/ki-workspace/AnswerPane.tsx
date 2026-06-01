@@ -1,6 +1,12 @@
 "use client";
 
-import { Loader2, RefreshCw, AlertCircle, BookmarkPlus } from "lucide-react";
+import {
+  Loader2,
+  RefreshCw,
+  AlertCircle,
+  BookmarkPlus,
+  Sparkles,
+} from "lucide-react";
 import { Fragment, useState, type ReactNode } from "react";
 import type { ReportResult } from "./types";
 import { cn } from "@/lib/utils";
@@ -8,6 +14,11 @@ import {
   parsePipelineSections,
   extractTrailingBlock,
 } from "./pipeline-tabs-view";
+import {
+  classifyIsBlockState,
+  formatSimilarityPercent,
+  pickIsFooterText,
+} from "./answer-pane-is-state";
 
 interface AnswerPaneProps {
   result?: ReportResult | null;
@@ -108,9 +119,67 @@ export function AnswerPane({
         </div>
       )}
 
+      {/* V8.7-A SLC-871 MT-5 — IS-Knowledge-Block + Footer (DEC-255/256). */}
+      {!isLoading && !error && result && (
+        <IsKnowledgeSection result={result} />
+      )}
+
       {!isLoading && !error && !result && (
         <p className="text-sm text-muted-foreground">
           Berichts-Button waehlen oder Frage stellen.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function IsKnowledgeSection({ result }: { result: ReportResult }) {
+  const blockState = classifyIsBlockState(result);
+  const footerText = pickIsFooterText(result, blockState);
+  if (blockState.kind === "none" && !footerText) return null;
+
+  return (
+    <div
+      className="mt-4 space-y-2"
+      data-testid="answer-pane-is-knowledge-section"
+    >
+      {blockState.kind === "hits" && (
+        <div
+          className="rounded-md border border-brand-primary/20 bg-brand-primary/5 p-3"
+          data-testid="answer-pane-is-knowledge-hits"
+        >
+          <div className="flex items-center gap-1.5 text-xs font-medium text-brand-primary mb-2">
+            <Sparkles className="h-3 w-3" />
+            <span>Aus Strategaize-Wissens-Basis</span>
+          </div>
+          <ul
+            className="list-disc pl-5 text-xs text-foreground space-y-0.5"
+            data-testid="answer-pane-is-knowledge-hits-list"
+          >
+            {blockState.sorted.map((hit) => (
+              <li key={hit.id}>
+                {hit.title} ({formatSimilarityPercent(hit.similarity)})
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {blockState.kind === "error" && (
+        <p
+          className="text-xs text-muted-foreground italic"
+          data-testid="answer-pane-is-knowledge-error"
+        >
+          {blockState.message}
+        </p>
+      )}
+
+      {footerText && (
+        <p
+          className="text-xs text-muted-foreground"
+          data-testid="answer-pane-is-knowledge-footer"
+        >
+          {footerText}
         </p>
       )}
     </div>
