@@ -155,7 +155,12 @@ describe("KIWorkspace", () => {
     });
 
     expect(runner).toHaveBeenCalledTimes(1);
-    expect(runner.mock.calls[0][0]).toEqual({ reportId: "tagesanalyse", scope: SCOPE });
+    // V8.7-A SLC-871 MT-6b — KIWorkspace forwards softCapReached +
+    // workspaceSessionId + question (alle optional). objectContaining
+    // bleibt robust gegen kuenftige additive Args.
+    expect(runner.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ reportId: "tagesanalyse", scope: SCOPE })
+    );
     await waitFor(() => {
       expect(screen.getByTestId("ki-workspace-result")).toHaveTextContent("button-result");
     });
