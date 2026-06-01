@@ -2567,7 +2567,7 @@
       "title": "V8.9 Security Quick-Wins — 4 IDOR + timing-safe Cron-Secret (SLC-891)",
       "type": "fix",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.9",
       "description": "Schliesst 5 hoechst-priorisierte Security-Findings aus Cross-Repo-Audit 2026-05-30 (docs/SECURITY_AUDIT_2026-05-30.md). SEC-001..004: 4 API-Routes (/api/meetings/[id]/generate-agenda, /api/signals/extract, /api/knowledge/query, /api/meetings/[id]/retry-summary + retry-transcript) lesen+updaten via createAdminClient() ohne User-Client-Vor-Check — aktiv exploitable fuer Cross-Owner-Bedrock-Cost + PII-Verarbeitung. SEC-010: 17 Cron-Endpoints + 6 Export-API-Endpoints nutzen JS '!==' statt crypto.timingSafeEqual. Fix-Pattern: User-Client-Vor-Check per RLS (maybeSingle()) vor createAdminClient-Pfad in 4 IDOR-Routes + verifyCronSecret/verifyExportApiKey auf crypto.timingSafeEqual umstellen mit Pattern-Reuse aus cockpit/src/lib/calcom/webhook-handler.ts:61-67. 6 MTs, ~3-4h Code + ~1h /qa. 0 Schema-Migration. Out-of-Scope SEC-005..020 → Sprint 2-4. SLC-891.",
       "createdAt": "2026-05-30"
