@@ -10,7 +10,7 @@ import type {
 } from "./types";
 import { AnswerPane } from "./AnswerPane";
 import { NLBuilderInline } from "./nl-builder-inline";
-import { useReportRun } from "./hooks/useReportRun";
+import { useReportRun, type UseReportRunOpts } from "./hooks/useReportRun";
 import { useVoiceCapture } from "./hooks/useVoiceCapture";
 import { MeineBerichteDropdown } from "./meine-berichte-dropdown";
 import { SaveCustomReportModal } from "./save-custom-report-modal";
@@ -18,6 +18,11 @@ import type {
   CustomReportContextType,
   CustomReportRow,
 } from "@/lib/custom-reports/types";
+import {
+  IS_KNOWLEDGE_SOFT_CAP,
+  shouldSkipIsCall,
+  SOFT_CAP_STORAGE_KEY,
+} from "@/lib/is-knowledge/soft-cap";
 
 interface ExtendedProps extends KIWorkspaceProps {
   className?: string;
@@ -38,6 +43,10 @@ interface ExtendedProps extends KIWorkspaceProps {
 }
 
 const FREE_QUESTION_REPORT_ID = "freie-frage";
+// V8.7-A SLC-871 MT-4 — dedicated Free-Question Server-Action (statt
+// reports[0]-Reuse, was den User-Input dropte). Wrapper muss diesen
+// Pfad in seinem loadRunner kennen (deal-ki-workspace-wrapper.tsx).
+const FREE_QUESTION_SERVER_ACTION_PATH = "@/lib/ki-workspace/free-question";
 // V7.6 SLC-761 MT-2 — special-cased Report-ID, das den NL-Builder-Mode
 // triggert statt einen Bedrock-Report-Runner aufzurufen. Sichtbarkeit per
 // canSculpt-Filter im ki-workspace-wrapper.tsx.
@@ -72,6 +81,26 @@ export function KIWorkspace({
   // AnswerPane.onSaveAsReport-Callback getoggled, erscheint NUR nach freier
   // Frage (DEC-216).
   const [saveModalOpen, setSaveModalOpen] = useState(false);
+  // V8.7-A SLC-871 MT-3 — stable workspace-session-uuid fuer audit_log
+  // (DEC-258). Frisch pro Mount, persistiert nicht ueber Tab-Reload.
+  const [workspaceSessionId] = useState<string>(() => {
+    if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+      return crypto.randomUUID();
+    }
+    // Fallback fuer aeltere Browser oder JSDOM-Tests ohne randomUUID.
+    return `ws-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  });
+  // V8.7-A SLC-871 MT-6 — sessionStorage-Counter fuer IS-Knowledge-
+  // Soft-Cap (DEC-252). Reset bei Tab-Close. Wir initialisieren aus
+  // sessionStorage damit Reload innerhalb derselben Tab den Counter
+  // beibehaelt.
+  const [isCallCount, setIsCallCount] = useState<number>(() => {
+    if (typeof window === "undefined") return 0;
+    const raw = window.sessionStorage.getItem(SOFT_CAP_STORAGE_KEY);
+    if (!raw) return 0;
+    const n = Number(raw);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  });
   const reportRun = useReportRun({ loadRunner });
   const voice = useVoiceCapture();
 
@@ -79,8 +108,36 @@ export function KIWorkspace({
     customReports !== undefined &&
     customReportContextType !== undefined;
 
+  // V8.7-A SLC-871 MT-6 — increment sessionStorage-Counter wenn der
+  // letzte Bedrock-Call IS-Knowledge-Hits geliefert hat. Pure UI-State,
+  // kein Server-Roundtrip.
+  const incrementIsCallCounterIfHits = useCallback(
+    (result: { isKnowledgeHits?: unknown }) => {
+      const hits = result.isKnowledgeHits as { id: string }[] | undefined;
+      if (!hits || hits.length === 0) return;
+      setIsCallCount((prev) => {
+        const next = prev + 1;
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(SOFT_CAP_STORAGE_KEY, String(next));
+        }
+        return next;
+      });
+    },
+    []
+  );
+
+  const buildRunOpts = useCallback(
+    (extra?: { question?: string; bypassCache?: boolean }): UseReportRunOpts => ({
+      bypassCache: extra?.bypassCache,
+      question: extra?.question,
+      softCapReached: shouldSkipIsCall(isCallCount, IS_KNOWLEDGE_SOFT_CAP),
+      workspaceSessionId,
+    }),
+    [isCallCount, workspaceSessionId]
+  );
+
   const handleReportClick = useCallback(
-    async (report: KIWorkspaceReport) => {
+    async (report: KIWorkspaceReport, question?: string) => {
       setSelectedReport(report);
       if (report.id === NL_BUILDER_REPORT_ID) {
         // Short-Circuit: KEIN reportRun.run(), NLBuilderInline rendert inline
@@ -89,15 +146,21 @@ export function KIWorkspace({
         return;
       }
       setMode("report");
-      await reportRun.run(report, scope);
+      const result = await reportRun.run(report, scope, buildRunOpts({ question }));
+      if (result) incrementIsCallCounterIfHits(result);
     },
-    [reportRun, scope],
+    [buildRunOpts, incrementIsCallCounterIfHits, reportRun, scope],
   );
 
   const handleRefresh = useCallback(async () => {
     if (!selectedReport) return;
-    await reportRun.run(selectedReport, scope, { bypassCache: true });
-  }, [reportRun, scope, selectedReport]);
+    const result = await reportRun.run(
+      selectedReport,
+      scope,
+      buildRunOpts({ bypassCache: true })
+    );
+    if (result) incrementIsCallCounterIfHits(result);
+  }, [buildRunOpts, incrementIsCallCounterIfHits, reportRun, scope, selectedReport]);
 
   // V7.6 SLC-763 — Klick auf Item in der Dropdown. Wir bauen einen Pseudo-
   // KIWorkspaceReport mit `serverActionPath="__custom__"`, der Wrapper
@@ -113,9 +176,9 @@ export function KIWorkspace({
       };
       setSelectedReport(pseudo);
       setMode("report");
-      await reportRun.run(pseudo, scope);
+      await reportRun.run(pseudo, scope, buildRunOpts());
     },
-    [reportRun, scope],
+    [buildRunOpts, reportRun, scope],
   );
 
   const isFreeFormResult =
@@ -225,14 +288,21 @@ export function KIWorkspace({
         <button
           type="button"
           onClick={() => {
-            if (!inputText.trim()) return;
+            const question = inputText.trim();
+            if (!question) return;
+            // V8.7-A SLC-871 MT-4 — Free-Question hat jetzt einen
+            // dedicated Server-Action-Pfad. Wrapper muss den Pfad in
+            // loadRunner kennen (im deal-ki-workspace-wrapper bereits
+            // registriert; andere Wrapper koennen Free-Question
+            // weiterhin ignorieren, da der Button visuell nur dann
+            // sinnvoll ist, wenn der Wrapper ihn aktiviert).
             const freeReport: KIWorkspaceReport = {
               id: FREE_QUESTION_REPORT_ID,
               label: "Freie Frage",
-              serverActionPath: reports[0]?.serverActionPath ?? "",
+              serverActionPath: FREE_QUESTION_SERVER_ACTION_PATH,
               cacheable: false,
             };
-            void handleReportClick(freeReport);
+            void handleReportClick(freeReport, question);
           }}
           disabled={!inputText.trim() || reportRun.isLoading || isNlBuilderMode}
           className={cn(
