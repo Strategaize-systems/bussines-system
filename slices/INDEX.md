@@ -421,7 +421,7 @@ V8.7-B (FEAT-872 / BL-494) ist deferred bis nach V8.10 + V8.11 + Anwalt-Sign-off
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-871 | [V8.7-A KI-Workspace IS-Knowledge-API-RAG-Erweiterung](SLC-871-knowledge-rag-workspace.md) | FEAT-871 / BL-505 | planned | Medium | 2026-06-01 |
+| SLC-871 | [V8.7-A KI-Workspace IS-Knowledge-API-RAG-Erweiterung](SLC-871-knowledge-rag-workspace.md) | FEAT-871 / BL-505 | in_progress | Medium | 2026-06-01 |
 | SLC-355 | (deferred — V8.7-B BS->IS Verdichtungs-Cron, /slice-planning faellt nach V8.11 + Anwalt-Sign-off) | FEAT-872 / BL-494 | deferred | Low | 2026-06-01 |
 
 ## V8.8 Slices (Help-System Redesign Foundation)
