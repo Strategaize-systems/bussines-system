@@ -447,4 +447,4 @@ V8.10 = 2 Slices SLC-892 + SLC-893, gemeinsamer Aufwand ~1 Tag Code + ~1h /qa. S
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-892 | [V8.10 Email-HTML DOMPurify-Sanitize (Stored-XSS Defense)](SLC-892-email-dompurify-sanitize.md) | FEAT-892 / BL-498 | done | High | 2026-06-02 |
-| SLC-893 | [V8.10 documents-Storage user-scoped + Backfill (Cross-Tenant Defense)](SLC-893-documents-storage-user-scoped.md) | FEAT-893 / BL-499 | planned | High | 2026-06-02 |
+| SLC-893 | [V8.10 documents-Storage user-scoped + Backfill (Cross-Tenant Defense)](SLC-893-documents-storage-user-scoped.md) | FEAT-893 / BL-499 | in_progress | High | 2026-06-02 |

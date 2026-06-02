@@ -1,5 +1,20 @@
 # Decisions
 
+## DEC-262 — Backfill-NULL-Owner-Fallback via ENV (SLC-893 MT-1)
+- Status: accepted
+- Reason: V1-Single-User-Aera-Documents (vor Multi-User) haben `created_by IS NULL`. Bei BS Internal-Test-Mode + Single-User-Phase sind alle bestehenden Documents praktisch vom Founder. Hartes Orphan-Markieren wuerde Founder-Files nach Policy-Apply unlesbar machen. User-Entscheidung 2026-06-02: Founder-UUID-Default via ENV-Variable `MIG_041_FALLBACK_OWNER_UUID`. Kein Hard-Code, kein User-Tabellen-Pre-Update noetig. Wenn ENV NICHT gesetzt UND `created_by IS NULL` → Orphan (skip + log + im Backfill-Report dokumentiert) per AC-893-5(c).
+- Consequence: Backfill-Script `cockpit/scripts/backfill-documents-user-scope.mjs` liest `MIG_041_FALLBACK_OWNER_UUID` aus ENV (UUID-v4-validated). Pure-Function `classifyBackfillCandidate` in `cockpit/src/lib/storage/document-path.ts` macht den Owner-Lookup deterministisch testbar (8 Vitest-Cases). MT-6 Live-Apply-Session muss Founder-UUID des Production-Auth-Accounts in Coolify-ENV setzen bevor Backfill --apply laeuft.
+
+## DEC-264 — documents-Storage-Pfad-Sub-Schema (SLC-893 MT-1)
+- Status: accepted
+- Reason: Slice-Spec offen wie das Sub-Folder-Schema unter `<user-id>/` aussieht. Heutiges Schema `documents/{contacts|companies|deals|misc}/...` mit redundantem `documents/`-Praefix (Bucket heisst schon `documents`). Bei Sub-Hierarchien (Document zu einem Deal) ist die Entity-Verknuepfung sinnvoll als zweites Path-Segment.
+- Consequence: Neues Schema = `<user-id>/<folder>/<Date.now()>_<filename>` mit `folder` ∈ `contacts/<contact-id>` | `companies/<company-id>` | `deals/<deal-id>` | `misc`. `documents/`-Praefix entfaellt. Pure-Function `buildDocumentStoragePath` in `cockpit/src/lib/storage/document-path.ts` enkapsuliert die Pfad-Berechnung mit 11 Vitest-Cases (Prio-Reihenfolge contact > company > deal > misc). Erstes Path-Segment ist immer eine UUID v4 → matchet `(storage.foldername(name))[1] = auth.uid()::text` direkt.
+
+## DEC-263 — Production-Pause-Window-Strategie (deferred bis SLC-893 MT-6)
+- Status: deferred
+- Reason: Bei Apply-Tag muss kurzfristig sichergestellt werden, dass keine neuen Uploads waehrend Backfill+Policy-Switch entstehen (sonst unter altem Pfad = orphan nach Apply). Internal-Test-Mode mit Single-User erlaubt geplante Pause-Window. Entscheidung wird in MT-6-Session mit Founder synchronisiert (Pause-Dauer + Maintenance-Banner-UI + Apply-Reihenfolge).
+- Consequence: MT-6 Live-Apply-Session beinhaltet (1) Production-Pause kurz (~5 Min), (2) MIG-041 apply via SSH+base64, (3) Backfill --apply, (4) Re-Iterate bis 0 Pending, (5) Production-Resume. Alternative: Iterativ-Bis-Zero ohne harte Pause wenn Race-Risiko niedrig (kein Bulk-Upload waehrend Apply zu erwarten).
+
 ## DEC-001 — Skill-basiertes Pattern statt klassische Web-App
 - Status: accepted
 - Reason: Claude Max Subscription deckt die AI-Arbeit ab ohne API-Kosten. Skills sind leicht anpassbar (Markdown), pro Firma individualisierbar, und das Pattern ist bereits erprobt im Dev System.

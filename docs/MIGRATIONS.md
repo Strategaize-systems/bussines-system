@@ -1,5 +1,27 @@
 # Migrations
 
+### MIG-041 — V8.10 SLC-893 documents-Storage user-scoped (Code-Side ready 2026-06-02; NICHT applied)
+- Date: 2026-06-02 (Migration-File geschrieben, Test-Suite vorbereitet, Apply deferred bis MT-6 Live-Apply-Session mit Pre-Backfill).
+- Scope: Storage-Policies fuer `documents`-Bucket. 3 alte Policies DROP + 4 neue user-scoped CREATE.
+  ```sql
+  -- DROP (idempotent IF EXISTS)
+  DROP POLICY "authenticated_upload_documents" ON storage.objects;
+  DROP POLICY "authenticated_read_documents"   ON storage.objects;
+  DROP POLICY "authenticated_delete_documents" ON storage.objects;
+
+  -- CREATE 4 user-scoped Policies (SELECT/INSERT/UPDATE/DELETE) mit
+  -- (auth.uid())::text = (storage.foldername(name))[1] als USING-/WITH-CHECK-Filter.
+  CREATE POLICY "documents_user_select" ...;
+  CREATE POLICY "documents_user_insert" ...;
+  CREATE POLICY "documents_user_update" ...;
+  CREATE POLICY "documents_user_delete" ...;
+  ```
+- Reason: V8.10 Security Sprint 2 SEC-008 (Audit `docs/SECURITY_AUDIT_2026-05-30.md`) — `sql/02_rls.sql:47-57` `documents`-Bucket-Policies haben KEINEN first-path-segment-Filter. Jeder authenticated User kann jedes Storage-Object lesen, ueberschreiben und loeschen. Bei 2. User sind alle Documents sofort cross-tenant-lesbar. PRE-LIVE PFLICHT vor Multi-User-Onboarding. Pattern-Reuse 1:1 aus V5.5 MIG-026 (`proposal_pdfs_user_select`).
+- Affected Areas: `storage.objects` (Policies only, kein Schema). Code: `cockpit/src/lib/actions/document-actions.ts:uploadDocument` (Pfad-Refactor auf user-scoped). 4 Storage-Aufrufer enumeriert in `/slices/SLC-893-audit-notes.md`. Service-Role (Indexer) bleibt unberuehrt (BYPASSRLS). DB-Tabelle `documents` (Tabellen-RLS) bleibt V1 `authenticated_full_access` — gehaertet in V8.11 SLC-901..904 RLS-Sweep.
+- Risk: Mittel/Hoch bei Apply ohne Pre-Backfill. Bestehende Files (Pfad `documents/<folder>/...`) werden mit den neuen Policies fuer alle User unlesbar (erstes Path-Segment ist `documents`, nicht `<user-uuid>`). Pflicht-Sequenz: (1) Backfill --apply lauft VOR der Migration ODER (2) Apply in Production-Pause-Window (DEC-263) + Backfill direkt im Anschluss. service_role bleibt jederzeit accessible.
+- Rollback Notes: `DROP POLICY documents_user_select|insert|update|delete ON storage.objects; CREATE POLICY authenticated_*_documents ON storage.objects ... bucket_id='documents'`. Pfad-Refactor in `document-actions.ts` haelt die neuen Pfade bei (kein Bestandteil von MIG-041). Rollback ohne Daten-Verlust, aber Backfill-Resultate bleiben unter user-scoped Pfaden.
+- Verify: nach Apply `SELECT polname FROM pg_policies WHERE schemaname='storage' AND tablename='objects' AND polname LIKE 'documents_user_%' ORDER BY polname;` → 4 Rows. Plus Vitest gegen Coolify-DB: `__tests__/migrations/041-v810-documents-storage-user-scoped.test.ts` (4 Cases) + `__tests__/rls/documents-storage-rls.test.ts` (8+2 Cases, Cross-Tenant Read/Insert/Update/Delete denial).
+
 ### MIG-039 — V8.5 SLC-851 Reserved-Slug-Trigger auf teams.slug (APPLIED 2026-05-24 via SSH+base64)
 - Date: 2026-05-24 (~08:07 UTC, postgres-User, idempotent CREATE OR REPLACE FUNCTION + DROP TRIGGER IF EXISTS, 3 Self-Tests im DO-Block PASS, NOTIFY pgrst).
 - Scope: 2 Functions + 1 Trigger auf bestehender `teams`-Tabelle.
