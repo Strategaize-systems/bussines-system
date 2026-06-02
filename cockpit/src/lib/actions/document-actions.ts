@@ -5,6 +5,7 @@ import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { revalidatePath } from "next/cache";
 import { indexDocument } from "@/lib/knowledge/indexer";
 import { isExtractableFormat } from "@/lib/knowledge/chunker";
+import { buildDocumentStoragePath } from "@/lib/storage/document-path";
 
 export type Document = {
   id: string;
@@ -44,6 +45,12 @@ export async function uploadDocument(formData: FormData) {
   await assertNotReadOnlyContext();
   const supabase = await createClient();
 
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) {
+    return { error: "Nicht authentifiziert" };
+  }
+  const userId = authData.user.id;
+
   const file = formData.get("file") as File;
   if (!file || file.size === 0) return { error: "Keine Datei ausgewählt" };
 
@@ -51,13 +58,15 @@ export async function uploadDocument(formData: FormData) {
   const companyId = (formData.get("company_id") as string) || null;
   const dealId = (formData.get("deal_id") as string) || null;
 
-  // Build storage path: documents/{entity_type}/{entity_id}/{filename}
-  let folder = "misc";
-  if (contactId) folder = `contacts/${contactId}`;
-  else if (companyId) folder = `companies/${companyId}`;
-  else if (dealId) folder = `deals/${dealId}`;
-
-  const filePath = `documents/${folder}/${Date.now()}_${file.name}`;
+  // SLC-893 MIG-041: user-scoped Storage-Pfad <user-id>/<folder>/<filename>.
+  // Erforderlich fuer documents_user_select/insert/update/delete RLS-Policies.
+  const filePath = buildDocumentStoragePath({
+    userId,
+    filename: file.name,
+    contactId,
+    companyId,
+    dealId,
+  });
 
   // Upload to Supabase Storage
   const { error: uploadError } = await supabase.storage
@@ -76,6 +85,7 @@ export async function uploadDocument(formData: FormData) {
     file_type: file.type || null,
     file_size: file.size,
     category: (formData.get("category") as string) || null,
+    created_by: userId,
   }).select("id").single();
 
   if (dbError) return { error: dbError.message };
