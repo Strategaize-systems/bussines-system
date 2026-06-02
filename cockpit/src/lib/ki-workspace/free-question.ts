@@ -11,6 +11,7 @@ import {
   formatHitsForBedrockContext,
   toIsKnowledgeHits,
 } from "@/lib/is-knowledge/format-hits";
+import { redactPiiFromQ } from "@/lib/is-knowledge/redact-pii";
 import {
   envelopeToErrorString,
   runIsSearchWithSoftCap,
@@ -119,13 +120,13 @@ export async function runFreeQuestion(
   });
 
   if (isEnvelope.kind === "ok" && args.workspaceSessionId) {
+    // AC-871-4 + AC-871-8 + Live-Smoke Pfad 4: query_excerpt im audit_log
+    // muss PII-redacted sein. Der Adapter redacted nur die Wire-Query, der
+    // Audit-Pfad ist eine separate Datensenke — daher hier explizit redact.
     void logIsKnowledgeQuery({
       workspaceSessionId: args.workspaceSessionId,
       workspacePage: "deal-detail",
-      // question hier statt fixed-query — PII ist via redactPiiFromQ
-      // bereits Adapter-intern entfernt worden, aber zur Defense
-      // truncated logIsKnowledgeQuery final nochmal auf 200 chars.
-      queryExcerpt: question,
+      queryExcerpt: redactPiiFromQ(question),
       costUsd: isEnvelope.queryEmbeddingCostUsd,
       itemCount: isEnvelope.items.length,
       similarityTop: isEnvelope.items[0]?.similarity ?? null,
