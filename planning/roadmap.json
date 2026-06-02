@@ -304,7 +304,7 @@
     {
       "id": "v8-10",
       "name": "V8.10",
-      "status": "planned",
+      "status": "active",
       "summary": "**Security Sprint 2 BS — PRE-LIVE PFLICHT vor erstem Customer-Onboarding.** Schliesst 2 verbleibende High-Findings aus Cross-Repo-Audit 2026-05-30 die nicht in V8.9 Quick-Wins passten. **BL-498 SEC-005 Email-HTML DOMPurify-Sanitize** (~3h): cockpit/src/app/(app)/emails/email-detail.tsx:331 nutzt 4-Zeilen-Regex fuer IMAP-Email-Body-Sanitization. Trivial via <svg onload>, <img onerror>, HTML-Entity-Encoding umgehbar. **Stored-XSS-Pfad bei jedem Inbound-Email-Open.** Fix: isomorphic-dompurify + iframe-Sandbox-Pattern. **BL-499 SEC-008 documents-Storage user-scoped + Backfill** (~3-4h): sql/02_rls.sql:47-57 Policies fuer documents-Bucket haben keinen first-path-segment-Filter. Jeder authenticated User kann jedes Storage-Object lesen/schreiben/loeschen. **Cross-Tenant-Exfiltration moeglich.** Fix: (auth.uid())::text = (storage.foldername(name))[1] analog proposal_pdfs_user_select Pattern + Doc-Upload-Code-Refactor + Backfill bestehender Files. Geschaetzter Gesamt-Aufwand: 1 Tag verteilt auf 2 separate Slices SLC-892 + SLC-893. Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-005 + SEC-008.",
       "order": 39.0
     },

@@ -2577,7 +2577,7 @@
       "title": "V8.10 SEC-005 Email-HTML DOMPurify-Sanitize (PRE-LIVE PFLICHT) — Sprint 2 Slice 1",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V8.10",
       "description": "**PRE-LIVE PFLICHT — Stored-XSS-Pfad bei jedem Inbound-Email-Open.** Aktuelle Sanitization in cockpit/src/app/(app)/emails/email-detail.tsx:331 ist ein 4-Zeilen-Regex (entfernt nur <script> + on-Attributes). Trivial umgehbar via: (a) <svg onload='alert(1)'> (svg-Tag nicht blockiert), (b) <img src=x onerror='alert(1)'> (img onerror nicht erkannt wenn anders gequotet), (c) HTML-Entity-Encoding wie &#x6F;n&#x65;rror=, (d) data:text/html-URLs in href. Jeder maliziose Inbound-Email-Sender kann beliebigen JS-Code im Kontext der BS-App ausfuehren -> Session-Cookies + LocalStorage + DOM-Access. Fix-Pattern: (1) isomorphic-dompurify dependency hinzufuegen, (2) DOMPurify.sanitize(html, {ALLOWED_TAGS:..., ALLOWED_ATTR:...}) mit strikter Whitelist (kein script/iframe/object/embed/svg + nur href/src/alt/title-Attribs), (3) Render in iframe sandbox='' (extra Defense-in-Depth gegen residuale CSS-Injection), (4) Vitest-Suite mit OWASP-XSS-Cheatsheet-Vectors (mind. 20 Cases). Aufwand: ~3h Code + ~30 Min /qa. Quality-Gates: Vitest XSS-Vectors PASS, Lint EXAKT V8.9-Baseline, Live-Smoke mit ein paar Production-IMAP-Mails (Render-Regression-Check). Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-005. Slice-Name: SLC-892.",
       "createdAt": "2026-05-30"
@@ -2587,7 +2587,7 @@
       "title": "V8.10 SEC-008 documents-Storage user-scoped + Backfill (PRE-LIVE PFLICHT) — Sprint 2 Slice 2",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "in_progress",
       "version": "V8.10",
       "description": "**PRE-LIVE PFLICHT — Cross-Tenant-Exfiltration aus documents-Bucket moeglich.** Aktuelle RLS in sql/02_rls.sql:47-57 fuer documents-Bucket (storage.objects WHERE bucket_id='documents') hat KEINEN first-path-segment-Filter. Jeder authenticated User kann via Storage-API: (a) jedes Storage-Object lesen (SELECT), (b) jedes Object ueberschreiben (UPDATE), (c) jedes Object loeschen (DELETE), unabhaengig vom Pfad. Bei 2. User sind alle bisher hochgeladenen Documents (PDFs, Anhaenge, Notizen-Attachments) sofort cross-tenant-lesbar. Fix-Pattern: (1) Pattern-Reuse aus proposal_pdfs_user_select (das hat den richtigen Filter): (auth.uid())::text = (storage.foldername(name))[1] als USING-Clause auf alle 4 Storage-Policies fuer documents-Bucket, (2) Code-Refactor in jedem documents-Upload-Aufrufer: Pfad auf <user-uuid>/<filename> normalisieren statt z.B. nur <filename>, (3) Backfill-Migration: bestehende Objects deren Pfad nicht mit user-uuid beginnt entweder verschieben (bei eindeutigem Owner ermittelbar) oder zur User-Aktion markieren, (4) RLS-Test-Suite-Erweiterung: 2 User, jeder uploaded Doc, User-B kann User-A's Doc NICHT lesen/schreiben/loeschen. Aufwand: ~3-4h Code (Migration + Code-Refactor + Backfill-Script + Tests). Quality-Gates: RLS-Tests gegen Coolify-DB PASS, kein bestehendes Doc unzugaenglich nach Backfill, Live-Smoke Upload+Read+Delete-Flow mit 2 Usern. Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-008. Slice-Name: SLC-893.",
       "createdAt": "2026-05-30"

@@ -439,3 +439,12 @@ V8.9 = 1 Slice SLC-891, 6 Micro-Tasks, ~3-4h Code + ~1h /qa + Coolify-Redeploy. 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-891 | [BS Security Quick-Wins (4 IDOR + timing-safe Cron-Secret)](SLC-891-bs-security-quick-wins.md) | FEAT-891 / BL-497 | done | High | 2026-05-30 |
+
+## V8.10 Slices (Security Sprint 2 — PRE-LIVE PFLICHT)
+
+V8.10 = 2 Slices SLC-892 + SLC-893, gemeinsamer Aufwand ~1 Tag Code + ~1h /qa. Schliesst 2 hoch-prioritisierte Security-Findings aus Cross-Repo-Audit 2026-05-30: SEC-005 (Stored-XSS via Email-HTML, 4-Zeilen-Regex trivial umgehbar) + SEC-008 (Cross-Tenant-Exfiltration aus documents-Bucket ohne first-path-segment-Filter). **PRE-LIVE PFLICHT vor Customer-Onboarding.** SLC-892 fuehrt isomorphic-dompurify + iframe-Sandbox-Defense-in-Depth ein (neu in Strategaize, Pattern-Library-Entry `11-html-sanitization.md` als Cross-Repo-Vorlage). SLC-893 portiert 1:1 das `proposal_pdfs_user_select`-Pattern (V5.5 SLC-553, MIG-026) als MIG-041 + Code-Refactor + Backfill bestehender Files. Single-Branch, kein Worktree (Internal-Tool-Mode). Out-of-Scope: 25 weitere Zweittabellen-RLS → V8.11 Sprint 3 (SLC-901..904). Reihenfolge SLC-892 → SLC-893 (entkoppelt, koennen aber sequenziell laufen).
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-892 | [V8.10 Email-HTML DOMPurify-Sanitize (Stored-XSS Defense)](SLC-892-email-dompurify-sanitize.md) | FEAT-892 / BL-498 | planned | High | 2026-06-02 |
+| SLC-893 | [V8.10 documents-Storage user-scoped + Backfill (Cross-Tenant Defense)](SLC-893-documents-storage-user-scoped.md) | FEAT-893 / BL-499 | planned | High | 2026-06-02 |
