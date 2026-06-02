@@ -2657,7 +2657,7 @@
       "title": "V8.7-A KI-Workspace IS-Knowledge-API-RAG-Erweiterung (FEAT-871, SLC-871)",
       "type": "feature",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.7",
       "description": "Cross-Repo-RAG-Konsument. BS-KI-Workspace bekommt IS-Knowledge-API als zweite RAG-Quelle (orthogonal zur lokalen BS-Knowledge). 3 Endpoints konsumiert: /api/knowledge/{search,item/[id],health}. Service-Key-Auth via STRATEGAIZE_KNOWLEDGE_SERVICE_KEY (Server-Side-only), x-strategaize-consumer=business-system Header, q-Param PII-Pre-Redact (Email/Phone) per IS RPT-275 O-1, audit_log-Event is_knowledge_queried mit Cost, Graceful-Degradation bei IS-Down/429. Mindest-Integration Deal-Detail-Workspace, weitere Workspaces (Mein Tag, KI-Cockpit, Team) per /architecture-Entscheidung. Aufwand ~0,5-1 Tag Code + Live-Smoke. Read-only, kein Anwalt-Gate. Pre-Condition: IS V3.5 live (erfuellt seit REL-016 + REL-017 2026-06-01). User-Pflicht: STRATEGAIZE_KNOWLEDGE_SERVICE_KEY in BS-Coolify-ENV setzen (identischer Wert wie IS-Coolify).",
       "createdAt": "2026-06-01"

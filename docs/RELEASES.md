@@ -1,5 +1,28 @@
 # Releases
 
+### REL-043 — V8.7-A KI-Workspace IS-Knowledge-API-RAG-Erweiterung
+- Date: 2026-06-02
+- Image-Tag: `49d146b` (= `fix(v87a SLC-871 /qa B-3): FREE_QUESTION_SYSTEM_PROMPT in non-server-Module`). Coolify-Redeploy 2026-06-02T11:31:49 UTC. Container `app-k9f5pn5upfq7etoefb5ukbcg-112915841954` healthy seit Deploy. Bundle-Leak-Check 0 Treffer fuer `STRATEGAIZE_KNOWLEDGE_SERVICE_KEY` (DEC-253 verifiziert).
+- Scope: V8.7-A KI-Workspace IS-Knowledge-API-RAG-Erweiterung. 1 Slice SLC-871, 7 Pflicht-MTs + 1 OPT-IN MT-8 (Build-Leak-Check). **0 Schema-Migration**, **0 neue npm-Packages**. BL-505 done. FEAT-871 deployed.
+  - **MT-1** `cockpit/src/lib/is-knowledge/client.ts` — Server-Side-only Adapter mit `searchKnowledge()` + `getKnowledgeItem()` + `IsKnowledgeError`-Klasse, Header-Mechanik 1:1 Mirror IS V3.5 `validateServiceKey` (`x-strategaize-service-key` + `x-strategaize-consumer: business-system`), Timeout 4s via AbortController, zod-Validation tolerant gegen unbekannte Felder.
+  - **MT-2** `cockpit/src/lib/is-knowledge/redact-pii.ts` — Pure-Function `redactPiiFromQ()` (Email + Phone-Pattern). Email-First-Regex-Order. 8 Vitest-Cases.
+  - **MT-3** `cockpit/src/lib/audit.ts` + `cockpit/src/lib/audit-is-knowledge.ts` — `AuditAction += "knowledge_queried"`, `AuditEntityType += "is_knowledge_api"`, Pure-Helper `buildIsKnowledgeQueryAuditParams()` getrennt vom "use server"-Wrapper.
+  - **MT-4** `cockpit/src/lib/ki-workspace/free-question.ts` + `cockpit/src/lib/ki-workspace/reports/risiken.ts` — `Promise.allSettled([loadDealContext, runIsSearchWithSoftCap])` Parallel-Fetch, optional IS-Hits-Block im Bedrock-Userprompt, audit_log nur bei `kind: "ok"` (DEC-258 Failure-Pfade NICHT geloggt).
+  - **MT-5** `cockpit/src/components/ki-workspace/AnswerPane.tsx` + `answer-pane-is-state.ts` — Sub-Component `IsKnowledgeSection` rendert "Aus Strategaize-Wissens-Basis"-Block mit Sparkles-Icon + 5 Items + Footer per Pure-Helper-Klassifikation `classifyIsBlockState` (none/hits/soft_cap/error).
+  - **MT-6** `cockpit/src/components/ki-workspace/KIWorkspace.tsx` + `soft-cap.ts` — `sessionStorage["isKnowledgeCallCount"]`-Counter, `shouldSkipIsCall(count >= 20)` Pure-Function, `workspaceSessionId` via `crypto.randomUUID()`.
+  - **MT-7** `qa/SLC-871-coolify-env-setup.md` + `qa/SLC-871-live-smoke.md` — User-Pflicht-Setup-Doku + 5-Pfade-Smoke-Spec.
+  - **MT-8** `cockpit/src/__tests__/build/service-key-leak-check.test.ts` — OPT-IN Vitest greppt nach Bundle-Leak.
+- 11 DECs DEC-248..258. /qa Code-Side PASS-WITH-FIX (RPT-560 + 3 In-/qa Auto-Fixes B-1/B-2/B-3 per Deviation Rule 1).
+- Summary: BS-KI-Workspace bekommt IS-Knowledge-API als zweite, orthogonale RAG-Quelle. Cross-Repo-Konsument zu IS V3.5 (REL-016 + REL-017). Free-Question + risiken-einwaende-Report im Deal-Detail-Workspace ziehen Strategaize-Foundation-Wissen ein. **5 Live-Smoke-Pfade PASS** via Playwright + audit_log-SQL: Pfad 1 Vollmacht-Klausel-Frage (5 IS-Hits + audit_log), Pfad 2 Risiken-Report (3 Sektionen + 5 IS-Hits + audit_log), Pfad 3 Soft-Cap 21x (Footer "20/20 verbraucht" + KEIN Hits-Block + KEIN audit_log), Pfad 4 PII-Redact (audit_log query_excerpt enthaelt `[email]`/`[phone]`, NICHT Original-Werte), Pfad 5 Wrong-Key (HTTP 401 via API-Smoke). Verification-Aggregat: TSC EXIT=0, Vitest 1204/1204 PASS (Baseline V8.9 1152 + 52 neue Cases), ESLint EXACT V8.9-Baseline 142e/57w, Build clean 80 static pages, Bundle-Leak 0 Treffer in `.next/static/`.
+- Risks:
+  - **LOW (R-1 Server-Key-Leak)** — MITIGATED per DEC-253 Server-Side-only + MT-8 Bundle-Leak-Grep PASS.
+  - **LOW (R-2 IS-Latenz erhoeht Workspace-Antwort-Zeit)** — Akzeptiert per `Promise.allSettled` parallel, 4s Timeout via AbortController.
+  - **LOW (R-3 PII-Regex False-Positives)** — Akzeptiert. Broader Phone-Pattern (mit Whitespace-Separators) ist DSGVO-sicherer als der Spec-Hint.
+  - **LOW (R-4 Service-Key-Sync-Drift IS/BS)** — Mitigated per ENV-Setup-Doku Schritt 1 + Rotation-Procedure.
+  - **LOW (R-5 IS Rate-Limit 100/min Consumer-wide)** — Mitigated per Soft-Cap 20/Session.
+- Rollback Notes: V8.7-A hat **0 Schema-Migration** + 1 neue ENV-Variable (`STRATEGAIZE_KNOWLEDGE_SERVICE_KEY`). Rollback per Coolify-Image-History → REL-042 (`6e2d79b`) trivial — ENV-Variable kann bleiben (wird unused) oder entfernt werden. Bei Rollback verschwinden Free-Question-Pfad-Dedication + IS-Hits-Block + Soft-Cap-UI. RTO: 3 Min Image-Rollback.
+- Post-Launch: Burn-In-Window startet 2026-06-02T11:31 UTC. T+24h-Check 2026-06-03 ~11:31 UTC. Bei Stabilitaet: V8.7-A STABLE-Bestaetigung in separatem /post-launch-Light-Touch-Report.
+
 ### REL-042 — V8.9 Security Quick-Wins Sprint 1 (4 IDOR + timing-safe Cron-Secret)
 - Date: 2026-06-01
 - Image-Tag: `6e2d79b` (= `chore(SLC-891): /qa PASS CONDITIONAL — RPT-557 + Records-Sync`). Coolify-Redeploy 2026-05-30T06:25 UTC. Container `app-k9f5pn5upfq7etoefb5ukbcg-062232193645` healthy seit Deploy. Stack 16/17 healthy (supabase-studio pre-existing unhealthy, unrelated).

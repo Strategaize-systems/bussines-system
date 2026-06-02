@@ -275,7 +275,7 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-871 | V8.7-A KI-Workspace IS-Knowledge-API-RAG-Erweiterung (Read-only Konsument, BL-505) | in_progress | [Spec](FEAT-871-v87-knowledge-rag-workspace.md) | 2026-06-01 |
+| FEAT-871 | V8.7-A KI-Workspace IS-Knowledge-API-RAG-Erweiterung (Read-only Konsument, BL-505) | deployed | [Spec](FEAT-871-v87-knowledge-rag-workspace.md) | 2026-06-01 |
 | FEAT-872 | V8.7-B BS->IS Verdichtungs-Cron (SLC-355, deferred bis nach V8.10+V8.11+Anwalt, BL-494) | deferred | — | 2026-06-01 |
 
 ## V8.8 Features (Help-System Redesign Foundation — Requirements done 2026-05-28)
