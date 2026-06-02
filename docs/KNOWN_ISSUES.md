@@ -1,5 +1,16 @@
 # Known Issues
 
+### ISSUE-087 — V8.7-A IMP-950 Re-Inzidenz: /final-check + /go-live pre-Deploy uebersprungen
+- Status: resolved
+- Severity: Medium
+- Area: Workflow-Discipline / Release-Gate-Defense
+- Summary: V8.7-A SLC-871 ging von /qa Live-Smoke PASS (RPT-561 2026-06-02 11:31 UTC) direkt in Deploy REL-043 ohne formale /final-check + /go-live Workflow-Schritte. features/INDEX.md FEAT-871 wurde auf `deployed` gesetzt OHNE existierenden /go-live Report. Verletzung der Release-Gate-Defense-Rule aus `.claude/rules/mandatory-completion-report.md` ("Memory file claiming 'Vx.y released' requires /go-live GO-verdict"). Live-Smoke ist Deploy-Validation, NICHT Workflow-Closure. Wiederholung von IMP-950 — die Pre-Memory-Workflow-Check-Defense aus IMP-950 hat nicht gegriffen, weil sie nur beim Memory-Schreiben triggert, nicht beim Deploy.
+- Impact: Kein direkter technischer Schaden (Code-Side war clean, Deploy lief sauber, Live-Smoke 5/5 PASS). Aber Workflow-Discipline-Erosion. Bei naechstem ungeplanten Issue post-Deploy gibt es keine formale Pre-Deploy-Risk-Akzeptanz auf die zurueckverwiesen werden kann. Cockpit hat 50% V8.7-Stand korrekt angezeigt (V8.7-A done + V8.7-B deferred), aber FEAT-871 = `deployed` ohne /go-live Report ist formal regelwidrig.
+- Workaround: Retroaktive Gap-Closure via RPT-562 (/final-check) + RPT-563 (/go-live). Records-Stand danach formal sauber.
+- Discovery: User-Cockpit-Pruefung 2026-06-02 nach Deploy-Tag — "ist v8.7 komplett fertig, oder sindf Schritte uebersprungen?"
+- Resolution: 2026-06-02. (a) RPT-562 /final-check retroaktiv gefahren — 7 Audit-Dimensionen alle PASS, 1 Medium-Workflow-Skip-Finding dokumentiert. (b) RPT-563 /go-live retroaktiver Release-Gate-Vote. (c) IMP-984 in Dev-System SKILL_IMPROVEMENTS.md angelegt — Pre-Deploy-Workflow-Check als zusaetzliche Defense neben Pre-Memory-Workflow-Check. (d) Workflow-Sequenz fuer V8.7-A nun vollstaendig: requirements → architecture → slice-planning → backend → qa code-side → qa live-smoke → deploy → final-check → go-live → post-launch (T+24h pending).
+- Next Action: Verify IMP-984 Pre-Deploy-Workflow-Check Defense bei naechstem Deploy-Schritt (V8.10).
+
 ### ISSUE-086 — Help-Hotspot-Screenshot enthaelt User-Name (Pre-Customer-Live)
 - Status: open
 - Severity: Low
