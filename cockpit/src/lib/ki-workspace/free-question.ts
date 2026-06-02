@@ -72,11 +72,14 @@ export async function runFreeQuestion(
   }
 
   // Parallel-Fetch: BS-RAG (deal-context) + IS-Knowledge-Search.
+  // Kein domain-Filter: IS V3.5 Foundation-Items liegen ueber alle Domains
+  // (general/onboarding/marketing/...), nicht nur "sales". Engfuehrung auf
+  // eine einzige Domain wuerde die Treffer-Quote im Workspace auf 0 senken
+  // (B-2 Live-Smoke-Pre-Check 2026-06-02).
   const [contextSettled, isSettled] = await Promise.allSettled([
     loadDealContext(args.scope.dealId),
     runIsSearchWithSoftCap(question, {
       softCapReached: args.softCapReached,
-      domain: "sales",
       limit: 5,
     }),
   ]);
