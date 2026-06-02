@@ -21,19 +21,11 @@ import { IsKnowledgeError } from "@/lib/is-knowledge/types";
 import { invokeReport } from "@/lib/ki-workspace/reports/_shared";
 import { loadDealContext } from "@/lib/ki-workspace/deal-context";
 import { formatDealContext } from "@/lib/ki-workspace/prompts/deal-context-format";
+import { FREE_QUESTION_SYSTEM_PROMPT } from "@/lib/ki-workspace/prompts/free-question-prompt";
 import type {
   ReportResult,
   RunReportArgs,
 } from "@/components/ki-workspace/types";
-
-export const FREE_QUESTION_SYSTEM_PROMPT = `Du bist Beratungs-Assistent fuer einen B2B-Vertriebsmitarbeiter im Strategaize Business System. Beantworte die Frage des Nutzers PRAEZIS auf Basis des Deal-Kontextes und — wenn vorhanden — der Strategaize-Foundation-Pattern.
-
-Regeln:
-- Antworte in Markdown. Maximal 200 Woerter.
-- Du-Form.
-- Wenn die Datenlage knapp ist: sage das ehrlich, schlage konkret naechste Schritte vor.
-- Wenn Strategaize-Wissens-Pattern referenzierbar sind: nutze die Erkenntnisse, aber zitiere keine Pattern-Titel woertlich (die zeigt das UI separat).
-- Keine Einleitungs-/Schlussfloskeln.`;
 
 interface BuildFreeQuestionPromptInput {
   question: string;
