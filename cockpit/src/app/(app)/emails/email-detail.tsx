@@ -6,6 +6,8 @@ import {
   Clock, ChevronDown, ChevronUp, Link2, ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { sanitizeEmailHtml } from "@/lib/email/sanitize-email-html";
+import { EmailHtmlIframe } from "@/components/email/email-html-iframe";
 import type { InboxEmail } from "./imap-actions";
 import { getEmailThread, assignEmailToContact, assignEmailToCompany, assignEmailToDeal, searchContacts, searchDeals } from "./imap-actions";
 import Link from "next/link";
@@ -226,12 +228,7 @@ function ThreadMessage({ message, isActive }: { message: InboxEmail; isActive: b
 
 function EmailBody({ email }: { email: InboxEmail }) {
   if (email.body_html) {
-    return (
-      <div
-        className="prose prose-sm max-w-none text-slate-700 [&_a]:text-blue-600 [&_img]:max-w-full"
-        dangerouslySetInnerHTML={{ __html: sanitizeHtml(email.body_html) }}
-      />
-    );
+    return <EmailHtmlIframe html={sanitizeEmailHtml(email.body_html)} />;
   }
 
   return (
@@ -327,15 +324,6 @@ function AssignmentPanel({ emailId, onDone }: { emailId: string; onDone: () => v
 // ------------------------------------------------------------------
 // Helpers
 // ------------------------------------------------------------------
-
-function sanitizeHtml(html: string): string {
-  // Remove script tags and event handlers for security
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/on\w+="[^"]*"/gi, "")
-    .replace(/on\w+='[^']*'/gi, "")
-    .replace(/javascript:/gi, "");
-}
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
