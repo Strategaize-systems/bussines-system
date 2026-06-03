@@ -5,7 +5,7 @@
       "title": "V8.13 BS storage-Schema GRANTs Hotfix (ISSUE-088 Root-Fix)",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V8.13",
       "description": "SLC-894. Schliesst ISSUE-088 endgueltig durch MIG-043: idempotente GRANT SELECT/INSERT/UPDATE/DELETE auf alle storage.* Tabellen fuer authenticated+anon. Root-Cause: Storage v1.11.13 + GoTrue v2.160 (alte Container-Versionen auf BS+OP) setzen die Standard-Supabase-Default-GRANTs nicht im Init-Script. PostgreSQL Error-Code 42501 wird von Storage als 'new row violates row-level security policy' verkleidet (diagnostische Verwirrung). Cross-Repo: OP gleicher Bug, separater Slice in OP-Repo. IS + ImSch nicht betroffen (v2.186 / v1.44.2). ~30 Min Migration + ~30 Min Live-Verify = ~1h. PRE-LIVE PFLICHT — blockiert V8.11 RLS-Sweep weil V8.11 erweitert RLS auf 25 Tabellen und wenn INSERT-Pfad mit fehlenden GRANTs broken ist, waere V8.11 sofort kaputt.",
       "createdAt": "2026-06-03"

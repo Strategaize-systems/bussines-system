@@ -1,5 +1,23 @@
 # Migrations
 
+### MIG-043 — V8.13 SLC-894 Storage-Schema GRANTs Hotfix fuer authenticated+anon (APPLIED 2026-06-03 via SSH+base64)
+- Date: 2026-06-03
+- Scope: idempotente additive GRANTs auf `storage`-Schema:
+  ```sql
+  GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA storage TO authenticated, anon;
+  GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA storage TO authenticated, anon;
+  ALTER DEFAULT PRIVILEGES IN SCHEMA storage GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO authenticated, anon;
+  ALTER DEFAULT PRIVILEGES IN SCHEMA storage GRANT USAGE,SELECT ON SEQUENCES TO authenticated, anon;
+  ALTER DEFAULT PRIVILEGES FOR ROLE supabase_storage_admin IN SCHEMA storage GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO authenticated, anon;
+  ALTER DEFAULT PRIVILEGES FOR ROLE supabase_storage_admin IN SCHEMA storage GRANT USAGE,SELECT ON SEQUENCES TO authenticated, anon;
+  NOTIFY pgrst, 'reload schema';
+  ```
+- Reason: Discovery V8.10 Live-Smoke (RPT-569) als angeblicher RLS-Bug, in V8.13 Investigation (RPT-573) als GRANT-Bug Root-Cause identifiziert. Storage v1.11.13 castet PostgreSQL Error-Code `42501 insufficient_privilege` (aus `aclchk.c:3650`, GRANT-Check) zu Misleading-Message "new row violates row-level security policy". Pre-Apply-Audit BS Production (`slices/SLC-894-pre-apply-audit.md`): authenticated+anon hatten nur `SELECT` auf alle 5 storage-Tables (buckets, migrations, objects, s3_multipart_uploads, s3_multipart_uploads_parts). Standard-Supabase-Init-Script in Storage v1.44.2+ setzt diese GRANTs automatisch — Storage v1.11.13-Init-Script tut das nicht. Cross-Repo-Versions-Matrix: BS+OP auf alten Versionen betroffen, IS+ImSch nicht.
+- Affected Areas: 5 Tables im storage-Schema (buckets, migrations, objects, s3_multipart_uploads, s3_multipart_uploads_parts). 0 Sequences existieren aktuell — Sequence-GRANT ist defensive No-Op fuer Future-Proofness. ALTER DEFAULT PRIVILEGES greift fuer zukuenftige Tables/Sequences die `postgres` oder `supabase_storage_admin` anlegt. service_role-GRANTs sind UNVERAENDERT. RLS-Policies aus MIG-041 (4 documents_user_*) sind UNVERAENDERT — Defense-Layer bleibt aktiv.
+- Risk: Niedrig. Pure additive GRANTs (kein REVOKE). Idempotent (PG-natively). Live-Smoke 2026-06-03 4/4 PASS bestaetigt (a) User-A INSERT eigener Pfad HTTP 200 + Key returned, (b) User-A INSERT fremder Pfad HTTP 400 "row-level security policy" (RLS-Defense aktiv), (c) User-A SELECT eigener Pfad HTTP 200, (d) DELETE Cleanup HTTP 200. Vitest-Schema-Verification 5/5 PASS (RED-pre-apply 3/5 FAIL bestaetigt Bug-Detection).
+- Rollback Notes: `REVOKE INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA storage FROM authenticated, anon;` plus REVOKE der ALTER-DEFAULT-PRIVILEGES via separater ALTER-DEFAULT-PRIVILEGES-REVOKE-Statement. Praktisch kein Bedarf — Rollback wuerde ISSUE-088 wieder oeffnen.
+- Verify: `SELECT grantee, table_name, privilege_type FROM information_schema.role_table_grants WHERE table_schema='storage' AND grantee IN ('authenticated','anon') AND privilege_type IN ('INSERT','UPDATE','DELETE') ORDER BY table_name, grantee, privilege_type;` → 30 Rows (5 Tables * 2 Roles * 3 Privileges).
+
 ### MIG-042 — V8.10 SLC-893 MT-6 auth-Schema-GRANTs fuer authenticated (APPLIED 2026-06-03 via SSH)
 - Date: 2026-06-03
 - Scope: idempotente GRANTs:
