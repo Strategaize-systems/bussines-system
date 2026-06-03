@@ -111,9 +111,35 @@ JWT direkt aus `GOTRUE_JWT_SECRET` signen (umgeht ISSUE-089-Pendant falls in OP 
 - `planning/backlog.json` BL → done.
 - `docs/STATE.md` Current Focus.
 
-## OP V8.0.3 (oder gleichwertig) — ISSUE-089-Pendant?
+## OP V8.0.3 (oder gleichwertig) — ISSUE-089-Pendant (MIG-044 Auth-aud-Normalisierung)
 
-ISSUE-089 Cross-Repo-Status: noch nicht bestaetigt fuer OP. SLC-895 MT-7 in BS-Repo testet OP-Login mit echtem Bestands-User und dokumentiert Befund. Falls OP betroffen ist: gleicher Slice-Plan analog SLC-895 im OP-Repo.
+**BS-Resolution 2026-06-03 via SLC-895 (RPT-575):** ISSUE-089 Root-Cause war `auth.users.aud='authenticated'`-Drift bei 3 manuell SQL-angelegten qa-User. GoTrue v2.160 `FindUserByEmailAndAudience` matched `aud=''` als Default → User mit `aud='authenticated'` werden vom signInWithPassword-Lookup ausgeschlossen → HTTP 400 invalid_credentials. Fix: MIG-044 `UPDATE auth.users SET aud='' WHERE aud='authenticated';` (idempotent). richard@bellaerts.de war NICHT betroffen (hatte `aud=''` schon).
+
+### OP-Pre-Check (Cross-Repo)
+
+Falls OP **manuell via SQL angelegte User** hat (qa-User, Test-User, Seed-User), pruefen:
+
+```bash
+ssh root@<OP-Server> "docker exec -i <op-supabase-db-container> psql -U postgres -d postgres -c \"SELECT COALESCE(NULLIF(aud,''),'<empty>') AS aud_value, COUNT(*) FROM auth.users GROUP BY aud ORDER BY count DESC;\""
+```
+
+- Falls 0 Rows mit `aud='authenticated'`: **OP NICHT betroffen** — Fresh-Signup-Default in v2.160 ist `aud=''`. Migration nicht noetig.
+- Falls >=1 Row mit `aud='authenticated'`: **OP betroffen** — gleiche Migration MIG-044-Mirror auf OP applien.
+
+### OP MIG-044-Mirror
+
+1:1 Mirror der BS-Migration:
+
+```sql
+-- OP <NNN>_v8x_auth_users_aud_normalize.sql
+UPDATE auth.users SET aud = '', updated_at = now() WHERE aud = 'authenticated';
+```
+
+Idempotent. Live-Smoke: signInWithPassword fuer einen post-Migration-User-mit-aud='' soll HTTP 200 + access_token returnen.
+
+### Pre-Customer-Live-Defense
+
+Bei jedem **kuenftigen manuellen User-Seed via SQL-Direkt-Insert** MUSS `aud=''` gesetzt sein (oder Spalte komplett weglassen → Default NULL ist auch OK). NIEMALS `aud='authenticated'` explizit setzen — das ist ein GoTrue v2.160-Anti-Pattern und reaktiviert ISSUE-089.
 
 ## V8.14 Container-Upgrade (separater Sprint, BS+OP gemeinsam)
 

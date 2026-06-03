@@ -456,4 +456,4 @@ V8.13 = 2 Slices SLC-894 + SLC-895, gemeinsamer Aufwand ~3-4h. Schliesst die zwe
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-894 | [V8.13 BS storage-Schema GRANTs Hotfix (ISSUE-088 Root-Fix)](SLC-894-bs-storage-grants-hotfix.md) | FEAT-813 / BL-506 | done | High | 2026-06-03 |
-| SLC-895 | [V8.13 BS ISSUE-089 GoTrue signInWithPassword Investigation + Fix](SLC-895-bs-issue-089-investigation.md) | FEAT-813 / BL-507 | planned | High | 2026-06-03 |
+| SLC-895 | [V8.13 BS ISSUE-089 GoTrue signInWithPassword Investigation + Fix](SLC-895-bs-issue-089-investigation.md) | FEAT-813 / BL-507 | done | High | 2026-06-03 |

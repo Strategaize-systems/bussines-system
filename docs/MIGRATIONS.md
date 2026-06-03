@@ -1,5 +1,17 @@
 # Migrations
 
+### MIG-044 — V8.13 SLC-895 auth.users.aud Normalisierung (ISSUE-089 Root-Fix) (APPLIED 2026-06-03 via SSH+base64)
+- Date: 2026-06-03
+- Scope: idempotente Spalten-Normalisierung in `auth.users`:
+  ```sql
+  UPDATE auth.users SET aud = '', updated_at = now() WHERE aud = 'authenticated';
+  ```
+- Reason: Discovery V8.10 Gesamt-/qa Live-Smoke (RPT-569) als generischer "signInWithPassword broken fuer Bestands-User"-Symptom, in V8.13 Investigation (RPT-573 + slices/SLC-895-investigation-results.md) als `aud`-Lookup-Drift Root-Cause identifiziert. GoTrue v2.160.0 `internal/api/token.go::ResourceOwnerPasswordGrant` ruft `FindUserByEmailAndAudience(email, audience)` mit Filter `WHERE instance_id = ? AND LOWER(email) = ? AND aud = ? AND is_sso_user = false`. `audience`-Parameter wird vom Supabase-JS-Client NICHT default gesetzt → Default ist `''` (leer). User mit explizit gesetztem `auth.users.aud='authenticated'` werden vom Default-Lookup NICHT gefunden → 400 invalid_credentials ohne Passwort-Hash-Check. Reproducer-Bestaetigt 2026-06-03 (MT-1 A/B-Test): qa-admin mit `aud='authenticated'` + crypt-Reset Cost-10 → HTTP 400; qa-admin mit `aud=''` + gleicher crypt-Reset → HTTP 200 + access_token. 3 Bestands-User waren betroffen (qa-admin/qa-member/qa-teamlead, alle manuell via SQL angelegt mit explizitem `aud='authenticated'`). Fresh-Signup-User und richard@bellaerts.de (Pre-V7-User mit `aud=''`) waren NICHT betroffen.
+- Affected Areas: 3 Rows in `auth.users`. Spalte `aud` von `'authenticated'` auf `''`. Keine anderen Spalten beruehrt. `role`-Spalte und `instance_id` unangetastet. RLS-Policies, GoTrue-Konfig, Container-Versionen, downstream-Services alle unangetastet — JWT-Output-Claim `aud` ist ohnehin leer und wird nicht von BS Cockpit (`@supabase/auth-helpers-nextjs`) oder PostgREST validiert. service_role-Sessions/-Tokens unangetastet.
+- Risk: Niedrig. Pure additive Spalten-Update (kein DELETE/DROP). Idempotent (`WHERE aud='authenticated'` matched zweiter Run = 0 Rows). Token-Refresh-Sessions bleiben aktiv (refresh_token-Validation ignoriert aud-Spalte). Live-Smoke 2026-06-03: (a) Pre-Apply curl signInWithPassword qa-admin (aud='authenticated' + crypt-Reset Cost-10) → HTTP 400 invalid_credentials. (b) Post-Apply curl signInWithPassword qa-admin (aud='' + crypt-Reset Cost-10) → HTTP 200 access_token + role='authenticated' JWT-claim korrekt. (c) Founder Richard Live-Verify Browser-Login mit `richard@bellaerts.de` PASS. Vitest 5/5 PASS via Coolify-DB-Sidecar (node:20 im business-net, 33ms).
+- Rollback Notes: `UPDATE auth.users SET aud = 'authenticated', updated_at = now() WHERE aud = '';`. Wuerde ISSUE-089 fuer betroffene User wieder oeffnen — kein praktischer Rollback-Bedarf. Nur ausfuehren wenn ein anderer Service explizit `aud='authenticated'` braucht UND der Login-Fix anders bereitgestellt wird (z.B. via GoTrue-Container-Upgrade auf v2.186+).
+- Verify: `SELECT COUNT(*) FROM auth.users WHERE aud='authenticated';` → 0. Plus: curl signInWithPassword auf Kong mit beliebigem Bestands-User (crypt-Reset auf bekanntes Passwort) → HTTP 200.
+
 ### MIG-043 — V8.13 SLC-894 Storage-Schema GRANTs Hotfix fuer authenticated+anon (APPLIED 2026-06-03 via SSH+base64)
 - Date: 2026-06-03
 - Scope: idempotente additive GRANTs auf `storage`-Schema:

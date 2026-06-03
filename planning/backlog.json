@@ -15,9 +15,9 @@
       "title": "V8.13 BS ISSUE-089 GoTrue signInWithPassword Investigation + Fix",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V8.13",
-      "description": "SLC-895. Klaert die wahre Wurzel von ISSUE-089 (GoTrue signInWithPassword fuer Bestands-User broken). Investigation-Erkenntnis 2026-06-03: signInWithPassword funktioniert grundsaetzlich (Fresh-Signup+Sign-In PASS) — die urspruengliche Hypothese 'alle Bestands-User broken' ist zu breit. 6 Hypothesen zu pruefen (H-1 Bcrypt-Cost-Strenge, H-2 auth.identities-Drift, H-3 User-Side-Passwort, H-4 Coolify-Redeploy-Side-Effect, H-5 GoTrue v2.160-Pre-Check, H-6 Browser-Cookie-Issue). MTs: (1) Reproducer gegen qa-admin via crypt()-Reset, (2) auth.identities Cross-Check Fresh vs Bestand, (3) GoTrue v2.160 Changelog Web-Recherche, (4) Hypothese-Resolution, (5) Fix-Implementation (Pfad abhaengig von Root-Cause), (6) Founder Live-Verify, (7) Records-Sync. Aufwand: 1-2h Investigation + 30-60min Fix. PRE-LIVE PFLICHT — Founder + qa-admin muessen wieder einloggen koennen vor Customer-Live.",
+      "description": "SLC-895. Root-Cause IDENTIFIZIERT + FIXED 2026-06-03 via MIG-044. GoTrue v2.160 FindUserByEmailAndAudience matched aud='' beim Default-Lookup; 3 manuell SQL-seeded qa-User mit explizit gesetztem aud='authenticated' wurden ausgeschlossen. Fix: idempotente UPDATE auth.users SET aud='' WHERE aud='authenticated'. 3 Rows updated (qa-admin/qa-member/qa-teamlead). Hypothesen H-1..H-6 alle widerlegt, neue H-7 (aud-Lookup-Drift) bestaetigt im A/B-Reproducer-Test. Vitest 5/5 PASS gegen Coolify-DB. Founder Live-Verify Browser-Login richard@bellaerts.de PASS. ISSUE-089 → resolved.",
       "createdAt": "2026-06-03"
     },
     {

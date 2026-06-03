@@ -301,7 +301,7 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-813 | V8.13 Storage+Auth-Hotfix-Slice (ISSUE-088 Storage-GRANTs + ISSUE-089 GoTrue-signInWithPassword, SLC-894 + SLC-895, BL-506 + BL-507) | in_progress | — | 2026-06-03 |
+| FEAT-813 | V8.13 Storage+Auth-Hotfix-Slice (ISSUE-088 Storage-GRANTs + ISSUE-089 GoTrue-signInWithPassword, SLC-894 + SLC-895, BL-506 + BL-507) | done | — | 2026-06-03 |
 
 ## V8.3 Features (Hilfe-Section — RELEASED 2026-05-22 als REL-037)
 
