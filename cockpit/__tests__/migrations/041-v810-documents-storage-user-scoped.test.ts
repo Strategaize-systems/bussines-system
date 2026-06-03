@@ -76,12 +76,14 @@ describe("MIG-041 — documents-Bucket user-scoped Storage-Policies", () => {
   });
 
   it("alte authenticated_*_documents Policies sind geloescht", async () => {
-    const res = await client.query<{ polname: string }>(
-      `SELECT polname
+    // pg_policies (View) Spalte heisst `policyname`, NICHT `polname`.
+    // `polname` existiert nur in der unterliegenden pg_policy-Tabelle.
+    const res = await client.query<{ policyname: string }>(
+      `SELECT policyname
          FROM pg_policies
         WHERE schemaname = 'storage'
           AND tablename = 'objects'
-          AND polname IN (
+          AND policyname IN (
             'authenticated_upload_documents',
             'authenticated_read_documents',
             'authenticated_delete_documents'
