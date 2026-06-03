@@ -1,0 +1,4 @@
+SLC-893 LIVE-SMOKE Test-Dokument
+Founder: claude-smoke-v810
+Pfad-Schema verifizieren: <user-uuid>/<folder>/<filename>
+Timestamp: 2026-06-03T07:50Z
