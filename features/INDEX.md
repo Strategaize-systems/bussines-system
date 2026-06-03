@@ -297,11 +297,11 @@
 | FEAT-892 | V8.10 Email-HTML DOMPurify-Sanitize (Stored-XSS Defense, SLC-892, BL-498) | deployed | — | 2026-06-02 |
 | FEAT-893 | V8.10 documents-Storage user-scoped + Backfill (Cross-Tenant Defense, SLC-893, BL-499) | deployed | — | 2026-06-02 |
 
-## V8.13 Features (Storage+Auth-Hotfix-Slice — PRE-LIVE PFLICHT, slice-planning done 2026-06-03)
+## V8.13 Features (Storage+Auth-Hotfix-Slice — RELEASED 2026-06-03 als REL-045)
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-813 | V8.13 Storage+Auth-Hotfix-Slice (ISSUE-088 Storage-GRANTs + ISSUE-089 GoTrue-signInWithPassword, SLC-894 + SLC-895, BL-506 + BL-507) | done | — | 2026-06-03 |
+| FEAT-813 | V8.13 Storage+Auth-Hotfix-Slice (ISSUE-088 Storage-GRANTs + ISSUE-089 GoTrue-signInWithPassword, SLC-894 + SLC-895, BL-506 + BL-507) | deployed | — | 2026-06-03 |
 
 ## V8.3 Features (Hilfe-Section — RELEASED 2026-05-22 als REL-037)
 
