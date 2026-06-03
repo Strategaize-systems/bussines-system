@@ -309,6 +309,13 @@
       "order": 39.0
     },
     {
+      "id": "v8-13",
+      "name": "V8.13",
+      "status": "active",
+      "summary": "**Storage+Auth-Hotfix-Slice (PRE-LIVE PFLICHT, blockiert V8.11 RLS-Sweep).** 2 Slices SLC-894 + SLC-895, gemeinsamer Aufwand ~3-4h. Schliesst ISSUE-088 (Storage-API Self-Access INSERT broken — Root-Cause: fehlende `authenticated`-GRANTs auf storage-Schema, PostgreSQL 42501 wird von Storage v1.11.13 als RLS-Error verkleidet) + ISSUE-089 (GoTrue signInWithPassword broken fuer bestehende User — Root-Cause-Investigation in SLC-895 mit Hypothesen H-1..H-6). **Cross-Repo systemisch:** BS + OP haben beide alte Container-Versionen (GoTrue v2.160 / Storage v1.11.13) waehrend IS + ImSch auf v2.186 / v1.44.2 sind. OP gleiche Storage-GRANT-Luecke (sogar schlimmer: KEINE GRANTs vs BS nur SELECT). OP-Cross-Repo-Slice nach BS-Resolution. SLC-894 = Migration MIG-043 idempotente GRANT-Setzung + Live-Verify. SLC-895 = Reproducer + Hypothese-Resolution + Fix-Implementation + Founder-Live-Verify. Investigation-Output: RPT-573. Audit-Quelle: V8.10 /post-launch-Aufdeckung 2026-06-03 (RPT-569, RPT-571). Out-of-Scope: Container-Upgrade auf v2.186/v1.44.2 → V8.14 (separater Sprint mit Schema-Migration-Audit).",
+      "order": 39.05
+    },
+    {
       "id": "v8-11",
       "name": "V8.11",
       "status": "planned",

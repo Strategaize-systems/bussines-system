@@ -448,3 +448,12 @@ V8.10 = 2 Slices SLC-892 + SLC-893, gemeinsamer Aufwand ~1 Tag Code + ~1h /qa. S
 |----|-------|---------|--------|----------|---------|
 | SLC-892 | [V8.10 Email-HTML DOMPurify-Sanitize (Stored-XSS Defense)](SLC-892-email-dompurify-sanitize.md) | FEAT-892 / BL-498 | done | High | 2026-06-02 |
 | SLC-893 | [V8.10 documents-Storage user-scoped + Backfill (Cross-Tenant Defense)](SLC-893-documents-storage-user-scoped.md) | FEAT-893 / BL-499 | done | High | 2026-06-02 |
+
+## V8.13 Slices (Storage+Auth-Hotfix-Slice — PRE-LIVE PFLICHT, blockiert V8.11 RLS-Sweep)
+
+V8.13 = 2 Slices SLC-894 + SLC-895, gemeinsamer Aufwand ~3-4h. Schliesst die zwei Pre-existing High-Bugs die V8.10 Live-Smoke aufgedeckt hat (RPT-569). **PRE-LIVE PFLICHT — blockiert V8.11 RLS-Sweep weil V8.11 erweitert RLS auf 25 Tabellen und ohne funktionierende Storage-INSERT-Pipeline + funktionierenden Founder-Login wuerde V8.11 sofort kaputt sein.** Cross-Repo systemisch: BS + OP haben beide alte Container-Versionen (GoTrue v2.160 / Storage v1.11.13) waehrend IS + ImSch auf v2.186 / v1.44.2 sind und die Bugs nicht haben. SLC-894 portiert die Standard-Supabase-Default-GRANTs via MIG-043 idempotent (~1h). SLC-895 macht Reproducer + Hypothese-Resolution + Fix-Implementation (1-2h Investigation + 30-60min Fix). OP-Cross-Repo-Slice nach BS-Resolution in OP-Repo. Investigation-Output dokumentiert in RPT-573. Container-Upgrade BS+OP auf v2.186 / v1.44.2 ist V8.14-Scope (separater Sprint mit Schema-Migration-Audit). Reihenfolge SLC-894 zuerst (kleinerer Scope, klarer Fix), dann SLC-895 (Investigation-lastig).
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-894 | [V8.13 BS storage-Schema GRANTs Hotfix (ISSUE-088 Root-Fix)](SLC-894-bs-storage-grants-hotfix.md) | FEAT-813 / BL-506 | planned | High | 2026-06-03 |
+| SLC-895 | [V8.13 BS ISSUE-089 GoTrue signInWithPassword Investigation + Fix](SLC-895-bs-issue-089-investigation.md) | FEAT-813 / BL-507 | planned | High | 2026-06-03 |

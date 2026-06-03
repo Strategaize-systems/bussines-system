@@ -1,6 +1,26 @@
 {
   "items": [
     {
+      "id": "BL-506",
+      "title": "V8.13 BS storage-Schema GRANTs Hotfix (ISSUE-088 Root-Fix)",
+      "type": "fix",
+      "priority": "high",
+      "status": "open",
+      "version": "V8.13",
+      "description": "SLC-894. Schliesst ISSUE-088 endgueltig durch MIG-043: idempotente GRANT SELECT/INSERT/UPDATE/DELETE auf alle storage.* Tabellen fuer authenticated+anon. Root-Cause: Storage v1.11.13 + GoTrue v2.160 (alte Container-Versionen auf BS+OP) setzen die Standard-Supabase-Default-GRANTs nicht im Init-Script. PostgreSQL Error-Code 42501 wird von Storage als 'new row violates row-level security policy' verkleidet (diagnostische Verwirrung). Cross-Repo: OP gleicher Bug, separater Slice in OP-Repo. IS + ImSch nicht betroffen (v2.186 / v1.44.2). ~30 Min Migration + ~30 Min Live-Verify = ~1h. PRE-LIVE PFLICHT — blockiert V8.11 RLS-Sweep weil V8.11 erweitert RLS auf 25 Tabellen und wenn INSERT-Pfad mit fehlenden GRANTs broken ist, waere V8.11 sofort kaputt.",
+      "createdAt": "2026-06-03"
+    },
+    {
+      "id": "BL-507",
+      "title": "V8.13 BS ISSUE-089 GoTrue signInWithPassword Investigation + Fix",
+      "type": "fix",
+      "priority": "high",
+      "status": "open",
+      "version": "V8.13",
+      "description": "SLC-895. Klaert die wahre Wurzel von ISSUE-089 (GoTrue signInWithPassword fuer Bestands-User broken). Investigation-Erkenntnis 2026-06-03: signInWithPassword funktioniert grundsaetzlich (Fresh-Signup+Sign-In PASS) — die urspruengliche Hypothese 'alle Bestands-User broken' ist zu breit. 6 Hypothesen zu pruefen (H-1 Bcrypt-Cost-Strenge, H-2 auth.identities-Drift, H-3 User-Side-Passwort, H-4 Coolify-Redeploy-Side-Effect, H-5 GoTrue v2.160-Pre-Check, H-6 Browser-Cookie-Issue). MTs: (1) Reproducer gegen qa-admin via crypt()-Reset, (2) auth.identities Cross-Check Fresh vs Bestand, (3) GoTrue v2.160 Changelog Web-Recherche, (4) Hypothese-Resolution, (5) Fix-Implementation (Pfad abhaengig von Root-Cause), (6) Founder Live-Verify, (7) Records-Sync. Aufwand: 1-2h Investigation + 30-60min Fix. PRE-LIVE PFLICHT — Founder + qa-admin muessen wieder einloggen koennen vor Customer-Live.",
+      "createdAt": "2026-06-03"
+    },
+    {
       "id": "BL-495",
       "title": "V8.8 Help-Hotspot-Content Iter 2 — pipeline + compose + deal-detail Slugs",
       "type": "feature",
