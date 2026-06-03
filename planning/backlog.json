@@ -2587,7 +2587,7 @@
       "title": "V8.10 SEC-008 documents-Storage user-scoped + Backfill (PRE-LIVE PFLICHT) — Sprint 2 Slice 2",
       "type": "fix",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.10",
       "description": "**PRE-LIVE PFLICHT — Cross-Tenant-Exfiltration aus documents-Bucket moeglich.** Aktuelle RLS in sql/02_rls.sql:47-57 fuer documents-Bucket (storage.objects WHERE bucket_id='documents') hat KEINEN first-path-segment-Filter. Jeder authenticated User kann via Storage-API: (a) jedes Storage-Object lesen (SELECT), (b) jedes Object ueberschreiben (UPDATE), (c) jedes Object loeschen (DELETE), unabhaengig vom Pfad. Bei 2. User sind alle bisher hochgeladenen Documents (PDFs, Anhaenge, Notizen-Attachments) sofort cross-tenant-lesbar. Fix-Pattern: (1) Pattern-Reuse aus proposal_pdfs_user_select (das hat den richtigen Filter): (auth.uid())::text = (storage.foldername(name))[1] als USING-Clause auf alle 4 Storage-Policies fuer documents-Bucket, (2) Code-Refactor in jedem documents-Upload-Aufrufer: Pfad auf <user-uuid>/<filename> normalisieren statt z.B. nur <filename>, (3) Backfill-Migration: bestehende Objects deren Pfad nicht mit user-uuid beginnt entweder verschieben (bei eindeutigem Owner ermittelbar) oder zur User-Aktion markieren, (4) RLS-Test-Suite-Erweiterung: 2 User, jeder uploaded Doc, User-B kann User-A's Doc NICHT lesen/schreiben/loeschen. Aufwand: ~3-4h Code (Migration + Code-Refactor + Backfill-Script + Tests). Quality-Gates: RLS-Tests gegen Coolify-DB PASS, kein bestehendes Doc unzugaenglich nach Backfill, Live-Smoke Upload+Read+Delete-Flow mit 2 Usern. Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-008. Slice-Name: SLC-893.",
       "createdAt": "2026-05-30"

@@ -79,7 +79,7 @@ Globaler Kontext: V7 RLS-Switch (MIG-035) hat 8 Kerntabellen (companies/contacts
 - Vorschlag: (a) `SET search_path = public` an die Function-Definition haengen (Standard-Pattern wie in `is_admin`/`get_my_team_id` aus MIG-035). (b) Function um `caller_uid uuid` Param erweitern, JOIN auf `meetings`/`email_messages`/`activities`/`documents` mit `can_see_owner(parent.owner_user_id)` Filter ergaenzen. Alternativ Function auf SECURITY INVOKER umstellen und RLS auf knowledge_chunks korrekt setzen (SEC-006).
 - Aufwand: M
 
-### SEC-008 — Storage-Bucket `documents`: alle authenticated User koennen lesen+schreiben+loeschen (kein User-/Tenant-Scope)
+### SEC-008 — Storage-Bucket `documents`: alle authenticated User koennen lesen+schreiben+loeschen (kein User-/Tenant-Scope) [RESOLVED 2026-06-03]
 - Severity: High
 - Klasse: Storage / RLS-Bypass
 - File: sql/02_rls.sql:47-57
@@ -87,6 +87,7 @@ Globaler Kontext: V7 RLS-Switch (MIG-035) hat 8 Kerntabellen (companies/contacts
 - Beschreibung: Drei Policies (`authenticated_upload_documents`, `authenticated_read_documents`, `authenticated_delete_documents`) ohne Filter auf erstes Path-Segment / Owner / Tenant. Jeder authenticated User kann (a) jedes hochgeladene Dokument runterladen (SELECT), (b) ueber dem Bucket beliebige Files anlegen, (c) jeden anderen Storage-Object loeschen. `documents`-Bucket enthaelt Deal-/Company-/Contact-Anhaenge (Vertrags-PDFs, etc.). Cross-Tenant-DSGVO-relevante Files koennen exfiltriert werden.
 - Vorschlag: Analog `proposal_pdfs_user_select` Policies in MIG-026 — user-scoped per first-path-segment: `bucket_id = 'documents' AND (auth.uid())::text = (storage.foldername(name))[1]`. Plus Doc-Upload-Code in `lib/actions/document-actions.ts` muss den Path mit `<user-id>/<deal-id>/...` praefixen. Backfill bestehender Files.
 - Aufwand: M
+- Resolution: V8.10 SLC-893 (2026-06-03). MIG-041 applied: documents-Bucket-Create + 4 user-scoped Policies (`documents_user_select|insert|update|delete`). Pre-Apply-Discovery: Bucket war auf Live-DB nie angelegt (Audit-Annahme war 3 alte Policies droppen — tatsaechlich 0 alte Policies + kein Bucket; MIG-041-Patch ergaenzt `INSERT INTO storage.buckets ... ON CONFLICT DO NOTHING`). Code-Side `uploadDocument` refactored mit Pure-Function `buildDocumentStoragePath` Pfad-Schema `<user-id>/<folder>/<filename>`. Migration-Verifikations-Test 5/5 PASS gegen Coolify-DB. Cross-Tenant-Defense Live-Smoke 2/4 PASS (Pfade 2 + 3): USER_B GET USER_A-Pfad → 404 (RLS SELECT-USING blockt), USER_B INSERT in USER_A-Pfad → 403 (RLS INSERT-WITH-CHECK blockt). Self-Access-Pfade 1+4 deferred → ISSUE-088 (Storage-Service-vs-RLS Context-Bridge Bug, betrifft auch proposal-pdfs gleichermassen, nicht SLC-893-spezifisch). Cross-Tenant-Exfiltration-Vektor ist geschlossen. RPT-568.
 
 ### SEC-009 — Open Redirect via /api/track/[id] (`url`-Query-Param ungeprueft)
 - Severity: Medium

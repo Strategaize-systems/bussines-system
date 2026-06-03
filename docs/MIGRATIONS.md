@@ -1,26 +1,44 @@
 # Migrations
 
-### MIG-041 — V8.10 SLC-893 documents-Storage user-scoped (Code-Side ready 2026-06-02; NICHT applied)
-- Date: 2026-06-02 (Migration-File geschrieben, Test-Suite vorbereitet, Apply deferred bis MT-6 Live-Apply-Session mit Pre-Backfill).
-- Scope: Storage-Policies fuer `documents`-Bucket. 3 alte Policies DROP + 4 neue user-scoped CREATE.
+### MIG-042 — V8.10 SLC-893 MT-6 auth-Schema-GRANTs fuer authenticated (APPLIED 2026-06-03 via SSH)
+- Date: 2026-06-03
+- Scope: idempotente GRANTs:
   ```sql
-  -- DROP (idempotent IF EXISTS)
-  DROP POLICY "authenticated_upload_documents" ON storage.objects;
-  DROP POLICY "authenticated_read_documents"   ON storage.objects;
-  DROP POLICY "authenticated_delete_documents" ON storage.objects;
+  GRANT USAGE ON SCHEMA auth TO authenticated, anon;
+  GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated, anon;
+  GRANT EXECUTE ON FUNCTION auth.role() TO authenticated, anon;
+  GRANT EXECUTE ON FUNCTION auth.email() TO authenticated, anon;
+  GRANT EXECUTE ON FUNCTION auth.jwt() TO authenticated, anon;
+  ```
+- Reason: Discovery 2026-06-03 (BS V8.10 SLC-893 MT-6 Live-Smoke): authenticated/anon Roles hatten KEINE USAGE-Permission auf `auth`-Schema und KEINE EXECUTE-Permission auf `auth.uid()`. Standard-Supabase-Init setzt diese GRANTs (`init/00-initial-schema.sql`) — auf BS Live-DB fehlten sie. Konsequenz: jede RLS-Policy die `auth.uid()` ruft schlaegt fuer authenticated-Role permission-denied fehl. Pattern-passt zu der Beobachtung dass `proposal-pdfs`-Bucket seit 2026-05-04 nichts neues mehr hochgeladen bekommen hat (8 alte Files Mai 2026).
+- Affected Areas: Permission-Schema auf `auth` schema + 4 Standard-Supabase-Funktionen. Beeinflusst alle RLS-Policies die `auth.*` Functions rufen — also praktisch alle user-scoped Storage-Policies und alle public-Tabellen mit auth-uid-Checks.
+- Risk: Niedrig. GRANTs sind idempotent (nochmals ausfuehren ist No-Op). Standard-Supabase-Default-Setup. Verifikation per `has_schema_privilege('authenticated', 'auth', 'USAGE')` und `has_function_privilege(...)`.
+- Rollback Notes: `REVOKE USAGE ON SCHEMA auth FROM authenticated, anon; REVOKE EXECUTE ON FUNCTION auth.uid()...`. Aber REVOKE-Rollback wuerde alle RLS-Policies brechen die `auth.uid()` callen. Praktisch kein Bedarf zu rollback.
+- Verify: `SELECT has_schema_privilege('authenticated', 'auth', 'USAGE') AS usage_auth, has_function_privilege('authenticated', 'auth.uid()', 'EXECUTE') AS exec_uid;` → beide `t`.
 
-  -- CREATE 4 user-scoped Policies (SELECT/INSERT/UPDATE/DELETE) mit
-  -- (auth.uid())::text = (storage.foldername(name))[1] als USING-/WITH-CHECK-Filter.
+### MIG-041 — V8.10 SLC-893 documents-Storage user-scoped (APPLIED 2026-06-03 via SSH+base64)
+- Date: 2026-06-03 (MT-6 Live-Apply).
+- Scope: Storage-Bucket + 4 user-scoped Policies. Self-contained Migration mit Bucket-Create.
+  ```sql
+  -- Bucket-Create (MT-6 Pre-Apply-Discovery-Patch — Bucket war auf Live-DB nie angelegt)
+  INSERT INTO storage.buckets (id, name, public) VALUES ('documents','documents',false)
+    ON CONFLICT (id) DO NOTHING;
+  -- 3 alte Policies idempotent DROP (waren auf Live-DB nicht vorhanden — DROP-IF-EXISTS = No-Op)
+  DROP POLICY IF EXISTS "authenticated_upload_documents" ON storage.objects;
+  DROP POLICY IF EXISTS "authenticated_read_documents"   ON storage.objects;
+  DROP POLICY IF EXISTS "authenticated_delete_documents" ON storage.objects;
+  -- CREATE 4 user-scoped Policies mit (auth.uid())::text = (storage.foldername(name))[1]
   CREATE POLICY "documents_user_select" ...;
   CREATE POLICY "documents_user_insert" ...;
   CREATE POLICY "documents_user_update" ...;
   CREATE POLICY "documents_user_delete" ...;
   ```
-- Reason: V8.10 Security Sprint 2 SEC-008 (Audit `docs/SECURITY_AUDIT_2026-05-30.md`) — `sql/02_rls.sql:47-57` `documents`-Bucket-Policies haben KEINEN first-path-segment-Filter. Jeder authenticated User kann jedes Storage-Object lesen, ueberschreiben und loeschen. Bei 2. User sind alle Documents sofort cross-tenant-lesbar. PRE-LIVE PFLICHT vor Multi-User-Onboarding. Pattern-Reuse 1:1 aus V5.5 MIG-026 (`proposal_pdfs_user_select`).
-- Affected Areas: `storage.objects` (Policies only, kein Schema). Code: `cockpit/src/lib/actions/document-actions.ts:uploadDocument` (Pfad-Refactor auf user-scoped). 4 Storage-Aufrufer enumeriert in `/slices/SLC-893-audit-notes.md`. Service-Role (Indexer) bleibt unberuehrt (BYPASSRLS). DB-Tabelle `documents` (Tabellen-RLS) bleibt V1 `authenticated_full_access` — gehaertet in V8.11 SLC-901..904 RLS-Sweep.
-- Risk: Mittel/Hoch bei Apply ohne Pre-Backfill. Bestehende Files (Pfad `documents/<folder>/...`) werden mit den neuen Policies fuer alle User unlesbar (erstes Path-Segment ist `documents`, nicht `<user-uuid>`). Pflicht-Sequenz: (1) Backfill --apply lauft VOR der Migration ODER (2) Apply in Production-Pause-Window (DEC-263) + Backfill direkt im Anschluss. service_role bleibt jederzeit accessible.
-- Rollback Notes: `DROP POLICY documents_user_select|insert|update|delete ON storage.objects; CREATE POLICY authenticated_*_documents ON storage.objects ... bucket_id='documents'`. Pfad-Refactor in `document-actions.ts` haelt die neuen Pfade bei (kein Bestandteil von MIG-041). Rollback ohne Daten-Verlust, aber Backfill-Resultate bleiben unter user-scoped Pfaden.
-- Verify: nach Apply `SELECT polname FROM pg_policies WHERE schemaname='storage' AND tablename='objects' AND polname LIKE 'documents_user_%' ORDER BY polname;` → 4 Rows. Plus Vitest gegen Coolify-DB: `__tests__/migrations/041-v810-documents-storage-user-scoped.test.ts` (4 Cases) + `__tests__/rls/documents-storage-rls.test.ts` (8+2 Cases, Cross-Tenant Read/Insert/Update/Delete denial).
+- Reason: V8.10 Security Sprint 2 SEC-008 (Audit `docs/SECURITY_AUDIT_2026-05-30.md`) — `sql/02_rls.sql:47-57` `documents`-Bucket-Policies haben KEINEN first-path-segment-Filter. Jeder authenticated User kann jedes Storage-Object lesen, ueberschreiben und loeschen. PRE-LIVE PFLICHT vor Multi-User-Onboarding. Pattern-Reuse 1:1 aus V5.5 MIG-026.
+- Pre-Apply-Discovery 2026-06-03: documents-Bucket war auf Live-DB nie angelegt (`sql/02_rls.sql` Bucket-Create-Block nie appliziert); 0 alte authenticated_*_documents Policies; 0 Storage-Objects; 0 documents-DB-Rows. MIG-041 wurde gepatcht um Bucket-Create zu enthalten — self-contained auf jeder DB. Commits aad16c6 (Bucket-Create-Patch) + 2db64cd (Test-Bug-Fix pg_policies.policyname).
+- Affected Areas: `storage.objects` (4 Policies) + `storage.buckets` (1 Row) + Code `cockpit/src/lib/actions/document-actions.ts:uploadDocument` (Pfad-Refactor auf `<user-id>/<folder>/<filename>`). 4 Storage-Aufrufer enumeriert in `/slices/SLC-893-audit-notes.md`. Service-Role (Indexer) bleibt unberuehrt (BYPASSRLS). DB-Tabelle `documents` (Tabellen-RLS) bleibt V1 `authenticated_full_access` — gehaertet in V8.11 SLC-901..904 RLS-Sweep.
+- Risk: Niedrig bei Live-Apply 2026-06-03 (0 existing Objects, 0 existing DB-Rows, keine Backfill-Sorgen, keine Production-Pause noetig). service_role bleibt jederzeit accessible.
+- Rollback Notes: `DROP POLICY documents_user_*; DELETE FROM storage.buckets WHERE id='documents'`. Ohne Daten-Verlust weil Bucket leer war.
+- Verify (DONE 2026-06-03): `SELECT polname FROM pg_policies WHERE schemaname='storage' AND tablename='objects' AND polname LIKE 'documents_user_%'` → 4 Rows. Migration-Vitest 5/5 PASS via node:22-Sidecar gegen Coolify-DB (RPT-568). Cross-Tenant-Defense Live-Smoke 2/4 PASS (Pfade 2 + 3 RLS-Defense PASS; Pfade 1+4 Self-Access deferred → ISSUE-088 Storage-Service-Context-Bridge-Bug betrifft auch proposal-pdfs).
 
 ### MIG-039 — V8.5 SLC-851 Reserved-Slug-Trigger auf teams.slug (APPLIED 2026-05-24 via SSH+base64)
 - Date: 2026-05-24 (~08:07 UTC, postgres-User, idempotent CREATE OR REPLACE FUNCTION + DROP TRIGGER IF EXISTS, 3 Self-Tests im DO-Block PASS, NOTIFY pgrst).

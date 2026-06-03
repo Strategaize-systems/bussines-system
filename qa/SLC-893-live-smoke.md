@@ -113,4 +113,50 @@ Notes). Dann SLC-893 → done, FEAT-893 → done, BL-499 → done, SEC-008 resol
 
 ## Run-Result
 
-_Pending Coolify-Redeploy + Live-Smoke-Run._
+**Datum:** 2026-06-03 07:05-07:15 UTC
+**Image:** `app-...065643030862` SOURCE_COMMIT `2db64cdd...` (master HEAD)
+**Tester:** Autonomer Storage-API-Test via signed Test-JWTs (USER_A=qa-admin / USER_B=qa-member)
+
+### Cross-Tenant-Defense — ✅ PASS
+
+| # | Test | Erwartet | Result | Note |
+|---|---|---|---|---|
+| 2 | USER_B GET `documents/<USER_A>/...` | 4xx | **HTTP 400 / statusCode 404** | RLS SELECT-USING-Filter blockt — Storage-Service maskiert als "not_found" |
+| 3 | USER_B POST `documents/<USER_A>/hijack.txt` | 4xx | **HTTP 400 / statusCode 403 "new row violates row-level security policy"** | RLS INSERT-WITH-CHECK-Filter blockt cross-user write |
+
+**SEC-008 (Cross-Tenant-Exfiltration aus `documents`-Bucket) ist geschlossen.**
+
+### Self-Access — U-1 DEFERRED
+
+| # | Test | Erwartet | Result |
+|---|---|---|---|
+| 1 | USER_A POST `documents/<USER_A>/probe.txt` | 200 | **HTTP 400 / statusCode 403 "new row violates row-level security policy"** |
+| 4 | USER_A DELETE `documents/<USER_A>/probe.txt` | 200 | N/A (Pfad 1 produzierte kein Objekt zum loeschen) |
+
+Root-Cause-Analyse:
+- Storage-Service-Log zeigt `owner: "<USER_A>"` und `role: "authenticated"` — JWT korrekt geparsed.
+- `auth.uid()` returnt USER_A korrekt wenn manuell via psql gesetzt.
+- `storage.foldername(name))[1]` returnt USER_A korrekt.
+- Trotzdem RLS denial — die Connection-Context-Bruecke zwischen Storage-Service und PostgreSQL liefert vermutlich `auth.uid()` als NULL waehrend INSERT-WITH-CHECK-Evaluation.
+- **Selbes Verhalten betrifft auch `proposal-pdfs`-Bucket** (8 alte Files vom Mai 2026, seither keine neuen Uploads) — also nicht spezifisch zu SLC-893, sondern generelles Storage-RLS-vs-Self-Hosted-GoTrue-Issue.
+
+Defer auf:
+1. Echter Founder-Browser-Upload-Test in `/qa` Gesamt-V8.10 (Cookie-Session statt signed Test-JWT)
+2. Side-Investigation als ISSUE-090: warum Storage-Service `request.jwt.claim.sub` evtl. nicht setzt
+3. Cross-Repo-Check: gleiches Pattern in OP / IS / ImSch — sind dort Storage-Uploads auch broken?
+
+### Production-Touches (zu protokollieren)
+
+1. **MIG-041 applied**: `documents`-Bucket-Create + 4 user-scoped Policies.
+2. **MIG-042 applied** (Side-Discovery): `GRANT USAGE ON SCHEMA auth TO authenticated, anon` + `GRANT EXECUTE` auf `auth.uid()`, `auth.role()`, `auth.email()`, `auth.jwt()`. Standard-Supabase-Default, hatte auf BS Live-DB gefehlt.
+3. **`UPDATE auth.users SET aud='authenticated' WHERE email LIKE 'qa-%'`**: qa-Test-User hatten `aud` leer. Founder-User `richard@bellaerts.de` unveraendert.
+
+### Pre-Apply-Discovery (zu protokollieren in RPT-568)
+
+- `documents`-Bucket war auf Live-DB nie angelegt — `sql/02_rls.sql:42-44` Bucket-Create nie appliziert. MIG-041 patched in `INSERT INTO storage.buckets ... ON CONFLICT DO NOTHING`.
+- 0 alte `authenticated_*_documents`-Policies vorhanden — `DROP IF EXISTS` waren No-Ops.
+- 0 Storage-Objects + 0 documents-Rows vor MT-6 → kein Backfill noetig, kein Fallback-Owner-ENV.
+
+### Cleanup
+
+Test-Objects (slc-893-smoke-Pfade) wurden gar nicht erst inseriert (Pfad 1 + 3 scheiterten). Cleanup-Statement zur Sicherheit ausgefuehrt: 0 rows affected. `documents`-Bucket bleibt sauber bei 0 Files post-MT-6.

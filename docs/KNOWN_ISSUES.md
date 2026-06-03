@@ -1,5 +1,15 @@
 # Known Issues
 
+### ISSUE-088 — Storage-API Self-Access RLS-Denial (Storage-Service vs. authenticated-Role Context-Bridge)
+- Status: open
+- Severity: Medium
+- Area: Storage / RLS / Self-Hosted GoTrue
+- Summary: BS V8.10 SLC-893 MT-6 Live-Smoke 2026-06-03 hat festgestellt, dass authenticated User ihre EIGENEN Storage-Objekte im `documents`-Bucket per Storage-API NICHT inserieren koennen — RLS denial "new row violates row-level security policy" trotz korrekter Pfad-Struktur `<user-uuid>/<folder>/<filename>`. Storage-Service-Log zeigt `owner: "<user-uuid>"` + `role: "authenticated"` (JWT korrekt geparsed), aber `auth.uid()` returnt vermutlich NULL waehrend INSERT-WITH-CHECK-Evaluation. Cross-Tenant-Defense (USER_B kann USER_A-Pfade nicht lesen/schreiben) funktioniert korrekt — SEC-008 ist gefixt. Aber Self-Access ist betroffen — selbes Verhalten in `proposal-pdfs`-Bucket (8 alte Files vom 2026-05-04, seither keine neuen Uploads). Verifiziert per direkter Storage-API + signed Test-JWT in MT-6 Live-Smoke (siehe `qa/SLC-893-live-smoke.md`).
+- Impact: Production-Storage-Operations via `supabase.storage.from(bucket).upload(...)` (Browser-Cookie-Session oder signed-JWT) scheitern fuer alle user-scoped Buckets. Internal-Test-Mode aktuell nicht direkt betroffen (Founder kennt Workaround = service_role-Pfade ueber Server-Actions die BYPASSRLS sind). Bei Customer-Go-Live blockierend.
+- Workaround: Server-Actions wie `uploadDocument` koennten temporaer `createAdminClient` statt `createClient` nutzen (service_role bypass) — aber das hebt RLS-Defense effektiv auf. Besser: Self-Access-Bug verstehen + fixen.
+- Discovery: Pre-Apply-Audit + MT-6 Live-Smoke Pfade 1+4 FAIL 2026-06-03 (RPT-568).
+- Next Action: (a) Storage-Service v1.11.13-Source pruefen: setzt es `request.jwt.claim.sub` oder `request.jwt.claims` (JSON) vor Knex-Query? (b) Cross-Repo-Check OP + IS + ImSch — sind dort Storage-Uploads auch broken? (c) Founder-Browser-Test im naechsten `/qa` Gesamt-V8.10 (Cookie-Session statt signed Test-JWT). (d) Falls Cookie-Session-Pfad auch fail: Storage-Service Config-Drift seit V8.7-A Coolify-Redeploy untersuchen.
+
 ### ISSUE-087 — V8.7-A IMP-950 Re-Inzidenz: /final-check + /go-live pre-Deploy uebersprungen
 - Status: resolved
 - Severity: Medium
