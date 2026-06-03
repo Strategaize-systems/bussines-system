@@ -10,11 +10,12 @@
  *     -e TEST_DATABASE_URL='postgresql://postgres:<urlenc-pw>@supabase-db:5432/postgres' \
  *     node:20 npx vitest run __tests__/migrations/041-v810-documents-storage-user-scoped.test.ts
  *
- * Tests (4):
- *   1. Alle 4 user-scoped Policies existieren (SELECT/INSERT/UPDATE/DELETE).
- *   2. Alte authenticated_*_documents Policies sind komplett geloescht.
- *   3. USING-Clause enthaelt first-path-segment-Filter (storage.foldername).
- *   4. WITH-CHECK-Clause auf INSERT + UPDATE enthaelt first-path-segment-Filter.
+ * Tests (5):
+ *   1. documents-Bucket existiert in storage.buckets (MT-6 Pre-Apply-Discovery).
+ *   2. Alle 4 user-scoped Policies existieren (SELECT/INSERT/UPDATE/DELETE).
+ *   3. Alte authenticated_*_documents Policies sind komplett geloescht.
+ *   4. USING-Clause enthaelt first-path-segment-Filter (storage.foldername).
+ *   5. WITH-CHECK-Clause auf INSERT + UPDATE enthaelt first-path-segment-Filter.
  *
  * Voraussetzung: MIG-041 applied auf der TEST_DATABASE_URL-DB.
  */
@@ -40,6 +41,15 @@ afterAll(async () => {
 });
 
 describe("MIG-041 — documents-Bucket user-scoped Storage-Policies", () => {
+  it("documents-Bucket existiert in storage.buckets", async () => {
+    const res = await client.query<{ id: string; public: boolean }>(
+      `SELECT id, public FROM storage.buckets WHERE id = 'documents'`
+    );
+    expect(res.rowCount).toBe(1);
+    expect(res.rows[0].id).toBe("documents");
+    expect(res.rows[0].public).toBe(false);
+  });
+
   it("4 user-scoped Policies existieren (SELECT/INSERT/UPDATE/DELETE)", async () => {
     const res = await client.query<{ polname: string; cmd: string }>(
       `SELECT polname, polcmd AS cmd

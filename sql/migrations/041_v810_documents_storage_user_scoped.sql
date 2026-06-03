@@ -25,6 +25,26 @@
 --
 -- Idempotent: DROP POLICY IF EXISTS + CREATE POLICY (eindeutige Namen).
 -- Anwenden via SSH analog .claude/rules/sql-migration-hetzner.md (postgres-User).
+--
+-- MT-6 Pre-Apply-Discovery 2026-06-03 (Live-DB BS):
+--   Der `documents`-Bucket war auf Live-DB nie angelegt (`storage.buckets`
+--   enthaelt nur `branding`, `call-recordings`, `email-attachments`,
+--   `meeting-recordings`, `proposal-pdfs`). Die 3 alten Policies aus
+--   `sql/02_rls.sql:47-57` existieren auf Live-DB ebenfalls nicht, weil
+--   `sql/02_rls.sql` nie vollstaendig appliziert wurde (vermutlich nur
+--   Tabellen-RLS). Deshalb ergaenzt diese Migration jetzt auch den
+--   Bucket-Create (idempotent), damit MIG-041 auf jeder DB self-contained
+--   funktioniert — egal ob `sql/02_rls.sql` vorher applied wurde oder nicht.
+
+-- =====================================================
+-- 0. Bucket-Existenz sicherstellen (idempotent)
+-- =====================================================
+-- documents-Bucket ist Voraussetzung fuer die Policies, weil polqual
+-- gegen `bucket_id = 'documents'` matcht. Ohne Bucket sind die Policies
+-- nicht wirksam (und uploadDocument wuerde mit BucketNotFound failen).
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('documents', 'documents', false)
+ON CONFLICT (id) DO NOTHING;
 
 -- =====================================================
 -- 1. Alte Policies droppen (idempotent)
@@ -102,3 +122,7 @@ CREATE POLICY "documents_user_delete" ON storage.objects
 -- SELECT polname FROM pg_policies WHERE schemaname='storage' AND tablename='objects'
 --   AND polname LIKE 'authenticated_%_documents';
 --   -- Erwartet: 0 Rows.
+--
+-- -- Sanity: documents-Bucket existiert
+-- SELECT id, public FROM storage.buckets WHERE id = 'documents';
+--   -- Erwartet: 1 Row (id=documents, public=f)
