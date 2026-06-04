@@ -318,7 +318,7 @@
     {
       "id": "v8-11",
       "name": "V8.11",
-      "status": "planned",
+      "status": "active",
       "summary": "**Security Sprint 3 BS RLS-Sweep — PRE-LIVE PFLICHT (kritischster Brocken) vor Multi-User-Onboarding.** Schliesst BS SEC-006 — die ~25 Zweittabellen die nach V7-RLS-Switch (MIG-035, nur 8 Kerntabellen + profiles + teams umgestellt) weiter auf der V1-`authenticated_full_access`-Policy stehen geblieben sind. Tabellen: user_settings, audit_log, emails (Outbound), automation_rules, campaigns, knowledge_chunks, kpi_snapshots, calendar_events, tasks, signals, branding_settings, email_templates, cadences + Sub-Tabellen, email_threads, email_sync_state, ai_action_queue, ai_feedback, compliance_templates, vat_id_validations, auto_winloss_runs, email_attachments, payment_terms_templates, proposal_payment_milestones, proposal_items, activity_kpi_targets. **Bei 2. User sofort Cross-Tenant-Reads.** 4 Sub-Slices empfohlen: SLC-901 per-User-Stammdaten (user_id = auth.uid()) / SLC-902 team-bezogene Konfiguration (Admin-mutate, alle-read) / SLC-903 abgeleitete Records (JOIN auf Parent mit can_see_owner()) / SLC-904 Audit/Logging. Pro Sub-Slice Migration + Backfill + RLS-Test-Matrix-Erweiterung + /qa gegen Coolify-DB. Aufwand-Geschaetzt ~1-2 Wochen Single-Dev. **Dominanter Aufwand des gesamten BS-Security-Plans (~60%). Ergebnis: BS ist multi-tenant-tauglich → Customer-Onboarding kann starten.** BL-500. Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-006.",
       "order": 39.1
     },

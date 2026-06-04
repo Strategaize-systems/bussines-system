@@ -4091,3 +4091,64 @@ Total V8.1-Aufwand: ~4-5h reine Implementation + QA + Live-Smoke. SLC-824 ist gr
 **Internal-Tool, Permission-Sprint.** Keine neue Stack-Komponente, keine Schema-Migration, kein neuer Provider, kein neuer Cron, kein Bedrock-Call. Internal-Test-Mode bleibt aktiv. V8.1-PASS heisst: V8-Stack bleibt deployed wie aktuell (Production-Image `c5e0f0c`), plus 4 Slices als kumulative UI-/Permission-Aenderungen mit Coolify-Redeploy am Slice-Ende (Pattern wie V8).
 
 **V8.1 Requirements ready for `/architecture`.** (Architecture done in RPT-491 + Permission-Klaerung 2026-05-20.)
+
+## V8.11 — Security Sprint 3 BS RLS-Sweep der 25 Zweittabellen (Requirements done 2026-06-04)
+
+### V8.11 Problem
+
+Nach V7-RLS-Switch (MIG-035, SLC-704) wurden 8 Kerntabellen + `profiles` + `teams` auf Owner-/Team-aware RLS umgestellt. Die restlichen ~25 Zweittabellen stehen weiter auf der V1-Policy `authenticated_full_access` (`FOR ALL TO authenticated USING (true)`). Jeder authenticated User kann Read+Update+Delete auf allen Rows dieser Tabellen — egal welchem owner_user_id oder team_id sie gehoeren.
+
+Im Internal-Test-Mode (Admin = User Immo) keine Auswirkung. **Sobald 2. User dazu kommt** (Customer-Onboarding) sind das sofortige Cross-Tenant-Reads + Modifikationen. Konkrete Angriffsbeispiele:
+- `UPDATE user_settings SET push_subscription = '<eigener Endpoint>' WHERE user_id = '<admin-uid>'` — Member uebernimmt Admin-Push-Notifications
+- `SELECT * FROM audit_log` — vollstaendiger Audit-Trail aller User sichtbar
+- `SELECT * FROM emails` — alle Outbound-Mails inkl. Body lesbar
+- `SELECT * FROM knowledge_chunks` — alle RAG-Embeddings cross-tenant lesbar
+
+Quelle: SEC-006 in `docs/SECURITY_AUDIT_2026-05-30.md`.
+
+### V8.11 Goal
+
+BS ist nach V8.11 multi-tenant-tauglich. Customer-Onboarding kann starten ohne Cross-Tenant-Read-Risiko auf den 25 Zweittabellen. **V8.11 ist die letzte Pre-Customer-Live-Pflicht-Hardening fuer BS.**
+
+### V8.11 Primary User
+
+Admin (User Immo) und kuenftiger Customer-User (Founder, Sales-Member, Teamlead, Admin). Indirekt auch alle Background-Cron-Jobs, die ueber service_role weiter RLS-bypass haben.
+
+### V8.11 V1 Scope
+
+Migration aller 25 Zweittabellen auf Owner-/Team-aware RLS nach 4 Klassen-Patterns:
+
+1. **SLC-901 per-User-Stammdaten** (~3 Tabellen): `user_id = auth.uid()`-Policy + Admin-Bypass
+2. **SLC-902 team-bezogene Konfiguration** (~7 Tabellen): Admin-mutate, alle-Team-User-read
+3. **SLC-903 abgeleitete Records** (~15 Tabellen): JOIN auf Parent mit `can_see_owner()`. knowledge_chunks Spezial-Pfad: Schema-Erweiterung + Backfill.
+4. **SLC-904 Audit/Logging** (2 Tabellen): Admin-all + Actor-own-Rows (DSGVO-Art-15-Self-Service)
+
+Pro Sub-Slice: Migration + Backfill + RLS-Test-Matrix-Erweiterung (mind. 2 Tests/Tabelle) + /qa gegen Coolify-DB + Cron-Code-Audit der betroffenen Tabellen.
+
+### V8.11 Out of Scope
+
+- MFA-Pflicht (V8.12+)
+- search_knowledge_chunks-Function-Hardening (SEC-007, eigener Hotfix)
+- Hard-Performance-Test mit Production-Datenvolumen (V8.11 nur Smoke-EXPLAIN-ANALYZE)
+- Cron-Code-Refactoring weg von service_role (nur Audit, kein Refactor)
+- OP V8.0.x + IS V1.5.x RLS-Sweep-Mirror (Cross-Repo separate Sprints)
+- V8.7-B (BS→IS Verdichtungs-Cron) — bleibt deferred bis nach V8.11 Customer-Live-Gate
+
+### V8.11 Success Criteria
+
+Q-V8.11-B entschieden: **100% Coverage 25/25 Tabellen**. Done-Gate per Sec-Audit-Helper-Function `list_tables_with_authenticated_full_access()` mit leerem Result-Set + 50+ neue RLS-Vitest + V8.11 RELEASED + STABLE-Bestaetigung.
+
+### V8.11 Founder-Entscheidungen
+
+- **Q-V8.11-A audit_log-Policy:** Admin-all + Actor-own-Rows (DSGVO-Art-15-kompatibel)
+- **Q-V8.11-B Done-Kriterium:** 100% Coverage 25/25 Tabellen
+- **Q-V8.11-C knowledge_chunks-Strategie:** owner_user_id + team_id Spalten + Backfill
+- **Q-V8.11-D Cron-Service-Role:** Doku-DEC + Pflicht-Cron-Audit pro Sub-Slice
+
+### V8.11 Delivery Mode
+
+**SaaS-Mode, Pre-Live-Pflicht-Hardening.** Cumulative-Single-Branch-Worktree (`v8-11-rls-sweep`) analog V7-RLS-Switch. Sub-Slices SLC-901..904 nacheinander auf den Branch, Master-Merge erst nach kompletter V8.11 + /qa Gesamt + /final-check + /go-live + /post-launch. **Pre-Condition erfuellt**: V8.13 RELEASED (ISSUE-088 + ISSUE-089 resolved).
+
+Gesamt-Aufwand: ~17-22h Code-Side ueber ~1-2 Wochen verteilt, Single-Dev.
+
+**V8.11 Requirements ready for `/architecture`.** (FEAT-911 + BL-500 in_progress + V8.11 status=active.)

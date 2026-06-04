@@ -303,6 +303,12 @@
 |----|---------|--------|------|---------|
 | FEAT-813 | V8.13 Storage+Auth-Hotfix-Slice (ISSUE-088 Storage-GRANTs + ISSUE-089 GoTrue-signInWithPassword, SLC-894 + SLC-895, BL-506 + BL-507) | deployed | — | 2026-06-03 |
 
+## V8.11 Features (Security Sprint 3 — BS RLS-Sweep PRE-LIVE PFLICHT, Requirements done 2026-06-04)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-911 | V8.11 BS RLS-Sweep 25 Zweittabellen (4 Sub-Slices SLC-901..904, BL-500) | in_progress | [Spec](FEAT-911-v811-rls-sweep.md) | 2026-06-04 |
+
 ## V8.3 Features (Hilfe-Section — RELEASED 2026-05-22 als REL-037)
 
 | ID | Feature | Status | Spec | Created |
