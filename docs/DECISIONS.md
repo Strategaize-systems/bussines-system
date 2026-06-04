@@ -1,5 +1,55 @@
 # Decisions
 
+## DEC-274 — Sec-Audit-Helper-Function `list_tables_with_authenticated_full_access()` als persistenter Done-Gate (V8.11 /architecture)
+- Status: accepted
+- Reason: Q-V8.11-B Done-Gate erfordert 100% Coverage (25/25 → 41/41 nach Live-DB-Realitaets-Check). Eine SQL-Helper-Function in der DB persistent zu deployen erlaubt (a) den Done-Gate-Check zu Migration-Time, (b) Burn-In-Monitoring fuer R-V8.11-2 (Migration-Drift), (c) Pre-Customer-Live-Gate als 1-Sekunden-Query. Function ist SECURITY DEFINER mit `SET search_path = public` (V7-Pattern), GRANT EXECUTE TO authenticated.
+- Consequence: SLC-902 MIG-046 deployed `list_tables_with_authenticated_full_access()` als persistente Helper-Function. Done-Gate pro Sub-Slice: `SELECT COUNT(*)` muss strikt monoton fallen (41 → 37 → 26 → 2 → 1 → 0). Bei V8.11-Abschluss 0 Rows = Q-V8.11-B-Erfuellung. /post-launch T+24h Full-Check und nachfolgende Versionen ziehen die Function als Routine-Check.
+
+## DEC-273 — knowledge_chunks Schema-Erweiterung um owner_user_id + team_id (V8.11 SLC-905)
+- Status: accepted
+- Reason: Q-V8.11-C Founder-Entscheidung. knowledge_chunks hat aktuell nur source_type+source_id ohne Owner-Bezug. Cross-Tenant-Read von RAG-Embeddings ist DSGVO-relevant (Embedding-Text enthaelt Originalsource-Auszug). Direkter Owner-Filter ist Performance-besser als JOIN auf 4 verschiedene Parent-Tabellen (meetings/email_messages/activities/documents). Schema-Erweiterung erlaubt zukuenftiges Multi-Tenant-Erweiterung via team_id-Filter.
+- Consequence: MIG-049 (SLC-905) `ALTER TABLE knowledge_chunks ADD COLUMN owner_user_id UUID REFERENCES profiles(id), ADD COLUMN team_id UUID REFERENCES teams(id)` + 2 Indexe (idx_knowledge_chunks_owner, idx_knowledge_chunks_team) + SYNC-Backfill (DEC-267). Embedding-Sync-Cron `cockpit/src/app/api/cron/embedding-sync/route.ts` muss bei chunk-INSERT owner_user_id+team_id aus Parent-Source-Row ableiten (Pflicht-MT). `search_knowledge_chunks` SECURITY-DEFINER-Function wird um `WHERE can_see_owner(owner_user_id)`-Filter erweitert (schliesst SEC-007 Lese-Pfad-Teil ab).
+
+## DEC-272 — Klasse-C Parent-FK-JOIN RLS-Pattern via EXISTS-Subquery (V8.11 SLC-903)
+- Status: accepted
+- Reason: 24 Tabellen ohne eigene owner_user_id-Spalte, aber mit FK auf V7-Kerntabellen (deal_id/contact_id/company_id/meeting_id/email_message_id/proposal_id/activity_id). Direkter JOIN in Policy-USING-Clause ist Standard-Postgres-Pattern, evaluiert mit STABLE-Function-Cache pro Statement. NULL-Parent-Fall (z.B. tasks ohne deal_id) wird per `created_by = auth.uid()`-Pfad erlaubt. Bei Multi-Parent-Tabellen (signals) OR-Verkettung der EXISTS.
+- Consequence: SLC-903 MIG-047 deployed Policy-Template pro Tabelle mit `EXISTS (SELECT 1 FROM <parent> WHERE <parent>.id = <child>.<fk> AND can_see_owner(<parent>.owner_user_id))`. Performance-Pflicht-Check: Parent-FK-Spalte muss indexiert sein (CREATE INDEX falls fehlt). `emails`-Tabelle hat bereits eigene owner_user_id-Spalte → wird via V7-MIG-035-Pattern direkt ohne JOIN umgestellt.
+
+## DEC-271 — Klasse-B Team-Templates RLS-Pattern (SELECT all + Admin-mutate) (V8.11 SLC-902)
+- Status: accepted
+- Reason: 11 Templates-/Konfigurations-Tabellen (branding_settings, email_templates, payment_terms_templates, compliance_templates, vat_id_validations, pipelines, pipeline_stages, products, automation_rules, cadences, cadence_steps) sind semantisch Team-shared — alle Member nutzen die gleichen Pipelines/Templates, nur Admin darf Konfiguration aendern. Im Single-Team-Internal-Mode aequivalent zu V1, in Multi-Tenant-V9 wird zusaetzlicher team_id-Filter ergaenzt — V8.11-Pattern bleibt forward-compatible. Im Gegensatz zu V7-Pattern kein can_see_owner-Pfad noetig (kein Owner).
+- Consequence: SLC-902 MIG-046 deployed Policy `SELECT TO authenticated USING (true)` + `INSERT/UPDATE/DELETE TO authenticated WITH CHECK/USING (is_admin())` fuer alle 11 Klasse-B-Tabellen. Member kann Templates lesen (z.B. neue Mail mit Template), darf aber nichts aendern. Multi-Tenant-V9 erweitert spaeter um `team_id = get_my_team_id()`-Filter analog V7-`teams`-Pattern.
+
+## DEC-270 — Klasse-A Per-User-Stammdaten RLS-Pattern (user_id = auth.uid()) (V8.11 SLC-901)
+- Status: accepted
+- Reason: 4 Tabellen mit eigener user_id-Spalte (user_settings, kpi_snapshots, goals, activity_kpi_targets) sind privat per-User. Admin braucht Read-Bypass fuer Support-Cases (z.B. "warum sieht User X die KPI nicht"), aber kein Teamlead-Pfad (eigene Settings sind privat, Team-Aggregate ueber Cron + service_role). Simpler als V7-can_see_owner-Pfad — kein Teamlead-Branching, kein Owner-Lookup via JOIN.
+- Consequence: SLC-901 MIG-045 deployed Policy `<table>_select USING (user_id = auth.uid() OR is_admin())` + Mutate-Policies identisch. Member sieht nur eigene Rows, Admin sieht alle. Cron-/Worker-Schreiber (kpi-snapshots-aggregator) nutzt service_role und setzt user_id korrekt.
+
+## DEC-269 — Cron + Worker Service-Role-Bypass formell dokumentiert (V8.11 Q-V8.11-D)
+- Status: accepted
+- Reason: Q-V8.11-D Founder-Entscheidung. Background-Cron-Endpoints und Worker-Routes haben kein User-Session (kein auth.uid()), arbeiten cross-tenant (signal-extract, embedding-sync, automation-runner), schreiben in V8.11-migrierte Tabellen. RLS-Filter wuerde Cron unbenutzbar machen. Service-Role-Bypass (`createAdminClient()` mit `SUPABASE_SERVICE_ROLE_KEY`, BYPASSRLS=true) ist designed-in, NICHT Bug — formell dokumentiert.
+- Consequence: Pflicht-MT pro V8.11-Sub-Slice: Cron-Code-Audit via `grep -rn "createAdminClient" cockpit/src/app/api/cron/` + Worker-Pfaden. Pro Treffer pruefen ob owner_user_id (oder relevante Owner-Spalte) korrekt aus Parent-Row gesetzt wird. Audit-Liste in ARCHITECTURE.md V8.11-Sektion. Service-Role-Schreiber landet in audit_log mit `actor_id = NULL` (markiert Cron-Schreiber). R-V8.11-3 (Cron-Bugs durch Service-Role-Bypass maskiert) wird durch Pflicht-MT-Audit mitigiert.
+
+## DEC-268 — V8.11 RLS-Test-Pattern wiederverwendet V7-Matrix-Suite (V8.11 OQ-V8.11-arch-4)
+- Status: accepted
+- Reason: V7-Test-Suite `cockpit/__tests__/rls/v7-rls-matrix.test.ts` (256 Zeilen, 96 Tests via 8 Tabellen × 3 Rollen × 4 Ops) ist battle-tested, laeuft im node:22-Sidecar gegen Coolify-DB im business-net (Pattern coolify-test-setup.md), nutzt SAVEPOINT fuer expected RLS-Rejections, TEST_DATABASE_URL via ENV. Wiederverwendung der Test-Fixtures (TEST_MEMBER_1/TEST_MEMBER_2/TEST_TEAMLEAD_ID) erspart Seed-Doppel-Pflege.
+- Consequence: SLC-901..905 erzeugen je eigene Test-File `v8-11-slc-90X-rls-matrix.test.ts` mit Matrix-Pattern aus V7. SLC-903 erlaubt 3 Test-Files (pro Migration-Block 8 Tabellen) wegen 24 Tabellen × 3 Rollen × 4 Ops = 288 Tests Cap. Helper-Funktionen (Session-Setup, JWT-Claim, SAVEPOINT-Wrapper) in `cockpit/__tests__/rls/helpers/v8-11-matrix-helpers.ts` extrahieren falls 5+ Duplikationen entstehen.
+
+## DEC-267 — knowledge_chunks Backfill SYNC innerhalb Migration (V8.11 OQ-V8.11-arch-3)
+- Status: accepted
+- Reason: Aktueller knowledge_chunks-Stand <10k chunks (Internal-Test-Mode Single-User). SYNC-Backfill innerhalb MIG-049 ist atomar (kein halb-migrated-Window), einfacher zu beweisen GREEN, Migration-Apply-Dauer im Sekundenbereich akzeptabel. Async-Backfill via Background-Cron mit Status='pending'-Spalte ist komplex (neuer Cron, Race-Conditions, staged-Rollout) und fuer V8.11-Volumen ueberdimensioniert.
+- Consequence: MIG-049 enthaelt UPDATE-Statements pro source_type (meeting/email_message/activity/document) mit JOIN auf Parent-Tabelle, setzt owner_user_id + team_id atomar. Backfill-Verifikation post-Apply: `SELECT COUNT(*) FROM knowledge_chunks WHERE owner_user_id IS NULL` muss 0 sein (oder Orphan-Liste explizit dokumentiert wenn Parent-Source bereits geloescht). Bei spaeterem Volumen >100k chunks: V9-Hotfix-Pflicht zu Async-Backfill (Migration-Pattern-Drift dokumentieren).
+
+## DEC-266 — V8.11 EXPLAIN ANALYZE Hard-Threshold = max(100ms, 10x Pre-V8.11-Baseline) (V8.11 OQ-V8.11-arch-2)
+- Status: accepted
+- Reason: R-V8.11-1 (Performance-Drop bei JOIN-basierten Policies) braucht objektiven Pass/Fail-Threshold. Absolute Schranke <100ms haelt interactive UI-Pfad ohne Spinner. Relative Schranke <10x Pre-V8.11-Baseline schuetzt vor Mega-Drop bei datenintensiven Tabellen. Beide Schranken muessen beide ueberschritten sein bevor ein Sub-Slice blockt — bei nur einer Verletzung Index-Refactor als Mitigation.
+- Consequence: Pro Sub-Slice 5 typische Production-Queries in `qa/SLC-90X-perf-baseline.md` dokumentiert. Pre-V8.11-Baseline gemessen vor Migration-Apply (gleicher Query, gleiche Daten). Post-V8.11 EXPLAIN ANALYZE Vergleich. Bei max(absolut, relativ) verletzt: Index-Audit (Parent-FK indexiert?) + CREATE INDEX im selben Migration-Block. Bei weiter verletzt: Sub-Slice blockt + DEC-Update + escalate zu /architecture-Review.
+
+## DEC-265 — V8.11 Sub-Slice-Reihenfolge SLC-901 → 902 → 903 → 904 → 905 (V8.11 OQ-V8.11-arch-1)
+- Status: accepted
+- Reason: Steigende Komplexitaet — einfaches user_id-Pattern (SLC-901) zuerst etabliert Pattern + Test-Setup + Cron-Audit-Template. Klasse-B-Templates (SLC-902) baut auf SLC-901-Pipeline auf. Klasse-C-Dominator (SLC-903, 24 Tabellen) erst nachdem Pipeline eingespielt. Klasse-E-Audit-Spezial (SLC-904) klein und isoliert. Klasse-D-Schema-Erweiterung (SLC-905) zuletzt weil destructive (ALTER + Backfill) und benoetigt eingespielte Pipeline aus 4 erfolgreichen Slices.
+- Consequence: V8.11-Worktree `v8-11-rls-sweep` startet mit SLC-901 (4 Tabellen, ~3-4h), endet mit SLC-905 (knowledge_chunks + search_knowledge_chunks Function-Erweiterung, ~4-5h). Gesamt-Aufwand ~24-31h Code-Side ueber ~1.5-2 Wochen Single-Dev. Pro Sub-Slice eigener Commit-Burst auf Worktree-Branch, Master-Merge erst nach kompletter V8.11 + /qa Gesamt + /final-check + /go-live (Cumulative-Single-Branch-Pattern analog V7-RLS-Switch).
+
 ## DEC-262 — Backfill-NULL-Owner-Fallback via ENV (SLC-893 MT-1)
 - Status: accepted
 - Reason: V1-Single-User-Aera-Documents (vor Multi-User) haben `created_by IS NULL`. Bei BS Internal-Test-Mode + Single-User-Phase sind alle bestehenden Documents praktisch vom Founder. Hartes Orphan-Markieren wuerde Founder-Files nach Policy-Apply unlesbar machen. User-Entscheidung 2026-06-02: Founder-UUID-Default via ENV-Variable `MIG_041_FALLBACK_OWNER_UUID`. Kein Hard-Code, kein User-Tabellen-Pre-Update noetig. Wenn ENV NICHT gesetzt UND `created_by IS NULL` → Orphan (skip + log + im Backfill-Report dokumentiert) per AC-893-5(c).

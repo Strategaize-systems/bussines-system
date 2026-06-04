@@ -11937,3 +11937,428 @@ Service-Key-Rotation:
 - Optional **MT-8** Build-Time-Service-Key-Leak-Check (grep-Test als Vitest-Smoke)
 
 **V8.7-A Architecture ready for `/slice-planning V8.7-A`.**
+
+## V8.11 — RLS-Sweep der 41 Zweittabellen Architecture (Addendum 2026-06-04)
+
+V8.11 schliesst den V7-RLS-Switch (MIG-035) ab, indem alle verbleibenden Tabellen mit `*_full_access`-Policies auf Owner-/Team-aware RLS umgestellt werden. Pre-Live-Pflicht-Hardening vor Multi-User-Onboarding. Architektur-Addendum statt Voll-Rewrite per Addendum-Section-Pattern.
+
+### Architecture Summary
+
+```
+authenticated User -> Postgres
+        |
+        +-- V7-RLS-getragene Tabellen (8 Kerntabellen + profiles + teams)
+        |   (companies/contacts/deals/activities/meetings/proposals/email_messages/calls)
+        |   Policies: owner-aware (can_see_owner / is_admin / is_teamlead)
+        |
+        +-- V8.11-RLS-getragene Tabellen (41 Zweittabellen) -- NEU
+        |   |
+        |   +-- Klasse A: per-User-Stammdaten (4 Tabellen, user_id-Spalte)
+        |   |   user_settings, kpi_snapshots, goals, activity_kpi_targets
+        |   |   Policy: user_id = auth.uid() + is_admin()-SELECT-Bypass
+        |   |
+        |   +-- Klasse B: Team-Templates (11 Tabellen, kein owner)
+        |   |   branding_settings, email_templates, payment_terms_templates, etc.
+        |   |   Policy: SELECT all authenticated, INSERT/UPDATE/DELETE Admin
+        |   |
+        |   +-- Klasse C: Parent-FK-JOIN (24 Tabellen, JOIN auf V7-Parent)
+        |   |   tasks, signals, calendar_events, email_attachments, ...,
+        |   |   campaigns, campaign_links, automation_runs, deal_products, ...
+        |   |   Policy: EXISTS-Subquery auf Parent-Tabelle mit can_see_owner()
+        |   |
+        |   +-- Klasse D: Schema-Erweiterung + Backfill (1 Tabelle: knowledge_chunks)
+        |   |   ALTER ADD COLUMN owner_user_id + team_id, Backfill via source_type/source_id JOIN
+        |   |   Policy: owner_user_id = auth.uid() + can_see_owner()
+        |   |
+        |   +-- Klasse E: Audit-Spezial (1 Tabelle: audit_log)
+        |       Policy: SELECT (is_admin() OR actor_id = auth.uid()),
+        |                INSERT/UPDATE/DELETE service_role only
+        |
+        +-- service_role (Cron + Worker, BYPASSRLS=true)
+            schreibt cross-tenant, MUSS owner_user_id korrekt aus Parent setzen
+            (Cron-Code-Audit pro Sub-Slice Pflicht)
+```
+
+### V8.11 Hauptkomponenten
+
+#### Klasse A — Per-User-Stammdaten (4 Tabellen)
+
+Tabellen mit eigener `user_id`-Spalte:
+- `user_settings` (user_id NOT NULL)
+- `kpi_snapshots` (user_id)
+- `goals` (user_id)
+- `activity_kpi_targets` (user_id)
+
+Policy-Template (`<table>` = einer der 4):
+
+```sql
+CREATE POLICY <table>_select ON <table>
+  FOR SELECT TO authenticated
+  USING (user_id = auth.uid() OR is_admin());
+
+CREATE POLICY <table>_insert ON <table>
+  FOR INSERT TO authenticated
+  WITH CHECK (user_id = auth.uid() OR is_admin());
+
+CREATE POLICY <table>_update ON <table>
+  FOR UPDATE TO authenticated
+  USING (user_id = auth.uid() OR is_admin())
+  WITH CHECK (user_id = auth.uid() OR is_admin());
+
+CREATE POLICY <table>_delete ON <table>
+  FOR DELETE TO authenticated
+  USING (user_id = auth.uid() OR is_admin());
+```
+
+Begruendung: Per-User-Stammdaten sind privat — Admin sieht alle fuer Support-Cases, andere User sehen 0 Rows. Kein Teamlead-Pfad (eigene Settings sind privat, Team-Aggregate laufen ueber Cron + service_role).
+
+#### Klasse B — Team-Templates (11 Tabellen)
+
+Tabellen ohne Owner-Spalte, semantisch Team-shared:
+- `branding_settings`, `email_templates`, `payment_terms_templates`, `compliance_templates`, `vat_id_validations`
+- `pipelines`, `pipeline_stages`, `products`
+- `automation_rules`, `cadences`, `cadence_steps`
+
+Policy-Template:
+
+```sql
+CREATE POLICY <table>_select ON <table>
+  FOR SELECT TO authenticated
+  USING (true);
+
+CREATE POLICY <table>_insert ON <table>
+  FOR INSERT TO authenticated
+  WITH CHECK (is_admin());
+
+CREATE POLICY <table>_update ON <table>
+  FOR UPDATE TO authenticated
+  USING (is_admin())
+  WITH CHECK (is_admin());
+
+CREATE POLICY <table>_delete ON <table>
+  FOR DELETE TO authenticated
+  USING (is_admin());
+```
+
+Begruendung: Konfiguration ist allen Team-Usern sichtbar (alle Member nutzen die gleichen Templates/Pipelines/Products), aber nur Admin darf aendern. Im Single-Team-Internal-Mode aequivalent zu V1, in Multi-Tenant-V9 wird `team_id`-Spalte plus `team_id = get_my_team_id()`-Filter ergaenzt — V8.11-Pattern bleibt forward-compatible.
+
+#### Klasse C — Parent-FK-JOIN (24 Tabellen)
+
+Tabellen mit FK auf eine V7-RLS-getragene Parent-Tabelle (deals/contacts/companies/meetings/email_messages/proposals/activities). Policy-Template via EXISTS-Subquery:
+
+```sql
+-- Beispiel: tasks JOIN auf deals
+CREATE POLICY tasks_select ON tasks
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM deals d
+      WHERE d.id = tasks.deal_id
+        AND can_see_owner(d.owner_user_id)
+    )
+    OR (tasks.deal_id IS NULL AND created_by = auth.uid())
+  );
+
+CREATE POLICY tasks_insert ON tasks
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM deals d
+      WHERE d.id = tasks.deal_id
+        AND can_see_owner(d.owner_user_id)
+    )
+    OR (tasks.deal_id IS NULL AND created_by = auth.uid())
+  );
+
+-- UPDATE + DELETE analog
+```
+
+**Multi-Parent-Tabellen** (z.B. `signals` mit deal_id + contact_id + company_id + activity_id): Policy ist OR-Verkettung der EXISTS-Subqueries. NULL-Parent erlaubt nur eigene `created_by`-Rows.
+
+**Spezialfall `emails`**: hat bereits `owner_user_id`-Spalte → V7-Pattern direkt anwendbar wie auf den 8 V7-Kerntabellen. Wird in SLC-903 gebuendelt aus Cohaesion (Outbound-Mail-Kontext).
+
+**Tabellen ohne Parent-FK** (Live-DB-Befund 2026-06-04): `email_tracking_events`, `campaign_link_clicks`, `automation_runs`, `cadence_enrollments`, `fit_assessments`, `pipelines` (wait, pipelines ist Klasse B). Pro Tabelle in /slice-planning entscheiden:
+- Via `email_message_id` / `campaign_link_id` / `rule_id` / `cadence_id` / `deal_id` (mittelbarer FK ueber Junction)
+- Falls kein FK existiert: Schema-ALTER mit `created_by`-FK plus Backfill (analog knowledge_chunks)
+- Audit-/Tracking-Only-Tabellen (z.B. `email_tracking_events`): SELECT moeglicherweise Admin-only, INSERT service_role-only
+
+#### Klasse D — Schema-Erweiterung + Backfill (1 Tabelle: knowledge_chunks)
+
+knowledge_chunks hat aktuell nur `source_type` + `source_id` (kein Owner). Q-V8.11-C entschieden: Schema-Erweiterung um `owner_user_id` + `team_id` Spalten mit Backfill aus Parent.
+
+DDL:
+
+```sql
+ALTER TABLE knowledge_chunks
+  ADD COLUMN IF NOT EXISTS owner_user_id UUID REFERENCES profiles(id),
+  ADD COLUMN IF NOT EXISTS team_id        UUID REFERENCES teams(id);
+
+CREATE INDEX IF NOT EXISTS idx_knowledge_chunks_owner ON knowledge_chunks(owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_knowledge_chunks_team  ON knowledge_chunks(team_id);
+```
+
+Backfill-Strategy (DEC-267, SYNC innerhalb Migration):
+
+```sql
+-- meeting-source
+UPDATE knowledge_chunks kc
+   SET owner_user_id = m.owner_user_id,
+       team_id       = p.team_id
+  FROM meetings m
+  JOIN profiles p ON p.id = m.owner_user_id
+ WHERE kc.source_type = 'meeting'
+   AND kc.source_id  = m.id
+   AND kc.owner_user_id IS NULL;
+
+-- email_message-source, activity-source, document-source: analog
+-- document-source: JOIN ueber documents-Tabelle (Klasse C, hat deal_id-FK)
+```
+
+Policy (post-Backfill):
+
+```sql
+CREATE POLICY knowledge_chunks_select ON knowledge_chunks
+  FOR SELECT TO authenticated
+  USING (can_see_owner(owner_user_id));
+-- INSERT/UPDATE/DELETE: service_role-only (Embedding-Sync-Cron)
+```
+
+**Cron-Anpassung Pflicht-MT:** `cockpit/src/app/api/cron/embedding-sync/route.ts` muss bei chunk-INSERT die owner_user_id+team_id aus Parent-Source ableiten. Audit-Check als DoD pro Sub-Slice (Q-V8.11-D).
+
+**Sonderfall `search_knowledge_chunks` Function** (SEC-007): Function ist SECURITY DEFINER und umgeht knowledge_chunks-RLS strukturell. V8.11 muss Function-Body um `WHERE can_see_owner(owner_user_id)`-Filter erweitern, sonst greift RLS in V8.11 nur fuer direkte SELECT-Queries, NICHT ueber die RPC. Wird in SLC-905 gebuendelt mit knowledge_chunks-Migration.
+
+#### Klasse E — Audit-Spezial (1 Tabelle: audit_log)
+
+Q-V8.11-A entschieden: Admin-all + Actor-own-Rows (DSGVO-Art-15-Self-Service).
+
+```sql
+CREATE POLICY audit_log_select ON audit_log
+  FOR SELECT TO authenticated
+  USING (is_admin() OR actor_id = auth.uid());
+
+-- INSERT/UPDATE/DELETE: service_role-only
+-- Begruendung: User darf NIE eigene Audit-Eintraege manipulieren
+-- (Compliance / Forensik). Cron + Server-Actions schreiben via createAdminClient().
+```
+
+**Code-Audit:** Alle `cockpit/src/lib/audit.ts`-Caller pruefen — keine `auth.uid()`-Client-Pfade duerfen direkt audit_log INSERTen. Server-Actions wechseln auf `createAdminClient()` falls noch nicht.
+
+### Helper-Functions (Wiederverwendung V7 MIG-035)
+
+Keine neuen Helper-Functions. V8.11 nutzt 1:1:
+- `is_admin()` — SECURITY DEFINER, profiles.role = 'admin'
+- `is_teamlead()` — analog
+- `get_my_team_id()` — analog
+- `can_see_owner(target_owner UUID)` — admin OR self OR teamlead-in-same-team
+
+A-V8.11-1 verifiziert: alle 4 Helper sind in Live-DB aktiv (V7+V8.x-Burn-Ins). Re-Verifikation pro Sub-Slice nicht noetig — Trigger im Migration-Apply ueber `RAISE EXCEPTION IF v_helper_count <> 4`.
+
+### Sec-Audit-Helper-Function (Done-Gate)
+
+Neue persistente Helper-Function fuer Done-Gate (Q-V8.11-B 100% Coverage):
+
+```sql
+CREATE OR REPLACE FUNCTION list_tables_with_authenticated_full_access()
+  RETURNS TABLE(schemaname TEXT, tablename TEXT, policyname TEXT)
+  LANGUAGE SQL
+  STABLE
+  SECURITY DEFINER
+  SET search_path = public
+AS $$
+  SELECT schemaname, tablename, policyname
+    FROM pg_policies
+   WHERE schemaname = 'public'
+     AND (policyname = 'authenticated_full_access'
+          OR policyname LIKE '%_full_access');
+$$;
+
+GRANT EXECUTE ON FUNCTION list_tables_with_authenticated_full_access() TO authenticated;
+```
+
+Done-Gate-Check pro Sub-Slice: `SELECT COUNT(*) FROM list_tables_with_authenticated_full_access()` muss strikt monoton fallen (Klasse-A 41 -> 37, Klasse-B 37 -> 26, etc.). Bei V8.11-Abschluss 0 Rows.
+
+### Data Model / Storage
+
+**Schema-Migrations:**
+
+| Slice | Migration | Scope | Idempotent | Destructive |
+|-------|-----------|-------|------------|-------------|
+| SLC-901 | MIG-045 | Klasse A: 4 Tabellen × 4 Policies | ja | nein |
+| SLC-902 | MIG-046 | Klasse B: 11 Tabellen × 4 Policies + Sec-Audit-Helper | ja | nein |
+| SLC-903 | MIG-047 | Klasse C: 24 Tabellen × 4 Policies (inkl. emails V7-Pattern) | ja | nein |
+| SLC-904 | MIG-048 | Klasse E: audit_log × 4 Policies | ja | nein |
+| SLC-905 | MIG-049 | Klasse D: knowledge_chunks ALTER + Backfill + Policies + search_knowledge_chunks Function-Erweiterung | ja | **ja** (Schema-ALTER) |
+
+**Migration-Pattern:** Alle Migrations folgen `sql-migration-hetzner.md` (SSH+base64+psql als postgres-Superuser, idempotent, Rollback-Notes). DO-Block iteriert ueber Tabellen-Array fuer Klasse-A/B/C wie MIG-035 (BEPS Loop-Pattern).
+
+**Rollback-Notes Template pro Migration:**
+1. `DROP POLICY <table>_select|insert|update|delete ON <table>` (alle neuen Policies)
+2. `CREATE POLICY authenticated_full_access ON <table> FOR ALL TO authenticated USING (true)` (alte V1-Policy wieder herstellen)
+3. Fuer MIG-049 (knowledge_chunks ALTER): `ALTER TABLE knowledge_chunks DROP COLUMN owner_user_id, DROP COLUMN team_id` (nach Down-Backfill der Test-Daten)
+
+### Data Flow / Request Flow
+
+**Read-Pfad (User-Session) — Beispiel `SELECT * FROM tasks WHERE deal_id = $1`:**
+
+1. Browser → Server-Action (Next.js)
+2. Server-Action → `createServerClient(cookie-Session)` → `supabase.from('tasks').select()`
+3. PostgREST → Postgres mit JWT-Claim `auth.uid()`
+4. Postgres evaluiert `tasks_select`-Policy:
+   - EXISTS-Subquery auf `deals` mit `can_see_owner(d.owner_user_id)`
+   - can_see_owner ruft is_admin / is_teamlead / get_my_team_id (3 cached STABLE-Functions)
+5. RLS filtert Rows → 0..N Rows zurueck (kein Error)
+
+**Write-Pfad (Cron-Worker) — Beispiel embedding-sync-cron:**
+
+1. Coolify-Scheduled-Task POST /api/cron/embedding-sync
+2. Verify-Cron-Secret (timing-safe) → service_role-Client
+3. service_role bypassed RLS (BYPASSRLS=true)
+4. Worker iteriert ueber `meetings WHERE NOT EXISTS knowledge_chunks` (cross-tenant)
+5. Pro neuer chunk: INSERT mit `owner_user_id = meeting.owner_user_id, team_id = profiles(owner_user_id).team_id` **(Pflicht-Audit)**
+6. Wenn owner_user_id NULL gesetzt wuerde: chunk waere unsichtbar fuer User, sichtbar nur fuer Admin (`can_see_owner(NULL)` = `is_admin() OR NULL = auth.uid() OR teamlead-check` = `is_admin()` if NULL)
+
+### Performance-Strategy
+
+**EXPLAIN ANALYZE Hard-Threshold (DEC-266):** Pro Sub-Slice 5 typische Queries aus Production-Code messen. Hard-Threshold: **max(100ms, 10x Pre-V8.11-Baseline)**. Wenn beide verletzt:
+
+1. Index-Audit: Parent-FK-Spalte indexiert? (z.B. `tasks(deal_id)`, `signals(deal_id)`, `email_attachments(email_message_id)`)
+2. Helper-Function-Cost: `can_see_owner()` evaluiert mit JIT (STABLE-Cache pro Statement) — bei N+1-Pattern in Anwendung Indexe + Query-Plan checken
+3. Bei JOIN-Tabellen ohne Parent-FK-Index: Migration ergaenzt CREATE INDEX
+
+**Queries-Set pro Sub-Slice (slice-planning verbessert):**
+- SLC-901: `SELECT * FROM user_settings WHERE user_id = $1` (~ms erwartet)
+- SLC-902: `SELECT * FROM email_templates WHERE category = $1` (~10ms erwartet)
+- SLC-903: `SELECT * FROM tasks WHERE deal_id = $1` (Index-Pfad)
+- SLC-904: `SELECT * FROM audit_log WHERE actor_id = auth.uid() ORDER BY created_at DESC LIMIT 50` (Index auf actor_id+created_at)
+- SLC-905: `SELECT * FROM knowledge_chunks ORDER BY embedding <=> $1 LIMIT 10` (HNSW + Owner-Filter)
+
+### Cron + Service-Role-Architektur
+
+**DEC-269** dokumentiert formell: Background-Cron + Worker schreiben weiter via `createAdminClient()` mit `SUPABASE_SERVICE_ROLE_KEY`. RLS-Bypass ist designed-in, NICHT Bug. Begruendung:
+- Cron hat kein User-Session (kein auth.uid())
+- Cron iteriert cross-tenant (signal-extract, embedding-sync, automation-runner)
+- RLS wuerde Cron unbenutzbar machen
+
+**Constraint (Pflicht-MT pro Sub-Slice):** Cron-Code-Audit per `grep -rn "createAdminClient" cockpit/src/app/api/cron/` und Worker-Pfaden. Pro Treffer pruefen:
+- Wird in eine V8.11-migrierte Tabelle INSERTed?
+- Wird owner_user_id (oder relevante Owner-Spalte) korrekt aus Parent-Row gesetzt?
+- Bei knowledge_chunks: wird owner_user_id+team_id aus source_type/source_id-Parent abgeleitet?
+
+Audit-Liste (Stand 2026-06-04):
+- `/api/cron/embedding-sync` → knowledge_chunks (SLC-905)
+- `/api/cron/expire-proposals` → proposals (V7-already-owner-aware, kein Audit noetig)
+- `/api/cron/automation-runner` → ai_action_queue, automation_runs (SLC-903)
+- `/api/cron/signal-extract` → signals (SLC-903)
+- `/api/cron/click-log-cleanup` → email_tracking_events, campaign_link_clicks (SLC-903)
+- `/api/cron/cadence-execute` → cadence_executions, cadence_enrollments (SLC-903)
+- `/api/cron/meeting-reminders`, `/api/cron/meeting-briefing`, `/api/cron/recording-poll`, `/api/cron/classify` → vermutlich nur V7-Tabellen, aber Audit-Check Pflicht
+- `cockpit/src/lib/audit.ts` Helper → audit_log (SLC-904)
+
+### External Dependencies
+
+**Keine neuen externen Dependencies.** V8.11 ist eine reine Postgres-RLS-Migration. Keine npm-Pakete, keine externen APIs.
+
+**Test-Sidecar:** Vitest gegen Coolify-DB ueber node:22 im `business-net` (Pattern `coolify-test-setup.md`). SAVEPOINT-Pattern fuer expected RLS-Rejections. TEST_DATABASE_URL via ENV. Wiederverwendung 1:1 aus V7-Pattern `cockpit/__tests__/rls/v7-rls-matrix.test.ts` (96 Tests bereits live).
+
+### Security / Privacy Considerations
+
+**Cross-Tenant-Read-Vermeidung** ist der Kern-Schutz. Klasse A/C/E sind hart, Klasse B (Templates) ist SELECT-all bewusst (Konfiguration ist Team-shared). Sobald Multi-Tenant-V9 kommt: Klasse B bekommt zusaetzlich `team_id`-Filter.
+
+**Helper-Functions sind SECURITY DEFINER mit `SET search_path = public`** (V7-Pattern, V8.11 erbt). search_path-Hijack-Risk ist mitigiert.
+
+**Sec-Audit-Helper-Function `list_tables_with_authenticated_full_access()`** ist persistent in der DB (nicht nur in der Migration). Erlaubt Burn-In-Monitoring und faengt zukuenftige Tabellen-Drifts ab (R-V8.11-2). Sollte in `/post-launch` T+24h Full-Check als 1-Sekunden-Query mitgenommen werden.
+
+**Service-Role-Bypass bleibt bestehen** (DEC-269), wird aber durch Cron-Code-Audit pro Sub-Slice qualitaetsgesichert. Audit-Trail in audit_log mit `actor_id = NULL` markiert Cron-Schreiber.
+
+### Constraints / Tradeoffs
+
+**Pro 4-Klassen-Pattern statt einer Mega-Migration:**
+- Pro: Pattern-Etablierung im kleinsten Slice (SLC-901, 4 Tabellen) erlaubt Lehren-Sammeln bevor groesste Slice (SLC-903, 24 Tabellen) startet
+- Pro: Pro Klasse eigene Test-File → einfacher reviewable, pro-Slice-PR moeglich
+- Pro: Risiko-Isolation — bei Performance-Drop in einer Klasse muss nur diese Slice rolled-back werden
+- Contra: 5 Migrations + 5 Test-Files statt 1+1
+- Contra: 5 Sub-Slices statt 4 vergroessern den V8.11-Workflow um ~3-5h Overhead (Reports, Records-Updates pro Slice)
+
+**Pro Sub-Slice-Reihenfolge 901 → 902 → 903 → 904 → 905 (DEC-265):**
+- Pro: Steigende Komplexitaet — einfaches user_id-Pattern zuerst, knowledge_chunks Schema-ALTER zuletzt
+- Pro: SLC-901 etabliert Test-Pattern (1 Test-File mit 4 Tabellen × 3 Rollen × 4 Ops = 48 Tests), SLC-902/903 erweitern
+- Pro: knowledge_chunks Backfill profitiert von eingespielter Pipeline (4 Slices erfolgreich vorher gesehen)
+- Contra: Dominanter Aufwand (SLC-903, 24 Tabellen) erst spaet — wenn etwas an SLC-903 schiefgeht, sind 901+902 schon released und der Rest haengt
+
+**Pro Sync-Backfill knowledge_chunks (DEC-267):**
+- Pro: Atomar, kein halb-migrated-Window
+- Pro: Aktueller Stand <10k chunks → Sekundenbereich
+- Pro: Einfacher zu beweisen GREEN (1 Migration, ein Apply)
+- Contra: Migration-Apply-Dauer hoeher (aber im Sekundenbereich akzeptabel)
+- Contra: Bei spaeterem >100k Volumen: V9-Hotfix-Pflicht zu Async-Backfill
+
+**Pro Test-Pattern V7-Wiederverwendung (DEC-268):**
+- Pro: Einheitliche Test-Helper-Funktion (Session-Setup, JWT-Claim, SAVEPOINT)
+- Pro: Bestehendes node:22-Sidecar-Setup laeuft sofort
+- Contra: Bei massiver Klasse-C-Drift (24 Tabellen) wird die Test-File >1000 Zeilen — Sub-Slice-Split der Test-Files innerhalb SLC-903 moeglich
+
+### Open Technical Questions
+
+**Alle 4 architecture-OQs in /architecture-Session 2026-06-04 entschieden:**
+- OQ-V8.11-arch-1 → DEC-265 (SLC-901 → 902 → 903 → 904 → 905)
+- OQ-V8.11-arch-2 → DEC-266 (EXPLAIN max(100ms, 10x Baseline))
+- OQ-V8.11-arch-3 → DEC-267 (Sync-Backfill knowledge_chunks)
+- OQ-V8.11-arch-4 → DEC-268 (V7-Test-Pattern wiederverwenden + neue Test-Files pro Sub-Slice)
+
+**Neu eingefuehrt in /architecture:**
+
+- **OQ-V8.11-arch-5 (Carry-Over zu /slice-planning):** Tabellen ohne klaren Parent-FK (`email_tracking_events`, `campaign_link_clicks`, `automation_runs`, `cadence_enrollments`, `fit_assessments`) — pro Tabelle in /slice-planning entscheiden: (a) mittelbarer FK ueber Junction-Lookup, (b) Schema-ALTER mit `created_by`-FK, (c) Admin-only SELECT + service_role-only Mutate. Default-Empfehlung: (c) fuer Tracking/Logging-Tabellen, (a) fuer Workflow-Tabellen.
+- **OQ-V8.11-arch-6 (Carry-Over zu /slice-planning):** `documents`-PUBLIC-Tabelle (nicht der Storage-Bucket!) hat contact_id+company_id+deal_id+created_by — Klasse C straight-forward, aber Konflikt mit Storage-Bucket-Policy aus V8.10/SLC-893 zu vermeiden. Beide nutzen `documents`-Namespace — Policy-Naming-Praefix `documents_table_*` vs `documents_storage_*` empfohlen.
+
+### Recommended Implementation Direction
+
+`/slice-planning V8.11` -> SLC-901..905 mit folgender Sub-Slice-Spec:
+
+**SLC-901 (Klasse A, ~3-4h):**
+- MT-1 MIG-045 (4 Tabellen × 4 Policies, idempotent, DO-Loop-Pattern)
+- MT-2 Vitest `v8-11-slc-901-rls-matrix.test.ts` (4 Tabellen × 3 Rollen × 4 Ops = 48 Tests)
+- MT-3 Cron-Code-Audit Klasse-A-betreffende Worker (kpi-snapshots-Aggregator, etc.)
+- MT-4 EXPLAIN ANALYZE 5 Queries → Doc in `qa/SLC-901-perf-baseline.md`
+- MT-5 Sec-Audit-Helper-Function deploy (im Migration-Body) + Done-Gate-Check
+- MT-6 Records-Sync + Live-Smoke (Vitest gegen Coolify-DB + 2-3 Browser-Smoke-Pfade)
+
+**SLC-902 (Klasse B, ~5-6h):**
+- MT-1 MIG-046 (11 Tabellen × 4 Policies, idempotent)
+- MT-2 Vitest `v8-11-slc-902-rls-matrix.test.ts` (Admin-mutate + Member-read-Pattern, ~88 Tests)
+- MT-3 Cron-Code-Audit (template-using Cron-Endpoints)
+- MT-4 EXPLAIN ANALYZE 5 Queries
+- MT-5 Done-Gate-Check (41-4-11 = 26 verbleibend)
+- MT-6 Records-Sync + Live-Smoke
+
+**SLC-903 (Klasse C, ~10-13h):**
+- MT-1..3 MIG-047 in 3 atomaren Migration-Schritten:
+  - MT-1: 8 Tabellen mit klarem deal_id-FK
+  - MT-2: 8 Tabellen mit contact_id/company_id-FK
+  - MT-3: 8 Tabellen mit anderen FKs (meeting_id, email_message_id, proposal_id, activity_id, campaign_id, cadence_id, plus emails V7-Pattern direkt)
+- MT-4 Vitest pro Migration-Block (3 Test-Files, ~96+96+96 Tests)
+- MT-5 Cron-Code-Audit (signal-extract, automation-runner, cadence-execute, click-log-cleanup)
+- MT-6 EXPLAIN ANALYZE 5 Queries pro Block
+- MT-7 OQ-arch-5 Tabellen-Entscheidung (kein-Parent-FK-Tabellen pro Tabelle)
+- MT-8 Done-Gate-Check (26-24 = 2 verbleibend)
+- MT-9 Records-Sync + Live-Smoke
+
+**SLC-904 (Klasse E, ~2-3h):**
+- MT-1 MIG-048 (audit_log × 4 Policies inkl. service_role-only mutate)
+- MT-2 Vitest `v8-11-slc-904-rls-matrix.test.ts` (3 Rollen × 4 Ops + Actor-own-Cases = ~18 Tests)
+- MT-3 Code-Audit `cockpit/src/lib/audit.ts` Caller (alle Pfade nutzen createAdminClient?)
+- MT-4 EXPLAIN ANALYZE actor-own-SELECT-Query
+- MT-5 Done-Gate-Check (2-1 = 1 verbleibend = knowledge_chunks)
+- MT-6 Records-Sync + Live-Smoke
+
+**SLC-905 (Klasse D, ~4-5h):**
+- MT-1 MIG-049 ALTER + Backfill + Policies + search_knowledge_chunks Function-Erweiterung
+- MT-2 Backfill-Verifikation (`SELECT COUNT(*) FROM knowledge_chunks WHERE owner_user_id IS NULL` muss 0 sein post-Backfill)
+- MT-3 Vitest `v8-11-slc-905-rls-matrix.test.ts` (Schema-Erweiterung + Policy + Function-Erweiterung)
+- MT-4 Cron-Code-Audit embedding-sync-cron (owner_user_id+team_id-Set bei chunk-INSERT)
+- MT-5 EXPLAIN ANALYZE Vector-Search-Query mit Owner-Filter
+- MT-6 Done-Gate-Check (1-1 = 0 verbleibend → 100% Coverage erreicht, Q-V8.11-B erfuellt)
+- MT-7 Records-Sync + Gesamt-/qa V8.11 + /final-check + /go-live
+
+**Gesamt-Aufwand korrigiert: ~24-31h Code-Side** (statt initial ~17-22h aus FEAT-911). Erhoehung wegen Live-DB-Realitaet (41 statt 25 Tabellen).
+
+**V8.11 Architecture ready for `/slice-planning V8.11`.**

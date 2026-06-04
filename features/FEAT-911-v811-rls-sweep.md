@@ -8,7 +8,9 @@
 
 ## Problem
 
-Nach V7-RLS-Switch (MIG-035, SLC-704) wurden 8 Kerntabellen + `profiles` + `teams` auf Owner-/Team-aware RLS umgestellt. Die restlichen ~25 Zweittabellen stehen weiter auf der V1-Policy `authenticated_full_access` (`FOR ALL TO authenticated USING (true)`). Jeder authenticated User kann Read+Update+Delete auf allen Rows dieser Tabellen — egal welchem owner_user_id oder team_id sie gehoeren.
+Nach V7-RLS-Switch (MIG-035, SLC-704) wurden 8 Kerntabellen + `profiles` + `teams` auf Owner-/Team-aware RLS umgestellt. Die restlichen Zweittabellen stehen weiter auf der V1-Policy `authenticated_full_access` (`FOR ALL TO authenticated USING (true)`). Jeder authenticated User kann Read+Update+Delete auf allen Rows dieser Tabellen — egal welchem owner_user_id oder team_id sie gehoeren.
+
+**Live-DB Realitaets-Check 2026-06-04 (in /architecture-Session):** SEC-006 listete ~25 Tabellen — die Live-Coolify-DB zeigt **41 Tabellen** mit `*_full_access`-Pattern. Die 16 zusaetzlichen Tabellen (automation_runs, cadence_enrollments, campaign_link_clicks, campaign_links, campaigns, deal_products, documents-PUBLIC-Tabelle (nicht Storage-Bucket), email_tracking_events, fit_assessments, handoffs, pipeline_stages, pipelines, products, referrals) waren in SEC-006 Sub-Slice-Vorschau nicht enthalten. R-V8.11-5 → High eskaliert.
 
 **Im Internal-Test-Mode** (Admin = User Immo, keine Customer) keine Auswirkung. **Sobald ein 2. User dazu kommt** (Customer-Onboarding) sind das sofortige Cross-Tenant-Reads + Modifikationen.
 
@@ -28,36 +30,50 @@ Admin (User Immo) und kuenftiger Customer-User (Founder, Sales-Member, Teamlead,
 
 ## V1 Scope
 
-**Pflicht-Migration aller 25 Zweittabellen** auf Owner-/Team-aware RLS analog zum V7-MIG-035-Pattern. Pro Tabelle:
+**Pflicht-Migration aller 41 Zweittabellen** (Live-DB-Realitaet 2026-06-04, korrigiert von 25) auf Owner-/Team-aware RLS analog zum V7-MIG-035-Pattern. Pro Tabelle:
 - Drop der alten `authenticated_full_access`-Policy
 - Neue 4 CRUD-Policies (`<table>_select`, `_insert`, `_update`, `_delete`) basierend auf einem von 4 Klassen-Templates
 - RLS-Test-Matrix-Erweiterung (mind. 2 Tests pro Tabelle: same-owner sees / foreign-owner blocked)
 - Vitest gegen Coolify-DB-Sidecar (node:22 im business-net) GREEN
 - Pflicht-MT pro Sub-Slice: Cron-Code-Audit der betroffenen Tabellen
 
-**Policy-Klassen (analog BL-500-Vorschlag, in Sub-Slices gegliedert):**
+**Policy-Klassen (post-/architecture re-baseline auf Live-DB-Realitaet, 5 Sub-Slices SLC-901..905):**
 
-### SLC-901 — Per-User-Stammdaten
-- Tabellen: `user_settings`, `kpi_snapshots`, ggf. `goals`
-- Policy: `user_id = auth.uid()` (simple Owner-Filter)
-- Admin: `is_admin()` Bypass fuer SELECT (Read-only Cross-User Admin-Sicht)
-- Mutate: nur Eigentuemer
+Klassen-Templates ausfuehrlich dokumentiert in `docs/ARCHITECTURE.md` V8.11-Section + DECs DEC-265..274.
 
-### SLC-902 — Team-bezogene Konfiguration
-- Tabellen: `branding_settings`, `email_templates`, `payment_terms_templates`, `automation_rules`, `compliance_templates`, `cadences`, `cadence_steps`
-- Pattern: Admin-mutate (`is_admin()`), alle-Team-User-read (`team_id = get_my_team_id()`)
-- Begruendung: Konfigurations-Daten sind Team-shared, aber nur Admin darf aendern
+### SLC-901 — Klasse A: Per-User-Stammdaten (4 Tabellen)
+- Tabellen: `user_settings`, `kpi_snapshots`, `goals`, `activity_kpi_targets`
+- Spalte: alle haben `user_id`
+- Policy (DEC-270): `user_id = auth.uid() OR is_admin()` fuer SELECT + Mutate
+- Aufwand: ~3-4h, MIG-045
 
-### SLC-903 — Abgeleitete Records (JOIN auf Parent)
-- Tabellen: `tasks`, `signals`, `calendar_events`, `email_attachments`, `proposal_items`, `proposal_payment_milestones`, `cadence_executions`, `ai_action_queue`, `ai_feedback`, `auto_winloss_runs`, `email_threads`, `email_sync_state`, `knowledge_chunks`, `vat_id_validations`, `activity_kpi_targets`
-- Pattern: JOIN auf Parent-Owner-Tabelle (`meetings`/`deals`/`activities`/`email_messages`/`proposals`) mit `can_see_owner(parent.owner_user_id)`
-- **knowledge_chunks Spezial-Pfad (Q-V8.11-C entschieden):** Schema-Erweiterung um `owner_user_id` + `team_id` Spalten + Backfill aus Parent-Source-Row. Direkter Owner-Filter statt JOIN. Embedding-Sync-Cron-Anpassung Pflicht-MT.
+### SLC-902 — Klasse B: Team-Templates (11 Tabellen)
+- Tabellen: `branding_settings`, `email_templates`, `payment_terms_templates`, `compliance_templates`, `vat_id_validations`, `pipelines`, `pipeline_stages`, `products`, `automation_rules`, `cadences`, `cadence_steps`
+- Spalte: kein Owner (Templates ohne user-Bezug)
+- Policy (DEC-271): SELECT all authenticated, INSERT/UPDATE/DELETE Admin-only
+- Multi-Tenant-V9-forward-compatible (team_id-Filter spaeter ergaenzbar)
+- Aufwand: ~5-6h, MIG-046 inkl. Sec-Audit-Helper-Function (DEC-274)
 
-### SLC-904 — Audit/Logging
-- Tabellen: `audit_log`, `emails` (Outbound)
-- audit_log-SELECT-Policy (Q-V8.11-A entschieden): Admin-all + Actor-own-Rows (`is_admin() OR actor_id = auth.uid()`). Member sehen eigene Audit-Eintraege fuer DSGVO-Art-15-Self-Service.
-- audit_log-INSERT/UPDATE/DELETE: Service-Role-only (kein User-Mutate ueber API).
-- emails-Outbound: JOIN auf parent (deal/contact) mit can_see_owner — fallback in SLC-903 falls schema das traegt.
+### SLC-903 — Klasse C: Parent-FK-JOIN (24 Tabellen)
+- Tabellen: `tasks`, `signals`, `calendar_events`, `email_attachments`, `proposal_items`, `proposal_payment_milestones`, `cadence_executions`, `cadence_enrollments`, `automation_runs`, `deal_products`, `handoffs`, `referrals`, `fit_assessments`, `ai_action_queue`, `ai_feedback`, `auto_winloss_runs`, `email_threads`, `email_sync_state`, `campaigns`, `campaign_links`, `campaign_link_clicks`, `documents` (Tabelle, nicht Bucket!), `email_tracking_events`, `emails` (V7-direct wegen eigener owner_user_id-Spalte)
+- Pattern (DEC-272): `EXISTS (SELECT 1 FROM <parent> WHERE <parent>.id = <child>.<fk> AND can_see_owner(<parent>.owner_user_id))`
+- Multi-Parent: OR-Verkettung (z.B. signals mit deal_id + contact_id + company_id + activity_id)
+- OQ-V8.11-arch-5 (in /slice-planning): kein-Parent-FK-Tabellen (email_tracking_events, campaign_link_clicks, automation_runs, cadence_enrollments, fit_assessments) → pro Tabelle entscheiden ob mittelbarer FK / Schema-ALTER / Admin-only-SELECT
+- Aufwand: ~10-13h, MIG-047 in 3 atomaren Migration-Schritten (8+8+8 Tabellen)
+
+### SLC-904 — Klasse E: Audit-Spezial (1 Tabelle: audit_log)
+- audit_log-SELECT-Policy (Q-V8.11-A entschieden, DEC-272-Verfeinerung): Admin-all + Actor-own-Rows (`is_admin() OR actor_id = auth.uid()`). DSGVO-Art-15-Self-Service
+- audit_log-INSERT/UPDATE/DELETE: Service-Role-only (kein User-Mutate ueber API)
+- Code-Audit `cockpit/src/lib/audit.ts` — alle Caller pruefen ob createAdminClient genutzt wird
+- Aufwand: ~2-3h, MIG-048
+
+### SLC-905 — Klasse D: Schema-Erweiterung + Backfill (1 Tabelle: knowledge_chunks)
+- knowledge_chunks Schema-ALTER (DEC-273): ADD COLUMN owner_user_id UUID + team_id UUID + 2 Indexe
+- SYNC-Backfill (DEC-267) innerhalb Migration: UPDATE...FROM Parent-Source pro source_type (meeting/email_message/activity/document)
+- Policy: `can_see_owner(owner_user_id)` (direkter Owner-Filter statt JOIN, Performance-besser)
+- search_knowledge_chunks SECURITY-DEFINER-Function-Erweiterung: WHERE-Filter Owner ergaenzen (schliesst SEC-007-Lese-Pfad-Teil)
+- Embedding-Sync-Cron-Anpassung Pflicht-MT
+- Aufwand: ~4-5h, MIG-049 (destructive ALTER + Backfill)
 
 ## Out of Scope
 
@@ -98,7 +114,7 @@ Admin (User Immo) und kuenftiger Customer-User (Founder, Sales-Member, Teamlead,
 
 **R-V8.11-4 (Medium):** knowledge_chunks Schema-Migration ist destructive (Backfill aller bestehenden chunks). Wenn Backfill fehlschlaegt, sind RAG-Embeddings cross-tenant geleakt oder unzugaenglich. Mitigation: Idempotenter Backfill mit Pre-Apply-Audit, Test-Daten in Smoke-DB.
 
-**R-V8.11-5 (Low):** Vergessene Tabellen — Realitaets-Check ergibt, dass die SEC-006-Liste (~25 Tabellen) nicht mehr aktuell ist. Pre-/architecture muss SQL-Helper-Function aufrufen die LIVE alle authenticated_full_access-Tabellen listet.
+**R-V8.11-5 (HIGH — re-eskaliert 2026-06-04 in /architecture):** Vergessene Tabellen — Live-DB-Check zeigt 41 Tabellen, SEC-006 listete 25. Differenz +16 Tabellen (automation_runs, cadence_enrollments, campaign_link_clicks, campaign_links, campaigns, deal_products, documents-Tabelle, email_tracking_events, fit_assessments, handoffs, pipeline_stages, pipelines, products, referrals — alle in Live-DB mit `*_full_access`-Policy). Mitigation: persistente Sec-Audit-Helper-Function (DEC-274) deployed in SLC-902 als Done-Gate, Burn-In-Check 1-Sekunden-Query. Aufwand-Schaetzung +30-40% (von ~17-22h auf ~24-31h).
 
 **A-V8.11-1:** V7-MIG-035 Helper-Functions (`is_admin`, `get_my_team_id`, `can_see_owner`) sind weiterhin korrekt + nicht modifiziert. Annahme verifiziert durch V7-Burn-In + V8.x-Burn-Ins.
 
@@ -106,9 +122,9 @@ Admin (User Immo) und kuenftiger Customer-User (Founder, Sales-Member, Teamlead,
 
 ## Success criteria
 
-**Done-Kriterium (Q-V8.11-B entschieden — 100% Coverage):**
+**Done-Kriterium (Q-V8.11-B entschieden — 100% Coverage, re-baselined auf Live-DB-Realitaet):**
 
-1. **25/25 Tabellen** migriert auf Owner-/Team-aware RLS (per den 4 Klassen-Patterns).
+1. **41/41 Tabellen** migriert auf Owner-/Team-aware RLS (per den 5 Klassen-Patterns, korrigiert von 25 nach Live-DB-Check 2026-06-04).
 2. **RLS-Test-Matrix erweitert** um mindestens 2 Vitest pro Tabelle (same-owner sees / foreign-owner blocked), insgesamt mind. 50 neue Tests. Alle GREEN gegen Coolify-DB-Sidecar.
 3. **Sec-Audit-Helper-Function** `list_tables_with_authenticated_full_access()` liefert leeren Result-Set.
 4. **EXPLAIN ANALYZE** auf 5 typischen Queries (z.B. `SELECT * FROM tasks WHERE deal_id = $1`) zeigt akzeptable Cost (<10x Pre-V8.11 Baseline) — Hard-Threshold in /architecture festlegen.
@@ -122,12 +138,17 @@ Admin (User Immo) und kuenftiger Customer-User (Founder, Sales-Member, Teamlead,
 
 Alle 4 Founder-OQs sind in /requirements-Session 2026-06-04 entschieden (Q-V8.11-A bis Q-V8.11-D, siehe oben).
 
-**Offene /architecture-OQs (Founder-Input nicht zwingend):**
+**Alle /architecture-OQs in /architecture-Session 2026-06-04 entschieden (DEC-265..268):**
 
-- **OQ-V8.11-arch-1:** Sub-Slice-Reihenfolge — SLC-901 (per-User-Stammdaten, einfachste Pattern) zuerst als Pattern-Etablierung, oder SLC-903 (groesster Brocken, ~15 Tabellen) zuerst um den dominanten Aufwand fruh zu bewaeltigen?
-- **OQ-V8.11-arch-2:** EXPLAIN ANALYZE Hard-Threshold — was ist "akzeptable Cost"? 10x V7-Baseline? Absolut <100ms pro Query?
-- **OQ-V8.11-arch-3:** knowledge_chunks Backfill — Sync (Migration-Time) oder Async (Background-Cron mit Status='pending' Spalte)?
-- **OQ-V8.11-arch-4:** RLS-Test-Pattern — wiederverwenden Coolify-Test-Setup von V7 (cockpit/__tests__/rls/v7-*) oder eigene v8-11-rls-Test-Suite?
+- **OQ-V8.11-arch-1 → DEC-265:** Sub-Slice-Reihenfolge SLC-901 → 902 → 903 → 904 → 905 (steigende Komplexitaet, Pattern-Etablierung zuerst, destructive ALTER zuletzt)
+- **OQ-V8.11-arch-2 → DEC-266:** EXPLAIN ANALYZE Hard-Threshold = max(100ms, 10x Pre-V8.11-Baseline)
+- **OQ-V8.11-arch-3 → DEC-267:** knowledge_chunks Backfill SYNC innerhalb MIG-049 (Volumen <10k chunks)
+- **OQ-V8.11-arch-4 → DEC-268:** V7-Test-Pattern wiederverwenden + neue Test-Files pro Sub-Slice
+
+**Neu eingefuehrt in /architecture (Carry-Over zu /slice-planning):**
+
+- **OQ-V8.11-arch-5:** Tabellen ohne klaren Parent-FK (email_tracking_events, campaign_link_clicks, automation_runs, cadence_enrollments, fit_assessments) — pro Tabelle in /slice-planning entscheiden: (a) mittelbarer FK ueber Junction, (b) Schema-ALTER mit created_by-FK, (c) Admin-only SELECT + service_role-only Mutate.
+- **OQ-V8.11-arch-6:** `documents`-PUBLIC-Tabelle vs Storage-Bucket-Policy aus V8.10/SLC-893 — Policy-Naming-Praefix `documents_table_*` vs `documents_storage_*` empfohlen.
 
 **Cross-Repo-Symmetrie (post-V8.11):**
 - OP V8.0.x und IS V1.5.x haben aehnliche RLS-Sweep-Restbestaende? → eigene /requirements pro Repo nach V8.11 Customer-Live-Gate.
@@ -136,16 +157,17 @@ Alle 4 Founder-OQs sind in /requirements-Session 2026-06-04 entschieden (Q-V8.11
 
 **SaaS-Mode** — V8.11 ist eine Pre-Live-Pflicht-Hardening fuer ein Multi-Tenant-SaaS-Produkt. Cumulative-Single-Branch-Worktree (`v8-11-rls-sweep`) analog V7-RLS-Switch. Pro Sub-Slice eigener Commit-Burst auf den Worktree-Branch, Master-Merge erst nach kompletter V8.11 + /qa Gesamt + /final-check + /go-live.
 
-## Sub-Slice-Vorschau (Detail in /slice-planning)
+## Sub-Slice-Vorschau (post-/architecture re-baseline, Detail in /slice-planning)
 
 | Sub-Slice | Klasse | Tabellen | Aufwand | Migration |
 |-----------|--------|----------|---------|-----------|
-| SLC-901 | per-User-Stammdaten | ~3 (user_settings, kpi_snapshots, ggf goals) | ~3-4h | MIG-045 |
-| SLC-902 | team-bezogene Konfiguration | ~7 | ~4-5h | MIG-046 |
-| SLC-903 | abgeleitete Records (inkl. knowledge_chunks Schema-Erw.) | ~15 | ~8-10h | MIG-047 |
-| SLC-904 | Audit/Logging | 2 | ~2-3h | MIG-048 |
+| SLC-901 | A — per-User-Stammdaten (user_id-Spalte) | 4 | ~3-4h | MIG-045 |
+| SLC-902 | B — Team-Templates (kein owner) | 11 | ~5-6h | MIG-046 (+ Sec-Audit-Helper-Function DEC-274) |
+| SLC-903 | C — Parent-FK-JOIN (3 atomare Blocks) | 24 | ~10-13h | MIG-047 |
+| SLC-904 | E — Audit-Spezial (Actor-own-Rows) | 1 (audit_log) | ~2-3h | MIG-048 |
+| SLC-905 | D — Schema-Erweiterung + Backfill | 1 (knowledge_chunks) | ~4-5h | MIG-049 + search_knowledge_chunks Function-Erweiterung |
 
-Gesamt-Aufwand: **~17-22h Code-Side** ueber ~1-2 Wochen verteilt, Single-Dev. Plus /qa pro Sub-Slice + /qa Gesamt + /final-check + /go-live + /post-launch.
+Gesamt: 4+11+24+1+1 = **41 Tabellen**. Gesamt-Aufwand: **~24-31h Code-Side** ueber ~1.5-2 Wochen verteilt, Single-Dev (korrigiert von ~17-22h nach Live-DB-Check). Plus /qa pro Sub-Slice + /qa Gesamt + /final-check + /go-live + /post-launch.
 
 ## Related
 
