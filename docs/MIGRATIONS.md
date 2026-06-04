@@ -1,5 +1,23 @@
 # Migrations
 
+### MIG-045 — V8.11 SLC-901 Klasse-A user_id RLS-Policies (APPLIED 2026-06-04 via SSH+base64)
+- Date: 2026-06-04
+- Scope: idempotente RLS-Policy-Umstellung auf 4 Per-User-Stammdaten-Tabellen via DO-Block-Loop:
+  ```sql
+  -- DO $$ FOREACH ['user_settings','kpi_snapshots','goals','activity_kpi_targets'] LOOP
+  DROP POLICY IF EXISTS authenticated_full_access ON <t>;
+  CREATE POLICY <t>_select ON <t> FOR SELECT TO authenticated USING (user_id = auth.uid() OR is_admin());
+  CREATE POLICY <t>_insert ON <t> FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid() OR is_admin());
+  CREATE POLICY <t>_update ON <t> FOR UPDATE TO authenticated USING (user_id = auth.uid() OR is_admin()) WITH CHECK (...);
+  CREATE POLICY <t>_delete ON <t> FOR DELETE TO authenticated USING (user_id = auth.uid() OR is_admin());
+  ```
+  Plus Helper-Existenz-Guard `RAISE EXCEPTION IF V7-Helper < 4` und Verifikations-Block (16 Policies + 0 orphan).
+- Reason: Security Sprint 3 V8.11 RLS-Sweep der 41 Zweittabellen mit `authenticated_full_access`-Policy (USING(true), keine User-Isolation). Klasse-A-Pattern (DEC-270) fuer Per-User-Stammdaten ohne Team-Visibility (kein teamlead-Bypass) — Settings/Snapshots/Goals/Targets sind privat. Pre-Apply Done-Gate `pg_policies WHERE policyname LIKE '%_full_access'` = 41 (Live-DB-Befund 2026-06-04). Post-Apply: 37 (41 - 4). Pattern-Quelle: `sql/migrations/035_v7_rls_switch.sql` DO-Loop-Section (1:1 portiert mit Klasse-A-Drift — kein can_see_owner-Wrap, kein teamlead-Pfad). SEC-006 Sub-Item.
+- Affected Areas: 4 Tables im public-Schema: `user_settings` (8 Rows), `kpi_snapshots` (315 Rows), `goals` (3 Rows), `activity_kpi_targets` (5 Rows). 16 neue RLS-Policies (4 pro Tabelle), 4 Drops alte `authenticated_full_access`. 0 Schema-Changes, 0 Index-Changes. service_role + supabase_admin BYPASSRLS unaffected. Cron-Schreiber `cockpit/src/app/api/cron/kpi-snapshot/route.ts` (service_role) verifiziert: setzt user_id korrekt aus profiles-Lookup (`docs/AUDIT_CRON_V811.md` Klasse-A Verdict: 0 FIX-NEEDED).
+- Risk: Niedrig. Pure additive RLS-Aenderung (kein DROP TABLE/ALTER COLUMN). Idempotent (re-apply verifiziert: 2. Run 0 Errors, alle DROP POLICY IF EXISTS skippen, NOTICE-Output sauber). Post-Apply Vitest 48/48 GREEN in 199ms via node:22-Sidecar im `k9f5pn5upfq7etoefb5ukbcg_business-net`. Post-Apply EXPLAIN-Re-Run unter Klasse-A-Policy aktiv: alle 5 Test-Queries unter 0.4ms, max-Faktor 3.14x bei Q1 user_settings (0.073ms → 0.229ms). DEC-266 max(100ms, 10x-Baseline) eingehalten mit grossem Abstand. is_admin() STABLE-Caching pro Statement (1 Profile-Read pro Query, kein N-mal-Read).
+- Rollback Notes: `DO $$ FOREACH ... LOOP DROP POLICY <t>_select|_insert|_update|_delete; CREATE POLICY authenticated_full_access ON <t> FOR ALL TO authenticated USING (true); END LOOP $$;`. Wuerde Klasse-A-Isolation entfernen und Multi-User-Cross-User-Read wieder oeffnen — kein praktischer Rollback-Bedarf weil V8.11 Pre-Customer-Live-Pflicht ist und V1-State auch Pre-Live-Block waere.
+- Verify: `SELECT COUNT(*) FROM pg_policies WHERE schemaname='public' AND policyname LIKE '%_full_access'` → 37 (Pre-Apply 41, Delta 4). `SELECT COUNT(*) FROM pg_policies WHERE tablename IN ('user_settings','kpi_snapshots','goals','activity_kpi_targets')` → 16 (4 pro Tabelle).
+
 ### MIG-044 — V8.13 SLC-895 auth.users.aud Normalisierung (ISSUE-089 Root-Fix) (APPLIED 2026-06-03 via SSH+base64)
 - Date: 2026-06-03
 - Scope: idempotente Spalten-Normalisierung in `auth.users`:

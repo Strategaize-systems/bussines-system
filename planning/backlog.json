@@ -2627,9 +2627,9 @@
       "title": "V8.11 SLC-901 RLS Klasse A: Per-User-Stammdaten (4 Tabellen, MIG-045)",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V8.11",
-      "description": "Sub-Item von BL-500. 4 Per-User-Stammdaten-Tabellen mit eigener user_id-Spalte (user_settings, kpi_snapshots, goals, activity_kpi_targets) auf Klasse-A-Pattern umstellen: `user_id = auth.uid() OR is_admin()`. MIG-045 idempotent. Vitest 48 Tests (4 x 3 Rollen x 4 Ops). Cron-Code-Audit fuer kpi-aggregate-Cron (docs/AUDIT_CRON_V811.md Klasse A). Pre-Apply 41 Rows in Helper-Function (existiert noch nicht), Post-Apply 37 Rows direkter pg_policies-Query. ~3-4h Code-Side. Slice-Spec: slices/SLC-901-rls-sweep-klasse-a-user-id.md. DEC-270, DEC-265.",
+      "description": "Sub-Item von BL-500. 4 Per-User-Stammdaten-Tabellen mit eigener user_id-Spalte (user_settings, kpi_snapshots, goals, activity_kpi_targets) auf Klasse-A-Pattern umstellen: `user_id = auth.uid() OR is_admin()`. MIG-045 idempotent applied + re-apply-idempotent. Vitest 48 Tests (4 x 3 Rollen x 4 Ops) GREEN in 199ms. Cron-Code-Audit (docs/AUDIT_CRON_V811.md Klasse A) Verdict: 0 FIX-NEEDED. Pre-Apply 41 (loose), Post-Apply 37 (loose) per pg_policies-Direkt-Query. EXPLAIN-Perf max-Faktor 3.14x bei 0.229ms (DEC-266-Threshold 100ms eingehalten). Code-Side done; Live-Smoke MT-6 separat. Slice-Spec: slices/SLC-901-rls-sweep-klasse-a-user-id.md. DEC-270, DEC-265.",
       "createdAt": "2026-06-04"
     },
     {
