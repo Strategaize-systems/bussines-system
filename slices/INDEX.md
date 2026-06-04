@@ -457,3 +457,17 @@ V8.13 = 2 Slices SLC-894 + SLC-895, gemeinsamer Aufwand ~3-4h. Schliesst die zwe
 |----|-------|---------|--------|----------|---------|
 | SLC-894 | [V8.13 BS storage-Schema GRANTs Hotfix (ISSUE-088 Root-Fix)](SLC-894-bs-storage-grants-hotfix.md) | FEAT-813 / BL-506 | deployed | High | 2026-06-03 |
 | SLC-895 | [V8.13 BS ISSUE-089 GoTrue signInWithPassword Investigation + Fix](SLC-895-bs-issue-089-investigation.md) | FEAT-813 / BL-507 | deployed | High | 2026-06-03 |
+
+## V8.11 Slices (Security Sprint 3 — RLS-Sweep der 41 Zweittabellen — PRE-LIVE PFLICHT)
+
+V8.11 = 5 Sub-Slices SLC-901..905, Gesamt-Aufwand ~24-31h Code-Side ueber ~1.5-2 Wochen Single-Dev. **Cumulative-Single-Branch-Worktree `v8-11-rls-sweep` (analog V7-RLS-Switch)** — pro Sub-Slice eigener Commit-Burst, Master-Merge erst nach kompletter V8.11 + Gesamt-/qa + /final-check + /go-live. **Pre-Live-Pflicht** vor erstem Customer-Onboarding (2. User) wegen aktuell offener Cross-Tenant-Read-Risiko auf 41 Tabellen. Live-DB-Realitaets-Check 2026-06-04 (in /architecture) korrigierte SEC-006-Schaetzung von ~25 auf **41 Tabellen** (+16 ungenannte). 5 Klassen-Templates etabliert (DEC-270..274): A user_id, B Templates, C Parent-FK-JOIN, D knowledge_chunks Schema-ALTER, E audit_log Actor-own. Sec-Audit-Helper-Function `list_tables_with_authenticated_full_access()` (DEC-274) deployed in SLC-902 als persistenter Done-Gate (post-V8.11 returns 0 Rows = 100% Coverage erfuellt Q-V8.11-B). 2 Carry-Over-OQs entschieden in /slice-planning (in SLC-903 dokumentiert): OQ-arch-5 5 Tabellen ohne Parent-FK (email_tracking_events → mittelbar via emails, campaign_link_clicks/automation_runs/email_sync_state → Admin-only, cadence_enrollments → Multi-Parent, fit_assessments → assessed_by-special); OQ-arch-6 documents-Naming `documents_table_*` (Storage-Bucket-Policies sind `documents_user_*`, konfliktfrei).
+
+Pflicht-MTs pro Sub-Slice: Migration + Vitest + Cron-Code-Audit (`docs/AUDIT_CRON_V811.md`) + EXPLAIN ANALYZE (`qa/SLC-90X-perf-baseline.md`) + Done-Gate-Check (via Helper-Function ab SLC-902) + Records-Sync + Live-Smoke. Reihenfolge SLC-901 → 902 → 903 → 904 → 905 per DEC-265 (steigende Komplexitaet, destructive ALTER zuletzt). Pattern-Reuse: V7-Migration-DO-Loop (`sql/migrations/035_v7_rls_switch.sql`), V7-Test-Matrix-Sidecar (`cockpit/__tests__/rls/v7-rls-matrix.test.ts`), sql-migration-hetzner.md, coolify-test-setup.md.
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-901 | [Klasse A: Per-User-Stammdaten (4 Tabellen, MIG-045)](SLC-901-rls-sweep-klasse-a-user-id.md) | FEAT-911 / BL-500-901 | planned | High | 2026-06-04 |
+| SLC-902 | [Klasse B: Team-Templates (11 Tabellen, MIG-046 + Sec-Audit-Helper)](SLC-902-rls-sweep-klasse-b-team-templates.md) | FEAT-911 / BL-500-902 | planned | High | 2026-06-04 |
+| SLC-903 | [Klasse C: Parent-FK-JOIN (24 Tabellen, MIG-047a/b/c, 3 atomare Blocks)](SLC-903-rls-sweep-klasse-c-parent-fk-join.md) | FEAT-911 / BL-500-903 | planned | High | 2026-06-04 |
+| SLC-904 | [Klasse E: audit_log (Admin-all + Actor-own DSGVO-Art-15, MIG-048)](SLC-904-rls-sweep-klasse-e-audit-log.md) | FEAT-911 / BL-500-904 | planned | High | 2026-06-04 |
+| SLC-905 | [Klasse D: knowledge_chunks Schema-ALTER + Backfill + search_knowledge_chunks-Erw + Done-Gate (MIG-049)](SLC-905-rls-sweep-klasse-d-knowledge-chunks.md) | FEAT-911 / BL-500-905 | planned | High | 2026-06-04 |

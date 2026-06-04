@@ -145,10 +145,15 @@ Alle 4 Founder-OQs sind in /requirements-Session 2026-06-04 entschieden (Q-V8.11
 - **OQ-V8.11-arch-3 → DEC-267:** knowledge_chunks Backfill SYNC innerhalb MIG-049 (Volumen <10k chunks)
 - **OQ-V8.11-arch-4 → DEC-268:** V7-Test-Pattern wiederverwenden + neue Test-Files pro Sub-Slice
 
-**Neu eingefuehrt in /architecture (Carry-Over zu /slice-planning):**
+**OQ-V8.11-arch-5 + arch-6 entschieden in /slice-planning 2026-06-04 (Live-DB-Inspektion):**
 
-- **OQ-V8.11-arch-5:** Tabellen ohne klaren Parent-FK (email_tracking_events, campaign_link_clicks, automation_runs, cadence_enrollments, fit_assessments) — pro Tabelle in /slice-planning entscheiden: (a) mittelbarer FK ueber Junction, (b) Schema-ALTER mit created_by-FK, (c) Admin-only SELECT + service_role-only Mutate.
-- **OQ-V8.11-arch-6:** `documents`-PUBLIC-Tabelle vs Storage-Bucket-Policy aus V8.10/SLC-893 — Policy-Naming-Praefix `documents_table_*` vs `documents_storage_*` empfohlen.
+- **OQ-V8.11-arch-5 → entschieden pro Tabelle (umgesetzt in SLC-903 MIG-047c Block 3):**
+  - `email_tracking_events` → **(a) mittelbarer FK via emails.owner_user_id** (emails hat owner_user_id; EXISTS-Subquery)
+  - `campaign_link_clicks` → **(c) Admin-only SELECT + service_role-only mutate** (pure Tracking-Log ohne User-Bezug, ip_hash/referer nicht user-relevant)
+  - `automation_runs` → **(c) Admin-only SELECT + service_role-only mutate** (rule_id→automation_rules ist Klasse-B Template ohne Owner; trigger_entity polymorph fragil; Workflow-Audit)
+  - `cadence_enrollments` → **(a) Multi-Parent EXISTS via deal_id OR contact_id + created_by-Fallback** (beide FKs vorhanden)
+  - `fit_assessments` → **(a) Special-Case `assessed_by = auth.uid() OR is_admin()`** (polymorph entity_type/_id fragil; assessed_by stabil + per-User-private Bewertung)
+- **OQ-V8.11-arch-6 → entschieden (umgesetzt in SLC-903 MIG-047c):** Storage-Bucket-Policies sind in Live-DB `documents_user_select/insert/update/delete` (Live-Inspektion 2026-06-04). PUBLIC-`documents`-Tabelle nutzt **`documents_table_*`-Praefix** (`documents_table_select/insert/update/delete`). Konflikt-frei.
 
 **Cross-Repo-Symmetrie (post-V8.11):**
 - OP V8.0.x und IS V1.5.x haben aehnliche RLS-Sweep-Restbestaende? → eigene /requirements pro Repo nach V8.11 Customer-Live-Gate.
@@ -157,17 +162,21 @@ Alle 4 Founder-OQs sind in /requirements-Session 2026-06-04 entschieden (Q-V8.11
 
 **SaaS-Mode** — V8.11 ist eine Pre-Live-Pflicht-Hardening fuer ein Multi-Tenant-SaaS-Produkt. Cumulative-Single-Branch-Worktree (`v8-11-rls-sweep`) analog V7-RLS-Switch. Pro Sub-Slice eigener Commit-Burst auf den Worktree-Branch, Master-Merge erst nach kompletter V8.11 + /qa Gesamt + /final-check + /go-live.
 
-## Sub-Slice-Vorschau (post-/architecture re-baseline, Detail in /slice-planning)
+## Sub-Slices (post-/slice-planning 2026-06-04, mit Backlog-Sub-Items)
 
-| Sub-Slice | Klasse | Tabellen | Aufwand | Migration |
-|-----------|--------|----------|---------|-----------|
-| SLC-901 | A — per-User-Stammdaten (user_id-Spalte) | 4 | ~3-4h | MIG-045 |
-| SLC-902 | B — Team-Templates (kein owner) | 11 | ~5-6h | MIG-046 (+ Sec-Audit-Helper-Function DEC-274) |
-| SLC-903 | C — Parent-FK-JOIN (3 atomare Blocks) | 24 | ~10-13h | MIG-047 |
-| SLC-904 | E — Audit-Spezial (Actor-own-Rows) | 1 (audit_log) | ~2-3h | MIG-048 |
-| SLC-905 | D — Schema-Erweiterung + Backfill | 1 (knowledge_chunks) | ~4-5h | MIG-049 + search_knowledge_chunks Function-Erweiterung |
+| Sub-Slice | Klasse | Tabellen | Aufwand | Migration | Backlog | Spec |
+|-----------|--------|----------|---------|-----------|---------|------|
+| SLC-901 | A — per-User-Stammdaten (user_id-Spalte) | 4 | ~3-4h | MIG-045 | BL-508 | slices/SLC-901-rls-sweep-klasse-a-user-id.md |
+| SLC-902 | B — Team-Templates (kein owner) | 11 | ~5-6h | MIG-046 (+ Sec-Audit-Helper-Function DEC-274) | BL-509 | slices/SLC-902-rls-sweep-klasse-b-team-templates.md |
+| SLC-903 | C — Parent-FK-JOIN (3 atomare Blocks 047a/b/c) | 24 | ~10-13h | MIG-047a/b/c | BL-510 | slices/SLC-903-rls-sweep-klasse-c-parent-fk-join.md |
+| SLC-904 | E — Audit-Spezial (Actor-own-Rows) | 1 (audit_log) | ~2-3h | MIG-048 | BL-511 | slices/SLC-904-rls-sweep-klasse-e-audit-log.md |
+| SLC-905 | D — Schema-Erweiterung + Backfill + Function-Erweiterung | 1 (knowledge_chunks) | ~4-5h | MIG-049 + search_knowledge_chunks-Function-Erweiterung | BL-512 | slices/SLC-905-rls-sweep-klasse-d-knowledge-chunks.md |
 
-Gesamt: 4+11+24+1+1 = **41 Tabellen**. Gesamt-Aufwand: **~24-31h Code-Side** ueber ~1.5-2 Wochen verteilt, Single-Dev (korrigiert von ~17-22h nach Live-DB-Check). Plus /qa pro Sub-Slice + /qa Gesamt + /final-check + /go-live + /post-launch.
+Gesamt: 4+11+24+1+1 = **41 Tabellen**. Gesamt-Aufwand: **~24-31h Code-Side** ueber ~1.5-2 Wochen verteilt, Single-Dev. Plus /qa pro Sub-Slice + /qa Gesamt V8.11 + /final-check + /go-live + /post-launch.
+
+**Test-Volumen:** ~605+ Vitest-RLS-Tests gegen Coolify-DB ueber alle 5 Slices (48 + 132 + 288 + 18 + 20 = 506 RLS-Matrix + Schema/Function-Tests + Embedding-Cron-Unit-Test).
+
+**Done-Gate (Q-V8.11-B 100% Coverage):** `SELECT COUNT(*) FROM list_tables_with_authenticated_full_access()` muss strikt monoton fallen: 41 → 37 (SLC-901) → 26 (SLC-902) → 2 (SLC-903) → 1 (SLC-904) → **0 (SLC-905)**.
 
 ## Related
 
