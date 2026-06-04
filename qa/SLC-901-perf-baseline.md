@@ -56,8 +56,30 @@ Faktisch ist die 100ms-Untergrenze in allen 5 Faellen bindend.
 
 ## Post-V8.11 Re-Run (MT-5, nach MIG-045-Apply)
 
-_Wird in MT-5 nach Migration-Apply ergaenzt._
+Ausgefuehrt mit `SET LOCAL ROLE authenticated` + `SET LOCAL "request.jwt.claim.sub"` = Founder-Admin-UUID, sodass die neue Klasse-A-Policy `user_id = auth.uid() OR is_admin()` aktiv ist (admin-Pfad: is_admin()=true).
+
+| # | Query | Execution Time | Plan |
+|---|---|---|---|
+| Q1 | `SELECT * FROM user_settings WHERE user_id = <test-uuid>` | **0.229 ms** | Index Scan + Policy-Filter |
+| Q2 | `SELECT * FROM kpi_snapshots WHERE user_id = <test-uuid> ORDER BY snapshot_date DESC LIMIT 30` | **0.115 ms** | Index Scan + Policy-Filter |
+| Q3 | `SELECT * FROM goals WHERE user_id = <test-uuid> AND status = 'active'` | **0.141 ms** | Bitmap Heap Scan + Policy-Filter |
+| Q4 | `SELECT * FROM activity_kpi_targets WHERE user_id = <test-uuid>` | **0.079 ms** | Bitmap Heap Scan + Policy-Filter |
+| Q5 | `SELECT COUNT(*) FROM kpi_snapshots WHERE created_at >= NOW() - INTERVAL '30 days'` | **0.388 ms** | Seq Scan + Policy-Filter |
+
+Plan-Anreicherung: Filter-Block enthaelt jetzt zusaetzlich die Klasse-A-Bedingung:
+`((user_id = (COALESCE(NULLIF(current_setting('request.jwt.claim.sub'), ''), (...->>('sub')))::uuid) OR is_admin())`.
+`is_admin()` ist als STABLE markiert und wird pro Statement 1x evaluiert (Cache-faehig, kein N-mal-Profile-Read).
 
 ## Threshold-Verdict
 
-_Wird in MT-5 entschieden. Bei Violation: Index-Audit + Index-DDL als Patch ans Ende MIG-045 anhaengen + Re-Apply._
+| # | Pre-Baseline | Post-MIG-045 | Faktor | Threshold (max 100ms / 10x) | Verdict |
+|---|---|---|---|---|---|
+| Q1 | 0.073 ms | 0.229 ms | 3.14x | OK (10x = 0.73ms; 100ms-Floor bindend) | **PASS** |
+| Q2 | 0.074 ms | 0.115 ms | 1.55x | OK | **PASS** |
+| Q3 | 0.802 ms | 0.141 ms | 0.18x (Verbesserung) | OK | **PASS** |
+| Q4 | 0.156 ms | 0.079 ms | 0.51x (Verbesserung) | OK | **PASS** |
+| Q5 | 0.345 ms | 0.388 ms | 1.12x | OK | **PASS** |
+
+**Gesamt-Verdict:** Alle 5 Queries erfuellen DEC-266-Threshold mit grossem Abstand. Kein Index-Audit erforderlich. Kein Migration-Patch noetig. AC-901-6 + AC-901-7 PASS.
+
+Q3 + Q4 sind sogar schneller — die spezifischeren Indizes (`idx_goals_status`, `idx_activity_kpi_targets_unique`) machen den Plan praeziser; die neue RLS-Bedingung reduziert die zurueck-zu-recheckenden Rows (Filter-Push-Down profitiert vom user_id-Praedikat).
