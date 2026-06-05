@@ -1,5 +1,15 @@
 # Known Issues
 
+### ISSUE-093 — insight-actions umgeht Klasse-C-RLS via createAdminClient fuer ai_action_queue + ai_feedback (Klasse-C-Block-3-Pendant)
+- Status: open
+- Severity: Medium
+- Area: Defense-in-Depth / RLS-Klasse-C-Bypass / V8.11 SLC-903 Sub-Session 3 IMP-1054-Finding
+- Summary: Nach MIG-047c (V8.11 SLC-903 Klasse-C-Sweep Block 3, 2026-06-05 LIVE auf Coolify-DB) enforciert die DB-Layer fuer `ai_action_queue` Polymorph 5-Wege-EXISTS-Pattern (entity_type=deal/email_message/contact/company/proposal + decided_by-Fallback + admin) und fuer `ai_feedback` transitive Policy ueber ai_action_queue. In `cockpit/src/lib/actions/insight-actions.ts` L37+83+172+196 wird jedoch `createAdminClient()` (BYPASSRLS) verwendet fuer `admin.from('ai_action_queue').select/.update` und `admin.from('ai_feedback').insert` — die Klasse-C-Policies greifen fuer diesen Pfad NICHT. Defense-in-Depth-Gap, analog ISSUE-090 (products) + ISSUE-091 (deal-products) + ISSUE-092 (email_attachments).
+- Impact: Funktionaler Access-Control-Bypass auf `ai_action_queue` Reads + Status-Updates + `ai_feedback` Inserts via Server-Actions. In Single-Founder-Mode (V3.2-Phase) ist keine echte Produktion betroffen, weil nur Admin-Login existiert. Pre-Customer-Live MUSS gefixt sein vor V4+ Multi-User-Onboarding.
+- Workaround: Aktuell kein Handlungsbedarf (Single-Founder). Pre-Customer-Live entweder Option A oder Option B (siehe Next Action).
+- Discovery: 2026-06-05 V8.11 SLC-903 Sub-Session 3 MT-4-B createAdminClient-Audit. IMP-1054 Pflicht-Pre-Step `grep admin.from` ueber Block-3-Tabellen aufgespuert. Bundling mit ISSUE-090 + ISSUE-091 + ISSUE-092 + SLC-901 M-1 als V8.11-Closure-Block-Bundle empfohlen — jetzt 6-7 analoge Faelle in einem Sweep mit identischem Fix-Pattern.
+- Next Action: Option A (preferred): in V8.11-Closure-Phase `createAdminClient()` durch `createClient()` in insight-actions.ts L37+83+172+196 ersetzen. RLS Klasse-C `polymorph 5-Wege OR decided_by OR is_admin` greift automatisch. Aufwand: ~10min (insight-Server-Actions sind User-bound, RLS-Pfad funktional aequivalent). Option B (defense-in-depth): `assertEntityOwnership(entity_type, entity_id)` Helper als Pre-Check vor createAdminClient (Aufwand: ~30min). Entscheidung: in V8.11 Gesamt-/qa.
+
 ### ISSUE-092 — emails-Compose send-action umgeht Klasse-C-RLS via createAdminClient fuer email_attachments-Bulk-Insert (Klasse-C-Block-2-Pendant)
 - Status: open
 - Severity: Medium

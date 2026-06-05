@@ -1,5 +1,47 @@
 # Migrations
 
+### MIG-047c — V8.11 SLC-903 Klasse-C Block 3 Polymorph/Special-Cases RLS-Policies (APPLIED 2026-06-05 via SSH+base64)
+- Date: 2026-06-05
+- Scope: idempotente RLS-Policy-Umstellung auf 9 Klasse-C Block-3-Tabellen (inkl. ai_feedback deferred aus Block 2 per DEC-275) + 5 neue Parent-FK-Indizes:
+  ```sql
+  -- Helper-Existenz-Guard: is_admin + can_see_owner
+  -- 5 CREATE INDEX IF NOT EXISTS (documents.{company,deal,created_by} + campaigns.created_by + fit_assessments.assessed_by)
+  -- 36 DROP POLICY IF EXISTS (18 alte authenticated_full_access-Varianten + 18 neue _select/_insert/_update/_delete Naming-Varianten fuer Re-Apply-Idempotenz)
+  -- 36 CREATE POLICY: pro Tabelle <t>_select / <t>_insert / <t>_update / <t>_delete (documents nutzt `documents_table_*`-Praefix per OQ-arch-6)
+  --   ai_action_queue (Polymorph 5-Wege CASE per D-MT4-AiActionQueue-Polymorph Decision):
+  --     USING (entity_type='deal' AND EXISTS(deals via entity_id)
+  --            OR entity_type='email_message' AND EXISTS(emails)
+  --            OR entity_type='contact' AND EXISTS(contacts)
+  --            OR entity_type='company' AND EXISTS(companies)
+  --            OR entity_type='proposal' AND EXISTS(proposals)
+  --            OR decided_by = auth.uid()  -- own-decision-Fallback
+  --            OR is_admin())
+  --   ai_feedback (Transitive via ai_action_queue) — Policy dupliziert 5-Wege-Logik (PostgreSQL hat kein Policy-Inheritance):
+  --     USING (EXISTS(SELECT 1 FROM ai_action_queue q WHERE q.id = ai_feedback.action_queue_id AND <5-Wege-CASE>) OR is_admin())
+  --   campaigns (Klasse-A-Stil created_by):
+  --     USING (created_by = auth.uid() OR is_admin())
+  --   campaign_links (Transitive via campaigns):
+  --     USING (EXISTS(SELECT 1 FROM campaigns c WHERE c.id = campaign_links.campaign_id AND (c.created_by = auth.uid() OR is_admin())) OR is_admin())
+  --   campaign_link_clicks (Admin-only SELECT + service_role mutate, Admin-DELETE fuer DSGVO):
+  --     SELECT USING (is_admin()); INSERT WITH CHECK (false); UPDATE USING (false); DELETE USING (is_admin())
+  --   automation_runs (Admin-only SELECT + service_role mutate):
+  --     SELECT USING (is_admin()); INSERT WITH CHECK (false); UPDATE USING (false); DELETE USING (is_admin())
+  --   fit_assessments (assessed_by Special):
+  --     USING (assessed_by = auth.uid() OR is_admin())
+  --   documents (Multi-Parent OR contact/company/deal + created_by + admin, `documents_table_*`-Naming per OQ-arch-6):
+  --     USING (EXISTS(contacts) OR EXISTS(companies) OR EXISTS(deals)
+  --            OR (alle 3 NULL AND created_by = auth.uid())
+  --            OR is_admin())
+  --   email_sync_state (Admin-only):
+  --     SELECT USING (is_admin()); INSERT WITH CHECK (false); UPDATE USING (false); DELETE USING (is_admin())
+  -- NOTIFY pgrst, 'reload schema'
+  ```
+- Reason: Security Sprint 3 V8.11 RLS-Sweep Klasse-C Sub-Slice 3/5 Block 3 (finaler Block). Pattern-Reuse aus MIG-047a (Idempotenz + DROP-Strategie) + MIG-047b (Transitive-Pattern). **DECISION D-MT4-AiActionQueue-Polymorph (Live-Schema-Befund 2026-06-05):** ai_action_queue hat KEIN `created_by` (Spec L225 Default unmoeglich). Vorhandene Spalten: entity_type (NOT NULL), entity_id (NOT NULL uuid), decided_by (nullable uuid). Live-Daten zeigen entity_type-Werte 'deal' (18) + 'email_message' (2). Gewaehlt: polymorph 5-Wege CASE (deal/email_message/contact/company/proposal) + decided_by + admin. Eingrenzung auf nur 2 Werte (Spec L225 Default) wuerde 'email_message' blockieren + zukuenftige entity_types blockieren. **DECISION D-MT4-AiFeedback-Transitive:** ai_feedback Policy dupliziert die 5-Wege-Logik via Subquery (PostgreSQL erlaubt kein Policy-Inheritance). NULL-action_queue_id: orphan, nur Admin-sichtbar. **DECISION D-MT4-Documents-Naming (OQ-arch-6 Live-Verify):** storage.objects hat `documents_user_*` (Bucket-Policies V8.10 MIG-041), public.documents bekommt `documents_table_*`-Praefix → konflikt-frei. Pre-Apply 11 (post-MIG-047b Stand). Post-Apply 2 (-9 inkl. ai_feedback aus Block 2 deferred). 2 verbleibend: audit_log (SLC-904) + knowledge_chunks (SLC-905).
+- Affected Areas: 9 Tables im public-Schema: `ai_action_queue`, `ai_feedback`, `campaigns`, `campaign_links`, `campaign_link_clicks`, `automation_runs`, `fit_assessments`, `documents`, `email_sync_state`. 36 neue RLS-Policies (4 pro Tabelle). 18 Drops alter `authenticated_full_access`-Naming-Varianten + 18 Drops neue Naming-Varianten fuer Re-Apply-Idempotenz. 5 neue Indizes (idx_documents_company, idx_documents_deal, idx_documents_created_by, idx_campaigns_created_by, idx_fit_assessments_assessed_by). 0 Schema-Changes. service_role + supabase_admin BYPASSRLS unaffected. createAdminClient-Audit-Befund: 1 NEW M-3 ISSUE-093 (`insight-actions.ts` L37+83+172+196 `admin.from('ai_action_queue')/('ai_feedback')` analog ISSUE-090/091/092). Public-Tracking-Pixel-Insert `/r/[token]` nutzt createAdminClient als beabsichtigter Cron-equivalent-Bypass (unauthenticated entry) — OK. automation/* nutzt durchgehend createAdminClient (Worker-by-design, konsistent mit Admin-only-automation_runs).
+- Risk: Niedrig. Pure additive RLS-Aenderung + Index-Ergaenzungen. Idempotent (Re-Apply 0 Errors verifiziert). ai_action_queue Polymorph-CASE laeuft per index idx_ai_queue_entity (entity_type+entity_id). 20 Pre-existing ai_action_queue-Rows (18 deal + 2 email_message) → alle ueber den 5-Wege-CASE oder admin sichtbar. 1 Pre-existing ai_feedback-Row mit action_queue_id=set → transitive Policy greift. 5 Pre-existing automation_runs + 1 email_sync_state → nur via is_admin() sichtbar (richtig fuer Tracking/Audit-Logs). 0 Rows in campaigns/campaign_links/campaign_link_clicks/documents/fit_assessments → Greenfield. DEC-266-Threshold (max 100ms, 10x-Baseline) erwartet erfuellt — Q-Block-3 EXPLAIN in Sub-Session 3 MT-7 final dokumentiert. Direct-SQL Sanity-Smoke 16/16 PASS-LIVE (admin sieht alles, member sieht 0 Admin-only-Tabellen + 1 ai_action_queue via deal_owner-Pfad + 0 ai_feedback).
+- Rollback Notes: `DO $$ FOREACH 9 Tabellen LOOP DROP POLICY <t>_<op>; CREATE POLICY authenticated_full_access ON <t> FOR ALL TO authenticated USING (true); END LOOP $$;` mit documents-Naming `documents_table_<op>`. Index-Drop optional via `DROP INDEX IF EXISTS idx_documents_company,...`. Kein praktischer Rollback-Bedarf weil V8.11 Pre-Customer-Live-Pflicht ist.
+- Verify: `SELECT COUNT(*) FROM list_tables_with_authenticated_full_access()` → 2 (Pre-Apply 11, Delta 9). `SELECT tablename, COUNT(policyname) FROM pg_policies WHERE schemaname='public' AND tablename IN ('ai_action_queue','ai_feedback','campaigns','campaign_links','campaign_link_clicks','automation_runs','fit_assessments','documents','email_sync_state') GROUP BY tablename` → 9 × 4 = 36 Rows. Direct-SQL Sanity-Smoke siehe RPT-591 Section "Direct-SQL Sanity-Smoke Block 3". Voll Vitest 288 Tests (3 Test-Files) verschoben in Sub-Session 4 (MT-5).
+
 ### MIG-047b — V8.11 SLC-903 Klasse-C Block 2 Proposal/Email/Cadence-FK + V7-Direct emails RLS-Policies (APPLIED 2026-06-05 via SSH+base64)
 - Date: 2026-06-05
 - Scope: idempotente RLS-Policy-Umstellung auf 7 Klasse-C Block-2-Tabellen + 4 neue Parent-FK-Indizes. ai_feedback wegen D-MT3-AiFeedback-Defer-Decision aus Block 2 raus → Block 3:
