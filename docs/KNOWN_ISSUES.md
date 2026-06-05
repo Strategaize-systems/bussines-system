@@ -1,5 +1,15 @@
 # Known Issues
 
+### ISSUE-094 — document-actions umgeht Klasse-C-RLS via createAdminClient fuer documents (Klasse-C-Block-3-Cron-Audit-Finding)
+- Status: open
+- Severity: Medium
+- Area: Defense-in-Depth / RLS-Klasse-C-Bypass / V8.11 SLC-903 Sub-Session 4 MT-6 Cron-Audit-Finding
+- Summary: Nach MIG-047c (V8.11 SLC-903 Klasse-C-Sweep Block 3, 2026-06-05 LIVE auf Coolify-DB) enforciert die DB-Layer `documents_table_*` Multi-Parent OR-EXISTS-Policy (`EXISTS contacts.owner_user_id OR EXISTS companies.owner_user_id OR EXISTS deals.owner_user_id OR (NULL-Parent AND created_by=auth.uid()) OR is_admin()`). In `cockpit/src/lib/actions/document-actions.ts` L31/73/79/114/128 wird jedoch durchgaengig `createAdminClient()` (BYPASSRLS) verwendet fuer alle SELECT/INSERT/DELETE/UPDATE auf `documents` — mit `withCustomerScope()`-Wrapper als alleiniger Pre-Check (kein Klasse-C-can_see_owner-Check, kein is_admin()-Check). Die Klasse-C-Policy greift fuer diesen Pfad NICHT. Defense-in-Depth-Gap, analog ISSUE-090 (products) + ISSUE-091 (deal-products) + ISSUE-092 (email_attachments) + ISSUE-093 (ai_action_queue/ai_feedback).
+- Impact: Funktionaler Access-Control-Bypass auf `documents`-CRUD via Server-Actions. In Single-Founder-Mode (V3.2-Phase) ist keine echte Produktion betroffen, weil nur Admin-Login existiert. Pre-Customer-Live MUSS gefixt sein vor V4+ Multi-User-Onboarding.
+- Workaround: Aktuell kein Handlungsbedarf (Single-Founder). Pre-Customer-Live entweder Option A oder Option B (siehe Next Action).
+- Discovery: 2026-06-05 V8.11 SLC-903 Sub-Session 4 MT-6 Cron-Code-Audit (`docs/AUDIT_CRON_V811.md` Klasse-C-Section). IMP-1054 Pflicht-Pre-Step `grep .from\\('documents'\\)` ueber alle createAdminClient-Caller aufgespuert. Bundling mit ISSUE-090/091/092/093 + SLC-901 M-1 als V8.11-Closure-Block-Bundle empfohlen — jetzt 7-8 analoge Faelle in einem Sweep mit identischem Fix-Pattern.
+- Next Action: Option A (preferred): in V8.11-Closure-Phase `createAdminClient()` durch `createClient()` in document-actions.ts L31/73/79/114/128 ersetzen. RLS Klasse-C `documents_table_select/insert/update/delete` (Multi-Parent OR + created_by-Fallback + admin) greift automatisch. Aufwand: ~15min (5 Funktionen, alle User-bound, RLS-Pfad funktional aequivalent — withCustomerScope-Wrapper kann bleiben als zusaetzlicher tenant-Layer). Option B (defense-in-depth): `assertDocumentOwnership(documentId)` Helper als Pre-Check vor createAdminClient (Aufwand: ~30min). Entscheidung: in V8.11 Gesamt-/qa.
+
 ### ISSUE-093 — insight-actions umgeht Klasse-C-RLS via createAdminClient fuer ai_action_queue + ai_feedback (Klasse-C-Block-3-Pendant)
 - Status: open
 - Severity: Medium
