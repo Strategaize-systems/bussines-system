@@ -1,5 +1,15 @@
 # Known Issues
 
+### ISSUE-090 — products Server-Actions umgehen Klasse-B-RLS via createAdminClient ohne is_admin()-Pre-Check
+- Status: open
+- Severity: Medium
+- Area: Defense-in-Depth / RLS-Klasse-B-Bypass / V8.11 SLC-902 IMP-1054-Finding
+- Summary: Nach MIG-046 (V8.11 SLC-902 Klasse-B-Sweep, 2026-06-05 LIVE auf Coolify-DB) enforciert die DB-Layer `is_admin()` fuer INSERT/UPDATE/DELETE auf `products`. Die Code-Layer in `cockpit/src/app/actions/products.ts` ruft jedoch `createAdminClient()` (BYPASSRLS) in `createProduct` (L77), `updateProduct` (L114) und `archiveProduct` (L153) auf — ohne expliziten role-Check (lediglich `if (!user)` Authentication-Check). Damit kann jeder authentifizierte User (member, teamlead, admin) Produkte schreiben, obwohl die Klasse-B-Policy nur Admin zulaesst. Defense-in-Depth-Gap, kein Cross-User-Read-Bug, kein RLS-Skript-Drift sondern bewusst-falsches Code-Pattern.
+- Impact: Funktionaler Access-Control-Bypass auf `products`-Writes. In Single-Founder-Mode (V3.2-Phase) ist keine echte Produktion betroffen, weil nur Admin-Login existiert. Pre-Customer-Live MUSS gefixt sein vor V4+ Multi-User-Onboarding.
+- Workaround: Aktuell keine echte Live-Exposition (Single-Founder). Pre-Customer-Live entweder Option A oder Option B (siehe Next Action).
+- Discovery: 2026-06-05 V8.11 SLC-902 MT-4 Cron-Code-Audit (`docs/AUDIT_CRON_V811.md` Klasse-B-Section, RPT-586). IMP-1054 Pflicht-Pre-Step `grep createAdminClient` ueber 11 Klasse-B-Tabellen aufgespuert. Aehnliches Pattern (Klasse A) wurde in SLC-901 /qa als Medium M-1 fuer 3 Server-Actions (goals/kpi-snapshots/activity-kpis) festgestellt — products ist der naechste Treffer.
+- Next Action: Option A (preferred): in V8.11-Closure-Phase oder V8.11 SLC-902 MT-6 Hotfix-Slice `createAdminClient()` durch `createClient()` in 3 Funktionen ersetzen (createProduct, updateProduct, archiveProduct). RLS Klasse-B `is_admin()` greift automatisch. Aufwand: ~10min. Option B (defense-in-depth): `assertIsAdmin()` Helper als Pre-Check vor createAdminClient (Aufwand: ~30min). Entscheidung: in V8.11 Gesamt-/qa.
+
 ### ISSUE-089 — GoTrue signInWithPassword broken fuer bestimmte Bestands-User (Diagnose-Scope verschoben nach V8.13 Investigation) [RESOLVED 2026-06-03]
 - Status: resolved
 - Severity: High (Pre-Customer-Live Blocker)

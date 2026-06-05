@@ -44,9 +44,54 @@
 - `kpi-snapshot/route.ts` iteriert NUR ueber den ersten Profile (`profiles[0]`). In V9 muss das ein Loop ueber alle aktiven Profiles werden. Beobachtung — nicht V8.11-Scope.
 - `meeting-reminders/route.ts` liest alle `user_settings` ohne Filter — das ist beabsichtigt fuer Cross-User-Reminder-Aggregation. Bei Multi-Tenant in V9 muss ggf. ein WHERE-Filter pro Tenant gesetzt werden.
 
-## Klasse B — Team-Templates (SLC-902, geplant)
+## Klasse B — Team-Templates (SLC-902)
 
-_Pending. Wird in SLC-902 MT ergaenzt._
+**Tabellen (11):** `branding_settings`, `email_templates`, `payment_terms_templates`, `compliance_templates`, `vat_id_validations`, `pipelines`, `pipeline_stages`, `products`, `automation_rules`, `cadences`, `cadence_steps`
+
+**Audit-Methode (IMP-1054 Pflicht-Pre-Step):**
+- `grep -rln "createAdminClient" cockpit/src/app/actions/ cockpit/src/app/(app)/ cockpit/src/lib/`
+- `grep -rn ".from('<table>')." cockpit/src/` pro Tabelle
+- Cron-Endpoints: `cockpit/src/app/api/cron/` keine Treffer auf 11 Tabellen
+- Pruefung: Server-Action-Pfad (Write) — `createClient` (RLS-enforced) ODER `createAdminClient` (BYPASSRLS, Pflicht-Pre-Check `is_admin()` im Code)?
+
+**Server-Action-Treffer-Tabelle (Klasse B):**
+
+| Tabelle | File | Pfad | Client | Pre-Check | Verdict |
+|---|---|---|---|---|---|
+| `branding_settings` | `cockpit/src/app/(app)/settings/branding/actions.ts` L213-219 | `updateBranding` UPDATE/INSERT | `createClient` | `requireUser()` (kein role-Check, RLS Klasse-B is_admin() erzwingt es) | **OK** |
+| `branding_settings` | `cockpit/src/app/(app)/settings/branding/actions.ts` L104 | `getBrandingForSend` SELECT (cron/send hook) | `createAdminClient` | Read-only Cron-Pfad | **OK** (read-only Bypass, DEC-269 legit) |
+| `branding_settings` | `cockpit/src/app/(app)/settings/branding/actions.ts` L264-282 | `uploadLogo` storage.upload | `createAdminClient` | `requireUser()` (Storage-Bucket-API, nicht branding_settings-Table) | **OK** (Storage-API, kein Table-Write) |
+| `email_templates` | `cockpit/src/app/(app)/settings/template-actions.ts` L71 | INSERT (createTemplate) | `createClient` | `requireUser()` + RLS Klasse-B is_admin() | **OK** |
+| `payment_terms_templates` | `cockpit/src/app/(app)/settings/payment-terms/actions.ts` | UPSERT (Default-Flag-Toggle) | `createClient` | `requireUser()` + RLS Klasse-B | **OK** |
+| `compliance_templates` | `cockpit/src/app/(app)/settings/compliance/actions.ts` L111+L141 | UPSERT (saveTemplate, resetTemplate) | `createClient` | `requireUser()` + RLS Klasse-B | **OK** |
+| `vat_id_validations` | `cockpit/src/lib/validation/vies-actions.ts` L38 | UPSERT (Cache-Update) | `createAdminClient` | Cache-Pattern (kein per-User-Filter, DPA-konformer EU-Bedrock-Pfad) | **OK** (service-role Cache-Bypass, DEC-269 legit) |
+| `pipelines` | `cockpit/src/app/(app)/pipeline/actions.ts` L857 | DELETE (deletePipeline) | `createClient` | `requireUser()` + RLS Klasse-B | **OK** |
+| `pipeline_stages` | `cockpit/src/app/(app)/pipeline/actions.ts` L779/L855/L907/L978 | INSERT/UPDATE/DELETE | `createClient` | `requireUser()` + RLS Klasse-B | **OK** |
+| `products` | `cockpit/src/app/actions/products.ts` L77/L114/L153 | INSERT (createProduct), UPDATE (updateProduct), UPDATE-archive (archiveProduct) | `createAdminClient` | **KEIN role-Check** — nur `if (!user)` Authentication-Check | **DEFENSE-IN-DEPTH-GAP — Medium** |
+| `products` | `cockpit/src/app/actions/products.ts` L25/L48 | SELECT (listProducts, listProductCategories) | `createAdminClient` | `requireUser()` Authentication-Check | **OK** (Read-only, Klasse-B-SELECT-USING(true) erlaubt es ohnehin) |
+| `automation_rules` | `cockpit/src/app/(app)/pipeline/actions.ts` L968 | UPDATE (Auto-Pause bei stage-delete) | `createClient` | `requireUser()` + RLS Klasse-B is_admin() | **OK** |
+| `automation_rules` | `cockpit/src/app/(app)/mein-tag/actions/apply-nl-rule.ts` L137 | INSERT (NL-Sculptor) | `createClient` | `requireUser()` + RLS Klasse-B is_admin() | **OK** |
+| `automation_rules` | `cockpit/src/lib/automation/executor.ts` L216 | UPDATE (last_run_at, last_run_status) | `createAdminClient` | Cron-Runner Pfad (DEC-269 service-role) | **OK** (Runner-Telemetry, kein User-State) |
+| `automation_rules` | `cockpit/src/lib/automation/dispatcher.ts` L53 | SELECT (matching rules) | `createAdminClient` | Cron-Runner Pfad | **OK** (Read-only Dispatcher) |
+| `automation_rules` | `cockpit/src/lib/automation/sculptor.ts` L132 | INSERT (KI-Sculptor) | `createAdminClient` (dynamic import) | KI-Pfad via Server-Action mit eigenem Auth-Wrapper (apply-nl-rule.ts oben) | **OK** (sculptor.ts ist Helper, eigentlicher Entry-Point ist apply-nl-rule.ts mit requireUser) |
+| `cadences` | `cockpit/src/app/(app)/cadences/actions.ts` L136 | DELETE | `createClient` | `requireUser()` + RLS Klasse-B | **OK** |
+| `cadence_steps` | `cockpit/src/app/(app)/cadences/actions.ts` L243 | DELETE | `createClient` | `requireUser()` + RLS Klasse-B | **OK** |
+
+**Verdict Klasse B:** 10 von 11 Tabellen sauber. **1 FIX-NEEDED (Medium): `products`.**
+
+**Issue: `actions/products.ts` umgeht Klasse-B RLS via `createAdminClient` ohne expliziten `is_admin()`-Pre-Check.** Nach MIG-046 sollte jeder INSERT/UPDATE/DELETE auf `products` nur fuer Admin moeglich sein, aber die aktuelle Implementierung erlaubt allen authentifizierten Usern (member, teamlead) Produkte zu erzeugen/aendern/archivieren. **Wird als ISSUE-090 in `docs/KNOWN_ISSUES.md` eroeffnet** und SLC-902 MT-6 SQL-Hotfix-Slice ODER V8.11-Closure-Block.
+
+**Fix-Optionen:**
+- **Option A (preferred):** Replace `createAdminClient()` mit `createClient()` (RLS Klasse-B greift automatisch) in `createProduct`, `updateProduct`, `archiveProduct`. Minimal-invasiv. ListProducts kann auf createClient umstellen (SELECT erlaubt). Pre-Live-bug, kein V3-Customer-Live-Block aktuell aber Single-Founder-Mode tolerant.
+- **Option B (defense-in-depth):** Add `assertIsAdmin()` Helper-Function (per V7-RLS-Switch SECURITY DEFINER) als Pre-Check vor jedem createAdminClient-Use.
+
+**Cron-Treffer-Tabelle (Klasse B):** Keine `/api/cron/`-Routes touchen die 11 Klasse-B-Tabellen direkt. Cron-Runner-Helper (`lib/automation/*`, `lib/cadence/*`) sind ueber Server-Actions getriggert oder via Bearer-Cron-Secret-Endpoints abgesichert.
+
+**V9-Multi-Tenant Beobachtung (out-of-scope SLC-902):**
+- 11 Klasse-B-Tabellen sind Single-Team-Owner-less. In V9 muss `team_id`-Spalte + `team_id = get_my_team_id()`-Filter ergaenzt werden. Policy-Body bleibt forward-compatible (`USING(true)` → `USING(team_id = get_my_team_id())`).
+- KI-Vorlagen-Generator (`sculptor.ts`) ist heute Single-User; in V9 muss `created_by` als Team-Filter-Equivalent fungieren.
+
+**AC-902-5 PASS** (Klasse-B-Audit dokumentiert + ISSUE-090 fuer products eroeffnet).
 
 ## Klasse C — Parent-FK-JOIN (SLC-903, geplant)
 
