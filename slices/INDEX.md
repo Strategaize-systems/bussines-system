@@ -468,6 +468,6 @@ Pflicht-MTs pro Sub-Slice: Migration + Vitest + Cron-Code-Audit (`docs/AUDIT_CRO
 |----|-------|---------|--------|----------|---------|
 | SLC-901 | [Klasse A: Per-User-Stammdaten (4 Tabellen, MIG-045)](SLC-901-rls-sweep-klasse-a-user-id.md) | FEAT-911 / BL-500-901 | done | High | 2026-06-04 |
 | SLC-902 | [Klasse B: Team-Templates (11 Tabellen, MIG-046 + Sec-Audit-Helper)](SLC-902-rls-sweep-klasse-b-team-templates.md) | FEAT-911 / BL-500-902 | done | High | 2026-06-04 |
-| SLC-903 | [Klasse C: Parent-FK-JOIN (24 Tabellen, MIG-047a/b/c, 3 atomare Blocks)](SLC-903-rls-sweep-klasse-c-parent-fk-join.md) | FEAT-911 / BL-500-903 | planned | High | 2026-06-04 |
+| SLC-903 | [Klasse C: Parent-FK-JOIN (24 Tabellen, MIG-047a/b/c, 3 atomare Blocks)](SLC-903-rls-sweep-klasse-c-parent-fk-join.md) | FEAT-911 / BL-500-903 | done | High | 2026-06-04 |
 | SLC-904 | [Klasse E: audit_log (Admin-all + Actor-own DSGVO-Art-15, MIG-048)](SLC-904-rls-sweep-klasse-e-audit-log.md) | FEAT-911 / BL-500-904 | planned | High | 2026-06-04 |
 | SLC-905 | [Klasse D: knowledge_chunks Schema-ALTER + Backfill + search_knowledge_chunks-Erw + Done-Gate (MIG-049)](SLC-905-rls-sweep-klasse-d-knowledge-chunks.md) | FEAT-911 / BL-500-905 | planned | High | 2026-06-04 |

@@ -2647,7 +2647,7 @@
       "title": "V8.11 SLC-903 RLS Klasse C: Parent-FK-JOIN (24 Tabellen, MIG-047a/b/c, 3 atomare Blocks)",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V8.11",
       "description": "Sub-Item von BL-500. **Dominanter Aufwand der V8.11.** 24 Klasse-C-Tabellen in 3 atomaren Migration-Blocks: Block 1 Standard-Parent-FK (tasks, signals, calendar_events, email_threads, handoffs, deal_products, auto_winloss_runs, referrals, MIG-047a, ~3-4h), Block 2 Proposal/Email/Cadence-FK (proposal_items, proposal_payment_milestones, email_attachments, emails (V7-direct), cadence_enrollments, cadence_executions, email_tracking_events, ai_feedback, MIG-047b, ~3-4h), Block 3 Polymorph/Special-Cases (ai_action_queue, campaigns, campaign_links, campaign_link_clicks, automation_runs, fit_assessments, documents, email_sync_state, MIG-047c, ~3-4h). EXISTS-Subquery-Pattern per DEC-272. **OQ-arch-5 entschieden in /slice-planning:** email_tracking_events → mittelbar via emails, campaign_link_clicks/automation_runs/email_sync_state → Admin-only-SELECT + service_role-only mutate, cadence_enrollments → Multi-Parent EXISTS, fit_assessments → assessed_by-special. **OQ-arch-6 entschieden:** documents-PUBLIC-Tabelle nutzt `documents_table_*`-Policy-Praefix (Storage-Bucket-Policies sind `documents_user_*`, konfliktfrei). Vitest 288 Tests in 3 Test-Files. Cron-Code-Audit signal-extract/automation-runner/cadence-execute/click-log-cleanup. ~10-13h Code-Side. Post-Apply Helper-Function 2 Rows. Slice-Spec: slices/SLC-903-rls-sweep-klasse-c-parent-fk-join.md.",
       "createdAt": "2026-06-04"
