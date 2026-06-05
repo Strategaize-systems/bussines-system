@@ -127,18 +127,78 @@ EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT) SELECT cs.* FROM cadence_steps cs JOIN c
 
 Wegen Mini-Datenmenge (1-12 Rows) ist die 100ms-Untergrenze maßgeblich. RLS-Policy-Overhead muss unter 100ms bleiben pro Query.
 
-## Erwartung Post-MIG-046
+## Post-MIG-046 Re-Run (MT-5)
 
-- Plan-Hash kann sich aendern (USING(true)-Policy ist gleich teuer, INSERT/UPDATE/DELETE Plan bleibt unveraendert mit With-Check, da kein Filter im SELECT-Pfad).
-- Execution-Time soll im selben Bereich bleiben (0.05 - 0.5 ms). Wenn ueber 100ms: Index-Audit (SLC-902 MT-5 Verdict).
+Re-Run der 5 Queries nach MIG-046 LIVE-Apply (2026-06-05). Bedingungen identisch zur Baseline (`postgres`-Rolle, BYPASSRLS, gleiche Coolify-DB).
 
-## Verifizierung (MT-1 Done-Marker)
+### Q1 — email_templates SELECT all
+
+- Plan: `Seq Scan on email_templates` (Plan-Hash unchanged)
+- Planning Time: **0.315 ms**
+- **Execution Time: 0.082 ms**
+
+### Q2 — pipelines ORDER BY sort_order
+
+- Plan: `Sort -> Seq Scan on pipelines` (Plan-Hash unchanged)
+- Planning Time: 0.230 ms
+- **Execution Time: 0.078 ms**
+
+### Q3 — products SELECT all
+
+- Plan: `Seq Scan on products` (Plan-Hash unchanged)
+- Planning Time: 0.550 ms
+- **Execution Time: 0.101 ms**
+
+### Q4 — automation_rules WHERE status='active'
+
+- Plan: `Seq Scan on automation_rules` (Plan-Hash unchanged)
+- Planning Time: 0.321 ms
+- **Execution Time: 0.063 ms**
+
+### Q5 — cadence_steps JOIN cadences
+
+- Plan: `Hash Join -> Seq Scan + Hash(Seq Scan)` (Plan-Hash unchanged)
+- Planning Time: 1.303 ms
+- **Execution Time: 0.297 ms**
+
+## Threshold-Verdict (DEC-266 max(100ms, 10x))
+
+| ID | Query | Pre Exec ms | Post Exec ms | Faktor | Threshold | Verdict |
+|---|---|---|---|---|---|---|
+| Q1 | `email_templates` | 0.170 | **0.082** | 0.48x | 100ms | **PASS** (52% schneller) |
+| Q2 | `pipelines` | 0.158 | **0.078** | 0.49x | 100ms | **PASS** (51% schneller) |
+| Q3 | `products` | 0.050 | **0.101** | 2.02x | 100ms | **PASS** (Cold-Cache-Effekt, immer noch < 0.5ms) |
+| Q4 | `automation_rules` | 0.409 | **0.063** | 0.15x | 100ms | **PASS** (85% schneller) |
+| Q5 | `cadence_steps JOIN` | 0.482 | **0.297** | 0.62x | 100ms | **PASS** (38% schneller) |
+
+**Kein Plan-Hash-Wechsel.** 4 von 5 Queries laufen post-MIG schneller (Cache-Warm-Effekt). Q3 (products) ist absolut langsamer, aber im Absolut-Bereich unter 0.5ms — Faktor ist Cold-Cache-Differenz, kein RLS-Defekt.
+
+## RLS-Overhead-Check (1 Sample, authenticated)
+
+Verifikation dass `USING(true)`-Policy keinen messbaren Overhead erzeugt:
+
+```sql
+BEGIN;
+SET LOCAL ROLE authenticated;
+SET LOCAL "request.jwt.claim.sub" = '<TEST_MEMBER_2>';
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM email_templates;
+ROLLBACK;
+```
+
+- Plan: `Seq Scan on email_templates` (identisch zu postgres-Rolle)
+- **Execution Time: 0.170 ms** (vs. postgres 0.082 ms)
+- Ratio: 2.07x — Policy-Eval-Overhead vernachlaessigbar bei Mini-Dataset.
+
+## Verifizierung (MT-1 + MT-5 Done-Marker)
 
 - [x] 11 Tabellen Owner-less verifiziert (0 owner_user_id / user_id Spalten)
 - [x] Pre-Apply Policy-Inventur 11 Rows (10 `authenticated_full_access` + 1 `automation_rules_full_access`)
 - [x] Pre-Apply Done-Gate loose: 37 (entspricht Spec)
 - [x] 5 Baseline-Queries mit Exec-Times dokumentiert
 - [x] Threshold-Berechnung pro Query gemacht
-- [x] Sec-Audit-Helper-Function noch nicht deployed (wird MIG-046 erledigen)
+- [x] Sec-Audit-Helper-Function pre-MIG NICHT deployed
+- [x] Post-MIG-046: 5/5 Queries unter Threshold
+- [x] Kein Plan-Hash-Wechsel
+- [x] RLS-Overhead-Check authenticated zeigt vernachlaessigbaren Overhead
 
-**AC-902-7 PASS** (Pre-V8.11-Baseline gemessen + dokumentiert).
+**AC-902-6 + AC-902-7 PASS**.
