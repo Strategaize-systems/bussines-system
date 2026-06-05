@@ -347,3 +347,102 @@ ROLLBACK;
 - [x] RLS-Overhead-Check authenticated zeigt 2.665ms (akzeptabel)
 
 **AC-903-1 + AC-903-2 + AC-903-5 + AC-903-8 Block 1 PASS.**
+
+## Post-MIG-047b/c Re-Run (MT-7 Sub-Session 4 — Block 2 + Block 3)
+
+**Datum:** 2026-06-05 (nach MIG-047a + MIG-047b + MIG-047c alle LIVE)
+**DB:** Coolify-Postgres `supabase-db-k9f5pn5upfq7etoefb5ukbcg-065643061649`
+**Rolle:** `postgres` (BYPASSRLS) fuer Baseline-Vergleich, `authenticated` impersonated als TEST_MEMBER_1 fuer RLS-Overhead-Verify.
+**Threshold (DEC-266):** `max(100ms, 10x-Baseline)`.
+
+### Block 2 Queries (5 — Post-MIG-047b)
+
+| ID | Query | Plan | Exec ms | Threshold | Verdict |
+|---|---|---|---|---|---|
+| Q6 | `SELECT * FROM proposal_items WHERE proposal_id IS NOT NULL LIMIT 50` | Limit → Seq Scan | **0.115** | 100ms | **PASS** |
+| Q7 | `SELECT ea.* FROM email_attachments ea LEFT JOIN emails e ON ea.email_id=e.id LIMIT 50` | Limit → Seq Scan | **0.072** | 100ms | **PASS** |
+| Q8 | `SELECT * FROM emails WHERE owner_user_id IS NOT NULL ORDER BY created_at DESC LIMIT 50` | Limit → Sort (quicksort 29kB) → Seq Scan | **0.109** | 100ms | **PASS** |
+| Q9 | `SELECT * FROM cadence_enrollments WHERE status='active' LIMIT 50` | Limit → Seq Scan | **0.105** | 100ms | **PASS** |
+| Q10 | `SELECT ce.* FROM cadence_executions ce JOIN cadence_enrollments en ON en.id=ce.enrollment_id LIMIT 50` | Limit → Nested Loop Join (Seq+Seq) | **0.168** | 100ms | **PASS** |
+
+### Block 3 Queries (5 — Post-MIG-047c)
+
+| ID | Query | Plan | Exec ms | Threshold | Verdict |
+|---|---|---|---|---|---|
+| Q11 | `SELECT * FROM ai_action_queue WHERE entity_type='deal' LIMIT 50` | Limit → Seq Scan | **0.062** | 100ms | **PASS** |
+| Q12 | `SELECT * FROM ai_feedback LIMIT 50` | Limit → Seq Scan | **0.118** | 100ms | **PASS** |
+| Q13 | `SELECT * FROM campaigns ORDER BY created_at DESC LIMIT 50` | Limit → Sort (quicksort 25kB) → Seq Scan | **0.173** | 100ms | **PASS** |
+| Q14 | `SELECT d.* FROM documents d LEFT JOIN deals deal ON d.deal_id=deal.id LIMIT 50` | Limit → Seq Scan | **0.058** | 100ms | **PASS** |
+| Q15 | `SELECT * FROM automation_runs WHERE status=ANY(ARRAY['pending','running']) ORDER BY started_at DESC LIMIT 50` | Limit → Sort (quicksort 25kB) → Seq Scan | **0.197** | 100ms | **PASS** |
+
+**Block 2 + Block 3 alle 10 Queries unter 0.2ms** — Seq-Scan-Dominanz bei aktueller Datenmenge (proposal_items=378 rows, emails=12, cadence_enrollments=1, ai_action_queue=20, ai_feedback=1, campaigns=0, documents=0, automation_runs=0). Bei groesserem Dataset wird Index-Scan auf den Parent-FKs greifen (alle 25 fehlenden Indices in MIG-047a/b/c bereits ergaenzt).
+
+## RLS-Overhead-Check (authenticated, Multi-Parent OR + Polymorph)
+
+Verifikation: 3 repraesentative Klasse-C-Pattern als authenticated-User (TEST_MEMBER_1 = `00000000-0000-0000-0000-000000000081`):
+
+### Pattern 1 — emails (V7-Direct owner_user_id)
+
+```sql
+SELECT * FROM emails ORDER BY created_at DESC LIMIT 50;
+```
+
+- Plan: `Limit → Sort (quicksort 25kB) → Seq Scan on emails Filter: can_see_owner(owner_user_id)`
+- Rows Removed by Filter: 12 (von 13 total → member_1 sieht 1)
+- **Execution Time: 1.777ms** (vs postgres 0.109ms = ~16x)
+- Verdict: **PASS** unter 100ms. V7-Direct-Pattern hat geringer Overhead.
+
+### Pattern 2 — documents (Multi-Parent OR 3 SubPlans + NULL-Fallback)
+
+```sql
+SELECT * FROM documents LIMIT 50;
+```
+
+- Plan: `Limit → Seq Scan on documents Filter: ((hashed SubPlan 2) OR (hashed SubPlan 4) OR (hashed SubPlan 6) OR (NULL-Parent AND created_by=auth.uid()) OR is_admin())`
+- 3 SubPlans (contacts/companies/deals) via hashed-Set-Optimization (kein per-Row-Scan)
+- **Execution Time: 0.271ms** (vs postgres 0.058ms = ~4.7x)
+- Verdict: **PASS** sehr schnell. Hashed-SubPlan-Optimization durch PostgreSQL-Planner.
+
+### Pattern 3 — ai_action_queue (Polymorph 5-Wege CASE + decided_by + admin)
+
+```sql
+SELECT * FROM ai_action_queue LIMIT 50;
+```
+
+- Plan: `Limit → Seq Scan on ai_action_queue Filter: (5x entity_type-CASE + decided_by + is_admin())`
+- 5 SubPlans (deals/emails/contacts/companies/proposals); SubPlan 1 (deals) via Index-Scan deals_pkey (18 loops); SubPlan 4 (emails) Seq-Scan
+- Rows Removed by Filter: 19 (von 20 total → member_1 sieht 1 Row, da nur deal-entity_type member_1-owned)
+- **Execution Time: 10.247ms** (vs postgres 0.062ms = ~165x)
+- Verdict: **PASS** unter 100ms-Threshold. Polymorph 5-Wege CASE ist Worst-Case-Overhead — bei groesserem Dataset (>500 rows) ggf. Re-Evaluation. R-903-1 Mitigation: alle 25 Parent-FK-Indices bereits ergaenzt, SubPlan 1 demonstriert Index-Effekt (deals_pkey).
+
+## Threshold-Verdict (DEC-266 max(100ms, 10x))
+
+| Block | Queries | Max Exec ms (postgres) | Max RLS-Overhead Exec ms (authenticated) | Verdict |
+|---|---|---|---|---|
+| 1 (MIG-047a) | 5 | 0.128 (Q5 tasks JOIN) | 2.665 (tasks Multi-Parent OR 3 SubPlans) | **PASS** |
+| 2 (MIG-047b) | 5 | 0.168 (Q10 cadence_executions JOIN) | 1.777 (emails V7-Direct) | **PASS** |
+| 3 (MIG-047c) | 5 | 0.197 (Q15 automation_runs ORDER BY) | 10.247 (ai_action_queue Polymorph 5-Wege) | **PASS** |
+
+**Gesamt 15 Queries: 0 Threshold-Verletzungen.** Worst-Case-RLS-Overhead = 10.247ms (ai_action_queue Polymorph, ~165x vs postgres). Absolut < 100ms-Threshold (10.2% des Limits). Bei Tabellenwachstum auf >500 rows ai_action_queue sollte Re-Messung erfolgen.
+
+## Plan-Hash-Wechsel-Audit (DEC-266 Forensik)
+
+Vergleich Pre-MIG vs Post-MIG Plan-Hashes:
+
+- **Block 1 (5 Queries):** 2 Plan-Hash-Wechsel (Q1 tasks Index→Seq, Q5 tasks LEFT JOIN Seq→elided) — Statistik-Update nach +32 Policies, beide Queries schneller bzw. <0.5ms.
+- **Block 2 (5 Queries):** keine Plan-Hash-Wechsel — Seq-Scan-Dominanz blieb (Datenmenge <500 rows pro Tabelle).
+- **Block 3 (5 Queries):** keine Plan-Hash-Wechsel — Seq-Scan-Dominanz blieb.
+
+Kein Regression-Risiko durch Plan-Wechsel detektiert.
+
+## Verifizierung (MT-7 Done-Marker)
+
+- [x] MIG-047a + MIG-047b + MIG-047c alle Live-Apply ohne ERROR (32+28+36=96 CREATE POLICY + 25 CREATE INDEX + 3 NOTIFY)
+- [x] Done-Gate Pre 26 → MIG-047a 18 → MIG-047b 11 → MIG-047c **2** (audit_log SLC-904 + knowledge_chunks SLC-905 verbleibend)
+- [x] 96 Block-1+2+3 Policies aktiv (24 Tabellen × 4 Ops) via `pg_policies`
+- [x] 15 Post-Baseline-Queries gemessen, alle unter 100ms-Threshold (Worst-Case 0.197ms postgres)
+- [x] Kein Threshold-Verletzung
+- [x] RLS-Overhead-Check authenticated zeigt max 10.247ms (Polymorph 5-Wege Worst-Case), absolut akzeptabel
+- [x] Keine Plan-Hash-Regression (2 Plan-Wechsel in Block 1, beide schneller)
+
+**AC-903-1 + AC-903-2 + AC-903-5 + AC-903-8 Block 2 + Block 3 PASS. MT-7 Done-Gate erfuellt.**
