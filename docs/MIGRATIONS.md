@@ -1,5 +1,30 @@
 # Migrations
 
+### MIG-046 — V8.11 SLC-902 Klasse-B Team-Templates RLS-Policies + Sec-Audit-Helper-Function (APPLIED 2026-06-05 via SSH+base64)
+- Date: 2026-06-05
+- Scope: idempotente RLS-Policy-Umstellung auf 11 Team-Templates-Tabellen via DO-Block-Loop + persistente Sec-Audit-Helper-Function (DEC-274):
+  ```sql
+  -- DO $$ FOREACH 11 Tabellen LOOP
+  DROP POLICY IF EXISTS authenticated_full_access ON <t>;
+  DROP POLICY IF EXISTS <t>_full_access ON <t>;
+  CREATE POLICY <t>_select ON <t> FOR SELECT TO authenticated USING (true);
+  CREATE POLICY <t>_insert ON <t> FOR INSERT TO authenticated WITH CHECK (is_admin());
+  CREATE POLICY <t>_update ON <t> FOR UPDATE TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+  CREATE POLICY <t>_delete ON <t> FOR DELETE TO authenticated USING (is_admin());
+  -- END LOOP
+  CREATE OR REPLACE FUNCTION list_tables_with_authenticated_full_access()
+    RETURNS TABLE(schemaname TEXT, tablename TEXT, policyname TEXT)
+    LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public
+  AS $$ SELECT ... FROM pg_policies WHERE policyname LIKE '%_full_access' $$;
+  GRANT EXECUTE ON FUNCTION list_tables_with_authenticated_full_access() TO authenticated;
+  ```
+  Plus Helper-Existenz-Guard `RAISE EXCEPTION IF V7-Helper < 4` und Verifikations-Block (44 Policies + Helper-Function exists + Done-Gate=26).
+- Reason: Security Sprint 3 V8.11 RLS-Sweep der 41 Zweittabellen mit `authenticated_full_access`-Policy. Klasse-B-Pattern (DEC-271) fuer Team-Templates ohne Owner-Spalte — SELECT all authenticated (Team-share), Mutate Admin-only via `is_admin()`. Pre-Apply 37 (post-MIG-045 Stand). Post-Apply 26 (37 - 11). Sec-Audit-Helper-Function (DEC-274) wird hier deployed und ab SLC-903 als persistenter Done-Gate genutzt. Pattern-Quelle: `sql/migrations/045_v8_11_slc_901_klasse_a.sql` DO-Loop (1:1 portiert mit Klasse-B-Pattern: SELECT USING(true) statt user_id-Check, Mutate is_admin() statt user_id OR is_admin()).
+- Affected Areas: 11 Tables im public-Schema: `branding_settings`, `email_templates`, `payment_terms_templates`, `compliance_templates`, `vat_id_validations`, `pipelines`, `pipeline_stages`, `products`, `automation_rules`, `cadences`, `cadence_steps`. 44 neue RLS-Policies (4 pro Tabelle), 11 Drops alter `authenticated_full_access` + 11 Drops `<t>_full_access`-Variante. 1 neue Function `list_tables_with_authenticated_full_access()` (SECURITY DEFINER, STABLE, search_path=public, GRANT EXECUTE TO authenticated). 0 Schema-Changes, 0 Index-Changes. service_role + supabase_admin BYPASSRLS unaffected. Cron-Code-Audit `docs/AUDIT_CRON_V811.md` Klasse-B Section: 10/11 Tabellen sauber, **1 FIX-NEEDED Medium (products → ISSUE-090)** via createAdminClient ohne is_admin()-Pre-Check in 3 Server-Actions.
+- Risk: Niedrig. Pure additive RLS-Aenderung (kein DROP TABLE/ALTER COLUMN). Idempotent (Re-Apply verifiziert: 2. Run 0 Errors, alle DROP POLICY IF EXISTS skippen, CREATE OR REPLACE FUNCTION ohne Fehler, NOTICE-Output sauber). Post-Apply Vitest 132/132 GREEN in 339ms via node:22-Sidecar im `k9f5pn5upfq7etoefb5ukbcg_business-net` (alle 11 Tabellen × 3 Rollen × 4 Ops = 132 Cases). Post-Apply EXPLAIN-Re-Run unter Klasse-B-Policy aktiv: alle 5 Test-Queries 4/5 schneller post-MIG (Cache-Warm-Effekt), max-Faktor 2.02x bei Q3 products (0.050→0.101ms). DEC-266 max(100ms, 10x-Baseline) eingehalten mit grossem Abstand. RLS-Overhead-Check authenticated vs postgres-Rolle 2.07x bei Mini-Dataset = vernachlaessigbar.
+- Rollback Notes: `DO $$ FOREACH 11 Tabellen LOOP DROP POLICY <t>_select|_insert|_update|_delete; CREATE POLICY authenticated_full_access ON <t> FOR ALL TO authenticated USING (true); END LOOP $$; DROP FUNCTION IF EXISTS list_tables_with_authenticated_full_access();`. Wuerde Klasse-B-Admin-mutate-Restriction entfernen und Multi-User-Write-Bypass wieder oeffnen — kein praktischer Rollback-Bedarf weil V8.11 Pre-Customer-Live-Pflicht ist.
+- Verify: `SELECT COUNT(*) FROM list_tables_with_authenticated_full_access()` → 26 (Pre-Apply 37, Delta 11). `SELECT COUNT(*) FROM pg_policies WHERE schemaname='public' AND tablename = ANY(ARRAY[..11..]) AND policyname LIKE ANY(ARRAY['%_select','%_insert','%_update','%_delete'])` → 44. `SELECT COUNT(*) FROM pg_proc WHERE proname='list_tables_with_authenticated_full_access'` → 1.
+
 ### MIG-045 — V8.11 SLC-901 Klasse-A user_id RLS-Policies (APPLIED 2026-06-04 via SSH+base64)
 - Date: 2026-06-04
 - Scope: idempotente RLS-Policy-Umstellung auf 4 Per-User-Stammdaten-Tabellen via DO-Block-Loop:

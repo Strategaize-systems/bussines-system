@@ -2637,9 +2637,9 @@
       "title": "V8.11 SLC-902 RLS Klasse B: Team-Templates (11 Tabellen, MIG-046 + Sec-Audit-Helper)",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V8.11",
-      "description": "Sub-Item von BL-500. 11 Team-Templates-Tabellen ohne Owner-Spalte (branding_settings, email_templates, payment_terms_templates, compliance_templates, vat_id_validations, pipelines, pipeline_stages, products, automation_rules, cadences, cadence_steps) auf Klasse-B-Pattern: SELECT all authenticated, INSERT/UPDATE/DELETE Admin-only. **Pflicht: Sec-Audit-Helper-Function `list_tables_with_authenticated_full_access()` deploy (DEC-274)** als persistenter Done-Gate. Vitest 132 Tests. Cron-Code-Audit KI-Vorlagen-Generator. ~5-6h Code-Side. Post-Apply Helper-Function 26 Rows. Slice-Spec: slices/SLC-902-rls-sweep-klasse-b-team-templates.md. DEC-271, DEC-274, DEC-265.",
+      "description": "Sub-Item von BL-500. 11 Team-Templates-Tabellen ohne Owner-Spalte (branding_settings, email_templates, payment_terms_templates, compliance_templates, vat_id_validations, pipelines, pipeline_stages, products, automation_rules, cadences, cadence_steps) auf Klasse-B-Pattern: SELECT all authenticated, INSERT/UPDATE/DELETE Admin-only. MIG-046 idempotent applied + re-apply-idempotent. Sec-Audit-Helper-Function `list_tables_with_authenticated_full_access()` deployed (DEC-274) als persistenter Done-Gate. Vitest 132/132 GREEN in 339ms. Cron-Code-Audit (docs/AUDIT_CRON_V811.md Klasse B) Verdict: 10/11 Tabellen sauber, 1 FIX-NEEDED Medium (products → ISSUE-090). EXPLAIN-Perf 4/5 schneller post-MIG, max-Faktor 2.02x bei 0.101ms (DEC-266-Threshold 100ms eingehalten). Code-Side done; Live-Smoke MT-6 separat. Pre-Apply 37 Rows, Post-Apply 26 Rows. Slice-Spec: slices/SLC-902-rls-sweep-klasse-b-team-templates.md. DEC-271, DEC-274, DEC-265.",
       "createdAt": "2026-06-04"
     },
     {
