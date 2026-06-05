@@ -1,5 +1,15 @@
 # Known Issues
 
+### ISSUE-092 — emails-Compose send-action umgeht Klasse-C-RLS via createAdminClient fuer email_attachments-Bulk-Insert (Klasse-C-Block-2-Pendant)
+- Status: open
+- Severity: Medium
+- Area: Defense-in-Depth / RLS-Klasse-C-Bypass / V8.11 SLC-903 Sub-Session 2 IMP-1054-Finding
+- Summary: Nach MIG-047b (V8.11 SLC-903 Klasse-C-Sweep Block 2, 2026-06-05 LIVE auf Coolify-DB) enforciert die DB-Layer fuer `email_attachments` Multi-Parent OR-EXISTS-Policy (EXISTS emails.owner_user_id OR EXISTS proposals.owner_user_id + admin). In `cockpit/src/app/(app)/emails/compose/send-action.ts` L196-209 wird nach Email-Send-Erfolg jedoch ein Bulk-INSERT `admin.from('email_attachments').insert(rows)` via `createAdminClient()` (BYPASSRLS) ausgefuehrt — die Klasse-C-Policy greift fuer diesen Pfad NICHT. Defense-in-Depth-Gap, analog ISSUE-090 (products) + ISSUE-091 (deal-products).
+- Impact: Funktionaler Access-Control-Bypass auf `email_attachments`-Writes via Email-Compose-Server-Action. In Single-Founder-Mode (V3.2-Phase) ist keine echte Produktion betroffen, weil nur Admin-Login existiert. Pre-Customer-Live MUSS gefixt sein vor V4+ Multi-User-Onboarding.
+- Workaround: Aktuell kein Handlungsbedarf (Single-Founder). Pre-Customer-Live entweder Option A oder Option B (siehe Next Action).
+- Discovery: 2026-06-05 V8.11 SLC-903 Sub-Session 2 MT-3 createAdminClient-Audit. IMP-1054 Pflicht-Pre-Step `grep admin.from` ueber Block-2-Tabellen aufgespuert. Bundling mit ISSUE-090 (products) + ISSUE-091 (deal-products) + SLC-901 M-1 (goals/kpi-snapshots/activity-kpis) als V8.11-Closure-Block-Bundle empfohlen — 5-6 analoge Faelle in einem Sweep mit identischem Fix-Pattern.
+- Next Action: Option A (preferred): in V8.11-Closure-Phase `createAdminClient()` durch `createClient()` in send-action.ts L196-209 ersetzen. RLS Klasse-C `EXISTS(emails) OR EXISTS(proposals)` greift automatisch. Aufwand: ~10min (Email-Compose-Sender ist immer Email-Owner, RLS-Pfad funktional aequivalent). Option B (defense-in-depth): `assertEmailOwnership(emailId)` Helper als Pre-Check vor createAdminClient (Aufwand: ~30min). Entscheidung: in V8.11 Gesamt-/qa.
+
 ### ISSUE-091 — deal-products Server-Actions umgehen Klasse-C-RLS via createAdminClient ohne is_admin()-Pre-Check (Klasse-C-Pendant zu ISSUE-090)
 - Status: open
 - Severity: Medium

@@ -1,5 +1,36 @@
 # Migrations
 
+### MIG-047b — V8.11 SLC-903 Klasse-C Block 2 Proposal/Email/Cadence-FK + V7-Direct emails RLS-Policies (APPLIED 2026-06-05 via SSH+base64)
+- Date: 2026-06-05
+- Scope: idempotente RLS-Policy-Umstellung auf 7 Klasse-C Block-2-Tabellen + 4 neue Parent-FK-Indizes. ai_feedback wegen D-MT3-AiFeedback-Defer-Decision aus Block 2 raus → Block 3:
+  ```sql
+  -- Helper-Existenz-Guard: is_admin + can_see_owner
+  -- 4 CREATE INDEX IF NOT EXISTS (emails.company_id, emails.created_by, cadence_enrollments.created_by, cadence_executions.email_id)
+  -- 28 DROP POLICY IF EXISTS (14 alte + 14 neue Naming-Varianten fuer Re-Apply-Idempotenz)
+  -- 28 CREATE POLICY: pro Tabelle <t>_select / <t>_insert / <t>_update / <t>_delete
+  --   Single-Parent EXISTS proposals (proposal_items, proposal_payment_milestones):
+  --     USING (EXISTS(SELECT 1 FROM proposals p WHERE p.id = <t>.proposal_id AND can_see_owner(p.owner_user_id)) OR is_admin())
+  --   Multi-Parent OR (email_attachments via email_id/proposal_id):
+  --     USING (EXISTS(emails) OR EXISTS(proposals) OR is_admin())
+  --   V7-Direct (emails) — analog companies/contacts/deals MIG-035:
+  --     SELECT USING (can_see_owner(owner_user_id))
+  --     INSERT WITH CHECK (owner_user_id = auth.uid() OR is_admin())
+  --     UPDATE USING (can_see_owner(...)) WITH CHECK (owner_user_id = auth.uid() OR is_admin())
+  --     DELETE USING (owner_user_id = auth.uid() OR is_admin())
+  --   Multi-Parent OR + created_by (cadence_enrollments via deal_id/contact_id/created_by) — OQ-arch-5 (a):
+  --     USING (EXISTS(deals) OR EXISTS(contacts) OR (NULL-parents AND created_by=auth.uid()) OR is_admin())
+  --   Transitive-Parent (cadence_executions via cadence_enrollments):
+  --     USING (EXISTS(SELECT 1 FROM cadence_enrollments ce WHERE ce.id = cadence_executions.enrollment_id AND (EXISTS(deals)+EXISTS(contacts)+created_by)) OR is_admin())
+  --   Mittelbar (email_tracking_events via emails.owner_user_id) — OQ-arch-5 (a):
+  --     USING (EXISTS(SELECT 1 FROM emails e WHERE e.id = email_tracking_events.email_id AND can_see_owner(e.owner_user_id)) OR is_admin())
+  -- NOTIFY pgrst, 'reload schema'
+  ```
+- Reason: Security Sprint 3 V8.11 RLS-Sweep Klasse-C Sub-Slice 3/5 Block 2. Pattern-Reuse aus MIG-047a (Idempotenz + DROP-Strategie) + MIG-035 (V7-Direct-Pattern fuer emails) + Multi-Parent OR-EXISTS aus DEC-272. **DECISION D-MT3-AiFeedback-Defer:** ai_feedback hat nur `id`+`action_queue_id` — kein created_by, kein owner. Da ai_action_queue (Block-3-Tabelle) noch unmigriert ist, waere transitive EXISTS-Pattern unsicher → ai_feedback gemeinsam mit ai_action_queue in MIG-047c. Block-2 = 7 statt 8, Block-3 = 9 statt 8 Tabellen (net unveraendert). Pre-Apply 18 (post-MIG-047a Stand). Post-Apply 11 (-7).
+- Affected Areas: 7 Tables im public-Schema: `proposal_items`, `proposal_payment_milestones`, `email_attachments`, `emails`, `cadence_enrollments`, `cadence_executions`, `email_tracking_events`. 28 neue RLS-Policies (4 pro Tabelle). 14 Drops alter `authenticated_full_access`-Naming-Varianten + 14 Drops neue Naming-Varianten fuer Re-Apply-Idempotenz. 4 neue Indizes (idx_emails_company, idx_emails_created_by, idx_cadence_enrollments_created_by, idx_cadence_executions_email). 0 Schema-Changes. service_role + supabase_admin BYPASSRLS unaffected. Cron-Code-Audit-Befund: 1 NEW M-2 ISSUE-092 (`send-action.ts` L196-209 admin.from email_attachments analog ISSUE-090/091).
+- Risk: Niedrig. Pure additive RLS-Aenderung + Index-Ergaenzungen. Idempotent (Re-Apply 0 Errors verifiziert). emails owner_user_id existing index `idx_emails_owner_user_id` → V7-Pattern effizient. 8 Pre-existing emails-Rows haben NULL owner_user_id (Pre-V7-Daten) → nur ueber is_admin sichtbar (akzeptiertes V7-Verhalten, konsistent mit companies/contacts/deals NULL-Handling). Post-Apply EXPLAIN-Re-Run 5 Queries alle unter 100ms, max-Faktor 2.36x bei Q3 email_attachments (0.088→0.208ms, Cache-Miss). DEC-266-Threshold eingehalten. Direct-SQL Sanity-Smoke 7/7 PASS-LIVE inkl. Cross-Team-Isolation bestaetigt (richard-team fa0ff2b6 vs Test-Team 077 sauber getrennt — wichtig fuer Multi-Tenant-V9-Vorbereitung).
+- Rollback Notes: `DO $$ FOREACH 7 Tabellen LOOP DROP POLICY <t>_select|_insert|_update|_delete; CREATE POLICY authenticated_full_access ON <t> FOR ALL TO authenticated USING (true); END LOOP $$;`. Index-Drop optional via `DROP INDEX IF EXISTS idx_emails_company,...`. Kein praktischer Rollback-Bedarf weil V8.11 Pre-Customer-Live-Pflicht ist.
+- Verify: `SELECT COUNT(*) FROM list_tables_with_authenticated_full_access()` → 11 (Pre-Apply 18, Delta 7). `SELECT tablename, COUNT(policyname) FROM pg_policies WHERE schemaname='public' AND tablename IN ('proposal_items','proposal_payment_milestones','email_attachments','emails','cadence_enrollments','cadence_executions','email_tracking_events') GROUP BY tablename` → 7 × 4 = 28 Rows. Direct-SQL Sanity-Smoke siehe RPT-590 Section "Direct-SQL Sanity-Smoke Block 2". Voll Vitest 96 Block 2 verschoben in Sub-Session 3 (MT-5 mit 288 Tests gebuendelt).
+
 ### MIG-047a — V8.11 SLC-903 Klasse-C Block 1 Standard-Parent-FK + Multi-Parent OR-EXISTS RLS-Policies (APPLIED 2026-06-05 via SSH+base64)
 - Date: 2026-06-05
 - Scope: idempotente RLS-Policy-Umstellung auf 8 Klasse-C Block-1-Tabellen + 16 neue Parent-FK-Indizes (R-903-1 Mitigation):
