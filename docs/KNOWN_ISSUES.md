@@ -1,5 +1,15 @@
 # Known Issues
 
+### ISSUE-091 — deal-products Server-Actions umgehen Klasse-C-RLS via createAdminClient ohne is_admin()-Pre-Check (Klasse-C-Pendant zu ISSUE-090)
+- Status: open
+- Severity: Medium
+- Area: Defense-in-Depth / RLS-Klasse-C-Bypass / V8.11 SLC-903 Sub-Session 1 IMP-1054-Finding
+- Summary: Nach MIG-047a (V8.11 SLC-903 Klasse-C-Sweep Block 1, 2026-06-05 LIVE auf Coolify-DB) enforciert die DB-Layer `EXISTS(SELECT 1 FROM deals d WHERE d.id = deal_products.deal_id AND can_see_owner(d.owner_user_id)) OR is_admin()` fuer SELECT/INSERT/UPDATE/DELETE auf `deal_products`. Die Code-Layer in `cockpit/src/app/actions/deal-products.ts` ruft jedoch `createAdminClient()` (BYPASSRLS) in `getProductsForDeal` (L26), `addProductToDeal` (L64), `updateDealProduct` (L97) und `removeProductFromDeal` (L124) auf — ohne Parent-Deal-Ownership-Verify (nur `if (!user)` Authentication-Check). Damit kann jeder authentifizierte User Deal-Products beliebiger fremder Deals lesen/schreiben, obwohl die Klasse-C-Policy nur den Parent-Deal-Owner + Admin zulaesst. Defense-in-Depth-Gap, analog ISSUE-090 fuer products.
+- Impact: Funktionaler Access-Control-Bypass auf `deal_products`-Reads + Writes. In Single-Founder-Mode (V3.2-Phase) ist keine echte Produktion betroffen, weil nur Admin-Login existiert. Pre-Customer-Live MUSS gefixt sein vor V4+ Multi-User-Onboarding.
+- Workaround: Aktuell kein Handlungsbedarf (Single-Founder). Pre-Customer-Live entweder Option A oder Option B (siehe Next Action).
+- Discovery: 2026-06-05 V8.11 SLC-903 Sub-Session 1 MT-1 createAdminClient-Audit (`qa/SLC-903-perf-baseline.md` Section "createAdminClient-Audit (IMP-1054)"). IMP-1054 Pflicht-Pre-Step `grep createAdminClient` ueber Block-1-Tabellen aufgespuert. Bundling mit ISSUE-090 (products) und SLC-901 M-1 (goals/kpi-snapshots/activity-kpis) als V8.11-Closure-Block-Bundle empfohlen — 4-5 analoge Faelle in einem Sweep mit identischem Fix-Pattern.
+- Next Action: Option A (preferred): in V8.11-Closure-Phase oder dediziertem Hotfix-Slice `createAdminClient()` durch `createClient()` in 4 Funktionen ersetzen. RLS Klasse-C `EXISTS(deals) + can_see_owner OR is_admin()` greift automatisch. Aufwand: ~10min. Option B (defense-in-depth): `assertParentDealOwnership(dealId)` Helper als Pre-Check vor createAdminClient (Aufwand: ~30min). Entscheidung: in V8.11 Gesamt-/qa.
+
 ### ISSUE-090 — products Server-Actions umgehen Klasse-B-RLS via createAdminClient ohne is_admin()-Pre-Check
 - Status: open
 - Severity: Medium

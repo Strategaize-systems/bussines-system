@@ -1,5 +1,27 @@
 # Migrations
 
+### MIG-047a — V8.11 SLC-903 Klasse-C Block 1 Standard-Parent-FK + Multi-Parent OR-EXISTS RLS-Policies (APPLIED 2026-06-05 via SSH+base64)
+- Date: 2026-06-05
+- Scope: idempotente RLS-Policy-Umstellung auf 8 Klasse-C Block-1-Tabellen + 16 neue Parent-FK-Indizes (R-903-1 Mitigation):
+  ```sql
+  -- Helper-Existenz-Guard: is_admin + can_see_owner
+  -- 16 CREATE INDEX IF NOT EXISTS (Parent-FKs auf tasks/signals/calendar_events/email_threads/handoffs/referrals)
+  -- 32 DROP POLICY IF EXISTS (16 alte + 16 neue Naming-Varianten fuer Re-Apply-Idempotenz)
+  -- 32 CREATE POLICY: pro Tabelle <t>_select / <t>_insert / <t>_update / <t>_delete
+  --   Standard-Single-Parent (deal_products, auto_winloss_runs):
+  --     USING (EXISTS(SELECT 1 FROM deals d WHERE d.id = <t>.deal_id AND can_see_owner(d.owner_user_id)) OR is_admin())
+  --   Multi-Parent OR (tasks, signals, calendar_events, email_threads, handoffs, referrals):
+  --     USING (EXISTS(deals) OR EXISTS(contacts) OR EXISTS(companies) [OR EXISTS(activities/meetings/referred_*)]
+  --            OR (alle Parents NULL AND created_by=auth.uid()) -- nur wenn created_by-Spalte existiert
+  --            OR is_admin())
+  -- NOTIFY pgrst, 'reload schema'
+  ```
+- Reason: Security Sprint 3 V8.11 RLS-Sweep Klasse-C Sub-Slice 3/5 Block 1 (von 3 atomaren Migration-Blocks: 047a/047b/047c). Klasse-C-Pattern (DEC-272) fuer Tabellen mit Parent-FK-Spalten — Visibility via `can_see_owner(parent.owner_user_id)` Lookup. Multi-Parent-Tabellen nutzen OR-Verkettung. NULL-Parent erlaubt nur eigene `created_by`-Rows (wenn Spalte existiert). Admin-Bypass via `is_admin()`. Pre-Apply 26 (post-MIG-046 Stand). Post-Apply 18 (-8). Pattern-Quelle: `sql/migrations/046_v8_11_slc_902_klasse_b.sql` (Helper-Guard + Idempotenz-Pattern) + V7-`can_see_owner`-Pattern (`sql/migrations/035_v7_rls_switch.sql`).
+- Affected Areas: 8 Tables im public-Schema: `tasks`, `signals`, `calendar_events`, `email_threads`, `handoffs`, `deal_products`, `auto_winloss_runs`, `referrals`. 32 neue RLS-Policies (4 pro Tabelle), 16 Drops alter Naming-Varianten (7× `authenticated_full_access` + 1× `auto_winloss_runs_full_access` Drift). 16 neue Parent-FK-Indizes (idx_tasks_deal/_company/_created_by, idx_signals_company/_activity/_created_by, idx_calendar_events_deal/_contact/_company/_meeting, idx_email_threads_deal/_company, idx_handoffs_company/_created_by, idx_referrals_deal/_referred_company). 0 Schema-Changes (kein ALTER TABLE/ADD COLUMN). service_role + supabase_admin BYPASSRLS unaffected. Cron-Code-Audit-Befund: 1 NEW M-1 ISSUE-091 (`deal-products.ts` 4× createAdminClient ohne Parent-Deal-Ownership-Verify, analog ISSUE-090 products).
+- Risk: Niedrig. Pure additive RLS-Aenderung (kein DROP TABLE/ALTER COLUMN). Idempotent (nach DROP-Section-Erweiterung um 32 neue Naming-Varianten: Re-Apply 0 Errors verifiziert). Edge-Case: 1 Pre-existing `email_threads`-Row ohne jeden Parent-FK + kein `created_by` → nur ueber `is_admin()` sichtbar (orphan-row, akzeptiert). Post-Apply EXPLAIN-Re-Run der 5 Block-1-Test-Queries: 4/5 schneller post-MIG (Index-Effekt + Cache-Warm), Q2 + Q5 Mikro-Drift im 0.1ms-Bereich (Plan-Hash-Wechsel bei Q1+Q5 wegen Statistik-Update — kein RLS-Regression). DEC-266 max(100ms, 10x-Baseline) eingehalten mit grossem Abstand. RLS-Overhead-Check authenticated (admin) 2.665ms (Multi-Parent OR mit 3 EXISTS SubPlans, Pkey-Index-Lookups) — vernachlaessigbar bei Mini-Dataset, akzeptabel bei groesserem Dataset wegen Index-Coverage.
+- Rollback Notes: `DO $$ FOREACH 8 Tabellen LOOP DROP POLICY <t>_select|_insert|_update|_delete; CREATE POLICY authenticated_full_access ON <t> FOR ALL TO authenticated USING (true); END LOOP $$;`. Wuerde Klasse-C-Owner-Isolation entfernen und Multi-User-Cross-Read wieder oeffnen — kein praktischer Rollback-Bedarf weil V8.11 Pre-Customer-Live-Pflicht ist. Index-Drop optional via `DROP INDEX IF EXISTS idx_tasks_deal,...` (16 Indizes, kosten kein Daten-Risiko).
+- Verify: `SELECT COUNT(*) FROM list_tables_with_authenticated_full_access()` → 18 (Pre-Apply 26, Delta 8). `SELECT COUNT(*) FROM pg_policies WHERE schemaname='public' AND tablename IN ('tasks','signals','calendar_events','email_threads','handoffs','deal_products','auto_winloss_runs','referrals')` → 32 (8 × 4 Ops). Direct-SQL Sanity-Smoke 4/4 PASS-LIVE auf tasks-Tabelle (admin all=4, teamlead member2-deal=1, member-2 own=1, member-2 cross-member=0). Voll Vitest 96 Tests v8-11-slc-903a-rls-matrix.test.ts verschoben in Sub-Session 3 (MT-5 mit 288 Tests gebuendelt).
+
 ### MIG-046 — V8.11 SLC-902 Klasse-B Team-Templates RLS-Policies + Sec-Audit-Helper-Function (APPLIED 2026-06-05 via SSH+base64)
 - Date: 2026-06-05
 - Scope: idempotente RLS-Policy-Umstellung auf 11 Team-Templates-Tabellen via DO-Block-Loop + persistente Sec-Audit-Helper-Function (DEC-274):
