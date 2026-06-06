@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { assertRole } from "@/lib/auth/assert-role";
 import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
@@ -84,7 +85,8 @@ export async function updateCustomerDse(
 
   if (error) return { ok: false, error: error.message };
 
-  await supabase.from("audit_log").insert({
+  // V8.11 SLC-904 (MIG-048): audit_log INSERT erfordert service_role.
+  await createAdminClient().from("audit_log").insert({
     actor_id: profile.user_id,
     action: "customer_dse.updated",
     entity_type: "legal_document",
@@ -137,7 +139,8 @@ export async function resetCustomerDseToDefault(): Promise<
 
   if (error) return { ok: false, error: error.message };
 
-  await supabase.from("audit_log").insert({
+  // V8.11 SLC-904 (MIG-048): audit_log INSERT erfordert service_role.
+  await createAdminClient().from("audit_log").insert({
     actor_id: profile.user_id,
     action: "customer_dse.reset",
     entity_type: "legal_document",

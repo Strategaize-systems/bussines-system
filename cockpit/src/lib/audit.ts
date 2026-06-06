@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type AuditAction =
   | "stage_change"
@@ -47,6 +48,10 @@ export interface AuditParams {
  *
  * Design: fire-and-forget — callers should NOT await this.
  * Audit failure must never block or break the business operation.
+ *
+ * V8.11 SLC-904 (MIG-048): audit_log_insert is WITH CHECK (false) for authenticated.
+ * We use createAdminClient() for the INSERT path (service_role bypasses RLS), while
+ * still reading the current user via createClient() (user-session) to determine actor_id.
  */
 export async function logAudit(params: AuditParams): Promise<void> {
   try {
@@ -62,7 +67,8 @@ export async function logAudit(params: AuditParams): Promise<void> {
       return;
     }
 
-    await supabase.from("audit_log").insert({
+    const admin = createAdminClient();
+    await admin.from("audit_log").insert({
       actor_id: user.id,
       action: params.action,
       entity_type: params.entityType,
@@ -99,7 +105,9 @@ export async function logAuditWithId(
 
     if (!user) return null;
 
-    const { data, error } = await supabase
+    // V8.11 SLC-904 (MIG-048): INSERT via admin client (service_role bypasses RLS).
+    const admin = createAdminClient();
+    const { data, error } = await admin
       .from("audit_log")
       .insert({
         actor_id: user.id,
