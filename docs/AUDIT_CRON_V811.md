@@ -168,6 +168,82 @@
 
 _Pending. Wird in SLC-905 MT ergaenzt._
 
-## Klasse E — audit_log Special-Case (SLC-904, geplant)
+## Klasse E — audit_log Special-Case (SLC-904, 2026-06-06)
 
-_Pending. Wird in SLC-904 MT ergaenzt. service_role-Block ist explizit Pflicht-Item._
+**Tabelle (1):** `audit_log`
+
+**Policy-Pattern (MIG-048):**
+- SELECT: `is_admin() OR actor_id = auth.uid()` (DSGVO-Art-15 Self-Service Right-of-Access)
+- INSERT: `WITH CHECK (false)` (Service-Role-only via BYPASSRLS — Forensik-Integritaet)
+- UPDATE: `USING (false) WITH CHECK (false)` (Audit-Eintraege sind immutable; auch Admin via User-Session blockiert)
+- DELETE: `USING (false)` (Forensik-Schutz; Admin-Loeschung nur via service_role-Skript)
+
+**Audit-Methode:**
+- `grep -rn "from\(['\"]audit_log['\"]\)" cockpit/src/` — 49 Call-Sites in 36 Files
+- `grep -rn "logAudit\(|logAuditWithId\(" cockpit/src/` — 31 transitive Caller in 6 Files
+
+**Treffer-Klassifikation:**
+
+| Pfad-Typ | Anzahl | Client | Status |
+|---|---|---|---|
+| Direct ADMIN (Cron + Worker + Webhooks + admin Server-Actions) | 26 Sites | `createAdminClient()` | OK |
+| Direct USER-SESSION (Pre-V8.11) | 16 Sites in 11 Files | `createClient()` | **FIXED in MT-4a + MT-4b** |
+| Transitive via `logAudit` / `logAuditWithId` | 31 Caller in 6 Files | via `lib/audit.ts` zentral | **FIXED in MT-4a (transitiv)** |
+| audit-log SELECT-Pfade | 2 Files | `createClient()` RLS-Read | OK (Klasse-E SELECT-Policy aktiv) |
+
+**MT-4a — Zentraler Refactor `lib/audit.ts`:**
+- `logAudit(params)` und `logAuditWithId(params)`: holen weiterhin User-Session via `createClient()` fuer `auth.getUser()`, INSERT via `createAdminClient()` (BYPASSRLS).
+- Damit funktionieren alle 31 transitive Caller (pipeline 12, proposals 8, automation 5, campaigns 4, payment-terms 4, activity 1) sofort weiter.
+
+**MT-4b — Direct-Site Refactor (11 Files / 16 Sites):**
+
+| File | Sites | Pfad-Typ-Pre | Pattern-Aenderung |
+|---|---|---|---|
+| `lib/audit.ts` | 2 (logAudit + logAuditWithId) | silent (try/catch) | createAdminClient fuer INSERT |
+| `lib/team/view-as-audit.ts` | 1 | parameter-passed supabase | Helper nutzt eigenen admin; Caller `team/[user_id]/layout.tsx` Signature angepasst |
+| `lib/ki-workspace/reports/_shared.ts` | 1 | silent (try/catch) | createAdminClient fuer logReportAudit |
+| `lib/custom-reports/actions/save.ts` | 1 | silent | createAdminClient |
+| `lib/custom-reports/actions/rename.ts` | 1 | silent | createAdminClient |
+| `lib/custom-reports/actions/run.ts` | 1 | silent | createAdminClient |
+| `lib/custom-reports/actions/delete.ts` | 1 | silent | createAdminClient |
+| `app/(app)/proposals/actions.ts` L319 | 1 | silent (await void) | createAdminClient |
+| `app/(app)/proposals/actions.ts` L1210 | 1 | silent (await void) | createAdminClient |
+| `app/(app)/proposals/actions.ts` L1322 | 1 | **CRITICAL (UI-Break)** | createAdminClient |
+| `app/(app)/proposals/actions.ts` L1449 | 1 | **CRITICAL (UI-Break)** | createAdminClient |
+| `app/(app)/pipeline/actions.ts` L1079 | 1 | **CRITICAL (insertAudit hot-path)** | createAdminClient |
+| `app/(app)/settings/compliance/customer-dse/actions.ts` L87 | 1 | **CRITICAL (DSGVO-Submit)** | createAdminClient |
+| `app/(app)/settings/compliance/customer-dse/actions.ts` L140 | 1 | **CRITICAL (DSGVO-Reset)** | createAdminClient |
+| `app/(app)/mein-tag/actions/apply-nl-rule.ts` L166 | 1 | silent | createAdminClient |
+
+**Total: 16 Direct-Sites refactored zu createAdminClient.** 5 CRITICAL Sites OHNE try/catch fixed — verhinderten UI-Breaks nach MIG-048-Apply.
+
+**Service-Role-Pfade (durch Refactor unveraendert, by-design):**
+
+| File | Operation | Pattern | Status |
+|---|---|---|---|
+| Cron-Endpoints (10 Files, 16 Sites) | audit_log INSERT | createAdminClient | by-design |
+| `lib/automation/dispatcher.ts` (transitive via context.supabase) | INSERT in auto_winloss_extract.safeAudit | createAdminClient passed-through | by-design |
+| `app/api/cron/click-log-cleanup/route.ts` | INSERT | createAdminClient | by-design |
+| `app/api/cron/signal-extract/route.ts` | INSERT | createAdminClient | by-design |
+| `app/api/cron/meeting-*/route.ts` (briefing/recording-poll/recording-retention/reminders/summary/transcript) | INSERT | createAdminClient | by-design |
+| `app/api/meetings/[id]/{retry-summary,retry-transcript,generate-agenda}/route.ts` | INSERT | createAdminClient | by-design |
+| `app/api/leads/intake/route.ts` | INSERT | createAdminClient | by-design |
+| `app/api/cron/call-processing/route.ts` | INSERT | createAdminClient | by-design |
+| `app/actions/{consent,meetings}.ts` | INSERT | createAdminClient | by-design |
+| `lib/automation/{dry-run,nl-history,sculptor}.ts` + `actions/update_field.ts` + `assignee-resolver.ts` | INSERT | createAdminClient | by-design |
+| `lib/team/actions.ts` (3 Sites) | INSERT | createAdminClient | by-design |
+| `lib/auth/read-only-context.ts` | INSERT | createAdminClient | by-design |
+| `lib/ai/followup-engine.ts` | INSERT | createAdminClient | by-design |
+| `app/(app)/proposals/actions.ts` L1566 (batched) | INSERT | createAdminClient | by-design |
+| `app/(app)/audit-log/actions.ts` (2 Sites) | SELECT | createClient (RLS-Read-Pfad) | OK — `is_admin() OR actor_id=auth.uid()` |
+| `app/(app)/mein-tag/actions.ts` L754 | SELECT | createClient (RLS-Read-Pfad) | OK |
+
+**Cron-Code-Audit-Verdict:** Alle 16 Cron + Worker Sites schreiben via `createAdminClient` (service_role BYPASSRLS). DSGVO-Forensik-Integritaet gewahrt — User koennen via User-Session keinen INSERT/UPDATE/DELETE machen, auch nicht eigene Eintraege manipulieren. Self-Service-Read fuer DSGVO-Art-15 funktioniert via `actor_id = auth.uid()` Policy.
+
+**R-904-1 Eskalation-Resolution:** Pre-Audit erwartete ~3 Caller-Fixes. Real-Befund 16 Sites + 33 transitive. Founder-Decision Option A 2026-06-05 → In-Slice-Refactor durchgefuehrt. Alle Sites refactored, 0 Audit-Trail-Verlust nach MIG-048 LIVE-Apply.
+
+**V9-Multi-Tenant Beobachtung (out-of-scope SLC-904):**
+- `audit_log` hat keinen `team_id`-Spalten. Bei V9 muss ggf. `actor_id`-Join zur `profiles.team_id` als Filter-Pfad ergaenzt werden.
+- Alternative: separater `audit_log_team_id` Spalte mit Trigger-basierter Population aus `actor_id`.
+
+**AC-904-4 PASS** (audit.ts + 11 Sites refactored + Section dokumentiert + Cron-Pfade verifiziert).
