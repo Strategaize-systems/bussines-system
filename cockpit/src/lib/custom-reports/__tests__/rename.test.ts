@@ -21,9 +21,14 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
 }));
 
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: vi.fn(),
+}));
+
 const { renameCustomReport } = await import("../actions/rename");
 const { getProfile } = await import("@/lib/auth/get-profile");
 const { createClient } = await import("@/lib/supabase/server");
+const { createAdminClient } = await import("@/lib/supabase/admin");
 
 const VALID_UUID = "11111111-2222-4333-8444-555555555555";
 
@@ -75,6 +80,7 @@ function makeSupabaseMock(opts: SupabaseMockOpts = {}) {
 beforeEach(() => {
   vi.mocked(getProfile).mockReset();
   vi.mocked(createClient).mockReset();
+  vi.mocked(createAdminClient).mockReset();
 });
 
 describe("renameCustomReport", () => {
@@ -90,6 +96,7 @@ describe("renameCustomReport", () => {
     vi.mocked(getProfile).mockResolvedValue(profile());
     const mock = makeSupabaseMock({ selectRow: null });
     vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
     const res = await renameCustomReport({ id: VALID_UUID, name: "Neu" });
     expect(res.ok).toBe(false);
@@ -105,6 +112,7 @@ describe("renameCustomReport", () => {
       },
     });
     vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
     const res = await renameCustomReport({ id: VALID_UUID, name: "Neu" });
     expect(res.ok).toBe(false);
@@ -117,6 +125,7 @@ describe("renameCustomReport", () => {
       updateError: { code: "42501", message: "permission denied" },
     });
     vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
     const res = await renameCustomReport({ id: VALID_UUID, name: "Neu" });
     expect(res.ok).toBe(false);
@@ -128,6 +137,7 @@ describe("renameCustomReport", () => {
     const auditInsert = vi.fn().mockResolvedValue({ error: null });
     const mock = makeSupabaseMock({ auditInsert });
     vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
     const res = await renameCustomReport({ id: VALID_UUID, name: "Neu" });
 

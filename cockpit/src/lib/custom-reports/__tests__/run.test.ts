@@ -17,6 +17,10 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
 }));
 
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: vi.fn(),
+}));
+
 vi.mock("@/lib/ki-workspace/custom-report-runner", () => ({
   runCustomReportCore: vi.fn(),
 }));
@@ -24,6 +28,7 @@ vi.mock("@/lib/ki-workspace/custom-report-runner", () => ({
 const { runCustomReport } = await import("../actions/run");
 const { getProfile } = await import("@/lib/auth/get-profile");
 const { createClient } = await import("@/lib/supabase/server");
+const { createAdminClient } = await import("@/lib/supabase/admin");
 const { runCustomReportCore } = await import(
   "@/lib/ki-workspace/custom-report-runner"
 );
@@ -113,6 +118,7 @@ function makeSupabaseMock(opts: SupabaseMockOpts = {}) {
 beforeEach(() => {
   vi.mocked(getProfile).mockReset();
   vi.mocked(createClient).mockReset();
+  vi.mocked(createAdminClient).mockReset();
   vi.mocked(runCustomReportCore).mockReset();
 });
 
@@ -143,6 +149,7 @@ describe("runCustomReport", () => {
     vi.mocked(getProfile).mockResolvedValue(profile());
     const mock = makeSupabaseMock({ selectReport: { data: null } });
     vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
     const res = await runCustomReport(validInput());
 
@@ -155,6 +162,7 @@ describe("runCustomReport", () => {
     vi.mocked(getProfile).mockResolvedValue(profile());
     const mock = makeSupabaseMock();
     vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
     vi.mocked(runCustomReportCore).mockRejectedValue(
       new Error("Bedrock timeout after 60s")
     );
@@ -170,6 +178,7 @@ describe("runCustomReport", () => {
     const auditInsert = vi.fn().mockResolvedValue({ error: null });
     const mock = makeSupabaseMock({ auditInsert });
     vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
     vi.mocked(runCustomReportCore).mockResolvedValue({
       reportResult: {
         markdown: "## Heutige Bewegung\n- foo",

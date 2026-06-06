@@ -20,9 +20,14 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
 }));
 
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: vi.fn(),
+}));
+
 const { deleteCustomReport } = await import("../actions/delete");
 const { getProfile } = await import("@/lib/auth/get-profile");
 const { createClient } = await import("@/lib/supabase/server");
+const { createAdminClient } = await import("@/lib/supabase/admin");
 
 const VALID_UUID = "11111111-2222-4333-8444-555555555555";
 
@@ -75,6 +80,7 @@ function makeSupabaseMock(opts: SupabaseMockOpts = {}) {
 beforeEach(() => {
   vi.mocked(getProfile).mockReset();
   vi.mocked(createClient).mockReset();
+  vi.mocked(createAdminClient).mockReset();
 });
 
 describe("deleteCustomReport", () => {
@@ -90,6 +96,7 @@ describe("deleteCustomReport", () => {
     vi.mocked(getProfile).mockResolvedValue(profile());
     const mock = makeSupabaseMock({ selectRow: null });
     vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
     const res = await deleteCustomReport({ id: VALID_UUID });
     expect(res.ok).toBe(false);
@@ -102,6 +109,7 @@ describe("deleteCustomReport", () => {
       deleteError: { message: "permission denied" },
     });
     vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
     const res = await deleteCustomReport({ id: VALID_UUID });
     expect(res.ok).toBe(false);
@@ -113,6 +121,7 @@ describe("deleteCustomReport", () => {
     const auditInsert = vi.fn().mockResolvedValue({ error: null });
     const mock = makeSupabaseMock({ auditInsert });
     vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
     const res = await deleteCustomReport({ id: VALID_UUID });
 

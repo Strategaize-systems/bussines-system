@@ -22,6 +22,10 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
 }));
 
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: vi.fn(),
+}));
+
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
@@ -41,6 +45,7 @@ vi.mock("@/lib/automation/sculptor-dedup", async () => {
 const { applyNlRule } = await import("./apply-nl-rule");
 const { getProfile } = await import("@/lib/auth/get-profile");
 const { createClient } = await import("@/lib/supabase/server");
+const { createAdminClient } = await import("@/lib/supabase/admin");
 const { assertNotDuplicateRuleDb, DuplicateRuleError } = await import(
   "@/lib/automation/sculptor-dedup"
 );
@@ -115,6 +120,7 @@ function makeSupabaseMock(opts: SupabaseMockOpts = {}) {
 beforeEach(() => {
   vi.mocked(getProfile).mockReset();
   vi.mocked(createClient).mockReset();
+  vi.mocked(createAdminClient).mockReset();
   vi.mocked(assertNotDuplicateRuleDb).mockReset();
 });
 
@@ -138,7 +144,9 @@ describe("applyNlRule", () => {
 
   it("returns duplicate error with existing_rule_id when dedup throws DuplicateRuleError", async () => {
     vi.mocked(getProfile).mockResolvedValue(profile("admin"));
-    vi.mocked(createClient).mockResolvedValue(makeSupabaseMock() as never);
+    const dupMock = makeSupabaseMock();
+    vi.mocked(createClient).mockResolvedValue(dupMock as never);
+    vi.mocked(createAdminClient).mockReturnValue(dupMock as never);
     vi.mocked(assertNotDuplicateRuleDb).mockRejectedValue(
       new DuplicateRuleError("existing-rule-99", "user-1", "Follow-up bei Angebot")
     );
@@ -155,6 +163,7 @@ describe("applyNlRule", () => {
     const auditInsert = vi.fn().mockResolvedValue({ error: null });
     const mock = makeSupabaseMock({ auditInsert });
     vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
     vi.mocked(assertNotDuplicateRuleDb).mockResolvedValue(undefined);
 
     const res = await applyNlRule(applyInput());
@@ -171,6 +180,7 @@ describe("applyNlRule", () => {
     const auditInsert = vi.fn().mockResolvedValue({ error: null });
     const mock = makeSupabaseMock({ auditInsert });
     vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
     vi.mocked(assertNotDuplicateRuleDb).mockResolvedValue(undefined);
 
     await applyNlRule(applyInput());
