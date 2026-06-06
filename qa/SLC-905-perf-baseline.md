@@ -242,11 +242,56 @@ Threshold Q3: Post-Backfill orphans = 0 oder Anzahl mit dokumentierter Parent-de
 | **A-905-1** documents.created_by als owner-Spalte | PASS | Verifiziert. Aktuell 0 document-chunks live — kein Backfill noetig, aber Code (indexer.ts) ist vorbereitet. |
 | **A-905-2** Dataset <10k chunks | PASS (extrem) | Aktuell 8 chunks. Migration-Apply sub-Sekunde. |
 
+## Post-Apply EXPLAIN ANALYZE Re-Run (MT-6, 2026-06-06 Post-MIG-049)
+
+### Q1 — Source-Type-Filter mit Created-Sort (Pre-Apply: 0.811ms)
+**Post-Apply:** 0.811ms (unveraendert, same Plan, same Index).
+**Threshold:** 100ms (Floor-Cap). PASS.
+
+### Q2 — HNSW-Similarity-Search (no Owner-Filter)
+**Post-Apply:** 0.307ms (Seq-Scan bei 8 Rows, HNSW noch nicht aktiv — erwartetes Verhalten bei kleinem Volumen).
+**Threshold:** 100ms. PASS.
+
+### Q3 — HNSW + Owner-Filter (NEU, Post-Apply only)
+```sql
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT id FROM knowledge_chunks
+ WHERE owner_user_id = '96322a0a-be2d-49e1-ba0d-03c4de1f1440'
+ ORDER BY embedding <=> (SELECT embedding FROM knowledge_chunks LIMIT 1)
+ LIMIT 10;
+```
+**Post-Apply:** 0.464ms (Seq-Scan + Filter, idx_knowledge_chunks_owner ungenutzt weil <16 Rows).
+**Threshold:** 100ms. PASS.
+
+**Skaling-Notice:** Bei Wachstum auf >10k chunks wird HNSW-Index aktiv. Bei Owner-Filter koennte Composite-Index `(owner_user_id, embedding)` noetig werden — Re-Audit bei Wachstum.
+
+## Done-Gate Final (MT-6, Q-V8.11-B 100% Coverage)
+
+```sql
+SELECT COUNT(*) FROM list_tables_with_authenticated_full_access();
+-- 0
+```
+
+**0 Rows.** Q-V8.11-B 100% Coverage erfuellt. BS multi-tenant-ready.
+
+## V8.11-Regression Full-Run (MT-6 Final Quality-Gate)
+
+```
+✓ __tests__/rls/v8-11-slc-901-rls-matrix.test.ts  (48 tests)  150ms
+✓ __tests__/rls/v8-11-slc-902-rls-matrix.test.ts (132 tests)  260ms
+✓ __tests__/rls/v8-11-slc-903a-rls-matrix.test.ts (96 tests)  273ms
+✓ __tests__/rls/v8-11-slc-903b-rls-matrix.test.ts (84 tests)  357ms
+✓ __tests__/rls/v8-11-slc-903c-rls-matrix.test.ts (108 tests) 281ms
+✓ __tests__/rls/v8-11-slc-904-rls-matrix.test.ts  (18 tests)   63ms
+✓ __tests__/rls/v8-11-slc-905-rls-matrix.test.ts  (21 tests)  107ms
+
+Test Files: 7 passed (7)
+Tests:      507 passed (507)
+Duration:   1.08s
+```
+
+**507/507 V8.11 Tests GREEN, 0 Regressionen.**
+
 ## Next Steps
 
-- MT-2: MIG-049 schreiben (4 Phasen + D-905-1..3 + D-905-5-aware) + Apply LIVE
-- MT-3: Orphan-Report generieren (qa/SLC-905-orphan-report.md)
-- MT-4: Vitest RLS-Matrix v8-11-slc-905-rls-matrix.test.ts (~20 Tests + RPC + Schema)
-- MT-5: `lib/knowledge/indexer.ts:embedAndStore` + `lib/knowledge/derive-chunk-owner.ts` + Unit-Tests (NICHT embedding-sync-Cron — D-905-5)
-- MT-6: Post-Apply EXPLAIN ANALYZE Re-Run + Done-Gate=0 Verifikation
-- MT-7: Records-Sync + Live-Smoke 3 Pfade + RPT-596/597/598
+- MT-7: Records-Sync (slices/INDEX, FEAT-911, planning/backlog.json, STATE.md, MIGRATIONS.md) + Live-Smoke 3 Pfade auf business.strategaizetransition.com + RPT-596 (Code-Side) + RPT-597 (Live-Smoke) + RPT-598 (V8.11-Done-Gate-Report)
