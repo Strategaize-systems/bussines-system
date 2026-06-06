@@ -5,6 +5,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getEmbeddingProvider } from "@/lib/ai/embeddings";
+import { deriveChunkOwner } from "./derive-chunk-owner";
 import {
   chunkMeeting,
   chunkEmail,
@@ -44,6 +45,20 @@ export async function embedAndStore(
   const admin = createAdminClient();
   const result: EmbedResult = { stored: 0, failed: 0, errors: [] };
 
+  // V8.11 SLC-905 MIG-049: Owner aus Parent-Source ableiten (1x pro Source, alle chunks teilen Owner).
+  // Wirft bei unbekanntem sourceType / nicht-gefundener Parent-Source / NULL-Owner — passed
+  // als result.failed durch falls die ganze Source fehlschlaegt.
+  let owner: { owner_user_id: string; team_id: string | null };
+  try {
+    owner = await deriveChunkOwner(admin, sourceType, sourceId);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    result.failed = chunks.length;
+    result.errors.push(`Owner-Ableitung fehlgeschlagen: ${msg}`);
+    console.error(`[indexer] deriveChunkOwner failed for ${sourceType}/${sourceId}:`, msg);
+    return result;
+  }
+
   for (const chunk of chunks) {
     try {
       const embedding = await provider.embed(chunk.text);
@@ -66,6 +81,8 @@ export async function embedAndStore(
           embedding: vectorStr,
           metadata: chunk.metadata,
           embedding_model: provider.modelId(),
+          owner_user_id: owner.owner_user_id,
+          team_id: owner.team_id,
           status: "active",
           updated_at: new Date().toISOString(),
         }, {
