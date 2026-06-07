@@ -16,6 +16,7 @@
 import { getProfile } from "@/lib/auth/get-profile";
 import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   RenameCustomReportSchema,
   UNIQUE_VIOLATION,
@@ -90,8 +91,10 @@ export async function renameCustomReport(
   }
 
   // Best-effort audit-Insert.
+  // V8.11 SLC-904 (MIG-048): audit_log INSERT erfordert service_role.
   try {
-    await supabase.from("audit_log").insert({
+    const admin = createAdminClient();
+    await admin.from("audit_log").insert({
       actor_id: profile.user_id,
       action: "custom_report.renamed",
       entity_type: "custom_report",

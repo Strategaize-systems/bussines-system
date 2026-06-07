@@ -23,9 +23,14 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
 }));
 
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: vi.fn(),
+}));
+
 const { saveCustomReport } = await import("../actions/save");
 const { getProfile } = await import("@/lib/auth/get-profile");
 const { createClient } = await import("@/lib/supabase/server");
+const { createAdminClient } = await import("@/lib/supabase/admin");
 
 function profile() {
   return {
@@ -82,6 +87,7 @@ function makeSupabaseMock(opts: SupabaseMockOpts = {}) {
 beforeEach(() => {
   vi.mocked(getProfile).mockReset();
   vi.mocked(createClient).mockReset();
+  vi.mocked(createAdminClient).mockReset();
 });
 
 describe("saveCustomReport", () => {
@@ -113,6 +119,7 @@ describe("saveCustomReport", () => {
       },
     });
     vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
     const res = await saveCustomReport(validInput());
 
@@ -129,6 +136,7 @@ describe("saveCustomReport", () => {
       },
     });
     vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
     const res = await saveCustomReport(validInput());
 
@@ -141,6 +149,7 @@ describe("saveCustomReport", () => {
     const auditInsert = vi.fn().mockResolvedValue({ error: null });
     const mock = makeSupabaseMock({ auditInsert });
     vi.mocked(createClient).mockResolvedValue(mock as never);
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
     const res = await saveCustomReport(validInput());
 

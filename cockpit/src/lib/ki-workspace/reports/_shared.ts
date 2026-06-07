@@ -1,6 +1,7 @@
 // SLC-705 MT-4 — authorizeTeamReport hinzugefuegt (admin/teamlead-Rollen-Gate).
 import { createHash } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { queryLLM } from "@/lib/ai/bedrock-client";
 import { getProfile } from "@/lib/auth/get-profile";
 import type { LLMOptions } from "@/lib/ai/types";
@@ -80,8 +81,9 @@ export async function logReportAudit(params: {
   errorMessage?: string;
 }): Promise<void> {
   try {
-    const supabase = await createClient();
-    await supabase.from("audit_log").insert({
+    // V8.11 SLC-904 (MIG-048): audit_log INSERT erfordert service_role.
+    const admin = createAdminClient();
+    await admin.from("audit_log").insert({
       actor_id: params.userId,
       action: "ki_workspace_report",
       entity_type: "ki_workspace",

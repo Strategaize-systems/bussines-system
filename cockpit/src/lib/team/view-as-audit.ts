@@ -16,8 +16,11 @@
 // Risk-Mitigation R3 (Audit-Spam): Wir akzeptieren bewusst 1 Eintrag pro
 // Page-Load. Volumen ist im Internal-Test-Mode vernachlaessigbar (<20 Drilldowns/
 // Tag). Cache-Optimierung wird erst noetig wenn Audit-Volume waechst.
+//
+// V8.11 SLC-904 (MIG-048): audit_log INSERT erfordert service_role.
+// Helper nutzt eigenen admin-Client, supabase-Parameter entfaellt.
 
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface LogViewAsArgs {
   viewerUserId: string;
@@ -25,11 +28,9 @@ export interface LogViewAsArgs {
   path: string;
 }
 
-export async function logViewAs(
-  supabase: SupabaseClient,
-  args: LogViewAsArgs,
-): Promise<void> {
-  const { error } = await supabase.from("audit_log").insert({
+export async function logViewAs(args: LogViewAsArgs): Promise<void> {
+  const admin = createAdminClient();
+  const { error } = await admin.from("audit_log").insert({
     actor_id: args.viewerUserId,
     action: "view_as",
     entity_type: "profile",

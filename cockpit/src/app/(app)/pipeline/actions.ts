@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { logAudit, logAuditWithId } from "@/lib/audit";
 import { dispatchAutomationTrigger } from "@/lib/automation/dispatcher";
@@ -1076,7 +1077,8 @@ export async function suggestLossReason(
       id: string,
       ctx: SuggestLossReasonAuditContext
     ): Promise<void> => {
-      await supabase.from("audit_log").insert({
+      // V8.11 SLC-904 (MIG-048): audit_log INSERT erfordert service_role.
+      await createAdminClient().from("audit_log").insert({
         actor_id: profile.user_id,
         action: "ki_loss_reason_suggested",
         entity_type: "deal",

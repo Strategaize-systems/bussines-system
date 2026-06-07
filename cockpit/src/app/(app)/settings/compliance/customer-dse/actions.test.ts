@@ -26,6 +26,10 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
 }));
 
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: vi.fn(),
+}));
+
 // Note: node:fs/promises is intentionally NOT mocked — vi.mock on node-builtin
 // is brittle for "use server" modules. The reset-test below reads the real
 // customer-dse-default.md from the worktree (which exists per SLC-842).
@@ -35,6 +39,7 @@ const { updateCustomerDse, resetCustomerDseToDefault } = await import(
 );
 const { assertRole } = await import("@/lib/auth/assert-role");
 const { createClient } = await import("@/lib/supabase/server");
+const { createAdminClient } = await import("@/lib/supabase/admin");
 
 const ADMIN_PROFILE: Profile = {
   user_id: "55555555-5555-5555-5555-555555555555",
@@ -128,6 +133,7 @@ describe("updateCustomerDse", () => {
   it("rejects content_md shorter than 100 chars", async () => {
     const supabase = makeSupabaseMock({});
     (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(supabase);
 
     const result = await updateCustomerDse("zu kurz");
 
@@ -142,6 +148,7 @@ describe("updateCustomerDse", () => {
   it("rejects content_md longer than 50000 chars", async () => {
     const supabase = makeSupabaseMock({});
     (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(supabase);
 
     const result = await updateCustomerDse("x".repeat(50001));
 
@@ -154,6 +161,7 @@ describe("updateCustomerDse", () => {
       previousContent: "a".repeat(200),
     });
     (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(supabase);
 
     const newContent = "b".repeat(500);
     const result = await updateCustomerDse(newContent);
@@ -195,6 +203,7 @@ describe("resetCustomerDseToDefault", () => {
       previousContent: "edited content",
     });
     (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(supabase);
 
     const result = await resetCustomerDseToDefault();
 

@@ -27,6 +27,7 @@ import { revalidatePath } from "next/cache";
 import { getProfile } from "@/lib/auth/get-profile";
 import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { SculptSuccessSchema } from "@/lib/automation/sculptor-schema";
 import {
   DuplicateRuleError,
@@ -162,8 +163,10 @@ export async function applyNlRule(
   const ruleId = (ruleRow as { id: string }).id;
 
   // INSERT audit_log (best-effort, never blocks)
+  // V8.11 SLC-904 (MIG-048): audit_log INSERT erfordert service_role.
   try {
-    await supabase.from("audit_log").insert({
+    const admin = createAdminClient();
+    await admin.from("audit_log").insert({
       actor_id: profile.user_id,
       action: "automation_rule.create_via_nl",
       entity_type: "automation_rule",

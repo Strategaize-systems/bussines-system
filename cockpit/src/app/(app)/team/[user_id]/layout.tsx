@@ -74,7 +74,7 @@ export default async function DrilldownLayout({
   // Audit-Insert als Side-Effect. Path bestimmen wir generisch — die konkrete
   // Sub-Route (mein-tag/pipeline/aufgaben) steckt nicht in `params`, sondern
   // im Request-Path. Fuer V1 ist der "/team/<id>" Pfad-Stamm genug.
-  await logViewAs(supabase, {
+  await logViewAs({
     viewerUserId: viewer.user_id,
     targetUserId,
     path: `/team/${targetUserId}`,

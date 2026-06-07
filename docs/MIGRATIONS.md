@@ -1,5 +1,192 @@
 # Migrations
 
+### MIG-049 — V8.11 SLC-905 Klasse-D knowledge_chunks Schema-ALTER + Sync-Backfill + RLS-Policies + search_knowledge_chunks-Function-Erweiterung (APPLIED 2026-06-06 via SSH+base64, Q-V8.11-B 100% Coverage erreicht)
+- Date: 2026-06-06
+- Scope: 4-Phasen idempotente Migration auf 1 Klasse-D-Tabelle `knowledge_chunks` + 1 Function-Erweiterung:
+  ```sql
+  -- Helper-Existenz-Guard: 4 Functions (can_see_owner, is_admin, is_teamlead, get_my_team_id)
+  -- Phase 1 ALTER ADD COLUMN owner_user_id UUID REFERENCES profiles(id) + team_id UUID REFERENCES teams(id) (idempotent)
+  -- Phase 1 CREATE INDEX IF NOT EXISTS idx_knowledge_chunks_owner + idx_knowledge_chunks_team
+  -- Phase 2 SYNC-Backfill (4 UPDATE-Bloecke):
+  --   - meeting → meetings.owner_user_id  (0 chunks live)
+  --   - email → email_messages.owner_user_id  (2 chunks live)
+  --   - deal_activity → activities.owner_user_id  (6 chunks live)
+  --   - document → documents.created_by  (0 chunks live)
+  --   + Orphan-WARNING-DO-Block (0 Orphans aufgetreten)
+  -- Phase 3 DROP alte UND neue Policies (idempotent) + 4 neue Policies:
+  --   knowledge_chunks_select  USING (can_see_owner(owner_user_id))
+  --   knowledge_chunks_insert  WITH CHECK (false)                  — service_role-only via BYPASSRLS
+  --   knowledge_chunks_update  USING (false) WITH CHECK (false)
+  --   knowledge_chunks_delete  USING (false)
+  -- Phase 4 CREATE OR REPLACE FUNCTION search_knowledge_chunks(query_embedding TEXT, match_count INT DEFAULT 20, filter_scope TEXT DEFAULT NULL, filter_id TEXT DEFAULT NULL) RETURNS TABLE(id, source_type, source_id, chunk_index, chunk_text, metadata, similarity) LANGUAGE plpgsql SECURITY DEFINER
+  --   Body-Filter NEU: `AND (auth.uid() IS NULL OR can_see_owner(kc.owner_user_id))` — Defense-in-Depth via Bypass-Pattern fuer service_role-Cron
+  -- GRANT EXECUTE ON FUNCTION ... TO authenticated (backward-compatible)
+  -- NOTIFY pgrst, 'reload schema'
+  ```
+- Reason: Security Sprint 3 V8.11 RLS-Sweep Klasse-D Sub-Slice 5/5 (letzte). Pattern-Reuse aus MIG-047c Idempotenz-Strategie + DEC-273 + DEC-267 + DEC-274. **5 Spec-Drifts D-905-1..5 autonom in-Scope adressiert:** D-905-1 source_type Live-Reality 'email' statt 'email_message' und 'deal_activity' statt 'activity' (Live-Code-Convention in lib/knowledge/indexer.ts); D-905-2 search_knowledge_chunks-Signatur respektiert per R-905-3 (Live TEXT-Embedding/4 Params/plpgsql/7 Returns statt Spec vector/3 Params/SQL/4 Returns); D-905-3 Function-Body Bypass-Pattern `auth.uid() IS NULL OR can_see_owner(...)` (sonst broeselt Signal-Extractor-Cron weil can_see_owner intern auth.uid() nutzt und bei service_role NULL returnt); D-905-4 searchKnowledge-Caller-Refactor (User-Session-Mode statt admin) BEYOND SCOPE — SEC-007-Followup V8.12+ (Pre-Check via loadDealContext mit User-Client bleibt aktiv); D-905-5 MT-5-Code-Target ist lib/knowledge/indexer.ts:embedAndStore statt /api/cron/embedding-sync (der schreibt keine chunks, nur UPDATE existing). Pre-Apply 1 Row (knowledge_chunks). Post-Apply 0 Rows. **Q-V8.11-B 100% Coverage erreicht → BS multi-tenant-ready.**
+- Affected Areas: 1 Table im public-Schema `knowledge_chunks` (2 neue Spalten + 2 neue btree-Indexe + 4 neue Policies, 1-2 Drops alter authenticated_full_access/knowledge_chunks_full_access-Varianten + 4 Drops neue Naming-Varianten fuer Re-Apply-Idempotenz). 1 Function im public-Schema `search_knowledge_chunks` CREATE OR REPLACE mit existierender Signatur + Body-Filter-Erweiterung. 0 Schema-Changes ausserhalb knowledge_chunks. service_role + supabase_admin BYPASSRLS unaffected. Code-Anpassung in 1 Test-File (cockpit/__tests__/rls/v8-11-slc-905-rls-matrix.test.ts, 21 Tests) + 2 neue Production-Files (cockpit/src/lib/knowledge/derive-chunk-owner.ts Pure-Function + cockpit/src/lib/knowledge/derive-chunk-owner.test.ts 9 Unit-Tests) + 1 Anpassung (cockpit/src/lib/knowledge/indexer.ts:embedAndStore: deriveChunkOwner-Lookup 1x pro Source, dann pro chunk owner_user_id+team_id im UPSERT). Quality-Gates: TSC=0 errors, ESLint SLC-905-Files=0 errors (chunker.ts:80 pre-existing nicht touchiert per surgical-changes-Rule), Next.js Build PASS.
+- Risk: Niedrig. Schema-ALTER bei 8 chunks Live-Volumen sub-Sekunde. Backfill 8/8 chunks erfolgreich, 0 Orphans. RLS-Policies pure additive. Function CREATE OR REPLACE mit existierender Signatur backward-compatible. R-905-1 (Orphan-Count >100) NICHT-EINGETRETEN bei 8 Rows Live-Volumen. R-905-2 (HNSW-Performance bei Owner-Filter) Sub-Threshold bei 8 Rows (Seq-Scan); bei Wachstum auf >10k chunks Composite-Index `(owner_user_id, embedding)` nachruesten. R-905-3 (RPC-Signatur-Breaking) MITIGATED durch existierende Signatur respektiert + CREATE OR REPLACE. R-905-4 (Embedding-Sync-Cron-Latenz +ms) ENTFAELLT durch D-905-5 (Cron schreibt keine chunks). Performance-Werte Post-Apply: Q1=0.811ms, Q2=0.307ms, Q3 Owner-Filter=0.464ms (alle deutlich Sub-Threshold 100ms).
+- Rollback Notes: `DROP POLICY knowledge_chunks_select ON knowledge_chunks; DROP POLICY knowledge_chunks_insert ON knowledge_chunks; DROP POLICY knowledge_chunks_update ON knowledge_chunks; DROP POLICY knowledge_chunks_delete ON knowledge_chunks; CREATE POLICY authenticated_full_access ON knowledge_chunks FOR ALL TO authenticated USING (true) WITH CHECK (true);` plus Function-Rollback `CREATE OR REPLACE FUNCTION search_knowledge_chunks(...) ... WHERE kc.status = 'active' AND (filter_scope IS NULL OR ...) ORDER BY ... LIMIT match_count` (Filter-Klausel entfernen) plus Code-Revert (indexer.ts:embedAndStore + derive-chunk-owner.ts loeschen) plus `ALTER TABLE knowledge_chunks DROP COLUMN owner_user_id; DROP COLUMN team_id; DROP INDEX idx_knowledge_chunks_owner; DROP INDEX idx_knowledge_chunks_team` (nach Down-Backfill). Kein praktischer Rollback-Bedarf, weil V8.11 Pre-Customer-Live-Pflicht ist und MIG-049 in 0-Orphan-Live-Zustand sauber appliziert ist.
+- Verify: `SELECT COUNT(*) FROM list_tables_with_authenticated_full_access()` → **0 Rows** (Pre-Apply 1, Delta 1) → Q-V8.11-B 100% Coverage. `SELECT policyname, cmd FROM pg_policies WHERE schemaname='public' AND tablename='knowledge_chunks'` → 4 Rows (SELECT/INSERT/UPDATE/DELETE). `SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='knowledge_chunks' AND column_name IN ('owner_user_id','team_id')` → 2 Rows. `SELECT indexname FROM pg_indexes WHERE schemaname='public' AND tablename='knowledge_chunks' AND indexname IN ('idx_knowledge_chunks_owner','idx_knowledge_chunks_team')` → 2 Rows. `SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname='search_knowledge_chunks'` → enthaelt `AND (auth.uid() IS NULL OR can_see_owner(kc.owner_user_id))`. `SELECT COUNT(*) FROM knowledge_chunks WHERE owner_user_id IS NULL` → 0 Orphans. Vitest `__tests__/rls/v8-11-slc-905-rls-matrix.test.ts` 21/21 GREEN in 317ms via node:22-Sidecar. V8.11-Regression alle 7 Test-Files 507/507 GREEN in 1.08s.
+
+### MIG-048 — V8.11 SLC-904 Klasse-E audit_log Admin-all + Actor-own DSGVO-Art-15 + Service-Role-only Mutate (APPLIED 2026-06-06 via SSH+base64)
+- Date: 2026-06-06
+- Scope: idempotente RLS-Policy-Umstellung auf 1 Klasse-E-Tabelle `audit_log` + 1 neuer composite Index:
+  ```sql
+  -- Helper-Existenz-Guard: is_admin (Klasse E braucht can_see_owner NICHT)
+  -- 1 CREATE INDEX IF NOT EXISTS idx_audit_log_actor_created ON audit_log (actor_id, created_at DESC) — Q1 27x schneller
+  -- 6 DROP POLICY IF EXISTS (2 alte authenticated_full_access-Varianten + 4 neue _select/_insert/_update/_delete Naming-Varianten fuer Re-Apply-Idempotenz)
+  -- 4 CREATE POLICY:
+  --   audit_log_select  USING (is_admin() OR actor_id = auth.uid())          — DSGVO-Art-15 Self-Service Right-of-Access
+  --   audit_log_insert  WITH CHECK (false)                                    — Service-Role-only via BYPASSRLS
+  --   audit_log_update  USING (false) WITH CHECK (false)                      — Audit-Eintraege sind immutable
+  --   audit_log_delete  USING (false)                                         — Forensik-Schutz auch fuer Admin via User-Session
+  -- NOTIFY pgrst, 'reload schema'
+  ```
+- Reason: Security Sprint 3 V8.11 RLS-Sweep Klasse-E Sub-Slice 4/5. Pattern-Reuse aus MIG-047c (Idempotenz + DROP-Strategie) + DEC-272-Verfeinerung + Q-V8.11-A. **Begruendung Niemand-Mutiert-Policy:** Audit-Trail-Integritaet ist DSGVO-/Forensik-kritisch. Mutation via User-Session waere Manipulationsrisiko. Auch Admin via User-Session blockiert — Loeschung nur ueber service_role-Skript mit explizitem audit_log_deleted_by_admin-Entry. **DECISION D-MT1-Composite-Actor:** Pre-MIG Q1 `actor=$1 ORDER BY created_at DESC LIMIT 50` nutzte idx_audit_log_created mit Rows-Removed-by-Filter: 7771 (bei 8850 total). Composite Index `(actor_id, created_at DESC)` verhindert Filter-Overhead und ermoeglicht Index-Range-Scan. Post-MIG Q1 0.407ms statt 11.016ms (27x). **DECISION D-MT1-Composite-Entity (Verzicht):** existing `idx_audit_log_entity (entity_type, entity_id)` reicht (Q2 0.193ms). **R-904-1 Eskalation Medium → High Founder-Decision Option A:** 11 direkte + 33 transitive User-Session-INSERT-Caller. In-Slice-Refactor durchgefuehrt: lib/audit.ts central (logAudit + logAuditWithId → createAdminClient) + 11 Direct-Sites → createAdminClient. 5 CRITICAL UI-Break-Sites OHNE try/catch fixed (proposals/actions.ts L1322 + L1449 + pipeline/actions.ts L1079 insertAudit-Callback + customer-dse/actions.ts L87 + L140). Live-Smoke 2 UI-Pfade deferred zu Master-Merge (Praezedenz SLC-903). Pre-Apply 2 (post-MIG-047c Stand). Post-Apply 1 (-1 audit_log). Verbleibend: knowledge_chunks (SLC-905).
+- Affected Areas: 1 Table im public-Schema: `audit_log`. 4 neue RLS-Policies. 2 Drops alter `authenticated_full_access` + `audit_log_full_access`-Varianten + 4 Drops neue Naming-Varianten fuer Re-Apply-Idempotenz. 1 neuer Index (idx_audit_log_actor_created composite). 0 Schema-Changes. service_role + supabase_admin BYPASSRLS unaffected. Code-Refactor in 12 Files: lib/audit.ts (logAudit + logAuditWithId zentral via createAdminClient), lib/team/view-as-audit.ts (Signature-Change: supabase-Parameter entfernt, eigener createAdminClient), lib/ki-workspace/reports/_shared.ts (logReportAudit), lib/custom-reports/actions/{save,rename,run,delete}.ts (4 best-effort), app/(app)/proposals/actions.ts (4 Sites L319+L1210+L1322+L1449), app/(app)/pipeline/actions.ts (insertAudit-Callback L1079), app/(app)/settings/compliance/customer-dse/actions.ts (L87+L140), app/(app)/mein-tag/actions/apply-nl-rule.ts (L166), app/(app)/team/[user_id]/layout.tsx (Caller-Adaption logViewAs Signature). auto_winloss_extract.ts (parameter-passed context.supabase) verified als admin (via dispatcher.ts createAdminClient) — kein Fix noetig. Quality-Gates: TSC=0 errors, ESLint SLC-904-scope=0 NEUE errors (2 pre-existing pipeline/actions.ts L484 + L722 in any-Detection), Next.js Build PASS 12.1s.
+- Risk: Niedrig. Pure additive RLS-Aenderung + 1 Index-Ergaenzung. Idempotent (Re-Apply 0 Errors verifiziert via NOTICE messages). Code-Refactor 12 Files mit identischem Pattern (insert-Stelle: supabase → createAdminClient()). 8850 Pre-existing audit_log-Rows (96% mit NULL actor_id = Cron/Service-Role-geschriebene Eintraege, 4% mit echtem actor_id) — alle nach MIG nur ueber is_admin() oder actor_id=auth.uid() sichtbar. Performance-Wins: Q1 27x schneller (Composite-Index), Q2 3.2x schneller (Cache-Warm). RLS-Overhead authenticated 0.071ms (TEST_MEMBER_1) bzw 0.719ms (Admin alle Rows) — beide deutlich unter DEC-266-Threshold 100ms.
+- Rollback Notes: `DO $$ DROP POLICY audit_log_select ON audit_log; DROP POLICY audit_log_insert ON audit_log; DROP POLICY audit_log_update ON audit_log; DROP POLICY audit_log_delete ON audit_log; CREATE POLICY authenticated_full_access ON audit_log FOR ALL TO authenticated USING (true) WITH CHECK (true); END $$;` plus Code-Revert (12 Files git revert) plus DROP INDEX IF EXISTS idx_audit_log_actor_created. Kein praktischer Rollback-Bedarf, weil V8.11 Pre-Customer-Live-Pflicht ist und MIG-048 strict additive ist.
+- Verify: `SELECT COUNT(*) FROM list_tables_with_authenticated_full_access()` → 1 (Pre-Apply 2, Delta 1). `SELECT policyname, cmd FROM pg_policies WHERE schemaname='public' AND tablename='audit_log'` → 4 Rows (SELECT/INSERT/UPDATE/DELETE). `SELECT indexname FROM pg_indexes WHERE schemaname='public' AND tablename='audit_log'` → 6 Rows inkl. idx_audit_log_actor_created. Vitest `__tests__/rls/v8-11-slc-904-rls-matrix.test.ts` 18/18 GREEN in 99ms via node:20-Sidecar gegen Coolify-DB. V8.11-Regression alle 6 Test-Files 486/486 GREEN in 1.12s.
+
+### MIG-047c — V8.11 SLC-903 Klasse-C Block 3 Polymorph/Special-Cases RLS-Policies (APPLIED 2026-06-05 via SSH+base64)
+- Date: 2026-06-05
+- Scope: idempotente RLS-Policy-Umstellung auf 9 Klasse-C Block-3-Tabellen (inkl. ai_feedback deferred aus Block 2 per DEC-275) + 5 neue Parent-FK-Indizes:
+  ```sql
+  -- Helper-Existenz-Guard: is_admin + can_see_owner
+  -- 5 CREATE INDEX IF NOT EXISTS (documents.{company,deal,created_by} + campaigns.created_by + fit_assessments.assessed_by)
+  -- 36 DROP POLICY IF EXISTS (18 alte authenticated_full_access-Varianten + 18 neue _select/_insert/_update/_delete Naming-Varianten fuer Re-Apply-Idempotenz)
+  -- 36 CREATE POLICY: pro Tabelle <t>_select / <t>_insert / <t>_update / <t>_delete (documents nutzt `documents_table_*`-Praefix per OQ-arch-6)
+  --   ai_action_queue (Polymorph 5-Wege CASE per D-MT4-AiActionQueue-Polymorph Decision):
+  --     USING (entity_type='deal' AND EXISTS(deals via entity_id)
+  --            OR entity_type='email_message' AND EXISTS(emails)
+  --            OR entity_type='contact' AND EXISTS(contacts)
+  --            OR entity_type='company' AND EXISTS(companies)
+  --            OR entity_type='proposal' AND EXISTS(proposals)
+  --            OR decided_by = auth.uid()  -- own-decision-Fallback
+  --            OR is_admin())
+  --   ai_feedback (Transitive via ai_action_queue) — Policy dupliziert 5-Wege-Logik (PostgreSQL hat kein Policy-Inheritance):
+  --     USING (EXISTS(SELECT 1 FROM ai_action_queue q WHERE q.id = ai_feedback.action_queue_id AND <5-Wege-CASE>) OR is_admin())
+  --   campaigns (Klasse-A-Stil created_by):
+  --     USING (created_by = auth.uid() OR is_admin())
+  --   campaign_links (Transitive via campaigns):
+  --     USING (EXISTS(SELECT 1 FROM campaigns c WHERE c.id = campaign_links.campaign_id AND (c.created_by = auth.uid() OR is_admin())) OR is_admin())
+  --   campaign_link_clicks (Admin-only SELECT + service_role mutate, Admin-DELETE fuer DSGVO):
+  --     SELECT USING (is_admin()); INSERT WITH CHECK (false); UPDATE USING (false); DELETE USING (is_admin())
+  --   automation_runs (Admin-only SELECT + service_role mutate):
+  --     SELECT USING (is_admin()); INSERT WITH CHECK (false); UPDATE USING (false); DELETE USING (is_admin())
+  --   fit_assessments (assessed_by Special):
+  --     USING (assessed_by = auth.uid() OR is_admin())
+  --   documents (Multi-Parent OR contact/company/deal + created_by + admin, `documents_table_*`-Naming per OQ-arch-6):
+  --     USING (EXISTS(contacts) OR EXISTS(companies) OR EXISTS(deals)
+  --            OR (alle 3 NULL AND created_by = auth.uid())
+  --            OR is_admin())
+  --   email_sync_state (Admin-only):
+  --     SELECT USING (is_admin()); INSERT WITH CHECK (false); UPDATE USING (false); DELETE USING (is_admin())
+  -- NOTIFY pgrst, 'reload schema'
+  ```
+- Reason: Security Sprint 3 V8.11 RLS-Sweep Klasse-C Sub-Slice 3/5 Block 3 (finaler Block). Pattern-Reuse aus MIG-047a (Idempotenz + DROP-Strategie) + MIG-047b (Transitive-Pattern). **DECISION D-MT4-AiActionQueue-Polymorph (Live-Schema-Befund 2026-06-05):** ai_action_queue hat KEIN `created_by` (Spec L225 Default unmoeglich). Vorhandene Spalten: entity_type (NOT NULL), entity_id (NOT NULL uuid), decided_by (nullable uuid). Live-Daten zeigen entity_type-Werte 'deal' (18) + 'email_message' (2). Gewaehlt: polymorph 5-Wege CASE (deal/email_message/contact/company/proposal) + decided_by + admin. Eingrenzung auf nur 2 Werte (Spec L225 Default) wuerde 'email_message' blockieren + zukuenftige entity_types blockieren. **DECISION D-MT4-AiFeedback-Transitive:** ai_feedback Policy dupliziert die 5-Wege-Logik via Subquery (PostgreSQL erlaubt kein Policy-Inheritance). NULL-action_queue_id: orphan, nur Admin-sichtbar. **DECISION D-MT4-Documents-Naming (OQ-arch-6 Live-Verify):** storage.objects hat `documents_user_*` (Bucket-Policies V8.10 MIG-041), public.documents bekommt `documents_table_*`-Praefix → konflikt-frei. Pre-Apply 11 (post-MIG-047b Stand). Post-Apply 2 (-9 inkl. ai_feedback aus Block 2 deferred). 2 verbleibend: audit_log (SLC-904) + knowledge_chunks (SLC-905).
+- Affected Areas: 9 Tables im public-Schema: `ai_action_queue`, `ai_feedback`, `campaigns`, `campaign_links`, `campaign_link_clicks`, `automation_runs`, `fit_assessments`, `documents`, `email_sync_state`. 36 neue RLS-Policies (4 pro Tabelle). 18 Drops alter `authenticated_full_access`-Naming-Varianten + 18 Drops neue Naming-Varianten fuer Re-Apply-Idempotenz. 5 neue Indizes (idx_documents_company, idx_documents_deal, idx_documents_created_by, idx_campaigns_created_by, idx_fit_assessments_assessed_by). 0 Schema-Changes. service_role + supabase_admin BYPASSRLS unaffected. createAdminClient-Audit-Befund: 1 NEW M-3 ISSUE-093 (`insight-actions.ts` L37+83+172+196 `admin.from('ai_action_queue')/('ai_feedback')` analog ISSUE-090/091/092). Public-Tracking-Pixel-Insert `/r/[token]` nutzt createAdminClient als beabsichtigter Cron-equivalent-Bypass (unauthenticated entry) — OK. automation/* nutzt durchgehend createAdminClient (Worker-by-design, konsistent mit Admin-only-automation_runs).
+- Risk: Niedrig. Pure additive RLS-Aenderung + Index-Ergaenzungen. Idempotent (Re-Apply 0 Errors verifiziert). ai_action_queue Polymorph-CASE laeuft per index idx_ai_queue_entity (entity_type+entity_id). 20 Pre-existing ai_action_queue-Rows (18 deal + 2 email_message) → alle ueber den 5-Wege-CASE oder admin sichtbar. 1 Pre-existing ai_feedback-Row mit action_queue_id=set → transitive Policy greift. 5 Pre-existing automation_runs + 1 email_sync_state → nur via is_admin() sichtbar (richtig fuer Tracking/Audit-Logs). 0 Rows in campaigns/campaign_links/campaign_link_clicks/documents/fit_assessments → Greenfield. DEC-266-Threshold (max 100ms, 10x-Baseline) erwartet erfuellt — Q-Block-3 EXPLAIN in Sub-Session 3 MT-7 final dokumentiert. Direct-SQL Sanity-Smoke 16/16 PASS-LIVE (admin sieht alles, member sieht 0 Admin-only-Tabellen + 1 ai_action_queue via deal_owner-Pfad + 0 ai_feedback).
+- Rollback Notes: `DO $$ FOREACH 9 Tabellen LOOP DROP POLICY <t>_<op>; CREATE POLICY authenticated_full_access ON <t> FOR ALL TO authenticated USING (true); END LOOP $$;` mit documents-Naming `documents_table_<op>`. Index-Drop optional via `DROP INDEX IF EXISTS idx_documents_company,...`. Kein praktischer Rollback-Bedarf weil V8.11 Pre-Customer-Live-Pflicht ist.
+- Verify: `SELECT COUNT(*) FROM list_tables_with_authenticated_full_access()` → 2 (Pre-Apply 11, Delta 9). `SELECT tablename, COUNT(policyname) FROM pg_policies WHERE schemaname='public' AND tablename IN ('ai_action_queue','ai_feedback','campaigns','campaign_links','campaign_link_clicks','automation_runs','fit_assessments','documents','email_sync_state') GROUP BY tablename` → 9 × 4 = 36 Rows. Direct-SQL Sanity-Smoke siehe RPT-591 Section "Direct-SQL Sanity-Smoke Block 3". Voll Vitest 288 Tests (3 Test-Files) verschoben in Sub-Session 4 (MT-5).
+
+### MIG-047b — V8.11 SLC-903 Klasse-C Block 2 Proposal/Email/Cadence-FK + V7-Direct emails RLS-Policies (APPLIED 2026-06-05 via SSH+base64)
+- Date: 2026-06-05
+- Scope: idempotente RLS-Policy-Umstellung auf 7 Klasse-C Block-2-Tabellen + 4 neue Parent-FK-Indizes. ai_feedback wegen D-MT3-AiFeedback-Defer-Decision aus Block 2 raus → Block 3:
+  ```sql
+  -- Helper-Existenz-Guard: is_admin + can_see_owner
+  -- 4 CREATE INDEX IF NOT EXISTS (emails.company_id, emails.created_by, cadence_enrollments.created_by, cadence_executions.email_id)
+  -- 28 DROP POLICY IF EXISTS (14 alte + 14 neue Naming-Varianten fuer Re-Apply-Idempotenz)
+  -- 28 CREATE POLICY: pro Tabelle <t>_select / <t>_insert / <t>_update / <t>_delete
+  --   Single-Parent EXISTS proposals (proposal_items, proposal_payment_milestones):
+  --     USING (EXISTS(SELECT 1 FROM proposals p WHERE p.id = <t>.proposal_id AND can_see_owner(p.owner_user_id)) OR is_admin())
+  --   Multi-Parent OR (email_attachments via email_id/proposal_id):
+  --     USING (EXISTS(emails) OR EXISTS(proposals) OR is_admin())
+  --   V7-Direct (emails) — analog companies/contacts/deals MIG-035:
+  --     SELECT USING (can_see_owner(owner_user_id))
+  --     INSERT WITH CHECK (owner_user_id = auth.uid() OR is_admin())
+  --     UPDATE USING (can_see_owner(...)) WITH CHECK (owner_user_id = auth.uid() OR is_admin())
+  --     DELETE USING (owner_user_id = auth.uid() OR is_admin())
+  --   Multi-Parent OR + created_by (cadence_enrollments via deal_id/contact_id/created_by) — OQ-arch-5 (a):
+  --     USING (EXISTS(deals) OR EXISTS(contacts) OR (NULL-parents AND created_by=auth.uid()) OR is_admin())
+  --   Transitive-Parent (cadence_executions via cadence_enrollments):
+  --     USING (EXISTS(SELECT 1 FROM cadence_enrollments ce WHERE ce.id = cadence_executions.enrollment_id AND (EXISTS(deals)+EXISTS(contacts)+created_by)) OR is_admin())
+  --   Mittelbar (email_tracking_events via emails.owner_user_id) — OQ-arch-5 (a):
+  --     USING (EXISTS(SELECT 1 FROM emails e WHERE e.id = email_tracking_events.email_id AND can_see_owner(e.owner_user_id)) OR is_admin())
+  -- NOTIFY pgrst, 'reload schema'
+  ```
+- Reason: Security Sprint 3 V8.11 RLS-Sweep Klasse-C Sub-Slice 3/5 Block 2. Pattern-Reuse aus MIG-047a (Idempotenz + DROP-Strategie) + MIG-035 (V7-Direct-Pattern fuer emails) + Multi-Parent OR-EXISTS aus DEC-272. **DECISION D-MT3-AiFeedback-Defer:** ai_feedback hat nur `id`+`action_queue_id` — kein created_by, kein owner. Da ai_action_queue (Block-3-Tabelle) noch unmigriert ist, waere transitive EXISTS-Pattern unsicher → ai_feedback gemeinsam mit ai_action_queue in MIG-047c. Block-2 = 7 statt 8, Block-3 = 9 statt 8 Tabellen (net unveraendert). Pre-Apply 18 (post-MIG-047a Stand). Post-Apply 11 (-7).
+- Affected Areas: 7 Tables im public-Schema: `proposal_items`, `proposal_payment_milestones`, `email_attachments`, `emails`, `cadence_enrollments`, `cadence_executions`, `email_tracking_events`. 28 neue RLS-Policies (4 pro Tabelle). 14 Drops alter `authenticated_full_access`-Naming-Varianten + 14 Drops neue Naming-Varianten fuer Re-Apply-Idempotenz. 4 neue Indizes (idx_emails_company, idx_emails_created_by, idx_cadence_enrollments_created_by, idx_cadence_executions_email). 0 Schema-Changes. service_role + supabase_admin BYPASSRLS unaffected. Cron-Code-Audit-Befund: 1 NEW M-2 ISSUE-092 (`send-action.ts` L196-209 admin.from email_attachments analog ISSUE-090/091).
+- Risk: Niedrig. Pure additive RLS-Aenderung + Index-Ergaenzungen. Idempotent (Re-Apply 0 Errors verifiziert). emails owner_user_id existing index `idx_emails_owner_user_id` → V7-Pattern effizient. 8 Pre-existing emails-Rows haben NULL owner_user_id (Pre-V7-Daten) → nur ueber is_admin sichtbar (akzeptiertes V7-Verhalten, konsistent mit companies/contacts/deals NULL-Handling). Post-Apply EXPLAIN-Re-Run 5 Queries alle unter 100ms, max-Faktor 2.36x bei Q3 email_attachments (0.088→0.208ms, Cache-Miss). DEC-266-Threshold eingehalten. Direct-SQL Sanity-Smoke 7/7 PASS-LIVE inkl. Cross-Team-Isolation bestaetigt (richard-team fa0ff2b6 vs Test-Team 077 sauber getrennt — wichtig fuer Multi-Tenant-V9-Vorbereitung).
+- Rollback Notes: `DO $$ FOREACH 7 Tabellen LOOP DROP POLICY <t>_select|_insert|_update|_delete; CREATE POLICY authenticated_full_access ON <t> FOR ALL TO authenticated USING (true); END LOOP $$;`. Index-Drop optional via `DROP INDEX IF EXISTS idx_emails_company,...`. Kein praktischer Rollback-Bedarf weil V8.11 Pre-Customer-Live-Pflicht ist.
+- Verify: `SELECT COUNT(*) FROM list_tables_with_authenticated_full_access()` → 11 (Pre-Apply 18, Delta 7). `SELECT tablename, COUNT(policyname) FROM pg_policies WHERE schemaname='public' AND tablename IN ('proposal_items','proposal_payment_milestones','email_attachments','emails','cadence_enrollments','cadence_executions','email_tracking_events') GROUP BY tablename` → 7 × 4 = 28 Rows. Direct-SQL Sanity-Smoke siehe RPT-590 Section "Direct-SQL Sanity-Smoke Block 2". Voll Vitest 96 Block 2 verschoben in Sub-Session 3 (MT-5 mit 288 Tests gebuendelt).
+
+### MIG-047a — V8.11 SLC-903 Klasse-C Block 1 Standard-Parent-FK + Multi-Parent OR-EXISTS RLS-Policies (APPLIED 2026-06-05 via SSH+base64)
+- Date: 2026-06-05
+- Scope: idempotente RLS-Policy-Umstellung auf 8 Klasse-C Block-1-Tabellen + 16 neue Parent-FK-Indizes (R-903-1 Mitigation):
+  ```sql
+  -- Helper-Existenz-Guard: is_admin + can_see_owner
+  -- 16 CREATE INDEX IF NOT EXISTS (Parent-FKs auf tasks/signals/calendar_events/email_threads/handoffs/referrals)
+  -- 32 DROP POLICY IF EXISTS (16 alte + 16 neue Naming-Varianten fuer Re-Apply-Idempotenz)
+  -- 32 CREATE POLICY: pro Tabelle <t>_select / <t>_insert / <t>_update / <t>_delete
+  --   Standard-Single-Parent (deal_products, auto_winloss_runs):
+  --     USING (EXISTS(SELECT 1 FROM deals d WHERE d.id = <t>.deal_id AND can_see_owner(d.owner_user_id)) OR is_admin())
+  --   Multi-Parent OR (tasks, signals, calendar_events, email_threads, handoffs, referrals):
+  --     USING (EXISTS(deals) OR EXISTS(contacts) OR EXISTS(companies) [OR EXISTS(activities/meetings/referred_*)]
+  --            OR (alle Parents NULL AND created_by=auth.uid()) -- nur wenn created_by-Spalte existiert
+  --            OR is_admin())
+  -- NOTIFY pgrst, 'reload schema'
+  ```
+- Reason: Security Sprint 3 V8.11 RLS-Sweep Klasse-C Sub-Slice 3/5 Block 1 (von 3 atomaren Migration-Blocks: 047a/047b/047c). Klasse-C-Pattern (DEC-272) fuer Tabellen mit Parent-FK-Spalten — Visibility via `can_see_owner(parent.owner_user_id)` Lookup. Multi-Parent-Tabellen nutzen OR-Verkettung. NULL-Parent erlaubt nur eigene `created_by`-Rows (wenn Spalte existiert). Admin-Bypass via `is_admin()`. Pre-Apply 26 (post-MIG-046 Stand). Post-Apply 18 (-8). Pattern-Quelle: `sql/migrations/046_v8_11_slc_902_klasse_b.sql` (Helper-Guard + Idempotenz-Pattern) + V7-`can_see_owner`-Pattern (`sql/migrations/035_v7_rls_switch.sql`).
+- Affected Areas: 8 Tables im public-Schema: `tasks`, `signals`, `calendar_events`, `email_threads`, `handoffs`, `deal_products`, `auto_winloss_runs`, `referrals`. 32 neue RLS-Policies (4 pro Tabelle), 16 Drops alter Naming-Varianten (7× `authenticated_full_access` + 1× `auto_winloss_runs_full_access` Drift). 16 neue Parent-FK-Indizes (idx_tasks_deal/_company/_created_by, idx_signals_company/_activity/_created_by, idx_calendar_events_deal/_contact/_company/_meeting, idx_email_threads_deal/_company, idx_handoffs_company/_created_by, idx_referrals_deal/_referred_company). 0 Schema-Changes (kein ALTER TABLE/ADD COLUMN). service_role + supabase_admin BYPASSRLS unaffected. Cron-Code-Audit-Befund: 1 NEW M-1 ISSUE-091 (`deal-products.ts` 4× createAdminClient ohne Parent-Deal-Ownership-Verify, analog ISSUE-090 products).
+- Risk: Niedrig. Pure additive RLS-Aenderung (kein DROP TABLE/ALTER COLUMN). Idempotent (nach DROP-Section-Erweiterung um 32 neue Naming-Varianten: Re-Apply 0 Errors verifiziert). Edge-Case: 1 Pre-existing `email_threads`-Row ohne jeden Parent-FK + kein `created_by` → nur ueber `is_admin()` sichtbar (orphan-row, akzeptiert). Post-Apply EXPLAIN-Re-Run der 5 Block-1-Test-Queries: 4/5 schneller post-MIG (Index-Effekt + Cache-Warm), Q2 + Q5 Mikro-Drift im 0.1ms-Bereich (Plan-Hash-Wechsel bei Q1+Q5 wegen Statistik-Update — kein RLS-Regression). DEC-266 max(100ms, 10x-Baseline) eingehalten mit grossem Abstand. RLS-Overhead-Check authenticated (admin) 2.665ms (Multi-Parent OR mit 3 EXISTS SubPlans, Pkey-Index-Lookups) — vernachlaessigbar bei Mini-Dataset, akzeptabel bei groesserem Dataset wegen Index-Coverage.
+- Rollback Notes: `DO $$ FOREACH 8 Tabellen LOOP DROP POLICY <t>_select|_insert|_update|_delete; CREATE POLICY authenticated_full_access ON <t> FOR ALL TO authenticated USING (true); END LOOP $$;`. Wuerde Klasse-C-Owner-Isolation entfernen und Multi-User-Cross-Read wieder oeffnen — kein praktischer Rollback-Bedarf weil V8.11 Pre-Customer-Live-Pflicht ist. Index-Drop optional via `DROP INDEX IF EXISTS idx_tasks_deal,...` (16 Indizes, kosten kein Daten-Risiko).
+- Verify: `SELECT COUNT(*) FROM list_tables_with_authenticated_full_access()` → 18 (Pre-Apply 26, Delta 8). `SELECT COUNT(*) FROM pg_policies WHERE schemaname='public' AND tablename IN ('tasks','signals','calendar_events','email_threads','handoffs','deal_products','auto_winloss_runs','referrals')` → 32 (8 × 4 Ops). Direct-SQL Sanity-Smoke 4/4 PASS-LIVE auf tasks-Tabelle (admin all=4, teamlead member2-deal=1, member-2 own=1, member-2 cross-member=0). Voll Vitest 96 Tests v8-11-slc-903a-rls-matrix.test.ts verschoben in Sub-Session 3 (MT-5 mit 288 Tests gebuendelt).
+
+### MIG-046 — V8.11 SLC-902 Klasse-B Team-Templates RLS-Policies + Sec-Audit-Helper-Function (APPLIED 2026-06-05 via SSH+base64)
+- Date: 2026-06-05
+- Scope: idempotente RLS-Policy-Umstellung auf 11 Team-Templates-Tabellen via DO-Block-Loop + persistente Sec-Audit-Helper-Function (DEC-274):
+  ```sql
+  -- DO $$ FOREACH 11 Tabellen LOOP
+  DROP POLICY IF EXISTS authenticated_full_access ON <t>;
+  DROP POLICY IF EXISTS <t>_full_access ON <t>;
+  CREATE POLICY <t>_select ON <t> FOR SELECT TO authenticated USING (true);
+  CREATE POLICY <t>_insert ON <t> FOR INSERT TO authenticated WITH CHECK (is_admin());
+  CREATE POLICY <t>_update ON <t> FOR UPDATE TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+  CREATE POLICY <t>_delete ON <t> FOR DELETE TO authenticated USING (is_admin());
+  -- END LOOP
+  CREATE OR REPLACE FUNCTION list_tables_with_authenticated_full_access()
+    RETURNS TABLE(schemaname TEXT, tablename TEXT, policyname TEXT)
+    LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public
+  AS $$ SELECT ... FROM pg_policies WHERE policyname LIKE '%_full_access' $$;
+  GRANT EXECUTE ON FUNCTION list_tables_with_authenticated_full_access() TO authenticated;
+  ```
+  Plus Helper-Existenz-Guard `RAISE EXCEPTION IF V7-Helper < 4` und Verifikations-Block (44 Policies + Helper-Function exists + Done-Gate=26).
+- Reason: Security Sprint 3 V8.11 RLS-Sweep der 41 Zweittabellen mit `authenticated_full_access`-Policy. Klasse-B-Pattern (DEC-271) fuer Team-Templates ohne Owner-Spalte — SELECT all authenticated (Team-share), Mutate Admin-only via `is_admin()`. Pre-Apply 37 (post-MIG-045 Stand). Post-Apply 26 (37 - 11). Sec-Audit-Helper-Function (DEC-274) wird hier deployed und ab SLC-903 als persistenter Done-Gate genutzt. Pattern-Quelle: `sql/migrations/045_v8_11_slc_901_klasse_a.sql` DO-Loop (1:1 portiert mit Klasse-B-Pattern: SELECT USING(true) statt user_id-Check, Mutate is_admin() statt user_id OR is_admin()).
+- Affected Areas: 11 Tables im public-Schema: `branding_settings`, `email_templates`, `payment_terms_templates`, `compliance_templates`, `vat_id_validations`, `pipelines`, `pipeline_stages`, `products`, `automation_rules`, `cadences`, `cadence_steps`. 44 neue RLS-Policies (4 pro Tabelle), 11 Drops alter `authenticated_full_access` + 11 Drops `<t>_full_access`-Variante. 1 neue Function `list_tables_with_authenticated_full_access()` (SECURITY DEFINER, STABLE, search_path=public, GRANT EXECUTE TO authenticated). 0 Schema-Changes, 0 Index-Changes. service_role + supabase_admin BYPASSRLS unaffected. Cron-Code-Audit `docs/AUDIT_CRON_V811.md` Klasse-B Section: 10/11 Tabellen sauber, **1 FIX-NEEDED Medium (products → ISSUE-090)** via createAdminClient ohne is_admin()-Pre-Check in 3 Server-Actions.
+- Risk: Niedrig. Pure additive RLS-Aenderung (kein DROP TABLE/ALTER COLUMN). Idempotent (Re-Apply verifiziert: 2. Run 0 Errors, alle DROP POLICY IF EXISTS skippen, CREATE OR REPLACE FUNCTION ohne Fehler, NOTICE-Output sauber). Post-Apply Vitest 132/132 GREEN in 339ms via node:22-Sidecar im `k9f5pn5upfq7etoefb5ukbcg_business-net` (alle 11 Tabellen × 3 Rollen × 4 Ops = 132 Cases). Post-Apply EXPLAIN-Re-Run unter Klasse-B-Policy aktiv: alle 5 Test-Queries 4/5 schneller post-MIG (Cache-Warm-Effekt), max-Faktor 2.02x bei Q3 products (0.050→0.101ms). DEC-266 max(100ms, 10x-Baseline) eingehalten mit grossem Abstand. RLS-Overhead-Check authenticated vs postgres-Rolle 2.07x bei Mini-Dataset = vernachlaessigbar.
+- Rollback Notes: `DO $$ FOREACH 11 Tabellen LOOP DROP POLICY <t>_select|_insert|_update|_delete; CREATE POLICY authenticated_full_access ON <t> FOR ALL TO authenticated USING (true); END LOOP $$; DROP FUNCTION IF EXISTS list_tables_with_authenticated_full_access();`. Wuerde Klasse-B-Admin-mutate-Restriction entfernen und Multi-User-Write-Bypass wieder oeffnen — kein praktischer Rollback-Bedarf weil V8.11 Pre-Customer-Live-Pflicht ist.
+- Verify: `SELECT COUNT(*) FROM list_tables_with_authenticated_full_access()` → 26 (Pre-Apply 37, Delta 11). `SELECT COUNT(*) FROM pg_policies WHERE schemaname='public' AND tablename = ANY(ARRAY[..11..]) AND policyname LIKE ANY(ARRAY['%_select','%_insert','%_update','%_delete'])` → 44. `SELECT COUNT(*) FROM pg_proc WHERE proname='list_tables_with_authenticated_full_access'` → 1.
+
+### MIG-045 — V8.11 SLC-901 Klasse-A user_id RLS-Policies (APPLIED 2026-06-04 via SSH+base64)
+- Date: 2026-06-04
+- Scope: idempotente RLS-Policy-Umstellung auf 4 Per-User-Stammdaten-Tabellen via DO-Block-Loop:
+  ```sql
+  -- DO $$ FOREACH ['user_settings','kpi_snapshots','goals','activity_kpi_targets'] LOOP
+  DROP POLICY IF EXISTS authenticated_full_access ON <t>;
+  CREATE POLICY <t>_select ON <t> FOR SELECT TO authenticated USING (user_id = auth.uid() OR is_admin());
+  CREATE POLICY <t>_insert ON <t> FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid() OR is_admin());
+  CREATE POLICY <t>_update ON <t> FOR UPDATE TO authenticated USING (user_id = auth.uid() OR is_admin()) WITH CHECK (...);
+  CREATE POLICY <t>_delete ON <t> FOR DELETE TO authenticated USING (user_id = auth.uid() OR is_admin());
+  ```
+  Plus Helper-Existenz-Guard `RAISE EXCEPTION IF V7-Helper < 4` und Verifikations-Block (16 Policies + 0 orphan).
+- Reason: Security Sprint 3 V8.11 RLS-Sweep der 41 Zweittabellen mit `authenticated_full_access`-Policy (USING(true), keine User-Isolation). Klasse-A-Pattern (DEC-270) fuer Per-User-Stammdaten ohne Team-Visibility (kein teamlead-Bypass) — Settings/Snapshots/Goals/Targets sind privat. Pre-Apply Done-Gate `pg_policies WHERE policyname LIKE '%_full_access'` = 41 (Live-DB-Befund 2026-06-04). Post-Apply: 37 (41 - 4). Pattern-Quelle: `sql/migrations/035_v7_rls_switch.sql` DO-Loop-Section (1:1 portiert mit Klasse-A-Drift — kein can_see_owner-Wrap, kein teamlead-Pfad). SEC-006 Sub-Item.
+- Affected Areas: 4 Tables im public-Schema: `user_settings` (8 Rows), `kpi_snapshots` (315 Rows), `goals` (3 Rows), `activity_kpi_targets` (5 Rows). 16 neue RLS-Policies (4 pro Tabelle), 4 Drops alte `authenticated_full_access`. 0 Schema-Changes, 0 Index-Changes. service_role + supabase_admin BYPASSRLS unaffected. Cron-Schreiber `cockpit/src/app/api/cron/kpi-snapshot/route.ts` (service_role) verifiziert: setzt user_id korrekt aus profiles-Lookup (`docs/AUDIT_CRON_V811.md` Klasse-A Verdict: 0 FIX-NEEDED).
+- Risk: Niedrig. Pure additive RLS-Aenderung (kein DROP TABLE/ALTER COLUMN). Idempotent (re-apply verifiziert: 2. Run 0 Errors, alle DROP POLICY IF EXISTS skippen, NOTICE-Output sauber). Post-Apply Vitest 48/48 GREEN in 199ms via node:22-Sidecar im `k9f5pn5upfq7etoefb5ukbcg_business-net`. Post-Apply EXPLAIN-Re-Run unter Klasse-A-Policy aktiv: alle 5 Test-Queries unter 0.4ms, max-Faktor 3.14x bei Q1 user_settings (0.073ms → 0.229ms). DEC-266 max(100ms, 10x-Baseline) eingehalten mit grossem Abstand. is_admin() STABLE-Caching pro Statement (1 Profile-Read pro Query, kein N-mal-Read).
+- Rollback Notes: `DO $$ FOREACH ... LOOP DROP POLICY <t>_select|_insert|_update|_delete; CREATE POLICY authenticated_full_access ON <t> FOR ALL TO authenticated USING (true); END LOOP $$;`. Wuerde Klasse-A-Isolation entfernen und Multi-User-Cross-User-Read wieder oeffnen — kein praktischer Rollback-Bedarf weil V8.11 Pre-Customer-Live-Pflicht ist und V1-State auch Pre-Live-Block waere.
+- Verify: `SELECT COUNT(*) FROM pg_policies WHERE schemaname='public' AND policyname LIKE '%_full_access'` → 37 (Pre-Apply 41, Delta 4). `SELECT COUNT(*) FROM pg_policies WHERE tablename IN ('user_settings','kpi_snapshots','goals','activity_kpi_targets')` → 16 (4 pro Tabelle).
+
 ### MIG-044 — V8.13 SLC-895 auth.users.aud Normalisierung (ISSUE-089 Root-Fix) (APPLIED 2026-06-03 via SSH+base64)
 - Date: 2026-06-03
 - Scope: idempotente Spalten-Normalisierung in `auth.users`:

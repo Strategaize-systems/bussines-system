@@ -2627,9 +2627,9 @@
       "title": "V8.11 SLC-901 RLS Klasse A: Per-User-Stammdaten (4 Tabellen, MIG-045)",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V8.11",
-      "description": "Sub-Item von BL-500. 4 Per-User-Stammdaten-Tabellen mit eigener user_id-Spalte (user_settings, kpi_snapshots, goals, activity_kpi_targets) auf Klasse-A-Pattern umstellen: `user_id = auth.uid() OR is_admin()`. MIG-045 idempotent. Vitest 48 Tests (4 x 3 Rollen x 4 Ops). Cron-Code-Audit fuer kpi-aggregate-Cron (docs/AUDIT_CRON_V811.md Klasse A). Pre-Apply 41 Rows in Helper-Function (existiert noch nicht), Post-Apply 37 Rows direkter pg_policies-Query. ~3-4h Code-Side. Slice-Spec: slices/SLC-901-rls-sweep-klasse-a-user-id.md. DEC-270, DEC-265.",
+      "description": "Sub-Item von BL-500. 4 Per-User-Stammdaten-Tabellen mit eigener user_id-Spalte (user_settings, kpi_snapshots, goals, activity_kpi_targets) auf Klasse-A-Pattern umstellen: `user_id = auth.uid() OR is_admin()`. MIG-045 idempotent applied + re-apply-idempotent. Vitest 48 Tests (4 x 3 Rollen x 4 Ops) GREEN in 199ms. Cron-Code-Audit (docs/AUDIT_CRON_V811.md Klasse A) Verdict: 0 FIX-NEEDED. Pre-Apply 41 (loose), Post-Apply 37 (loose) per pg_policies-Direkt-Query. EXPLAIN-Perf max-Faktor 3.14x bei 0.229ms (DEC-266-Threshold 100ms eingehalten). Code-Side done; Live-Smoke MT-6 separat. Slice-Spec: slices/SLC-901-rls-sweep-klasse-a-user-id.md. DEC-270, DEC-265.",
       "createdAt": "2026-06-04"
     },
     {
@@ -2637,9 +2637,9 @@
       "title": "V8.11 SLC-902 RLS Klasse B: Team-Templates (11 Tabellen, MIG-046 + Sec-Audit-Helper)",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V8.11",
-      "description": "Sub-Item von BL-500. 11 Team-Templates-Tabellen ohne Owner-Spalte (branding_settings, email_templates, payment_terms_templates, compliance_templates, vat_id_validations, pipelines, pipeline_stages, products, automation_rules, cadences, cadence_steps) auf Klasse-B-Pattern: SELECT all authenticated, INSERT/UPDATE/DELETE Admin-only. **Pflicht: Sec-Audit-Helper-Function `list_tables_with_authenticated_full_access()` deploy (DEC-274)** als persistenter Done-Gate. Vitest 132 Tests. Cron-Code-Audit KI-Vorlagen-Generator. ~5-6h Code-Side. Post-Apply Helper-Function 26 Rows. Slice-Spec: slices/SLC-902-rls-sweep-klasse-b-team-templates.md. DEC-271, DEC-274, DEC-265.",
+      "description": "Sub-Item von BL-500. 11 Team-Templates-Tabellen ohne Owner-Spalte (branding_settings, email_templates, payment_terms_templates, compliance_templates, vat_id_validations, pipelines, pipeline_stages, products, automation_rules, cadences, cadence_steps) auf Klasse-B-Pattern: SELECT all authenticated, INSERT/UPDATE/DELETE Admin-only. MIG-046 idempotent applied + re-apply-idempotent. Sec-Audit-Helper-Function `list_tables_with_authenticated_full_access()` deployed (DEC-274) als persistenter Done-Gate. Vitest 132/132 GREEN in 339ms. Cron-Code-Audit (docs/AUDIT_CRON_V811.md Klasse B) Verdict: 10/11 Tabellen sauber, 1 FIX-NEEDED Medium (products → ISSUE-090). EXPLAIN-Perf 4/5 schneller post-MIG, max-Faktor 2.02x bei 0.101ms (DEC-266-Threshold 100ms eingehalten). Code-Side done; Live-Smoke MT-6 separat. Pre-Apply 37 Rows, Post-Apply 26 Rows. Slice-Spec: slices/SLC-902-rls-sweep-klasse-b-team-templates.md. DEC-271, DEC-274, DEC-265.",
       "createdAt": "2026-06-04"
     },
     {
@@ -2647,7 +2647,7 @@
       "title": "V8.11 SLC-903 RLS Klasse C: Parent-FK-JOIN (24 Tabellen, MIG-047a/b/c, 3 atomare Blocks)",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V8.11",
       "description": "Sub-Item von BL-500. **Dominanter Aufwand der V8.11.** 24 Klasse-C-Tabellen in 3 atomaren Migration-Blocks: Block 1 Standard-Parent-FK (tasks, signals, calendar_events, email_threads, handoffs, deal_products, auto_winloss_runs, referrals, MIG-047a, ~3-4h), Block 2 Proposal/Email/Cadence-FK (proposal_items, proposal_payment_milestones, email_attachments, emails (V7-direct), cadence_enrollments, cadence_executions, email_tracking_events, ai_feedback, MIG-047b, ~3-4h), Block 3 Polymorph/Special-Cases (ai_action_queue, campaigns, campaign_links, campaign_link_clicks, automation_runs, fit_assessments, documents, email_sync_state, MIG-047c, ~3-4h). EXISTS-Subquery-Pattern per DEC-272. **OQ-arch-5 entschieden in /slice-planning:** email_tracking_events → mittelbar via emails, campaign_link_clicks/automation_runs/email_sync_state → Admin-only-SELECT + service_role-only mutate, cadence_enrollments → Multi-Parent EXISTS, fit_assessments → assessed_by-special. **OQ-arch-6 entschieden:** documents-PUBLIC-Tabelle nutzt `documents_table_*`-Policy-Praefix (Storage-Bucket-Policies sind `documents_user_*`, konfliktfrei). Vitest 288 Tests in 3 Test-Files. Cron-Code-Audit signal-extract/automation-runner/cadence-execute/click-log-cleanup. ~10-13h Code-Side. Post-Apply Helper-Function 2 Rows. Slice-Spec: slices/SLC-903-rls-sweep-klasse-c-parent-fk-join.md.",
       "createdAt": "2026-06-04"
@@ -2657,9 +2657,9 @@
       "title": "V8.11 SLC-904 RLS Klasse E: audit_log (Admin-all + Actor-own DSGVO-Art-15, MIG-048)",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V8.11",
-      "description": "Sub-Item von BL-500. audit_log RLS: SELECT `is_admin() OR actor_id = auth.uid()` (DSGVO-Art-15 Self-Service Right-of-Access), INSERT/UPDATE/DELETE service_role-only via `USING (false) WITH CHECK (false)`. **Niemand** (auch nicht Admin via User-Session) darf Audit-Eintraege mutieren oder loeschen — Forensik-Schutz. Cron + Worker schreiben via createAdminClient (DEC-269 BYPASSRLS). Code-Audit cockpit/src/lib/audit.ts: alle Caller via createAdminClient. Vitest ~18 Tests + service_role-Test-Block. EXPLAIN ANALYZE Indexe auf (actor_id, created_at DESC) + (entity_type, entity_id, created_at DESC). ~2-3h Code-Side. Post-Apply Helper-Function 1 Row. Slice-Spec: slices/SLC-904-rls-sweep-klasse-e-audit-log.md. DEC-272-Verfeinerung, Q-V8.11-A.",
+      "description": "Sub-Item von BL-500. audit_log RLS: SELECT `is_admin() OR actor_id = auth.uid()` (DSGVO-Art-15 Self-Service Right-of-Access), INSERT/UPDATE/DELETE service_role-only via `USING (false) WITH CHECK (false)`. **Niemand** (auch nicht Admin via User-Session) darf Audit-Eintraege mutieren oder loeschen — Forensik-Schutz. Cron + Worker schreiben via createAdminClient (DEC-269 BYPASSRLS). Code-Audit cockpit/src/lib/audit.ts: alle Caller via createAdminClient. Vitest ~18 Tests + service_role-Test-Block. EXPLAIN ANALYZE Indexe auf (actor_id, created_at DESC) + (entity_type, entity_id, created_at DESC). ~2-3h Code-Side. Post-Apply Helper-Function 1 Row. Slice-Spec: slices/SLC-904-rls-sweep-klasse-e-audit-log.md. DEC-272-Verfeinerung, Q-V8.11-A. **2026-06-06 done:** R-904-1 eskaliert auf High (11 Direct + 33 transitive Caller statt erwarteten ~3). Founder-Decision Option A: In-Slice-Refactor durchgefuehrt (audit.ts + 11 Sites + Caller-Adaption logViewAs). 5 CRITICAL UI-Break-Sites fixed (proposals 2x / pipeline insertAudit / customer-dse 2x). MIG-048 LIVE applied, Done-Gate 2 to 1. Vitest 18/18 GREEN + V8.11-Regression 486/486 GREEN. Q1 27x schneller (composite Index actor_id+created_at), Q2 3.2x schneller. Quality-Gates TSC=0, ESLint SLC-904-scope=0 (2 pre-existing pipeline pre-existing), Build PASS 12.1s. Live-Smoke 2 UI-Pfade deferred zu Master-Merge (Praezedenz SLC-903).",
       "createdAt": "2026-06-04"
     },
     {
@@ -2667,9 +2667,9 @@
       "title": "V8.11 SLC-905 RLS Klasse D: knowledge_chunks Schema-ALTER + Backfill + search_knowledge_chunks-Erw + 100% Coverage Done-Gate (MIG-049)",
       "type": "fix",
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "version": "V8.11",
-      "description": "Sub-Item von BL-500. **Destructive: ALTER TABLE.** Letzte Sub-Slice. Phasen: (1) Schema-ALTER ADD COLUMN owner_user_id + team_id + 2 Indexe, (2) SYNC-Backfill (DEC-267) per source_type (meeting/email_message/activity/document) via JOIN auf Parent, (3) RLS-Policy `can_see_owner(owner_user_id)` SELECT + service_role-only Mutate, (4) `search_knowledge_chunks` RPC-Function-Body um `can_see_owner`-Filter erweitern (schliesst SEC-007 Lese-Pfad-Teil). Embedding-Sync-Cron Code-Anpassung Pflicht: chunk-INSERT setzt owner_user_id+team_id aus source-Parent via Helper deriveChunkOwner. Vitest ~20 Tests inkl. RPC-Test + Schema-Test + service_role-Block. Orphan-Report bei Parent-geloescht-Faellen. ~4-5h Code-Side. **Post-Apply Helper-Function 0 Rows → Q-V8.11-B 100% Coverage erfuellt → BS multi-tenant-ready.** Naechster Schritt nach BL-512 done: Gesamt-/qa V8.11 + /final-check + /go-live REL-046 + /deploy + /post-launch T+24h. Slice-Spec: slices/SLC-905-rls-sweep-klasse-d-knowledge-chunks.md. DEC-273, DEC-267, DEC-274.",
+      "description": "Sub-Item von BL-500. **Destructive: ALTER TABLE.** Letzte Sub-Slice. **2026-06-06 done:** MIG-049 LIVE applied — 4 Phasen idempotent: ALTER ADD COLUMN owner_user_id + team_id + 2 Indexe + SYNC-Backfill (8/8 chunks, 0 Orphans) + 4 Policies (SELECT can_see_owner + INSERT/UPDATE/DELETE WITH CHECK false) + search_knowledge_chunks-Function-Erweiterung mit Bypass-Pattern '(auth.uid() IS NULL OR can_see_owner(...))'. Spec-Drifts D-905-1..5 dokumentiert (qa/SLC-905-perf-baseline.md): source_type 'email'/'deal_activity' Live-Reality, search_knowledge_chunks-Signatur respektiert (4 Params TEXT-Embedding plpgsql statt Spec vector/3 Params/SQL), Cron-Bypass-Pattern, Defense-in-Depth Caller-Refactor BEYOND SCOPE (SEC-007-Followup V8.12+), MT-5 passt indexer.ts:embedAndStore an statt embedding-sync-Cron (der schreibt keine chunks). deriveChunkOwner Pure-Function (4 source_types + 4 Error-Pfade) + 9/9 Unit-Tests PASS. Vitest 21/21 GREEN gegen Coolify-DB in 317ms (12 RLS-Matrix + 4 service_role + 2 RPC-Filter + 3 Schema-Audit). V8.11-Regression 507/507 GREEN. Quality-Gates TSC=0, ESLint SLC-905-Files=0 (chunker.ts:80 pre-existing nicht touchiert per surgical-changes-Rule), Build PASS. Post-Apply EXPLAIN: Q1=0.811ms, Q2=0.307ms, Q3=0.464ms (alle Sub-Threshold 100ms). **Post-Apply Done-Gate = 0 Rows → Q-V8.11-B 100% Coverage erfuellt → BS multi-tenant-ready.** Naechster Schritt: Gesamt-/qa V8.11 + /final-check + /go-live REL-046 + /deploy + /post-launch T+24h. Slice-Spec: slices/SLC-905-rls-sweep-klasse-d-knowledge-chunks.md. DEC-273, DEC-267, DEC-274.",
       "createdAt": "2026-06-04"
     },
     {

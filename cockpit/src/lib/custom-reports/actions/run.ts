@@ -15,6 +15,7 @@
 
 import { getProfile } from "@/lib/auth/get-profile";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { RunCustomReportSchema } from "@/lib/custom-reports/schema";
 import { runCustomReportCore } from "@/lib/ki-workspace/custom-report-runner";
 import type {
@@ -113,8 +114,10 @@ export async function runCustomReport(
   }
 
   // 4. audit_log (best-effort).
+  // V8.11 SLC-904 (MIG-048): audit_log INSERT erfordert service_role.
   try {
-    await supabase.from("audit_log").insert({
+    const admin = createAdminClient();
+    await admin.from("audit_log").insert({
       actor_id: profile.user_id,
       action: "custom_report.executed",
       entity_type: "custom_report",

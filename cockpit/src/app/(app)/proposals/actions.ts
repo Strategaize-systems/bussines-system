@@ -316,7 +316,8 @@ export async function createProposal(
 
   // Audit-Trail (DEC-024). Best-effort: Audit-Fehler darf den Proposal-Create
   // nicht zurueckdrehen — Audit-Lueke ist akzeptabel, doppelter Insert nicht.
-  await supabase.from("audit_log").insert({
+  // V8.11 SLC-904 (MIG-048): audit_log INSERT erfordert service_role.
+  await createAdminClient().from("audit_log").insert({
     actor_id: userId,
     action: "create",
     entity_type: "proposal",
@@ -1207,7 +1208,8 @@ export async function generateProposalPdf(
 
   // Audit-Eintrag direkt (nicht via logAudit-Helper) — wir kennen userId und
   // wollen keine zusaetzliche Auth-Roundtrip-Latenz im Hot-Path.
-  await supabase.from("audit_log").insert({
+  // V8.11 SLC-904 (MIG-048): audit_log INSERT erfordert service_role.
+  await createAdminClient().from("audit_log").insert({
     actor_id: userId,
     action: "update",
     entity_type: "proposal",
@@ -1319,7 +1321,8 @@ export async function transitionProposalStatus(
 
   if (updErr) return { ok: false, error: updErr.message };
 
-  await supabase.from("audit_log").insert({
+  // V8.11 SLC-904 (MIG-048): audit_log INSERT erfordert service_role.
+  await createAdminClient().from("audit_log").insert({
     actor_id: user.id,
     action: "status_change",
     entity_type: "proposal",
@@ -1446,7 +1449,8 @@ export async function createProposalVersion(
     }
   }
 
-  await supabase.from("audit_log").insert({
+  // V8.11 SLC-904 (MIG-048): audit_log INSERT erfordert service_role.
+  await createAdminClient().from("audit_log").insert({
     actor_id: user.id,
     action: "create",
     entity_type: "proposal",
