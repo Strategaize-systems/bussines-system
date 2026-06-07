@@ -307,7 +307,7 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-911 | V8.11 BS RLS-Sweep 41 Zweittabellen (5 Sub-Slices SLC-901..905, BL-500) | in_progress | [Spec](FEAT-911-v811-rls-sweep.md) | 2026-06-04 |
+| FEAT-911 | V8.11 BS RLS-Sweep 41 Zweittabellen (5 Sub-Slices SLC-901..905, BL-500) | deployed | [Spec](FEAT-911-v811-rls-sweep.md) | 2026-06-04 |
 
 ## V8.3 Features (Hilfe-Section — RELEASED 2026-05-22 als REL-037)
 
