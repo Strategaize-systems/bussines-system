@@ -1,5 +1,25 @@
 # Known Issues
 
+### ISSUE-096 — Cal.com Container Crash-Loop Root-Cause unklar (Re-Inzidenz-Risiko fuer Production-Outage)
+- Status: open
+- Severity: Low
+- Area: Production-Stability / Cal.com Container / NICHT-V8.11
+- Summary: Am 2026-06-06 ~10:00 UTC ging der Cal.com-Container `calcom-k9f5pn5upfq7etoefb5ukbcg-*` in einen Restart-Loop. Symptome: Load Average 737.47 (von normalerweise <1), Disk 95% (von 82%), 3 parallele yarn/turbo/node-Processes mit START=10:18 und TIME=0:00 (ganz frisch geforkt) und 197%+60%+37% CPU. Application-Layer komplett unresponsiv: SSH banner-exchange timeout 30s, Production HTTP 503 Service Unavailable, Coolify-UI nicht erreichbar. Recovery via Founder-Manual-Coolify-Redeploy (alle 16 Container parallel neu erzeugt) → Cal.com-Loop unterbrochen, neuer Container `075930079644` Up healthy, seitdem 23min+ stabil mit RestartCount=0.
+- Impact: Single-Event-Production-Outage am 2026-06-06 ~10:00 UTC (Dauer ~30-60min bis Recovery). Re-Inzidenz-Risk: wenn Crash-Loop wiederkommt, eskaliert schnell zur Production-Outage wegen Disk/CPU/Memory-Fuelle. In Single-Founder-Mode (V3.x-Phase, kein Customer-Live) ist Impact-Window limitiert auf Founder-Aktivitaet.
+- Workaround: Cal.com-Logs nach Recovery zeigen transiente `next-auth CLIENT_FETCH_ERROR: Gateway Timeout` und `Failed to find Server Action`-Errors (Service-Discovery beim Boot, Server-Action-Hash-Drift zwischen Browser-Client und Server). Harmlos waehrend Container-Boot, kein klarer Crash-Trigger. RestartCount=0 seit Recovery 2026-06-06T10:20 UTC.
+- Discovery: 2026-06-07 V8.11 /deploy Session (RPT-601 L-2). Beim Pre-Deploy-Server-Check via SSH wurde der Crash-Loop entdeckt (Load 737), Recovery durch Founder erfolgte vor V8.11-Push. T+immediate Light-Check (RPT-604) bestaetigt: kein Repeat-Crash, Cal.com 23min+ stabil.
+- Next Action: Re-Inzidenz-Monitoring im /post-launch T+3h + T+24h Window. Falls Crash-Loop wiederkommt: dedizierte Diagnose-Slice (Container Memory-Limits, Auto-Restart-Logic, next-auth-Config-Drift, Image-Pin auf bestimmte Cal.com-Version statt `:latest`-Tag). Aktuell deferred. Verwandt mit IMP-1113 (/deploy Pre-Deploy-Server-Health-Check als BLOCKING-Step im Dev-System).
+
+### ISSUE-095 — Coolify GitHub-Webhook nicht aktiv konfiguriert (Auto-Deploy nach git push fehlt)
+- Status: open
+- Severity: Low
+- Area: Infrastructure / Coolify-Konfig / Operational
+- Summary: Coolify auf BS-Production-Server (`91.98.20.191`) hat keinen aktiven GitHub-Webhook fuer die BS-Application-Resource. Folge: `git push origin main` triggert KEINEN automatischen Coolify-Build. Founder muss in Coolify-UI manuell auf "Redeploy" klicken um den neuen main-HEAD zu bauen. Bestaetigt durch V8.11-Deploy-Sequenz 2026-06-07 08:01 UTC: nach `git push` blieb Coolify-Log bei reiner Routine-Scheduled-Activity (kein `ApplicationDeploymentJob`, kein `StartApplicationDeployment`), erst nach Founder-Manual-UI-Klick startete der Build.
+- Impact: Jeder Deploy braucht manuellen Founder-Klick zusaetzlich zum git push. Erhoehter manueller Aufwand (~30s pro Deploy). Riskant fuer Cross-Repo-Sync-Operationen (z.B. /post-launch T+3h auf einem Repo waehrend Founder offline ist). Internal-Test-Mode-konform — keine Customer-Auswirkung.
+- Workaround: Founder klickt manuell "Redeploy" in Coolify-UI. Praezedenz: gestriger Production-Outage-Recovery 2026-06-06 + heutige V8.11-Deploy 2026-06-07.
+- Discovery: 2026-06-07 V8.11 /deploy Session (RPT-601 L-1). 8 Minuten nach `git push origin main` keine Coolify-Build-Activity feststellbar.
+- Next Action: Coolify-UI → BS-Application-Resource → Configuration → Webhooks → "Add Webhook" mit GitHub-Repo-URL + Branch=`main` + Trigger=`push`. Aufwand ~5-10min Founder-Aktion. V8.12-Backlog-Slot oder V8.x-Polish-Sprint. Cross-Repo-Aufgabe: OP, IS, ImSch ggf. gleiche Pruefung.
+
 ### ISSUE-094 — document-actions umgeht Klasse-C-RLS via createAdminClient fuer documents (Klasse-C-Block-3-Cron-Audit-Finding)
 - Status: open
 - Severity: Medium
