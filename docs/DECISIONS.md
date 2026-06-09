@@ -1,5 +1,45 @@
 # Decisions
 
+## DEC-284 — V8.12 Bundle-Strategie: Single V8.12 mit 3 Features + ~7 Sub-Slices
+- Status: accepted
+- Reason: /requirements V8.12 2026-06-09 hat 11 Items in 3 thematische Phasen geschnitten (Code-Closures / Cross-Repo-Polish / Observability). Single-V8.12-Umbrella ist konsistenter mit "Defense-in-Depth Sprint" Naming und ermoeglicht 1 /final-check + /go-live + REL-047 + /deploy + /post-launch-Sequenz statt 3x. Sub-Splits V8.12a/b/c waeren unnoetig fragmentiert.
+- Consequence: roadmap V8.12 ist single-version active. 3 Features FEAT-921 (Phase 1 Code-Closures) + FEAT-922 (Phase 2 Cross-Repo-Polish 4 Patterns) + FEAT-923 (Phase 3 Observability). ~7 Sub-Slices SLC-9X1..9X7 final-cut in /slice-planning. Gesamt-/qa V8.12 ueber alle 3 Phasen.
+
+## DEC-283 — V8.12 Cost-Cap-Alerting-Pfad: Sentry-Issue-Dashboard (kein separater Slack-Webhook)
+- Status: accepted
+- Reason: V8.12 baut Sentry-Observability (FEAT-923) → LLM-Cost-Cap-Hit-Events koennen direkt als Sentry-Custom-Error gemeldet werden mit Issue-Severity=warning. Slack-Webhook ist Extra-Infrastruktur ohne Mehrwert solange Founder Sentry-Dashboard prueft. Pre-Customer-Live-Slot kann Slack-Integration ergaenzen.
+- Consequence: BL-504 LLM-Cost-Cap implementiert `Sentry.captureMessage("LLM Cap Hit", level=warning, tags={tenant_id, period})` statt eigener Slack-POST. 1 ENV-Variable weniger (SLACK_ALERT_WEBHOOK_URL nicht benoetigt). Sentry-Issue-Dashboard wird primaere Alert-Surface fuer V8.12.
+
+## DEC-282 — V8.12 Passwort-Policy zxcvbn-Score-Threshold = 3 ('good')
+- Status: accepted
+- Reason: /requirements V8.12 2026-06-09 Q-V812-B. Score 3 ist Industry-Standard ("good"), zwingt erkennbare Komplexitaet ohne Frust. Score 4 ("strong") wuerde fuer Internal-Test-Mode-Founder ueberzogen sein und User-Friction erhoehen. Mindestlaenge 12 wirkt als Hard-Floor zusaetzlich.
+- Consequence: BL-502 `validatePasswordStrength(pw)` rejecte alle Passwoerter mit length < 12 OR zxcvbn-Score < 3. Client-Side Visual-Indicator zeigt Score-Bar 0-4. Pre-Customer-Live-Slot kann Threshold auf 4 erhoehen wenn noetig.
+
+## DEC-281 — V8.12 LLM-Cost-Cap Granularitaet + Defaults: Pro-Tenant DAILY=25 EUR / MONTHLY=500 EUR
+- Status: accepted
+- Reason: /discovery V8.12 Q-V812-4 + /requirements V8.12 Q-V812-A. Pro-Tenant nutzt vorhandenes `ai_cost_ledger.tenant_id`-Feld und ist Pre-Customer-Live-konform out-of-the-box. Defaults 25/500 EUR sind generous-Internal-Test-Mode (erlaubt grosse Bedrock-Calls ohne Sorge, deckt Burst-Usage Embedding-Generation-Mix). Override per Coolify-ENV moeglich, spaeter per-Tenant via DB-Tabelle (Post-V8.12-Slot).
+- Consequence: BL-504 implementiert Pre-flight `SELECT SUM(cost_eur) FROM ai_cost_ledger WHERE tenant_id=$1 AND created_at >= NOW() - INTERVAL '1 day'` + Monthly-Pendant. ENVs: `LLM_DAILY_CAP_EUR_PER_TENANT=25`, `LLM_MONTHLY_CAP_EUR_PER_TENANT=500`. Hard-Cap throw + Cron/Job-Status=failed. Pro-Service-Role-Granularitaet (Workspace vs Cron getrennt) ist Post-V8.12-Slot.
+
+## DEC-280 — V8.12 Logger-Redaction Default-Keys-Liste: Security-Core (10) + PII-Minimal (2) = 12 Keys
+- Status: accepted
+- Reason: /requirements V8.12 Q-V812-D. Security-Core deckt 95% der gefaehrlichen Log-Leaks (password, token, secret, api_key, authorization, cookie, session, jwt, refresh_token, access_token). PII-Minimal (email, phone) deckt DSGVO-Risk in Coolify-Container-Logs. Strict-Liste mit Business-Identifiers (iban/vat_id/full_name) hat zu viele False-Positives in normalen Object-Logs (z.B. `address`-Property in Geo-Objekten). Erweiterbar via `redactSecrets(obj, { extraKeys: [...] })`-Param.
+- Consequence: BL-503 `redact.ts` exportiert `DEFAULT_REDACT_KEYS = ['password', 'token', 'secret', 'api_key', 'authorization', 'cookie', 'session', 'jwt', 'refresh_token', 'access_token', 'email', 'phone']`. `redactSecrets(obj, opts?)` mit `opts.extraKeys` und `opts.replacementValue` (default '[REDACTED]'). Cross-Repo-Lib-Kandidat fuer Dev-System.
+
+## DEC-279 — V8.12 CSP-Mode: Report-Only-Phase 1-2 Wo → strict, report-uri = Sentry-CSP-Integration
+- Status: accepted
+- Reason: /discovery V8.12 Q-V812-3 + /requirements V8.12 Q-V812-C. Report-Only-Phase ist pragmatisch wegen Next.js-Inline-Scripts-Komplexitaet (vermutlich 3-5 Iter-Fixes noetig). Sentry-DSN als report-uri eliminiert eigenen CSP-Endpoint-Code und gibt CSP-Violations dasselbe Issue-Dashboard wie Errors → saubere Korrelation. Cross-Repo-wiederverwendbar wenn IS+OP nachziehen.
+- Consequence: BL-501 CSP-Implementation in 2 Phasen: Phase-A `Content-Security-Policy-Report-Only` Header in `next.config.ts` mit `report-uri` zu Sentry-DSN-Endpoint. Nach 1-2 Wo Inventur der Violations + Whitelist-Anpassung. Phase-B Header-Switch zu `Content-Security-Policy` strict. Live-Smoke ueber 80+ Pages Pflicht vor Phase-B-Switch. Whitelist initial: `script-src 'self' 'nonce-<runtime>'; img-src 'self' data: <supabase-storage>; connect-src 'self' <bedrock-aws> <supabase> <sentry-ingest>; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'`.
+
+## DEC-278 — V8.12 Passwort-Policy Force-Reset-Scope: Nur neue Passwoerter (Internal-Test-Mode)
+- Status: accepted
+- Reason: /discovery V8.12 Q-V812-2. Internal-Test-Mode hat Founder als einzigen User → Force-Reset waere nur ein Touch fuer Founder selbst, ohne Multi-User-Risk-Realitaet. Pre-Customer-Live MUSS spaeter Force-Reset-Slice ergaenzen weil dann Bestands-User mit altem Passwort existieren koennten.
+- Consequence: BL-502 implementiert validatePasswordStrength NUR in set-password/actions.ts + accept-invitation/actions.ts (= Stellen wo neue Passwoerter gesetzt werden). Bestands-User-Passwoerter bleiben unangetastet. Pre-Customer-Live-Slot fuer Force-Reset-Slice angelegt (Out-of-Scope-Liste).
+
+## DEC-277 — V8.12 Sentry-Variante: Sentry.io EU-Region Frankfurt (DPA-konform, Team-Plan)
+- Status: accepted
+- Reason: /discovery V8.12 Q-V812-1. Sentry.io EU-Region (eu.sentry.io) ist DSGVO-konform per `data-residency.md`, hat Team-Plan ~$26-80/mo, Default-DPA out-of-the-box. Reuse aus ImSch V3.3 IMP-1086 + IS V3.5 wenn vorhanden. Self-hosted GlitchTip (free, Sentry-API-kompatibel) waere alternative aber Self-Mgmt-Aufwand und Container-Resource in Coolify zusaetzlich. Founder waehlte Sentry.io fuer geringsten Setup-Aufwand und Cross-Repo-Konsistenz.
+- Consequence: FEAT-923 implementiert `@sentry/nextjs` mit Coolify-ENVs `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `SENTRY_TRACES_SAMPLE_RATE=0.1`. DSGVO-Posture: `Sentry.init({ sendDefaultPii: false })` + beforeSend-Hook mit BL-503 Logger-Redaction-Integration. Founder-Pre-Step: Sentry-Account erstellen + EU-Project + DPA. Cross-Repo-Lib-Kandidat fuer ImSch + IS + OP nachziehen.
+
 ## DEC-276 — Klasse-C Block 3 MT-4 Drei Sub-Decisions: Polymorph 5-Wege CASE + Transitive-Subquery + `documents_table_*`-Naming (V8.11 SLC-903 Sub-Session 3 MT-4)
 - Status: accepted
 - Reason: Sub-Session 3 MT-4 musste 3 nicht-triviale Sub-Decisions treffen, alle in MIG-047c-Header + MIGRATIONS.md detailliert dokumentiert. Formelle DEC-Trail-Schliessung fuer audit-trail-Symmetrie zu DEC-275 + Cross-Repo-Reusability.

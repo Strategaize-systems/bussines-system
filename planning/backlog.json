@@ -2673,41 +2673,61 @@
       "createdAt": "2026-06-04"
     },
     {
-      "id": "BL-501",
-      "title": "V8.12 CSP-Headers (NICE-TO-HAVE vor Live) — Sprint 4 BS-Anteil",
+      "id": "BL-514",
+      "title": "V8.12 Sentry-Setup EU-Region Frankfurt + Worker-Integration + CSP-Endpoint + Redact-beforeSend (FEAT-923 SLC-9X7)",
       "type": "improvement",
       "priority": "medium",
-      "status": "open",
+      "status": "in_progress",
+      "version": "V8.12",
+      "description": "FEAT-923 Phase 3 Observability-Baseline. Sentry.io EU-Region Frankfurt (DEC-277, DPA-konform, Team-Plan ~$26-80/mo). @sentry/nextjs Setup in cockpit. Coolify-ENVs SENTRY_DSN + SENTRY_ENVIRONMENT + SENTRY_TRACES_SAMPLE_RATE=0.1. Init in cockpit/src/instrumentation.ts (Next.js 15+ hook). beforeSend-Hook integriert mit BL-503 Logger-Redaction (R-V812-5 DSGVO-Posture sendDefaultPii=false). CSP-Endpoint integriert (DEC-279 report-uri = Sentry-DSN-CSP). Cap-Hit-Alert via Sentry.captureMessage (DEC-283). Cross-Repo-Pattern fuer ImSch + IS + OP nachziehen. ~3-5h Code-Side. Founder-Pre-Steps: Sentry-Account + EU-Project + DPA + DSN-Wert in Coolify-ENV.",
+      "createdAt": "2026-06-09"
+    },
+    {
+      "id": "BL-513",
+      "title": "V8.12 Phase 1 Code-Layer-Closures Bundle 7 ISSUEs (FEAT-921 SLC-9X1+9X2)",
+      "type": "improvement",
+      "priority": "high",
+      "status": "in_progress",
+      "version": "V8.12",
+      "description": "FEAT-921 Phase 1 Code-Layer-Closures. 7 createAdminClient-Bypass-Server-Actions auf assertAdmin()-Pre-Check oder User-Session-Client-Switch umstellen: ISSUE-090 products-actions.ts (Klasse-B), ISSUE-091 deal-products-actions.ts (Klasse-C), ISSUE-092 send-action.ts email_attachments-Bulk (Klasse-C), ISSUE-093 insight-actions.ts ai_action_queue+ai_feedback (Klasse-C), ISSUE-094 document-actions.ts (Klasse-C), SLC-901 M-1 {goals,kpi-snapshots,activity-kpis}-actions.ts (Klasse-A), SLC-905 D-905-4 knowledge/search.ts (Klasse-D Caller-Mode-Switch). Pattern-Reuse 100% mit assertAdmin() Helper (Status OQ-V812-arch-1). Vitest Mock-Pattern fuer is_admin-Check pro File. Final-Cut Bundle-vs-Klasse-Split in /slice-planning (OQ-V812-slice-1). Pre-Cond V8.11 STABLE ✓. AC-921-1..5 in FEAT-921-Spec.",
+      "createdAt": "2026-06-09"
+    },
+    {
+      "id": "BL-501",
+      "title": "V8.12 CSP-Headers iterativ Phase-A Report-Only → Phase-B strict (FEAT-922 SLC-9X6)",
+      "type": "improvement",
+      "priority": "medium",
+      "status": "in_progress",
       "version": "V8.12",
       "description": "**NICE-TO-HAVE vor Live, NICHT blockierend.** Content-Security-Policy-Layer in cockpit/next.config.ts ergaenzen. Aktuell: keine CSP — alle Inline-Scripts/Styles/Image-Sources/Fetches sind erlaubt. Mit CSP: strikte Whitelist fuer script-src (self + 'nonce-' fuer Next.js Inline-Scripts), img-src (self + data: + Supabase-Storage-Domain), connect-src (self + Bedrock-AWS-Endpoint + Supabase-API + Coolify-Storage), style-src (self + 'unsafe-inline' fuer Tailwind-Generated falls noch nicht nonce-faehig). **Mitigiert strukturell:** Stored-XSS (Defense-in-Depth zu V8.10 SEC-005), DOM-XSS, Clickjacking (frame-ancestors 'none'), MITM-Exfil-via-WebSocket. **Aufwand: ~M (iterativer Smoke-Test pflicht).** Kritischer Pflicht-Test: alle 80 statischen Pages + alle dynamischen Dialogues + KI-Workspace-Streaming + Cal.com-Webhook + Supabase-Auth-Callback. Vermutlich 3-5 iter-Fixes wegen Inline-Scripts. Aufwand: ~2-3h Code + ~2-3h iter-Smoke. Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md (Cross-Repo Sprint-4-Pattern). Cross-Repo-Hinweis: identisches Pattern auch in OP V8.0.3 BL-138 + IS V1.2 BL-115. Dev-System sollte CSP-Pattern als Pattern-Library-Entry aufnehmen.",
       "createdAt": "2026-05-30"
     },
     {
       "id": "BL-502",
-      "title": "V8.12 Passwort-Policy 12+ Zeichen + zxcvbn (NICE-TO-HAVE vor Live) — Sprint 4 BS-Anteil",
+      "title": "V8.12 Passwort-Policy 12+ zxcvbn>=3 nur neue Passwoerter (FEAT-922 SLC-9X4)",
       "type": "improvement",
       "priority": "medium",
-      "status": "open",
+      "status": "in_progress",
       "version": "V8.12",
       "description": "**NICE-TO-HAVE vor Live, NICHT blockierend.** Aktuell: BS Set-Password-Page + Accept-Invitation akzeptieren Passwoerter ab 6 Zeichen (Supabase-Default). Risiko: Brute-Force-Attack auf interne User-Accounts. Fix-Pattern: (1) zxcvbn dependency hinzufuegen (Standard-Lib fuer Passwort-Strength-Scoring), (2) Server-Action validatePasswordStrength: min 12 chars + zxcvbn-Score >= 3 (mind. 'good'), (3) Client-Side Visual-Indicator (Tailwind Progress-Bar mit zxcvbn-Score) im set-password.tsx + accept-invitation.tsx, (4) Reject mit deutscher Fehlermeldung wenn unzureichend. **Aufwand: ~S (~1-2h Code + 30 Min /qa).** Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md (Cross-Repo Sprint-4-Pattern). Cross-Repo-Hinweis: identisches Pattern in OP V8.0.3 BL-139 + IS V1.2 BL-116. **Ideal als Dev-System-Helper-Lib mit Pattern-Reuse-Pflicht** — sonst drift gleicher Bug in 3 Repos.",
       "createdAt": "2026-05-30"
     },
     {
       "id": "BL-503",
-      "title": "V8.12 Logger-Redaction-Layer (NICE-TO-HAVE vor Live) — Sprint 4 BS-Anteil",
+      "title": "V8.12 Logger-Redaction-Layer 12 Keys (FEAT-922 SLC-9X3) Cross-Repo-Lib-Kandidat",
       "type": "improvement",
       "priority": "medium",
-      "status": "open",
+      "status": "in_progress",
       "version": "V8.12",
       "description": "**NICE-TO-HAVE vor Live, NICHT blockierend (DSGVO-Posture-Verbesserung).** Aktuelle BS-Logs enthalten Klartext: Email-Adressen, Bedrock-Cost-Argumente mit Customer-Strings, Whisper-Transcripts in console.log()-Calls in Cron-Loops, Cal.com-Webhook-Payloads mit Calendar-Event-Subjects. **Risiko:** Coolify-Container-Logs gehen an Hetzner-Log-Aggregation + an Coolify-UI ohne Redaction — Admin-User mit Coolify-Zugang sieht Klartext-PII. Fix-Pattern: (1) Helper-Lib `src/lib/logger/redact.ts` mit `redactSecrets(obj, opts)` der rekursiv durch Object/Array geht und Keys matching /password|token|secret|api_key|email|bearer|authorization/i auf `[REDACTED]` setzt, plus Values matching Email-Regex/Bearer-Token-Regex/UUID-im-PII-Kontext maskiert. (2) Wrapper `logSafe(level, ...args)` der die Helper-Lib vor JSON.stringify ruft. (3) Existing console.log/console.error-Calls in 10-15 critical Files (cron-loops, webhook-handlers, Bedrock-adapter) auf logSafe umstellen. (4) Vitest mit Mock-Patterns: Email/Token/Secret/Customer-Name-Redaction. **Aufwand: ~M (~3-4h Code + 1h /qa) — die Lib selbst ist klein, die Migrations-Arbeit braucht Zeit.** Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-011 indirekt + Cross-Repo-Pattern. Cross-Repo-Hinweis: identisches Pattern in OP V8.0.3 BL-140 + IS V1.2 BL-117. **Ideal als Dev-System-Lib** (siehe BL-501-Hinweis).",
       "createdAt": "2026-05-30"
     },
     {
       "id": "BL-504",
-      "title": "V8.12 LLM-Cost-Cap im Bedrock-Adapter (NICE-TO-HAVE vor Live) — Sprint 4 BS-Anteil",
+      "title": "V8.12 LLM-Cost-Cap Pro-Tenant DAILY=25 EUR / MONTHLY=500 EUR (FEAT-922 SLC-9X5)",
       "type": "improvement",
       "priority": "medium",
-      "status": "open",
+      "status": "in_progress",
       "version": "V8.12",
       "description": "**NICE-TO-HAVE vor Live (Cost-Protection bei Misuse/Bug).** Aktuell: keine Pre-flight-Cost-Limit in cockpit/src/lib/ai/bedrock-client.ts. Bei Bug (Endlos-Loop, Stuck-Cron) oder Misuse (User dreht durch) kann Bedrock-Cost auf $X.XX/Tag explodieren ohne Bremse. Fix-Pattern: (1) Pre-flight in queryLLM(): SELECT SUM(cost_eur) FROM ai_cost_ledger WHERE created_at >= NOW() - INTERVAL '1 day' — wenn > DAILY_LLM_CAP (default 5.00 EUR via ENV) → throw Error('LLM Daily Cap Exceeded'). (2) Job/Cron faengt Error ab + setzt z.B. ai_jobs.status='failed' mit Reason 'daily_cap_exceeded'. (3) Optional: Slack-Webhook-Alert bei Cap-Hit (ENV SLACK_ALERT_WEBHOOK_URL). (4) ENV-Vars: DAILY_LLM_CAP_EUR (default 5.00), MONTHLY_LLM_CAP_EUR (default 100.00 — Pre-flight checkt beide). (5) Vitest: cap reached -> reject, cap not reached -> pass, ENV missing -> default-werte. **Aufwand: ~M (~3h Code + 1h /qa).** Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-013 + Cross-Repo-Pattern. Cross-Repo-Hinweis: identisches Pattern in OP V8.0.3 BL-140 + IS V1.2 BL-117 (alle 3 Repos haben Bedrock-Adapter).",
       "createdAt": "2026-05-30"
