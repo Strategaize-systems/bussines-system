@@ -1,5 +1,20 @@
 # Decisions
 
+## DEC-287 — V8.12 LLM-Cost-Cap Pre-flight-Cache: In-Memory 1min TTL + Cap-Approach-Bypass bei >95% Cap
+- Status: accepted
+- Reason: /architecture V8.12 2026-06-09 OQ-V812-arch-3. Pro Bedrock-Call ein SELECT SUM(cost_eur) WHERE tenant_id=$1 kostet ~5-10ms DB-Latenz. Bei 25-EUR-DAILY-Cap erlaubt das ~5000 Calls/Tag (~3.5 Calls/Min) — Cache lohnt sich. In-Memory Map<tenant_id, {day_sum,month_sum,expires_at}> ist Single-Container-Internal-Test-Mode-konform (process-lokal). Redis-Cache waere Overengineering fuer Founder-Single-Container, kommt erst bei Worker-Container-Migration. Cap-Approach-Bypass (>95% Cap → Cache-Skip + fresh SELECT) verhindert silent Drift kurz vor Cap-Hit.
+- Consequence: BL-504 implementiert `capCache = new Map<string, {day_sum, month_sum, expires_at: number}>()` in bedrock-client.ts module-scope. CACHE_TTL_MS=60_000, APPROACH_THRESHOLD=0.95. Average-Latency-Add bei Cache-Hit: <1ms. Bei Cache-Miss ODER >95%-Approach: fresh SELECT (~5-10ms). Multi-Container-Drift (Worker+App separat) ist Post-V8.12-Slot (Redis-Cache). Cap-Hit-Behaviour: `Sentry.captureMessage("LLM Daily/Monthly Cap Exceeded", level=warning, tags={tenant_id, period})` + `throw new Error()` + Cron/Job-Status=failed per DEC-281+DEC-283.
+
+## DEC-286 — V8.12 Logger-Redaction Export-Pattern: Top-Level Wrapper `logSafe()` (kein console.* Drop-In)
+- Status: accepted
+- Reason: /architecture V8.12 2026-06-09 OQ-V812-arch-2. Top-Level-Wrapper `logSafe(level, ...args)` ist explicit Caller-Site-Aenderung — grep `logSafe(` zeigt alle Stellen, Migration ist nachvollziehbar. Drop-In console.* Patching ist invasiv (instrumentation-Hook), Next.js-Build-Step-fragil und kann von Tree-Shaking ueberlebt werden. ImSch SLC-330 Sentry-Wrapper hat den selben Top-Level-Pattern (`captureException`, `captureMessage`) erfolgreich etabliert.
+- Consequence: BL-503 exportiert pure `redactSecrets(obj, opts?)` aus `cockpit/src/lib/logger/redact.ts` + top-level `logSafe(level, ...args)` aus `cockpit/src/lib/logger/index.ts`. 10-15 critical Caller-Sites in Phase 2 manuell migriert (cron-loops, webhook-handlers, bedrock-client.ts, audit.ts central). Bestands-`console.*`-Calls ausserhalb dieser Files bleiben unangetastet — Surgical-Changes-Rule. Sentry-beforeSend-Hook nutzt selben `redactSecrets()`-Pure-Function fuer Event-Payload-Redact.
+
+## DEC-285 — V8.12 Phase-1 Code-Layer-Closures Role-Check-Helper: `assertRole(["admin"])` existing (kein neuer assertAdmin())
+- Status: accepted
+- Reason: /architecture V8.12 2026-06-09 OQ-V812-arch-1 + A-V812-1. Code-Read bestaetigt: zentraler `assertAdmin()`-Helper existiert NICHT in BS-Codebase. ABER: `assertRole(allowed: Role[])` aus `cockpit/src/lib/auth/assert-role.ts` ist established BS-Pattern seit V5+ und funktioniert in Server-Actions (verifiziert in customer-dse/actions.ts L25+L48). Wirft via `redirect('/mein-tag')` bei Role-Mismatch. 100% Pattern-Reuse statt neuer Helper-Surface.
+- Consequence: FEAT-921 nutzt `await assertRole(["admin"])` als Pre-Check-Pattern fuer alle 7 Closures (ISSUE-090..094 + SLC-901 M-1 + SLC-905 D-905-4). Keine neue Helper-Function-Datei. Kein assertAdminAction()-Variant mit `throw new Error("Forbidden")` — `redirect('/mein-tag')` ist Production-erprobt seit V5+. Klasse-C/D-Faelle (SLC-905 D-905-4 knowledge/search.ts + ISSUE-092 send-action.ts) brauchen Caller-Mode-Switch (User-Client wenn auth.uid() set, Admin nur fuer Cron-Caller) statt simpler Pre-Check — Hybrid-Pattern.
+
 ## DEC-284 — V8.12 Bundle-Strategie: Single V8.12 mit 3 Features + ~7 Sub-Slices
 - Status: accepted
 - Reason: /requirements V8.12 2026-06-09 hat 11 Items in 3 thematische Phasen geschnitten (Code-Closures / Cross-Repo-Polish / Observability). Single-V8.12-Umbrella ist konsistenter mit "Defense-in-Depth Sprint" Naming und ermoeglicht 1 /final-check + /go-live + REL-047 + /deploy + /post-launch-Sequenz statt 3x. Sub-Splits V8.12a/b/c waeren unnoetig fragmentiert.

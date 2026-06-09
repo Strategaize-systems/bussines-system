@@ -12362,3 +12362,411 @@ Audit-Liste (Stand 2026-06-04):
 **Gesamt-Aufwand korrigiert: ~24-31h Code-Side** (statt initial ~17-22h aus FEAT-911). Erhoehung wegen Live-DB-Realitaet (41 statt 25 Tabellen).
 
 **V8.11 Architecture ready for `/slice-planning V8.11`.**
+
+## V8.12 — Defense-in-Depth Sprint Architecture (Addendum 2026-06-09)
+
+V8.12 schliesst die 7 Code-Layer-Defense-Gaps aus V8.11 (createAdminClient-Bypass ohne is_admin()-Pre-Check) + 4 Cross-Repo-Polish-Patterns (CSP, Passwort-Policy, Logger-Redaction, LLM-Cost-Cap) + 1 Observability-Baseline (Sentry.io EU Frankfurt). 3 Phasen / 3 Features (FEAT-921/922/923) / ~7 Sub-Slices SLC-9X1..9X7. 0 Schema-Migration. 2 additive npm-Deps (zxcvbn dynamic-import, @sentry/nextjs).
+
+### Architecture Summary
+
+```
+Browser (HTTPS)
+  |
+  |- business.strategaizetransition.com (Production)
+  |
+Coolify / Caddy (Reverse Proxy)
+  |
+  |- / -> app:3000 (Next.js BD Cockpit) -- V8.12 Touch-Points
+  |       |
+  |       |- Code-Layer (FEAT-921):
+  |       |   7 Server-Actions in cockpit/src/lib/actions/** + knowledge/search.ts
+  |       |   alle bekommen `assertRole(["admin"])` Pre-Check vor createAdminClient()
+  |       |   bzw. User-Session-Client-Switch (Klasse-C/D-Faelle)
+  |       |   Pattern: bestehender @/lib/auth/assert-role.ts (siehe DEC-285)
+  |       |
+  |       |- Edge/Header-Layer (FEAT-922-CSP, BL-501):
+  |       |   next.config.ts Header-Block ergaenzt
+  |       |   Phase-A Content-Security-Policy-Report-Only (1-2 Wo)
+  |       |   Phase-B Content-Security-Policy strict
+  |       |   report-uri = Sentry-DSN-CSP-Endpoint (DEC-279)
+  |       |   Whitelist-Helper-Lib: cockpit/src/lib/security/csp.ts
+  |       |   (Pattern: ImSch SLC-331 csp-allowlist.ts, ~30-50% byte-identisch)
+  |       |
+  |       |- Logger-Layer (FEAT-922-Logger, BL-503):
+  |       |   cockpit/src/lib/logger/redact.ts mit pure redactSecrets(obj, opts?)
+  |       |   cockpit/src/lib/logger/index.ts mit top-level logSafe(level, ...args)
+  |       |   (Pattern: BS V8.12 Origin, Cross-Repo-Reuse-Quelle — DEC-286)
+  |       |   12 Default-Keys (10 Security + 2 PII), erweiterbar via opts.extraKeys
+  |       |   Migration in 10-15 critical Caller-Sites (Phase 2)
+  |       |
+  |       |- Auth-Layer (FEAT-922-Pw, BL-502):
+  |       |   cockpit/src/lib/auth/password-policy.ts validatePasswordStrength(pw)
+  |       |   zxcvbn dynamic-import (Bundle-Size R-V812-3 Mitigation)
+  |       |   Mindestlaenge 12 + zxcvbn-Score >=3 (DEC-282)
+  |       |   Caller-Sites: set-password/actions.ts + accept-invitation/actions.ts
+  |       |   Scope: NUR neue Passwoerter (DEC-278)
+  |       |
+  |       |- AI-Adapter-Layer (FEAT-922-CostCap, BL-504):
+  |       |   cockpit/src/lib/ai/bedrock-client.ts Pre-flight in queryLLM()
+  |       |   ai_cost_ledger Query: SUM(cost_eur) WHERE tenant_id=$1
+  |       |   In-Memory Map<tenant_id, {day_sum,month_sum,expires_at}> 1min TTL (DEC-287)
+  |       |   Cap-Approach-Bypass: >95% Cap -> Cache-Skip + fresh SELECT
+  |       |   Hard-Cap throw + Sentry.captureMessage("LLM Cap Hit", level=warning)
+  |       |
+  |       |- Observability-Layer (FEAT-923):
+  |       |   cockpit/src/instrumentation.ts Next.js 15+ Hook (Server-Side Init)
+  |       |   cockpit/sentry.server.config.ts (Node-Runtime Init, SENTRY_DSN)
+  |       |   cockpit/sentry.client.config.ts (Browser Init, NEXT_PUBLIC_SENTRY_DSN)
+  |       |   cockpit/sentry.edge.config.ts (Edge-Runtime Init)
+  |       |   cockpit/src/lib/monitoring/sentry.ts Wrapper
+  |       |     (captureException, captureMessage, isSentryEnabled)
+  |       |   (Pattern: ImSch SLC-330, ~70-80% byte-identisch — DEC-277)
+  |       |   beforeSend-Hook -> redactSecrets() (BL-503-Integration)
+  |       |   tracesSampleRate=0.1, replaysSessionSampleRate=0
+  |       |   sendDefaultPii=false (R-V812-5 DSGVO-Mitigation)
+  |       |
+  |       v
+  |       Supabase / Bedrock / Existing Backend (unchanged)
+  |
+  +- Sentry.io EU-Region Frankfurt (External Service, NEU)
+     (Project-DSN per Coolify-ENV, CSP-report-uri integriert)
+```
+
+### V8.12 Hauptkomponenten
+
+#### Phase 1 — Code-Layer-Closures (FEAT-921, SLC-9X1 [+ optional SLC-9X2])
+
+**Komponente:** 7 Server-Action-Files in cockpit/src/lib/actions/** + 1 search-Helper.
+
+**Pattern-Reuse:** 100% — `assertRole(["admin"])` aus `@/lib/auth/assert-role.ts` existing seit V5+. Funktioniert in Server-Actions (verifiziert in customer-dse/actions.ts L25+L48). Wirft via `redirect('/mein-tag')` bei Role-Mismatch.
+
+**7 Closures (Tabelle):**
+
+| Issue | File | Klasse | Fix-Pattern |
+|---|---|---|---|
+| ISSUE-090 | `products-actions.ts` | B | `await assertRole(["admin"])` vor createAdminClient |
+| ISSUE-091 | `deal-products-actions.ts` | C | `await assertRole(["admin"])` ODER User-Client-Switch |
+| ISSUE-092 | `send-action.ts` (email_attachments-Bulk) | C | User-Client SELECT+INSERT, Admin nur fuer Storage-Cleanup |
+| ISSUE-093 | `insight-actions.ts` (ai_action_queue + ai_feedback) | C | `await assertRole(["admin"])` |
+| ISSUE-094 | `document-actions.ts` | C | User-Client SELECT+INSERT |
+| SLC-901 M-1 | `goals-actions.ts`, `kpi-snapshots-actions.ts`, `activity-kpis-actions.ts` | A | `await assertRole(["admin"])` (admin-only-write) |
+| SLC-905 D-905-4 | `cockpit/src/lib/knowledge/search.ts` | D | Caller-Mode-Switch: User-Client wenn `auth.uid()` set, Admin nur fuer Cron-Caller |
+
+**Verifikation:** grep-Audit nach Phase 1 muss 0 `createAdminClient`-Calls in `cockpit/src/lib/actions/**` ohne vorgelagerten Role-Check liefern (AC-921-3).
+
+#### Phase 2.1 — Logger-Redaction-Layer (FEAT-922 BL-503, SLC-9X3)
+
+**Komponente:** Strategaize-Origin-Pattern fuer Cross-Repo-Logger-Hygiene.
+
+**Files:**
+- `cockpit/src/lib/logger/redact.ts` — pure function `redactSecrets(obj, opts?)`, `DEFAULT_REDACT_KEYS` (12 Keys per DEC-280)
+- `cockpit/src/lib/logger/index.ts` — top-level wrapper `logSafe(level, ...args)` (DEC-286)
+
+**Decision Top-Level vs Drop-In (DEC-286):** Top-level Wrapper gewaehlt. Caller-Sites werden explicit migriert (grep `logSafe(` zeigt alle Stellen). Drop-In console.* patching ist invasiv und Next.js-Build-Step-fragil.
+
+**Migration:** 10-15 critical Files in Phase 2 (cron-loops, webhook-handlers, bedrock-client.ts, audit.ts central). Bestands-`console.*`-Calls ausserhalb dieser Files unangetastet.
+
+**Vitest:** Mock-Patterns fuer Email/Token/Secret/Customer-Name-Redaction.
+
+#### Phase 2.2 — Passwort-Policy (FEAT-922 BL-502, SLC-9X4)
+
+**Komponente:** Strategaize-Origin-Pattern fuer Cross-Repo-Auth-Hardening.
+
+**Files:**
+- `cockpit/src/lib/auth/password-policy.ts` — `validatePasswordStrength(pw): { ok, score, reasons }`
+- `cockpit/src/components/auth/PasswordStrengthIndicator.tsx` — Tailwind Progress-Bar (Score 0-4 Visual)
+
+**zxcvbn-Bundle-Size-Mitigation (R-V812-3):**
+
+```typescript
+// Dynamic-Import in validatePasswordStrength()
+const zxcvbn = (await import("zxcvbn")).default;
+const result = zxcvbn(pw);
+```
+
+Damit landet zxcvbn (~700KB minified) NICHT im Main-Bundle, sondern in einem Lazy-Chunk der nur bei set-password/accept-invitation geladen wird.
+
+**Caller-Edit (Scope DEC-278: NUR neue Passwoerter):**
+- `cockpit/src/app/auth/set-password/actions.ts`
+- `cockpit/src/app/auth/accept-invitation/actions.ts`
+
+**Bestands-User unangetastet** (DEC-278 — Pre-Customer-Live separater Force-Reset-Slot).
+
+#### Phase 2.3 — LLM-Cost-Cap (FEAT-922 BL-504, SLC-9X5)
+
+**Komponente:** Pre-flight-Cost-Cap im Bedrock-Adapter mit In-Memory-Cache.
+
+**File:** `cockpit/src/lib/ai/bedrock-client.ts` — Pre-flight in `queryLLM()` + neue Helper-Lib.
+
+**Cache-Strategy (DEC-287):**
+
+```typescript
+// In-Memory Module-Scope (Process-lokal, Single-Container Internal-Test-Mode-konform)
+const capCache = new Map<string, {
+  day_sum: number;
+  month_sum: number;
+  expires_at: number;
+}>();
+
+const CACHE_TTL_MS = 60_000; // 1min
+const APPROACH_THRESHOLD = 0.95; // >95% Cap = cache-bypass
+
+async function checkCap(tenantId: string): Promise<void> {
+  const cached = capCache.get(tenantId);
+  const now = Date.now();
+  let day_sum: number, month_sum: number;
+
+  if (cached && cached.expires_at > now &&
+      cached.day_sum < DAILY_CAP * APPROACH_THRESHOLD &&
+      cached.month_sum < MONTHLY_CAP * APPROACH_THRESHOLD) {
+    // Cache-Hit, Approach-Window safe
+    day_sum = cached.day_sum;
+    month_sum = cached.month_sum;
+  } else {
+    // Cache-Miss ODER Approach-Window — fresh SELECT
+    const { data } = await supabase.rpc("get_tenant_cost_sums", { p_tenant_id: tenantId });
+    day_sum = data.day_sum;
+    month_sum = data.month_sum;
+    capCache.set(tenantId, { day_sum, month_sum, expires_at: now + CACHE_TTL_MS });
+  }
+
+  if (day_sum >= DAILY_CAP) {
+    Sentry.captureMessage("LLM Daily Cap Exceeded", {
+      level: "warning",
+      tags: { tenant_id: tenantId, period: "daily" },
+    });
+    throw new Error("LLM Daily Cap Exceeded");
+  }
+  if (month_sum >= MONTHLY_CAP) {
+    Sentry.captureMessage("LLM Monthly Cap Exceeded", {
+      level: "warning",
+      tags: { tenant_id: tenantId, period: "monthly" },
+    });
+    throw new Error("LLM Monthly Cap Exceeded");
+  }
+}
+```
+
+**ENVs (DEC-281):**
+- `LLM_DAILY_CAP_EUR_PER_TENANT` (default 25)
+- `LLM_MONTHLY_CAP_EUR_PER_TENANT` (default 500)
+
+**Multi-Container-Note:** In-Memory-Cache ist Process-lokal. Bei Worker-Container+App-Container (V8.x+) waere Drift moeglich — dann Cross-Container-Cache via Redis als Post-V8.12-Slot. Internal-Test-Mode Single-Container macht das hier sicher.
+
+#### Phase 2.4 — CSP-Headers (FEAT-922 BL-501, SLC-9X6)
+
+**Komponente:** Iterativer CSP-Rollout — Phase-A Report-Only → Phase-B strict.
+
+**Files:**
+- `cockpit/src/lib/security/csp.ts` — `buildCSP(supabaseKongUrl)` pure function + `PERMISSIONS_POLICY` const (Pattern: ImSch SLC-331 csp-allowlist.ts, Pure-Function-Struktur 100% reuse, Domain-Liste BS-spezifisch)
+- `cockpit/next.config.ts` — `headers()` async function ergaenzt
+
+**Whitelist-Initial (BS-spezifisch):**
+
+```typescript
+export function buildCSP(supabaseKongUrl: string): string {
+  const connectSrc = [
+    "'self'",
+    "https://*.sentry.io",      // FEAT-923 Sentry-Endpoint (CSP-report-uri-Integration)
+    supabaseKongUrl,             // NEXT_PUBLIC_SUPABASE_URL
+    "https://bedrock-runtime.eu-central-1.amazonaws.com",  // DEC-005 Bedrock EU
+  ].filter(s => s.length > 0).join(" ");
+
+  return [
+    `default-src 'self'`,
+    // 'unsafe-inline' Pflicht fuer Next.js 15+ RSC-inline-Scripts (__next_f.push).
+    // Lehre aus ImSch V3.3 Live-Smoke 2026-06-08 (15min Production-Outage durch
+    // strikte script-src 'self'). Migration zu Nonce-CSP via Middleware = V8.x-Post-Slot.
+    `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'`,
+    `connect-src ${connectSrc}`,
+    `img-src 'self' data: blob:`,
+    `style-src 'self' 'unsafe-inline'`, // Tailwind-Generated
+    `font-src 'self'`,
+    `frame-ancestors 'none'`,
+    `base-uri 'self'`,
+    `form-action 'self'`,
+  ].join("; ");
+}
+
+export const PERMISSIONS_POLICY =
+  "camera=(), microphone=(), geolocation=(), payment=(), usb=()";
+```
+
+**Phase-A Report-Only (1-2 Wochen):** Header-Name `Content-Security-Policy-Report-Only`, report-uri = Sentry-DSN-CSP-Endpoint. Reale Violations werden in Sentry-Dashboard sichtbar — Iterativ-Fix der Inline-Scripts/Styles.
+
+**Phase-B strict:** Switch zu `Content-Security-Policy` (kein -Report-Only-Suffix). Pflicht-Verifikation per `security-headers-live-smoke.md` Probe: `tests/_probe/csp-check.mjs` Playwright + Console-Listener + React-Hydration-Check (0 CSP-Errors + hasReactProps + hasReactFiber + onSubmitAttached).
+
+**Permissions-Policy:** Statisch (camera/microphone/geolocation/payment/usb alle off). Wird mit CSP gemeinsam in `next.config.ts` headers() gesetzt.
+
+#### Phase 3 — Sentry-Observability (FEAT-923, SLC-9X7)
+
+**Komponente:** Sentry.io EU-Region Frankfurt Error-Monitoring + Performance-Tracing.
+
+**Files (Pattern aus ImSch SLC-330, ~70-80% byte-identisch portierbar):**
+- `cockpit/sentry.server.config.ts` — Node-Runtime Init (`SENTRY_DSN`)
+- `cockpit/sentry.client.config.ts` — Browser Init (`NEXT_PUBLIC_SENTRY_DSN`)
+- `cockpit/sentry.edge.config.ts` — Edge-Runtime Init
+- `cockpit/src/instrumentation.ts` — Next.js 15+ Hook (laedt sentry.server.config bei `NEXT_RUNTIME=nodejs`)
+- `cockpit/src/lib/monitoring/sentry.ts` — Wrapper (`captureException`, `captureMessage`, `isSentryEnabled`)
+- `cockpit/src/app/global-error.tsx` — Caller-Site fuer captureException (folgt ImSch-Pattern)
+
+**Sentry.init Config (alle 3 Configs):**
+
+```typescript
+import * as Sentry from "@sentry/nextjs";
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN, // bzw. NEXT_PUBLIC_SENTRY_DSN fuer Client
+  environment: process.env.NODE_ENV,
+  tracesSampleRate: 0.1,
+  replaysSessionSampleRate: 0,
+  sendDefaultPii: false, // DSGVO-Mitigation (R-V812-5)
+
+  beforeSend(event) {
+    // BL-503-Integration: Logger-Redaction auf Event-Payload
+    return redactSentryEvent(event);
+  },
+});
+```
+
+**beforeSend-Hook (BL-503-Integration):** `redactSentryEvent(event)` nutzt `redactSecrets()` aus `cockpit/src/lib/logger/redact.ts` und entfernt Secret-Keys aus `event.extra`, `event.contexts`, `event.tags`, `event.user`.
+
+**Sentry-Plan:** Sentry.io EU Team-Plan ~$26-80/mo (DPA-konform). Free-Tier reicht fuer Internal-Test-Mode initial; Upgrade wenn Event-Volume gross wird (A-V812-3).
+
+**Coolify-ENVs:**
+- `SENTRY_DSN` (Server-Only)
+- `NEXT_PUBLIC_SENTRY_DSN` (Client-exposed, gleich oder separates Project-DSN)
+- `SENTRY_ENVIRONMENT` (`production` / `development`)
+- `SENTRY_TRACES_SAMPLE_RATE` (default 0.1)
+
+**Founder-Pre-Steps (kein Slice noetig, vor Phase 3):**
+1. Sentry-Account erstellen + EU-Project Frankfurt einrichten + DPA unterzeichnen
+2. DSN-Wert in Coolify-ENV `SENTRY_DSN` + `NEXT_PUBLIC_SENTRY_DSN` setzen
+
+### Data Model / Storage Direction
+
+**0 Schema-Migration.** V8.12 nutzt ausschliesslich bestehende Tabellen:
+
+- `ai_cost_ledger.tenant_id` (BL-504 Pre-flight-Query, existing seit V6.4)
+- `audit_log` (existing, V8.12 schreibt keine neuen Eintraege — Sentry uebernimmt Error-Telemetry)
+
+**A-V812-2 Validation-Plan:** Pre-Phase-2.3 ein Direct-SQL-Check `SELECT COUNT(*) FROM ai_cost_ledger WHERE tenant_id IS NULL` — wenn >0, dann Default-Tenant-Fallback-Logic in BL-504 noetig.
+
+### External Dependencies / Integrations
+
+**Neue npm-Deps (additive, 0 Major-Upgrades):**
+- `zxcvbn` ^4.x — dynamic import (BL-502)
+- `@sentry/nextjs` ^8.x — instrumentation-Hook + 3 Config-Files (FEAT-923)
+
+**Neue External Services:**
+- **Sentry.io EU Frankfurt** (FEAT-923) — Project-Endpoint per DSN, DPA-konform, EU-Region. Per `data-residency.md` regelkonform.
+
+**Bestehend (unveraendert):**
+- AWS Bedrock eu-central-1 (LLM)
+- Supabase / Kong / Postgres
+- Coolify / Caddy
+
+### Security / Privacy
+
+**Data-Residency (`data-residency.md`):**
+- Sentry MUSS EU-Region (Frankfurt-Endpoint) sein, KEIN US-Endpoint
+- Sentry DSGVO: `sendDefaultPii: false` + `beforeSend`-Redact-Hook (R-V812-5 Mitigation)
+- Bedrock unveraendert eu-central-1
+
+**Code-Layer-Defense-in-Depth (Phase 1):**
+- 0 createAdminClient-Bypass in `cockpit/src/lib/actions/**` ohne assertRole(["admin"])-Pre-Check post-Phase-1
+- DB-Layer-RLS bleibt aktiv als Second-Line-of-Defense (V8.11 abgeschlossen)
+
+**CSP-Defense (Phase 2.4):**
+- Phase-A Report-Only deckt Inline-Script-Inventur ab (vermutlich 3-5 Iter-Fixes per Lehre ImSch SLC-331)
+- Phase-B strict + Pflicht-Live-Smoke per `security-headers-live-smoke.md` Probe
+- Permissions-Policy lock-down (camera/microphone/geolocation/payment/usb = off)
+
+**Logger-Redaction (Phase 2.1):**
+- 12 Default-Keys (10 Security + 2 PII) per DEC-280
+- Caller-Site-Migration in 10-15 critical Files
+- Sentry-beforeSend-Hook nutzt selben Redact-Layer (BL-503-Integration)
+
+**Passwort-Policy (Phase 2.2):**
+- Mindestlaenge 12 + zxcvbn-Score >=3 (DEC-282)
+- Scope: NUR neue Passwoerter (DEC-278) — Bestands-User unangetastet
+- Force-Reset-Slot Pre-Customer-Live separater Pre-Live-Slot
+
+**LLM-Cost-Cap (Phase 2.3):**
+- Hard-Cap per Tenant DAILY=25 EUR / MONTHLY=500 EUR (DEC-281)
+- Sentry-Alert bei Cap-Hit (DEC-283, kein Slack-Webhook)
+- Cap-Approach-Bypass-Cache verhindert silent Drift bei >95% Cap
+
+### Constraints / Tradeoffs
+
+**Constraints (verbindlich):**
+- Internal-Test-Mode bleibt durchgaengig — V8.12 ist KEINE Customer-Live-Vorbereitung
+- 0 Schema-Migration — kein MIG-XXX-Eintrag noetig
+- 0 npm-Major-Upgrades — nur additive Deps
+- TSC=0 + ESLint=0 Pflicht-Gates per Sub-Slice
+- Full-Vitest-Suite GREEN Pflicht-Gate per Sub-Slice (per IMP-1108)
+- Coolify-Redeploy nach jeder Sub-Slice mit cockpit/src-Touch
+- Pattern-Reuse-Pflicht per `strategaize-pattern-reuse.md`
+
+**Tradeoffs (bewusst gewaehlt):**
+
+| Tradeoff | Gewaehlt | Verworfen | Begruendung |
+|---|---|---|---|
+| Phase 1 Role-Check | `assertRole(["admin"])` existing | Neuer `assertAdminAction()`-Helper | DEC-285: 100% Pattern-Reuse, 0 neue Surface |
+| Logger-Wrapper | `logSafe()` top-level wrapper | console.* drop-in patching | DEC-286: explicit Caller-Sites, grep-trackbar |
+| Cost-Cap-Cache | In-Memory 1min TTL + Approach-Bypass | Kein Cache (DB-Hit pro Call) ODER Redis | DEC-287: Single-Container-Internal-Test-Mode-konform, Performance |
+| CSP-Rollout | Report-Only → strict iterativ | Direkt strict | DEC-279: ImSch SLC-331 hat 15min Production-Outage gezeigt — Report-Only-Phase ist Pflicht |
+| Sentry-Region | Sentry.io EU Frankfurt | Self-hosted Sentry | DEC-277: SaaS reduziert Ops-Aufwand, EU-Region+DPA DSGVO-konform |
+| Cost-Cap-Alerting | Sentry-Issue-Dashboard | Slack-Webhook separat | DEC-283: 1 Less ENV + 1 Less Integration, Sentry deckt Alert-Surface |
+
+**Tradeoff-Risiken:**
+- **In-Memory-Cache vs Multi-Container** (DEC-287): Bei Migration zu Worker-Container in V8.x+ wird der Cache zwischen Containern drift'en. Mitigation: Cap-Approach-Bypass-Logic erkennt >95% Cap und bypasst Cache → echte Cap-Anhebungen werden Cross-Container sichtbar. Vollstaendige Multi-Container-Loesung via Redis = Post-V8.12-Slot.
+
+### Open Technical Questions (post-arch)
+
+**Alle /architecture-OQs sind geschlossen** (OQ-V812-arch-1..3 → DEC-285/286/287).
+
+**Verbleibend fuer /slice-planning:**
+- OQ-V812-slice-1: Phase 1 als 1 Bundle-Slice SLC-9X1 mit 7 MTs ODER 2 Klasse-Splits SLC-9X1 (Klasse-B+D, 3 Files) + SLC-9X2 (Klasse-A+C, 4 Files)?
+- OQ-V812-slice-2: Phase 2 als 4 separate Slices (SLC-9X3..9X6) ODER 1 Bundle-Slice mit 4 MTs?
+
+Architektur-Empfehlung:
+- **Phase 1 als 1 Bundle (SLC-9X1)** — Pattern-Reuse 100% gleich, Code-Touch klein pro File, /qa AC-921-1..5 ueber alle 7 in einem Schritt
+- **Phase 2 als 4 separate Slices (SLC-9X3..9X6)** — Pattern-Origins sind verschieden, /qa pro Slice macht Iterativ-Fix einfacher (insb. CSP-Phase-A-Iter-Fixes), Phase 2.4 CSP hat eigenes Live-Smoke per `security-headers-live-smoke.md`
+
+Final-Cut in /slice-planning per Founder-Vote.
+
+### Pattern-Reuse-Audit-Tabelle
+
+| Komponente | Quelle | Reuse-Quote | Adapter-Anforderung |
+|---|---|---|---|
+| `assertRole(["admin"])` Pre-Check Phase 1 | BS V5+ `@/lib/auth/assert-role.ts` | 100% | keine — 1:1 import |
+| Sentry-Setup 3-File + Wrapper | ImSch SLC-330 (`sentry.{server,client,edge}.config.ts` + `src/lib/monitoring/sentry.ts`) | ~70-80% | DSN-ENV-Namen anpassen, Wrapper-Caller-Signatur 1:1 |
+| CSP-Allowlist Pure-Function | ImSch SLC-331 `src/lib/security/csp-allowlist.ts` | ~30-50% Struktur, 0% byte-identisch | Domain-Liste BS-spezifisch (Bedrock + Supabase + Sentry, kein seven.io) |
+| Logger-Redaction `redactSecrets()` + `logSafe()` | KEINE — BS V8.12 Origin | 0% | Cross-Repo-Reuse-Quelle fuer OP + IS + ImSch |
+| zxcvbn Passwort-Policy | KEINE — BS V8.12 Origin | 0% | Cross-Repo-Reuse-Quelle |
+| LLM-Cost-Cap In-Memory-Cache | KEINE — BS V8.12 Origin | 0% | Cross-Repo-Reuse-Quelle (IS V4.x Cost-Tracking analog) |
+| `tests/_probe/csp-check.mjs` Live-Smoke | ImSch V3.3 SLC-331 (security-headers-live-smoke.md) | 100% Tool, 0% byte-identisch in BS | Adapter-Path-Anpassung |
+
+### Risks Re-Audit
+
+Aus RPT-607 Section 8 sechs Risiken — mit Architecture-Resolutions:
+
+| Risk | Architecture-Mitigation |
+|---|---|
+| R-V812-1 (Phase 1 UI-Regression) | Live-Smoke 7 UI-Pfade nach Phase 1 (AC-921-5). `assertRole(["admin"])` ist Production-erprobt seit V5+ (customer-dse, settings, etc.). |
+| R-V812-2 (CSP Phase-B Page-Breaks) | Report-Only-Phase 1-2 Wochen + Iterativ-Fix. Live-Smoke-Probe per `tests/_probe/csp-check.mjs` als Pflicht-Gate. |
+| R-V812-3 (zxcvbn Bundle-Size) | Dynamic-Import in `validatePasswordStrength()` → Lazy-Chunk nur bei set-password/accept-invitation. |
+| R-V812-4 (Cost-Cap DB-Query-Latenz) | In-Memory-Cache 1min TTL (DEC-287). Cap-Approach-Bypass bei >95% Cap. Erwarteter Average-Latency-Add: <1ms (Cache-Hit). |
+| R-V812-5 (Sentry DSGVO User-IP-Default) | `Sentry.init({ sendDefaultPii: false })` + beforeSend-Hook mit redactSentryEvent(). |
+| R-V812-6 (Sentry Cost-Spike bei Cap-Hit) | tracesSampleRate=0.1 + Sentry-Rate-Limit pro Issue-Type (Standard Sentry-Feature). Cap-Hit-Events sind kategorisch (level=warning) und werden Sentry-deduplicated. |
+
+### Architecture Quality Bar Check
+
+- Build direction understandable: ✓ (3 Phasen sequential, klare Component-Boundaries)
+- Major structural choices clear: ✓ (Top-Level-Wrapper, In-Memory-Cache, Report-Only-First, 3 OQ-DECs)
+- Key responsibilities defined: ✓ (Component-Tabelle + Pattern-Reuse-Audit)
+- Major risks visible: ✓ (6 Risks mit Architecture-Mitigations)
+- Slice-Planning kann ohne Guessing weitermachen: ✓ (OQ-V812-slice-1+2 mit Architecture-Empfehlung, Final-Cut Founder-Vote)
+
+### V8.12 Architecture ready for `/slice-planning V8.12`.
