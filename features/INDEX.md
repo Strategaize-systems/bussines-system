@@ -307,7 +307,7 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-921 | V8.12 Code-Layer-Closures (Phase 1, 7 ISSUE-Closures via assertRole(["admin"]) — SLC-906) | in_progress | [Spec](FEAT-921-v812-code-closures.md) | 2026-06-09 |
+| FEAT-921 | V8.12 Code-Layer-Closures (Phase 1, 7 ISSUE-Closures via assertRole(["admin"]) — SLC-906) | done | [Spec](FEAT-921-v812-code-closures.md) | 2026-06-09 |
 | FEAT-922 | V8.12 Cross-Repo-Polish-Patterns (Phase 2, BL-501..504 — SLC-907 Logger + SLC-908 Passwort + SLC-909 Cost-Cap + SLC-910 CSP) | in_progress | [Spec](FEAT-922-v812-cross-repo-polish.md) | 2026-06-09 |
 | FEAT-923 | V8.12 Sentry-Observability (Phase 3, BL-514 Sentry.io EU-Region Frankfurt + CSP-Integration + Redact-beforeSend — SLC-911) | in_progress | [Spec](FEAT-923-v812-sentry-observability.md) | 2026-06-09 |
 

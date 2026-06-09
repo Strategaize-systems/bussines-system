@@ -58,7 +58,7 @@ describe("kpi-snapshots.ts — User-Client Defense-in-Depth", () => {
     const mock = makeUserClientMock({ unauthenticated: true });
     vi.mocked(createClient).mockResolvedValue(mock.client as never);
 
-    expect(await getSnapshotTrend("revenue", 7)).toEqual([]);
+    expect(await getSnapshotTrend("revenue_won", 7)).toEqual([]);
   });
 
   it("getSnapshotTrend uses User-Client only", async () => {
@@ -67,7 +67,7 @@ describe("kpi-snapshots.ts — User-Client Defense-in-Depth", () => {
     });
     vi.mocked(createClient).mockResolvedValue(mock.client as never);
 
-    await getSnapshotTrend("revenue", 7);
+    await getSnapshotTrend("revenue_won", 7);
     expect(mock.fromMock).toHaveBeenCalledWith("kpi_snapshots");
     expect(vi.mocked(createAdminClient)).not.toHaveBeenCalled();
   });
@@ -76,7 +76,7 @@ describe("kpi-snapshots.ts — User-Client Defense-in-Depth", () => {
     const mock = makeUserClientMock({});
     vi.mocked(createClient).mockResolvedValue(mock.client as never);
 
-    await getSnapshotComparison("revenue", "2026-06-01", "2026-05-01");
+    await getSnapshotComparison("revenue_won", "2026-06-01", "2026-05-01");
     expect(vi.mocked(createAdminClient)).not.toHaveBeenCalled();
   });
 });

@@ -215,7 +215,7 @@ describe("goals.ts — User-Client Defense-in-Depth (SLC-901 M-1)", () => {
         product_id: null,
       },
       {
-        type: "deals_won",
+        type: "deal_count",
         period: "year",
         period_start: "2026-01-01",
         target_value: 50,

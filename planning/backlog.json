@@ -2687,7 +2687,7 @@
       "title": "V8.12 Phase 1 Code-Layer-Closures Bundle 7 ISSUEs (FEAT-921 SLC-906)",
       "type": "improvement",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.12",
       "description": "FEAT-921 Phase 1 Code-Layer-Closures. 7 createAdminClient-Bypass-Server-Actions auf assertAdmin()-Pre-Check oder User-Session-Client-Switch umstellen: ISSUE-090 products-actions.ts (Klasse-B), ISSUE-091 deal-products-actions.ts (Klasse-C), ISSUE-092 send-action.ts email_attachments-Bulk (Klasse-C), ISSUE-093 insight-actions.ts ai_action_queue+ai_feedback (Klasse-C), ISSUE-094 document-actions.ts (Klasse-C), SLC-901 M-1 {goals,kpi-snapshots,activity-kpis}-actions.ts (Klasse-A), SLC-905 D-905-4 knowledge/search.ts (Klasse-D Caller-Mode-Switch). Pattern-Reuse 100% mit assertAdmin() Helper (Status OQ-V812-arch-1). Vitest Mock-Pattern fuer is_admin-Check pro File. Final-Cut Bundle-vs-Klasse-Split in /slice-planning (OQ-V812-slice-1). Pre-Cond V8.11 STABLE ✓. AC-921-1..5 in FEAT-921-Spec.",
       "createdAt": "2026-06-09"
