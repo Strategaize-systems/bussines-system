@@ -1,12 +1,18 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { revalidatePath } from "next/cache";
 import type { ActivityKpiKey, ActivityKpiTarget, ActivityKpiStatus, WeekDayKpiStatus } from "@/types/activity-kpis";
 import { ACTIVITY_KPI_LABELS } from "@/types/activity-kpis";
 import { getActivityKpiActual, getActivityKpiActualForRange, dayRangesForWeek } from "@/lib/goals/activity-kpi-queries";
+
+// V8.12 SLC-906 MT-6 (SLC-901 M-1): User-Client-Switch fuer alle
+// activity_kpi_targets-Operations + helpers. RLS Klasse-A
+// activity_kpi_targets_{select,insert,update,delete} (user_id=auth.uid() OR
+// is_admin()) greift fuer eigene Targets. Helper-Counts auf activities/
+// meetings/deals laufen ueber Klasse-C-RLS — Member-scoped.
+// Defense-in-Depth: kein createAdminClient mehr in diesem File.
 
 // ── List targets ─────────────────────────────────────────────
 
@@ -17,8 +23,7 @@ export async function listActivityKpiTargets(): Promise<ActivityKpiTarget[]> {
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const admin = createAdminClient();
-  const { data } = await admin
+  const { data } = await supabase
     .from("activity_kpi_targets")
     .select("*")
     .eq("user_id", user.id)
@@ -42,10 +47,8 @@ export async function upsertActivityKpiTarget(
 
   if (dailyTarget < 0) return { error: "Sollwert darf nicht negativ sein" };
 
-  const admin = createAdminClient();
-
   // Check if exists
-  const { data: existing } = await admin
+  const { data: existing } = await supabase
     .from("activity_kpi_targets")
     .select("id")
     .eq("user_id", user.id)
@@ -53,12 +56,12 @@ export async function upsertActivityKpiTarget(
     .single();
 
   if (existing) {
-    await admin
+    await supabase
       .from("activity_kpi_targets")
       .update({ daily_target: dailyTarget, active: true, updated_at: new Date().toISOString() })
       .eq("id", existing.id);
   } else {
-    await admin.from("activity_kpi_targets").insert({
+    await supabase.from("activity_kpi_targets").insert({
       user_id: user.id,
       kpi_key: kpiKey,
       daily_target: dailyTarget,
@@ -83,8 +86,7 @@ export async function toggleActivityKpiTarget(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht authentifiziert" };
 
-  const admin = createAdminClient();
-  await admin
+  await supabase
     .from("activity_kpi_targets")
     .update({ active, updated_at: new Date().toISOString() })
     .eq("user_id", user.id)
@@ -103,8 +105,7 @@ export async function getDailyActivityKpis(): Promise<ActivityKpiStatus[]> {
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const admin = createAdminClient();
-  const { data: targets } = await admin
+  const { data: targets } = await supabase
     .from("activity_kpi_targets")
     .select("*")
     .eq("user_id", user.id)
@@ -117,8 +118,8 @@ export async function getDailyActivityKpis(): Promise<ActivityKpiStatus[]> {
   for (const t of targets) {
     const kpiKey = t.kpi_key as ActivityKpiKey;
     const [todayActual, weekActual] = await Promise.all([
-      getActivityKpiActual(admin, kpiKey, "today"),
-      getActivityKpiActual(admin, kpiKey, "week"),
+      getActivityKpiActual(supabase, kpiKey, "today"),
+      getActivityKpiActual(supabase, kpiKey, "week"),
     ]);
 
     // Week target = daily * 5 (workdays)
@@ -147,8 +148,7 @@ export async function getWeeklyActivityKpisPerDay(): Promise<WeekDayKpiStatus[]>
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const admin = createAdminClient();
-  const { data: targets } = await admin
+  const { data: targets } = await supabase
     .from("activity_kpi_targets")
     .select("*")
     .eq("user_id", user.id)
@@ -167,7 +167,7 @@ export async function getWeeklyActivityKpisPerDay(): Promise<WeekDayKpiStatus[]>
       days.map(async (day) => ({
         date: day.date,
         dayLabel: day.dayLabel,
-        actual: await getActivityKpiActualForRange(admin, kpiKey, day.start, day.end),
+        actual: await getActivityKpiActualForRange(supabase, kpiKey, day.start, day.end),
         isToday: day.isToday,
       }))
     );
@@ -196,8 +196,6 @@ export async function getWeeklyComparison(): Promise<{
   } = await supabase.auth.getUser();
   if (!user) return { thisWeek: 0, lastWeek: 0, changePercent: null };
 
-  const admin = createAdminClient();
-
   // Count all activities this week vs last week
   const now = new Date();
   const dayOfWeek = now.getDay();
@@ -214,12 +212,12 @@ export async function getWeeklyComparison(): Promise<{
   nextMonday.setDate(thisMonday.getDate() + 7);
 
   const [thisWeekResult, lastWeekResult] = await Promise.all([
-    admin
+    supabase
       .from("activities")
       .select("id", { count: "exact", head: true })
       .gte("created_at", thisMonday.toISOString())
       .lt("created_at", nextMonday.toISOString()),
-    admin
+    supabase
       .from("activities")
       .select("id", { count: "exact", head: true })
       .gte("created_at", lastMonday.toISOString())

@@ -1,8 +1,11 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import type { KpiType } from "@/types/kpi-snapshots";
+
+// V8.12 SLC-906 MT-6 (SLC-901 M-1): User-Client-Switch fuer kpi_snapshots-Reads.
+// RLS Klasse-A kpi_snapshots_select USING (user_id=auth.uid() OR is_admin())
+// greift fuer eigenes user_id-Filter. Defense-in-Depth: kein createAdminClient.
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -30,12 +33,11 @@ export async function getSnapshotTrend(
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const admin = createAdminClient();
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
   const cutoffISO = cutoff.toISOString().split("T")[0];
 
-  let query = admin
+  let query = supabase
     .from("kpi_snapshots")
     .select("snapshot_date, kpi_value")
     .eq("user_id", user.id)
@@ -73,12 +75,11 @@ export async function getSnapshotComparison(
   } = await supabase.auth.getUser();
   if (!user) return { current: 0, previous: 0, changePercent: null };
 
-  const admin = createAdminClient();
   const today = new Date().toISOString().split("T")[0];
 
   // Get latest snapshot value in each period
   const buildQuery = (startDate: string, endDate: string) => {
-    let q = admin
+    let q = supabase
       .from("kpi_snapshots")
       .select("kpi_value")
       .eq("user_id", user.id)

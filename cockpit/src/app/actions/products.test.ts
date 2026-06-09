@@ -52,16 +52,12 @@ function makeUserClientMock() {
     data: [{ id: "p1", name: "Product A" }],
     error: null,
   });
-  const eq = vi.fn(() => ({ }));
-  const order = vi.fn(() => ({ eq }));
-  const select = vi.fn(() => ({ order }));
-  // Re-wire so .order returns a thenable plus eq() returning a thenable
   const finalOrder = {
     then: (cb: (v: { data: unknown; error: unknown }) => unknown) =>
       orderResult().then(cb),
     eq: vi.fn(() => orderResult()),
   };
-  select.mockImplementation(() => ({ order: vi.fn(() => finalOrder) }));
+  const select = vi.fn(() => ({ order: vi.fn(() => finalOrder) }));
   const from = vi.fn(() => ({ select }));
   const getUser = vi.fn().mockResolvedValue({
     data: { user: { id: ADMIN_PROFILE.user_id } },

@@ -1,10 +1,15 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { revalidatePath } from "next/cache";
 import type { Goal, GoalType, GoalPeriod, GoalStatus } from "@/types/goals";
+
+// V8.12 SLC-906 MT-6 (SLC-901 M-1): User-Client-Switch fuer alle goals-Operations.
+// RLS Klasse-A goals_{select,insert,update,delete} enforced
+// (user_id=auth.uid() OR is_admin()). Da goals.ts ausschliesslich auf user.id
+// (own user_id) operiert, ist User-Client der semantisch korrekte Pfad.
+// Defense-in-Depth: kein createAdminClient mehr in diesem File.
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -43,8 +48,7 @@ export async function listGoals(filters?: {
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const admin = createAdminClient();
-  let query = admin
+  let query = supabase
     .from("goals")
     .select("*, products(name)")
     .eq("user_id", user.id)
@@ -82,8 +86,7 @@ export async function createGoal(
     return { error: "Sollwert muss groesser als 0 sein" };
   }
 
-  const admin = createAdminClient();
-  const { data, error } = await admin
+  const { data, error } = await supabase
     .from("goals")
     .insert({
       user_id: user.id,
@@ -127,7 +130,6 @@ export async function updateGoal(
     return { error: "Sollwert muss groesser als 0 sein" };
   }
 
-  const admin = createAdminClient();
   const updates: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
@@ -139,7 +141,7 @@ export async function updateGoal(
   if (input.product_id !== undefined) updates.product_id = input.product_id || null;
   if (input.notes !== undefined) updates.notes = input.notes?.trim() || null;
 
-  const { data, error } = await admin
+  const { data, error } = await supabase
     .from("goals")
     .update(updates)
     .eq("id", input.id)
@@ -172,8 +174,7 @@ export async function cancelGoal(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht authentifiziert" };
 
-  const admin = createAdminClient();
-  const { error } = await admin
+  const { error } = await supabase
     .from("goals")
     .update({
       status: "cancelled",
@@ -214,13 +215,12 @@ export async function importGoalsFromCSV(
     return { imported: 0, errors: ["Keine Daten zum Importieren"] };
   }
 
-  const admin = createAdminClient();
   const errors: string[] = [];
   let imported = 0;
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    const { error } = await admin.from("goals").insert({
+    const { error } = await supabase.from("goals").insert({
       user_id: user.id,
       type: row.type,
       period: row.period,
@@ -264,8 +264,7 @@ export async function getGoalProgress(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht authentifiziert" };
 
-  const admin = createAdminClient();
-  const { data: goal } = await admin
+  const { data: goal } = await supabase
     .from("goals")
     .select("*")
     .eq("id", goalId)
@@ -287,11 +286,10 @@ export async function getGoalsWithProgress(filters?: {
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const admin = createAdminClient();
   const requestedPeriod = filters?.period;
 
   // First: try to find explicit goals for the requested period
-  let query = admin
+  let query = supabase
     .from("goals")
     .select("*, products(name)")
     .eq("user_id", user.id)
@@ -320,7 +318,7 @@ export async function getGoalsWithProgress(filters?: {
 
   // No explicit goals for this period — derive from yearly goals
   if (requestedPeriod && requestedPeriod !== "year") {
-    const { data: yearlyGoals } = await admin
+    const { data: yearlyGoals } = await supabase
       .from("goals")
       .select("*, products(name)")
       .eq("user_id", user.id)

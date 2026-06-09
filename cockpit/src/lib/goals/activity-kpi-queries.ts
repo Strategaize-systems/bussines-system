@@ -1,7 +1,11 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActivityKpiKey } from "@/types/activity-kpis";
 
-type AdminClient = ReturnType<typeof createAdminClient>;
+// V8.12 SLC-906 MT-6: Type-Widening von ReturnType<typeof createAdminClient>
+// auf SupabaseClient — Caller koennen User-Client (createClient) oder Admin-
+// Client (createAdminClient) passen. Helpers sind reine SELECT-Queries ohne
+// auth.admin-Calls, also generisch ueber beide Clients sicher.
+type AdminClient = SupabaseClient;
 
 function todayRange(): { start: string; end: string } {
   const now = new Date();
