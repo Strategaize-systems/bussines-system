@@ -2,8 +2,15 @@
 // Knowledge Search — RAG Query Pipeline (SLC-424)
 // MT-1: Similarity Search, MT-2: Context Assembly,
 // MT-3: Bedrock RAG Query, MT-4: Confidence Calculation
+//
+// V8.12 SLC-906 MT-7 (SLC-905 D-905-4): Caller-Mode-Switch.
+// UI-Caller (Default, serviceMode=false) verwenden createClient — RLS
+// search_knowledge_chunks-RPC sieht auth.uid() und filtert tenant-scoped.
+// Cron-Caller (serviceMode=true, z.B. Signal-Extractor) verwenden
+// createAdminClient (BYPASSRLS) fuer Cross-Tenant-Lookup.
 // =============================================================
 
+import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getEmbeddingProvider } from "@/lib/ai/embeddings";
 import { queryLLM } from "@/lib/ai/bedrock-client";
@@ -20,6 +27,12 @@ export interface SearchOptions {
   contactId?: string;
   companyId?: string;
   limit?: number;
+  /**
+   * V8.12 SLC-906 MT-7: explizites Cron-Caller-Flag. Default `false` =
+   * User-Client (RLS aktiv). `true` = createAdminClient (BYPASSRLS).
+   * Nur Cron/Background-Jobs duerfen `true` setzen.
+   */
+  serviceMode?: boolean;
 }
 
 export interface SearchChunk {
@@ -74,7 +87,13 @@ export async function searchKnowledge(
   options: SearchOptions,
 ): Promise<SearchChunk[]> {
   const provider = getEmbeddingProvider();
-  const admin = createAdminClient();
+
+  // V8.12 SLC-906 MT-7: Caller-Mode-Switch — UI-Caller bekommen User-Client
+  // (RLS auf RPC greift via auth.uid()), Cron-Caller (serviceMode=true)
+  // bekommen Admin-Client fuer Cross-Tenant-Lookup.
+  const client = options.serviceMode
+    ? createAdminClient()
+    : await createClient();
 
   // 1. Embed the query
   const queryEmbedding = await provider.embed(query);
@@ -97,7 +116,7 @@ export async function searchKnowledge(
   // scope "all" → no filter
 
   // 3. Call RPC function
-  const { data, error } = await admin.rpc("search_knowledge_chunks", {
+  const { data, error } = await client.rpc("search_knowledge_chunks", {
     query_embedding: embeddingStr,
     match_count: options.limit ?? 20,
     filter_scope: filterScope,

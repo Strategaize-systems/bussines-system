@@ -66,10 +66,14 @@ export async function extractSignals(
 
   if (dealContext.dealId) {
     try {
+      // V8.12 SLC-906 MT-7: Cron-Caller-Flag. Signal-Extractor laeuft im
+      // Background ohne User-Session und braucht Cross-Tenant-Lookup
+      // (Admin-Client + BYPASSRLS auf search_knowledge_chunks-RPC).
       const chunks = await searchKnowledge(sourceText, {
         scope: "deal",
         dealId: dealContext.dealId,
         limit: 5,
+        serviceMode: true,
       });
 
       if (chunks.length > 0) {
