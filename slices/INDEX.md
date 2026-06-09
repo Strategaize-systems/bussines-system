@@ -471,3 +471,51 @@ Pflicht-MTs pro Sub-Slice: Migration + Vitest + Cron-Code-Audit (`docs/AUDIT_CRO
 | SLC-903 | [Klasse C: Parent-FK-JOIN (24 Tabellen, MIG-047a/b/c, 3 atomare Blocks)](SLC-903-rls-sweep-klasse-c-parent-fk-join.md) | FEAT-911 / BL-500-903 | deployed | High | 2026-06-04 |
 | SLC-904 | [Klasse E: audit_log (Admin-all + Actor-own DSGVO-Art-15, MIG-048)](SLC-904-rls-sweep-klasse-e-audit-log.md) | FEAT-911 / BL-500-904 | deployed | High | 2026-06-04 |
 | SLC-905 | [Klasse D: knowledge_chunks Schema-ALTER + Backfill + search_knowledge_chunks-Erw + Done-Gate (MIG-049)](SLC-905-rls-sweep-klasse-d-knowledge-chunks.md) | FEAT-911 / BL-500-905 | deployed | High | 2026-06-04 |
+
+## V8.12 Slices (Defense-in-Depth Sprint — 3 Features in 3 Phasen, Pre-Customer-Live-Closure)
+
+V8.12 = 6 Sub-Slices SLC-906..911, Gesamt-Aufwand ~15-22h Code-Side ueber ~5-6 Sessions + 1-2 Wochen Phase-A Burn-In (SLC-910 CSP-Headers passive Elapsed-Time). **Single-Branch main direkt (kein Worktree)** — V8.12 ist Defense-in-Depth-Closure ohne Risk-Profile von V8.11. **Schliesst 7 Code-Layer-Defense-Gaps (V8.11-Accepted-Risks, FEAT-921 Phase 1) + 4 Cross-Repo-Polish-Patterns (FEAT-922 Phase 2) + 1 Observability-Baseline (FEAT-923 Phase 3).** Bundle-Strategie per DEC-284 (Single V8.12 mit 3 Features). Pattern-Reuse-Audit (RPT-608): 100% `assertRole(["admin"])` BS V5+; ~70-80% Sentry-Setup ImSch SLC-330; ~30-50% Struktur CSP-Allowlist ImSch SLC-331; 0% Origin fuer Logger-Redaction + zxcvbn-Passwort + LLM-Cost-Cap (BS V8.12 wird Cross-Repo-Reuse-Quelle fuer OP V9.x+ + IS V4.x+ + ImSch V3.x+).
+
+**OQ-V812-slice-1+2 final-cut per Architecture-Empfehlung** (RPT-608 Section 9): Phase-1 als 1 Bundle-Slice SLC-906 mit 7 MTs (Pattern-Reuse 100% gleich ueber alle 7 Files); Phase-2 als 4 separate Slices SLC-907..910 (Pattern-Origins verschieden, /qa pro Slice einfacher fuer CSP-Iter-Fixes); Phase-3 als 1 Slice SLC-911. = 6 Slices statt initial geschaetzten 7.
+
+**11 verbindliche DECs:** DEC-277..287 (8 aus /requirements + 3 aus /architecture). DEC-285 `assertRole(["admin"])` existing; DEC-286 `logSafe()` top-level Wrapper; DEC-287 In-Memory-Cache 1min TTL + Cap-Approach-Bypass >95%.
+
+**Reihenfolge (Dependency-getrieben):** SLC-906 → SLC-907 → SLC-911 → SLC-908 → SLC-909 → SLC-910.
+
+```
+SLC-906 (Phase 1, kein Pre-Cond, "sauberer Code-Base bevor Polish draufkommt")
+  |
+  v
+SLC-907 (Logger-Redaction, Pre-Cond fuer SLC-911 beforeSend-Hook)
+  |
+  v
+SLC-911 (Sentry-Setup, Pre-Cond fuer SLC-909 Cost-Cap-Alert + SLC-910 report-uri)
+  |
+  +- Founder-Pre-Step Sentry-Account + DSN in Coolify-ENV (~15min vor Slice-Start)
+  |
+  v
+SLC-908 (Passwort-Policy, autonom — nach Sentry damit Visual-Indicator-Bugs gefangen)
+  |
+  v
+SLC-909 (LLM-Cost-Cap, Pre-Cond Sentry fuer Alert via captureMessage)
+  |
+  v
+SLC-910 (CSP-Headers iterativ — Phase-A Report-Only + 1-2 Wo Burn-In + Phase-B strict)
+```
+
+**0 Schema-Migration** erwartet — leichte Ausnahme: **SLC-909 MIG-050** als Read-Only-Function `get_tenant_cost_sums(tenant_id)` RPC (kein Tabellen-DDL, idempotent CREATE OR REPLACE). MIG-050 wird in `docs/MIGRATIONS.md` ergaenzt.
+
+**Pflicht-Gates pro Sub-Slice:** TSC=0 + ESLint=0 + Full-Vitest-Suite jsdom GREEN (per IMP-1108). Phase-2.4 SLC-910 zusaetzlich `tests/_probe/csp-check.mjs` Live-Smoke per `security-headers-live-smoke.md`.
+
+**Founder-Pre-Steps (kein Slice-Aufwand, vor SLC-911 Start):**
+1. Sentry-Account anlegen + EU-Project Frankfurt einrichten + DPA unterzeichnen
+2. DSN-Wert in Coolify-Production-ENV `SENTRY_DSN` + `NEXT_PUBLIC_SENTRY_DSN` + `SENTRY_ENVIRONMENT=production` + `SENTRY_TRACES_SAMPLE_RATE=0.1` setzen
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-906 | [V8.12 Phase 1 Code-Layer-Closures Bundle (7 Server-Actions)](SLC-906-v812-phase-1-code-closures.md) | FEAT-921 / BL-513 | planned | High | 2026-06-09 |
+| SLC-907 | [V8.12 Logger-Redaction-Layer (Strategaize-Origin-Pattern)](SLC-907-v812-logger-redaction.md) | FEAT-922 / BL-503 | planned | Medium | 2026-06-09 |
+| SLC-911 | [V8.12 Sentry-Observability EU Frankfurt + beforeSend-Redact](SLC-911-v812-sentry-observability.md) | FEAT-923 / BL-514 | planned | Medium | 2026-06-09 |
+| SLC-908 | [V8.12 Passwort-Policy 12+ + zxcvbn (Origin-Pattern)](SLC-908-v812-password-policy.md) | FEAT-922 / BL-502 | planned | Medium | 2026-06-09 |
+| SLC-909 | [V8.12 LLM-Cost-Cap Pre-flight + In-Memory-Cache + Sentry-Alert (MIG-050)](SLC-909-v812-llm-cost-cap.md) | FEAT-922 / BL-504 | planned | Medium | 2026-06-09 |
+| SLC-910 | [V8.12 CSP-Headers iterativ (Report-Only-Phase-A + strict Phase-B + Probe)](SLC-910-v812-csp-headers.md) | FEAT-922 / BL-501 | planned | Medium | 2026-06-09 |

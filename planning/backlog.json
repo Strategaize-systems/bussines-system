@@ -2674,7 +2674,7 @@
     },
     {
       "id": "BL-514",
-      "title": "V8.12 Sentry-Setup EU-Region Frankfurt + Worker-Integration + CSP-Endpoint + Redact-beforeSend (FEAT-923 SLC-9X7)",
+      "title": "V8.12 Sentry-Setup EU-Region Frankfurt + Worker-Integration + CSP-Endpoint + Redact-beforeSend (FEAT-923 SLC-911)",
       "type": "improvement",
       "priority": "medium",
       "status": "in_progress",
@@ -2684,7 +2684,7 @@
     },
     {
       "id": "BL-513",
-      "title": "V8.12 Phase 1 Code-Layer-Closures Bundle 7 ISSUEs (FEAT-921 SLC-9X1+9X2)",
+      "title": "V8.12 Phase 1 Code-Layer-Closures Bundle 7 ISSUEs (FEAT-921 SLC-906)",
       "type": "improvement",
       "priority": "high",
       "status": "in_progress",
@@ -2694,7 +2694,7 @@
     },
     {
       "id": "BL-501",
-      "title": "V8.12 CSP-Headers iterativ Phase-A Report-Only → Phase-B strict (FEAT-922 SLC-9X6)",
+      "title": "V8.12 CSP-Headers iterativ Phase-A Report-Only → Phase-B strict (FEAT-922 SLC-910)",
       "type": "improvement",
       "priority": "medium",
       "status": "in_progress",
@@ -2704,7 +2704,7 @@
     },
     {
       "id": "BL-502",
-      "title": "V8.12 Passwort-Policy 12+ zxcvbn>=3 nur neue Passwoerter (FEAT-922 SLC-9X4)",
+      "title": "V8.12 Passwort-Policy 12+ zxcvbn>=3 nur neue Passwoerter (FEAT-922 SLC-908)",
       "type": "improvement",
       "priority": "medium",
       "status": "in_progress",
@@ -2714,7 +2714,7 @@
     },
     {
       "id": "BL-503",
-      "title": "V8.12 Logger-Redaction-Layer 12 Keys (FEAT-922 SLC-9X3) Cross-Repo-Lib-Kandidat",
+      "title": "V8.12 Logger-Redaction-Layer 12 Keys (FEAT-922 SLC-907) Cross-Repo-Lib-Kandidat",
       "type": "improvement",
       "priority": "medium",
       "status": "in_progress",
@@ -2724,7 +2724,7 @@
     },
     {
       "id": "BL-504",
-      "title": "V8.12 LLM-Cost-Cap Pro-Tenant DAILY=25 EUR / MONTHLY=500 EUR (FEAT-922 SLC-9X5)",
+      "title": "V8.12 LLM-Cost-Cap Pro-Tenant DAILY=25 EUR / MONTHLY=500 EUR (FEAT-922 SLC-909)",
       "type": "improvement",
       "priority": "medium",
       "status": "in_progress",
