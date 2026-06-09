@@ -7,6 +7,14 @@ import { indexDocument } from "@/lib/knowledge/indexer";
 import { isExtractableFormat } from "@/lib/knowledge/chunker";
 import { buildDocumentStoragePath } from "@/lib/storage/document-path";
 
+// V8.12 SLC-906 MT-5 (ISSUE-094): No-Op-Befund — document-actions.ts wurde
+// bereits in V8.10 SLC-893 MT-4 auf User-Client umgestellt. Alle 4 Operations
+// (getDocuments, uploadDocument, deleteDocument, getDocumentUrl) nutzen
+// supabase = await createClient(). RLS Klasse-C documents_table_* enforced
+// Multi-Parent-OR-EXISTS (contacts/companies/deals owner_user_id) +
+// NULL-Parent created_by=auth.uid() + is_admin(). MT-5 fuegt nur Regression-
+// Test + diesen Header-Kommentar hinzu.
+
 export type Document = {
   id: string;
   contact_id: string | null;
