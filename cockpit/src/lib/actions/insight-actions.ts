@@ -6,11 +6,22 @@
 // =============================================================
 
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { applyProposedChange } from "@/lib/ai/signals/applier";
 import type { AIActionQueueItem } from "@/types/ai-queue";
+
+// V8.12 SLC-906 MT-4 (ISSUE-093): User-Client-Switch fuer alle ai_action_queue
+// + ai_feedback Operations. RLS Klasse-C polymorph (5-Wege-EXISTS via
+// entity_type=deal|email_message|contact|company|proposal + decided_by-Fallback
+// + is_admin()) greift fuer Member-Eigene + Admin. activities.insert ebenfalls
+// via User-Client (owner_user_id=userId align mit auth.uid()).
+//
+// Deviation vs Slice-Spec-Text "assertRole(['admin'])": Spec-Wording wuerde
+// Members vom Approve/Reject auf mein-tag aussperren — aber mein-tag ist
+// Member-facing (page.tsx erlaubt alle Rollen). RLS-Klasse-C wurde explizit
+// polymorph designed um Member-eigene-Insights zu erlauben. ISSUE-093
+// Next-Action "Option A preferred" sagt ebenfalls User-Client-Switch.
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -34,9 +45,13 @@ interface BatchResult {
  * in the Unified Queue UI on Mein Tag.
  */
 export async function getPendingInsights(): Promise<AIActionQueueItem[]> {
-  const admin = createAdminClient();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
 
-  const { data, error } = await admin
+  const { data, error } = await supabase
     .from("ai_action_queue")
     .select("*")
     .in("source", ["signal_meeting", "signal_email", "signal_manual"])
@@ -50,14 +65,6 @@ export async function getPendingInsights(): Promise<AIActionQueueItem[]> {
   }
 
   return (data ?? []) as AIActionQueueItem[];
-}
-
-// ── Helper: Get current user ID ───────────────────────────────
-
-async function getCurrentUserId(): Promise<string | null> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  return user?.id ?? null;
 }
 
 // ── MT-2: approveInsightAction ────────────────────────────────
@@ -75,15 +82,17 @@ export async function approveInsightAction(
 ): Promise<InsightActionResult> {
   await assertNotReadOnlyContext();
 
-  const userId = await getCurrentUserId();
-  if (!userId) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
     return { success: false, error: "Nicht authentifiziert" };
   }
-
-  const admin = createAdminClient();
+  const userId = user.id;
 
   // 1. Load queue item
-  const { data: item, error: loadError } = await admin
+  const { data: item, error: loadError } = await supabase
     .from("ai_action_queue")
     .select("*")
     .eq("id", id)
@@ -107,7 +116,7 @@ export async function approveInsightAction(
     ? `applied: ${applyResult.applied}`
     : `failed: ${applyResult.error ?? applyResult.applied}`;
 
-  await admin
+  await supabase
     .from("ai_action_queue")
     .update({
       status: applyResult.success ? "approved" : "pending",
@@ -120,7 +129,7 @@ export async function approveInsightAction(
   // 4. Create audit activity if applied successfully
   // V7 SLC-704 MT-6: owner_user_id = approver user (User-Approval-Pfad, DEC-182).
   if (applyResult.success && queueItem.target_entity_id) {
-    await admin.from("activities").insert({
+    await supabase.from("activities").insert({
       deal_id: queueItem.target_entity_type === "deal"
         ? queueItem.target_entity_id
         : null,
@@ -164,15 +173,17 @@ export async function rejectInsightAction(
 ): Promise<InsightActionResult> {
   await assertNotReadOnlyContext();
 
-  const userId = await getCurrentUserId();
-  if (!userId) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
     return { success: false, error: "Nicht authentifiziert" };
   }
-
-  const admin = createAdminClient();
+  const userId = user.id;
 
   // 1. Update queue item status
-  const { data: item, error: updateError } = await admin
+  const { data: item, error: updateError } = await supabase
     .from("ai_action_queue")
     .update({
       status: "rejected",
@@ -193,7 +204,7 @@ export async function rejectInsightAction(
   }
 
   // 2. Create feedback entry for learning
-  await admin.from("ai_feedback").insert({
+  await supabase.from("ai_feedback").insert({
     action_queue_id: id,
     feedback_type: "rejected",
     reason: reason ?? null,
