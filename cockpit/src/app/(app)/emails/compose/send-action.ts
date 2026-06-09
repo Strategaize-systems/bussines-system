@@ -17,7 +17,6 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { getBrandingForSend } from "@/app/(app)/settings/branding/actions";
 import { renderBrandedHtml } from "@/lib/email/render";
 import { sendEmailWithTracking } from "@/lib/email/send";
@@ -192,8 +191,14 @@ export async function sendComposedEmail(
   // Bei Insert-Fehler: Mail ist schon raus, deshalb nur Warning loggen,
   // nicht den Send-Erfolg invalidieren.
   if (safeAttachments.length > 0 && result.emailId) {
+    // V8.12 SLC-906 MT-3 (ISSUE-092): User-Client-Switch fuer email_attachments
+    // Bulk-INSERT. RLS Klasse-C `email_attachments_insert` enforced
+    // EXISTS(emails.owner_user_id=auth.uid()) OR EXISTS(proposals.owner_user_id
+    // =auth.uid()) OR is_admin(). Die `emails`-Row wurde gerade in
+    // sendEmailWithTracking mit owner_user_id=profile.user_id angelegt
+    // → User-Client darf eigene Attachments einfuegen.
     try {
-      const admin = createAdminClient();
+      const supabase = await createClient();
       const rows = safeAttachments.map((a) => {
         const sourceType = a.source_type ?? "upload";
         return {
@@ -206,7 +211,7 @@ export async function sendComposedEmail(
           proposal_id: sourceType === "proposal" ? a.proposalId ?? null : null,
         };
       });
-      const { error } = await admin.from("email_attachments").insert(rows);
+      const { error } = await supabase.from("email_attachments").insert(rows);
       if (error) {
         // Warning, kein Hard-Fail — die Mail ist schon erfolgreich raus.
         console.error("[sendComposedEmail] Junction-Insert fehlgeschlagen:", error.message);
