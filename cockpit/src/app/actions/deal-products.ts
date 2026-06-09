@@ -1,10 +1,15 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 import { revalidatePath } from "next/cache";
 import type { DealProduct } from "@/types/products";
+
+// V8.12 SLC-906 MT-2 (ISSUE-091): User-Client-Switch fuer alle 4 deal_products-
+// Operations. RLS Klasse-C-Policy `deal_products_{select,insert,update,delete}`
+// enforced `EXISTS(SELECT 1 FROM deals d WHERE d.id=deal_id AND
+// can_see_owner(d.owner_user_id)) OR is_admin()` — Member kann eigene Deal-
+// Products voll managen, fremde nicht. Kein createAdminClient mehr.
 
 // ── List ──────────────────────────────────────────────────────
 
@@ -23,8 +28,7 @@ export async function listDealProducts(
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const admin = createAdminClient();
-  const { data } = await admin
+  const { data } = await supabase
     .from("deal_products")
     .select("*, products(name, status, category)")
     .eq("deal_id", dealId)
@@ -61,8 +65,7 @@ export async function assignProduct(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht authentifiziert" };
 
-  const admin = createAdminClient();
-  const { error } = await admin.from("deal_products").insert({
+  const { error } = await supabase.from("deal_products").insert({
     deal_id: dealId,
     product_id: productId,
     price: price ?? null,
@@ -94,8 +97,7 @@ export async function updateDealProduct(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht authentifiziert" };
 
-  const admin = createAdminClient();
-  const { error } = await admin
+  const { error } = await supabase
     .from("deal_products")
     .update(updates)
     .eq("id", dealProductId);
@@ -121,8 +123,7 @@ export async function removeProduct(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht authentifiziert" };
 
-  const admin = createAdminClient();
-  const { error } = await admin
+  const { error } = await supabase
     .from("deal_products")
     .delete()
     .eq("id", dealProductId);
