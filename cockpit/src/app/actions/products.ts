@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
+import { assertRole } from "@/lib/auth/assert-role";
 import { revalidatePath } from "next/cache";
 import type {
   Product,
@@ -10,6 +11,11 @@ import type {
   CreateProductInput,
   UpdateProductInput,
 } from "@/types/products";
+
+// V8.12 SLC-906 MT-1 (ISSUE-090): Reads via User-Client (Klasse-B SELECT-Policy
+// `products_select` USING (true) erlaubt allen authenticated). Writes ueber
+// assertRole(["admin"]) + createAdminClient (Klasse-B INSERT/UPDATE/DELETE
+// is_admin() bleibt als DB-Layer-Second-Line-of-Defense aktiv).
 
 // ── List ──────────────────────────────────────────────────────
 
@@ -22,8 +28,7 @@ export async function listProducts(
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const admin = createAdminClient();
-  let query = admin
+  let query = supabase
     .from("products")
     .select("*")
     .order("name", { ascending: true });
@@ -45,8 +50,7 @@ export async function listProductCategories(): Promise<string[]> {
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const admin = createAdminClient();
-  const { data } = await admin
+  const { data } = await supabase
     .from("products")
     .select("category")
     .not("category", "is", null)
@@ -64,11 +68,7 @@ export async function createProduct(
   input: CreateProductInput,
 ): Promise<{ error?: string; product?: Product }> {
   await assertNotReadOnlyContext();
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht authentifiziert" };
+  const profile = await assertRole(["admin"]);
 
   if (!input.name?.trim()) {
     return { error: "Name ist erforderlich" };
@@ -82,7 +82,7 @@ export async function createProduct(
       description: input.description?.trim() || null,
       category: input.category?.trim() || null,
       standard_price: input.standard_price ?? null,
-      created_by: user.id,
+      created_by: profile.user_id,
     })
     .select()
     .single();
@@ -101,11 +101,7 @@ export async function updateProduct(
   input: UpdateProductInput,
 ): Promise<{ error?: string; product?: Product }> {
   await assertNotReadOnlyContext();
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht authentifiziert" };
+  await assertRole(["admin"]);
 
   if (input.name !== undefined && !input.name.trim()) {
     return { error: "Name darf nicht leer sein" };
@@ -144,11 +140,7 @@ export async function archiveProduct(
   productId: string,
 ): Promise<{ error?: string }> {
   await assertNotReadOnlyContext();
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht authentifiziert" };
+  await assertRole(["admin"]);
 
   const admin = createAdminClient();
   const { error } = await admin
