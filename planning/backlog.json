@@ -2717,7 +2717,7 @@
       "title": "V8.12 Logger-Redaction-Layer 12 Keys (FEAT-922 SLC-907) Cross-Repo-Lib-Kandidat",
       "type": "improvement",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.12",
       "description": "**NICE-TO-HAVE vor Live, NICHT blockierend (DSGVO-Posture-Verbesserung).** Aktuelle BS-Logs enthalten Klartext: Email-Adressen, Bedrock-Cost-Argumente mit Customer-Strings, Whisper-Transcripts in console.log()-Calls in Cron-Loops, Cal.com-Webhook-Payloads mit Calendar-Event-Subjects. **Risiko:** Coolify-Container-Logs gehen an Hetzner-Log-Aggregation + an Coolify-UI ohne Redaction — Admin-User mit Coolify-Zugang sieht Klartext-PII. Fix-Pattern: (1) Helper-Lib `src/lib/logger/redact.ts` mit `redactSecrets(obj, opts)` der rekursiv durch Object/Array geht und Keys matching /password|token|secret|api_key|email|bearer|authorization/i auf `[REDACTED]` setzt, plus Values matching Email-Regex/Bearer-Token-Regex/UUID-im-PII-Kontext maskiert. (2) Wrapper `logSafe(level, ...args)` der die Helper-Lib vor JSON.stringify ruft. (3) Existing console.log/console.error-Calls in 10-15 critical Files (cron-loops, webhook-handlers, Bedrock-adapter) auf logSafe umstellen. (4) Vitest mit Mock-Patterns: Email/Token/Secret/Customer-Name-Redaction. **Aufwand: ~M (~3-4h Code + 1h /qa) — die Lib selbst ist klein, die Migrations-Arbeit braucht Zeit.** Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-011 indirekt + Cross-Repo-Pattern. Cross-Repo-Hinweis: identisches Pattern in OP V8.0.3 BL-140 + IS V1.2 BL-117. **Ideal als Dev-System-Lib** (siehe BL-501-Hinweis).",
       "createdAt": "2026-05-30"

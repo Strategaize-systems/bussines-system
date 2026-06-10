@@ -514,7 +514,7 @@ SLC-910 (CSP-Headers iterativ — Phase-A Report-Only + 1-2 Wo Burn-In + Phase-B
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-906 | [V8.12 Phase 1 Code-Layer-Closures Bundle (7 Server-Actions)](SLC-906-v812-phase-1-code-closures.md) | FEAT-921 / BL-513 | done | High | 2026-06-09 |
-| SLC-907 | [V8.12 Logger-Redaction-Layer (Strategaize-Origin-Pattern)](SLC-907-v812-logger-redaction.md) | FEAT-922 / BL-503 | planned | Medium | 2026-06-09 |
+| SLC-907 | [V8.12 Logger-Redaction-Layer (Strategaize-Origin-Pattern)](SLC-907-v812-logger-redaction.md) | FEAT-922 / BL-503 | done | Medium | 2026-06-09 |
 | SLC-911 | [V8.12 Sentry-Observability EU Frankfurt + beforeSend-Redact](SLC-911-v812-sentry-observability.md) | FEAT-923 / BL-514 | planned | Medium | 2026-06-09 |
 | SLC-908 | [V8.12 Passwort-Policy 12+ + zxcvbn (Origin-Pattern)](SLC-908-v812-password-policy.md) | FEAT-922 / BL-502 | planned | Medium | 2026-06-09 |
 | SLC-909 | [V8.12 LLM-Cost-Cap Pre-flight + In-Memory-Cache + Sentry-Alert (MIG-050)](SLC-909-v812-llm-cost-cap.md) | FEAT-922 / BL-504 | planned | Medium | 2026-06-09 |

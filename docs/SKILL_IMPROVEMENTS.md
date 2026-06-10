@@ -33,3 +33,12 @@
   Action-Modus braucht: Tool-Calling/Function-Calling Pattern, Bestätigungs-Loop, Undo-Fähigkeit, Audit-Trail
 - Affected Area: Gesamtarchitektur (LLM-Layer), E-Mail-System, Aufgaben-System, Meeting-System, Voice-Pipeline
 - Status: open
+
+### IMP-004 — Logger-Redaction ist Strategaize-Cross-Repo-Origin-Pattern (BS V8.12)
+
+- Date: 2026-06-10
+- Source: SLC-907 /backend (BL-503, FEAT-922 Phase 2.1) — Cross-Repo-Audit ergab, dass Secret-/PII-Keys via unstrukturiertem `console.*`-Log in Coolify-Container-Logs landen koennen, und kein Strategaize-Repo bisher eine Redaction-Schicht hatte (RPT-608 Pattern-Reuse-Audit: 0% reuse, BS V8.12 ist Origin).
+- Observation: `redactSecrets(obj, opts?)` (pure, deep-recursive, WeakSet-circular-guard, MAX_DEPTH=10) + top-level `logSafe(level, ...args)` Wrapper (DEC-286, kein `console.*` Drop-In) loesen das Problem mechanisch. 12 Default-Keys per DEC-280 (Security-Core 10 + PII-Minimal 2). `redactSecrets` ist Named Export fuer SLC-911 Sentry-`beforeSend`-Reuse. Implementiert unter `cockpit/src/lib/logger/{redact.ts,index.ts}`, 17 critical Caller-Sites migriert, 20 Vitest GREEN.
+- Suggested Improvement: Pattern in die Dev-System-Registry aufnehmen: (1) Tabellen-Eintrag "Logger-Redaction / logSafe" in `.claude/rules/strategaize-pattern-reuse.md` (Origin: BS V8.12 SLC-907, Quelle `cockpit/src/lib/logger/redact.ts` + `index.ts`); (2) Memory-File `feedback_logger_redaction_logsafe.md`; (3) Cross-Repo-Nachzug auf OP V9.x+ / IS V4.x+ / immoscheckheft V3.x+ als 1:1-Port mit Quell-Pfad-Header-Kommentar. Empfehlung: Registry-Eintrag erst nach SLC-907 /qa-PASS, damit andere Repos nicht auf unverifizierten Code zeigen.
+- Affected Area: `.claude/rules/strategaize-pattern-reuse.md` (Dev-System), neue Memory `feedback_logger_redaction_logsafe.md`, OP/IS/immoscheckheft Logger-Layer
+- Status: open
