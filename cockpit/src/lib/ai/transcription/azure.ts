@@ -7,6 +7,7 @@
 
 import { AzureOpenAI } from "openai";
 import { toFile } from "openai/core/uploads";
+import { logSafe } from "@/lib/logger";
 import type {
   TranscriptionProvider,
   TranscriptionOptions,
@@ -48,7 +49,8 @@ function logAuditEntry(
   options: { success: boolean; requestId?: string; durationMs?: number },
 ): void {
   // Audit-Log per data-residency.md: Anbieter, Region, Modell, Request-ID, Zeitstempel
-  console.info(
+  logSafe(
+    "info",
     "[Whisper/Azure] " + JSON.stringify({
       provider: "azure",
       region: extractRegionFromEndpoint(config.endpoint),

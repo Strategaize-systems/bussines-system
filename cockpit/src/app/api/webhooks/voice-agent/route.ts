@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getVoiceAgentProvider } from "@/lib/telephony/voice-agent";
+import { logSafe } from "@/lib/logger";
 import type {
   VoiceAgentCallResult,
   VoiceAgentClassification,
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
 
   const secret = process.env.SMAO_WEBHOOK_SECRET || "";
   if (!secret) {
-    console.error("[voice-agent-webhook] SMAO_WEBHOOK_SECRET not configured");
+    logSafe("error", "[voice-agent-webhook] SMAO_WEBHOOK_SECRET not configured");
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   }
 
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (callError || !call) {
-    console.error("[voice-agent-webhook] Call insert failed:", callError?.message);
+    logSafe("error", "[voice-agent-webhook] Call insert failed:", callError?.message);
     return NextResponse.json(
       { error: `Call insert failed: ${callError?.message}` },
       { status: 500 },
@@ -279,7 +280,7 @@ async function insertActivity(
     .select("id")
     .single();
   if (error) {
-    console.error("[voice-agent-webhook] activity insert failed:", error.message);
+    logSafe("error", "[voice-agent-webhook] activity insert failed:", error.message);
     return undefined;
   }
   return data?.id;
@@ -304,7 +305,7 @@ async function insertTask(
     .select("id")
     .single();
   if (error) {
-    console.error("[voice-agent-webhook] task insert failed:", error.message);
+    logSafe("error", "[voice-agent-webhook] task insert failed:", error.message);
     return undefined;
   }
   return data?.id;

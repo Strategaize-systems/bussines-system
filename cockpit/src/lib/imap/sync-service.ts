@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { parseEmail, normalizeSubject, type ParsedEmail } from "./parser";
 import { matchContact, type ContactMatch } from "./contact-matcher";
 import { indexEmail } from "@/lib/knowledge/indexer";
+import { logSafe } from "@/lib/logger";
 
 export interface SyncResult {
   synced: number;
@@ -165,8 +166,8 @@ export async function syncEmails(): Promise<SyncResult> {
           // Auto-embed email into knowledge base (fire-and-forget)
           if (insertedEmail?.id) {
             indexEmail(insertedEmail.id)
-              .then((r) => console.log(`[IMAP-Sync] Auto-embedded email ${insertedEmail.id}: ${r.stored} chunks`))
-              .catch((err) => console.error(`[IMAP-Sync] Auto-embed email failed: ${insertedEmail.id}`, err.message));
+              .then((r) => logSafe("log", `[IMAP-Sync] Auto-embedded email ${insertedEmail.id}: ${r.stored} chunks`))
+              .catch((err) => logSafe("error", `[IMAP-Sync] Auto-embed email failed: ${insertedEmail.id}`, err.message));
           }
 
           // Update thread stats if existing thread
@@ -182,7 +183,7 @@ export async function syncEmails(): Promise<SyncResult> {
           synced++;
         } catch (err) {
           errors++;
-          console.error(`[IMAP-Sync] UID ${msg.uid}:`, err);
+          logSafe("error", `[IMAP-Sync] UID ${msg.uid}:`, err);
         }
       }
     } finally {

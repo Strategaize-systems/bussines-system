@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { verifyCronSecret } from "../verify-cron-secret";
 import { syncEmails } from "@/lib/imap/sync-service";
+import { logSafe } from "@/lib/logger";
 
 export const maxDuration = 30;
 
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
       lastUid: result.lastUid,
     });
   } catch (err) {
-    console.error("[Cron/IMAP-Sync] Error:", err);
+    logSafe("error", "[Cron/IMAP-Sync] Error:", err);
     return NextResponse.json(
       {
         success: false,

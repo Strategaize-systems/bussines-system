@@ -11,6 +11,7 @@ import { injectTracking } from "./tracking";
 import { renderBrandedHtml, type RenderVars } from "./render";
 import { getBrandingForSend } from "@/app/(app)/settings/branding/actions";
 import { getTenantSlugByOwnerUserId } from "@/lib/team/lookup-slug";
+import { logSafe } from "@/lib/logger";
 
 export type SendEmailAttachment = {
   storagePath: string;
@@ -190,7 +191,8 @@ export async function sendEmailWithTracking(params: SendEmailParams): Promise<Se
           };
         }),
       );
-      console.log(
+      logSafe(
+        "log",
         `[sendEmailWithTracking] attachments=${params.attachments.length} (upload=${uploadCount}, proposal=${proposalCount})`,
       );
     } catch (err) {

@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logSafe } from "@/lib/logger";
 
 export interface RetentionResult {
   deleted: number;
@@ -32,7 +33,7 @@ export async function runRetention(): Promise<RetentionResult> {
     .in("id", ids);
 
   if (deleteError) {
-    console.error("[Retention] Delete failed:", deleteError.message);
+    logSafe("error", "[Retention] Delete failed:", deleteError.message);
     return { deleted: 0, errors: 1 };
   }
 

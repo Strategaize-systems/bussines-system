@@ -28,6 +28,7 @@ import {
   type AttachmentMeta,
 } from "@/lib/email/attachments-whitelist";
 import { transitionProposalStatus } from "@/app/(app)/proposals/actions";
+import { logSafe } from "@/lib/logger";
 import { getProfile } from "@/lib/auth/get-profile";
 import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
@@ -214,10 +215,10 @@ export async function sendComposedEmail(
       const { error } = await supabase.from("email_attachments").insert(rows);
       if (error) {
         // Warning, kein Hard-Fail — die Mail ist schon erfolgreich raus.
-        console.error("[sendComposedEmail] Junction-Insert fehlgeschlagen:", error.message);
+        logSafe("error", "[sendComposedEmail] Junction-Insert fehlgeschlagen:", error.message);
       }
     } catch (err) {
-      console.error("[sendComposedEmail] Junction-Insert exception:", err);
+      logSafe("error", "[sendComposedEmail] Junction-Insert exception:", err);
     }
 
     // SLC-555: Status-Auto-Sent fuer alle Proposal-Anhaenge (DEC-108
@@ -229,7 +230,8 @@ export async function sendComposedEmail(
       (a) => a.source_type === "proposal" && typeof a.proposalId === "string",
     );
     if (proposalAtts.length > 1) {
-      console.warn(
+      logSafe(
+        "warn",
         `[sendComposedEmail] Mehrfach-Proposal-Anhang (count=${proposalAtts.length}) — alle erhalten Status-Sent.`,
       );
     }
@@ -237,12 +239,14 @@ export async function sendComposedEmail(
       try {
         const tr = await transitionProposalStatus(att.proposalId as string, "sent");
         if (!tr.ok) {
-          console.warn(
+          logSafe(
+            "warn",
             `[sendComposedEmail] transitionProposalStatus(${att.proposalId},'sent') failed: ${tr.error}`,
           );
         }
       } catch (e) {
-        console.error(
+        logSafe(
+          "error",
           `[sendComposedEmail] transitionProposalStatus(${att.proposalId},'sent') exception:`,
           e,
         );

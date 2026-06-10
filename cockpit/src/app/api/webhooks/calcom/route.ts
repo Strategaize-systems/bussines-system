@@ -12,6 +12,7 @@ import {
   handleWebhookEvent,
   type CalcomWebhookPayload,
 } from "@/lib/calcom/webhook-handler";
+import { logSafe } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       ...result,
     });
   } catch (error) {
-    console.error("[calcom-webhook] Error:", error);
+    logSafe("error", "[calcom-webhook] Error:", error);
     return NextResponse.json(
       { error: "Webhook processing failed" },
       { status: 500 }
