@@ -2707,7 +2707,7 @@
       "title": "V8.12 Passwort-Policy 12+ zxcvbn>=3 nur neue Passwoerter (FEAT-922 SLC-908)",
       "type": "improvement",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.12",
       "description": "**NICE-TO-HAVE vor Live, NICHT blockierend.** Aktuell: BS Set-Password-Page + Accept-Invitation akzeptieren Passwoerter ab 6 Zeichen (Supabase-Default). Risiko: Brute-Force-Attack auf interne User-Accounts. Fix-Pattern: (1) zxcvbn dependency hinzufuegen (Standard-Lib fuer Passwort-Strength-Scoring), (2) Server-Action validatePasswordStrength: min 12 chars + zxcvbn-Score >= 3 (mind. 'good'), (3) Client-Side Visual-Indicator (Tailwind Progress-Bar mit zxcvbn-Score) im set-password.tsx + accept-invitation.tsx, (4) Reject mit deutscher Fehlermeldung wenn unzureichend. **Aufwand: ~S (~1-2h Code + 30 Min /qa).** Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md (Cross-Repo Sprint-4-Pattern). Cross-Repo-Hinweis: identisches Pattern in OP V8.0.3 BL-139 + IS V1.2 BL-116. **Ideal als Dev-System-Helper-Lib mit Pattern-Reuse-Pflicht** — sonst drift gleicher Bug in 3 Repos.",
       "createdAt": "2026-05-30"
