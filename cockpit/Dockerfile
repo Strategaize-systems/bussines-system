@@ -23,6 +23,11 @@ COPY next.config.ts ./
 COPY tsconfig.json ./
 COPY postcss.config.mjs ./
 COPY components.json ./
+# SLC-911 (V8.12): src/instrumentation.ts importiert ../sentry.{server,edge}.config
+# aus dem Repo-Root. Diese Root-Files muessen in den Build-Context kopiert werden,
+# sonst bricht der Docker-Build mit "Module not found" (lokaler next build sieht es
+# nicht, weil dort kein selektiver COPY laeuft).
+COPY sentry.client.config.ts sentry.server.config.ts sentry.edge.config.ts ./
 
 # NEXT_PUBLIC_* must be available at build time (inlined into client bundle)
 ARG NEXT_PUBLIC_SUPABASE_URL
