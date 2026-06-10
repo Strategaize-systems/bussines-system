@@ -1,5 +1,14 @@
 # Known Issues
 
+### ISSUE-097 — Keine LLM-Cost-Ledger-Foundation in BS (Pro-Tenant-Cost-Cap nicht baubar)
+- Status: open
+- Severity: Low
+- Area: AI / Cost-Governance / bedrock-client.ts
+- Summary: BS hat keine queryable LLM-Cost-Foundation. `ai_cost_ledger` existiert nicht (`to_regclass('public.ai_cost_ledger')` → NULL, Live-DB 2026-06-10), keine Tabelle hat eine `tenant_id`-Spalte. LLM-Cost wird nur fuer den Sculptor-Flow in `audit_log.context` als JSON-String `sculptor_cost_usd` (USD) geschrieben — die ~15 anderen `queryLLM()`-Caller (cron meeting-briefing, daily-summary, classifiers, knowledge/search, ki-workspace, followup-engine, winloss, etc.) schreiben keinerlei Cost. Dadurch ist der in DEC-281/SLC-909 geplante Pro-Tenant-EUR-Cost-Cap (Pre-flight `SUM(cost_eur) WHERE tenant_id=$1`) nicht implementierbar.
+- Impact: Kein Pre-flight-Cost-Limit im Bedrock-Adapter. Bei Bug (Endlos-Loop, Stuck-Cron) oder Multi-Agent-Runaway kann Bedrock-Cost ohne Bremse steigen. Risiko-Fenster aktuell durch Internal-Test-Mode (Single-Founder, kein Customer-Traffic) begrenzt. Per Security-Audit war Cost-Cap "NICE-TO-HAVE vor Live", kein Customer-Block.
+- Workaround: Bestehende Bremsen: Bedrock-Region-Pin + AWS-seitige Account-Limits + Sculptor-Single-Shot (DEC-205, max 2 Attempts). Manuelle Cost-Beobachtung ueber `audit_log.context.sculptor_cost_usd` fuer den Sculptor-Pfad.
+- Next Action: Post-V8.12 ein Foundation-Slice (BL-504, unversioniert): (1) Cost-Recording-Tabelle entscheiden (`ai_cost_ledger`-Aequivalent, `team_id`-scoped da BS kein `tenant_id` hat, EUR) ODER strukturierte Cost-Spalte statt JSON-`context`; (2) Write-Path-Wiring in ALLEN `queryLLM`-Callern (zentral im Adapter via usage+modelId + Pricing-Lookup); (3) DANN Pre-flight-Cap + In-Memory-Cache (Entwurf in ARCHITECTURE Phase 2.3 + DEC-287 bleibt als Referenz). Quelle: SLC-909 /backend A-V812-2 (DEC-288 supersedes DEC-281, RPT-618, IMP-005).
+
 ### ISSUE-096 — Cal.com Container Crash-Loop Root-Cause unklar (Re-Inzidenz-Risiko fuer Production-Outage)
 - Status: open
 - Severity: Low

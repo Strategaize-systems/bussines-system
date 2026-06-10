@@ -503,7 +503,7 @@ SLC-909 (LLM-Cost-Cap, Pre-Cond Sentry fuer Alert via captureMessage)
 SLC-910 (CSP-Headers iterativ — Phase-A Report-Only + 1-2 Wo Burn-In + Phase-B strict)
 ```
 
-**0 Schema-Migration** erwartet — leichte Ausnahme: **SLC-909 MIG-050** als Read-Only-Function `get_tenant_cost_sums(tenant_id)` RPC (kein Tabellen-DDL, idempotent CREATE OR REPLACE). MIG-050 wird in `docs/MIGRATIONS.md` ergaenzt.
+**0 Schema-Migration.** ~~leichte Ausnahme: SLC-909 MIG-050~~ — **MIG-050 ENTFAELLT (2026-06-10): SLC-909 deferred, `ai_cost_ledger` existiert in BS nicht (A-V812-2 Live-Check, DEC-288). V8.12-Scope = 5 Slices (SLC-906/907/908/910/911). BL-504 → Post-V8.12-Slot. Siehe ISSUE-097 + RPT-618.**
 
 **Pflicht-Gates pro Sub-Slice:** TSC=0 + ESLint=0 + Full-Vitest-Suite jsdom GREEN (per IMP-1108). Phase-2.4 SLC-910 zusaetzlich `tests/_probe/csp-check.mjs` Live-Smoke per `security-headers-live-smoke.md`.
 
@@ -517,5 +517,5 @@ SLC-910 (CSP-Headers iterativ — Phase-A Report-Only + 1-2 Wo Burn-In + Phase-B
 | SLC-907 | [V8.12 Logger-Redaction-Layer (Strategaize-Origin-Pattern)](SLC-907-v812-logger-redaction.md) | FEAT-922 / BL-503 | done | Medium | 2026-06-09 |
 | SLC-911 | [V8.12 Sentry-Observability EU Frankfurt + beforeSend-Redact](SLC-911-v812-sentry-observability.md) | FEAT-923 / BL-514 | in_progress | Medium | 2026-06-09 |
 | SLC-908 | [V8.12 Passwort-Policy 12+ + zxcvbn (Origin-Pattern)](SLC-908-v812-password-policy.md) | FEAT-922 / BL-502 | done | Medium | 2026-06-09 |
-| SLC-909 | [V8.12 LLM-Cost-Cap Pre-flight + In-Memory-Cache + Sentry-Alert (MIG-050)](SLC-909-v812-llm-cost-cap.md) | FEAT-922 / BL-504 | planned | Medium | 2026-06-09 |
+| SLC-909 | [V8.12 LLM-Cost-Cap — DEFERRED: ai_cost_ledger existiert in BS nicht (DEC-288, A-V812-2)](SLC-909-v812-llm-cost-cap.md) | FEAT-922 / BL-504 | blocked | Medium | 2026-06-09 |
 | SLC-910 | [V8.12 CSP-Headers iterativ (Report-Only-Phase-A + strict Phase-B + Probe)](SLC-910-v812-csp-headers.md) | FEAT-922 / BL-501 | planned | Medium | 2026-06-09 |

@@ -1,5 +1,13 @@
 # Skill Improvements
 
+### IMP-005 — Cross-Repo-Tabellen-Annahme (`ai_cost_ledger`) lief ungeprueft durch 4 Workflow-Steps
+- Date: 2026-06-10
+- Source: /backend SLC-909 A-V812-2 Pre-Check (V8.12 LLM-Cost-Cap)
+- Observation: SLC-909/DEC-281/ARCHITECTURE haben durchgehend angenommen, dass eine per-Tenant-Cost-Ledger-Tabelle `ai_cost_ledger.tenant_id` in BS existiert ("existing seit V6.4"). Tatsaechlich existiert die Tabelle in BS nicht (Live-Check `to_regclass` → NULL), und KEINE Tabelle hat eine `tenant_id`-Spalte — `ai_cost_ledger`/`ai_jobs` ist eine Intelligence-Studio-Konstruktion. Die Annahme stammt aus Cross-Repo-Pattern-Notizen (BL-504-Description: "identisches Pattern in OP V8.0.3 + IS V1.2, alle 3 Repos haben Bedrock-Adapter") — aber "hat einen Bedrock-Adapter" ≠ "hat einen Cost-Ledger". Die falsche Annahme lief ungeprueft durch /discovery → /requirements → /architecture → /slice-planning und wurde erst beim Pre-Coding-Live-Check (richtig vom Slice vorgesehen) entdeckt. ~Eine halbe /backend-Session ging in Diagnose + Records-Korrektur statt Implementation.
+- Suggested Improvement: (1) /requirements + /architecture: jede Aussage "Tabelle/Spalte X existing" die aus einem ANDEREN Strategaize-Repo stammt, MUSS per Live-Schema-Check (`to_regclass('public.X')` / `information_schema.columns`) gegen die Ziel-Repo-DB bestaetigt werden, BEVOR sie als "existing" in einen DEC/ARCHITECTURE-Eintrag eingeht — nicht erst im /backend-Pre-Check. (2) strategaize-pattern-reuse.md: Cross-Repo-Pattern-Reuse-Notizen muessen zwischen "Code-Pattern portierbar" (Adapter, Helper) und "Schema-Abhaengigkeit vorhanden" (Tabelle, Spalte, RPC) unterscheiden — Schema-Abhaengigkeiten sind NICHT automatisch cross-repo vorhanden. (3) /slice-planning: ein "Pre-Check"-MT der eine Tabelle voraussetzt sollte auch den Fall "Tabelle existiert gar nicht" als Verzweigung haben (nicht nur "tenant_id IS NULL > 0").
+- Affected Area: /requirements + /architecture (Cross-Repo-"existing"-Claims), strategaize-pattern-reuse.md (Schema-vs-Code-Reuse-Unterscheidung), /slice-planning (Pre-Check-MT-Verzweigungen). Dev-System-Kandidat.
+- Status: open
+
 ### IMP-001 — KI-Analyse Cockpit ersetzt statisches Dashboard-Konzept
 
 - Date: 2026-04-08

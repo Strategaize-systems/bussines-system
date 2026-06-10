@@ -12492,9 +12492,17 @@ Damit landet zxcvbn (~700KB minified) NICHT im Main-Bundle, sondern in einem Laz
 
 **Bestands-User unangetastet** (DEC-278 — Pre-Customer-Live separater Force-Reset-Slot).
 
-#### Phase 2.3 — LLM-Cost-Cap (FEAT-922 BL-504, SLC-9X5)
+#### Phase 2.3 — LLM-Cost-Cap (FEAT-922 BL-504, SLC-909) — ⛔ DEFERRED 2026-06-10
 
-**Komponente:** Pre-flight-Cost-Cap im Bedrock-Adapter mit In-Memory-Cache.
+> **DEFERRED out of V8.12 (DEC-288 supersedes DEC-281).** Die A-V812-2 Live-Schema-Pruefung hat
+> gezeigt, dass `ai_cost_ledger` in BS nicht existiert und keine Tabelle eine `tenant_id`-Spalte hat.
+> Der unten skizzierte `get_tenant_cost_sums`-RPC + In-Memory-Cache-Entwurf setzt eine Cost-Ledger-
+> Foundation voraus, die BS nicht hat. BS-Cost liegt nur in `audit_log.context` (Sculptor-only, USD).
+> Ein echter Pro-Tenant-EUR-Cap ist ein eigenes Foundation-Feature (Post-V8.12-Slot, BL-504).
+> Der folgende Entwurf bleibt als Referenz fuer das kuenftige Foundation-Slice stehen. Siehe
+> ISSUE-097 + IMP-005 + RPT-618.
+
+**Komponente (ENTWURF, nicht implementiert):** Pre-flight-Cost-Cap im Bedrock-Adapter mit In-Memory-Cache.
 
 **File:** `cockpit/src/lib/ai/bedrock-client.ts` — Pre-flight in `queryLLM()` + neue Helper-Lib.
 
@@ -12647,10 +12655,10 @@ Sentry.init({
 
 **0 Schema-Migration.** V8.12 nutzt ausschliesslich bestehende Tabellen:
 
-- `ai_cost_ledger.tenant_id` (BL-504 Pre-flight-Query, existing seit V6.4)
+- ~~`ai_cost_ledger.tenant_id` (BL-504 Pre-flight-Query, existing seit V6.4)~~ — **KORREKTUR 2026-06-10 (SLC-909 /backend A-V812-2): FALSCH. `ai_cost_ledger` existiert in BS NICHT** (`to_regclass('public.ai_cost_ledger')` → NULL), und KEINE Tabelle im public-Schema hat eine `tenant_id`-Spalte. `ai_cost_ledger` ist eine Intelligence-Studio-Tabelle, nicht BS. BS-LLM-Cost liegt ausschliesslich in `audit_log.context` (JSON `sculptor_cost_usd`, USD, nur Sculptor-Flow). SLC-909 ist dadurch **deferred** (DEC-288 supersedes DEC-281, BL-504 → Post-V8.12-Slot, ISSUE-097). MIG-050 entfaellt.
 - `audit_log` (existing, V8.12 schreibt keine neuen Eintraege — Sentry uebernimmt Error-Telemetry)
 
-**A-V812-2 Validation-Plan:** Pre-Phase-2.3 ein Direct-SQL-Check `SELECT COUNT(*) FROM ai_cost_ledger WHERE tenant_id IS NULL` — wenn >0, dann Default-Tenant-Fallback-Logic in BL-504 noetig.
+**A-V812-2 Validation-Plan (AUSGEFUEHRT 2026-06-10):** Direct-SQL-Check gegen Production-Coolify-DB. Ergebnis: `ai_cost_ledger` existiert nicht + 0 Tabellen mit `tenant_id`-Spalte → die Slice-Praemisse ist ungueltig, SLC-909 deferred. Siehe DEC-288 + ISSUE-097 + IMP-005 + RPT-618.
 
 ### External Dependencies / Integrations
 

@@ -2724,12 +2724,12 @@
     },
     {
       "id": "BL-504",
-      "title": "V8.12 LLM-Cost-Cap Pro-Tenant DAILY=25 EUR / MONTHLY=500 EUR (FEAT-922 SLC-909)",
+      "title": "LLM-Cost-Cap Foundation + Pro-Tenant Cap (deferred aus V8.12 SLC-909 — Post-V8.12-Slot)",
       "type": "improvement",
       "priority": "medium",
-      "status": "in_progress",
-      "version": "V8.12",
-      "description": "**NICE-TO-HAVE vor Live (Cost-Protection bei Misuse/Bug).** Aktuell: keine Pre-flight-Cost-Limit in cockpit/src/lib/ai/bedrock-client.ts. Bei Bug (Endlos-Loop, Stuck-Cron) oder Misuse (User dreht durch) kann Bedrock-Cost auf $X.XX/Tag explodieren ohne Bremse. Fix-Pattern: (1) Pre-flight in queryLLM(): SELECT SUM(cost_eur) FROM ai_cost_ledger WHERE created_at >= NOW() - INTERVAL '1 day' — wenn > DAILY_LLM_CAP (default 5.00 EUR via ENV) → throw Error('LLM Daily Cap Exceeded'). (2) Job/Cron faengt Error ab + setzt z.B. ai_jobs.status='failed' mit Reason 'daily_cap_exceeded'. (3) Optional: Slack-Webhook-Alert bei Cap-Hit (ENV SLACK_ALERT_WEBHOOK_URL). (4) ENV-Vars: DAILY_LLM_CAP_EUR (default 5.00), MONTHLY_LLM_CAP_EUR (default 100.00 — Pre-flight checkt beide). (5) Vitest: cap reached -> reject, cap not reached -> pass, ENV missing -> default-werte. **Aufwand: ~M (~3h Code + 1h /qa).** Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-013 + Cross-Repo-Pattern. Cross-Repo-Hinweis: identisches Pattern in OP V8.0.3 BL-140 + IS V1.2 BL-117 (alle 3 Repos haben Bedrock-Adapter).",
+      "status": "deferred",
+      "version": null,
+      "description": "**DEFERRED 2026-06-10 (SLC-909 /backend A-V812-2, DEC-288 supersedes DEC-281, ISSUE-097, RPT-618):** Nicht baubar als geplant — `ai_cost_ledger` existiert in BS nicht (Live-Check `to_regclass` → NULL), keine Tabelle hat `tenant_id`, BS-LLM-Cost liegt nur in `audit_log.context` (Sculptor-only, USD). Braucht zuerst ein Foundation-Slice: Cost-Recording-Tabelle (team_id-scoped, EUR) + Write-Path-Wiring ueber alle ~15 queryLLM-Caller, DANN Pre-flight-Cap. Eigenes Feature, kein Single-Slice. Aus V8.12 entfernt (version=null). Urspruengliche Spec (ungueltige Praemisse): **NICE-TO-HAVE vor Live (Cost-Protection bei Misuse/Bug).** Aktuell: keine Pre-flight-Cost-Limit in cockpit/src/lib/ai/bedrock-client.ts. Bei Bug (Endlos-Loop, Stuck-Cron) oder Misuse (User dreht durch) kann Bedrock-Cost auf $X.XX/Tag explodieren ohne Bremse. Fix-Pattern: (1) Pre-flight in queryLLM(): SELECT SUM(cost_eur) FROM ai_cost_ledger WHERE created_at >= NOW() - INTERVAL '1 day' — wenn > DAILY_LLM_CAP (default 5.00 EUR via ENV) → throw Error('LLM Daily Cap Exceeded'). (2) Job/Cron faengt Error ab + setzt z.B. ai_jobs.status='failed' mit Reason 'daily_cap_exceeded'. (3) Optional: Slack-Webhook-Alert bei Cap-Hit (ENV SLACK_ALERT_WEBHOOK_URL). (4) ENV-Vars: DAILY_LLM_CAP_EUR (default 5.00), MONTHLY_LLM_CAP_EUR (default 100.00 — Pre-flight checkt beide). (5) Vitest: cap reached -> reject, cap not reached -> pass, ENV missing -> default-werte. **Aufwand: ~M (~3h Code + 1h /qa).** Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-013 + Cross-Repo-Pattern. Cross-Repo-Hinweis: identisches Pattern in OP V8.0.3 BL-140 + IS V1.2 BL-117 (alle 3 Repos haben Bedrock-Adapter).",
       "createdAt": "2026-05-30"
     },
     {

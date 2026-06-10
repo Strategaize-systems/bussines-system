@@ -1,5 +1,10 @@
 # Decisions
 
+## DEC-288 — V8.12 SLC-909 LLM-Cost-Cap deferred: `ai_cost_ledger` existiert in BS nicht (supersedes DEC-281)
+- Status: accepted
+- Reason: /backend SLC-909 2026-06-10 A-V812-2 Pre-Check gegen die Production-Coolify-DB hat die Kern-Annahme von DEC-281/DEC-287/ARCHITECTURE widerlegt: `SELECT to_regclass('public.ai_cost_ledger')` → NULL (Tabelle existiert nicht), und KEINE Tabelle im public-Schema hat eine `tenant_id`-Spalte. `ai_cost_ledger` ist eine Intelligence-Studio-Konstruktion (FK auf `ai_jobs`, siehe backend.md), NICHT BS. BS verfolgt LLM-Cost nur in `audit_log.context` (JSON-String `sculptor_cost_usd`, USD) und nur fuer den Sculptor-Flow — die ~15 anderen `queryLLM()`-Caller schreiben keinerlei Cost. Die Annahme "ai_cost_ledger.tenant_id existing seit V6.4" war ein Cross-Repo-Assumption-Error, der ungeprueft durch /discovery → /requirements → /architecture → /slice-planning durchgelaufen ist. Ein echter Pro-Tenant-EUR-Cost-Cap braucht erst eine Cost-Recording-Foundation (ai_cost_ledger-Aequivalent + Write-Path ueber alle queryLLM-Caller) — das ist ein eigenes Feature, kein Single-Slice. Founder-Entscheidung 2026-06-10: SLC-909 deferren, V8.12 mit 5 Slices schliessen (SLC-906/907/908/910/911).
+- Consequence: DEC-281 → superseded. BL-504 → deferred (Status `deferred`, version `null`, Post-V8.12-Slot). SLC-909 → `blocked`. MIG-050 entfaellt (keine Tabelle zum Abfragen). V8.12-Scope = 5 Slices statt 6. Kein Customer-Block (Cost-Cap war per Audit "NICE-TO-HAVE vor Live", DB-Layer-RLS + Internal-Test-Mode decken das Risiko-Fenster). Pre-Condition fuer eine kuenftige Cost-Cap-Foundation: dokumentiert in ISSUE-097 + IMP-005. Verifikations-Disziplin: Tabellen-/Spalten-Annahmen aus anderen Strategaize-Repos MUESSEN per Live-Schema-Check (`to_regclass` / `information_schema.columns`) bestaetigt werden, bevor sie in /requirements/architecture als "existing" eingehen.
+
 ## DEC-287 — V8.12 LLM-Cost-Cap Pre-flight-Cache: In-Memory 1min TTL + Cap-Approach-Bypass bei >95% Cap
 - Status: accepted
 - Reason: /architecture V8.12 2026-06-09 OQ-V812-arch-3. Pro Bedrock-Call ein SELECT SUM(cost_eur) WHERE tenant_id=$1 kostet ~5-10ms DB-Latenz. Bei 25-EUR-DAILY-Cap erlaubt das ~5000 Calls/Tag (~3.5 Calls/Min) — Cache lohnt sich. In-Memory Map<tenant_id, {day_sum,month_sum,expires_at}> ist Single-Container-Internal-Test-Mode-konform (process-lokal). Redis-Cache waere Overengineering fuer Founder-Single-Container, kommt erst bei Worker-Container-Migration. Cap-Approach-Bypass (>95% Cap → Cache-Skip + fresh SELECT) verhindert silent Drift kurz vor Cap-Hit.
@@ -31,7 +36,8 @@
 - Consequence: BL-502 `validatePasswordStrength(pw)` rejecte alle Passwoerter mit length < 12 OR zxcvbn-Score < 3. Client-Side Visual-Indicator zeigt Score-Bar 0-4. Pre-Customer-Live-Slot kann Threshold auf 4 erhoehen wenn noetig.
 
 ## DEC-281 — V8.12 LLM-Cost-Cap Granularitaet + Defaults: Pro-Tenant DAILY=25 EUR / MONTHLY=500 EUR
-- Status: accepted
+- Status: superseded
+- Superseded-By: DEC-288 (2026-06-10 — Annahme `ai_cost_ledger.tenant_id` widerlegt durch Live-Schema-Check, SLC-909 deferred)
 - Reason: /discovery V8.12 Q-V812-4 + /requirements V8.12 Q-V812-A. Pro-Tenant nutzt vorhandenes `ai_cost_ledger.tenant_id`-Feld und ist Pre-Customer-Live-konform out-of-the-box. Defaults 25/500 EUR sind generous-Internal-Test-Mode (erlaubt grosse Bedrock-Calls ohne Sorge, deckt Burst-Usage Embedding-Generation-Mix). Override per Coolify-ENV moeglich, spaeter per-Tenant via DB-Tabelle (Post-V8.12-Slot).
 - Consequence: BL-504 implementiert Pre-flight `SELECT SUM(cost_eur) FROM ai_cost_ledger WHERE tenant_id=$1 AND created_at >= NOW() - INTERVAL '1 day'` + Monthly-Pendant. ENVs: `LLM_DAILY_CAP_EUR_PER_TENANT=25`, `LLM_MONTHLY_CAP_EUR_PER_TENANT=500`. Hard-Cap throw + Cron/Job-Status=failed. Pro-Service-Role-Granularitaet (Workspace vs Cron getrennt) ist Post-V8.12-Slot.
 

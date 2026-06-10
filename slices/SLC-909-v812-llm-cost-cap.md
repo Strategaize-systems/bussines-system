@@ -5,9 +5,40 @@
 - Version: V8.12
 - Feature: FEAT-922
 - Backlog: BL-504
-- Status: planned
+- Status: blocked
 - Priority: Medium
 - Created: 2026-06-09
+
+## 🛑 BLOCKED / DEFERRED (2026-06-10, /backend A-V812-2 pre-check)
+
+**This slice is not implementable as specified. Deferred out of V8.12 by Founder decision 2026-06-10.**
+
+Root cause: SLC-909, DEC-281 and ARCHITECTURE.md all assume a per-tenant cost ledger
+`ai_cost_ledger.tenant_id` ("existing seit V6.4"). The A-V812-2 pre-check against the
+production Coolify-DB proved this premise false for BS:
+
+- `SELECT to_regclass('public.ai_cost_ledger')` → **NULL** (table does not exist)
+- **Zero** tables in the `public` schema have a `tenant_id` column (BS multi-tenancy is
+  `team_id`/`user_id`-based per ARCHITECTURE V8.4: "Multi-Tenant via team_id-Reuse, kein
+  eigenes tenant_id-Schema-Refactor")
+- `ai_cost_ledger` is an **Intelligence Studio** construct (FK `ai_cost_ledger.job_id →
+  ai_jobs(id)` pattern, see `.claude/rules/backend.md`). BS records LLM cost only in
+  `audit_log.context` (JSON string `sculptor_cost_usd`, in USD) and **only for the sculptor
+  flow** — the ~15 other `queryLLM()` callers record no cost at all.
+
+Consequence: MIG-050 (`get_tenant_cost_sums(p_tenant_id UUID)` querying
+`SUM(cost_eur) FROM ai_cost_ledger WHERE tenant_id=$1`) cannot be written — no table, no
+`cost_eur`, no `tenant_id`. A cap built on existing data would miss exactly the runaway
+paths (cron loops, multi-agent) this slice exists to guard against → false confidence.
+
+A real per-tenant EUR cost cap requires a cost-recording foundation BS does not have
+(an `ai_cost_ledger`-equivalent + write-path wiring across all `queryLLM` callers). That
+is its own feature, not a single slice → **deferred to a Post-V8.12 slot** (BL-504,
+unversioned). See KNOWN_ISSUES ISSUE-097, DEC-288 (supersedes DEC-281), IMP-005, RPT-618.
+
+The spec body below is preserved for the future foundation slice.
+
+---
 
 ## Purpose
 
