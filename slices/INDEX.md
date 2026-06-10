@@ -518,4 +518,4 @@ SLC-910 (CSP-Headers iterativ — Phase-A Report-Only + 1-2 Wo Burn-In + Phase-B
 | SLC-911 | [V8.12 Sentry-Observability EU Frankfurt + beforeSend-Redact](SLC-911-v812-sentry-observability.md) | FEAT-923 / BL-514 | in_progress | Medium | 2026-06-09 |
 | SLC-908 | [V8.12 Passwort-Policy 12+ + zxcvbn (Origin-Pattern)](SLC-908-v812-password-policy.md) | FEAT-922 / BL-502 | done | Medium | 2026-06-09 |
 | SLC-909 | [V8.12 LLM-Cost-Cap — DEFERRED: ai_cost_ledger existiert in BS nicht (DEC-288, A-V812-2)](SLC-909-v812-llm-cost-cap.md) | FEAT-922 / BL-504 | blocked | Medium | 2026-06-09 |
-| SLC-910 | [V8.12 CSP-Headers iterativ (Report-Only-Phase-A + strict Phase-B + Probe)](SLC-910-v812-csp-headers.md) | FEAT-922 / BL-501 | planned | Medium | 2026-06-09 |
+| SLC-910 | [V8.12 CSP-Headers iterativ (Report-Only-Phase-A + strict Phase-B + Probe)](SLC-910-v812-csp-headers.md) | FEAT-922 / BL-501 | in_progress | Medium | 2026-06-09 |

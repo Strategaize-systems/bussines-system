@@ -5,9 +5,11 @@
 - Version: V8.12
 - Feature: FEAT-922
 - Backlog: BL-501
-- Status: planned
+- Status: in_progress
 - Priority: Medium
 - Created: 2026-06-09
+
+> **Phase-A Code DONE 2026-06-10 (RPT-619, /backend):** MT-1 (csp.ts + 7 Vitest), MT-2 (next.config Report-Only + 6 Security-Header), MT-3 (csp-check.mjs Probe) abgeschlossen. TSC=0, ESLint=0, Vitest 1390/1390, curl -I verifiziert alle 6 Header. **OFFEN:** MT-4 (Deploy + 1-2 Wo Burn-In + Sentry-Iter-Fix), MT-5 (Phase-B strict-Switch), MT-6 (Live-Smoke 5 Routes). `@playwright/test` devDep noch nicht installiert (erst vor MT-5/MT-6 noetig). Founder-TODO: `SENTRY_CSP_REPORT_URI` in Coolify auf Sentry-Security-Endpoint setzen, sonst Phase-A-Violations nur browser-console-lokal.
 
 ## Purpose
 
