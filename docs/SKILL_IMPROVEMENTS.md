@@ -1,5 +1,13 @@
 # Skill Improvements
 
+### IMP-006 — Dockerfile selective-COPY liess SLC-911 sentry.*.config.ts aus → prod-Build-Blocker (Hotfix 8b08996)
+- Date: 2026-06-10
+- Source: V8.12 /deploy (RPT-624)
+- Observation: cockpit/Dockerfile Builder-Stage hat eine Whitelist-COPY (src/, public/, next.config.ts, tsconfig.json, postcss.config.mjs, components.json). SLC-911 legte sentry.{client,server,edge}.config.ts im cockpit-Root an + src/instrumentation.ts importiert ../sentry.{server,edge}.config — diese Root-Files wurden nie ins Build-Image kopiert → Coolify-Build "Module not found", lokaler next build (in /qa RPT-615 + /final-check RPT-622) lief durch. ~1 Redeploy-Zyklus + Diagnose verloren.
+- Suggested Improvement: (1) Hotfix 8b08996 COPY sentry.*.config.ts ergaenzt (erledigt). (2) Bei kuenftigen Slices die neue Root-Files anlegen: Dockerfile-COPY-Parity in /qa pruefen (siehe Dev-System IMP-1184). (3) Erwaegen, cockpit/Dockerfile auf COPY . . + .dockerignore umzustellen, um die Whitelist-Drift-Quelle zu eliminieren.
+- Affected Area: cockpit/Dockerfile, /qa + /final-check Docker-Build-Parity. Dev-System IMP-1184.
+- Status: resolved
+
 ### IMP-005 — Cross-Repo-Tabellen-Annahme (`ai_cost_ledger`) lief ungeprueft durch 4 Workflow-Steps
 - Date: 2026-06-10
 - Source: /backend SLC-909 A-V812-2 Pre-Check (V8.12 LLM-Cost-Cap)
