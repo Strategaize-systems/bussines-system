@@ -1,13 +1,15 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 import { setPassword } from "./actions";
 
 export default function SetPasswordPage() {
+  const [password, setPasswordValue] = useState("");
   const [state, formAction, isPending] = useActionState(
     async (_prev: { error: string }, formData: FormData) => {
       const result = await setPassword(formData);
@@ -33,11 +35,14 @@ export default function SetPasswordPage() {
                 id="password"
                 name="password"
                 type="password"
-                placeholder="Mindestens 8 Zeichen"
+                placeholder="Mindestens 12 Zeichen"
                 required
-                minLength={8}
+                minLength={12}
                 autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPasswordValue(e.target.value)}
               />
+              <PasswordStrengthIndicator password={password} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Passwort wiederholen</Label>
@@ -47,7 +52,7 @@ export default function SetPasswordPage() {
                 type="password"
                 placeholder="Passwort wiederholen"
                 required
-                minLength={8}
+                minLength={12}
                 autoComplete="new-password"
               />
             </div>
