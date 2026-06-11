@@ -1,5 +1,76 @@
 # Known Issues
 
+### ISSUE-098 — Privilege-Escalation: jeder authenticated User kann profiles.role auf 'admin' setzen (PostgREST UPDATE)
+- Status: open
+- Severity: Blocker
+- Area: Security / RLS / Identity
+- Summary: RLS-Policy `profiles_admin_update` (sql/migrations/035_v7_rls_switch.sql:167) erlaubt `USING (is_admin() OR id = auth.uid()) WITH CHECK (is_admin() OR id = auth.uid())`. Postgres RLS verhindert NICHT column-Level-Updates innerhalb einer erlaubten Row. Es existieren keine `REVOKE UPDATE(role) ON profiles FROM authenticated`, kein BEFORE-UPDATE-Trigger und kein Column-Level-GRANT. Attacker mit gueltiger Session ruft `PATCH /rest/v1/profiles?id=eq.<uid>` mit `{"role":"admin"}` und ist Tenant-Admin. Discovery: V8.13-Pre-Security-Audit 2026-06-07.
+- Impact: Self-Promotion zu Tenant-Admin entsperrt jede `is_admin()`-gegate RLS-Policy schema-weit. Kombiniert mit ISSUE-100 (Stored XSS in Customer-DSE) zu Exploit-Chain: Promotion → DSE-Edit → XSS auf Public-Page. Heute Founder-Only-Single-User → kein Customer-Impact, aber **Blocker fuer jeden Multi-User-Schritt**. V8.11 RLS-Sweep hat das Column-Level-Schutz-Gap nicht gefangen.
+- Workaround: Aktuell keiner. Single-User-Founder-Status haelt Blast-Radius bei 0.
+- Next Action: V8.13 SLC (Hotfix-Bundle): entweder `REVOKE UPDATE(role) ON profiles FROM authenticated` + SECURITY-DEFINER-RPC fuer legitime Admin-Role-Changes, ODER BEFORE-UPDATE-Trigger `RAISE WHEN NEW.role IS DISTINCT FROM OLD.role AND NOT is_admin()`. Migration + Vitest mit pgcrypto-Self-Promotion-Versuch + RLS-Regression-Suite.
+
+### ISSUE-099 — Kein Rate-Limit/Lockout auf Login (signInWithPassword) — Credential-Stuffing moeglich
+- Status: open
+- Severity: High
+- Area: Security / Auth
+- Summary: `cockpit/src/app/(auth)/login/actions.ts` ruft `signInWithPassword` ohne App-Layer-Rate-Limit, Captcha oder Lockout. Repo-Wide `checkRateLimit`-Helper in `cockpit/src/lib/security/rate-limit.ts` existiert, wird aber in `(auth)/`-Routen nicht referenziert. `docker-compose.yml` setzt keine `GOTRUE_RATE_LIMIT_*`-Overrides (nur GoTrue-Default ~30/5min/IP fuer /token — schwach, in-memory). Verbatim-`error.message`-Return (login/actions.ts:18) addiert User-Enumeration. Discovery: V8.13-Pre-Security-Audit 2026-06-07.
+- Impact: Credential-Stuffing + Password-Spraying feasible. In-Memory-Limiter survivt Multi-Instance-Scale nicht. Heute geringes Risiko durch Single-User-Founder, aber Pre-Customer-Live-Blocker.
+- Workaround: GoTrue-Default begrenzt Brute-Force-Geschwindigkeit, aber kein echter Lockout.
+- Next Action: V8.13 SLC: `checkRateLimit` in login-Action wiren (5 Fails / 15min / Email+IP), Lockout-State persistieren, generische Error-Message (`"E-Mail oder Passwort ungueltig"`), GoTrue-`GOTRUE_RATE_LIMIT_TOKEN_REFRESH`/`GOTRUE_RATE_LIMIT_EMAIL_SENT` in Coolify-ENV pinnen.
+
+### ISSUE-100 — Stored XSS in Customer-DSE Markdown (Public-Page-Render)
+- Status: open
+- Severity: High
+- Area: Security / XSS / Customer-DSE
+- Summary: `cockpit/src/lib/legal/markdown.ts:16` konfiguriert `remark-html` mit `{ sanitize: false }`. Output wird via `dangerouslySetInnerHTML` in `cockpit/src/components/layout/customer-dse-page-shell.tsx:26` auf der **public** Route `cockpit/src/app/p/[tenant-slug]/datenschutz/page.tsx` gerendert. Editor-Path `cockpit/src/app/(app)/settings/compliance/customer-dse/actions.ts:48` erfordert nur `assertRole(["admin"])` (Tenant-Admin, NICHT Super-Admin) — kombiniert mit ISSUE-098 kann jeder authenticated User dorthin gelangen. CSP ist Report-Only Phase-A (SLC-910) + 'unsafe-inline' fuer script-src → kein Mitigant. Discovery: V8.13-Pre-Security-Audit 2026-06-07.
+- Impact: Tenant-Admin (oder via ISSUE-098 self-promoted User) plantet `<script>`-Payload, der bei jedem Public-Visitor von `/p/<slug>/datenschutz` feuert. Defacement, Phishing-Pivot, Brand-Damage, Session-Theft fuer Logged-in-User die die Seite besuchen.
+- Workaround: Keiner — Customer-DSE-Edits sind selten, aber jede einzige Edit kann persistent XSS deployen.
+- Next Action: V8.13 SLC: `remark-html` auf `{ sanitize: true }` flippen ODER via `rehype-sanitize` / DOMPurify-Pipe mit Safelist filtern. Server-Side-Validator in `updateCustomerDse` der Raw-HTML-Tags rejected. Vitest mit OWASP-XSS-Adversarial-Cases (Port von `lib/email/sanitize-email-html.test.ts`).
+
+### ISSUE-101 — Branding-uploadLogo bypassed RLS via Admin-Client ohne Role-Check
+- Status: open
+- Severity: Medium
+- Area: Security / RLS-Bypass / Branding
+- Summary: `cockpit/src/app/(app)/settings/branding/actions.ts` `uploadLogo` (Z. 247-313) ruft `requireUser()` (any-authenticated) aber KEIN Role-Check. Nutzt dann `createAdminClient()` (BYPASSRLS) fuer Storage-Upload + branding_settings.logo_url-UPDATE/INSERT. MIG-046 V8.11 SLC-902 setzte branding_settings RLS auf admin-only — aber Admin-Client bypassed das. Storage-Bucket "branding" hat keine eigenen storage.objects-Policies (sql/migrations/023). Discovery: V8.13-Pre-Security-Audit 2026-06-07.
+- Impact: Tenant-Member ueberschreibt Tenant-Logo. Logo wird in ausgehenden gebrandeten E-Mails + Customer-facing-Pages gerendert → Defacement + Phishing-Vektor. Kombiniert mit ISSUE-102 (SVG-XSS) zu Stored-XSS-Chain.
+- Workaround: Keiner.
+- Next Action: V8.13 SLC: `const profile = await getProfile(); if (profile.role !== "admin") throw new Error("Forbidden")` am Anfang von `uploadLogo`. `updateBranding`-Persist-Path zusaetzlich auf user-client umstellen (defense-in-depth).
+
+### ISSUE-102 — SVG-Upload als Branding-Logo enables Stored XSS
+- Status: open
+- Severity: Medium
+- Area: Security / XSS / Storage
+- Summary: `cockpit/src/app/(app)/settings/branding/actions.ts:22-27` MIME-Whitelist enthaelt `image/svg+xml`. Logo wird via `cockpit/src/app/api/branding/logo/route.ts:50-58` von App-Origin mit `Content-Type: image/svg+xml` ohne Sanitization geliefert. Endpoint public, keine Auth. SVGs koennen inline `<script>` enthalten und fuehren same-origin Scripts aus. CSP 'unsafe-inline' Report-Only Phase-A (SLC-910) → kein Mitigant. Kombiniert mit ISSUE-101 erreichbar fuer jeden authenticated User. Discovery: V8.13-Pre-Security-Audit 2026-06-07.
+- Impact: Persistent XSS-Payload via SVG-Logo, feuert in Browser-Sessions die Logo laden (Cockpit + Email-rendered HTML). Session-Theft, Brand-Damage.
+- Workaround: Keiner.
+- Next Action: V8.13 SLC: `image/svg+xml` aus ALLOWED_MIME entfernen ODER SVG durch DOMPurify mit SVG-Profil sanitizen. `Content-Disposition: inline; sandbox` + strict CSP auf `/api/branding/logo`-Response.
+
+### ISSUE-103 — PII interpoliert in raw console.log in Cron-Handler (Operator-Log-Leak)
+- Status: open
+- Severity: Low
+- Area: Security / Logging / DSGVO
+- Summary: `cockpit/src/app/api/cron/classify/route.ts:163-165` `console.log(\`[Cron/Classify] Auto-reply from ${email.from_address}: ${adjustedCount} followups...\`)` interpoliert User-PII (Email-Adresse) direkt in einen Raw-`console.log`, bypassed `logSafe`-Redaction (V8.12 SLC-907). Route gegated durch `verifyCronSecret` → nicht attacker-reachable, aber PII landed in Coolify-Container-Logs (Operator-Visibility, DSGVO). Discovery: V8.13-Pre-Security-Audit 2026-06-07.
+- Impact: Operator-Visibility-Konzern, nicht Customer-Impact heute. Pre-Customer-Live-Hygiene.
+- Workaround: Keiner.
+- Next Action: V8.13 SLC (Low-Priority): `logSafe('info', ...)` statt `console.log`. DEFAULT_REDACT_KEYS um BS-Domain-PII-Keys erweitern (from_address, recipient, body_text, transcript, x-cron-secret).
+
+### ISSUE-104 — `getCurrentUserRole()` fail-open default 'admin' bei user=null/error
+- Status: open
+- Severity: Low
+- Area: Security / Defense-in-Depth / Auth
+- Summary: `cockpit/src/lib/audit.ts:155-175` returnt `"admin"` bei (1) null user, (2) missing profile (`?? "admin"`), (3) JEDEM thrown error im try/catch. `/audit-log`-Page nutzt das fuer Admin-Gate. (App)-Layout `cockpit/src/app/(app)/layout.tsx:12` schirmt heute durch frueheren `getProfile()`-Redirect ab → nicht end-to-end exploitable. Aber Inverted-Threat-Model (default-zu-admin statt default-zu-rejected). Discovery: V8.13-Pre-Security-Audit 2026-06-07.
+- Impact: Heute durch Layout-Gate geschuetzt, aber Defense-in-Depth-Violation. Wenn Layout-Auth-Check je broken/race-condition: silent admin-grant.
+- Workaround: Layout-Auth-Gate schirmt heute ab.
+- Next Action: V8.13 SLC (Low-Priority, mit-bundeln wenn billig): `return null` (oder throw) bei null/catch/missing profile. `/audit-log`-Page explizit `if (role !== "admin") redirect("/dashboard")`.
+
+### ISSUE-105 — Open-Redirect auf `/api/track/[id]?t=click&url=...` (HMAC-Signatur-Fehlend) — RESOLVED
+- Status: resolved
+- Severity: High
+- Area: Security / Open-Redirect / Phishing-Pivot
+- Summary: Public-Endpoint `/api/track/[id]` akzeptierte user-controlled `url`-Query-Param und 302-redirected ohne Allowlist/Scheme-Check/Server-Side-Lookup. Tracking-ID leaks ueber Mail-Header → Attacker craftet `https://<bs-domain>/api/track/<id>?t=click&url=https://evil.example.com` und Phishing-Pivot ab Brand-Domain. Discovery: V8.13-Pre-Security-Audit 2026-06-07.
+- Impact: Phishing-Chain ab BS-Domain, Tracking-Analytics-Poisoning, Visitor-IP-Harvesting via Forwarded-Mail-Links.
+- Resolution: 2026-06-07 V8.13-Pre-Slice-Hotfix (DEC-300). `wrapLinks` signiert URLs mit HMAC-SHA256 (`TRACKING_HMAC_SECRET`-ENV), `s=`-Query-Param. `/api/track/[id]` verifiziert `s` timing-safe vor Redirect, fail-closed bei missing/invalid. Modul: `cockpit/src/lib/email/tracking.ts` (sign+verify Helpers, wrapLinks signiert), Route: `cockpit/src/app/api/track/[id]/route.ts` (sig-check), Test: `cockpit/src/lib/email/tracking.test.ts` (10 Vitest GREEN). `.env.example` ergaenzt. Backwards-Incompatibility: Legacy-Tracking-Links ohne `s=`-Param redirecten nicht mehr — akzeptiert (Founder-Stage, ~Wochen-History). Coolify-ENV-Action: `TRACKING_HMAC_SECRET` (32-Byte hex) muss vor Production-Deploy gesetzt sein.
+
 ### ISSUE-097 — Keine LLM-Cost-Ledger-Foundation in BS (Pro-Tenant-Cost-Cap nicht baubar)
 - Status: open
 - Severity: Low
