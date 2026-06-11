@@ -5,6 +5,8 @@
  * damit Open- und Click-Events ueber /api/track/[id] erfasst werden koennen.
  */
 
+import { createHmac, timingSafeEqual } from "node:crypto";
+
 function getTrackingBaseUrl(): string {
   return (
     process.env.TRACKING_BASE_URL?.replace(/\/+$/, "") ||
@@ -13,9 +15,65 @@ function getTrackingBaseUrl(): string {
   );
 }
 
+function getHmacSecret(): string | null {
+  const s = process.env.TRACKING_HMAC_SECRET;
+  return s && s.length >= 16 ? s : null;
+}
+
+function computeSignature(payload: string, secret: string): string {
+  return createHmac("sha256", secret)
+    .update(payload)
+    .digest()
+    .subarray(0, 8)
+    .toString("base64url");
+}
+
+/**
+ * Signiert eine Click-Tracking-URL gegen Manipulation (Open-Redirect-Schutz).
+ * Returns null wenn TRACKING_HMAC_SECRET fehlt; Caller faellt dann auf
+ * unsigned-Pfad zurueck (und /api/track verweigert ohne Sig die Weiterleitung).
+ */
+export function signTrackingUrl(
+  trackingId: string,
+  linkIndex: number,
+  targetUrl: string,
+): string | null {
+  const secret = getHmacSecret();
+  if (!secret) return null;
+  return computeSignature(`${trackingId}|${linkIndex}|${targetUrl}`, secret);
+}
+
+/**
+ * Verifiziert eine Tracking-URL-Signatur timing-safe.
+ * False bei fehlendem Secret, leerer Signatur, Tampering oder Malformed-Input.
+ */
+export function verifyTrackingSignature(
+  trackingId: string,
+  linkIndex: number,
+  targetUrl: string,
+  providedSignature: string | null | undefined,
+): boolean {
+  if (!providedSignature) return false;
+  const secret = getHmacSecret();
+  if (!secret) return false;
+  const expected = computeSignature(`${trackingId}|${linkIndex}|${targetUrl}`, secret);
+  if (expected.length !== providedSignature.length) return false;
+  try {
+    return timingSafeEqual(
+      Buffer.from(expected, "utf8"),
+      Buffer.from(providedSignature, "utf8"),
+    );
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Wraps all href links in HTML with tracking redirect URLs.
- * Replaces <a href="https://example.com"> with <a href="/api/track/{id}?t=click&url=...&idx=N">
+ * Replaces <a href="https://example.com"> with <a href="/api/track/{id}?t=click&url=...&idx=N&s=SIG">
+ *
+ * Wenn TRACKING_HMAC_SECRET fehlt wird der `s=`-Param weggelassen — die Track-Route
+ * verweigert dann konsequent die Weiterleitung (fail-closed Open-Redirect-Schutz).
  */
 function wrapLinks(html: string, trackingId: string, baseUrl: string): string {
   let linkIndex = 0;
@@ -27,7 +85,9 @@ function wrapLinks(html: string, trackingId: string, baseUrl: string): string {
         return _match;
       }
       const idx = linkIndex++;
-      const trackUrl = `${baseUrl}/api/track/${trackingId}?t=click&url=${encodeURIComponent(url)}&idx=${idx}`;
+      const sig = signTrackingUrl(trackingId, idx, url);
+      const sigParam = sig ? `&s=${sig}` : "";
+      const trackUrl = `${baseUrl}/api/track/${trackingId}?t=click&url=${encodeURIComponent(url)}&idx=${idx}${sigParam}`;
       return `<a ${before}href="${trackUrl}"${after}>`;
     }
   );

@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { verifyTrackingSignature } from "@/lib/email/tracking";
 
 // 1x1 transparent GIF (43 bytes)
 const TRANSPARENT_GIF = Buffer.from(
@@ -56,21 +57,34 @@ export async function GET(
     } else if (eventType === "click") {
       const linkUrl = searchParams.get("url");
       const linkIndex = searchParams.get("idx");
+      const providedSig = searchParams.get("s");
 
+      const parsedIdx = linkIndex !== null ? parseInt(linkIndex, 10) : NaN;
+      const sigValid =
+        !!linkUrl &&
+        Number.isFinite(parsedIdx) &&
+        verifyTrackingSignature(trackingId, parsedIdx, linkUrl, providedSig);
+
+      // Click-Attempt immer protokollieren — bei ungueltiger Sig OHNE attacker-controlled URL,
+      // damit das tracking-events-Audit nicht mit fremden URLs poisoned werden kann.
       await supabase.from("email_tracking_events").insert({
         tracking_id: trackingId,
         email_id: email.id,
         event_type: "click",
-        link_url: linkUrl || null,
-        link_index: linkIndex ? parseInt(linkIndex, 10) : null,
+        link_url: sigValid ? linkUrl : null,
+        link_index: Number.isFinite(parsedIdx) ? parsedIdx : null,
         ip_address: ip,
         user_agent: userAgent,
       });
 
-      // Redirect to original URL
-      if (linkUrl) {
+      // Open-Redirect-Schutz: nur weiterleiten wenn HMAC-Sig der URL gegen Tampering verifiziert.
+      if (sigValid) {
         return NextResponse.redirect(linkUrl, 302);
       }
+      return new NextResponse(
+        "Click-Tracking konnte nicht verifiziert werden.",
+        { status: 400, headers: { "Cache-Control": "no-store" } },
+      );
     }
   }
 
