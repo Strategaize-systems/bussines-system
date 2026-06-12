@@ -28,9 +28,11 @@
 - Workaround: Aktuell keiner. Single-User-Founder-Status haelt Blast-Radius bei 0.
 - Next Action: V8.13 SLC (Hotfix-Bundle): entweder `REVOKE UPDATE(role) ON profiles FROM authenticated` + SECURITY-DEFINER-RPC fuer legitime Admin-Role-Changes, ODER BEFORE-UPDATE-Trigger `RAISE WHEN NEW.role IS DISTINCT FROM OLD.role AND NOT is_admin()`. Migration + Vitest mit pgcrypto-Self-Promotion-Versuch + RLS-Regression-Suite.
 - Update 2026-06-12 (/backend SLC-912 MT-1): Fix implementiert via **MIG-051** `profiles_role_change_guard` BEFORE-UPDATE-Trigger — **service_role-aware** (`current_user <> 'service_role'`, NICHT `NOT is_admin()` weil das changeRole/createAdminClient brechen wuerde, DEC-301/R-912-1). DB-Verify-Test geschrieben (`cockpit/__tests__/migrations/051-*.test.ts`, node:20-Sidecar SAVEPOINT). Status bleibt `open` bis /qa + Live-DB-Apply (AC-912-10 im /deploy).
+- Update 2026-06-12 (/qa SLC-912 Code-Side PASS, RPT-636): Trigger-Logik + DB-Verify-Test code-reviewed PASS (Commit `36e6a5a`). **Bleibt `open`** — als einziger der 7 Findings live-gated: MIG-051 ist noch NICHT auf der Coolify-DB appliziert. Resolved erst nach /deploy V8.14 (MIG-051 Apply via `sql-migration-hetzner.md` + Live-Self-Promotion-Smoke, AC-912-10). Die Production-DB ist bis dahin weiter exponiert (Blast-Radius 0 durch Single-Founder).
 
 ### ISSUE-099 — Kein Rate-Limit/Lockout auf Login (signInWithPassword) — Credential-Stuffing moeglich
-- Status: open
+- Status: resolved
+- Resolution: V8.14 SLC-912 MT-2 (/qa Code-Side PASS 2026-06-12, RPT-636, Commit `db67752`). App-Layer-Rate-Limit (5/15min/Email+IP, peek-before-signin) + generische Error-Message in login/actions.ts. 4 Vitest GREEN. GoTrue-ENV als 2. Bremse = /deploy-Founder-Action.
 - Severity: High
 - Area: Security / Auth
 - Summary: `cockpit/src/app/(auth)/login/actions.ts` ruft `signInWithPassword` ohne App-Layer-Rate-Limit, Captcha oder Lockout. Repo-Wide `checkRateLimit`-Helper in `cockpit/src/lib/security/rate-limit.ts` existiert, wird aber in `(auth)/`-Routen nicht referenziert. `docker-compose.yml` setzt keine `GOTRUE_RATE_LIMIT_*`-Overrides (nur GoTrue-Default ~30/5min/IP fuer /token — schwach, in-memory). Verbatim-`error.message`-Return (login/actions.ts:18) addiert User-Enumeration. Discovery: V8.13-Pre-Security-Audit 2026-06-07.
@@ -40,7 +42,8 @@
 - Update 2026-06-12 (/backend SLC-912 MT-2): `lib/security/rate-limit.ts` backward-compat erweitert (`peekRateLimit` read-only + `clearRateLimit` + optionaler `windowMs`). `login/actions.ts` wired: peek-before-signin Lockout (gesperrte 6. Anfrage beruehrt GoTrue nicht), Fehlversuch-Zaehlung nur bei Fail, Counter-Clear bei Erfolg, generische `"E-Mail oder Passwort ungültig."` (kein verbatim error.message). 4 Vitest GREEN. GoTrue-`GOTRUE_RATE_LIMIT_*` als zweite Bremse = Founder-Coolify-ENV im /deploy. Status `open` bis /qa.
 
 ### ISSUE-100 — Stored XSS in Customer-DSE Markdown (Public-Page-Render)
-- Status: open
+- Status: resolved
+- Resolution: V8.14 SLC-912 MT-3 (/qa Code-Side PASS 2026-06-12, RPT-636, Commit `fcdb040`). `renderLegalMarkdown` → `sanitizeEmailHtml` (DOMPurify-Reuse V8.10) schliesst den Render-Pfad fuer ALLE Consumer (public DSE, /datenschutz, /impressum, Help-Hotspots, Editor-Preview); `findUnsafeMarkup` Write-Validator in `updateCustomerDse`. OWASP-Adversarial-Vitest GREEN. Live-Visual-Check (impressum/help rendern weiter) = /deploy-Smoke (L-1).
 - Severity: High
 - Area: Security / XSS / Customer-DSE
 - Summary: `cockpit/src/lib/legal/markdown.ts:16` konfiguriert `remark-html` mit `{ sanitize: false }`. Output wird via `dangerouslySetInnerHTML` in `cockpit/src/components/layout/customer-dse-page-shell.tsx:26` auf der **public** Route `cockpit/src/app/p/[tenant-slug]/datenschutz/page.tsx` gerendert. Editor-Path `cockpit/src/app/(app)/settings/compliance/customer-dse/actions.ts:48` erfordert nur `assertRole(["admin"])` (Tenant-Admin, NICHT Super-Admin) — kombiniert mit ISSUE-098 kann jeder authenticated User dorthin gelangen. CSP ist Report-Only Phase-A (SLC-910) + 'unsafe-inline' fuer script-src → kein Mitigant. Discovery: V8.13-Pre-Security-Audit 2026-06-07.
@@ -50,7 +53,8 @@
 - Update 2026-06-12 (/backend SLC-912 MT-3): `renderLegalMarkdown` leitet Output jetzt durch `sanitizeEmailHtml` (DOMPurify-Whitelist-Reuse V8.10 SLC-892) — script/iframe/svg/on*/javascript: entfernt, Tabellen/Listen/Links bleiben. Write-Path-Validator `findUnsafeMarkup` (`lib/legal/validate-markdown.ts`) rejected Raw-`<script>`/Event-Handler/`javascript:` in `updateCustomerDse` vor Persist. OWASP-Adversarial-Vitest GREEN (render + validator + legitimes Markdown). Status `open` bis /qa.
 
 ### ISSUE-101 — Branding-uploadLogo bypassed RLS via Admin-Client ohne Role-Check
-- Status: open
+- Status: resolved
+- Resolution: V8.14 SLC-912 MT-4 (/qa Code-Side PASS 2026-06-12, RPT-636, Commit `a6a2057`). `await assertRole(["admin"])` als erste Pruefung in `uploadLogo`, vor `createAdminClient()`. Vitest GREEN (non-admin throws, admin PNG erreicht Storage).
 - Severity: Medium
 - Area: Security / RLS-Bypass / Branding
 - Summary: `cockpit/src/app/(app)/settings/branding/actions.ts` `uploadLogo` (Z. 247-313) ruft `requireUser()` (any-authenticated) aber KEIN Role-Check. Nutzt dann `createAdminClient()` (BYPASSRLS) fuer Storage-Upload + branding_settings.logo_url-UPDATE/INSERT. MIG-046 V8.11 SLC-902 setzte branding_settings RLS auf admin-only — aber Admin-Client bypassed das. Storage-Bucket "branding" hat keine eigenen storage.objects-Policies (sql/migrations/023). Discovery: V8.13-Pre-Security-Audit 2026-06-07.
@@ -60,7 +64,8 @@
 - Update 2026-06-12 (/backend SLC-912 MT-4): `await assertRole(["admin"])` als erste Pruefung in `uploadLogo` (vor createAdminClient/BYPASSRLS) — non-admin redirect, Admin-Client nie erreicht. Vitest GREEN (non-admin throws, admin PNG upload erreicht Storage). Status `open` bis /qa.
 
 ### ISSUE-102 — SVG-Upload als Branding-Logo enables Stored XSS
-- Status: open
+- Status: resolved
+- Resolution: V8.14 SLC-912 MT-4 (/qa Code-Side PASS 2026-06-12, RPT-636, Commit `a6a2057`). `image/svg+xml` aus ALLOWED_MIME entfernt; Logo-Route liefert `Content-Disposition: inline` + `nosniff` + `default-src 'none'; sandbox`-CSP (Defense-in-Depth fuer evtl. Alt-SVGs). Vitest GREEN (SVG rejected ohne Storage-Touch).
 - Severity: Medium
 - Area: Security / XSS / Storage
 - Summary: `cockpit/src/app/(app)/settings/branding/actions.ts:22-27` MIME-Whitelist enthaelt `image/svg+xml`. Logo wird via `cockpit/src/app/api/branding/logo/route.ts:50-58` von App-Origin mit `Content-Type: image/svg+xml` ohne Sanitization geliefert. Endpoint public, keine Auth. SVGs koennen inline `<script>` enthalten und fuehren same-origin Scripts aus. CSP 'unsafe-inline' Report-Only Phase-A (SLC-910) → kein Mitigant. Kombiniert mit ISSUE-101 erreichbar fuer jeden authenticated User. Discovery: V8.13-Pre-Security-Audit 2026-06-07.
@@ -70,7 +75,8 @@
 - Update 2026-06-12 (/backend SLC-912 MT-4): `image/svg+xml` aus ALLOWED_MIME entfernt (SVG-Upload rejected). Logo-Route (`api/branding/logo/route.ts`) liefert jetzt `Content-Disposition: inline` + `X-Content-Type-Options: nosniff` + `Content-Security-Policy: default-src 'none'; sandbox` (Defense-in-Depth fuer evtl. Alt-SVGs im Bucket). Vitest GREEN (SVG rejected ohne Storage-Touch). Status `open` bis /qa.
 
 ### ISSUE-103 — PII interpoliert in raw console.log in Cron-Handler (Operator-Log-Leak)
-- Status: open
+- Status: resolved
+- Resolution: V8.14 SLC-912 MT-5 (/qa Code-Side PASS 2026-06-12, RPT-636, Commit `53efb2e`). Alle `console.log` in cron/classify → `logSafe`; PII (from_address) als redacted Objekt-Key statt String-Interpolation; `DEFAULT_REDACT_KEYS` 12→17. 0 console.log verbleibend. Vitest GREEN.
 - Severity: Low
 - Area: Security / Logging / DSGVO
 - Summary: `cockpit/src/app/api/cron/classify/route.ts:163-165` `console.log(\`[Cron/Classify] Auto-reply from ${email.from_address}: ${adjustedCount} followups...\`)` interpoliert User-PII (Email-Adresse) direkt in einen Raw-`console.log`, bypassed `logSafe`-Redaction (V8.12 SLC-907). Route gegated durch `verifyCronSecret` → nicht attacker-reachable, aber PII landed in Coolify-Container-Logs (Operator-Visibility, DSGVO). Discovery: V8.13-Pre-Security-Audit 2026-06-07.
@@ -80,7 +86,8 @@
 - Update 2026-06-12 (/backend SLC-912 MT-5): Alle `console.log` in `cron/classify/route.ts` → `logSafe` (0 console.log verbleibend); die PII-Zeile (from_address) als **Objekt-Key** uebergeben statt String-Interpolation (sonst umgeht sie die Redaction). `DEFAULT_REDACT_KEYS` 12→17 (+from_address/recipient/body_text/transcript/x-cron-secret). `console.error` bewusst belassen (kein PII; redactSecrets wuerde Error-Properties verschlucken). Vitest GREEN. Status `open` bis /qa.
 
 ### ISSUE-104 — `getCurrentUserRole()` fail-open default 'admin' bei user=null/error
-- Status: open
+- Status: resolved
+- Resolution: V8.14 SLC-912 MT-5 (/qa Code-Side PASS 2026-06-12, RPT-636, Commit `53efb2e`). `getCurrentUserRole` returnt `null` statt `'admin'` bei null-user/missing-profile/catch. `/audit-log`-Gate (`role !== "admin" → redirect`) greift jetzt korrekt bei null. Einziger src-Caller verifiziert. Vitest GREEN.
 - Severity: Low
 - Area: Security / Defense-in-Depth / Auth
 - Summary: `cockpit/src/lib/audit.ts:155-175` returnt `"admin"` bei (1) null user, (2) missing profile (`?? "admin"`), (3) JEDEM thrown error im try/catch. `/audit-log`-Page nutzt das fuer Admin-Gate. (App)-Layout `cockpit/src/app/(app)/layout.tsx:12` schirmt heute durch frueheren `getProfile()`-Redirect ab → nicht end-to-end exploitable. Aber Inverted-Threat-Model (default-zu-admin statt default-zu-rejected). Discovery: V8.13-Pre-Security-Audit 2026-06-07.

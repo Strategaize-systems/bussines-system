@@ -2757,7 +2757,7 @@
       "title": "V8.14 Security-Hotfix Bundle (SLC-912): profiles.role-Lock + Login-Rate-Limit + DSE-XSS + Branding-Hardening + Log/Auth-Hygiene",
       "type": "fix",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.14",
       "description": "Pre-Customer-Live-Security-Hotfix aus Out-of-Band Multi-Lens-Audit 2026-06-07. 1 Slice SLC-912 / FEAT-924 schliesst 7 Findings: ISSUE-098 Blocker (profiles.role-Privilege-Escalation via PostgREST-PATCH — Fix MIG-051 BEFORE-UPDATE-Trigger service_role-aware, Column-Level-Protection IMP-1200), ISSUE-099 High (Login ohne Rate-Limit/Lockout — checkRateLimit + generische Error-Message), ISSUE-100 High (Stored-XSS in Customer-DSE-Markdown Public-Render — rehype-sanitize + Server-Validator), ISSUE-101 Medium (Branding-uploadLogo ohne Role-Check), ISSUE-102 Medium (SVG-MIME als Logo = Stored-XSS), ISSUE-103 Low (PII in raw console.log Cron), ISSUE-104 Low (getCurrentUserRole fail-open default admin). ISSUE-105 (Open-Redirect) bereits resolved Pre-Slice DEC-300. 6 MTs, ~4-6h /backend + /qa. 1 additive Migration MIG-051 (050 = Luecke, DEC-288). Single-Branch main. Versions-Nr V8.14 wegen Kollision mit released v8-13. Pre-Condition: V8.12 STABLE. Founder-ENV vor Deploy: TRACKING_HMAC_SECRET + GOTRUE_RATE_LIMIT_*. Quelle: KNOWN_ISSUES ISSUE-098..105.",
       "createdAt": "2026-06-11"
