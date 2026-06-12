@@ -8,8 +8,9 @@ BS ist **Origin** (kanonische Quelle). Jedes andere Repo nutzt den BS-Fix als 1:
 
 ## Status BS V8.14 SLC-912
 
-- /slice-planning DONE 2026-06-11 (RPT-626). /backend OFFEN (gated auf V8.12 STABLE).
-- Origin-Code entsteht in /backend → danach werden die `PENDING`-Rows in `strategaize-pattern-reuse.md` mit realen Pfaden + Commit-Hash gefuellt.
+- /slice-planning DONE 2026-06-11 (RPT-626). **/backend DONE (RPT-635) + /qa Code-Side PASS (RPT-636) 2026-06-12, 0B/0H/0M/1L.** Commits `36e6a5a..916125b` lokal auf `main` (NICHT gepusht — Founder-ENV-gated). SLC-912/FEAT-924/BL-515 done.
+- Origin-Code steht: die 5 `PENDING`-Rows in `strategaize-pattern-reuse.md` sind mit realen Pfaden + Commit-Hashes gefuellt (Dev-System `e1f6764` gepusht); Reuse-Memories angelegt.
+- **6/7 Findings resolved** (ISSUE-099..104); **ISSUE-098 (Blocker) bleibt `open`** bis /deploy (MIG-051 Live-Apply, AC-912-10). Mirror-Slices in OP/IS/immoscheckheft sind nach BS-V8.14-/deploy je Repo per Code-Audit zu VERIFizieren (eigener Workflow).
 
 ## Applicability-Matrix (VERIFY pro Repo vor Mirror-Slice)
 
