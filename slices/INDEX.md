@@ -534,4 +534,4 @@ V8.15 = 1 Slice SLC-913, 8 Micro-Tasks. Schliesst die High+Medium-Findings (ISSU
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-913 | [V8.15 Security-Hardening Bundle (team_id-Guard + createAdminClient-Sweep + href-XSS-Guard + Mass-Assignment + Public-Endpoint-Hardening + Login-Rate-Limit + Export-Scoping)](SLC-913-v815-security-hardening.md) | FEAT-925 / BL-516 | planned | High | 2026-06-12 |
+| SLC-913 | [V8.15 Security-Hardening Bundle (team_id-Guard + createAdminClient-Sweep + href-XSS-Guard + Mass-Assignment + Public-Endpoint-Hardening + Login-Rate-Limit + Export-Scoping)](SLC-913-v815-security-hardening.md) | FEAT-925 / BL-516 | in_progress | High | 2026-06-12 |
