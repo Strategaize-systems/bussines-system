@@ -2739,7 +2739,7 @@
       "priority": "medium",
       "status": "in_progress",
       "version": "V8.7-B",
-      "description": "Woechentlicher Cron pusht anonymisierte/aggregierte Win/Loss-Reasons + Einwand-Behandlungen (Branche x Deal-Groesse) an die IS-Knowledge-API. /slice-planning DONE 2026-06-12 (RPT-628). 6 MTs, keine Migration. Next: /backend SLC-355.",
+      "description": "Woechentlicher Cron pusht anonymisierte/aggregierte Win/Loss-Reasons + Einwand-Behandlungen (Branche x Deal-Groesse) an die IS-Knowledge-API. /backend DONE 2026-06-12 (RPT-629): alle 6 MTs Code-Side, tsc=0/eslint=0/vitest 1457 GREEN/next build OK. Founder-Override DEC-290 min_bucket Default 1 (kein Skip am Anfang). Keine Migration. Next: /qa SLC-355.",
       "createdAt": "2026-05-27"
     },
     {

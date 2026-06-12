@@ -422,7 +422,7 @@ V8.7-B (FEAT-872 / BL-494) ist nach Founder-Entscheidung 2026-06-12 als eigener 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-871 | [V8.7-A KI-Workspace IS-Knowledge-API-RAG-Erweiterung](SLC-871-knowledge-rag-workspace.md) | FEAT-871 / BL-505 | done | Medium | 2026-06-01 |
-| SLC-355 | [V8.7-B BS->IS Verdichtungs-Cron](SLC-355-v87b-bs-is-verdichtungs-cron.md) | FEAT-872 / BL-494 | planned | Medium | 2026-06-12 |
+| SLC-355 | [V8.7-B BS->IS Verdichtungs-Cron](SLC-355-v87b-bs-is-verdichtungs-cron.md) | FEAT-872 / BL-494 | in_progress | Medium | 2026-06-12 |
 
 ## V8.8 Slices (Help-System Redesign Foundation)
 

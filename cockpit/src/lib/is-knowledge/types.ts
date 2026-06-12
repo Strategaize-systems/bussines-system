@@ -60,6 +60,37 @@ export const IsKnowledgeItemResponseSchema = z.object({
   item: KnowledgeItemSchema,
 });
 
+// V8.7-B SLC-355 MT-1 — Ingest-Item-Shape (DEC-289).
+//
+// Wire-Shape fuer POST /api/knowledge/ingest. Der IS-Endpoint erzwingt
+// serverseitig aggregation_level='aggregated', source_tenant_id=null,
+// source_consultant_id=null, pii_redacted=true — diese Felder NICHT senden
+// (werden serverseitig gesetzt). Extra-Felder werden serverseitig verworfen.
+export interface IsKnowledgeIngestItem {
+  /** ≥1 Zeichen. */
+  title: string;
+  /** ≥1 Zeichen. */
+  body_markdown: string;
+  domain: Domain;
+  /** Konstant "business_system" fuer BS-Push. */
+  source_system: "business_system";
+  /** Dedup-Key (UNIQUE(source_system, source_reference) IS-seitig). ≥1 Zeichen. */
+  source_reference: string;
+  tags: string[];
+  metadata: Record<string, unknown>;
+}
+
+// Antwort-Shape von POST /api/knowledge/ingest (200 alle ok / 207 Teil-Fail).
+export const IsKnowledgeIngestResponseSchema = z.object({
+  inserted: z.number(),
+  deduped: z.number(),
+  failed: z.number(),
+});
+
+export type IsKnowledgeIngestResult = z.infer<
+  typeof IsKnowledgeIngestResponseSchema
+>;
+
 export type IsKnowledgeErrorKind =
   | "auth"
   | "rate_limit"

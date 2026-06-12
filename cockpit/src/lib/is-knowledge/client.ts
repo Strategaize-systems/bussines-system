@@ -12,9 +12,12 @@
 import { redactPiiFromQ } from "./redact-pii";
 import {
   IsKnowledgeError,
+  IsKnowledgeIngestResponseSchema,
   IsKnowledgeItemResponseSchema,
   IsKnowledgeSearchResponseSchema,
   type Domain,
+  type IsKnowledgeIngestItem,
+  type IsKnowledgeIngestResult,
   type IsKnowledgeItem,
   type IsKnowledgeSearchResult,
 } from "./types";
@@ -22,6 +25,8 @@ import {
 const DEFAULT_BASE_URL = "https://is.strategaizetransition.com";
 const DEFAULT_TIMEOUT_MS = 4000;
 const CONSUMER_ID = "business-system";
+const INGEST_MAX_BATCH = 100;
+const INGEST_TIMEOUT_MS = 20_000;
 
 function getBaseUrl(): string {
   return (
@@ -54,12 +59,13 @@ function buildAuthHeaders(): Record<string, string> {
  * Timeout feuert, brechen wir ab (Caller-Signal bleibt unberuehrt).
  */
 function startRequestController(
-  callerSignal: AbortSignal | undefined
+  callerSignal: AbortSignal | undefined,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS
 ): { controller: AbortController; timer: ReturnType<typeof setTimeout> } {
   const controller = new AbortController();
   const timer = setTimeout(
     () => controller.abort(),
-    DEFAULT_TIMEOUT_MS
+    timeoutMs
   );
   if (callerSignal) {
     if (callerSignal.aborted) {
@@ -256,9 +262,102 @@ export async function getKnowledgeItem(
   return parsed.data.item;
 }
 
+/**
+ * V8.7-B SLC-355 MT-1 — Pusht verdichtete Wissens-Bausteine an die IS-
+ * Knowledge-API (`POST /api/knowledge/ingest`). Spiegelt die searchKnowledge-
+ * Mechanik (buildAuthHeaders + Timeout-Controller + IsKnowledgeError).
+ *
+ * DEC-289: BS ist zweite Wissens-Quelle (IS = Master). Items werden bereits
+ *          aggregiert + anonymisiert + redacted uebergeben (MT-2..MT-5).
+ * Server erzwingt aggregation_level/source_tenant_id/source_consultant_id/
+ * pii_redacted — diese Felder werden NICHT gesendet.
+ *
+ * Batch-Limit 100/Call wird Caller-seitig (MT-6, Chunking) eingehalten; hier
+ * defensiv re-validiert. 200 UND 207 (Teil-Fail) gelten als Erfolgs-Body.
+ */
+export async function ingestKnowledge(
+  items: IsKnowledgeIngestItem[]
+): Promise<IsKnowledgeIngestResult> {
+  if (items.length === 0) {
+    throw new IsKnowledgeError(
+      "server",
+      undefined,
+      undefined,
+      "ingestKnowledge: items darf nicht leer sein"
+    );
+  }
+  if (items.length > INGEST_MAX_BATCH) {
+    throw new IsKnowledgeError(
+      "server",
+      undefined,
+      undefined,
+      `ingestKnowledge: max ${INGEST_MAX_BATCH} Items/Call, erhalten ${items.length} — Caller muss chunken`
+    );
+  }
+
+  const url = new URL("/api/knowledge/ingest", getBaseUrl());
+
+  const { controller, timer } = startRequestController(
+    undefined,
+    INGEST_TIMEOUT_MS
+  );
+
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      method: "POST",
+      headers: {
+        ...buildAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ items }),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    clearTimeout(timer);
+    throw toIsKnowledgeError(e);
+  }
+  clearTimeout(timer);
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new IsKnowledgeError("auth", 401);
+    }
+    if (response.status === 429) {
+      const retryAfterSeconds = await parseRateLimit(response);
+      throw new IsKnowledgeError("rate_limit", 429, retryAfterSeconds);
+    }
+    throw new IsKnowledgeError("server", response.status);
+  }
+
+  let json: unknown;
+  try {
+    json = await response.json();
+  } catch {
+    throw new IsKnowledgeError(
+      "server",
+      response.status,
+      undefined,
+      "IS ingest response was not valid JSON"
+    );
+  }
+  const parsed = IsKnowledgeIngestResponseSchema.safeParse(json);
+  if (!parsed.success) {
+    throw new IsKnowledgeError(
+      "server",
+      response.status,
+      undefined,
+      "IS ingest response schema mismatch"
+    );
+  }
+  return parsed.data;
+}
+
 export { IsKnowledgeError } from "./types";
 export type {
   Domain,
+  IsKnowledgeIngestItem,
+  IsKnowledgeIngestResult,
   IsKnowledgeItem,
   IsKnowledgeSearchResult,
   KnowledgeSearchHit,
