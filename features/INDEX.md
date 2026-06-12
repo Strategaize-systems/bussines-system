@@ -1,5 +1,11 @@
 # Feature Index
 
+## V8.14 Features (Security-Hotfix-Sprint — slice-planning done 2026-06-11)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-924 | Pre-Customer-Live Security-Hotfix Bundle (profiles.role-Lock ISSUE-098 + Login-Rate-Limit ISSUE-099 + DSE-XSS ISSUE-100 + Branding-Hardening ISSUE-101/102 + Log/Auth-Hygiene ISSUE-103/104, BL-515, SLC-912) | in_progress | [Slice](../slices/SLC-912-v814-security-hotfix.md) | 2026-06-11 |
+
 ## V1 (Legacy — replaced by V2)
 
 | ID | Feature | Status | Spec | Created |
