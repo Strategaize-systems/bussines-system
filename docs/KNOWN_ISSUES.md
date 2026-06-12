@@ -8,6 +8,16 @@
 - Impact: Internal-Test-Mode (BS-eigene Vertriebsdaten, keine Mandanten-Daten) → Re-Identifikations-Risiko bewusst akzeptiert (DEC-290). Kein Code-Defekt; fail-soft (leeres/fehlerhaftes LLM-Ergebnis -> Bucket-Skip). Risiko = Output-Qualität (Namen-Leak ins IS-Wissen / thematisch dünne Objection-Items), nicht Korrektheit.
 - Workaround: `KNOWLEDGE_PUSH_ENABLED=false` bis Live-Smoke; bei Bedarf später `KNOWLEDGE_PUSH_MIN_BUCKET` hochsetzen (k-Anonymität).
 - Next Action: Beim /deploy-Live-Smoke (R-355-1) die ersten real destillierten Win/Loss- + Objection-Items inspizieren: (a) 0 Klarnamen im `body_markdown`/`title`, (b) Objection-Items thematisch sinnvoll. Falls Namen leaken: Namen-Redact ergänzen oder `objections`/`summary`-Spalte als Objection-Source nutzen. Vor jedem Pre-Customer-Live neu bewerten.
+- Update 2026-06-12 (/deploy REL-048): Live-Smoke gelaufen, aber **0 Quelldaten** im 7-Tage-Fenster (`winloss_7d=0 / activities_7d=0`) → der echte LLM-Anonymisierungs-Pfad wurde NICHT durchlaufen, Bleibt offen. Plumbing ist verifiziert (Cron-Run success + audit_log-Row). R-355-1-Verifikation verschiebt sich auf den ersten Lauf mit echten Win/Loss-Runs/Activity-Notizen (regulär wöchentlich So 02:00, oder manueller Trigger sobald Daten da sind). Dann IS-`knowledge_items` (source_system=business_system, ISO-Woche) auf 0 Klarnamen prüfen.
+
+### ISSUE-108 — Coolify-Build OOM-killt den BS-Prod-Host (speicher-enger 7,6-GB-Server)
+- Status: open
+- Severity: High
+- Area: Deploy / Infrastruktur / Coolify-Build-on-Prod-Host
+- Summary: Beim /deploy V8.7-B (REL-048) hat der Coolify-Redeploy den Host **zweimal** in OOM/Swap-Death getrieben: der `next build` (1. Versuch ohne Layer-Cache, 15 min) bzw. der **Container-Start-Overlap** (2. Versuch, Build gecacht/60s, aber alt+neu+Full-Stack inkl. Jitsi gleichzeitig) übersteigt den verfügbaren Speicher. Host: 7,6 GB RAM, Swap chronisch ~97% voll, zusätzlich ISSUE-106 (1007 Sessions / Load-15min 86). Symptom: SSH-Banner-Timeout, Coolify-UI 502, App weiter auf altem Commit. Der OOM-Killer reapt den Build (kein Reboot nötig), der alte Container überlebt → kein Daten-/Deploy-Schaden, aber Deploy schlägt fehl.
+- Impact: Jeder BS-Deploy mit App-Image-Rebuild ist OOM-gefährdet → Host-Hänger, fehlgeschlagene Deploys, im Worst-Case Hetzner-Reset nötig. Blockiert reibungslose Releases.
+- Workaround (in REL-048 angewandt, funktioniert): Vor dem Redeploy **Jitsi/Jibri-Stack stoppen** (5 Container, ~900 MB RAM + CPU frei) + **temporär Swap dazu** (`/swapfile2`, +2 GB). Danach Coolify-Redeploy → neuer Container kommt bei avail ≥2,8 GB healthy hoch. Anschließend Jitsi zurückstarten (Coolify recreated den Stack ohnehin). `/swapfile2` ist aktuell aktiv, aber NICHT in `/etc/fstab` (überlebt keinen Reboot).
+- Next Action: Root-Cause-Fix wählen — (a) Hetzner-Server-Resize auf mehr RAM (z.B. 16 GB), oder (b) ISSUE-106 Session-/Process-Sprawl per `/doctor` bereinigen (gibt RAM zurück), oder (c) App-Image off-host bauen (CI/Registry) und nur pullen, oder (d) `/swapfile2` via fstab persistent machen + Jitsi-Stop als Deploy-Standardschritt dokumentieren. Bis dahin: jeder BS-Deploy mit der Jitsi-Stop+Swap-Mitigation fahren.
 
 ### ISSUE-098 — Privilege-Escalation: jeder authenticated User kann profiles.role auf 'admin' setzen (PostgREST UPDATE)
 - Status: open
