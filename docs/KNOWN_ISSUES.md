@@ -41,7 +41,8 @@
 - Next Action: V8.15 SLC-913 MT-2 — auf User-Client + auth.getUser()-Guard umstellen ODER toten Code + Component entfernen.
 
 ### ISSUE-113 — Stored XSS via company.website in href ohne Scheme-Check (externer Lead-Intake-Vektor)
-- Status: open
+- Status: resolved
+- Resolution: 2026-06-12 V8.15 SLC-913 MT-3 (Commit ea4e4ed, RPT-644/645) — Render-Sink via `safeExternalHref()` (`lib/utils/safe-external-href.ts`, blockt zusaetzlich protocol-relative; scheme-lose Hosts https-Prepend R-913-4) + Scheme-Reject im Write-Path: companies/actions.ts Insert+Update (Fehler) und leads-intake validateInput (400). 29 OWASP-Adversarial-Tests GREEN.
 - Severity: Medium
 - Area: Security / Stored-XSS / Output-Rendering
 - Summary: `app/(app)/companies/[id]/page.tsx:179` rendert `<a href={company.website} target="_blank">` ohne Scheme-Validierung. Write-Pfade validieren nicht: `companies/actions.ts:122/174` + `api/leads/intake/route.ts:115` (`company_website` aus externer API, `validateInput` prueft nur Email). `javascript:`-Payload feuert beim Klick in der Admin-Session. React 19 strippt `javascript:`-hrefs nicht; CSP Report-Only + unsafe-inline = kein Mitigant. Safe-Pattern existiert schon in `components/ki-workspace/AnswerPane.tsx:274`.
@@ -50,7 +51,8 @@
 - Next Action: V8.15 SLC-913 MT-3 — `safeExternalHref()`-Helper (Scheme-Whitelist `^(https?:|mailto:|\/)`) am Sink, plus Scheme-Reject im `validateInput`/`companies/actions.ts`.
 
 ### ISSUE-114 — Stored XSS via contact.linkedin_url in href ohne Scheme-Check
-- Status: open
+- Status: resolved
+- Resolution: 2026-06-12 V8.15 SLC-913 MT-3 (Commit ea4e4ed, RPT-644/645) — `href={safeExternalHref(contact.linkedin_url)}` am Render-Sink (gleicher Shared-Helper wie ISSUE-113); meeting_link-Nachbar-Guard unveraendert (hatte bereits https-Prepend). QA-Sweep der beiden Pages: verbleibende rohe hrefs sind mailto-Templates, interne Routen + ENV-basierte calcom-URL (URL-encoded) — alle sicher.
 - Severity: Medium
 - Area: Security / Stored-XSS / Output-Rendering
 - Summary: `app/(app)/contacts/[id]/page.tsx:315` rendert `<a href={contact.linkedin_url}>` ohne Guard, `contacts/actions.ts:96/137` speichern unvalidiert. Nachbar `meeting_link:328` ist via `startsWith("http") ? ... : 'https://'+` geschuetzt — linkedin_url nicht. Member setzt `javascript:`, Admin klickt → Script in Admin-Session.
