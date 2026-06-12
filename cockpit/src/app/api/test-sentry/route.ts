@@ -19,19 +19,21 @@
 
 import { NextResponse } from "next/server";
 
-import {
-  captureException,
-  captureMessage,
-  isSentryEnabled,
-} from "@/lib/monitoring/sentry";
+import { captureException, captureMessage } from "@/lib/monitoring/sentry";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET(request: Request) {
+  // V8.15 SLC-913 MT-5 (ISSUE-110): in Production nicht erreichbar — der
+  // Endpoint ist ein Dev-/Staging-Verification-Tool und darf anonym weder
+  // Error-Events ausloesen noch Sentry-Konfigurations-State leaken.
+  if (process.env.NODE_ENV === "production") {
+    return new NextResponse(null, { status: 404 });
+  }
+
   const url = new URL(request.url);
   const type = url.searchParams.get("type");
-  const sentryActive = isSentryEnabled();
   const time = new Date().toISOString();
 
   if (type === "error") {
@@ -50,7 +52,6 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         status: "error-captured",
-        sentry: sentryActive ? "enabled" : "disabled-no-dsn",
         message: "Test-Error was sent to Sentry. Check Sentry dashboard.",
         verification: "V8.12 SLC-911 AC-911-2",
         time,
@@ -72,7 +73,6 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         status: "message-captured",
-        sentry: sentryActive ? "enabled" : "disabled-no-dsn",
         level: "warning",
         message: "Test-Message was sent to Sentry. Check Sentry dashboard.",
         verification: "V8.12 SLC-911 AC-911-2",
@@ -85,7 +85,6 @@ export async function GET(request: Request) {
   return NextResponse.json(
     {
       status: "help",
-      sentry: sentryActive ? "enabled" : "disabled-no-dsn",
       usage: {
         "GET /api/test-sentry?type=error":
           "Sentry.captureException(Error) + HTTP 500",

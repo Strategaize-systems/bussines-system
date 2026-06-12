@@ -1,11 +1,16 @@
 // V6.2 SLC-625 — Lead-Intake API (DEC-138 First-Touch-Lock)
 //
-// POST /api/leads/intake mit Bearer-Auth (FEAT-504-Pattern, EXPORT_API_KEY).
-// System 4 oder andere externe Quellen pushen Leads + UTM-Params.
-// First-Touch-Lock via COALESCE auf bestehender contacts.campaign_id.
+// POST /api/leads/intake mit Bearer-Auth. System 4 oder andere externe
+// Quellen pushen Leads + UTM-Params. First-Touch-Lock via COALESCE auf
+// bestehender contacts.campaign_id.
+//
+// V8.15 SLC-913 MT-5 (ISSUE-118): eigener write-scoped LEAD_INTAKE_API_KEY
+// (statt read-scoped EXPORT_API_KEY), Rate-Limit (guardExportRequest-Pattern)
+// + Max-Laengen-Caps in validateInput.
 
 import { NextResponse } from "next/server";
-import { verifyExportApiKey } from "@/lib/export/auth";
+import { verifyLeadIntakeApiKey } from "@/lib/export/auth";
+import { checkRateLimit } from "@/lib/export/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveCampaignFromUtm } from "@/lib/campaigns/mapper";
 import { isSafeExternalUrlInput } from "@/lib/utils/safe-external-href";
@@ -22,9 +27,33 @@ interface CompanyRow {
   campaign_id: string | null;
 }
 
+// V8.15 SLC-913 MT-5 (ISSUE-118): Max-Laengen-Caps — der Endpoint ist
+// extern erreichbar; ohne Caps sind beliebig grosse Payloads persistierbar.
+const MAX_LEN: Record<string, number> = {
+  first_name: 100,
+  last_name: 100,
+  email: 254,
+  phone: 50,
+  company_name: 200,
+  company_website: 2048,
+  notes: 5000,
+  utm_source: 200,
+  utm_medium: 200,
+  utm_campaign: 200,
+  utm_content: 200,
+  utm_term: 200,
+};
+
 function validateInput(body: unknown): { ok: true; input: LeadIntakeInput } | { ok: false; error: string } {
   if (!body || typeof body !== "object") return { ok: false, error: "Body must be JSON object" };
   const b = body as Record<string, unknown>;
+
+  for (const [field, max] of Object.entries(MAX_LEN)) {
+    const value = b[field];
+    if (typeof value === "string" && value.trim().length > max) {
+      return { ok: false, error: `${field} exceeds maximum length of ${max}` };
+    }
+  }
 
   const first_name = (b.first_name as string | undefined)?.trim();
   const last_name = (b.last_name as string | undefined)?.trim();
@@ -64,8 +93,11 @@ function validateInput(body: unknown): { ok: true; input: LeadIntakeInput } | { 
 }
 
 export async function POST(request: Request) {
-  const authResp = verifyExportApiKey(request);
+  const authResp = verifyLeadIntakeApiKey(request);
   if (authResp) return authResp;
+
+  const rateLimitResp = checkRateLimit(request);
+  if (rateLimitResp) return rateLimitResp;
 
   let body: unknown;
   try {

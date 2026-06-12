@@ -12,7 +12,8 @@
 - Next Action: V8.15 SLC-913 MT-1 — MIG-052 erweitert den Guard auf `NEW.team_id` (und alle authz-tragenden Spalten) fuer `current_user <> 'service_role'`, plus `BEFORE INSERT OR UPDATE`-Coverage (schliesst ISSUE-122). Alternativ `REVOKE UPDATE(role, team_id) ON profiles FROM authenticated`. DB-Verify via node:20-Sidecar SAVEPOINT. Siehe IMP-1237.
 
 ### ISSUE-110 — /api/test-sentry public + unauthenticated in Production (Sentry-Quota-DoS + Config-Leak)
-- Status: open
+- Status: resolved
+- Resolution: 2026-06-12 V8.15 SLC-913 MT-5 (RPT-648) — Prod-Gate als erste Zeile im Handler (`NODE_ENV==='production'` → 404 ohne Body, kein Sentry-Call), `/api/test-sentry` aus middleware publicPaths entfernt, `sentry: enabled/disabled-no-dsn`-State-Feld aus allen drei Responses gedroppt (isSentryEnabled-Import raus). 4 Vitest (Prod-404 help+error, Non-Prod-Trigger intakt, kein sentry-Feld).
 - Severity: Medium
 - Area: Security / Public-Surface / Observability
 - Summary: `app/api/test-sentry/route.ts` ist in `middleware.ts:48` publicPaths gelistet → kein Login-Redirect. Kein Auth, kein ENV-Gate, kein Rate-Limit. `GET /api/test-sentry?type=error` ruft `captureException()` und gibt 500. Anonyme Schleife verbrennt Sentry-Quota, flutet Alerting, leakt Deployment-State (`sentry: enabled/disabled-no-dsn`).
@@ -90,7 +91,8 @@
 - Next Action: V8.15 SLC-913 MT-2 — deal-UPDATE in applyProposedChange ueber den user-scoped Client (durchreichen) ODER Ownership auf target_entity_id vor dem Admin-Write verifizieren.
 
 ### ISSUE-118 — Public Lead-Intake erlaubt unbegrenzten Mass-Write mit read-scoped Export-Key, kein Rate-Limit, keine Feld-Längen-Caps
-- Status: open
+- Status: resolved
+- Resolution: 2026-06-12 V8.15 SLC-913 MT-5 (RPT-648) — eigener write-scoped `LEAD_INTAKE_API_KEY` via `verifyLeadIntakeApiKey` (lib/export/auth.ts generalisiert auf `verifyBearerKeyAgainstEnv`, timing-safe bleibt; EXPORT_API_KEY autorisiert den Endpoint NICHT mehr), `checkRateLimit` (guardExportRequest-Pattern, 100/min/IP) nach Auth, Max-Laengen-Caps fuer alle 12 String-Felder in validateInput (first_name/last_name 100, email 254, phone 50, company_name 200, company_website 2048, notes 5000, utm_* 200 → 400). ENVs `LEAD_INTAKE_API_KEY` + `EXPORT_API_KEY` in cockpit/.env.example dokumentiert (IMP-1238). 13 Vitest. ACHTUNG /deploy: neue Coolify-ENV `LEAD_INTAKE_API_KEY` setzen + externe Intake-Caller (System 4) auf neuen Key umstellen, sonst 500/401.
 - Severity: Medium
 - Area: Security / Public-Surface / Least-Privilege
 - Summary: `api/leads/intake/route.ts` ist nur durch `verifyExportApiKey` (denselben `EXPORT_API_KEY` wie die Read-Export-Consumer) gated, umgeht `guardExportRequest` (das rate-limiten wuerde), hat keine Laengen-Caps auf first_name/last_name/notes/company_name, schreibt contacts/companies via Admin-Client + audit_log mit actor_id=null. Key wird laut Route-Header an externe Systeme verteilt.
@@ -99,7 +101,8 @@
 - Next Action: V8.15 SLC-913 MT-5 — separater write-scoped Key (eigene ENV), `checkRateLimit` (IP/Key), Max-Laengen in validateInput.
 
 ### ISSUE-119 — Blind SSRF: push/subscribe validiert endpoint nie, server-side web-push POSTet an interne URLs
-- Status: open
+- Status: resolved
+- Resolution: 2026-06-12 V8.15 SLC-913 MT-5 (RPT-648) — neuer Shared-Helper `lib/push/endpoint-allowlist.ts` (`isAllowedPushEndpoint`: https-only, kein Credential/Custom-Port, Host exakt fcm.googleapis.com/web.push.apple.com oder Suffix .push.services.mozilla.com/.notify.windows.com — Allowlist-only deckt private/loopback/metadata implizit ab) am Write-Path (subscribe → 400) + Re-Check in `lib/push/send.ts` vor sendNotification (faengt Alt-Subscriptions, `endpoint_not_allowed`). 33 Vitest (Adversarial-Battery + Route). Cross-Repo-Origin BS (pattern-reuse-Row in MT-8).
 - Severity: Medium
 - Area: Security / SSRF / Push
 - Summary: `api/push/subscribe/route.ts:29-48` prueft nur `endpoint` ist String und schreibt das ganze Objekt in `user_settings.push_subscription`. `lib/push/send.ts:62` ruft spaeter `webpush.sendNotification(subscription, ...)` ohne Host/Scheme-Allowlist → server-side POST an `http://supabase-kong:8000`, `169.254.169.254`, localhost. Self-triggerbar (meeting-reminders-Cron pusht an den Host = denselben User).

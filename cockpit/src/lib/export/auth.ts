@@ -3,6 +3,8 @@
  *
  * Prueft Bearer Token gegen EXPORT_API_KEY ENV.
  * Wird von allen /api/export/* Endpoints verwendet.
+ * Seit V8.15 (SLC-913 MT-5) zusaetzlich: verifyLeadIntakeApiKey gegen den
+ * separaten write-scoped LEAD_INTAKE_API_KEY (ISSUE-118).
  *
  * SEC-891 SEC-010: Uses crypto.timingSafeEqual to prevent timing-side-channel
  * attacks that could leak the API key one byte at a time via response-latency
@@ -14,11 +16,28 @@ import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 
 export function verifyExportApiKey(request: Request): NextResponse | null {
-  const expectedKey = process.env.EXPORT_API_KEY;
+  return verifyBearerKeyAgainstEnv(request, "EXPORT_API_KEY");
+}
+
+/**
+ * V8.15 SLC-913 MT-5 (ISSUE-118): Lead-Intake bekommt einen eigenen
+ * write-scoped Key. Der read-scoped EXPORT_API_KEY autorisiert keine
+ * Schreib-Endpoints mehr — Key-Kompromittierung auf Export-Seite kann damit
+ * keine Leads/Contacts mehr anlegen.
+ */
+export function verifyLeadIntakeApiKey(request: Request): NextResponse | null {
+  return verifyBearerKeyAgainstEnv(request, "LEAD_INTAKE_API_KEY");
+}
+
+function verifyBearerKeyAgainstEnv(
+  request: Request,
+  envVar: string
+): NextResponse | null {
+  const expectedKey = process.env[envVar];
 
   if (!expectedKey) {
     return NextResponse.json(
-      { error: "EXPORT_API_KEY not configured" },
+      { error: `${envVar} not configured` },
       { status: 500 }
     );
   }

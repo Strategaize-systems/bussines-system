@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isAllowedPushEndpoint } from "@/lib/push/endpoint-allowlist";
 
 // ── POST: Save subscription ──────────────────────────────────
 
@@ -35,6 +36,16 @@ export async function POST(request: NextRequest) {
   ) {
     return NextResponse.json(
       { error: "Ungültige Push-Subscription (endpoint fehlt)" },
+      { status: 400 }
+    );
+  }
+
+  // V8.15 SLC-913 MT-5 (ISSUE-119): endpoint gegen Push-Service-Allowlist —
+  // web-push POSTet server-seitig an diese URL (SSRF-Vektor ohne Validierung).
+  const endpoint = (subscription as Record<string, unknown>).endpoint as string;
+  if (!isAllowedPushEndpoint(endpoint)) {
+    return NextResponse.json(
+      { error: "Push-Endpoint ist kein erlaubter Push-Service" },
       { status: 400 }
     );
   }

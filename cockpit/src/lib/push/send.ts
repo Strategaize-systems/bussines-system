@@ -6,6 +6,7 @@
 
 import webpush from "web-push";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isAllowedPushEndpoint } from "@/lib/push/endpoint-allowlist";
 
 // Configure VAPID once at module level
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY || "";
@@ -56,6 +57,13 @@ export async function sendPushNotification(
   const subscription = settings?.push_subscription;
   if (!subscription || typeof subscription !== "object" || !("endpoint" in subscription)) {
     return { success: false, error: "no_subscription" };
+  }
+
+  // V8.15 SLC-913 MT-5 (ISSUE-119): Re-Check vor dem Send — faengt auch
+  // Subscriptions ab, die VOR der Allowlist-Einfuehrung gespeichert wurden.
+  const endpoint = (subscription as { endpoint: unknown }).endpoint;
+  if (typeof endpoint !== "string" || !isAllowedPushEndpoint(endpoint)) {
+    return { success: false, error: "endpoint_not_allowed" };
   }
 
   try {
