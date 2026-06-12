@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { validateEuVatId } from "@/lib/validation/vat-id";
+import { isSafeExternalUrlInput } from "@/lib/utils/safe-external-href";
 import { getProfile } from "@/lib/auth/get-profile";
 import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
 
@@ -115,6 +116,12 @@ export async function createCompany(formData: FormData) {
     return { error: vatIdResult.error };
   }
 
+  // V8.15 SLC-913 MT-3 (ISSUE-113): Scheme-Reject im Write-Path —
+  // javascript:/data:-URLs duerfen gar nicht erst gespeichert werden.
+  if (!isSafeExternalUrlInput(formData.get("website") as string | null)) {
+    return { error: "Website-URL hat ein unzulaessiges Schema (erlaubt: http/https)." };
+  }
+
   const { error } = await supabase.from("companies").insert({
     owner_user_id: profile.user_id,
     name: formData.get("name") as string,
@@ -164,6 +171,11 @@ export async function updateCompany(id: string, formData: FormData) {
   const vatIdResult = sanitizeCompanyVatId(formData.get("vat_id"));
   if (vatIdResult.error) {
     return { error: vatIdResult.error };
+  }
+
+  // V8.15 SLC-913 MT-3 (ISSUE-113): Scheme-Reject im Write-Path.
+  if (!isSafeExternalUrlInput(formData.get("website") as string | null)) {
+    return { error: "Website-URL hat ein unzulaessiges Schema (erlaubt: http/https)." };
   }
 
   const { error } = await supabase

@@ -8,6 +8,7 @@ import { getSignals } from "../../fit-assessment/signal-actions";
 import { FitAssessmentForm } from "../../fit-assessment/fit-assessment-form";
 import { SignalList } from "../../fit-assessment/signal-list";
 import { UnifiedTimeline } from "@/components/timeline/unified-timeline";
+import { safeExternalHref } from "@/lib/utils/safe-external-href";
 import { getEmailsForCompany } from "../../emails/actions";
 import { getInboxEmailsForCompany } from "../../emails/imap-actions";
 import { getMeetingsForCompany } from "@/app/(app)/meetings/actions";
@@ -176,7 +177,7 @@ export default async function CompanyDetailPage({
               <div className="flex items-center gap-2 text-sm">
                 <Globe className="h-4 w-4 text-muted-foreground" />
                 <a
-                  href={company.website}
+                  href={safeExternalHref(company.website)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:underline"

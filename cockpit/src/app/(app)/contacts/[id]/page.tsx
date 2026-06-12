@@ -10,6 +10,7 @@ import { getSignals } from "../../fit-assessment/signal-actions";
 import { FitAssessmentForm } from "../../fit-assessment/fit-assessment-form";
 import { SignalList } from "../../fit-assessment/signal-list";
 import { UnifiedTimeline } from "@/components/timeline/unified-timeline";
+import { safeExternalHref } from "@/lib/utils/safe-external-href";
 import { getEmailsForContact } from "../../emails/actions";
 import { getInboxEmailsForContact } from "../../emails/imap-actions";
 import { getMeetingsForContact } from "@/app/(app)/meetings/actions";
@@ -312,7 +313,7 @@ export default async function ContactDetailPage({
               <div className="flex items-center gap-2 text-sm">
                 <LinkIcon className="h-4 w-4 text-muted-foreground" />
                 <a
-                  href={contact.linkedin_url}
+                  href={safeExternalHref(contact.linkedin_url)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:underline"

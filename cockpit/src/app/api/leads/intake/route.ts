@@ -8,6 +8,7 @@ import { NextResponse } from "next/server";
 import { verifyExportApiKey } from "@/lib/export/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveCampaignFromUtm } from "@/lib/campaigns/mapper";
+import { isSafeExternalUrlInput } from "@/lib/utils/safe-external-href";
 import type { LeadIntakeInput, LeadIntakeResponse } from "@/types/campaign";
 
 interface ContactRow {
@@ -36,6 +37,13 @@ function validateInput(body: unknown): { ok: true; input: LeadIntakeInput } | { 
     return { ok: false, error: "email is not a valid address" };
   }
 
+  // V8.15 SLC-913 MT-3 (ISSUE-113): Scheme-Reject fuer company_website —
+  // externer Intake-Vektor darf keine javascript:/data:-URLs persistieren.
+  const company_website = (b.company_website as string | undefined)?.trim() || null;
+  if (!isSafeExternalUrlInput(company_website)) {
+    return { ok: false, error: "company_website has a disallowed URL scheme" };
+  }
+
   return {
     ok: true,
     input: {
@@ -44,7 +52,7 @@ function validateInput(body: unknown): { ok: true; input: LeadIntakeInput } | { 
       email,
       phone: (b.phone as string | undefined)?.trim() || null,
       company_name: (b.company_name as string | undefined)?.trim() || null,
-      company_website: (b.company_website as string | undefined)?.trim() || null,
+      company_website,
       notes: (b.notes as string | undefined)?.trim() || null,
       utm_source: (b.utm_source as string | undefined)?.trim() || null,
       utm_medium: (b.utm_medium as string | undefined)?.trim() || null,
