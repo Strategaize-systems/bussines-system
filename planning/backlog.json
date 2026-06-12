@@ -2734,12 +2734,12 @@
     },
     {
       "id": "BL-494",
-      "title": "V8.7-B SLC-355 BS->IS Verdichtungs-Cron (deferred bis nach V8.10 + V8.11 + Anwalt-Sign-off)",
+      "title": "V8.7-B SLC-355 BS->IS Verdichtungs-Cron",
       "type": "feature",
-      "priority": "low",
-      "status": "open",
-      "version": "V8.7",
-      "description": "V8.7-B Cron-Pfad nach Split V8.7-A/V8.7-B 2026-06-01 (Option C). Weekly Sonntag-Nacht Cron der Win/Loss-Reasons aus auto_winloss_runs + Einwand-Behandlungen aus Activity-Logs aggregiert nach Branche + Deal-Groesse-Bucket und an IS-Knowledge-API POSTet mit aggregation_level=aggregated, kein source_tenant_id. KNOWLEDGE_PUSH_ENABLED=false als Master-Switch bis DSGVO-Sign-off. Pre-Conditions: V8.10 + V8.11 fertig + Anwalt-Pruefung der Aggregations-Pipeline. Aufwand ~1-2 Tage Code. FEAT-872.",
+      "priority": "medium",
+      "status": "in_progress",
+      "version": "V8.7-B",
+      "description": "Woechentlicher Cron pusht anonymisierte/aggregierte Win/Loss-Reasons + Einwand-Behandlungen (Branche x Deal-Groesse) an die IS-Knowledge-API. /slice-planning DONE 2026-06-12 (RPT-628). 6 MTs, keine Migration. Next: /backend SLC-355.",
       "createdAt": "2026-05-27"
     },
     {

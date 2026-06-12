@@ -413,16 +413,16 @@ V8.6 = 1 Slice SLC-861, 6 Micro-Tasks, ~45-60 Min. Reine Test-Layer-Hygiene ohne
 |----|-------|---------|--------|----------|---------|
 | SLC-861 | [Test-Hygiene-Bundle (ISSUE-084 + ISSUE-085)](SLC-861-test-hygiene-bundle.md) | BL-493 / ISSUE-084 + ISSUE-085 | done | Medium | 2026-05-26 |
 
-## V8.7 Slices (Knowledge Foundation BS Konsument — Split V8.7-A jetzt / V8.7-B deferred)
+## V8.7 Slices (Knowledge Foundation BS Konsument — V8.7-A deployed / V8.7-B SLC-355 in planning)
 
 V8.7 ist gesplittet per User-Direktive 2026-06-01 (Option C). V8.7-A startet jetzt als 1 Slice SLC-871 mit ~7-8 Micro-Tasks und 0 Schema-Migration. Architektur: 11 DECs (DEC-248..258) — Adapter `cockpit/src/lib/is-knowledge/client.ts` Server-Side-only, Mirror der IS-Auth-Header-Mechanik (`x-strategaize-service-key` + `x-strategaize-consumer`), transparenter PII-Redact via Adapter-intern, Workspace-Scope nur Deal-Detail (DEC-249), Integrations-Modell Free-Question + risiken-einwaende-Report (DEC-248), Soft-Cap 20 IS-Calls/Workspace-Session via sessionStorage (DEC-252), Graceful-Degradation via Promise.allSettled + IsKnowledgeError-Klasse (DEC-256), audit_log-Event `is_knowledge_queried` mit Cost-Tracking (DEC-258). Pattern-Reuse: Mirror IS `src/lib/api/serviceKeyAuth.ts` + ENV-Setup-Doku analog IS `qa/SLC-352-coolify-env-setup.md`. Single-Branch ohne Worktree (Internal-Tool-Mode). TDD-Mandatory fuer Adapter + Redact + Audit-Helper, TDD-Recommended fuer Server-Action + AnswerPane.
 
-V8.7-B (FEAT-872 / BL-494) ist deferred bis nach V8.10 + V8.11 + Anwalt-Sign-off und wird in eigenem Slice SLC-355 nach eigenem /requirements + /architecture + /slice-planning gebaut.
+V8.7-B (FEAT-872 / BL-494) ist nach Founder-Entscheidung 2026-06-12 als eigener Slice SLC-355 reaktiviert und per /slice-planning (RPT-628) formalisiert. Internal-Test-Mode → kein Anwalt-Gate für den Code-Build (BS-Daten = Strategaize-eigener Vertrieb). 6 Micro-Tasks, keine Migration, Single-Branch main.
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-871 | [V8.7-A KI-Workspace IS-Knowledge-API-RAG-Erweiterung](SLC-871-knowledge-rag-workspace.md) | FEAT-871 / BL-505 | done | Medium | 2026-06-01 |
-| SLC-355 | (deferred — V8.7-B BS->IS Verdichtungs-Cron, /slice-planning faellt nach V8.11 + Anwalt-Sign-off) | FEAT-872 / BL-494 | deferred | Low | 2026-06-01 |
+| SLC-355 | [V8.7-B BS->IS Verdichtungs-Cron](SLC-355-v87b-bs-is-verdichtungs-cron.md) | FEAT-872 / BL-494 | planned | Medium | 2026-06-12 |
 
 ## V8.8 Slices (Help-System Redesign Foundation)
 

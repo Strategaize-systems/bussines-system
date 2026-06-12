@@ -267,20 +267,6 @@
       "order": 38
     },
     {
-      "id": "v9",
-      "name": "V9",
-      "status": "planned",
-      "summary": "Offen — wartet auf Real-Use-Erkenntnisse aus Tag-zu-Tag-Vertrieb. Triggert sich sobald User selbst aktiv verkauft oder 1. Multiplikator-Pilot startet.",
-      "order": 39
-    },
-    {
-      "id": "v10",
-      "name": "V10+",
-      "status": "planned",
-      "summary": "Autonome AI-Agents (Agentforce-Style: Antwort-Vorschlag → Auto-Reply mit Approval-Workflow), API-Integration externe Kommunikations-Tools (BL-443 Slack/Teams), Multiplikatoren-Bereich-Strategie-Item. Wettbewerbsreaktion auf Salesforce Agentforce oder Kundenwunsch.",
-      "order": 40
-    },
-    {
       "id": "v8-7",
       "name": "V8.7",
       "status": "released",
@@ -302,11 +288,18 @@
       "order": 38.9
     },
     {
+      "id": "v9",
+      "name": "V9",
+      "status": "planned",
+      "summary": "Offen — wartet auf Real-Use-Erkenntnisse aus Tag-zu-Tag-Vertrieb. Triggert sich sobald User selbst aktiv verkauft oder 1. Multiplikator-Pilot startet.",
+      "order": 39
+    },
+    {
       "id": "v8-10",
       "name": "V8.10",
       "status": "released",
       "summary": "**RELEASED 2026-06-03 als REL-044, Image-Tag `2db64cd`. Live-Smoke 5/7 Pfade PASS via Playwright-MCP (RPT-569). SLC-892 XSS-Defense 3/3 PASS + SLC-893 Cross-Tenant 2/2 PASS + Self-Access SELECT PASS + INSERT FAIL → ISSUE-088 (Pre-existing). /go-live GO-with-known-issues (RPT-571).** Security Sprint 2 BS — PRE-LIVE PFLICHT vor erstem Customer-Onboarding. Schliesst 2 verbleibende High-Findings aus Cross-Repo-Audit 2026-05-30 die nicht in V8.9 Quick-Wins passten. **BL-498 SEC-005 Email-HTML DOMPurify-Sanitize** (~3h): cockpit/src/app/(app)/emails/email-detail.tsx:331 nutzt 4-Zeilen-Regex fuer IMAP-Email-Body-Sanitization. Trivial via <svg onload>, <img onerror>, HTML-Entity-Encoding umgehbar. **Stored-XSS-Pfad bei jedem Inbound-Email-Open.** Fix: isomorphic-dompurify + iframe-Sandbox-Pattern. **BL-499 SEC-008 documents-Storage user-scoped + Backfill** (~3-4h): sql/02_rls.sql:47-57 Policies fuer documents-Bucket haben keinen first-path-segment-Filter. Jeder authenticated User kann jedes Storage-Object lesen/schreiben/loeschen. **Cross-Tenant-Exfiltration moeglich.** Fix: (auth.uid())::text = (storage.foldername(name))[1] analog proposal_pdfs_user_select Pattern + Doc-Upload-Code-Refactor + Backfill bestehender Files. Geschaetzter Gesamt-Aufwand: 1 Tag verteilt auf 2 separate Slices SLC-892 + SLC-893. Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md SEC-005 + SEC-008.",
-      "order": 39.0
+      "order": 39
     },
     {
       "id": "v8-13",
@@ -323,6 +316,13 @@
       "order": 39.1
     },
     {
+      "id": "v8-12",
+      "name": "V8.12",
+      "status": "released",
+      "summary": "**Defense-in-Depth Sprint — /deploy DONE 2026-06-10 16:31 UTC als REL-047 (RPT-624, Image `8b08996`/`sha256:a55874aa9a9c`), Live-Smoke-Bundle PASS. /post-launch T+0-Baseline clean + SLC-906 AC-906-6 UI-Session-Smoke LIVE-PASS (RPT-625, 7/7 Admin-Pfade member-blocked + 4/4 Member-Pfade ok). STABLE bestaetigt 2026-06-12 (RPT-627): T+24h Full-Check ~38,7h Burn-In, RestartCount=0, RLS Done-Gate=0 persistent, 0 echte App-Errors. SLC-910 Phase-B (CSP strict, post-Burn-In) + SLC-911 (Sentry-Dashboard-Visual) bleiben offen.** Reiner Security-Härtungs-Sprint nach V8.11-RLS-Sweep — schließt V8.11-Restrisiken statt neue zu öffnen. **5 Code-Side-Slices SLC-906..911** (SLC-909 LLM-Cost-Cap DEFERRED per DEC-288, `ai_cost_ledger` fehlt in BS, BL-504 → Post-V8.12-Slot). **Netto-Sicherheitsgewinn:** SLC-906 schließt die 5 V8.11-deferred-Medium-Risiken (ISSUE-090..094 createAdminClient-Code-Layer-Bypass, jetzt User-Client/assertRole) + SLC-911 schließt V8.11-R-2-LOW-Observability-Lücke (Sentry EU Frankfurt, sendDefaultPii=false, beforeSend-Redact). Plus SLC-907 Secret-/PII-Log-Redaction (`redactSecrets` 12 Keys + `logSafe`-Wrapper, Cross-Repo-Origin), SLC-908 Passwort-Policy 12+/zxcvbn via dynamic-import (Cross-Repo-Origin), SLC-910 CSP Phase-A Report-Only + 5 Hardening-Header (kein Outage-Risiko). 3 Features FEAT-921/922/923. **0 Schema-Migration.** Gesamt-/qa PASS-CODE-SIDE (RPT-621, 0B/0H/0M/3L), /final-check READY (RPT-622, 0B/0H/0M/4L, 7 Dimensionen unabhängig verifiziert), /go-live GO (RPT-623). Quality-Gates: TSC=0, Vitest jsdom 1390/1390 GREEN (0 Regression), `next build` exit 0, Stub-Detection + Secret-Scan CLEAN. Cross-Slice SLC-907→SLC-911 redactSecrets-Chain end-to-end gewired. **SLC-910 + SLC-911 bleiben in_progress** bis Live-Portion post-Deploy (CSP Phase-B strict nach 1-2 Wo Burn-In; Sentry-Dashboard-Event nach Deploy). **Accepted-Risks:** L-1 142 pre-existing Lint-Debt (0 V8.12-Regression, IMP-1176), L-2 Doku-Drift (mit REL-047 geschlossen), L-3 Live-Smoke deferred zu /deploy, L-4 ISSUE-095/096/097 operational. **Founder-TODO offen:** Sentry-Dashboard `javascript-nextjs` visuell auf die 2 Test-Events pruefen → schliesst SLC-911. Deploy-Lehre: Dockerfile-Whitelist-COPY liess SLC-911 `sentry.*.config.ts` aus → 1. Redeploy FAILED, Hotfix-Commit `8b08996` (lokaler `next build` sah es nicht). Per IMP-950 + module-lifecycle-discipline: kein Customer-Live, nicht stable bis /post-launch T+24h. **Naechster Schritt: /post-launch V8.12 T+3h** (~19:31 UTC) → T+24h → STABLE; danach SLC-910 Phase-B CSP strict nach 1-2 Wo Burn-In. Reports RPT-607..625.**",
+      "order": 39.2
+    },
+    {
       "id": "v8-14",
       "name": "V8.14",
       "status": "active",
@@ -330,11 +330,18 @@
       "order": 39.3
     },
     {
-      "id": "v8-12",
-      "name": "V8.12",
-      "status": "released",
-      "summary": "**Defense-in-Depth Sprint — /deploy DONE 2026-06-10 16:31 UTC als REL-047 (RPT-624, Image `8b08996`/`sha256:a55874aa9a9c`), Live-Smoke-Bundle PASS. /post-launch T+0-Baseline clean + SLC-906 AC-906-6 UI-Session-Smoke LIVE-PASS (RPT-625, 7/7 Admin-Pfade member-blocked + 4/4 Member-Pfade ok). STABLE bestaetigt 2026-06-12 (RPT-627): T+24h Full-Check ~38,7h Burn-In, RestartCount=0, RLS Done-Gate=0 persistent, 0 echte App-Errors. SLC-910 Phase-B (CSP strict, post-Burn-In) + SLC-911 (Sentry-Dashboard-Visual) bleiben offen.** Reiner Security-Härtungs-Sprint nach V8.11-RLS-Sweep — schließt V8.11-Restrisiken statt neue zu öffnen. **5 Code-Side-Slices SLC-906..911** (SLC-909 LLM-Cost-Cap DEFERRED per DEC-288, `ai_cost_ledger` fehlt in BS, BL-504 → Post-V8.12-Slot). **Netto-Sicherheitsgewinn:** SLC-906 schließt die 5 V8.11-deferred-Medium-Risiken (ISSUE-090..094 createAdminClient-Code-Layer-Bypass, jetzt User-Client/assertRole) + SLC-911 schließt V8.11-R-2-LOW-Observability-Lücke (Sentry EU Frankfurt, sendDefaultPii=false, beforeSend-Redact). Plus SLC-907 Secret-/PII-Log-Redaction (`redactSecrets` 12 Keys + `logSafe`-Wrapper, Cross-Repo-Origin), SLC-908 Passwort-Policy 12+/zxcvbn via dynamic-import (Cross-Repo-Origin), SLC-910 CSP Phase-A Report-Only + 5 Hardening-Header (kein Outage-Risiko). 3 Features FEAT-921/922/923. **0 Schema-Migration.** Gesamt-/qa PASS-CODE-SIDE (RPT-621, 0B/0H/0M/3L), /final-check READY (RPT-622, 0B/0H/0M/4L, 7 Dimensionen unabhängig verifiziert), /go-live GO (RPT-623). Quality-Gates: TSC=0, Vitest jsdom 1390/1390 GREEN (0 Regression), `next build` exit 0, Stub-Detection + Secret-Scan CLEAN. Cross-Slice SLC-907→SLC-911 redactSecrets-Chain end-to-end gewired. **SLC-910 + SLC-911 bleiben in_progress** bis Live-Portion post-Deploy (CSP Phase-B strict nach 1-2 Wo Burn-In; Sentry-Dashboard-Event nach Deploy). **Accepted-Risks:** L-1 142 pre-existing Lint-Debt (0 V8.12-Regression, IMP-1176), L-2 Doku-Drift (mit REL-047 geschlossen), L-3 Live-Smoke deferred zu /deploy, L-4 ISSUE-095/096/097 operational. **Founder-TODO offen:** Sentry-Dashboard `javascript-nextjs` visuell auf die 2 Test-Events pruefen → schliesst SLC-911. Deploy-Lehre: Dockerfile-Whitelist-COPY liess SLC-911 `sentry.*.config.ts` aus → 1. Redeploy FAILED, Hotfix-Commit `8b08996` (lokaler `next build` sah es nicht). Per IMP-950 + module-lifecycle-discipline: kein Customer-Live, nicht stable bis /post-launch T+24h. **Naechster Schritt: /post-launch V8.12 T+3h** (~19:31 UTC) → T+24h → STABLE; danach SLC-910 Phase-B CSP strict nach 1-2 Wo Burn-In. Reports RPT-607..625.**",
-      "order": 39.2
+      "id": "v8-7-b",
+      "name": "V8.7-B",
+      "status": "active",
+      "order": 39.35,
+      "summary": "BS->IS Verdichtungs-Cron (SLC-355, FEAT-872, BL-494). /slice-planning DONE 2026-06-12 (RPT-628), Founder-reaktiviert nach V8.7-A. Woechentlicher Cron /api/cron/knowledge-push (So 02:00) verdichtet Win/Loss-Analysen (auto_winloss_runs) + Einwand-Behandlungen (Activity-Notizen via NEUEM Bedrock-Klassifikations-Pass eu-central-1) zu anonymisierten, aggregierten Wissens-Bausteinen (Branche x Deal-Groesse, k-Anonymitaet KNOWLEDGE_PUSH_MIN_BUCKET) und pusht sie an die live IS-Knowledge-API (POST /api/knowledge/ingest, source_system=business_system, domain=sales). 6 Micro-Tasks, KEINE Migration (audit_log.actor_id bereits nullable, IS-Dedup via UNIQUE(source_system,source_reference)), Cost BS-lokal in audit_log.context (kein ai_jobs/ai_cost_ledger in BS). Single-Branch main, Internal-Test-Mode (kein Customer-Live, KNOWLEDGE_PUSH_ENABLED ohne Anwalt-Gate fuer BS-eigene Vertriebsdaten). DECs 289/290/291. Naechster Schritt /backend SLC-355."
+    },
+    {
+      "id": "v10",
+      "name": "V10+",
+      "status": "planned",
+      "summary": "Autonome AI-Agents (Agentforce-Style: Antwort-Vorschlag → Auto-Reply mit Approval-Workflow), API-Integration externe Kommunikations-Tools (BL-443 Slack/Teams), Multiplikatoren-Bereich-Strategie-Item. Wettbewerbsreaktion auf Salesforce Agentforce oder Kundenwunsch.",
+      "order": 40
     }
   ]
 }
