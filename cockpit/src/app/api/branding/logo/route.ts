@@ -54,6 +54,13 @@ export async function GET() {
     status: 200,
     headers: {
       "Content-Type": contentType,
+      // V8.14 SLC-912 MT-4 (ISSUE-102): Defense-in-Depth fuer evtl. bereits im
+      // Bucket liegende Alt-SVGs. inline-Render statt Download, kein MIME-Sniffing,
+      // und ein vollstaendig gesandboxtes CSP, das Script-Ausfuehrung bei direkter
+      // Navigation auf die Logo-URL unterbindet.
+      "Content-Disposition": "inline",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
       "Cache-Control": "public, max-age=300, must-revalidate",
     },
   });

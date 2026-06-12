@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
+import { assertRole } from "@/lib/auth/assert-role";
 import {
   BRANDING_FONT_FAMILIES,
   BUSINESS_COUNTRIES,
@@ -19,12 +20,9 @@ import {
 
 const BUCKET = "branding";
 const MAX_LOGO_BYTES = 2 * 1024 * 1024; // 2 MB
-const ALLOWED_MIME = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/svg+xml",
-  "image/webp",
-]);
+// V8.14 SLC-912 MT-4 (ISSUE-102): image/svg+xml entfernt — SVG kann inline
+// <script> tragen und wuerde same-origin als Stored-XSS feuern.
+const ALLOWED_MIME = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 type BrandingRow = {
   id: string;
@@ -248,6 +246,10 @@ export async function uploadLogo(
   formData: FormData,
 ): Promise<{ error: string; logoUrl?: string }> {
   await assertNotReadOnlyContext();
+  // V8.14 SLC-912 MT-4 (ISSUE-101): Role-Check VOR createAdminClient (BYPASSRLS).
+  // Ohne diesen Check konnte jeder authenticated User (Member) via Admin-Client
+  // das Tenant-Logo ueberschreiben (Defacement/Phishing-Vektor in Branded-Mails).
+  await assertRole(["admin"]);
   await requireUser();
 
   const file = formData.get("file");
