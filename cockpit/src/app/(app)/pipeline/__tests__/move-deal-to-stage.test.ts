@@ -245,3 +245,99 @@ describe("moveDealToStage — V8 SLC-813 MT-3", () => {
     expect(mock.activitiesInsertCalls[1].title).toContain("Gewonnen");
   });
 });
+
+// V8.15 SLC-913 MT-4 (ISSUE-115): Mass-Assignment-Whitelist.
+// requirementValues ist Raw-Client-Input — nur die fuer die Ziel-Stage
+// deklarierten STAGE_REQUIRED_FIELDS-Keys duerfen in den deals-UPDATE.
+describe("moveDealToStage — V8.15 SLC-913 MT-4 Mass-Assignment-Whitelist (ISSUE-115)", () => {
+  it("Extra-Keys (owner_user_id/status/created_at/pipeline_id/value) werden NICHT geschrieben", async () => {
+    const dealRow = { ...defaultDealRow(), won_lost_reason: null };
+    const mock = makeSupabaseMock({ dealRow });
+    vi.mocked(createClient).mockResolvedValue(mock as never);
+
+    const maliciousPayload = {
+      won_lost_reason: "Preis zu hoch",
+      // alles ab hier sind Angriffs-Keys — "Verloren" erlaubt nur won_lost_reason:
+      owner_user_id: "attacker-uuid",
+      status: "won",
+      created_at: "1999-01-01T00:00:00Z",
+      pipeline_id: "pipeline-evil",
+      value: 0,
+      campaign_id: "campaign-evil",
+    } as never;
+
+    const result = await moveDealToStage(
+      "deal-1",
+      "stage-verloren",
+      "Verloren",
+      maliciousPayload
+    );
+
+    expect(result.error).toBe("");
+    expect(mock.dealsUpdateCalls).toHaveLength(2);
+
+    // Pflichtfeld-Update enthaelt NUR Whitelist-Feld + updated_at:
+    const reqUpdate = mock.dealsUpdateCalls[0];
+    expect(Object.keys(reqUpdate).sort()).toEqual(["updated_at", "won_lost_reason"]);
+    expect(reqUpdate.owner_user_id).toBeUndefined();
+    expect(reqUpdate.created_at).toBeUndefined();
+    expect(reqUpdate.pipeline_id).toBeUndefined();
+    expect(reqUpdate.campaign_id).toBeUndefined();
+    expect(reqUpdate.value).toBeUndefined();
+    // status wird NICHT vom Client-Input bestimmt — der Stage-Move setzt ihn regulaer:
+    expect(mock.dealsUpdateCalls[1]).toMatchObject({ status: "lost" });
+  });
+
+  it("Nur Angriffs-Keys (kein Whitelist-Feld) -> Pflichtfeld-Phase entfaellt, regulaerer Stage-Move", async () => {
+    const dealRow = { ...defaultDealRow(), won_lost_reason: "bereits gesetzt" };
+    const mock = makeSupabaseMock({ dealRow });
+    vi.mocked(createClient).mockResolvedValue(mock as never);
+
+    const result = await moveDealToStage(
+      "deal-1",
+      "stage-verloren",
+      "Verloren",
+      { owner_user_id: "attacker-uuid", created_at: "1999-01-01" } as never
+    );
+
+    expect(result.error).toBe("");
+    // KEIN Pflichtfeld-Update — nur der Stage-Move selbst:
+    expect(mock.dealsUpdateCalls).toHaveLength(1);
+    expect(mock.dealsUpdateCalls[0]).toMatchObject({ stage_id: "stage-verloren" });
+    expect(mock.dealsUpdateCalls[0].owner_user_id).toBeUndefined();
+  });
+
+  it("Nicht-skalare Werte (Objekt/Array) werden verworfen -> Pflichtfeld-Validation greift", async () => {
+    const dealRow = { ...defaultDealRow(), value: null };
+    const mock = makeSupabaseMock({ dealRow });
+    vi.mocked(createClient).mockResolvedValue(mock as never);
+
+    const result = await moveDealToStage(
+      "deal-1",
+      "stage-gewonnen",
+      "Gewonnen",
+      { value: { evil: true } } as never
+    );
+
+    // Objekt-Wert verworfen -> value bleibt null -> Pflichtfeld fehlt:
+    expect(result.error).toContain("Pflichtfelder");
+    expect(mock.dealsUpdateCalls).toHaveLength(0);
+  });
+
+  it("Audit-Activity-Titel listet nur die Whitelist-Keys (keine Audit-Evasion)", async () => {
+    const dealRow = { ...defaultDealRow(), value: null };
+    const mock = makeSupabaseMock({ dealRow });
+    vi.mocked(createClient).mockResolvedValue(mock as never);
+
+    await moveDealToStage(
+      "deal-1",
+      "stage-gewonnen",
+      "Gewonnen",
+      { value: 25000, owner_user_id: "attacker" } as never
+    );
+
+    const reqActivity = mock.activitiesInsertCalls[0];
+    expect(reqActivity.title).toContain("value");
+    expect(reqActivity.title).not.toContain("owner_user_id");
+  });
+});

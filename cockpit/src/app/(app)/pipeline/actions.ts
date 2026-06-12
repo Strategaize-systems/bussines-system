@@ -417,13 +417,28 @@ export async function moveDealToStage(
   // V8 SLC-813: Merge requirementValues (aus Modal) ueber currentDeal, sodass
   // die Pflichtfeld-Validation auf der konsolidierten Sicht stattfindet.
   const requirements = STAGE_REQUIRED_FIELDS[stageName];
+
+  // V8.15 SLC-913 MT-4 (ISSUE-115): Whitelist-Pick + Typ-Validierung.
+  // requirementValues ist Raw-Client-Input (TS-Typ zur Laufzeit erased) —
+  // nur die fuer die Ziel-Stage deklarierten Pflichtfelder duerfen in den
+  // deals-UPDATE; unbekannte Keys (owner_user_id/created_at/pipeline_id/…)
+  // und nicht-skalare Werte werden verworfen. Merge + Persist + Audit nutzen
+  // ausschliesslich die bereinigte Map.
+  const allowedFields = new Set<string>(requirements?.fields ?? []);
+  const cleanValues: Record<string, string | number | null> = {};
+  if (requirementValues) {
+    for (const [k, v] of Object.entries(requirementValues)) {
+      if (!allowedFields.has(k)) continue;
+      if (v !== null && typeof v !== "string" && typeof v !== "number") continue;
+      cleanValues[k] = v;
+    }
+  }
+
   const effectiveDeal: Record<string, unknown> = currentDeal
     ? { ...(currentDeal as Record<string, unknown>) }
     : {};
-  if (requirementValues) {
-    for (const [k, v] of Object.entries(requirementValues)) {
-      effectiveDeal[k] = v;
-    }
+  for (const [k, v] of Object.entries(cleanValues)) {
+    effectiveDeal[k] = v;
   }
 
   if (requirements && currentDeal) {
@@ -444,17 +459,17 @@ export async function moveDealToStage(
   // updateDealValue-Pattern Zeile 374-397). Wenn dieser Update fehlschlaegt,
   // wird der Stage-Move abgebrochen — sonst haetten wir ein "Stage gesetzt
   // ohne Pflichtfeld"-State.
-  if (requirementValues && Object.keys(requirementValues).length > 0 && currentDeal) {
+  if (Object.keys(cleanValues).length > 0 && currentDeal) {
     const before: Record<string, unknown> = {};
     const after: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(requirementValues)) {
+    for (const [k, v] of Object.entries(cleanValues)) {
       before[k] = (currentDeal as Record<string, unknown>)[k] ?? null;
       after[k] = v;
     }
 
     const { error: reqError } = await supabase
       .from("deals")
-      .update({ ...requirementValues, updated_at: new Date().toISOString() })
+      .update({ ...cleanValues, updated_at: new Date().toISOString() })
       .eq("id", dealId);
 
     if (reqError) return { error: reqError.message };
@@ -465,7 +480,7 @@ export async function moveDealToStage(
       company_id: (currentDeal as { company_id: string | null }).company_id,
       deal_id: dealId,
       type: "note",
-      title: `Pflichtfeld-Set bei Stage-Move → ${stageName}: ${Object.keys(requirementValues).join(", ")}`,
+      title: `Pflichtfeld-Set bei Stage-Move → ${stageName}: ${Object.keys(cleanValues).join(", ")}`,
     });
 
     logAudit({
