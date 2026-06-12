@@ -71,6 +71,15 @@
 - Impact: Phishing-Chain ab BS-Domain, Tracking-Analytics-Poisoning, Visitor-IP-Harvesting via Forwarded-Mail-Links.
 - Resolution: 2026-06-07 V8.13-Pre-Slice-Hotfix (DEC-300). `wrapLinks` signiert URLs mit HMAC-SHA256 (`TRACKING_HMAC_SECRET`-ENV), `s=`-Query-Param. `/api/track/[id]` verifiziert `s` timing-safe vor Redirect, fail-closed bei missing/invalid. Modul: `cockpit/src/lib/email/tracking.ts` (sign+verify Helpers, wrapLinks signiert), Route: `cockpit/src/app/api/track/[id]/route.ts` (sig-check), Test: `cockpit/src/lib/email/tracking.test.ts` (10 Vitest GREEN). `.env.example` ergaenzt. Backwards-Incompatibility: Legacy-Tracking-Links ohne `s=`-Param redirecten nicht mehr — akzeptiert (Founder-Stage, ~Wochen-History). Coolify-ENV-Action: `TRACKING_HMAC_SECRET` (32-Byte hex) muss vor Production-Deploy gesetzt sein.
 
+### ISSUE-106 — Host Session-/Process-Sprawl auf BS-Prod (Load-Avg hoch bei idle CPU)
+- Status: open
+- Severity: Low
+- Area: Infrastruktur / Hetzner-Host-Hygiene
+- Summary: Bei V8.12 /post-launch T+24h (2026-06-12 07:17 UTC, RPT-627) Host-Load-Avg 84/52/22 beobachtet, ABER CPU 72,7% idle + I/O-Wait 1,3% + hoechster CPU-Consumer war `top` selbst. `uptime` zeigt ~1002 Login-Sessions (vorige Sessions ~976 → waechst), `top` 2538 Tasks. Load ist also Session-/Task-Count-getrieben (vermutlich geleakte SSH/tty-utmp-Eintraege auf `up 71 days`-Box), nicht CPU-/App-gebunden.
+- Impact: Kein App-Impact aktuell (BS-App-Container healthy, RestartCount=0, App-CPU ~5%). Reine Host-Hygiene; bei weiterem Wachstum theoretisch Scheduler-Overhead.
+- Workaround: Keiner noetig kurzfristig.
+- Next Action: Stale-Login-Sessions/Tasks am Host untersuchen (`who`, `ps` D-state, leaked tty/ssh), ggf. bereinigen + Ursache (Cron/Hook der Sessions oeffnet?) finden. Nicht V8.12-blockierend.
+
 ### ISSUE-097 — Keine LLM-Cost-Ledger-Foundation in BS (Pro-Tenant-Cost-Cap nicht baubar)
 - Status: open
 - Severity: Low
