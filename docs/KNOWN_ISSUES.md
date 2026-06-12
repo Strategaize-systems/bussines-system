@@ -1,5 +1,169 @@
 # Known Issues
 
+<!-- ISSUE-109..126: BS V8.15 Post-Deploy Re-Audit 2026-06-12 (Fable-5 Multi-Agent, Workflow wf_5e95fe4b-7e9, 42 Agenten, 6 Finder-Dimensionen + adversarische Doppel-Verifikation). Audit ueber den deployten V8.14-Stand (Commit 7a7b225). 18 confirmed Findings (1 High + 12 Medium + 5 Low). 2 davon liessen V8.14-Fixes offen/umgehbar (ISSUE-109 team_id + ISSUE-120 Login-XFF). Standard: .claude/rules/security-audit-fable5-standard.md. -->
+
+### ISSUE-109 — profiles.team_id selbst-mutierbar: V8.14-Role-Guard liess die zweite authz-tragende Spalte ungeschuetzt (Team-Isolation-Bypass)
+- Status: open
+- Severity: High
+- Area: Security / RLS / Identity / V8.14-Fix-Incompleteness
+- Summary: MIG-051 `profiles_role_change_guard` blockt nur `NEW.role`. `profiles_admin_update` (035_v7_rls_switch.sql:167) erlaubt `USING/CHECK (is_admin() OR id = auth.uid())` → jeder authenticated User darf seine EIGENE Row updaten. Es gibt keinen Trigger und kein `REVOKE UPDATE(team_id)`. `get_my_team_id()`/`can_see_owner()` (035:44-72) haengen an `team_id`. Ein Teamlead setzt per `PATCH /rest/v1/profiles?id=eq.<self> {"team_id":"<fremd>"}` sein Team um → `can_see_owner()` wird TRUE fuer das fremde Team → liest/schreibt dessen deals/contacts/companies/activities/meetings/proposals/emails. Die ISSUE-098-Klasse ist nur HALB geschlossen.
+- Impact: Tenant-/Team-Isolation-Bypass. Heute Blast-Radius 0 (1 Admin, keine Teams; is_admin() sieht ohnehin alles), scharf sobald Teamleads + 2. Team existieren — exakt der Multi-User-Schritt, fuer den gehaertet wird.
+- Workaround: Single-Founder haelt Blast-Radius bei 0.
+- Next Action: V8.15 SLC-913 MT-1 — MIG-052 erweitert den Guard auf `NEW.team_id` (und alle authz-tragenden Spalten) fuer `current_user <> 'service_role'`, plus `BEFORE INSERT OR UPDATE`-Coverage (schliesst ISSUE-122). Alternativ `REVOKE UPDATE(role, team_id) ON profiles FROM authenticated`. DB-Verify via node:20-Sidecar SAVEPOINT. Siehe IMP-1237.
+
+### ISSUE-110 — /api/test-sentry public + unauthenticated in Production (Sentry-Quota-DoS + Config-Leak)
+- Status: open
+- Severity: Medium
+- Area: Security / Public-Surface / Observability
+- Summary: `app/api/test-sentry/route.ts` ist in `middleware.ts:48` publicPaths gelistet → kein Login-Redirect. Kein Auth, kein ENV-Gate, kein Rate-Limit. `GET /api/test-sentry?type=error` ruft `captureException()` und gibt 500. Anonyme Schleife verbrennt Sentry-Quota, flutet Alerting, leakt Deployment-State (`sentry: enabled/disabled-no-dsn`).
+- Impact: Einziger Fund mit 0 Preconditions, heute anonym erreichbar. Quota-Burn + Alert-Noise + trivialer Config-Leak. Kein Auth-/Tenant-Bruch.
+- Workaround: Keiner.
+- Next Action: V8.15 SLC-913 MT-5 — Endpoint hinter `verifyCronSecret` ODER `NODE_ENV!=='production'` gaten bzw. aus Prod-Build entfernen, aus publicPaths nehmen, sentry-State-Feld aus Response droppen.
+
+### ISSUE-111 — followup-actions approve/postpone/reject mutieren beliebige ai_action_queue-Rows via Admin-Client ohne Ownership-Check
+- Status: open
+- Severity: Medium
+- Area: Security / RLS-Bypass / createAdminClient (ISSUE-090..094-Klasse)
+- Summary: `app/(app)/mein-tag/followup-actions.ts:32-203` — `approveFollowup/postponeFollowup/rejectFollowup` nutzen `createAdminClient()` (BYPASSRLS), laden/updaten `ai_action_queue` per `.eq('id', actionId)` ohne owner/decided_by-Filter, einziges Gate ist `auth.getUser()`. approveFollowup INSERTet zusaetzlich eine `tasks`-Row mit deal_id/contact_id/company_id aus der fremden Row. Exakt das ISSUE-093-Pattern, das V8.12 SLC-906 in `insight-actions.ts` fixte, hier aber vergessen.
+- Impact: Cross-Owner-IDOR-Mutation auf AI-Followups + Task-Erzeugung. Heute 0 (Single-Founder), scharf bei Multi-Member.
+- Workaround: Keiner.
+- Next Action: V8.15 SLC-913 MT-2 — `ai_action_queue`-Reads/Writes + Task-Insert auf User-Client (createClient) umstellen, RLS-Klasse-C greift; analog V8.12 insight-actions.ts.
+
+### ISSUE-112 — getPendingFollowups liest ai_action_queue via Admin-Client mit GAR keinem Auth-Check (toter Code)
+- Status: open
+- Severity: Medium
+- Area: Security / RLS-Bypass / createAdminClient
+- Summary: `app/(app)/mein-tag/followup-actions.ts:13-26` — `getPendingFollowups()` nutzt `createAdminClient()` ohne `auth.getUser()` und ohne owner/team-Filter, gibt alle pending followup_engine-Rows zurueck. Mildernd: aktuell toter Code (nirgends aufgerufen, `FollowupSuggestions` nie gerendert). V8.12 haertete das Geschwister `getPendingInsights`, dieses wurde uebersehen.
+- Impact: Intra-Org-Disclosure von AI-Suggestion-Metadaten bei Multi-Member. Middleware verlangt Session (kein anonymer Zugriff). Heute 0 + dead code.
+- Workaround: Keiner noetig (dead code).
+- Next Action: V8.15 SLC-913 MT-2 — auf User-Client + auth.getUser()-Guard umstellen ODER toten Code + Component entfernen.
+
+### ISSUE-113 — Stored XSS via company.website in href ohne Scheme-Check (externer Lead-Intake-Vektor)
+- Status: open
+- Severity: Medium
+- Area: Security / Stored-XSS / Output-Rendering
+- Summary: `app/(app)/companies/[id]/page.tsx:179` rendert `<a href={company.website} target="_blank">` ohne Scheme-Validierung. Write-Pfade validieren nicht: `companies/actions.ts:122/174` + `api/leads/intake/route.ts:115` (`company_website` aus externer API, `validateInput` prueft nur Email). `javascript:`-Payload feuert beim Klick in der Admin-Session. React 19 strippt `javascript:`-hrefs nicht; CSP Report-Only + unsafe-inline = kein Mitigant. Safe-Pattern existiert schon in `components/ki-workspace/AnswerPane.tsx:274`.
+- Impact: Stored XSS in hoechstprivilegierter Session beim Klick. Heute 0 (kein Live-Lead-Source), scharf sobald Lead-Intake wired ist.
+- Workaround: Keiner.
+- Next Action: V8.15 SLC-913 MT-3 — `safeExternalHref()`-Helper (Scheme-Whitelist `^(https?:|mailto:|\/)`) am Sink, plus Scheme-Reject im `validateInput`/`companies/actions.ts`.
+
+### ISSUE-114 — Stored XSS via contact.linkedin_url in href ohne Scheme-Check
+- Status: open
+- Severity: Medium
+- Area: Security / Stored-XSS / Output-Rendering
+- Summary: `app/(app)/contacts/[id]/page.tsx:315` rendert `<a href={contact.linkedin_url}>` ohne Guard, `contacts/actions.ts:96/137` speichern unvalidiert. Nachbar `meeting_link:328` ist via `startsWith("http") ? ... : 'https://'+` geschuetzt — linkedin_url nicht. Member setzt `javascript:`, Admin klickt → Script in Admin-Session.
+- Impact: Privilege-Context-Crossing bei Multi-User. Heute Self-XSS (Single-Founder = Writer = Klicker), kein Trust-Boundary heute.
+- Workaround: Keiner.
+- Next Action: V8.15 SLC-913 MT-3 — gleiches `safeExternalHref()`-Pattern wie ISSUE-113 (href-Scheme-Guard-Sweep).
+
+### ISSUE-115 — Mass-Assignment in moveDealToStage: requirementValues ohne Key-Whitelist in deals-UPDATE gespreadet
+- Status: open
+- Severity: Medium
+- Area: Security / Mass-Assignment / Pipeline
+- Summary: `app/(app)/pipeline/actions.ts:455` — `.update({ ...requirementValues, updated_at })`. `requirementValues` ist Raw-Client-Input einer Server-Action; TS-Typ zur Laufzeit erased; die Validierungsschleife prueft nur Praesenz der Required-Keys, nie Key-Membership. Caller setzt extra Keys (value/created_at/pipeline_id/source/campaign_id/won_lost_reason/contact_id). RLS deals_update constrained nur owner_user_id → andere Spalten frei beschreibbar; Audit-Log loggt nur deklarierte Keys (Audit-Evasion).
+- Impact: Intra-Org Workflow-Bypass + Audit-Evasion auf sichtbaren Rows. RLS haelt Cross-Owner ab. Heute 0.
+- Workaround: Keiner.
+- Next Action: V8.15 SLC-913 MT-4 — requirementValues auf erlaubte `STAGE_REQUIRED_FIELDS`-Keys projizieren (Whitelist-Pick + Typ-Validierung), gleiche Filterung am effectiveDeal-Merge.
+
+### ISSUE-116 — Export-/winloss-/performance-Read-APIs dumpen alle Owner-Rows via service_role mit einem geteilten Key, kein Tenant-/Ownership-Scope
+- Status: open
+- Severity: Medium
+- Area: Security / Tenant-Isolation / Export-API (latent)
+- Summary: `api/export/*` + `api/winloss/[deal_id]` + `api/campaigns/[id]/performance` authentisieren nur gegen einen globalen `EXPORT_API_KEY` (`lib/export/auth.ts`) und queryen via `createAdminClient()` (BYPASSRLS) ohne owner_user_id/Tenant-Filter. winloss/performance geben Daten fuer JEDE id zurueck. `owner_user_id` existiert auf 8 Tabellen (MIG-033); ein Verifizierer wertete das als kein-Tenant-Modell, der andere als reale Latenz. Rate-Limit keyed auf spoofbares x-forwarded-for.
+- Impact: Heute Blast-Radius 0 (Single-Owner). Scharf, sobald ein 2. Customer in die geteilte DB onboarded — dann kann jeder Key-Holder alle Tenants exfiltrieren. Architektur-Entscheidung noetig.
+- Workaround: Single-Tenant haelt Blast-Radius bei 0; DEC-067 dokumentiert die Single-Key-Annahme.
+- Next Action: V8.15 SLC-913 MT-7 (mit DEC) — per-Tenant-Keys gemappt auf owner/team + `.eq('owner_user_id'/'team_id', ...)`-Filter, ODER RLS-gebundene Identitaet statt createAdminClient; winloss/performance id-Ownership pruefen; Rate-Limit auf Key-Identitaet statt Header.
+
+### ISSUE-117 — approveInsightAction wendet deal-Mutationen via Admin-Client auf target_entity_id an — V8.12-ISSUE-093-Fix nur auf entity_id, Write-Pfad ungeschuetzt
+- Status: open
+- Severity: Medium
+- Area: Security / RLS-Bypass / createAdminClient (V8.12-Fix-Incompleteness)
+- Summary: V8.12 stellte `approveInsightAction` (insight-actions.ts) auf User-Client um — RLS-scoped auf `entity_id`. Die eigentliche Mutation `applyProposedChange()` in `lib/ai/signals/applier.ts:41` nutzt aber weiter `createAdminClient()` und schreibt `deals.update({stage_id|value}).eq('id', target_entity_id)` (distinkte Spalte!) ohne Ownership-Re-Check. Ein Angreifer craftet eine ai_action_queue-Row (entity_id=eigener Deal besteht RLS, target_entity_id=Opfer-Deal) → approve → Admin-Write auf fremden Deal.
+- Impact: Cross-Owner stage/value-Write bei Multi-User mit crafted-Insert. Heute 0.
+- Workaround: Keiner.
+- Next Action: V8.15 SLC-913 MT-2 — deal-UPDATE in applyProposedChange ueber den user-scoped Client (durchreichen) ODER Ownership auf target_entity_id vor dem Admin-Write verifizieren.
+
+### ISSUE-118 — Public Lead-Intake erlaubt unbegrenzten Mass-Write mit read-scoped Export-Key, kein Rate-Limit, keine Feld-Längen-Caps
+- Status: open
+- Severity: Medium
+- Area: Security / Public-Surface / Least-Privilege
+- Summary: `api/leads/intake/route.ts` ist nur durch `verifyExportApiKey` (denselben `EXPORT_API_KEY` wie die Read-Export-Consumer) gated, umgeht `guardExportRequest` (das rate-limiten wuerde), hat keine Laengen-Caps auf first_name/last_name/notes/company_name, schreibt contacts/companies via Admin-Client + audit_log mit actor_id=null. Key wird laut Route-Header an externe Systeme verteilt.
+- Impact: Key-Holder (oder Key-Leak aus Read-Integration) kann CRM mass-fluten + Audit-Trail verschmutzen. Bounded auf Key-Besitz.
+- Workaround: Keiner.
+- Next Action: V8.15 SLC-913 MT-5 — separater write-scoped Key (eigene ENV), `checkRateLimit` (IP/Key), Max-Laengen in validateInput.
+
+### ISSUE-119 — Blind SSRF: push/subscribe validiert endpoint nie, server-side web-push POSTet an interne URLs
+- Status: open
+- Severity: Medium
+- Area: Security / SSRF / Push
+- Summary: `api/push/subscribe/route.ts:29-48` prueft nur `endpoint` ist String und schreibt das ganze Objekt in `user_settings.push_subscription`. `lib/push/send.ts:62` ruft spaeter `webpush.sendNotification(subscription, ...)` ohne Host/Scheme-Allowlist → server-side POST an `http://supabase-kong:8000`, `169.254.169.254`, localhost. Self-triggerbar (meeting-reminders-Cron pusht an den Host = denselben User).
+- Impact: Authenticated, blind, POST-only SSRF-Primitiv ins Docker-Netz. Kein Response-Reflection. Heute 0.
+- Workaround: Keiner.
+- Next Action: V8.15 SLC-913 MT-5 — endpoint beim Write validieren (https + Host-Allowlist echte Push-Services, private/loopback/link-local/metadata rejecten), optional Re-Check in send.ts.
+
+### ISSUE-120 — Login-Rate-Limit (ISSUE-099-Fix) per X-Forwarded-For umgehbar — unbegrenzter Brute-Force gegen einen Account
+- Status: open
+- Severity: Medium
+- Area: Security / Auth / V8.14-Fix-Incompleteness
+- Summary: `lib/security/ip-hash.ts:27` nimmt den LINKESTEN (client-kontrollierten) `x-forwarded-for`-Wert. `login/actions.ts` keyed `login:<email>:<ip>`, nur dieser Key wird gethrottlet (5/15min), Counter in-memory (per-Container, deploy-fluechtig). Angreifer rotiert XFF → frischer Bucket pro Request. Key ist (email,IP) statt account-scoped. Einziger echter Backstop bleibt GoTrue `GOTRUE_RATE_LIMIT_*`.
+- Impact: App-Layer-Fix (ISSUE-099) defeatable. GoTrue bremst real, daher nicht voellig unbounded. Heute 1 Founder-Account.
+- Workaround: GoTrue-`GOTRUE_RATE_LIMIT_*` (V8.14-Founder-ENV) bremst weiter.
+- Next Action: V8.15 SLC-913 MT-6 — XFF nicht vertrauen (rightmost/trusted-proxy-Offset oder Connection-Remote-Addr); account-scoped Lockout-Key (`login-acct:<email>`); Counter in persistenten Store (DB/Redis). Cross-Repo-Pattern (gleiche ip-hash.ts in OP/IS/immoscheckheft pruefen).
+
+### ISSUE-121 — lookupVatIdAction ist eine unauthenticated Server-Action mit Admin-Client-DB-Write + ausgehendem HTTP
+- Status: open
+- Severity: Medium
+- Area: Security / Auth / Server-Action
+- Summary: `lib/validation/vies-actions.ts:21-53` — exportierte `"use server"`-Action ohne requireUser/assertRole. Baut `createAdminClient()`, ruft `lookupVatId()` → ausgehender GET an ec.europa.eu + Upsert in `vat_id_validations` (RLS-bypassing). Next.js dispatcht Server-Actions per Action-ID global → ueber Public-Path anonym erreichbar. Kein SSRF (fixer Host), Writes nicht angreifer-kontrolliert (validateEuVatId constrained).
+- Impact: Unauth Resource-Abuse (VIES-Rate-Exhaustion) + anonyme Admin-Writes in Non-Sensitive-Cache. Kein Tenant-Bruch. Niedriges Medium.
+- Workaround: Keiner.
+- Next Action: V8.15 SLC-913 MT-2 — Auth-Gate (requireUser) am Top vor VIES-Call/Admin-Write, optional Rate-Limit + user-scoped Cache-Write.
+
+### ISSUE-122 — profiles_role_change_guard feuert nur BEFORE UPDATE, keine INSERT-Coverage (Defense-in-Depth)
+- Status: open
+- Severity: Low
+- Area: Security / RLS / Defense-in-Depth
+- Summary: `sql/migrations/051_v814_slc912_profiles_role_protect.sql:49` — Trigger ist `BEFORE UPDATE ON profiles` only; INSERT mit role='admin' nicht abgedeckt. Heute durch `profiles_admin_insert WITH CHECK (is_admin())` (035:163) + service_role-only Profile-Erzeugung (invite.ts) gedeckt; kein handle_new_user/raw_user_meta_data-Pfad existiert. Risiko nur falls ein Self-Service-Signup-Trigger ergaenzt oder die Insert-Policy geloosent wird.
+- Impact: Heute 0 (kein INSERT-Pfad). Reine Defense-in-Depth-Schuld.
+- Workaround: profiles_admin_insert haelt heute dicht.
+- Next Action: Wird durch ISSUE-109-Fix (V8.15 SLC-913 MT-1) mit erledigt: Trigger auf `BEFORE INSERT OR UPDATE` erweitern, fuer non-service_role role auf Safe-Default zwingen.
+
+### ISSUE-123 — Cal.com-Webhook ohne Timestamp/Nonce: signierter Payload replaybar (kann calendar_events loeschen)
+- Status: open
+- Severity: Low
+- Area: Security / Webhook / Replay
+- Summary: `lib/calcom/webhook-handler.ts:48` prueft nur HMAC(body)==Signatur, kein Timestamp-Window/Nonce/Idempotenz. Ein einmal mitgeschnittener valider signierter Request (Log/Proxy/On-Path) ist verbatim wiederholbar; BOOKING_CANCELLED/REJECTED → `deleteCalendarEvent(uid)` loescht die calendar_events-Row. Endpoint public.
+- Impact: Bounded auf calendar_events (Non-Core, re-synct von Cal.com). Setzt Capture eines validen Requests voraus. Kein Auth-Bruch.
+- Workaround: Keiner.
+- Next Action: Deferred (Low, Founder-Toleranz). Spaeter: createdAt-Skew-Window pruefen und/oder verarbeitete Event-ID (uid+trigger+createdAt) deduplizieren.
+
+### ISSUE-124 — ISSUE-103-PII-Log-Fix zu eng: Non-classify-Cron-Routes interpolieren weiter PII in rohes console.*
+- Status: open
+- Severity: Low
+- Area: Security / Logging / DSGVO
+- Summary: Der V8.14-Fix (logSafe + DEFAULT_REDACT_KEYS 12→17) griff nur in `cron/classify`. `cron/meeting-reminders/route.ts:338` loggt `${hostEmail}` (+ :237 externe `${c.email}`), `cron/meeting-summary/route.ts:69` loggt `${meeting.title}` via rohes console.*. `redactSecrets` ist key-basiert → faengt String-Interpolation strukturell nicht.
+- Impact: Operator mit Coolify-Log-Zugriff liest Empfaenger-Emails/Meeting-Titel. Heute nur Founder-eigene Daten (0). DSGVO-relevant bei Customer-Daten.
+- Workaround: Keiner.
+- Next Action: Deferred (Low, billig). Spaeter: rohes console.* in den restlichen Cron-Routes durch `logSafe` ersetzen, PII als strukturierte Objekt-Args (recipient/title) statt Interpolation.
+
+### ISSUE-125 — PostgREST .or()-Filter-Injection in Deals-Typeahead
+- Status: open
+- Severity: Low
+- Area: Security / Injection / PostgREST
+- Summary: `lib/deals/typeahead.ts:22` escaped nur `\ % _` (ILIKE-Wildcards), nicht `, . ( )`. `route.ts:71` interpoliert in `.or(\`first_name.ilike.${pattern},last_name.ilike.${pattern}\`)`. `q=a,owner_user_id.not.is.null` injiziert eine zusaetzliche OR-Bedingung. Bounded: User-Client + RLS, selektiert nur id → max. ueber-breites Matching in eigenen sichtbaren Rows, kein Cross-Tenant.
+- Impact: Filter-Grammar-Injection, RLS-bounded. Kein Datenleck ueber eigene Sichtbarkeit hinaus.
+- Workaround: Keiner.
+- Next Action: Deferred (Low). Spaeter: PostgREST-Metacharacters zusaetzlich strippen/rejecten ODER zwei separate `.ilike()`-Queries statt Raw-`.or()`.
+
+### ISSUE-126 — /api/transcribe ohne Size-/Rate-Limit (authenticated Cost-Abuse auf bezahltem Provider)
+- Status: open
+- Severity: Low
+- Area: Security / Cost-Abuse / DoS
+- Summary: `api/transcribe/route.ts` prueft nur `auth.getUser()`, liest dann die ganze Datei in den Speicher (`arrayBuffer()`) und schickt sie an einen bezahlten Transkriptions-Provider — ohne MIME-Check, Size-Cap, Rate-Limit (anders als ai/query + knowledge/query, die `checkRateLimit` nutzen). Authenticated User loopt grosse Uploads → unbounded Provider-Kosten + Memory-Druck.
+- Impact: Heute 0 (Single-Founder, Provider-25MB-Cap bremst pro Request). Authenticated-only.
+- Workaround: Provider-seitiger 25MB-Cap.
+- Next Action: Deferred (Low). Spaeter: Size-Cap (audioFile.size) + MIME-Whitelist + `checkRateLimit(user.id)` wie bei den anderen AI-Endpoints.
+
 ### ISSUE-107 — V8.7-B Verdichtungs-Cron: Anonymisierungs-Qualität + Objection-Source erst Live verifizierbar
 - Status: open
 - Severity: Low

@@ -527,3 +527,11 @@ V8.14 = 1 Slice SLC-912, 6 Micro-Tasks, ~4-6h /backend + /qa. Schliesst 7 Findin
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-912 | [V8.14 Security-Hotfix Bundle (profiles.role-Lock + Login-Rate-Limit + DSE-XSS + Branding-Hardening + Log/Auth-Hygiene)](SLC-912-v814-security-hotfix.md) | FEAT-924 / BL-515 | deployed | Blocker | 2026-06-11 |
+
+## V8.15 Slices (Security-Hardening-Sprint — Fable-5 Multi-Agent Re-Audit 2026-06-12)
+
+V8.15 = 1 Slice SLC-913, 8 Micro-Tasks. Schliesst die High+Medium-Findings (ISSUE-109..121) aus dem Fable-5 Post-Deploy Re-Audit (Workflow `wf_5e95fe4b-7e9`, 42 Agenten, 6 Finder-Dimensionen + adversarische Doppel-Verifikation ueber den deployten V8.14-Stand Commit `7a7b225`). 18 confirmed Findings (1 High + 12 Medium + 5 Low); **2 liessen V8.14-Fixes offen/umgehbar**: ISSUE-109 (profiles.team_id-Self-Mutation — V8.14-Role-Guard nur halb) + ISSUE-120 (Login-Rate-Limit XFF-Bypass). Die 5 Low (ISSUE-122..126) dokumentiert/deferred (ISSUE-122 wird vom MT-1-Fix mit-erledigt). **1 additive Migration MIG-052** (profiles team_id-Column-Guard + `BEFORE INSERT OR UPDATE`). **Single-Branch main**, Internal-Test-Mode. **Modell Fable 5 durchgaengig** (Audit-Standard `.claude/rules/security-audit-fable5-standard.md`, IMP-1236/1237). Pre-Condition: V8.14 STABLE (/post-launch T+24h ~2026-06-13). Pro MT: TSC=0 + ESLint=0 + Full-Vitest-jsdom GREEN (IMP-1108). MT-1 (DB+Migration) zuerst; MT-2..MT-6 parallel-faehig (disjunkte Files); MT-7 (Export-Scoping, mit DEC) ggf. eigenstaendig; MT-8 Records. Founder plant vor Multi-User-Schritt zusaetzlich `/code-review ultra` als externe Gegenprobe. Per module-lifecycle-discipline + IMP-950: kein Customer-Live.
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-913 | [V8.15 Security-Hardening Bundle (team_id-Guard + createAdminClient-Sweep + href-XSS-Guard + Mass-Assignment + Public-Endpoint-Hardening + Login-Rate-Limit + Export-Scoping)](SLC-913-v815-security-hardening.md) | FEAT-925 / BL-516 | planned | High | 2026-06-12 |

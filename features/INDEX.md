@@ -1,5 +1,11 @@
 # Feature Index
 
+## V8.15 Features (Security-Hardening-Sprint — Fable-5 Multi-Agent Re-Audit, slice-planning done 2026-06-12)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-925 | Pre-Customer-Live Security-Hardening Bundle (team_id-Column-Guard ISSUE-109 + createAdminClient-Sweep ISSUE-111/112/117/121 + href-XSS-Guard ISSUE-113/114 + Mass-Assignment ISSUE-115 + Public-Endpoint-Hardening ISSUE-110/118/119 + Login-Rate-Limit ISSUE-120 + Export-Scoping ISSUE-116, BL-516, SLC-913) | in_progress | [Slice](../slices/SLC-913-v815-security-hardening.md) | 2026-06-12 |
+
 ## V8.14 Features (Security-Hotfix-Sprint — slice-planning done 2026-06-11)
 
 | ID | Feature | Status | Spec | Created |
