@@ -27,6 +27,7 @@
 - Impact: Self-Promotion zu Tenant-Admin entsperrt jede `is_admin()`-gegate RLS-Policy schema-weit. Kombiniert mit ISSUE-100 (Stored XSS in Customer-DSE) zu Exploit-Chain: Promotion → DSE-Edit → XSS auf Public-Page. Heute Founder-Only-Single-User → kein Customer-Impact, aber **Blocker fuer jeden Multi-User-Schritt**. V8.11 RLS-Sweep hat das Column-Level-Schutz-Gap nicht gefangen.
 - Workaround: Aktuell keiner. Single-User-Founder-Status haelt Blast-Radius bei 0.
 - Next Action: V8.13 SLC (Hotfix-Bundle): entweder `REVOKE UPDATE(role) ON profiles FROM authenticated` + SECURITY-DEFINER-RPC fuer legitime Admin-Role-Changes, ODER BEFORE-UPDATE-Trigger `RAISE WHEN NEW.role IS DISTINCT FROM OLD.role AND NOT is_admin()`. Migration + Vitest mit pgcrypto-Self-Promotion-Versuch + RLS-Regression-Suite.
+- Update 2026-06-12 (/backend SLC-912 MT-1): Fix implementiert via **MIG-051** `profiles_role_change_guard` BEFORE-UPDATE-Trigger — **service_role-aware** (`current_user <> 'service_role'`, NICHT `NOT is_admin()` weil das changeRole/createAdminClient brechen wuerde, DEC-301/R-912-1). DB-Verify-Test geschrieben (`cockpit/__tests__/migrations/051-*.test.ts`, node:20-Sidecar SAVEPOINT). Status bleibt `open` bis /qa + Live-DB-Apply (AC-912-10 im /deploy).
 
 ### ISSUE-099 — Kein Rate-Limit/Lockout auf Login (signInWithPassword) — Credential-Stuffing moeglich
 - Status: open
@@ -36,6 +37,7 @@
 - Impact: Credential-Stuffing + Password-Spraying feasible. In-Memory-Limiter survivt Multi-Instance-Scale nicht. Heute geringes Risiko durch Single-User-Founder, aber Pre-Customer-Live-Blocker.
 - Workaround: GoTrue-Default begrenzt Brute-Force-Geschwindigkeit, aber kein echter Lockout.
 - Next Action: V8.13 SLC: `checkRateLimit` in login-Action wiren (5 Fails / 15min / Email+IP), Lockout-State persistieren, generische Error-Message (`"E-Mail oder Passwort ungueltig"`), GoTrue-`GOTRUE_RATE_LIMIT_TOKEN_REFRESH`/`GOTRUE_RATE_LIMIT_EMAIL_SENT` in Coolify-ENV pinnen.
+- Update 2026-06-12 (/backend SLC-912 MT-2): `lib/security/rate-limit.ts` backward-compat erweitert (`peekRateLimit` read-only + `clearRateLimit` + optionaler `windowMs`). `login/actions.ts` wired: peek-before-signin Lockout (gesperrte 6. Anfrage beruehrt GoTrue nicht), Fehlversuch-Zaehlung nur bei Fail, Counter-Clear bei Erfolg, generische `"E-Mail oder Passwort ungültig."` (kein verbatim error.message). 4 Vitest GREEN. GoTrue-`GOTRUE_RATE_LIMIT_*` als zweite Bremse = Founder-Coolify-ENV im /deploy. Status `open` bis /qa.
 
 ### ISSUE-100 — Stored XSS in Customer-DSE Markdown (Public-Page-Render)
 - Status: open
@@ -45,6 +47,7 @@
 - Impact: Tenant-Admin (oder via ISSUE-098 self-promoted User) plantet `<script>`-Payload, der bei jedem Public-Visitor von `/p/<slug>/datenschutz` feuert. Defacement, Phishing-Pivot, Brand-Damage, Session-Theft fuer Logged-in-User die die Seite besuchen.
 - Workaround: Keiner — Customer-DSE-Edits sind selten, aber jede einzige Edit kann persistent XSS deployen.
 - Next Action: V8.13 SLC: `remark-html` auf `{ sanitize: true }` flippen ODER via `rehype-sanitize` / DOMPurify-Pipe mit Safelist filtern. Server-Side-Validator in `updateCustomerDse` der Raw-HTML-Tags rejected. Vitest mit OWASP-XSS-Adversarial-Cases (Port von `lib/email/sanitize-email-html.test.ts`).
+- Update 2026-06-12 (/backend SLC-912 MT-3): `renderLegalMarkdown` leitet Output jetzt durch `sanitizeEmailHtml` (DOMPurify-Whitelist-Reuse V8.10 SLC-892) — script/iframe/svg/on*/javascript: entfernt, Tabellen/Listen/Links bleiben. Write-Path-Validator `findUnsafeMarkup` (`lib/legal/validate-markdown.ts`) rejected Raw-`<script>`/Event-Handler/`javascript:` in `updateCustomerDse` vor Persist. OWASP-Adversarial-Vitest GREEN (render + validator + legitimes Markdown). Status `open` bis /qa.
 
 ### ISSUE-101 — Branding-uploadLogo bypassed RLS via Admin-Client ohne Role-Check
 - Status: open
@@ -54,6 +57,7 @@
 - Impact: Tenant-Member ueberschreibt Tenant-Logo. Logo wird in ausgehenden gebrandeten E-Mails + Customer-facing-Pages gerendert → Defacement + Phishing-Vektor. Kombiniert mit ISSUE-102 (SVG-XSS) zu Stored-XSS-Chain.
 - Workaround: Keiner.
 - Next Action: V8.13 SLC: `const profile = await getProfile(); if (profile.role !== "admin") throw new Error("Forbidden")` am Anfang von `uploadLogo`. `updateBranding`-Persist-Path zusaetzlich auf user-client umstellen (defense-in-depth).
+- Update 2026-06-12 (/backend SLC-912 MT-4): `await assertRole(["admin"])` als erste Pruefung in `uploadLogo` (vor createAdminClient/BYPASSRLS) — non-admin redirect, Admin-Client nie erreicht. Vitest GREEN (non-admin throws, admin PNG upload erreicht Storage). Status `open` bis /qa.
 
 ### ISSUE-102 — SVG-Upload als Branding-Logo enables Stored XSS
 - Status: open
@@ -63,6 +67,7 @@
 - Impact: Persistent XSS-Payload via SVG-Logo, feuert in Browser-Sessions die Logo laden (Cockpit + Email-rendered HTML). Session-Theft, Brand-Damage.
 - Workaround: Keiner.
 - Next Action: V8.13 SLC: `image/svg+xml` aus ALLOWED_MIME entfernen ODER SVG durch DOMPurify mit SVG-Profil sanitizen. `Content-Disposition: inline; sandbox` + strict CSP auf `/api/branding/logo`-Response.
+- Update 2026-06-12 (/backend SLC-912 MT-4): `image/svg+xml` aus ALLOWED_MIME entfernt (SVG-Upload rejected). Logo-Route (`api/branding/logo/route.ts`) liefert jetzt `Content-Disposition: inline` + `X-Content-Type-Options: nosniff` + `Content-Security-Policy: default-src 'none'; sandbox` (Defense-in-Depth fuer evtl. Alt-SVGs im Bucket). Vitest GREEN (SVG rejected ohne Storage-Touch). Status `open` bis /qa.
 
 ### ISSUE-103 — PII interpoliert in raw console.log in Cron-Handler (Operator-Log-Leak)
 - Status: open
@@ -72,6 +77,7 @@
 - Impact: Operator-Visibility-Konzern, nicht Customer-Impact heute. Pre-Customer-Live-Hygiene.
 - Workaround: Keiner.
 - Next Action: V8.13 SLC (Low-Priority): `logSafe('info', ...)` statt `console.log`. DEFAULT_REDACT_KEYS um BS-Domain-PII-Keys erweitern (from_address, recipient, body_text, transcript, x-cron-secret).
+- Update 2026-06-12 (/backend SLC-912 MT-5): Alle `console.log` in `cron/classify/route.ts` → `logSafe` (0 console.log verbleibend); die PII-Zeile (from_address) als **Objekt-Key** uebergeben statt String-Interpolation (sonst umgeht sie die Redaction). `DEFAULT_REDACT_KEYS` 12→17 (+from_address/recipient/body_text/transcript/x-cron-secret). `console.error` bewusst belassen (kein PII; redactSecrets wuerde Error-Properties verschlucken). Vitest GREEN. Status `open` bis /qa.
 
 ### ISSUE-104 — `getCurrentUserRole()` fail-open default 'admin' bei user=null/error
 - Status: open
@@ -81,6 +87,7 @@
 - Impact: Heute durch Layout-Gate geschuetzt, aber Defense-in-Depth-Violation. Wenn Layout-Auth-Check je broken/race-condition: silent admin-grant.
 - Workaround: Layout-Auth-Gate schirmt heute ab.
 - Next Action: V8.13 SLC (Low-Priority, mit-bundeln wenn billig): `return null` (oder throw) bei null/catch/missing profile. `/audit-log`-Page explizit `if (role !== "admin") redirect("/dashboard")`.
+- Update 2026-06-12 (/backend SLC-912 MT-5): `getCurrentUserRole` fail-closed — returnt `null` bei null-user/missing-profile/catch (Return-Type `Promise<string|null>`). `/audit-log`-Page hatte den `if (role !== "admin") redirect` bereits → greift jetzt korrekt bei null. Vitest GREEN (null/null/null/role). Status `open` bis /qa.
 
 ### ISSUE-105 — Open-Redirect auf `/api/track/[id]?t=click&url=...` (HMAC-Signatur-Fehlend) — RESOLVED
 - Status: resolved

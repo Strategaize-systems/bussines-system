@@ -1,5 +1,15 @@
 # Decisions
 
+## DEC-301 — V8.14 SLC-912 MT-1 profiles.role-Lock via service_role-aware BEFORE-UPDATE-Trigger (nicht REVOKE/Column-GRANT, nicht NOT is_admin())
+- Status: accepted
+- Reason: ISSUE-098 (Blocker) — PostgREST erlaubt authenticated `PATCH /rest/v1/profiles {role:'admin'}` (RLS schuetzt nicht column-level). Drei Optionen: (A) `REVOKE UPDATE(role) ON profiles FROM authenticated` + Column-GRANT aller anderen Spalten — brittle (erfordert vollstaendige Spalten-Enumeration, bricht bei jeder neuen Spalte). (B) BEFORE-UPDATE-Trigger mit `NOT is_admin()` — wuerde den legitimen `changeRole` BRECHEN, weil dieser via `createAdminClient()` (service_role) laeuft und `is_admin()` dort (kein auth.uid()/Profil) zu false evaluiert (R-912-1). (C) BEFORE-UPDATE-Trigger mit `current_user <> 'service_role'` — robust gegen Schema-Drift, erlaubt service_role-Pfad, blockt authenticated. Gewaehlt: **C**.
+- Consequence: MIG-051 legt `profiles_role_change_guard()` + Trigger an. `changeRole` (service_role) + `last_login_at`-user-Updates bleiben funktional; authenticated role-PATCH + direkter postgres-role-UPDATE werden geblockt (insufficient_privilege). DB-Verify als node:20-Sidecar-Test (AC-912-10, /deploy). Kanonisches Cross-Repo-Origin-Pattern "profiles.role Column-Level-Protection" fuer OP/IS/immoscheckheft (IMP-1200 + IMP-1207).
+
+## DEC-300 — V8.14 ISSUE-105 Open-Redirect-Fix via HMAC-signierte Tracking-Links (Pre-Slice-Hotfix 2026-06-07)
+- Status: accepted
+- Reason: Public-Endpoint `/api/track/[id]` akzeptierte einen user-controlled `url`-Query-Param und 302-redirected ohne Allowlist/Signatur → Phishing-Pivot ab BS-Domain (ISSUE-105 High). Retroaktiv dokumentiert: in roadmap/backlog/slice/STATE/KNOWN_ISSUES referenziert, aber nie als DEC-Heading geschrieben (Records-Gap im V8.14 /backend geschlossen).
+- Consequence: `wrapLinks` signiert URLs mit HMAC-SHA256 (`TRACKING_HMAC_SECRET`-ENV, `s=`-Query-Param); `/api/track/[id]` verifiziert `s` timing-safe vor Redirect, fail-closed bei missing/invalid. Module `cockpit/src/lib/email/tracking.ts` + Route `cockpit/src/app/api/track/[id]/route.ts` + Test `tracking.test.ts` (10 Vitest GREEN), Commits `d2c9740`+`c0f8c61` (noch nicht gepusht). Coolify-ENV-Action: `TRACKING_HMAC_SECRET` (32-Byte hex) MUSS vor Production-Deploy gesetzt sein, sonst brechen Tracking-Click-Redirects fail-closed. Legacy-Links ohne `s=` redirecten nicht mehr (akzeptiert, Founder-Stage).
+
 ## DEC-291 — V8.7-B SLC-355 Cost-Tracking BS-lokal in `audit_log.context` (kein `ai_jobs`/`ai_cost_ledger`)
 - Status: accepted
 - Reason: BS hat weder `ai_cost_ledger` noch `ai_jobs` (bestaetigt SLC-909/DEC-288 via Live-Schema-Check). Der Synthetic-`ai_jobs`-INSERT-Pattern aus `backend.md` (FK `ai_cost_ledger.job_id → ai_jobs(id)`) ist eine Intelligence-Studio-Konstruktion und gilt fuer BS NICHT. BS-LLM-Cost wird ausschliesslich in `audit_log.context` als JSON gefuehrt (Praezedenz Sculptor-Flow `cockpit/src/lib/automation/sculptor.ts:280-293` + `sculptor-cost.ts:90-109` `calculateSculptCost(usage, modelId)`). Der NEUE Verdichtungs-Bedrock-Pass (MT-3) folgt 1:1 diesem BS-lokalen Pattern.

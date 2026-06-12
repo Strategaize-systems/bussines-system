@@ -1,5 +1,14 @@
 # Migrations
 
+### MIG-051 — V8.14 SLC-912 MT-1 profiles.role Column-Level-Lock (ISSUE-098 Blocker, BEFORE-UPDATE-Trigger service_role-aware)
+- Date: 2026-06-12
+- Scope: Additive Migration `sql/migrations/051_v814_slc912_profiles_role_protect.sql` — 1 Trigger-Function `profiles_role_change_guard()` (PL/pgSQL) + 1 BEFORE-UPDATE-Trigger `profiles_role_change_guard` auf `profiles`. Blockt jede `role`-Aenderung wenn `NEW.role IS DISTINCT FROM OLD.role AND current_user <> 'service_role'` (RAISE insufficient_privilege). Schliesst PostgREST-`PATCH /rest/v1/profiles {role:'admin'}`-Self-Promotion (ISSUE-098). Kein Tabellen-DDL, keine Spalten, keine Daten-Migration. `NOTIFY pgrst, 'reload schema'` am Ende.
+- Reason: RLS schuetzt nicht column-level innerhalb einer erlaubten Row (`profiles_admin_update USING (is_admin() OR id = auth.uid())`). Ein authenticated User konnte die eigene Row updaten inkl. `role` → Privilege-Escalation zu Tenant-Admin. service_role-aware Guard (NICHT `NOT is_admin()`), weil der legitime `changeRole` via `createAdminClient()` (service_role) laeuft, wo `is_admin()`=false evaluiert (R-912-1 / IMP-1200 / IMP-1207).
+- Affected Areas: `profiles`-Tabelle (alle UPDATE-Pfade). Legitim unberuehrt: `changeRole` (`cockpit/src/lib/team/actions.ts`, service_role), `last_login_at`-Updates (user-client, role unangetastet → Trigger feuert nicht). Geblockt: PostgREST authenticated role-PATCH + direkter postgres-Superuser role-UPDATE.
+- Risk: Niedrig-additiv. Ein versehentlicher legitimer user-client-role-Change waere geblockt — es existiert aber keiner (Audit bestaetigt: nur changeRole/service_role). Direkter postgres-Wartungs-role-Change muss via `SET ROLE service_role` oder Trigger-Disable laufen.
+- Rollback Notes: `DROP TRIGGER profiles_role_change_guard ON profiles; DROP FUNCTION profiles_role_change_guard();`
+- Status: NOT YET APPLIED — Apply im /deploy V8.14 via `sql-migration-hetzner.md` (postgres-Superuser, base64). DB-Verify: `cockpit/__tests__/migrations/051-v814-profiles-role-protect.test.ts` (node:20-Sidecar, SAVEPOINT, AC-912-10). MIG-050 ist bewusst eine Luecke (war fuer SLC-909 LLM-Cost-Cap reserviert, entfiel DEC-288).
+
 ### MIG-049 — V8.11 SLC-905 Klasse-D knowledge_chunks Schema-ALTER + Sync-Backfill + RLS-Policies + search_knowledge_chunks-Function-Erweiterung (APPLIED 2026-06-06 via SSH+base64, Q-V8.11-B 100% Coverage erreicht)
 - Date: 2026-06-06
 - Scope: 4-Phasen idempotente Migration auf 1 Klasse-D-Tabelle `knowledge_chunks` + 1 Function-Erweiterung:
