@@ -21,7 +21,8 @@
 - Next Action: V8.15 SLC-913 MT-5 — Endpoint hinter `verifyCronSecret` ODER `NODE_ENV!=='production'` gaten bzw. aus Prod-Build entfernen, aus publicPaths nehmen, sentry-State-Feld aus Response droppen.
 
 ### ISSUE-111 — followup-actions approve/postpone/reject mutieren beliebige ai_action_queue-Rows via Admin-Client ohne Ownership-Check
-- Status: open
+- Status: resolved
+- Resolution: 2026-06-12 V8.15 SLC-913 MT-2 (Commit 9cfb2cd, RPT-642/643) — alle 3 Actions inkl. Entity-Lookups + tasks-Insert auf User-Client (createClient), RLS-Klasse-C scoped; createAdminClient-Import entfernt; 7 Vitest (unauth/wrong-owner rejected, happy-path decided_by/created_by=User, kein Admin-Call).
 - Severity: Medium
 - Area: Security / RLS-Bypass / createAdminClient (ISSUE-090..094-Klasse)
 - Summary: `app/(app)/mein-tag/followup-actions.ts:32-203` — `approveFollowup/postponeFollowup/rejectFollowup` nutzen `createAdminClient()` (BYPASSRLS), laden/updaten `ai_action_queue` per `.eq('id', actionId)` ohne owner/decided_by-Filter, einziges Gate ist `auth.getUser()`. approveFollowup INSERTet zusaetzlich eine `tasks`-Row mit deal_id/contact_id/company_id aus der fremden Row. Exakt das ISSUE-093-Pattern, das V8.12 SLC-906 in `insight-actions.ts` fixte, hier aber vergessen.
@@ -30,7 +31,8 @@
 - Next Action: V8.15 SLC-913 MT-2 — `ai_action_queue`-Reads/Writes + Task-Insert auf User-Client (createClient) umstellen, RLS-Klasse-C greift; analog V8.12 insight-actions.ts.
 
 ### ISSUE-112 — getPendingFollowups liest ai_action_queue via Admin-Client mit GAR keinem Auth-Check (toter Code)
-- Status: open
+- Status: resolved
+- Resolution: 2026-06-12 V8.15 SLC-913 MT-2 (Commit 9cfb2cd, RPT-642/643) — User-Client + auth.getUser()-Guard (return [] unauth). Fix statt Removal: ISSUE-111 verlangte Fix der 3 Schwester-Actions, Teil-Removal waere inkohaerent; gehaertet-statt-entfernt verhindert Wiederbelebung des ungesicherten Patterns. Dead-Code-Status im File-Header dokumentiert.
 - Severity: Medium
 - Area: Security / RLS-Bypass / createAdminClient
 - Summary: `app/(app)/mein-tag/followup-actions.ts:13-26` — `getPendingFollowups()` nutzt `createAdminClient()` ohne `auth.getUser()` und ohne owner/team-Filter, gibt alle pending followup_engine-Rows zurueck. Mildernd: aktuell toter Code (nirgends aufgerufen, `FollowupSuggestions` nie gerendert). V8.12 haertete das Geschwister `getPendingInsights`, dieses wurde uebersehen.
@@ -75,7 +77,8 @@
 - Next Action: V8.15 SLC-913 MT-7 (mit DEC) — per-Tenant-Keys gemappt auf owner/team + `.eq('owner_user_id'/'team_id', ...)`-Filter, ODER RLS-gebundene Identitaet statt createAdminClient; winloss/performance id-Ownership pruefen; Rate-Limit auf Key-Identitaet statt Header.
 
 ### ISSUE-117 — approveInsightAction wendet deal-Mutationen via Admin-Client auf target_entity_id an — V8.12-ISSUE-093-Fix nur auf entity_id, Write-Pfad ungeschuetzt
-- Status: open
+- Status: resolved
+- Resolution: 2026-06-12 V8.15 SLC-913 MT-2 (Commit 9cfb2cd, RPT-642/643) — applyProposedChange(item, client): Caller (approveInsightAction, User-Client) reicht Client durch, deals-UPDATE + pipeline_stages-Lookup laufen RLS-scoped (can_see_owner auf target_entity_id); kein createAdminClient-Import mehr in applier.ts (Statik-Test). Crafted-Row-Angriff (entity_id=eigen, target=fremd) endet in update_failed/0-rows.
 - Severity: Medium
 - Area: Security / RLS-Bypass / createAdminClient (V8.12-Fix-Incompleteness)
 - Summary: V8.12 stellte `approveInsightAction` (insight-actions.ts) auf User-Client um — RLS-scoped auf `entity_id`. Die eigentliche Mutation `applyProposedChange()` in `lib/ai/signals/applier.ts:41` nutzt aber weiter `createAdminClient()` und schreibt `deals.update({stage_id|value}).eq('id', target_entity_id)` (distinkte Spalte!) ohne Ownership-Re-Check. Ein Angreifer craftet eine ai_action_queue-Row (entity_id=eigener Deal besteht RLS, target_entity_id=Opfer-Deal) → approve → Admin-Write auf fremden Deal.
@@ -111,7 +114,8 @@
 - Next Action: V8.15 SLC-913 MT-6 — XFF nicht vertrauen (rightmost/trusted-proxy-Offset oder Connection-Remote-Addr); account-scoped Lockout-Key (`login-acct:<email>`); Counter in persistenten Store (DB/Redis). Cross-Repo-Pattern (gleiche ip-hash.ts in OP/IS/immoscheckheft pruefen).
 
 ### ISSUE-121 — lookupVatIdAction ist eine unauthenticated Server-Action mit Admin-Client-DB-Write + ausgehendem HTTP
-- Status: open
+- Status: resolved
+- Resolution: 2026-06-12 V8.15 SLC-913 MT-2 (Commit 9cfb2cd, RPT-642/643) — Auth-Gate (createClient+getUser, throw bei unauth) als erste Pruefung VOR Format-Check/VIES-Call/Admin-Cache-Write; 3 Vitest. Admin-Client fuer Shared-Cache-Write bleibt by design (kein Ownership-Konzept), jetzt nur noch authentifiziert erreichbar.
 - Severity: Medium
 - Area: Security / Auth / Server-Action
 - Summary: `lib/validation/vies-actions.ts:21-53` — exportierte `"use server"`-Action ohne requireUser/assertRole. Baut `createAdminClient()`, ruft `lookupVatId()` → ausgehender GET an ec.europa.eu + Upsert in `vat_id_validations` (RLS-bypassing). Next.js dispatcht Server-Actions per Action-ID global → ueber Public-Path anonym erreichbar. Kein SSRF (fixer Host), Writes nicht angreifer-kontrolliert (validateEuVatId constrained).
