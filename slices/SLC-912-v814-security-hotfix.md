@@ -131,6 +131,18 @@ ISSUE-101 (uploadLogo ohne Role-Check) + ISSUE-102 (SVG-MIME erlaubt) → Member
 2. `GOTRUE_RATE_LIMIT_TOKEN_REFRESH` + `GOTRUE_RATE_LIMIT_EMAIL_SENT` in Coolify pinnen (zweite Bremse fuer ISSUE-099).
 3. V8.12 /post-launch T+24h-PASS bestaetigt (V8.14 deferred bis V8.12 stable).
 
+## Cross-Repo-Reuse (BLOCKING Definition-of-Done)
+
+BS V8.14 SLC-912 wird die **kanonische Origin-Quelle** fuer diese 5 Security-Fix-Klassen ueber alle Strategaize-Repos (OP/IS/immoscheckheft). Per `strategaize-pattern-reuse.md` (BLOCKING) sind die Klassen dort bereits als Tabellen-Rows mit `PENDING`-Origin-Markern eingetragen. Damit "gilt fuer alle Repos + maximal reuse" eingehalten wird, ist die Slice erst dann **done**, wenn ALLE folgenden Punkte erfuellt sind:
+
+1. **Portabel bauen (nicht BS-hardcoden):** Jeder Fix wird als wiederverwendbares Pattern authored — Parameter via ENV/Args, keine BS-only-Annahmen, Source-Path-Header-Kommentar wo aus existing Pattern portiert (z.B. assertRole, checkRateLimit, logSafe). MIG-051-Trigger als generische Template-Migration (Tabelle/Spalte oben als Konstante, service_role-Guard fix).
+2. **Pattern-Reuse-Tabelle nach /qa backfillen:** Die 5 `PENDING`-Rows in `.claude/rules/strategaize-pattern-reuse.md` (Dev-System) mit den realen BS-Pfaden + Commit-Hash ersetzen (PENDING-Marker entfernen).
+3. **Reuse-Memory(s) anlegen:** Pro neuem Origin-Pattern (mind. profiles.role-Trigger + Login-Rate-Limit) ein `feedback_*`-Memory-File, damit das naechste Repo es per Recall findet (analog [[feedback-logger-redaction-logsafe]] / [[feedback-password-policy-zxcvbn-dynamic-import]]).
+4. **Cross-Repo-Applicability-Matrix pflegen:** `docs/CROSS_REPO_V814_SECURITY_HOTFIX.md` (Findung × Repo-Matrix) — pro Finding markieren, welche Repos denselben Gap haben + Mirror-Slice-Status. Die Mirror-Slices in OP/IS/immoscheckheft werden NICHT in dieser Slice gebaut (eigene Repos, eigener Workflow), aber hier als verbindlicher Follow-up registriert.
+5. **`/backend`-Pre-Step Search-First:** Auch wenn BS hier Origin ist — vor jedem Fix kurz pruefen, ob ein anderes Repo das Pattern schon kanonisch hat (z.B. DOMPurify-HTML-Sanitize existiert als BS V8.10 SLC-892 / Pattern-Library `11-html-sanitization.md` — MT-3 baut darauf auf statt neu).
+
+Diese DoD ist Teil von AC-912-8 (Records-Sync) erweitert. Verletzung = Slice NICHT done.
+
 ## Quelle
 
 V8.13-Pre-Security-Audit 2026-06-07 (Workflow `wf_2c908025-94f`, 8 Lenses, 67 Subagents). Memory `project_bs_v813_security_audit_2026_06_07.md`. KNOWN_ISSUES ISSUE-098..105 Single-Source-of-Truth. Dev-System IMP-1200 (Column-Level-Protection) + IMP-1201 (Workflow-Verify-Rate-Limit). Versions-Nummer V8.14 (statt audit-bezeichnetem "V8.13") wegen Kollision mit released v8-13 Storage+Auth-Hotfix REL-045 — Founder-Entscheidung 2026-06-11.
