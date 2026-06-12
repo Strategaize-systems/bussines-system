@@ -1,5 +1,14 @@
 # Known Issues
 
+### ISSUE-107 — V8.7-B Verdichtungs-Cron: Anonymisierungs-Qualität + Objection-Source erst Live verifizierbar
+- Status: open
+- Severity: Low
+- Area: V8.7-B / SLC-355 / knowledge-push / Anonymisierung + Daten-Relevanz
+- Summary: Der BS->IS Verdichtungs-Cron (SLC-355) ist Code-Side /qa-PASS (RPT-630), aber zwei Aspekte sind strukturell nur mit gemocktem `queryLLM` getestet und brauchen einen Live-Smoke gegen echtes Bedrock: (1) **Namen-Anonymisierung** — Email/Telefon werden per Regex pre-Prompt + pre-Send gestrippt, Firmen-/Personennamen jedoch NICHT regex-gestrippt, sondern verlassen sich allein auf die LLM-Anonymisierung (System-Prompt "keine Namen", temp 0.2). Die reale Anonymisierungs-Güte/Halluzination ist noch nicht live verifiziert (R-355-1). (2) **Objection-Source** — `gatherObjectionNotes` zieht ALLE `activities.description` der letzten 7 Tage (typ-unspezifisch), nicht die dedizierte `activities.objections`/`summary`-Spalte. Per Spec (AC-355-3 "Activity-Notizen-Freitext"), aber die Klassifikations-Relevanz hängt davon ab, ob die Einwand-Inhalte tatsächlich in `description` liegen.
+- Impact: Internal-Test-Mode (BS-eigene Vertriebsdaten, keine Mandanten-Daten) → Re-Identifikations-Risiko bewusst akzeptiert (DEC-290). Kein Code-Defekt; fail-soft (leeres/fehlerhaftes LLM-Ergebnis -> Bucket-Skip). Risiko = Output-Qualität (Namen-Leak ins IS-Wissen / thematisch dünne Objection-Items), nicht Korrektheit.
+- Workaround: `KNOWLEDGE_PUSH_ENABLED=false` bis Live-Smoke; bei Bedarf später `KNOWLEDGE_PUSH_MIN_BUCKET` hochsetzen (k-Anonymität).
+- Next Action: Beim /deploy-Live-Smoke (R-355-1) die ersten real destillierten Win/Loss- + Objection-Items inspizieren: (a) 0 Klarnamen im `body_markdown`/`title`, (b) Objection-Items thematisch sinnvoll. Falls Namen leaken: Namen-Redact ergänzen oder `objections`/`summary`-Spalte als Objection-Source nutzen. Vor jedem Pre-Customer-Live neu bewerten.
+
 ### ISSUE-098 — Privilege-Escalation: jeder authenticated User kann profiles.role auf 'admin' setzen (PostgREST UPDATE)
 - Status: open
 - Severity: Blocker

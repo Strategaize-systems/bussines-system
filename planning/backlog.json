@@ -2737,9 +2737,9 @@
       "title": "V8.7-B SLC-355 BS->IS Verdichtungs-Cron",
       "type": "feature",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.7-B",
-      "description": "Woechentlicher Cron pusht anonymisierte/aggregierte Win/Loss-Reasons + Einwand-Behandlungen (Branche x Deal-Groesse) an die IS-Knowledge-API. /backend DONE 2026-06-12 (RPT-629): alle 6 MTs Code-Side, tsc=0/eslint=0/vitest 1457 GREEN/next build OK. Founder-Override DEC-290 min_bucket Default 1 (kein Skip am Anfang). Keine Migration. Next: /qa SLC-355.",
+      "description": "Woechentlicher Cron pusht anonymisierte/aggregierte Win/Loss-Reasons + Einwand-Behandlungen (Branche x Deal-Groesse) an die IS-Knowledge-API. /backend DONE (RPT-629) + /qa Code-Side PASS 2026-06-12 (RPT-630): alle 6 MTs, tsc=0/eslint=0/vitest 1457 GREEN, 57 Slice-Tests, Stub/Wiring clean, audit_log Spec-Drift schema-verifiziert (changes JSONB/context TEXT/entity_id UUID), actor_id nullable bestaetigt. 0 Blocker/High/Medium, 1 Low (ISSUE-107 Anonymisierungs-/Objection-Source Live-Verifikation). Keine Migration. Next: Gesamt-/qa V8.7-B -> /final-check.",
       "createdAt": "2026-05-27"
     },
     {
