@@ -61,7 +61,8 @@
 - Next Action: V8.15 SLC-913 MT-3 — gleiches `safeExternalHref()`-Pattern wie ISSUE-113 (href-Scheme-Guard-Sweep).
 
 ### ISSUE-115 — Mass-Assignment in moveDealToStage: requirementValues ohne Key-Whitelist in deals-UPDATE gespreadet
-- Status: open
+- Status: resolved
+- Resolution: 2026-06-12 V8.15 SLC-913 MT-4 (Commit c159185, RPT-646/647) — cleanValues-Projektion: Whitelist-Pick auf STAGE_REQUIRED_FIELDS[stageName].fields + Typ-Validierung (string|number|null); Merge/UPDATE/Audit-Snapshot/Activity-Titel nutzen ausschliesslich die bereinigte Map (Audit-Evasion mit-geschlossen). 4 Adversarial-Tests + 6 SLC-813-Regressions GREEN.
 - Severity: Medium
 - Area: Security / Mass-Assignment / Pipeline
 - Summary: `app/(app)/pipeline/actions.ts:455` — `.update({ ...requirementValues, updated_at })`. `requirementValues` ist Raw-Client-Input einer Server-Action; TS-Typ zur Laufzeit erased; die Validierungsschleife prueft nur Praesenz der Required-Keys, nie Key-Membership. Caller setzt extra Keys (value/created_at/pipeline_id/source/campaign_id/won_lost_reason/contact_id). RLS deals_update constrained nur owner_user_id → andere Spalten frei beschreibbar; Audit-Log loggt nur deklarierte Keys (Audit-Evasion).
