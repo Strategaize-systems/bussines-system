@@ -1,5 +1,12 @@
 # Releases
 
+### REL-049 — V8.14 Pre-Customer-Live Security-Hotfix Bundle (SLC-912: profiles.role-Lock + Login-Rate-Limit + DSE-XSS + Branding-Hardening + Log/Auth-Hygiene)
+- Date: 2026-06-12 (/go-live CONDITIONAL GO RPT-638) / /deploy + Live-Smoke PENDING
+- Scope: 1 Slice SLC-912 / FEAT-924 / BL-515 — schliesst die 7 Findings ISSUE-098..104 aus dem Out-of-Band Multi-Lens-Security-Audit 2026-06-07 (1 Blocker + 2 High + 2 Medium + 2 Low). MT-1 MIG-051 profiles.role BEFORE-UPDATE-Trigger (service_role-aware), MT-2 Login-Rate-Limit, MT-3 DSE-Markdown XSS-Sanitize + Write-Validator, MT-4 Branding uploadLogo Role-Check + SVG-MIME-Block + Logo-Route-Header, MT-5 Log-PII-Redaction (17 Keys) + getCurrentUserRole fail-closed. ISSUE-105 (Open-Redirect) bereits Pre-Slice resolved (DEC-300). 1 additive Migration MIG-051. 0 neue Dependencies, 0 docker-compose/next.config/.env-Changes.
+- Summary: Reiner Security-Hotfix. /qa Code-Side PASS (RPT-636, 0B/0H/0M/1L), /final-check CONDITIONALLY READY (RPT-637). Gates GREEN (tsc=0/ESLint=0/Vitest 1485/1485). **Verdict: CONDITIONAL GO** mit 4 Deploy-Conditions. Internal-Test-Mode, Single-Founder, kein Customer-Live.
+- Risks: R-912-4 In-Memory-Rate-Limit (Single-Container-OK, GoTrue-ENV 2. Bremse); ISSUE-098 Production-DB bis MIG-051-Live-Apply exponiert (Blast-Radius 0, Single-Founder); L-1 MT-3 sanitisiert breiter als ISSUE-100-Scope → Render-Visual-Smoke (C3).
+- Rollback Notes: App-Image auf REL-047 (V8.12) zurueck + `DROP TRIGGER profiles_role_change_guard ON profiles; DROP FUNCTION profiles_role_change_guard();` — additiv, unkritisch. Image-Tag im /deploy gesetzt (aktuell tbd-master-merge). Deploy-Conditions (BLOCKING): C1 Founder-ENV `TRACKING_HMAC_SECRET`+`GOTRUE_RATE_LIMIT_*`; C2 MIG-051-Apply + Self-Promotion-Live-Smoke (schliesst ISSUE-098); C3 Impressum/Help-Render-Smoke; C4 ISSUE-108 OOM-Mitigation. Master-Push bundelt 11 SLC-912-Commits + V8.7-B-Deploy-Doc-Commit `009d325` + ISSUE-105-Pre-Slice-Commits.
+
 ### REL-048 — V8.7-B BS→IS Verdichtungs-Cron (SLC-355, wöchentlicher Knowledge-Push an IS)
 - Date: 2026-06-12 (/go-live CONDITIONAL GO RPT-633) / 2026-06-12 (/deploy + Live-Smoke Plumbing-PASS RPT-634)
 - Image-Tag: `16aab52` (Git-Commit `16aab52260ecb5fefa07c603d9edabbe34511153` = Single-Branch `main`; V8.7-B-Code `23eaf6e` + /qa..go-live-Docs). Neuer App-Container `app-k9f5pn5upfq7etoefb5ukbcg-104504164315` Up healthy, RestartCount=0. **0 Schema-Migration** (DEC-289 — audit_log.actor_id bereits nullable, Idempotenz via IS-`UNIQUE(source_system,source_reference)`).
