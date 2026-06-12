@@ -156,6 +156,24 @@ describe("updateCustomerDse", () => {
     if (!result.ok) expect(result.error).toMatch(/zu lang/i);
   });
 
+  // V8.14 SLC-912 MT-3 (ISSUE-100): write-path XSS rejection BEFORE any DB write.
+  it("rejects content with raw <script> and does not write", async () => {
+    const supabase = makeSupabaseMock({});
+    (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(supabase);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(supabase);
+
+    const malicious =
+      "Gültiger Datenschutztext der lang genug ist. ".repeat(5) +
+      "<script>alert(document.cookie)</script>";
+    const result = await updateCustomerDse(malicious);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/script|HTML|Script/i);
+    // No DB write and no audit insert may have happened.
+    expect(supabase.calls.some((c) => c.method.startsWith("update"))).toBe(false);
+    expect(supabase.auditInsert).not.toHaveBeenCalled();
+  });
+
   it("updates legal_documents and inserts audit_log on happy path", async () => {
     const supabase = makeSupabaseMock({
       previousContent: "a".repeat(200),

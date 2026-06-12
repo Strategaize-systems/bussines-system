@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assertRole } from "@/lib/auth/assert-role";
 import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
+import { findUnsafeMarkup } from "@/lib/legal/validate-markdown";
 
 const MIN_CONTENT_LENGTH = 100;
 const MAX_CONTENT_LENGTH = 50000;
@@ -61,6 +62,17 @@ export async function updateCustomerDse(
     return {
       ok: false,
       error: `content_md zu lang (max ${MAX_CONTENT_LENGTH} Zeichen)`,
+    };
+  }
+
+  // V8.14 SLC-912 MT-3 (ISSUE-100): Stored-XSS auf der public DSE-Page unterbinden.
+  // Raw-<script>/Event-Handler/javascript:-URLs werden bereits beim Speichern
+  // rejected (Defense-in-Depth zum Render-Sanitizer in renderLegalMarkdown).
+  const unsafe = findUnsafeMarkup(contentMd);
+  if (unsafe) {
+    return {
+      ok: false,
+      error: `Unerlaubter HTML-/Script-Inhalt im Text: ${unsafe}`,
     };
   }
 
