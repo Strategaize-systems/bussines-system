@@ -52,7 +52,7 @@ Kampagnen sind **Marketing-Initiativen** — z.B. "Newsletter Q3", "LinkedIn-Out
 ### Variante B: Lead-Intake-API
 
 POST auf `/api/leads/intake` mit:
-- Bearer `EXPORT_API_KEY`
+- Bearer `LEAD_INTAKE_API_KEY` (eigener write-scoped Key seit V8.15 — der read-scoped `EXPORT_API_KEY` funktioniert hier nicht mehr)
 - JSON-Body mit `email`, `first_name`, `last_name`, optional `utm_source`/`utm_medium`/`utm_campaign`
 - System mappt UTM-Parameter ueber UTM→Campaign-Mapper:
   - Primary: External-Ref-Match (z.B. `utm_source = "linkedin-q3-steuerberater"`)
