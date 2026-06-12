@@ -7,7 +7,7 @@
 - Affected Areas: `profiles`-Tabelle (alle UPDATE-Pfade). Legitim unberuehrt: `changeRole` (`cockpit/src/lib/team/actions.ts`, service_role), `last_login_at`-Updates (user-client, role unangetastet → Trigger feuert nicht). Geblockt: PostgREST authenticated role-PATCH + direkter postgres-Superuser role-UPDATE.
 - Risk: Niedrig-additiv. Ein versehentlicher legitimer user-client-role-Change waere geblockt — es existiert aber keiner (Audit bestaetigt: nur changeRole/service_role). Direkter postgres-Wartungs-role-Change muss via `SET ROLE service_role` oder Trigger-Disable laufen.
 - Rollback Notes: `DROP TRIGGER profiles_role_change_guard ON profiles; DROP FUNCTION profiles_role_change_guard();`
-- Status: NOT YET APPLIED — Apply im /deploy V8.14 via `sql-migration-hetzner.md` (postgres-Superuser, base64). DB-Verify: `cockpit/__tests__/migrations/051-v814-profiles-role-protect.test.ts` (node:20-Sidecar, SAVEPOINT, AC-912-10). MIG-050 ist bewusst eine Luecke (war fuer SLC-909 LLM-Cost-Cap reserviert, entfiel DEC-288).
+- Status: APPLIED 2026-06-12 (/deploy V8.14, REL-049, RPT-639) via SSH+base64 (postgres-Superuser) auf `supabase-db-k9f5pn5upfq7etoefb5ukbcg-133238060930`. CREATE FUNCTION + CREATE TRIGGER + NOTIFY pgrst ohne Fehler; trigger:1/function:1 verifiziert. Self-Promotion-Live-Smoke (AC-912-10) PASS: authenticated role-change BLOCKED, service_role OK, last_login_at OK. MIG-050 ist bewusst eine Luecke (war fuer SLC-909 LLM-Cost-Cap reserviert, entfiel DEC-288).
 
 ### MIG-049 — V8.11 SLC-905 Klasse-D knowledge_chunks Schema-ALTER + Sync-Backfill + RLS-Policies + search_knowledge_chunks-Function-Erweiterung (APPLIED 2026-06-06 via SSH+base64, Q-V8.11-B 100% Coverage erreicht)
 - Date: 2026-06-06

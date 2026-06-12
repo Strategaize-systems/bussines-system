@@ -526,4 +526,4 @@ V8.14 = 1 Slice SLC-912, 6 Micro-Tasks, ~4-6h /backend + /qa. Schliesst 7 Findin
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-912 | [V8.14 Security-Hotfix Bundle (profiles.role-Lock + Login-Rate-Limit + DSE-XSS + Branding-Hardening + Log/Auth-Hygiene)](SLC-912-v814-security-hotfix.md) | FEAT-924 / BL-515 | done | Blocker | 2026-06-11 |
+| SLC-912 | [V8.14 Security-Hotfix Bundle (profiles.role-Lock + Login-Rate-Limit + DSE-XSS + Branding-Hardening + Log/Auth-Hygiene)](SLC-912-v814-security-hotfix.md) | FEAT-924 / BL-515 | deployed | Blocker | 2026-06-11 |

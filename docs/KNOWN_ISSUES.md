@@ -20,7 +20,8 @@
 - Next Action: Root-Cause-Fix wählen — (a) Hetzner-Server-Resize auf mehr RAM (z.B. 16 GB), oder (b) ISSUE-106 Session-/Process-Sprawl per `/doctor` bereinigen (gibt RAM zurück), oder (c) App-Image off-host bauen (CI/Registry) und nur pullen, oder (d) `/swapfile2` via fstab persistent machen + Jitsi-Stop als Deploy-Standardschritt dokumentieren. Bis dahin: jeder BS-Deploy mit der Jitsi-Stop+Swap-Mitigation fahren.
 
 ### ISSUE-098 — Privilege-Escalation: jeder authenticated User kann profiles.role auf 'admin' setzen (PostgREST UPDATE)
-- Status: open
+- Status: resolved
+- Resolution: V8.14 SLC-912 MT-1 /deploy 2026-06-12 (REL-049, RPT-639). MIG-051 `profiles_role_change_guard` BEFORE-UPDATE-Trigger (service_role-aware) LIVE auf Coolify-DB appliziert (trigger:1/function:1 verifiziert). **Self-Promotion-Live-Smoke (AC-912-10) PASS gegen die echte DB:** authenticated role-change → BLOCKED (`profiles.role change denied for role "authenticated" (service_role required)`), service_role role-change → OK (changeRole intakt), authenticated last_login_at → OK (kein Kollateral-Block). Production-DB nicht mehr exponiert.
 - Severity: Blocker
 - Area: Security / RLS / Identity
 - Summary: RLS-Policy `profiles_admin_update` (sql/migrations/035_v7_rls_switch.sql:167) erlaubt `USING (is_admin() OR id = auth.uid()) WITH CHECK (is_admin() OR id = auth.uid())`. Postgres RLS verhindert NICHT column-Level-Updates innerhalb einer erlaubten Row. Es existieren keine `REVOKE UPDATE(role) ON profiles FROM authenticated`, kein BEFORE-UPDATE-Trigger und kein Column-Level-GRANT. Attacker mit gueltiger Session ruft `PATCH /rest/v1/profiles?id=eq.<uid>` mit `{"role":"admin"}` und ist Tenant-Admin. Discovery: V8.13-Pre-Security-Audit 2026-06-07.
