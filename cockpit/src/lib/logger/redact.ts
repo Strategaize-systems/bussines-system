@@ -4,12 +4,15 @@
 // fuer den SLC-911 Sentry-beforeSend-Hook (Event-Payload-Redact).
 //
 // Default-Keys-Liste per DEC-280: Security-Core (10) + PII-Minimal (2) = 12 Keys.
+// V8.14 SLC-912 MT-5 (ISSUE-103): + BS-Domain-PII (5) = 17 Keys.
 // Export-Pattern per DEC-286: pure `redactSecrets(obj, opts?)` als Named Export.
 
 /**
  * Default-Keys, deren Werte in geloggten Objekten durch `[REDACTED]` ersetzt
  * werden. Security-Core (10) deckt die gefaehrlichsten Log-Leaks, PII-Minimal (2)
- * deckt DSGVO-Risk in Coolify-Container-Logs. Erweiterbar via `opts.extraKeys`.
+ * deckt DSGVO-Risk in Coolify-Container-Logs. BS-Domain-PII (5) deckt E-Mail-/
+ * Transkript-Inhalte, die in Cron-/Pipeline-Logs interpoliert wurden.
+ * Erweiterbar via `opts.extraKeys`.
  */
 export const DEFAULT_REDACT_KEYS = [
   // Security-Core (10)
@@ -26,6 +29,12 @@ export const DEFAULT_REDACT_KEYS = [
   // PII-Minimal (2)
   "email",
   "phone",
+  // BS-Domain-PII (5) — V8.14 SLC-912 MT-5
+  "from_address",
+  "recipient",
+  "body_text",
+  "transcript",
+  "x-cron-secret",
 ] as const;
 
 export interface RedactOptions {

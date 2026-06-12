@@ -150,9 +150,13 @@ export async function logIsKnowledgeQuery(
 
 /**
  * Get the current user's role from the profiles table.
- * Returns 'admin' by default (single-user system).
+ *
+ * V8.14 SLC-912 MT-5 (ISSUE-104): fail-CLOSED. Returnt `null` bei null-user,
+ * fehlendem Profil oder jedem Fehler — NIEMALS ein privilegiertes Default wie
+ * 'admin'. Caller (z.B. /audit-log) muessen `role !== "admin"` explizit gaten.
+ * Frueheres fail-open ('admin' by default) war ein inverted Threat-Model.
  */
-export async function getCurrentUserRole(): Promise<string> {
+export async function getCurrentUserRole(): Promise<string | null> {
   try {
     const supabase = await createClient();
 
@@ -160,7 +164,7 @@ export async function getCurrentUserRole(): Promise<string> {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) return "admin";
+    if (!user) return null;
 
     const { data: profile } = await supabase
       .from("profiles")
@@ -168,8 +172,8 @@ export async function getCurrentUserRole(): Promise<string> {
       .eq("id", user.id)
       .single();
 
-    return profile?.role ?? "admin";
+    return profile?.role ?? null;
   } catch {
-    return "admin";
+    return null;
   }
 }

@@ -6,8 +6,14 @@ import { classifyByLLM } from "@/lib/ai/classifiers/llm-based";
 import { extractAbsenceInfo } from "@/lib/ai/classifiers/auto-reply-analyzer";
 import { matchContactByAI } from "@/lib/ai/classifiers/contact-matcher-ai";
 import { createAction, expireOldActions } from "@/lib/ai/action-queue";
+import { logSafe } from "@/lib/logger";
 
 export const maxDuration = 60;
+
+// V8.14 SLC-912 MT-5 (ISSUE-103): logSafe statt roher console.log — PII (z.B.
+// from_address) wird als Objekt-Key uebergeben, damit redactSecrets sie maskiert
+// (String-Interpolation umgeht die Redaction). console.error bleibt fuer Error-
+// Objekte (kein PII; redactSecrets wuerde Error-Eigenschaften verschlucken).
 
 const BATCH_SIZE = 20;
 
@@ -37,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     if (!emails || emails.length === 0) {
       const expired = await expireOldActions();
-      console.log("[Cron/Classify] No unclassified emails. Expired actions:", expired);
+      logSafe("info", "[Cron/Classify] No unclassified emails. Expired actions:", expired);
       return NextResponse.json({
         success: true,
         processed: 0,
@@ -48,7 +54,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log(`[Cron/Classify] Processing ${emails.length} unclassified emails`);
+    logSafe("info", `[Cron/Classify] Processing ${emails.length} unclassified emails`);
 
     // ------------------------------------------------------------------
     // 2. Classify each email sequentially
@@ -102,7 +108,8 @@ export async function POST(request: NextRequest) {
           );
         } else {
           ruleClassified++;
-          console.log(
+          logSafe(
+            "info",
             `[Cron/Classify] Rule classified ${email.id}: ${ruleResult.classification} (${ruleResult.rule})`
           );
 
@@ -160,8 +167,10 @@ export async function POST(request: NextRequest) {
                       expires_at: `${returnDate}T23:59:59.000Z`,
                     });
 
-                    console.log(
-                      `[Cron/Classify] Auto-reply from ${email.from_address}: ${adjustedCount} followups adjusted to ${returnDate}`
+                    logSafe(
+                      "info",
+                      "[Cron/Classify] Auto-reply followups adjusted",
+                      { from_address: email.from_address, adjustedCount, returnDate }
                     );
                   }
                 }
@@ -277,7 +286,8 @@ export async function POST(request: NextRequest) {
         }
 
         llmClassified++;
-        console.log(
+        logSafe(
+          "info",
           `[Cron/Classify] LLM classified ${email.id}: ${llmResult.classification} / ${llmResult.priority} / action=${llmResult.suggested_action}`
         );
 
@@ -298,7 +308,8 @@ export async function POST(request: NextRequest) {
               dedup_key: `gatekeeper-${email.id}`,
               expires_at: expiresAt.toISOString(),
             });
-            console.log(
+            logSafe(
+              "info",
               `[Cron/Classify] Action created for ${email.id}: ${llmResult.suggested_action}`
             );
           } catch (actionError) {
@@ -374,7 +385,7 @@ export async function POST(request: NextRequest) {
               .eq("id", email.id);
 
             kiMatched++;
-            console.log(`[Cron/Classify] KI-Match auto-assigned ${email.id} → ${matchResult.contactId} (${matchResult.confidence})`);
+            logSafe("info", `[Cron/Classify] KI-Match auto-assigned ${email.id} → ${matchResult.contactId} (${matchResult.confidence})`);
           } else if (matchResult.confidence >= 0.3) {
             // Suggest via ai_action_queue
             await createAction({
@@ -390,7 +401,7 @@ export async function POST(request: NextRequest) {
             });
 
             kiSuggested++;
-            console.log(`[Cron/Classify] KI-Match suggested ${email.id} → ${matchResult.contactId} (${matchResult.confidence})`);
+            logSafe("info", `[Cron/Classify] KI-Match suggested ${email.id} → ${matchResult.contactId} (${matchResult.confidence})`);
           }
         } catch (matchError) {
           console.error(`[Cron/Classify] KI-Match error for ${email.id}:`, matchError);
@@ -404,7 +415,7 @@ export async function POST(request: NextRequest) {
 
     const expired = await expireOldActions();
     if (expired > 0) {
-      console.log(`[Cron/Classify] Expired ${expired} old pending actions`);
+      logSafe("info", `[Cron/Classify] Expired ${expired} old pending actions`);
     }
 
     // ------------------------------------------------------------------
@@ -412,7 +423,8 @@ export async function POST(request: NextRequest) {
     // ------------------------------------------------------------------
 
     const processed = ruleClassified + llmClassified + llmFailed;
-    console.log(
+    logSafe(
+      "info",
       `[Cron/Classify] Done — processed=${processed}, rule=${ruleClassified}, llm=${llmClassified}, failed=${llmFailed}, autoReplyAdjusted=${autoReplyAdjusted}, kiMatched=${kiMatched}, kiSuggested=${kiSuggested}, expired=${expired}`
     );
 

@@ -35,6 +35,27 @@ describe("redactSecrets", () => {
     ).toEqual({ items: [{ jwt: "[REDACTED]" }, { jwt: "[REDACTED]", id: 5 }] });
   });
 
+  // V8.14 SLC-912 MT-5 (ISSUE-103): neue BS-Domain-PII-Default-Keys.
+  it("redactet BS-Domain-PII-Keys (from_address, recipient, body_text, transcript, x-cron-secret)", () => {
+    expect(
+      redactSecrets({
+        from_address: "a@b.de",
+        recipient: "c@d.de",
+        body_text: "geheimer Inhalt",
+        transcript: "Meeting-Mitschrift",
+        "x-cron-secret": "s3cr3t",
+        keep: "ok",
+      }),
+    ).toEqual({
+      from_address: "[REDACTED]",
+      recipient: "[REDACTED]",
+      body_text: "[REDACTED]",
+      transcript: "[REDACTED]",
+      "x-cron-secret": "[REDACTED]",
+      keep: "ok",
+    });
+  });
+
   it("AC-907-3: redactet zusaetzliche Keys via opts.extraKeys", () => {
     expect(
       redactSecrets({ custom_key: "v", keep: "k" }, { extraKeys: ["custom_key"] }),
@@ -77,10 +98,11 @@ describe("redactSecrets", () => {
     expect(() => redactSecrets(deep)).not.toThrow();
   });
 
-  it("DEFAULT_REDACT_KEYS enthaelt genau 12 Keys (DEC-280)", () => {
-    expect(DEFAULT_REDACT_KEYS).toHaveLength(12);
+  it("DEFAULT_REDACT_KEYS enthaelt 17 Keys (DEC-280 12 + V8.14 SLC-912 MT-5 5)", () => {
+    expect(DEFAULT_REDACT_KEYS).toHaveLength(17);
     expect(DEFAULT_REDACT_KEYS).toContain("password");
     expect(DEFAULT_REDACT_KEYS).toContain("email");
     expect(DEFAULT_REDACT_KEYS).toContain("phone");
+    expect(DEFAULT_REDACT_KEYS).toContain("from_address");
   });
 });
