@@ -108,8 +108,9 @@ export async function approveInsightAction(
 
   const queueItem = item as AIActionQueueItem;
 
-  // 2. Apply the proposed change
-  const applyResult = await applyProposedChange(queueItem);
+  // 2. Apply the proposed change (V8.15 MT-2 / ISSUE-117: User-Client
+  // durchreichen — deal-UPDATE laeuft RLS-scoped statt BYPASSRLS)
+  const applyResult = await applyProposedChange(queueItem, supabase);
 
   // 3. Update queue item status
   const executionResult = applyResult.success

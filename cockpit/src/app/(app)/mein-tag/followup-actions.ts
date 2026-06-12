@@ -1,17 +1,34 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import type { AIActionQueueItem } from "@/types/ai-queue";
 import { assertNotReadOnlyContext } from "@/lib/auth/read-only-context";
+
+// V8.15 SLC-913 MT-2 (ISSUE-111 + ISSUE-112): kompletter User-Client-Switch.
+// Alle ai_action_queue-Reads/-Writes, Entity-Lookups (deals/contacts/
+// email_messages) und der tasks-Insert laufen ueber createClient() —
+// RLS-Klasse-C (047c, polymorpher EXISTS + decided_by-Fallback + is_admin())
+// scoped auf Ownership. Pattern analog V8.12 SLC-906 MT-4 insight-actions.ts
+// (ISSUE-093). Vorher: createAdminClient() (BYPASSRLS) ohne owner-Filter =
+// Cross-Owner-IDOR auf Followups + Task-Erzeugung aus fremden Rows.
+//
+// Hinweis: FollowupSuggestions (einziger Consumer) wird aktuell nirgends
+// gerendert (toter UI-Pfad, von Unified Queue abgeloest) — gehaertet statt
+// entfernt, damit eine Wiederbelebung nicht das ungesicherte Pattern
+// reanimiert (Wiederbelebungs-Risiko per security-audit-fable5-standard).
 
 // ------------------------------------------------------------------
 // Get pending followup suggestions
 // ------------------------------------------------------------------
 
 export async function getPendingFollowups(): Promise<AIActionQueueItem[]> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
 
   const { data, error } = await supabase
     .from("ai_action_queue")
@@ -32,7 +49,6 @@ export async function getPendingFollowups(): Promise<AIActionQueueItem[]> {
 export async function approveFollowup(actionId: string) {
   await assertNotReadOnlyContext();
   const supabase = await createClient();
-  const adminClient = createAdminClient();
 
   // Get the user
   const {
@@ -40,8 +56,8 @@ export async function approveFollowup(actionId: string) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet" };
 
-  // Get the action details
-  const { data: action, error: fetchError } = await adminClient
+  // Get the action details (RLS scoped: fremde Rows sind nicht sichtbar)
+  const { data: action, error: fetchError } = await supabase
     .from("ai_action_queue")
     .select("*")
     .eq("id", actionId)
@@ -50,7 +66,7 @@ export async function approveFollowup(actionId: string) {
   if (fetchError || !action) return { error: "Aktion nicht gefunden" };
 
   // Update action status to approved
-  await adminClient
+  await supabase
     .from("ai_action_queue")
     .update({
       status: "approved",
@@ -68,7 +84,7 @@ export async function approveFollowup(actionId: string) {
   if (action.entity_type === "deal") {
     deal_id = action.entity_id;
     // Look up contact and company from the deal
-    const { data: deal } = await adminClient
+    const { data: deal } = await supabase
       .from("deals")
       .select("contact_id, company_id")
       .eq("id", action.entity_id)
@@ -80,7 +96,7 @@ export async function approveFollowup(actionId: string) {
   } else if (action.entity_type === "contact") {
     contact_id = action.entity_id;
     // Look up company from contact
-    const { data: contact } = await adminClient
+    const { data: contact } = await supabase
       .from("contacts")
       .select("company_id")
       .eq("id", action.entity_id)
@@ -90,7 +106,7 @@ export async function approveFollowup(actionId: string) {
     }
   } else if (action.entity_type === "email_message") {
     // Look up contact and deal from the email
-    const { data: email } = await adminClient
+    const { data: email } = await supabase
       .from("email_messages")
       .select("contact_id, company_id, deal_id")
       .eq("id", action.entity_id)
@@ -107,7 +123,7 @@ export async function approveFollowup(actionId: string) {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const dueDate = tomorrow.toISOString().split("T")[0];
 
-  const { error: taskError } = await adminClient.from("tasks").insert({
+  const { error: taskError } = await supabase.from("tasks").insert({
     title: `[KI] ${action.action_description}`,
     description: action.reasoning,
     type: "follow_up",
@@ -142,7 +158,6 @@ export async function approveFollowup(actionId: string) {
 export async function postponeFollowup(actionId: string, days: number = 3) {
   await assertNotReadOnlyContext();
   const supabase = await createClient();
-  const adminClient = createAdminClient();
 
   const {
     data: { user },
@@ -154,7 +169,7 @@ export async function postponeFollowup(actionId: string, days: number = 3) {
 
   // Don't approve or reject — just push the suggested_at forward
   // This makes it re-appear later in the queue
-  const { error } = await adminClient
+  const { error } = await supabase
     .from("ai_action_queue")
     .update({
       suggested_at: newExpiry.toISOString(),
@@ -174,7 +189,6 @@ export async function postponeFollowup(actionId: string, days: number = 3) {
 export async function rejectFollowup(actionId: string, reason?: string) {
   await assertNotReadOnlyContext();
   const supabase = await createClient();
-  const adminClient = createAdminClient();
 
   const {
     data: { user },
@@ -182,7 +196,7 @@ export async function rejectFollowup(actionId: string, reason?: string) {
   if (!user) return { error: "Nicht angemeldet" };
 
   // Update action to rejected
-  await adminClient
+  await supabase
     .from("ai_action_queue")
     .update({
       status: "rejected",
@@ -192,7 +206,7 @@ export async function rejectFollowup(actionId: string, reason?: string) {
     .eq("id", actionId);
 
   // Create feedback entry
-  await adminClient.from("ai_feedback").insert({
+  await supabase.from("ai_feedback").insert({
     action_queue_id: actionId,
     feedback_type: "rejected",
     reason: reason ?? "Vom Benutzer abgelehnt",

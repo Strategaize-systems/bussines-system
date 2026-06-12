@@ -9,8 +9,13 @@
 // V7 SLC-704 MT-6: Dieser Applier macht NUR UPDATEs (kein Insert in
 // Kerntabellen). Bestehende owner_user_id-Werte werden durch die UPDATEs
 // nicht ueberschrieben. Daher kein Owner-Wiring noetig.
+//
+// V8.15 SLC-913 MT-2 (ISSUE-117): kein interner createAdminClient() mehr —
+// der Caller (approveInsightAction, User-Client + RLS-Klasse-C) reicht seinen
+// Client durch. Das deal-UPDATE laeuft damit RLS-scoped (can_see_owner);
+// fremde Deals sind fuer den Approver nicht mutierbar.
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ProposedChange, AIActionQueueItem } from "@/types/ai-queue";
 
 // ── Public types ──────────────────────────────────────────────
@@ -29,6 +34,7 @@ export interface ApplyResult {
  */
 export async function applyProposedChange(
   item: AIActionQueueItem,
+  client: SupabaseClient,
 ): Promise<ApplyResult> {
   if (!item.proposed_changes || !item.target_entity_type || !item.target_entity_id) {
     return {
@@ -38,22 +44,21 @@ export async function applyProposedChange(
     };
   }
 
-  const admin = createAdminClient();
   const change = item.proposed_changes;
   const entityId = item.target_entity_id;
 
   switch (item.type) {
     case "status_change":
-      return applyStageChange(admin, entityId, change);
+      return applyStageChange(client, entityId, change);
 
     case "value_change":
-      return applyValueChange(admin, entityId, change);
+      return applyValueChange(client, entityId, change);
 
     case "tag_change":
-      return applyTagChange(admin, entityId, change);
+      return applyTagChange(client, entityId, change);
 
     case "property_change":
-      return applyPropertyChange(admin, entityId, change);
+      return applyPropertyChange(client, entityId, change);
 
     default:
       return {
@@ -67,14 +72,14 @@ export async function applyProposedChange(
 // ── Stage change (stage_suggestion → deals.stage_id) ──────────
 
 async function applyStageChange(
-  admin: ReturnType<typeof createAdminClient>,
+  client: SupabaseClient,
   dealId: string,
   change: ProposedChange,
 ): Promise<ApplyResult> {
   const proposedStageName = String(change.new);
 
   // Look up stage ID by name
-  const { data: stage } = await admin
+  const { data: stage } = await client
     .from("pipeline_stages")
     .select("id, name")
     .ilike("name", proposedStageName)
@@ -88,7 +93,7 @@ async function applyStageChange(
     };
   }
 
-  const { error } = await admin
+  const { error } = await client
     .from("deals")
     .update({
       stage_id: stage.id,
@@ -109,7 +114,7 @@ async function applyStageChange(
 // ── Value change (value_update → deals.value) ─────────────────
 
 async function applyValueChange(
-  admin: ReturnType<typeof createAdminClient>,
+  client: SupabaseClient,
   dealId: string,
   change: ProposedChange,
 ): Promise<ApplyResult> {
@@ -122,7 +127,7 @@ async function applyValueChange(
     };
   }
 
-  const { error } = await admin
+  const { error } = await client
     .from("deals")
     .update({
       value: newValue,
@@ -145,7 +150,7 @@ async function applyValueChange(
 // until the schema is extended. The queue item remains as documentation.
 
 async function applyTagChange(
-  _admin: ReturnType<typeof createAdminClient>,
+  _client: SupabaseClient,
   _dealId: string,
   change: ProposedChange,
 ): Promise<ApplyResult> {
@@ -160,7 +165,7 @@ async function applyTagChange(
 // Priority column does not exist yet on deals. Same handling as tags.
 
 async function applyPropertyChange(
-  _admin: ReturnType<typeof createAdminClient>,
+  _client: SupabaseClient,
   _dealId: string,
   change: ProposedChange,
 ): Promise<ApplyResult> {

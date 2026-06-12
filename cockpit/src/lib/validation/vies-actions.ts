@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { validateEuVatId } from "./vat-id";
 import { lookupVatId, type ViesLookupSource } from "./vies-client";
 
@@ -19,6 +20,15 @@ export interface ViesLookupActionResult {
  * UI-Caller ruft via use(action.result) oder Form-Action.
  */
 export async function lookupVatIdAction(input: string): Promise<ViesLookupActionResult> {
+  // V8.15 SLC-913 MT-2 (ISSUE-121): Auth-Gate VOR VIES-Call/Admin-Write —
+  // Server-Action war sonst fuer unauthentifizierte Caller invocable
+  // (Outbound-VIES-Call + Cache-Write via Admin-Client).
+  const authClient = await createClient();
+  const {
+    data: { user },
+  } = await authClient.auth.getUser();
+  if (!user) throw new Error("Nicht authentifiziert");
+
   const trimmed = (input ?? "").trim().toUpperCase();
   const formatResult = validateEuVatId(trimmed);
 
