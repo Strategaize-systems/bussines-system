@@ -92,7 +92,9 @@ Pattern-Reuse aus V8.12 SLC-906 (User-Client statt Admin-Client, RLS-Klasse-C gr
 
 `api/export/*` + `api/winloss/[deal_id]` + `api/campaigns/[id]/performance` queryen via `createAdminClient()` ohne owner/team-Filter, einziger geteilter `EXPORT_API_KEY`. **Architektur-Entscheidung nötig (DEC-3xx):** per-Tenant/owner-Key-Mapping + `.eq('owner_user_id'/'team_id', …)`-Filter, ODER RLS-gebundene Identität statt Admin-Client. winloss/performance: id-Ownership prüfen. Rate-Limit auf Key-Identität statt spoofbaren Header.
 
-**Hinweis:** Latent (heute Single-Owner = 0 Blast-Radius). Falls der saubere Fix (per-Tenant-Keys) größer ist als V8.15-Budget → als eigenständiges Folge-Item mit DEC dokumentieren und in V8.15 mindestens den Header-basierten Rate-Limit-Key auf die Key-Identität umstellen. Founder-Entscheidung im /backend.
+**Hinweis:** Latent (heute Single-Owner = 0 Blast-Radius). Falls der saubere Fix (per-Tenant-Keys) größer ist als V8.15-Budget → als eigenständiges Folge-Item mit DEC dokumentieren und in V8.15 mindestens den Header-basierten Rate-Limit-Key auf die Key-Identität umstellen.
+
+**Founder-Entscheidung 2026-06-13: per-Tenant-Keys JETZT bauen (Full-Fix, NICHT defer).** Scope-Erweiterung gegenüber Spec-Fallback bewusst akzeptiert. Im /backend zu liefern: Key→Tenant/owner-Mapping (eigene Migration MIG-053 o.ä.), `.eq('owner_user_id'/'team_id', …)`-Filter auf `api/export/*` + `api/winloss/[deal_id]` + `api/campaigns/[id]/performance`, id-Ownership-Checks für winloss/performance, Rate-Limit-Key auf Key-Identität. DEC-3xx im /backend formalisieren (Approach: per-Tenant-Key-Mapping vs. RLS-gebundene Identität — Entscheidung beim Design treffen).
 
 **AC-913-7:** Entweder Tenant-Scope-Filter aktiv ODER DEC dokumentiert + Rate-Limit-Key gehärtet. Vitest/Doku entsprechend.
 
