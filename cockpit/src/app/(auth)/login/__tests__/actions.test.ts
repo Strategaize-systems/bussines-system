@@ -111,6 +111,61 @@ describe("login rate-limit + generic error (V8.14 SLC-912 MT-2)", () => {
     expect(signIn).toHaveBeenCalledTimes(6);
   });
 
+  it("account-scoped lockout greift trotz IP-Rotation (ISSUE-120 MT-6)", async () => {
+    const signIn = mockAuthFailure();
+    // 20 Fehlversuche, jeder von einer ANDEREN IP -> per-IP-Bucket immer frisch,
+    // aber der account-scoped Bucket (login-acct:<email>) akkumuliert.
+    for (let i = 0; i < 20; i++) {
+      setIp(`10.0.0.${i}`);
+      const r = await login(makeFormData("victim@b.de", "wrong"));
+      expect(r).toEqual({ error: GENERIC });
+    }
+    expect(signIn).toHaveBeenCalledTimes(20);
+
+    // 21. Versuch von einer weiteren frischen IP -> account-Lockout blockt VOR GoTrue.
+    setIp("10.0.0.99");
+    const blocked = await login(makeFormData("victim@b.de", "wrong"));
+    expect(blocked).toEqual({ error: GENERIC });
+    expect(signIn).toHaveBeenCalledTimes(20); // unveraendert — kein GoTrue-Touch
+  });
+
+  it("account-scoped Lockout trifft NUR den betroffenen Account (kein Kollateral)", async () => {
+    const signIn = mockAuthFailure();
+    for (let i = 0; i < 20; i++) {
+      setIp(`10.0.1.${i}`);
+      await login(makeFormData("victim@b.de", "wrong"));
+    }
+    expect(signIn).toHaveBeenCalledTimes(20);
+    // Anderer Account, frische IP -> nicht gesperrt.
+    setIp("10.0.1.99");
+    await login(makeFormData("other@b.de", "wrong"));
+    expect(signIn).toHaveBeenCalledTimes(21);
+  });
+
+  it("erfolgreicher Login leert auch den account-scoped Counter", async () => {
+    const failSignIn = mockAuthFailure();
+    for (let i = 0; i < 19; i++) {
+      setIp(`10.0.2.${i}`);
+      await login(makeFormData("victim@b.de", "wrong"));
+    }
+    expect(failSignIn).toHaveBeenCalledTimes(19);
+
+    const okSignIn = mockAuthSuccess();
+    setIp("10.0.2.50");
+    await expect(login(makeFormData("victim@b.de", "right"))).rejects.toThrow(
+      "NEXT_REDIRECT:/dashboard",
+    );
+    expect(okSignIn).toHaveBeenCalledTimes(1);
+
+    // account-Counter geleert -> 20 weitere Fehlversuche erreichen wieder GoTrue.
+    const failAgain = mockAuthFailure();
+    for (let i = 0; i < 20; i++) {
+      setIp(`10.0.3.${i}`);
+      await login(makeFormData("victim@b.de", "wrong"));
+    }
+    expect(failAgain).toHaveBeenCalledTimes(20);
+  });
+
   it("a successful login clears the failure counter", async () => {
     // 4 failures, then a success, then failures should start fresh.
     const failSignIn = mockAuthFailure();
