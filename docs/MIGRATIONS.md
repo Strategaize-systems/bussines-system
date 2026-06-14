@@ -1,5 +1,13 @@
 # Migrations
 
+### MIG-053 — V8.15 SLC-913 MT-7 export_api_keys (per-Tenant Export-Keys, ISSUE-116)
+- Date: 2026-06-13
+- Scope: Neue Tabelle `public.export_api_keys` (id, key_hash UNIQUE, owner_user_id FK auth.users, label, scope CHECK('read'), created_at, revoked_at) + 2 Indizes (aktiv-Lookup partial WHERE revoked_at IS NULL, owner). RLS ENABLE + FORCE, REVOKE ALL FROM anon/authenticated, GRANT service_role. NOTIFY pgrst reload.
+- Reason: Ersetzt den geteilten unscoped EXPORT_API_KEY (DEC-302) — die Read-APIs scopen jetzt auf die Key-Identitaet (owner_user_id, team-expandiert).
+- Affected Areas: /api/export/* + /api/winloss/[deal_id] + /api/campaigns/[id]/performance (Auth-Aufloesung via resolveExportIdentity). Keine bestehende Tabelle veraendert (additiv).
+- Risk: Niedrig (neue Tabelle). Default-Grant-Hygiene fuer neue public-Objekte beachtet (REVOKE anon/authenticated, sonst anonym ueber PostgREST lesbar). NICHT applied beim /backend — Live-Apply im /deploy via sql-migration-hetzner.md (postgres-User, Base64), danach DB-Verify `cockpit/__tests__/migrations/053-v815-export-api-keys.test.ts` + per-Tenant-Key fuer Founder provisionieren (openssl rand -hex 32 → sha256-Hash in export_api_keys) + System 4 auf den neuen Bearer-Key umstellen.
+- Rollback Notes: `DROP TABLE IF EXISTS public.export_api_keys;` + EXPORT_API_KEY-ENV in den Routen reaktivieren (vorherige verifyExportApiKey-Variante via git revert des MT-7-Commits).
+
 ### MIG-052 — V8.15 SLC-913 MT-1 profiles authz-Spalten-Lock (ISSUE-109 High team_id + ISSUE-122 Low INSERT-Coverage, BEFORE INSERT OR UPDATE)
 - Date: 2026-06-12
 - Scope: Erweitert die MIG-051-Guard-Function `profiles_role_change_guard()` per CREATE OR REPLACE (gleicher Function-/Trigger-Name, MIG-051-DB-Verify-Test bleibt gueltig): UPDATE blockt jetzt `role` UND `team_id`-Aenderungen fuer `current_user <> 'service_role'`; Trigger auf `BEFORE INSERT OR UPDATE` umgestellt; INSERT durch non-service_role nur mit explizit `role='member'` + `team_id IS NULL` (profiles.role hat DEFAULT 'admin' — nackter INSERT waere Self-Promotion). File: `sql/migrations/052_v815_slc913_profiles_authz_protect.sql`.

@@ -73,6 +73,7 @@
 
 ### ISSUE-116 — Export-/winloss-/performance-Read-APIs dumpen alle Owner-Rows via service_role mit einem geteilten Key, kein Tenant-/Ownership-Scope
 - Status: open
+- Resolution-Pending: Code-Side fertig 2026-06-13 V8.15 SLC-913 MT-7 (DEC-302) — per-Tenant-Keys (export_api_keys/MIG-053), guardExportTenant (identitaets-gebundener Rate-Limit), alle 7 Flaechen gescopt (owner_user_id/created_by/decided_by/abgeleitet, fail-closed). tsc=0/eslint=0, +16 Vitest. Bleibt `open` bis /deploy: MIG-053 ist NICHT applied (Live-Apply via sql-migration-hetzner.md + DB-Verify 053-*.test.ts) UND per-Tenant-Key muss provisioniert + System 4 umgestellt werden (sonst 401). Analog ISSUE-109/122 (MIG-052-Gate).
 - Severity: Medium
 - Area: Security / Tenant-Isolation / Export-API (latent)
 - Summary: `api/export/*` + `api/winloss/[deal_id]` + `api/campaigns/[id]/performance` authentisieren nur gegen einen globalen `EXPORT_API_KEY` (`lib/export/auth.ts`) und queryen via `createAdminClient()` (BYPASSRLS) ohne owner_user_id/Tenant-Filter. winloss/performance geben Daten fuer JEDE id zurueck. `owner_user_id` existiert auf 8 Tabellen (MIG-033); ein Verifizierer wertete das als kein-Tenant-Modell, der andere als reale Latenz. Rate-Limit keyed auf spoofbares x-forwarded-for.
@@ -111,7 +112,8 @@
 - Next Action: V8.15 SLC-913 MT-5 — endpoint beim Write validieren (https + Host-Allowlist echte Push-Services, private/loopback/link-local/metadata rejecten), optional Re-Check in send.ts.
 
 ### ISSUE-120 — Login-Rate-Limit (ISSUE-099-Fix) per X-Forwarded-For umgehbar — unbegrenzter Brute-Force gegen einen Account
-- Status: open
+- Status: resolved
+- Resolution: 2026-06-13 V8.15 SLC-913 MT-6 (DEC-303). R-913-3 live-verifiziert (SSH 91.98.20.191): Traefik laeuft ohne forwardedHeaders.trustedIPs und VERWIRFT den client-XFF (gespoofter 9.9.9.9 gedroppt, durch reale Peer-IP ersetzt) — die XFF-Rotations-Praemisse greift in dieser Config gar nicht. `extractClientIp` nimmt dennoch den rechtesten(-Offset) Eintrag (env TRUSTED_PROXY_COUNT, Default 1) statt des linkesten (robust/portabel). Primaerer Fix: IP-unabhaengiger account-scoped Lockout `login-acct:<email>` (20/15min) zusaetzlich zum per-(email,ip)-Limit — schliesst die echte Restluecke (Botnet mit vielen realen IPs). 16 Vitest (ip-hash 9 + login 7). In-Memory-Counter bleibt (R-912-4); persistenter Store = Folge-Item. App-Layer-only, keine Migration → resolved ohne /deploy-Gate.
 - Severity: Medium
 - Area: Security / Auth / V8.14-Fix-Incompleteness
 - Summary: `lib/security/ip-hash.ts:27` nimmt den LINKESTEN (client-kontrollierten) `x-forwarded-for`-Wert. `login/actions.ts` keyed `login:<email>:<ip>`, nur dieser Key wird gethrottlet (5/15min), Counter in-memory (per-Container, deploy-fluechtig). Angreifer rotiert XFF → frischer Bucket pro Request. Key ist (email,IP) statt account-scoped. Einziger echter Backstop bleibt GoTrue `GOTRUE_RATE_LIMIT_*`.
