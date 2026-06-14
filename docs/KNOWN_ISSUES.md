@@ -3,7 +3,8 @@
 <!-- ISSUE-109..126: BS V8.15 Post-Deploy Re-Audit 2026-06-12 (Fable-5 Multi-Agent, Workflow wf_5e95fe4b-7e9, 42 Agenten, 6 Finder-Dimensionen + adversarische Doppel-Verifikation). Audit ueber den deployten V8.14-Stand (Commit 7a7b225). 18 confirmed Findings (1 High + 12 Medium + 5 Low). 2 davon liessen V8.14-Fixes offen/umgehbar (ISSUE-109 team_id + ISSUE-120 Login-XFF). Standard: .claude/rules/security-audit-fable5-standard.md. -->
 
 ### ISSUE-109 — profiles.team_id selbst-mutierbar: V8.14-Role-Guard liess die zweite authz-tragende Spalte ungeschuetzt (Team-Isolation-Bypass)
-- Status: open
+- Status: resolved
+- Resolution: 2026-06-14 V8.15 SLC-913 MT-1 (REL-050, /deploy RPT-656) — MIG-052 live appliziert auf Coolify-DB (postgres-User, Base64). Trigger `profiles_role_change_guard` jetzt `BEFORE INSERT OR UPDATE` (tgtype=23) + Guard auf `NEW.team_id` UND `NEW.role` fuer `current_user <> 'service_role'`. Live-verifiziert via transaktionale psql-SAVEPOINT-Probe (BEGIN..ROLLBACK): authenticated team_id-UPDATE → BLOCKED, authenticated role-UPDATE → BLOCKED, service_role team_id-UPDATE → OK (R-913-1 legit Admin-Pfad), non-authz Spalte `team` → OK. Team-Isolation-Bypass geschlossen.
 - Severity: High
 - Area: Security / RLS / Identity / V8.14-Fix-Incompleteness
 - Summary: MIG-051 `profiles_role_change_guard` blockt nur `NEW.role`. `profiles_admin_update` (035_v7_rls_switch.sql:167) erlaubt `USING/CHECK (is_admin() OR id = auth.uid())` → jeder authenticated User darf seine EIGENE Row updaten. Es gibt keinen Trigger und kein `REVOKE UPDATE(team_id)`. `get_my_team_id()`/`can_see_owner()` (035:44-72) haengen an `team_id`. Ein Teamlead setzt per `PATCH /rest/v1/profiles?id=eq.<self> {"team_id":"<fremd>"}` sein Team um → `can_see_owner()` wird TRUE fuer das fremde Team → liest/schreibt dessen deals/contacts/companies/activities/meetings/proposals/emails. Die ISSUE-098-Klasse ist nur HALB geschlossen.
@@ -72,8 +73,8 @@
 - Next Action: V8.15 SLC-913 MT-4 — requirementValues auf erlaubte `STAGE_REQUIRED_FIELDS`-Keys projizieren (Whitelist-Pick + Typ-Validierung), gleiche Filterung am effectiveDeal-Merge.
 
 ### ISSUE-116 — Export-/winloss-/performance-Read-APIs dumpen alle Owner-Rows via service_role mit einem geteilten Key, kein Tenant-/Ownership-Scope
-- Status: open
-- Resolution-Pending: Code-Side fertig 2026-06-13 V8.15 SLC-913 MT-7 (DEC-302) — per-Tenant-Keys (export_api_keys/MIG-053), guardExportTenant (identitaets-gebundener Rate-Limit), alle 7 Flaechen gescopt (owner_user_id/created_by/decided_by/abgeleitet, fail-closed). tsc=0/eslint=0, +16 Vitest. Bleibt `open` bis /deploy: MIG-053 ist NICHT applied (Live-Apply via sql-migration-hetzner.md + DB-Verify 053-*.test.ts) UND per-Tenant-Key muss provisioniert + System 4 umgestellt werden (sonst 401). Analog ISSUE-109/122 (MIG-052-Gate).
+- Status: resolved
+- Resolution: 2026-06-14 V8.15 SLC-913 MT-7 (REL-050, /deploy RPT-656) — MIG-053 live appliziert (export_api_keys, RLS forced t|t, GRANT nur postgres+service_role, REVOKE anon/authenticated live-verifiziert). Per-Tenant-Key fuer Founder provisioniert (nur SHA-256-Hash gespeichert). Alle 7 Read-Flaechen via guardExportTenant gescopt (owner_user_id/created_by/decided_by/Parent-FK fail-closed). Live-Smoke PASS: WRONG key → 401, NO auth → 401, CORRECT key → 200 + founder-scoped Resultat (kein Cross-Owner-Leak). EXPORT_API_KEY hat keinen Route-Caller mehr. OFFEN (operativ, kein Re-Open): System 4 muss auf `Bearer <RAW>` umgestellt werden.
 - Severity: Medium
 - Area: Security / Tenant-Isolation / Export-API (latent)
 - Summary: `api/export/*` + `api/winloss/[deal_id]` + `api/campaigns/[id]/performance` authentisieren nur gegen einen globalen `EXPORT_API_KEY` (`lib/export/auth.ts`) und queryen via `createAdminClient()` (BYPASSRLS) ohne owner_user_id/Tenant-Filter. winloss/performance geben Daten fuer JEDE id zurueck. `owner_user_id` existiert auf 8 Tabellen (MIG-033); ein Verifizierer wertete das als kein-Tenant-Modell, der andere als reale Latenz. Rate-Limit keyed auf spoofbares x-forwarded-for.
@@ -132,7 +133,8 @@
 - Next Action: V8.15 SLC-913 MT-2 — Auth-Gate (requireUser) am Top vor VIES-Call/Admin-Write, optional Rate-Limit + user-scoped Cache-Write.
 
 ### ISSUE-122 — profiles_role_change_guard feuert nur BEFORE UPDATE, keine INSERT-Coverage (Defense-in-Depth)
-- Status: open
+- Status: resolved
+- Resolution: 2026-06-14 V8.15 SLC-913 MT-1 (REL-050, /deploy RPT-656) — von MIG-052 mit-erledigt. Trigger jetzt `BEFORE INSERT OR UPDATE` (tgtype=23). Live-verifiziert: authenticated INSERT mit role='admin' → BLOCKED (Trigger RAISEt insufficient_privilege vor FK-Check). INSERT-Coverage geschlossen.
 - Severity: Low
 - Area: Security / RLS / Defense-in-Depth
 - Summary: `sql/migrations/051_v814_slc912_profiles_role_protect.sql:49` — Trigger ist `BEFORE UPDATE ON profiles` only; INSERT mit role='admin' nicht abgedeckt. Heute durch `profiles_admin_insert WITH CHECK (is_admin())` (035:163) + service_role-only Profile-Erzeugung (invite.ts) gedeckt; kein handle_new_user/raw_user_meta_data-Pfad existiert. Risiko nur falls ein Self-Service-Signup-Trigger ergaenzt oder die Insert-Policy geloosent wird.

@@ -2767,7 +2767,7 @@
       "title": "V8.15 Security-Hardening Bundle (SLC-913): team_id-Column-Guard + createAdminClient-Sweep + href-XSS-Guard + Mass-Assignment + Public-Endpoint-Hardening + Login-Rate-Limit + Export-Scoping",
       "type": "fix",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.15",
       "description": "Pre-Customer-Live-Security-Hardening aus dem Fable-5 Multi-Agent Post-Deploy Re-Audit 2026-06-12 (Workflow wf_5e95fe4b-7e9, 42 Agenten). 1 Slice SLC-913 / FEAT-925 schliesst die High+Medium-Findings (ISSUE-109..121), die 5 Low (ISSUE-122..126) dokumentiert/deferred. 8 MTs: MT-1 MIG-052 profiles team_id-Guard + BEFORE INSERT OR UPDATE (ISSUE-109+122), MT-2 createAdminClient-Ownership-Sweep followup-actions+applier+vies (ISSUE-111/112/117/121), MT-3 safeExternalHref-Sweep company.website+linkedin_url (ISSUE-113/114), MT-4 Mass-Assignment-Whitelist moveDealToStage (ISSUE-115), MT-5 Public-Endpoint-Hardening test-sentry+leads-intake+push-SSRF (ISSUE-110/118/119), MT-6 Login-Rate-Limit-Haertung XFF+account-scoped (ISSUE-120), MT-7 Export-API-Tenant-Scoping mit DEC (ISSUE-116), MT-8 Records. 1 additive Migration MIG-052. Single-Branch main, Fable 5 durchgaengig. Pre-Condition: V8.14 STABLE. Quelle: KNOWN_ISSUES ISSUE-109..126 + Standard security-audit-fable5-standard.md.",
       "createdAt": "2026-06-12"

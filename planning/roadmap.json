@@ -339,7 +339,7 @@
     {
       "id": "v8-15",
       "name": "V8.15",
-      "status": "active",
+      "status": "released",
       "order": 39.4,
       "summary": "Security-Hardening-Sprint aus dem Fable-5 Multi-Agent Post-Deploy Re-Audit 2026-06-12 (Workflow wf_5e95fe4b-7e9, 42 Agenten, 6 Finder-Dimensionen + adversarische Doppel-Verifikation ueber den deployten V8.14-Stand Commit 7a7b225). 18 confirmed Findings (1 High + 12 Medium + 5 Low), 2 davon liessen V8.14-Fixes offen/umgehbar (ISSUE-109 profiles.team_id-Self-Mutation + ISSUE-120 Login-Rate-Limit-XFF-Bypass). 1 Slice SLC-913 / FEAT-925 / BL-516. Founder-Direktive: alle High + Medium (ISSUE-109..121) werden gefixt, die 5 Low (ISSUE-122..126) dokumentiert + deferred (ISSUE-122 wird vom 109-Fix mit-erledigt). 8 Micro-Tasks: MT-1 DB-Column-Guard MIG-052 (profiles team_id + BEFORE INSERT OR UPDATE), MT-2 createAdminClient-Ownership-Sweep (followup-actions + applier + vies-auth), MT-3 href-Scheme-Guard-Sweep (safeExternalHref Helper), MT-4 Mass-Assignment-Whitelist (moveDealToStage), MT-5 Public-Endpoint-Hardening (test-sentry + leads-intake + push-SSRF), MT-6 Login-Rate-Limit-Haertung (XFF + account-scoped), MT-7 Export-API-Tenant-Scoping (mit DEC), MT-8 Records. 1 additive Migration MIG-052. Single-Branch main, Internal-Test-Mode. Modell: Fable 5 durchgaengig (Audit-Standard security-audit-fable5-standard.md). Pre-Condition: V8.14 STABLE (/post-launch T+24h ~2026-06-13). Per module-lifecycle-discipline + IMP-950: kein Customer-Live, NICHT released bis /go-live, NICHT stable bis /post-launch T+24h. Founder plant vor Multi-User-Schritt zusaetzlich /code-review ultra als externe Gegenprobe. Quelle: KNOWN_ISSUES ISSUE-109..126 + IMP-1236/1237. Naechster Schritt: /backend SLC-913 MT-1."
     },
