@@ -36,12 +36,23 @@ export function checkRateLimit(request: Request): NextResponse | null {
     request.headers.get("x-real-ip") ||
     "unknown";
 
+  return checkRateLimitByKey(`ip:${ip}`);
+}
+
+/**
+ * V8.15 SLC-913 MT-7 (ISSUE-116): Rate-Limit auf eine explizite Identitaet
+ * (z.B. die aufgeloeste Export-Key-owner_user_id) statt auf den client-
+ * spoofbaren x-forwarded-for-Header. Der Tenant-scoped Export keyed damit auf
+ * `key:<owner_user_id>` — ein Angreifer kann das Limit nicht per Header-Rotation
+ * umgehen.
+ */
+export function checkRateLimitByKey(key: string): NextResponse | null {
   const now = Date.now();
-  const entry = store.get(ip);
+  const entry = store.get(key);
 
   if (!entry || entry.resetAt <= now) {
     // New window
-    store.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    store.set(key, { count: 1, resetAt: now + WINDOW_MS });
     return null;
   }
 

@@ -1,18 +1,20 @@
 // SLC-665 MT-7 (DEC-171) — Win/Loss Read-API fuer Intelligence Studio.
 //
-// GET /api/winloss/[deal_id] mit Bearer-Auth EXPORT_API_KEY (FEAT-622-Pattern).
-// Liefert den juengsten auto_winloss_runs-Eintrag pro Deal.
+// GET /api/winloss/[deal_id]. V8.15 SLC-913 MT-7 (ISSUE-116): per-Tenant-Key
+// + Ownership-Check — auto_winloss_runs hat kein owner_user_id, der Deal aber
+// schon (deal_id -> deals.owner_user_id). Gehoert der Deal nicht zum Tenant,
+// antwortet die Route 404 (keine Enumeration fremder deal_ids).
 
 import { NextResponse } from "next/server";
-import { verifyExportApiKey } from "@/lib/export/auth";
+import { guardExportTenant } from "@/lib/export/helpers";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ deal_id: string }> }
 ) {
-  const authResp = verifyExportApiKey(request);
-  if (authResp) return authResp;
+  const identity = await guardExportTenant(request);
+  if (identity instanceof NextResponse) return identity;
 
   const { deal_id } = await params;
   if (!deal_id || typeof deal_id !== "string") {
@@ -20,6 +22,21 @@ export async function GET(
   }
 
   const supabase = createAdminClient();
+
+  // Ownership-Gate: der Deal muss dem Tenant gehoeren (abgeleitete Ownership).
+  const { data: deal } = await supabase
+    .from("deals")
+    .select("owner_user_id")
+    .eq("id", deal_id)
+    .maybeSingle();
+  const dealOwner = (deal as { owner_user_id: string | null } | null)?.owner_user_id ?? null;
+  if (!dealOwner || !identity.teamMemberIds.includes(dealOwner)) {
+    return NextResponse.json(
+      { error: "No win/loss run found for this deal" },
+      { status: 404 }
+    );
+  }
+
   const { data, error } = await supabase
     .from("auto_winloss_runs")
     .select(

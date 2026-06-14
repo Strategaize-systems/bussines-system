@@ -1,10 +1,14 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { guardExportRequest, parseExportParams, exportResponse } from "@/lib/export/helpers";
+import { guardExportTenant, parseExportParams, exportResponse } from "@/lib/export/helpers";
 
 export async function GET(request: NextRequest) {
-  const guard = guardExportRequest(request);
-  if (guard) return guard;
+  // V8.15 SLC-913 MT-7 (ISSUE-116): Tenant-scope ueber decided_by (ai_action_queue
+  // hat kein owner_user_id; approved-Rows haben decided_by gesetzt = der Team-User
+  // der die Aktion freigegeben hat = Tenant-Grenze, DEC-302). NULL decided_by
+  // faellt aus dem .in raus = fail-closed.
+  const identity = await guardExportTenant(request);
+  if (identity instanceof NextResponse) return identity;
 
   const params = parseExportParams(request);
   const supabase = createAdminClient();
@@ -14,7 +18,8 @@ export async function GET(request: NextRequest) {
   let countQuery = supabase
     .from("ai_action_queue")
     .select("id", { count: "exact", head: true })
-    .eq("status", "approved");
+    .eq("status", "approved")
+    .in("decided_by", identity.teamMemberIds);
   if (params.since) countQuery = countQuery.gte("created_at", params.since);
   if (params.until) countQuery = countQuery.lte("created_at", params.until);
   const { count } = await countQuery;
@@ -25,6 +30,7 @@ export async function GET(request: NextRequest) {
       "id, type, action_description, reasoning, entity_type, entity_id, source, priority, status, suggested_at, decided_at, decided_by, execution_result, created_at"
     )
     .eq("status", "approved")
+    .in("decided_by", identity.teamMemberIds)
     .order("created_at", { ascending: false })
     .range(offset, offset + params.limit - 1);
 

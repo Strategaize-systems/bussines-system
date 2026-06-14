@@ -4,7 +4,7 @@
 // Returnt KPI-JSON fuer System 4 / externe Reporting-Konsumenten.
 
 import { NextResponse } from "next/server";
-import { verifyExportApiKey } from "@/lib/export/auth";
+import { guardExportTenant } from "@/lib/export/helpers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { CampaignPerformance } from "@/types/campaign";
 
@@ -12,8 +12,11 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResp = verifyExportApiKey(request);
-  if (authResp) return authResp;
+  // V8.15 SLC-913 MT-7 (ISSUE-116): per-Tenant-Key + Ownership-Check. campaigns
+  // hat kein owner_user_id; created_by (NOT NULL) ist die Tenant-Grenze (DEC-302).
+  // Fremde campaign id -> 404 (keine Enumeration).
+  const identity = await guardExportTenant(request);
+  if (identity instanceof NextResponse) return identity;
 
   const { id } = await params;
   if (!id || typeof id !== "string") {
@@ -22,15 +25,20 @@ export async function GET(
 
   const supabase = createAdminClient();
 
-  // 1) Lookup campaign
+  // 1) Lookup campaign (inkl. created_by fuer Ownership-Gate)
   const { data: campaign, error: cErr } = await supabase
     .from("campaigns")
-    .select("id, name, external_ref")
+    .select("id, name, external_ref, created_by")
     .eq("id", id)
     .maybeSingle();
 
   if (cErr) return NextResponse.json({ error: cErr.message }, { status: 500 });
   if (!campaign) return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+
+  const campOwner = (campaign as { created_by: string | null }).created_by;
+  if (!campOwner || !identity.teamMemberIds.includes(campOwner)) {
+    return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+  }
 
   // 2) Aggregate counts in parallel
   const since30 = new Date();
