@@ -535,3 +535,12 @@ V8.15 = 1 Slice SLC-913, 8 Micro-Tasks. Schliesst die High+Medium-Findings (ISSU
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
 | SLC-913 | [V8.15 Security-Hardening Bundle (team_id-Guard + createAdminClient-Sweep + href-XSS-Guard + Mass-Assignment + Public-Endpoint-Hardening + Login-Rate-Limit + Export-Scoping)](SLC-913-v815-security-hardening.md) | FEAT-925 / BL-516 | deployed | High | 2026-06-12 |
+
+## V8.16 Slices (Security-Hardening — Fable-5 Re-Audit über deployten V8.15, slice-planning done 2026-07-04)
+
+V8.16 schliesst die 4 offenen Findings aus dem Fable-5 Re-Audit über den deployten V8.15-Stand (RPT-659, `c9efb41` — NICHT konvergiert): ISSUE-131 (High, `startMeeting` createAdminClient-IDOR — Nachbar-Lücke des V8.12/V8.15 Ownership-Sweeps), ISSUE-132 (Medium, RLS-Klasse-C Multi-Parent WITH-CHECK Cross-Tenant-Injection), ISSUE-133/134 (Low, Hygiene). **1 additive Migration MIG-054** (Multi-Parent WITH-CHECK-Conjunction, pattern-weit über den vollständigen Multi-Parent-Satz — IMP-1394, NICHT nur die 7 audit-benannten Tabellen). Zusätzlich **SLC-910 CSP Phase-B-Close** (Report-Only → enforced + Browser-Smoke `csp-check.mjs`) → bringt V8.12 auf 100%. Single-Branch main, Internal-Test-Mode (Precedent SLC-912/913). Pro MT: TSC=0 + ESLint geänderte Files=0 + Full-Vitest-jsdom GREEN (IMP-1108). Cross-Repo (OP/IS/immoscheckheft) = separater Follow-up, NICHT in diesem Slot. Nach V8.16: `/code-review ultra` externe Gegenprobe vor Multi-User-Schritt. Per module-lifecycle-discipline + IMP-950: kein Customer-Live.
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-914 | [V8.16 Security-Hardening Bundle (startMeeting-IDOR + Class-C WITH-CHECK MIG-054 + Low-Hygiene)](SLC-914-v816-security-hardening.md) | FEAT-926 / BL-518 | planned | High | 2026-07-04 |
+| SLC-910 | [V8.12 CSP-Headers Phase-B-Close (Report-Only → enforced + Browser-Smoke) — im V8.16-Slot abgeschlossen](SLC-910-v812-csp-headers.md) | FEAT-922 / BL-501 | in_progress | Medium | 2026-06-09 |

@@ -1,5 +1,13 @@
 # Migrations
 
+### MIG-054 — V8.16 SLC-914 MT-2 Class-C Multi-Parent WITH-CHECK Härtung (ISSUE-132) — RESERVED, geschrieben im /backend
+- Date: 2026-07-04 (reserviert bei /slice-planning; File wird im /backend SLC-914 MT-2 angelegt)
+- Scope: Additive Migration `sql/migrations/054_v816_slc914_class_c_withcheck_harden.sql`. Rewrites die INSERT- und UPDATE-`WITH CHECK` jeder genuin Multi-Parent-Class-C-Tabelle (live aus `pg_policies` abgeleitet, ≥2 Parent-FK-EXISTS-OR-Zweige) von OR zu AND-Conjunction: jeder gesetzte (non-NULL) FK muss via `can_see_owner()` sichtbar sein; plus `(mind. 1 FK non-NULL OR (alle FK NULL AND created_by=auth.uid()))`. Bekannte Kandidaten: tasks, signals, calendar_events, email_threads, handoffs, referrals (MIG-047a) + documents, email_attachments, cadence_enrollments (audit-benannt) + weitere ≥2-FK-Tabellen (emails, email_tracking_events, ai_action_queue, ai_feedback, fit_assessments — live bestätigen). Tabellen ohne created_by (email_threads) ohne all-NULL-Zweig (Orphan nur via is_admin). SELECT/UPDATE-USING/DELETE unverändert OR-Logik. Idempotent (DROP POLICY IF EXISTS + CREATE). NOTIFY pgrst reload.
+- Reason: ISSUE-132 (Fable-5 Re-Audit 2026-07-04, RPT-659) — die OR-`WITH CHECK` erlaubt cross-tenant Row-Injection über den nicht-geprüften FK-Zweig. DEC-305. Pattern-weit über den vollständigen Multi-Parent-Satz (IMP-1394), nicht nur die 7 audit-benannten Tabellen.
+- Affected Areas: RLS-INSERT/UPDATE-WITH-CHECK aller Multi-Parent-Class-C-Tabellen im public-Schema. Keine Tabellen-DDL, keine Datenänderung (nur Policy-Rewrite). `list_tables_with_authenticated_full_access()` bleibt 0.
+- Risk: Medium — eine zu strenge Conjunction könnte legitime same-tenant Multi-Parent-Inserts rejecten. Mitigation: DB-Verify mit Positiv- UND Negativ-Cases pro betroffener Tabelle (node:20-Sidecar SAVEPOINT, `cockpit/__tests__/migrations/054-v816-class-c-withcheck.test.ts`), email_threads-Orphan-Semantik explizit. NICHT applied beim /backend — Live-Apply im /deploy via sql-migration-hetzner.md (postgres-User, Base64).
+- Rollback Notes: MIG-047a/b/c-`WITH CHECK`-Klauseln der betroffenen Tabellen per git-revert des MT-2-Commits re-applyen (OR-Logik wiederherstellen). Additiv, kein Datenverlust.
+
 ### MIG-053 — V8.15 SLC-913 MT-7 export_api_keys (per-Tenant Export-Keys, ISSUE-116)
 - Date: 2026-06-13
 - Scope: Neue Tabelle `public.export_api_keys` (id, key_hash UNIQUE, owner_user_id FK auth.users, label, scope CHECK('read'), created_at, revoked_at) + 2 Indizes (aktiv-Lookup partial WHERE revoked_at IS NULL, owner). RLS ENABLE + FORCE, REVOKE ALL FROM anon/authenticated, GRANT service_role. NOTIFY pgrst reload.

@@ -1,5 +1,11 @@
 # Feature Index
 
+## V8.16 Features (Security-Hardening — Fable-5 Re-Audit über deployten V8.15, slice-planning done 2026-07-04)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-926 | V8.16 Security-Hardening Bundle (startMeeting-IDOR ISSUE-131 + Class-C Multi-Parent WITH-CHECK ISSUE-132 + Low-Hygiene ISSUE-133/134) + SLC-910 CSP Phase-B-Close | in_progress | [Slice](../slices/SLC-914-v816-security-hardening.md) | 2026-07-04 |
+
 ## V8.15 Features (Security-Hardening-Sprint — Fable-5 Multi-Agent Re-Audit, slice-planning done 2026-06-12)
 
 | ID | Feature | Status | Spec | Created |
