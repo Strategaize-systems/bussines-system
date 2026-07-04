@@ -1,5 +1,10 @@
 # Decisions
 
+## DEC-304 — Compliance-Baseline V8.15: konsolidierte Customer-Live-taugliche COMPLIANCE-Doku als kanonisches Deliverable
+- Status: accepted
+- Reason: Die bisherige `docs/COMPLIANCE.md` war versions-chronologisch angehängt und stand bei V5.7 still, während das System über V6/V7/V8.x umfangreiche datenschutz-/sicherheitsrelevante Änderungen erhielt (vollständige RLS V8.11, Logger-Redaction, Passwort-Policy, profiles-Spaltenschutz, Export-Tenant-Scoping, Login-Lockout, Sentry-EU). Für die Pre-Customer-Live-Homework (Founder-Direktive 2026-06-15) wurde eine aktuelle, lesbare, an Kunden/DSB übergebbare Gesamtdarstellung benötigt — kein weiterer Versions-Anhang.
+- Consequence: Neue konsolidierte Fassung unter `deliverables/COMPLIANCE.md` (Stand V8.15, 14 Abschnitte, Customer-Live-tauglich, Pre-Customer-Live-Gates explizit). `docs/COMPLIANCE.md` bleibt als Historie mit Verweis-Banner erhalten. Neue Compliance-Gaps als ISSUE-127..130 erfasst (SMTP-EU-Default, Erasure-Flow, Tracking-IP-Klartext, Aufnahme-Consent-Gate); Whisper-EU-Switch weiter über ISSUE-042. Dokument ist technische Beschreibung, keine Rechtsberatung — anwaltliche/DSB-Gesamtprüfung bleibt Pflicht-Gate vor Customer-Live.
+
 ## DEC-303 — V8.15 SLC-913 MT-6 Login-XFF-Trust-Modell: rightmost(-Offset) Eintrag + account-scoped Lockout (ISSUE-120)
 - Status: accepted
 - Reason: R-913-3 wurde live gegen die laufende Instanz verifiziert (2026-06-13, SSH 91.98.20.191): coolify-proxy/Traefik laeuft OHNE `forwardedHeaders.trustedIPs` und VERWIRFT den client-gelieferten `X-Forwarded-For`, ersetzt ihn durch die reale Peer-IP (Einzelwert — gespoofter `9.9.9.9` wurde NICHT angehaengt, sondern gedroppt). Die Audit-Praemisse von ISSUE-120 ("Angreifer rotiert XFF → frischer Bucket") greift in dieser Proxy-Konfiguration also NICHT. Die echte Restluecke ist der `login:<email>:<ip>`-Key: ein Angreifer mit vielen REALEN IPs (Botnet) zieht pro IP einen frischen Bucket.

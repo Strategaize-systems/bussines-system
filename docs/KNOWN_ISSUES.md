@@ -1191,3 +1191,69 @@
   2. Neuen Key in Coolify-ENV `OPENAI_API_KEY` setzen
   3. Lokale Datei loeschen oder nach `~/credentials/` ausserhalb des Repos verschieben
   4. (Pre-Go-Live Pflicht) Switch auf Azure OpenAI EU per `TRANSCRIPTION_PROVIDER=azure` macht den OpenAI-US-Key irrelevant — diese Massnahme reduziert Blast-Radius dauerhaft.
+
+### ISSUE-127 — SMTP-Versand-Default ist Gmail (US) — EU-Provider Pre-Customer-Live-Pflicht
+- Status: open
+- Severity: Medium
+- Area: Compliance / Data-Residency / E-Mail-Versand
+- Summary: `.env.example` (Zeile 35) und `docker-compose.yml` (`SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}`) setzen als Default `smtp.gmail.com` (US-Infrastruktur). IMAP-Empfang ist dagegen bereits `imap.ionos.de` (DE). Ausgehende Mails (inkl. sensibler Consent-Links, Meeting-Details, Angebote) würden bei unverändertem Default über US-Google laufen — Verstoss gegen `.claude/rules/data-residency.md`.
+- Impact: Drittland-Übermittlung personenbezogener Daten ohne EU-Endpoint/DPA, sobald echte Empfänger-Daten verarbeitet werden.
+- Workaround: ENV-überschreibbar — der Produktions-SMTP in Coolify kann bereits auf einen EU-Provider gesetzt sein.
+- Next Action: Produktionswert `SMTP_HOST`/`GOTRUE_SMTP_HOST` in Coolify auf EU-Provider (z. B. IONOS) verifizieren bzw. setzen; AV-Vertrag mit dem SMTP-Provider sicherstellen; Default in `.env.example`/`docker-compose.yml` auf neutralen Platzhalter ändern. Gate aus deliverables/COMPLIANCE.md §13.
+
+### ISSUE-128 — Vollständiger betroffenen-bezogener Erasure-/Account-Lösch-Flow (Art. 17) fehlt
+- Status: open
+- Severity: Medium
+- Area: Compliance / Betroffenenrechte / Datenmodell
+- Summary: Kontakt-/Deal-Löschung kaskadiert über Foreign-Keys, deckt aber nicht alle abhängigen Datensätze durchgängig ab (insb. ausgehende `emails`-Tabelle ohne FK-Kaskade; verwaiste Storage-Anhänge bleiben). Ein nutzer-/account-initiierter vollständiger Erasure-Flow existiert nicht.
+- Impact: Art.-17-Löschanträge können derzeit nicht vollständig und nachweisbar automatisiert erfüllt werden.
+- Next Action: Erasure-Service implementieren, der pro Betroffenem alle Tabellen + Storage-Objekte erfasst (inkl. `emails`, Anhänge, Recordings) und das Ergebnis auditiert; Account-Löschung (Supabase Auth + App-seitige Profil-Bereinigung) ergänzen. Gate aus deliverables/COMPLIANCE.md §13.
+
+### ISSUE-129 — E-Mail-Tracking-Events speichern IP/User-Agent im Klartext
+- Status: open
+- Severity: Low
+- Area: Compliance / Datensparsamkeit
+- Summary: `email_tracking_events` speichert `ip_address` und `user_agent` im Klartext (Open-/Click-Forensik), während Consent-Vorgänge IP/UA bereits nur als täglich rotierten SHA-256-Hash ablegen. Inkonsistente Datensparsamkeit (Art. 5 (1) c / Art. 32).
+- Impact: Aufbewahrung roher Geräte-/Netzwerk-Merkmale ohne zwingende Notwendigkeit; erhöhtes Risiko bei Datenabfluss.
+- Workaround: Tracking ist opt-in (`tracking_enabled`); Cleanup-Cron `click-log-cleanup` begrenzt die Aufbewahrungsdauer.
+- Next Action: IP/UA vor Speicherung hashen (Hash-Helfer aus `lib/security/ip-hash.ts` wiederverwenden) oder Aufbewahrungsfrist verkürzen. Gate aus deliverables/COMPLIANCE.md §13.
+
+### ISSUE-130 — Aufnahme-Rechtsgrundlage / technischer Consent-Gate für Anruf-/Meeting-Aufnahmen nicht erzwungen
+- Status: open
+- Severity: Medium
+- Area: Compliance / Einwilligung / Recording
+- Summary: Einwilligungs-/Datenschutzhinweise für Aufnahmen liegen als editierbare Templates vor (`/settings/compliance`), aber es gibt keinen technisch erzwungenen Aufnahme-Gate bzw. keine pro Aufnahme dokumentierte Rechtsgrundlage. Aufnahmen sind im Internal-Test-Mode nicht produktiv im Einsatz.
+- Impact: Ohne dokumentierte/erzwungene Rechtsgrundlage (i. d. R. Einwilligung) ist die produktive Aufnahme echter Gespräche datenschutzrechtlich nicht belastbar.
+- Next Action: Rechtsgrundlage je Aufnahme festlegen (anwaltlich), Einwilligungsnachweis pro Anruf/Meeting erfassen und ggf. technisch erzwingen (kein Recording ohne Consent-Status). Gate aus deliverables/COMPLIANCE.md §13.
+
+### ISSUE-131 — startMeeting() via createAdminClient (BYPASSRLS) ohne Ownership-Check — Cross-Owner-IDOR + fremde Contact-PII + unaufgeforderter Mailversand
+- Status: open
+- Severity: High
+- Area: Security / AuthZ / IDOR / createAdminClient
+- Summary: `startMeeting(dealId, contactIds, title)` (`cockpit/src/app/actions/meetings.ts:70`) läuft komplett über `createAdminClient()` (BYPASSRLS). Einzige Guards: `assertNotReadOnlyContext()` (greift nur auf `/team/*`-Drilldown, nicht auf normale Calls aus /mein-tag oder /deals) + `auth.getUser()` (reine Authentisierung). Deal-Read (73-77) ohne `can_see_owner`/owner-Filter; `checkConsentStatus` + 2. contacts-Read lesen fremde PII (Vor-/Nachname, Email, consent_status) für beliebige contactIds; Meeting/Activity werden auf den FREMDEN Deal geschrieben; `sendMeetingInvites` verschickt echte Mails an fremde Kontakte; der `missingConsent`-Return exfiltriert Name+Email an den Caller.
+- Impact: Cross-Owner/Cross-Tenant-IDOR + PII-Disclosure + unaufgeforderter Mailversand. Latent im Single-Founder-Internal-Test-Mode (Blast-Radius 0), scharf am Tag des 2. Users/Tenants. Ausnutzung erfordert Kenntnis fremder UUIDs (nicht blind enumerierbar) → deshalb High statt Blocker.
+- Next Action: `startMeeting` auf den User-Client umstellen (Deal via `createClient()` lesen → RLS/`can_see_owner`; contactIds gegen die sichtbare Menge validieren; `checkConsentStatus` den User-Client durchreichen) — analog dem V8.12/V8.15-Switch in deal-products.ts (ISSUE-091), insight-actions.ts (ISSUE-093), applier.ts (ISSUE-117). Quelle: Fable-5 Re-Audit 2026-07-04 (RPT-659). **bypasses_recent_fix: Nachbar-Lücke des createAdminClient-Ownership-Sweeps — meetings.ts wurde bei V8.12/V8.15 ausgelassen.**
+
+### ISSUE-132 — RLS-Klasse-C Multi-Parent WITH CHECK erlaubt Cross-Tenant-Row-Injection (nur EIN sichtbarer Parent nötig)
+- Status: open
+- Severity: Medium
+- Area: Security / RLS / Tenant-Isolation
+- Summary: Die INSERT-WITH-CHECK der Multi-Parent-Tabellen (tasks, signals, calendar_events, referrals, documents, email_attachments, cadence_enrollments; `sql/migrations/047a..047c`) ist ein OR über alle Parent-FKs — es genügt, dass GENAU EIN Parent via `can_see_owner()` sichtbar ist; die übrigen FK-Spalten dürfen frei auf fremde Tenant-Objekte zeigen. Ein authenticated Non-Admin kann direkt an PostgREST z.B. `POST /rest/v1/signals {deal_id:<eigener Deal>, contact_id:<fremde Contact-UUID>}` senden; die Zeile besteht WITH CHECK über den deal-Zweig und wird via `signals_select` (contact-Zweig) in der fremden Tenant-View sichtbar.
+- Impact: Stored cross-tenant Integritäts-/Spoofing-Injection in fremde Views (kann fremde Automationen/Signal-Extraktoren triggern). KEINE Read-Exfiltration, KEIN Privesc. Vorbedingung: Kenntnis einer Victim-Zeilen-UUID (nicht enumerierbar) → Medium. Multi-User-relevant.
+- Next Action: WITH CHECK härten — jeder gesetzte (non-NULL) Parent-FK muss sichtbar sein: pro FK-Spalte `(<col> IS NULL OR EXISTS(...can_see_owner...))` mit AND verknüpfen + verlangen, dass mindestens ein FK gesetzt ist ODER (all-NULL AND `created_by=auth.uid()`). SELECT/UPDATE/DELETE behalten die OR-Logik (Read ist nicht bypassbar). Additive Migration. **Cross-Repo:** OP/IS/immoscheckheft, die die Klasse-C-Parent-FK-Vorlage kopiert haben, auf denselben WITH-CHECK-OR-Gap prüfen. Quelle: Fable-5 Re-Audit 2026-07-04 (RPT-659).
+
+### ISSUE-133 — AnswerPane-Link-Guard nicht auf safeExternalHref migriert (protocol-relative //evil.com passiert)
+- Status: open
+- Severity: Low
+- Area: Security / Open-Redirect / Hygiene
+- Summary: `cockpit/src/components/ki-workspace/AnswerPane.tsx:274` nutzt weiter den Inline-Regex `/^(https?:|mailto:|\/)/` statt `safeExternalHref`. Der `\/`-Zweig lässt protocol-relative `//evil.com` passieren → Open-Redirect für LLM-generierte Links (z.B. via Prompt-Injection über eingebetteten Kontext). V8.15 SLC-913 extrahierte `safe-external-href.ts` genau aus dieser Stelle und härtete `//`, migrierte aber nur companies/contacts/leads-intake — nicht die Quell-Stelle. Kein XSS (javascript:/data:/vbscript: → `#`).
+- Impact: Gering — Phishing/Open-Redirect zu fremder Origin, benötigt gelungene Prompt-Injection + Klick; `rel=noopener noreferrer` gesetzt; der gehärtete Helper erlaubt ohnehin beliebige https-Ziele, der `//`-Bypass gibt 0 zusätzliche Capability.
+- Next Action: One-Liner `AnswerPane.tsx:274` → `safeExternalHref(linkHref)` (Konsistenz mit SLC-913). Quelle: Fable-5 Re-Audit 2026-07-04 (RPT-659). **bypasses_recent_fix: Nachbar-Lücke von SLC-913 (Quell-Stelle nicht mitmigriert).**
+
+### ISSUE-134 — leads/intake-Rate-Limit nutzt leftmost-XFF-Helper statt gehärtetem extractClientIp (Same-Release-Inkonsistenz)
+- Status: open
+- Severity: Low
+- Area: Security / Rate-Limit / Defense-in-Depth
+- Summary: `leads/intake` (route.ts:99 → `lib/export/rate-limit.ts:35`) keyed den Rate-Limit-Bucket auf den leftmost, client-kontrollierten `X-Forwarded-For` (`split(',')[0]`) statt der in V8.15 (ISSUE-120/R-913-3) gehärteten `extractClientIp` (rightmost-offset). Same-Release-Inkonsistenz.
+- Impact: **Gegen den aktuell deployten Traefik NICHT exploitbar** (coolify-proxy verwirft den client-XFF und ersetzt ihn durch die reale Peer-IP als Einzelwert → leftmost==rightmost==reale IP, Cap hält; live verifiziert für ISSUE-120). Wird erst spoofbar, wenn eine 2. Proxy-Schicht ergänzt wird. Reine Defense-in-Depth-Regression eines Same-Release-Fixes.
+- Next Action: In `lib/export/rate-limit.ts:checkRateLimit` die Client-IP via `extractClientIp(headers)` beziehen ODER intake auf eine key-basierte Identität (Hash des `LEAD_INTAKE_API_KEY`) keyen. Vor Multi-Proxy-Topologie/Go-Live schließen. Quelle: Fable-5 Re-Audit 2026-07-04 (RPT-659, Exploitability-Lens refuted für deployten Stand / Severity-Lens confirmed als Hygiene).

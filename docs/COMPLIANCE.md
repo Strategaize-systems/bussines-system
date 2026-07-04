@@ -1,5 +1,7 @@
 # DSGVO-Compliance-Dokumentation
 
+> ⚠️ **HISTORIE / VERALTET (ab 2026-06-15):** Diese Datei ist die versions-chronologische Compliance-Dokumentation (V5.2–V5.7). Die **kanonische, konsolidierte und aktuelle** Fassung (Stand V8.15, Customer-Live-tauglich) liegt unter **`deliverables/COMPLIANCE.md`**. Diese Datei bleibt nur als Historie erhalten.
+
 > **Erstellt:** 2026-04-25 (V5.2-Release-Stand)
 > **System:** Strategaize Business Development System
 > **Delivery Mode:** internal-tool
