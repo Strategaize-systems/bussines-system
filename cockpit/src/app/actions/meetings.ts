@@ -67,10 +67,17 @@ export async function startMeeting(
     return { error: "Nicht authentifiziert" };
   }
 
+  // V8.16 SLC-914 MT-1 (ISSUE-131): Ownership-Gate via User-Client (RLS
+  // can_see_owner). Deal, Kontakte, Meeting und Activity laufen RLS-scoped —
+  // ein fremder Deal / fremde Kontakte sind fuer den Aufrufer nicht sichtbar,
+  // also kein Cross-Owner-IDOR, keine fremde Contact-PII, kein unaufgeforderter
+  // Mailversand. Nur die audit_log-INSERTs nutzen den service-role-Client:
+  // audit_log INSERT ist fuer `authenticated` WITH CHECK(false) (MIG-048,
+  // append-only Forensik) und muss NACH dem Gate ueber den Admin-Client laufen.
   const admin = createAdminClient();
 
-  // Get deal info for meeting title
-  const { data: deal } = await admin
+  // Get deal info for meeting title (RLS: fremder Deal => nicht sichtbar)
+  const { data: deal } = await supabase
     .from("deals")
     .select("id, title")
     .eq("id", dealId)
@@ -80,8 +87,27 @@ export async function startMeeting(
     return { error: "Deal nicht gefunden" };
   }
 
-  // Get user profile for host name
-  const { data: profile } = await admin
+  // Validate participant contacts against the RLS-visible set BEFORE any side
+  // effect (Meeting-Erstellung / Mailversand). Enthaelt die Anfrage nicht-
+  // sichtbare contactIds => fail-closed. `visibleContacts` wird unten fuer den
+  // Einladungs-Build wiederverwendet (kein zweiter Read).
+  const visibleContacts =
+    contactIds.length > 0
+      ? (
+          await supabase
+            .from("contacts")
+            .select("id, first_name, last_name, email, consent_status, opt_out_communication")
+            .in("id", contactIds)
+        ).data ?? []
+      : [];
+
+  const visibleContactIds = new Set(visibleContacts.map((c) => c.id));
+  if (contactIds.some((id) => !visibleContactIds.has(id))) {
+    return { error: "Ein oder mehrere Kontakte wurden nicht gefunden oder sind nicht zugreifbar" };
+  }
+
+  // Get user profile for host name (eigene Row, RLS-erlaubt)
+  const { data: profile } = await supabase
     .from("profiles")
     .select("display_name, email")
     .eq("id", user.id)
@@ -95,9 +121,9 @@ export async function startMeeting(
   const title = meetingTitle || `Meeting: ${deal.title}`;
   const scheduledAt = new Date();
 
-  // Create meeting row
+  // Create meeting row (RLS-Klasse-A: WITH CHECK owner_user_id = auth.uid())
   // V7 SLC-704 MT-6: owner_user_id = Host-User (DEC-186, DEC-182).
-  const { data: meeting, error: meetingError } = await admin
+  const { data: meeting, error: meetingError } = await supabase
     .from("meetings")
     .insert({
       title,
@@ -117,13 +143,13 @@ export async function startMeeting(
     return { error: `Meeting-Erstellung fehlgeschlagen: ${meetingError.message}` };
   }
 
-  // Check consent for all contacts
-  const consentResult = await checkConsentStatus(contactIds);
+  // Check consent for all contacts (User-Client durchgereicht => RLS-scoped)
+  const consentResult = await checkConsentStatus(contactIds, supabase);
   const recordingEnabled = consentResult.allGranted && contactIds.length > 0;
 
-  // Update recording status based on consent
+  // Update recording status based on consent (RLS: can_see_owner(owner_user_id))
   if (recordingEnabled) {
-    await admin
+    await supabase
       .from("meetings")
       .update({ recording_status: "pending" })
       .eq("id", meeting.id);
@@ -139,16 +165,13 @@ export async function startMeeting(
   // Build Participant-JWTs + send invites for contacts
   const meetingExpiresAt = new Date(scheduledAt.getTime() + 6 * 60 * 60 * 1000);
 
-  // Get full contact info for all participants
+  // Reuse the RLS-validated participant set (kein zweiter Contact-Read).
   let invitesSent = 0;
   if (contactIds.length > 0) {
-    const { data: contacts } = await admin
-      .from("contacts")
-      .select("id, first_name, last_name, email, consent_status, opt_out_communication")
-      .in("id", contactIds);
+    const contacts = visibleContacts;
 
     // Build invite recipients (skip opt_out_communication contacts)
-    const recipients = (contacts ?? [])
+    const recipients = contacts
       .filter((c) => !c.opt_out_communication && c.email)
       .map((c) => {
         const participantJwt = buildParticipantJwt(
@@ -216,9 +239,9 @@ export async function startMeeting(
     context: `Meeting started: ${title}`,
   });
 
-  // Create activity for timeline
+  // Create activity for timeline (RLS-Klasse-A: WITH CHECK owner_user_id = auth.uid())
   // V7 SLC-704 MT-6: owner_user_id erbt vom Meeting (Host = user.id) (DEC-182).
-  await admin.from("activities").insert({
+  await supabase.from("activities").insert({
     type: "meeting",
     title,
     description: recordingEnabled

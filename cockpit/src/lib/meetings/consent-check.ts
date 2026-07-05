@@ -3,6 +3,7 @@
 // =============================================================
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 interface ContactConsentInfo {
   id: string;
@@ -24,16 +25,22 @@ export interface ConsentCheckResult {
 /**
  * Check consent status for a list of contact IDs.
  * Returns which contacts have granted consent and which are missing.
+ *
+ * V8.16 SLC-914 MT-1 (ISSUE-131): optionaler `client` — der Caller (startMeeting,
+ * User-Client + RLS `can_see_owner`) reicht seinen Client durch, damit der
+ * Consent-Read RLS-scoped laeuft und keine fremde Contact-PII zurueckgibt.
+ * Ohne Argument bleibt das Verhalten identisch (createAdminClient, backward-compat).
  */
 export async function checkConsentStatus(
   contactIds: string[],
+  client?: SupabaseClient,
 ): Promise<ConsentCheckResult> {
   if (contactIds.length === 0) {
     return { allGranted: true, missing: [], granted: [] };
   }
 
-  const admin = createAdminClient();
-  const { data: contacts, error } = await admin
+  const db = client ?? createAdminClient();
+  const { data: contacts, error } = await db
     .from("contacts")
     .select("id, first_name, last_name, email, consent_status")
     .in("id", contactIds);
