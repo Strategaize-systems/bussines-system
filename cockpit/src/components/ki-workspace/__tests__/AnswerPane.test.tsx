@@ -39,6 +39,25 @@ describe("AnswerPane", () => {
     expect(out.querySelectorAll("li")[0].textContent).toContain("Deal A");
   });
 
+  // V8.16 SLC-914 MT-3 (ISSUE-133): inline-Link-hrefs laufen durch
+  // safeExternalHref — protocol-relative + javascript:-URLs → "#".
+  it("sanitizes inline link hrefs via safeExternalHref (ISSUE-133)", () => {
+    const result: ReportResult = {
+      markdown:
+        "Siehe [sicher](https://example.com), [boese](//evil.com) und [js](javascript:x).",
+      completedAt: "2026-07-05T00:00:00Z",
+      model: "claude-opus-4-8",
+      refreshable: false,
+    };
+    render(<AnswerPane isLoading={false} result={result} />);
+    const out = screen.getByTestId("ki-workspace-result");
+    const byText = (t: string) =>
+      Array.from(out.querySelectorAll("a")).find((a) => a.textContent === t);
+    expect(byText("sicher")?.getAttribute("href")).toBe("https://example.com");
+    expect(byText("boese")?.getAttribute("href")).toBe("#");
+    expect(byText("js")?.getAttribute("href")).toBe("#");
+  });
+
   it("Aktualisieren button triggers onRefresh when result + onRefresh present", () => {
     const onRefresh = vi.fn();
     render(<AnswerPane isLoading={false} result={RESULT} onRefresh={onRefresh} />);

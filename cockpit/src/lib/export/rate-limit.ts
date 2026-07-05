@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { extractClientIp } from "@/lib/security/ip-hash";
 
 const WINDOW_MS = 60 * 1000; // 1 Minute
 const MAX_REQUESTS = 100;
@@ -31,10 +32,10 @@ setInterval(() => {
  * Returns NextResponse with 429 if rate limit exceeded, null if OK.
  */
 export function checkRateLimit(request: Request): NextResponse | null {
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown";
+  // V8.16 SLC-914 MT-3 (ISSUE-134): reale Client-IP via extractClientIp
+  // (rechte(-Offset)-Position, TRUSTED_PROXY_COUNT) statt des client-spoofbaren
+  // linkesten x-forwarded-for-Eintrags — analog dem Login-Lockout (ISSUE-120).
+  const ip = extractClientIp(request.headers) ?? "unknown";
 
   return checkRateLimitByKey(`ip:${ip}`);
 }

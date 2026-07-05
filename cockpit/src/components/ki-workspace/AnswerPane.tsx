@@ -10,6 +10,7 @@ import {
 import { Fragment, useState, type ReactNode } from "react";
 import type { ReportResult } from "./types";
 import { cn } from "@/lib/utils";
+import { safeExternalHref } from "@/lib/utils/safe-external-href";
 import {
   parsePipelineSections,
   extractTrailingBlock,
@@ -271,7 +272,7 @@ function renderInline(text: string): ReactNode[] {
         </code>,
       );
     } else if (linkText && linkHref) {
-      const safeHref = /^(https?:|mailto:|\/)/.test(linkHref) ? linkHref : "#";
+      const safeHref = safeExternalHref(linkHref);
       nodes.push(
         <a
           key={key++}
