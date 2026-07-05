@@ -1244,7 +1244,8 @@
 - Next Action: WITH CHECK härten — jeder gesetzte (non-NULL) Parent-FK muss sichtbar sein: pro FK-Spalte `(<col> IS NULL OR EXISTS(...can_see_owner...))` mit AND verknüpfen + verlangen, dass mindestens ein FK gesetzt ist ODER (all-NULL AND `created_by=auth.uid()`). SELECT/UPDATE/DELETE behalten die OR-Logik (Read ist nicht bypassbar). Additive Migration. **Cross-Repo:** OP/IS/immoscheckheft, die die Klasse-C-Parent-FK-Vorlage kopiert haben, auf denselben WITH-CHECK-OR-Gap prüfen. Quelle: Fable-5 Re-Audit 2026-07-04 (RPT-659).
 
 ### ISSUE-133 — AnswerPane-Link-Guard nicht auf safeExternalHref migriert (protocol-relative //evil.com passiert)
-- Status: open
+- Status: resolved
+- Resolution: V8.16 SLC-914 MT-3 (/qa PASS RPT-664 2026-07-05). `AnswerPane.tsx:274` nutzt jetzt `safeExternalHref(linkHref)` (Import aus `@/lib/utils/safe-external-href`) — protocol-relative `//evil.com` + `javascript:`-URLs → `#`, https/mailto/relative bleiben. AnswerPane-Render-Test (`__tests__/AnswerPane.test.tsx`) belegt das Wiring; safe-external-href.ts-Helper war seit SLC-913 gehärtet+getestet. App-Layer, keine Migration → resolved code-side. Gates: TSC=0, ESLint=0, Full-Vitest 1616/1616.
 - Severity: Low
 - Area: Security / Open-Redirect / Hygiene
 - Summary: `cockpit/src/components/ki-workspace/AnswerPane.tsx:274` nutzt weiter den Inline-Regex `/^(https?:|mailto:|\/)/` statt `safeExternalHref`. Der `\/`-Zweig lässt protocol-relative `//evil.com` passieren → Open-Redirect für LLM-generierte Links (z.B. via Prompt-Injection über eingebetteten Kontext). V8.15 SLC-913 extrahierte `safe-external-href.ts` genau aus dieser Stelle und härtete `//`, migrierte aber nur companies/contacts/leads-intake — nicht die Quell-Stelle. Kein XSS (javascript:/data:/vbscript: → `#`).
@@ -1252,7 +1253,8 @@
 - Next Action: One-Liner `AnswerPane.tsx:274` → `safeExternalHref(linkHref)` (Konsistenz mit SLC-913). Quelle: Fable-5 Re-Audit 2026-07-04 (RPT-659). **bypasses_recent_fix: Nachbar-Lücke von SLC-913 (Quell-Stelle nicht mitmigriert).**
 
 ### ISSUE-134 — leads/intake-Rate-Limit nutzt leftmost-XFF-Helper statt gehärtetem extractClientIp (Same-Release-Inkonsistenz)
-- Status: open
+- Status: resolved
+- Resolution: V8.16 SLC-914 MT-3 (/qa PASS RPT-664 2026-07-05). `lib/export/rate-limit.ts:checkRateLimit` bezieht die Client-IP jetzt via `extractClientIp(request.headers)` (`@/lib/security/ip-hash`, rightmost-offset + TRUSTED_PROXY_COUNT + x-real-ip-Fallback + "unknown") statt `split(",")[0]`. Delegiert an den in V8.15 MT-6 (ISSUE-120) live-verifizierten + 9-fach getesteten Helper; intake-route.test mockt das Modul → kein Test-Bruch. App-Layer, keine Migration → resolved code-side. Gates: TSC=0, ESLint=0, Full-Vitest 1616/1616.
 - Severity: Low
 - Area: Security / Rate-Limit / Defense-in-Depth
 - Summary: `leads/intake` (route.ts:99 → `lib/export/rate-limit.ts:35`) keyed den Rate-Limit-Bucket auf den leftmost, client-kontrollierten `X-Forwarded-For` (`split(',')[0]`) statt der in V8.15 (ISSUE-120/R-913-3) gehärteten `extractClientIp` (rightmost-offset). Same-Release-Inkonsistenz.
