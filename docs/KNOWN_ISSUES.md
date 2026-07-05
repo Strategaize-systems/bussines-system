@@ -1227,7 +1227,8 @@
 - Next Action: Rechtsgrundlage je Aufnahme festlegen (anwaltlich), Einwilligungsnachweis pro Anruf/Meeting erfassen und ggf. technisch erzwingen (kein Recording ohne Consent-Status). Gate aus deliverables/COMPLIANCE.md §13.
 
 ### ISSUE-131 — startMeeting() via createAdminClient (BYPASSRLS) ohne Ownership-Check — Cross-Owner-IDOR + fremde Contact-PII + unaufgeforderter Mailversand
-- Status: open
+- Status: resolved
+- Resolution: V8.16 SLC-914 MT-1 (Commit `1b9baa3`, /qa PASS RPT-661 2026-07-05). `startMeeting` liest Deal + Kontakte + schreibt Meeting + Activity via User-Client (`createClient()`, RLS `can_see_owner`); contactIds werden gegen die sichtbare Menge validiert BEVOR ein Meeting angelegt oder eine Mail verschickt wird (fail-closed → "Deal nicht gefunden" bzw. "Kontakte nicht zugreifbar"). `checkConsentStatus` bekommt den User-Client durchgereicht (optionaler Param, backward-compat). audit_log-INSERTs bleiben service-role NACH dem Gate (audit_log INSERT ist WITH CHECK(false) für authenticated, MIG-048 append-only). App-Layer-Fix, keine Migration → resolved code-side (kein /deploy-Gate). +11 Vitest, Full-Vitest 1615/1615. Analog V8.15 ISSUE-117.
 - Severity: High
 - Area: Security / AuthZ / IDOR / createAdminClient
 - Summary: `startMeeting(dealId, contactIds, title)` (`cockpit/src/app/actions/meetings.ts:70`) läuft komplett über `createAdminClient()` (BYPASSRLS). Einzige Guards: `assertNotReadOnlyContext()` (greift nur auf `/team/*`-Drilldown, nicht auf normale Calls aus /mein-tag oder /deals) + `auth.getUser()` (reine Authentisierung). Deal-Read (73-77) ohne `can_see_owner`/owner-Filter; `checkConsentStatus` + 2. contacts-Read lesen fremde PII (Vor-/Nachname, Email, consent_status) für beliebige contactIds; Meeting/Activity werden auf den FREMDEN Deal geschrieben; `sendMeetingInvites` verschickt echte Mails an fremde Kontakte; der `missingConsent`-Return exfiltriert Name+Email an den Caller.
