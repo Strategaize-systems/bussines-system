@@ -8,6 +8,7 @@
 - Risks: R-912-4 In-Memory-Rate-Limit (Single-Container-OK); ISSUE-108 Host-Enge (Disk nach Deploy 89% — Image-Cleanup empfohlen).
 - Rollback Notes: App-Image auf REL-049 (V8.14, `e0d5e28`) zurück. MIG-052 Rollback = Re-Apply 051 (role-only-Guard + BEFORE UPDATE). MIG-053 additiv = `DROP TABLE export_api_keys` (Reads fallen auf 401, alter EXPORT_API_KEY-Pfad war eh deprecated). Beide unkritisch additiv.
 - Offen (operativ, post-deploy): (1) Coolify-ENV `LEAD_INTAKE_API_KEY` NICHT gesetzt → `/api/leads/intake` 500 (fail-closed/safe) bis Founder ENV setzt + redeployt; (2) System 4 auf `Bearer <RAW-Export-Key>` umstellen; (3) Disk-Cleanup (`docker image prune`).
+- Post-Launch: T+20h Interim-PASS (RPT-657) + **T+3wk Full-Check PASS 2026-07-06 (RPT-668) → V8.15 STABLE** — 3 Wochen healthy/RestartCount=0, 0 echte Errors, MIG-052/053 persistent.
 
 ### REL-049 — V8.14 Pre-Customer-Live Security-Hotfix Bundle (SLC-912: profiles.role-Lock + Login-Rate-Limit + DSE-XSS + Branding-Hardening + Log/Auth-Hygiene)
 - Date: 2026-06-12 (/go-live CONDITIONAL GO RPT-638) / 2026-06-12 (/deploy SUCCESS RPT-639)
