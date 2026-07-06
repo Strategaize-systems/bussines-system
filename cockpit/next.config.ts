@@ -14,8 +14,9 @@ const CSP_VALUE = buildCSP(
 );
 
 const SECURITY_HEADERS = [
-  // Phase-A: -Report-Only blockt NICHTS, meldet nur (Burn-In ohne Outage-Risiko).
-  { key: "Content-Security-Policy-Report-Only", value: CSP_VALUE },
+  // Phase-B (SLC-910 MT-5, V8.16 /deploy 2026-07-06): enforce nach Phase-A-Burn-In.
+  // Rollback: Key zurueck auf "Content-Security-Policy-Report-Only" + Redeploy.
+  { key: "Content-Security-Policy", value: CSP_VALUE },
   { key: "Permissions-Policy", value: PERMISSIONS_POLICY },
   {
     key: "Strict-Transport-Security",
