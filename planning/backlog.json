@@ -2791,6 +2791,16 @@
       "version": "V8.16",
       "description": "Schliesst die 4 offenen Findings aus dem Fable-5 Re-Audit über den deployten V8.15-Stand (RPT-659, c9efb41 — NICHT konvergiert). ISSUE-131 (High): startMeeting() läuft komplett über createAdminClient() ohne Ownership-Gate → Cross-Owner-IDOR + fremde Contact-PII + unaufgeforderter Mailversand; Fix = User-Client-Switch analog deal-products/insight-actions/applier. ISSUE-132 (Medium): Multi-Parent-Class-C WITH-CHECK ist OR über alle FKs → nur ein sichtbarer Parent nötig, fremde FK frei setzbar → stored cross-tenant Injection; Fix = additive Migration MIG-054, jeder non-NULL FK muss sichtbar sein, pattern-weit über den vollständigen Multi-Parent-Satz (IMP-1394). ISSUE-133/134 (Low): safeExternalHref in AnswerPane + extractClientIp in export/rate-limit. Plus SLC-910 CSP Phase-B (Report-Only → enforced + Browser-Smoke) → V8.12 auf 100%. Slice SLC-914 + FEAT-926. Cross-Repo OP/IS/immoscheckheft = separater Follow-up. Danach /code-review ultra vor Multi-User-Schritt.",
       "createdAt": "2026-07-04"
+    },
+    {
+      "id": "BL-519",
+      "title": "Passwort-vergessen-Flow (Self-Service-Reset) — Port aus OP SLC-186",
+      "type": "feature",
+      "priority": "medium",
+      "status": "open",
+      "version": null,
+      "description": "ISSUE-135: enumeration-sichere requestPasswordReset-Action (P-081-Doppel-Rate-Limit) + GoTrue generateLink recovery + Passwort-vergessen-Page + Login-Link + Callback recovery->set-password. 1:1-Port aus OP SLC-186 (kanonische Quelle, nach OP-V10.3-Merge). Pre-Multi-User-Gate. Kandidat naechster V8.x-Slot nach V8.16 STABLE.",
+      "createdAt": "2026-07-06"
     }
   ]
 }
