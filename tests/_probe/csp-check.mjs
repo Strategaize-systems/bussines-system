@@ -41,11 +41,15 @@ const result = await page.evaluate(() => {
   const propsKey = Object.keys(body).find((k) => k.startsWith("__reactProps"));
   const fiberKey = Object.keys(body).find((k) => k.startsWith("__reactFiber"));
   const forms = Array.from(document.querySelectorAll("form"));
+  // React-19-Server-Action-Forms (Strategaize-Standard: native Form + action-Prop)
+  // haben KEIN onSubmit — der hydratisierte action-Handler ist der aequivalente Beweis.
   const onSubmitAttached =
     forms.length === 0 ||
     forms.some((f) => {
       const propKey = Object.keys(f).find((k) => k.startsWith("__reactProps"));
-      return propKey && f[propKey].onSubmit;
+      if (!propKey) return false;
+      const p = f[propKey];
+      return typeof p.onSubmit === "function" || typeof p.action === "function";
     });
   return {
     hasReactProps: !!propsKey,
