@@ -518,7 +518,7 @@ SLC-910 (CSP-Headers iterativ — Phase-A Report-Only + 1-2 Wo Burn-In + Phase-B
 | SLC-911 | [V8.12 Sentry-Observability EU Frankfurt + beforeSend-Redact](SLC-911-v812-sentry-observability.md) | FEAT-923 / BL-514 | deployed | Medium | 2026-06-09 |
 | SLC-908 | [V8.12 Passwort-Policy 12+ + zxcvbn (Origin-Pattern)](SLC-908-v812-password-policy.md) | FEAT-922 / BL-502 | deployed | Medium | 2026-06-09 |
 | SLC-909 | [V8.12 LLM-Cost-Cap — DEFERRED: ai_cost_ledger existiert in BS nicht (DEC-288, A-V812-2)](SLC-909-v812-llm-cost-cap.md) | FEAT-922 / BL-504 | blocked | Medium | 2026-06-09 |
-| SLC-910 | [V8.12 CSP-Headers iterativ (Report-Only-Phase-A + strict Phase-B + Probe)](SLC-910-v812-csp-headers.md) | FEAT-922 / BL-501 | in_progress | Medium | 2026-06-09 |
+| SLC-910 | [V8.12 CSP-Headers iterativ (Report-Only-Phase-A + strict Phase-B + Probe) — Phase-B im V8.16-Slot deployed (REL-051)](SLC-910-v812-csp-headers.md) | FEAT-922 / BL-501 | deployed | Medium | 2026-06-09 |
 
 ## V8.14 Slices (Security-Hotfix-Sprint — Pre-Customer-Live-Blocker-Closure — slice-planning done 2026-06-11)
 
@@ -542,5 +542,5 @@ V8.16 schliesst die 4 offenen Findings aus dem Fable-5 Re-Audit über den deploy
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-914 | [V8.16 Security-Hardening Bundle (startMeeting-IDOR + Class-C WITH-CHECK MIG-054 + Low-Hygiene)](SLC-914-v816-security-hardening.md) | FEAT-926 / BL-518 | in_progress | High | 2026-07-04 |
-| SLC-910 | [V8.12 CSP-Headers Phase-B-Close (Report-Only → enforced + Browser-Smoke) — im V8.16-Slot abgeschlossen](SLC-910-v812-csp-headers.md) | FEAT-922 / BL-501 | in_progress | Medium | 2026-06-09 |
+| SLC-914 | [V8.16 Security-Hardening Bundle (startMeeting-IDOR + Class-C WITH-CHECK MIG-054 + Low-Hygiene)](SLC-914-v816-security-hardening.md) | FEAT-926 / BL-518 | deployed | High | 2026-07-04 |
+| SLC-910 | [V8.12 CSP-Headers Phase-B-Close (Report-Only → enforced + Browser-Smoke) — im V8.16-Slot abgeschlossen, deployed 2026-07-06 (REL-051)](SLC-910-v812-csp-headers.md) | FEAT-922 / BL-501 | deployed | Medium | 2026-06-09 |

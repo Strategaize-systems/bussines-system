@@ -346,9 +346,9 @@
     {
       "id": "v8-16",
       "name": "V8.16",
-      "status": "active",
+      "status": "released",
       "order": 39.5,
-      "summary": "Security-Hardening aus dem Fable-5 Multi-Agent Re-Audit über den DEPLOYTEN V8.15-Stand (2026-07-04, Workflow wf_5afa93eb-abc, RPT-659, Commit c9efb41) — der Re-Audit KONVERGIERTE NICHT: er fand genau die vorhergesagte Nachbar-Lücken-Klasse, die frühere Sweeps ausgelassen haben. 1 Slice SLC-914 / FEAT-926 / BL-518 (+ SLC-910 CSP Phase-B-Close). Schliesst 4 Findings: ISSUE-131 (High — startMeeting() via createAdminClient ohne Ownership-Gate = Cross-Owner-IDOR + fremde Contact-PII + unaufgeforderter Mailversand, Nachbar-Lücke des V8.12/V8.15 createAdminClient-Ownership-Sweeps → User-Client-Switch), ISSUE-132 (Medium — RLS-Klasse-C Multi-Parent WITH-CHECK OR-Gap = stored cross-tenant Row-Injection → additive Migration MIG-054, jeder non-NULL FK muss sichtbar sein, pattern-weit über den vollständigen Multi-Parent-Satz per IMP-1394), ISSUE-133/134 (Low — safeExternalHref in AnswerPane + extractClientIp in export/rate-limit). Plus SLC-910 CSP Phase-B (Report-Only → enforced + funktionaler Browser-Smoke csp-check.mjs) → V8.12 auf 100%. 1 additive Migration MIG-054. Single-Branch main, Internal-Test-Mode (Precedent SLC-912/913). Modell Fable 5 durchgängig (security-audit-fable5-standard.md). Cross-Repo (OP/IS/immoscheckheft) = separater Follow-up, NICHT in diesem Slot (Founder-Entscheidung). Nach V8.16: /code-review ultra externe Gegenprobe vor dem Multi-User-Schritt (Founder-Closure-Kriterium). Per module-lifecycle-discipline + IMP-950: kein Customer-Live, NICHT released bis /go-live, NICHT stable bis /post-launch T+24h. Last Stable bleibt V8.14. Naechster Schritt: /backend SLC-914 MT-1."
+      "summary": "Security-Hardening aus dem Fable-5 Re-Audit (RPT-659): SLC-914 (ISSUE-131 startMeeting-IDOR + ISSUE-132 MIG-054 Class-C WITH-CHECK + ISSUE-133/134) + SLC-910 CSP Phase-B enforce. /deploy SUCCESS 2026-07-06 als REL-051 (RPT-669, Image 8ebcf6c, MIG-054 live + DB-Verify 10/10, csp-check.mjs PASS). NICHT stable bis /post-launch T+24h."
     },
     {
       "id": "v10",

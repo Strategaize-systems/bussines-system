@@ -1236,7 +1236,8 @@
 - Next Action: `startMeeting` auf den User-Client umstellen (Deal via `createClient()` lesen → RLS/`can_see_owner`; contactIds gegen die sichtbare Menge validieren; `checkConsentStatus` den User-Client durchreichen) — analog dem V8.12/V8.15-Switch in deal-products.ts (ISSUE-091), insight-actions.ts (ISSUE-093), applier.ts (ISSUE-117). Quelle: Fable-5 Re-Audit 2026-07-04 (RPT-659). **bypasses_recent_fix: Nachbar-Lücke des createAdminClient-Ownership-Sweeps — meetings.ts wurde bei V8.12/V8.15 ausgelassen.**
 
 ### ISSUE-132 — RLS-Klasse-C Multi-Parent WITH CHECK erlaubt Cross-Tenant-Row-Injection (nur EIN sichtbarer Parent nötig)
-- Status: open
+- Status: resolved
+- Resolution: V8.16 SLC-914 MT-2 — **MIG-054 LIVE appliziert 2026-07-06 im /deploy (RPT-669)**: alle 18 INSERT/UPDATE-WITH-CHECK-Policies der 9 Multi-Parent-Tabellen live auf AND-Conjunction rewritten (postgres-User, Base64, 2× idempotent EXIT=0), Post-Apply-`pg_policies`-Verify + **DB-Verify 10/10 GREEN** (node:20-Sidecar, `cockpit/__tests__/migrations/054-v816-class-c-withcheck.test.ts`, negativ+positiv+admin-Bypass+created_by-Spoof). Policies überleben Coolify-Full-Stack-Recreate (post-Deploy re-verifiziert). Cross-Repo-Check OP/IS/immoscheckheft bleibt separater Follow-up.
 - Severity: Medium
 - Area: Security / RLS / Tenant-Isolation
 - Summary: Die INSERT-WITH-CHECK der Multi-Parent-Tabellen (tasks, signals, calendar_events, referrals, documents, email_attachments, cadence_enrollments; `sql/migrations/047a..047c`) ist ein OR über alle Parent-FKs — es genügt, dass GENAU EIN Parent via `can_see_owner()` sichtbar ist; die übrigen FK-Spalten dürfen frei auf fremde Tenant-Objekte zeigen. Ein authenticated Non-Admin kann direkt an PostgREST z.B. `POST /rest/v1/signals {deal_id:<eigener Deal>, contact_id:<fremde Contact-UUID>}` senden; die Zeile besteht WITH CHECK über den deal-Zweig und wird via `signals_select` (contact-Zweig) in der fremden Tenant-View sichtbar.

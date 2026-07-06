@@ -2697,7 +2697,7 @@
       "title": "V8.12 CSP-Headers iterativ Phase-A Report-Only → Phase-B strict (FEAT-922 SLC-910)",
       "type": "improvement",
       "priority": "medium",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.12",
       "description": "**NICE-TO-HAVE vor Live, NICHT blockierend.** Content-Security-Policy-Layer in cockpit/next.config.ts ergaenzen. Aktuell: keine CSP — alle Inline-Scripts/Styles/Image-Sources/Fetches sind erlaubt. Mit CSP: strikte Whitelist fuer script-src (self + 'nonce-' fuer Next.js Inline-Scripts), img-src (self + data: + Supabase-Storage-Domain), connect-src (self + Bedrock-AWS-Endpoint + Supabase-API + Coolify-Storage), style-src (self + 'unsafe-inline' fuer Tailwind-Generated falls noch nicht nonce-faehig). **Mitigiert strukturell:** Stored-XSS (Defense-in-Depth zu V8.10 SEC-005), DOM-XSS, Clickjacking (frame-ancestors 'none'), MITM-Exfil-via-WebSocket. **Aufwand: ~M (iterativer Smoke-Test pflicht).** Kritischer Pflicht-Test: alle 80 statischen Pages + alle dynamischen Dialogues + KI-Workspace-Streaming + Cal.com-Webhook + Supabase-Auth-Callback. Vermutlich 3-5 iter-Fixes wegen Inline-Scripts. Aufwand: ~2-3h Code + ~2-3h iter-Smoke. Audit-Quelle: docs/SECURITY_AUDIT_2026-05-30.md (Cross-Repo Sprint-4-Pattern). Cross-Repo-Hinweis: identisches Pattern auch in OP V8.0.3 BL-138 + IS V1.2 BL-115. Dev-System sollte CSP-Pattern als Pattern-Library-Entry aufnehmen.",
       "createdAt": "2026-05-30"
@@ -2787,7 +2787,7 @@
       "title": "V8.16 Security-Hardening Bundle (startMeeting-IDOR ISSUE-131 + Class-C Multi-Parent WITH-CHECK ISSUE-132/MIG-054 + Low-Hygiene ISSUE-133/134) + SLC-910 CSP Phase-B-Close",
       "type": "fix",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.16",
       "description": "Schliesst die 4 offenen Findings aus dem Fable-5 Re-Audit über den deployten V8.15-Stand (RPT-659, c9efb41 — NICHT konvergiert). ISSUE-131 (High): startMeeting() läuft komplett über createAdminClient() ohne Ownership-Gate → Cross-Owner-IDOR + fremde Contact-PII + unaufgeforderter Mailversand; Fix = User-Client-Switch analog deal-products/insight-actions/applier. ISSUE-132 (Medium): Multi-Parent-Class-C WITH-CHECK ist OR über alle FKs → nur ein sichtbarer Parent nötig, fremde FK frei setzbar → stored cross-tenant Injection; Fix = additive Migration MIG-054, jeder non-NULL FK muss sichtbar sein, pattern-weit über den vollständigen Multi-Parent-Satz (IMP-1394). ISSUE-133/134 (Low): safeExternalHref in AnswerPane + extractClientIp in export/rate-limit. Plus SLC-910 CSP Phase-B (Report-Only → enforced + Browser-Smoke) → V8.12 auf 100%. Slice SLC-914 + FEAT-926. Cross-Repo OP/IS/immoscheckheft = separater Follow-up. Danach /code-review ultra vor Multi-User-Schritt.",
       "createdAt": "2026-07-04"

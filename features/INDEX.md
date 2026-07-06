@@ -4,7 +4,7 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
-| FEAT-926 | V8.16 Security-Hardening Bundle (startMeeting-IDOR ISSUE-131 + Class-C Multi-Parent WITH-CHECK ISSUE-132 + Low-Hygiene ISSUE-133/134) + SLC-910 CSP Phase-B-Close | in_progress | [Slice](../slices/SLC-914-v816-security-hardening.md) | 2026-07-04 |
+| FEAT-926 | V8.16 Security-Hardening Bundle (startMeeting-IDOR ISSUE-131 + Class-C Multi-Parent WITH-CHECK ISSUE-132 + Low-Hygiene ISSUE-133/134) + SLC-910 CSP Phase-B-Close — deployed 2026-07-06 (REL-051) | deployed | [Slice](../slices/SLC-914-v816-security-hardening.md) | 2026-07-04 |
 
 ## V8.15 Features (Security-Hardening-Sprint — Fable-5 Multi-Agent Re-Audit, slice-planning done 2026-06-12)
 
@@ -326,7 +326,7 @@
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
 | FEAT-921 | V8.12 Code-Layer-Closures (Phase 1, 7 ISSUE-Closures via assertRole(["admin"]) — SLC-906) | deployed | [Spec](FEAT-921-v812-code-closures.md) | 2026-06-09 |
-| FEAT-922 | V8.12 Cross-Repo-Polish-Patterns (Phase 2 — SLC-907 Logger done + SLC-908 Passwort done + SLC-909 Cost-Cap DEFERRED/DEC-288 + SLC-910 CSP offen) | in_progress | [Spec](FEAT-922-v812-cross-repo-polish.md) | 2026-06-09 |
+| FEAT-922 | V8.12 Cross-Repo-Polish-Patterns (Phase 2 — SLC-907 Logger deployed + SLC-908 Passwort deployed + SLC-909 Cost-Cap DEFERRED/DEC-288 + SLC-910 CSP Phase-B deployed 2026-07-06/REL-051 → V8.12 100%) | deployed | [Spec](FEAT-922-v812-cross-repo-polish.md) | 2026-06-09 |
 | FEAT-923 | V8.12 Sentry-Observability (Phase 3, BL-514 Sentry.io EU-Region Frankfurt + CSP-Integration + Redact-beforeSend — SLC-911) | deployed | [Spec](FEAT-923-v812-sentry-observability.md) | 2026-06-09 |
 
 ## V8.11 Features (Security Sprint 3 — BS RLS-Sweep PRE-LIVE PFLICHT, Requirements done 2026-06-04)
