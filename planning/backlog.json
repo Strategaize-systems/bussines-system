@@ -2801,6 +2801,16 @@
       "version": null,
       "description": "ISSUE-135: enumeration-sichere requestPasswordReset-Action (P-081-Doppel-Rate-Limit) + GoTrue generateLink recovery + Passwort-vergessen-Page + Login-Link + Callback recovery->set-password. 1:1-Port aus OP SLC-186 (kanonische Quelle, nach OP-V10.3-Merge). Pre-Multi-User-Gate. Kandidat naechster V8.x-Slot nach V8.16 STABLE.",
       "createdAt": "2026-07-06"
+    },
+    {
+      "id": "BL-520",
+      "title": "V8.16-Regressions-Fix-Bundle (CSP-Feature-Flows + MIG-054-UPDATE + startMeeting-Caller + Consent-Guard)",
+      "type": "fix",
+      "priority": "high",
+      "status": "open",
+      "version": null,
+      "description": "Aus ultrareview-Nachbau RPT-672 (Range c9efb41..HEAD): ISSUE-138 (High) CSP connect-src um wss://sip + Permissions-Policy microphone/camera self-Allowlist + Telefonie/Meeting-Audio-Browser-Smoke; ISSUE-139 CSP img-src fuer E-Mail-Viewer (DEC Tracking-Pixel vs. Proxy); ISSUE-140 MIG-054 UPDATE-WITH-CHECK entschaerfen (nur geaenderte FKs) + 4 Call-Sites Fehlerpruefung; ISSUE-141 MeetingPrepCard res.error + getNextMeetingWithContext keine unsichtbare contact_id; ISSUE-142 checkConsentStatus Count-Guard fail-closed. ISSUE-138 ist der einzige akute (Telefonie-Feature deployed+scharf); 140 Multi-User-latent. Naechster V8.x-Slot, ISSUE-138 ggf. als Hotfix vorziehen.",
+      "createdAt": "2026-07-07"
     }
   ]
 }
