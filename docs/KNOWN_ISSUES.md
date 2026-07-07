@@ -1279,3 +1279,12 @@
 - Impact: Jeder Deal, der ohne verknüpften Kontakt/Firma angelegt wird, hat eine kaputte Detail-Seite. Im Founder-Betrieb umgehbar (Deals mit Kontakt anlegen), für Multi-User ein sichtbarer Qualitätsmangel.
 - Workaround: Deal-Detail nur für Deals mit verknüpftem Kontakt/Firma öffnen; Test-Deals bereinigen oder verknüpfen.
 - Next Action: In den Pipeline-Actions des Deal-Workspace NULL-`contact_id`/`company_id` vor dem Query abfangen (kein String-"null" in uuid-Filter) + Empty-State im Workspace für fehlende Verknüpfungen. Als Fix-Item in den nächsten V8.x-Slot aufnehmen.
+
+### ISSUE-136 — Stale-Session gelöschter User erzeugt wiederholte Server-Errors statt Redirect (+ uuid-"null"-Validation)
+- Status: open
+- Severity: Low
+- Area: Auth / Session-Hygiene / Input-Validation
+- Summary: Post-Launch-Beobachtung V8.16 T+24h (RPT-671, 2026-07-07 08:18–08:26 UTC): eine noch gültige Session/JWT eines Users, der weder in `auth.users` noch in `profiles` existiert (gelöschter Test-User `3426fc1a-…`), erzeugte 7× `getProfile: profile row missing`-Server-Errors statt eines sauberen Sign-Out/Redirects zu /login. Parallel 2× `invalid input syntax for type uuid: "null"` in `(app)/pipeline/actions.ts` (String "null" als UUID-Parameter, gleiche Session). App blieb healthy, kein Crash. Nicht V8.16-attribuierbar (kein V8.16-Pfad betroffen).
+- Impact: Gering — Error-Log-Noise + verwirrende UX für die betroffene (ohnehin ungültige) Session. Kein Security-Impact (RLS greift, keine Daten sichtbar).
+- Workaround: Browser Hard-Reload + Abmelden/Cookies löschen der betroffenen Session; Test-User-Sessions nach User-Löschung invalidieren.
+- Next Action: (1) getProfile-Fail für nicht-existente User → signOut + Redirect /login statt Error werfen; (2) UUID-Parameter-Validation in pipeline actions ("null"/leer → 400 statt DB-Error); (3) Orphan-Test-User `slc-895-fresh-1780492959@example.com` (auth.users ohne profiles-Row, Juni/SLC-895) aufräumen. Kandidat nächster V8.x-Hygiene-Slot, ggf. gebündelt mit BL-519.
