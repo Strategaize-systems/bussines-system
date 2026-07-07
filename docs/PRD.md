@@ -4152,3 +4152,92 @@ Q-V8.11-B entschieden: **100% Coverage 25/25 Tabellen**. Done-Gate per Sec-Audit
 Gesamt-Aufwand: ~17-22h Code-Side ueber ~1-2 Wochen verteilt, Single-Dev.
 
 **V8.11 Requirements ready for `/architecture`.** (FEAT-911 + BL-500 in_progress + V8.11 status=active.)
+
+## V8.17 — Regressions-Fix-Bundle aus Code-Review V8.16-Range (Requirements done 2026-07-07)
+
+### V8.17 Problem
+
+Der lokale High-Effort Code-Review (ultrareview-Nachbau, Workflow `wf_defeb900-8a3`) über den kompletten V8.16-Range `c9efb41..HEAD` fand 5 distinkte Regressionen (RPT-672), alle durch V8.16 eingeführt und von allen bisherigen QA-Stufen (Slice-/qa, Gesamt-/qa RPT-665, /final-check RPT-666, /post-launch RPT-671) übersehen. Kern-Ursache-Klasse: der CSP-Enforce-Flip (SLC-910) und die MIG-054-WITH-CHECK-Verschärfung waren unter Report-Only / im Single-Founder-Admin-Modus unauffällig, brechen aber reale Feature-Flows bzw. den künftigen Multi-User-Betrieb.
+
+- **ISSUE-138 (High):** Enforced CSP `connect-src` enthält den SIP-WebSocket (`wss://sip…/ws`) nicht → In-App-Telefonie-Transport bricht; zusätzlich `Permissions-Policy: microphone=()` → kein Call-/Meeting-Audio. Click-to-Call ist deployed + scharf, live verifiziert gebrochen.
+- **ISSUE-139 (Medium):** CSP `img-src` (ohne `https:`) blockt via srcdoc-Vererbung Remote-Bilder im Inbound-E-Mail-Viewer → Broken-Images/Layout-Kollaps, silent (csp-check.mjs probt den Viewer nicht).
+- **ISSUE-140 (Medium, Multi-User-Blocker):** MIG-054 stellte INSERT+UPDATE-`WITH CHECK` der 9 Multi-Parent-Klasse-C-Tabellen von OR auf AND-Conjunction. Postgres prüft WITH CHECK gegen die volle NEUE Row inkl. unveränderter FKs → reine Status-Updates auf mixed-owner-Rows scheitern für Non-Admins mit 42501. Heute durch is_admin()-Single-User maskiert.
+- **ISSUE-141 (Medium):** `getNextMeetingWithContext` reicht eine RLS-unsichtbare rohe `contact_id` an das neue V8.16-startMeeting-Ownership-Gate; `MeetingPrepCard` wertet `res.error` nie aus → Silent-Dead-Button in Mein Tag.
+- **ISSUE-142 (Medium):** `checkConsentStatus` vergleicht die zurückgelieferte Row-Zahl nie mit `contactIds.length` → RLS-weggefilterte Kontakte ⇒ fail-OPEN; auf einem concurrent-Reassignment-Race Recording ohne Consent-Beweis (§201 StGB / DSGVO) möglich.
+
+Quelle: RPT-672, KNOWN_ISSUES ISSUE-138..142.
+
+### V8.17 Goal / Intended Outcome
+
+Alle 5 Regressionen geschlossen: Telefonie/Meeting-Audio unter enforced CSP wieder funktional (mit funktionalem Feature-Flow-Smoke statt nur Hydration), E-Mail-Viewer bewusst tracking-sicher mit opt-in Bild-Nachladen, RLS-Alltags-Updates im Multi-User-Betrieb entsperrt bei vollem Cross-Tenant-Injection-Schutz, keine Silent-Dead-Buttons, Consent-Gate fail-closed. CSP-Enforce-Härtung (SLC-910) bleibt erhalten — kein Report-Only-Rollback.
+
+### V8.17 Primary User
+
+Founder (Single-User heute — akut nur ISSUE-138 spürbar) und künftige Multi-User-Team (Admin/Teamlead/Member — ISSUE-140/141/142 werden multi-user-relevant). Consent-Gate betrifft alle künftigen aufgezeichneten Gesprächspartner (Datenschutz-Betroffene).
+
+### V8.17 V1 Scope
+
+1 Slice (BL-520 / FEAT-927), 1 additive Migration MIG-055:
+1. **ISSUE-138:** `csp.ts` `connect-src` um `wss://`-Variante der SIP-Domain (`NEXT_PUBLIC_SIP_DOMAIN`-abgeleitet, Fallback `sip.strategaizetransition.com`) + `Permissions-Policy` von `microphone=()` auf `microphone=(self)` (+`camera=(self)` für Meetings). Funktionaler Telefonie- UND Meeting-Audio-Browser-Smoke.
+2. **ISSUE-139:** E-Mail-Viewer blockt Remote-Bilder standardmäßig + zeigt Banner „Externe Bilder blockiert (Tracking-Schutz)" mit Per-Mail-„Bilder laden"-Button (viewer-scoped, kein globales CSP-Aufweichen, kein Server-Proxy).
+3. **ISSUE-140:** MIG-055 — UPDATE-`WITH CHECK` prüft nur die tatsächlich geänderten FK-Spalten (Trigger, OLD vs NEW) gegen `can_see_owner`; unveränderte FKs unberührt; INSERT + FK-Change bleiben streng. Plus 4 Call-Sites (`followup-actions.ts:126`, `signal-actions.ts:73`, `imap-actions.ts:135`, `meetings/actions.ts:228`) auf Fehlerprüfung/Kompensation.
+4. **ISSUE-141:** `MeetingPrepCard` wertet `res.error` aus (Toast statt No-Op) + `getNextMeetingWithContext` mappt unsichtbare rohe `contact_id` auf null.
+5. **ISSUE-142:** `checkConsentStatus` Count-Guard: returned-Row-Count < `contactIds.length` ⇒ fail-closed (allGranted=false, fehlende IDs als missing).
+
+Plus: Playbook `security-headers-live-smoke.md` um Feature-Flow-Coverage (connect-src/img-src/Permissions-Policy je genutztem Endpoint) ergänzt (IMP-1401).
+
+### V8.17 Out of Scope
+
+- BL-519 Passwort-vergessen-Flow (eigener Pre-Multi-User-Slot, separat)
+- ISSUE-136-Hygiene (Stale-Session/Orphan-Test-User)
+- Cross-Repo-Mirror der ISSUE-140-Klasse in OP/IS/immoscheckheft (separater Follow-up)
+- Report-Only-Rollback der CSP (Founder verwarf zugunsten Hotfix)
+- Server-seitiger Bild-Proxy für E-Mail-Viewer (Founder verwarf zugunsten Block+Toggle)
+- Bulk-Reassign-Parent-FK-Mit-Verschiebung (ISSUE-140 Option c — nicht gewählt)
+
+### V8.17 Constraints
+
+- Single-Branch `main`, Internal-Test-Mode (kein Worktree, Precedent V8.12/14/15/16).
+- Additive Migration nur (MIG-055) — kein destruktives DDL; idempotent + Rollback-Notes.
+- Bestehende CSP-Enforce-Härtung SLC-910 darf nicht verwässert werden (keine `img-src https:` global, kein `microphone=*`).
+- Keine neuen npm-Packages ohne Not; keine neuen Container.
+
+### V8.17 Risks / Assumptions
+
+- **R-1:** Trigger-basierter changed-FK-Check über 9 Tabellen ist die aufwändigste Einzelmaßnahme; Regressionsrisiko auf legitime INSERTs. Mitigation: DB-Verify-Test (positiv+negativ, mixed-owner-Row) im /deploy gegen Coolify-DB, node:20-Sidecar (Precedent MIG-054).
+- **R-2:** CSP-Smoke muss die echten Telefonie/Meeting-Audio-Flows treffen, nicht nur Hydration — sonst wiederholt sich exakt der RPT-672-Trugschluss.
+- **Annahme:** `NEXT_PUBLIC_SIP_DOMAIN` bleibt live leer → Client-Fallback `sip.strategaizetransition.com` ist die zu erlaubende Origin (aus RPT-672-Live-Verifikation).
+
+### V8.17 Success Criteria
+
+- Telefonie + Meeting-Audio unter enforced CSP funktional (funktionaler Browser-Smoke PASS, nicht nur Hydration).
+- E-Mail-Viewer: Bilder default geblockt, „Bilder laden" lädt sie für die eine Mail; kein globales CSP-Aufweichen.
+- Non-Admin-Status-Update auf mixed-owner-Row PASS; Cross-Tenant-FK-Injection auf UPDATE weiterhin 42501 (DB-Verify beide Shapes).
+- 4 Call-Sites melden/kompensieren Insert/Update-Fehler statt sie zu verschlucken.
+- Kein Silent-Dead-Button (res.error sichtbar); Consent-Gate fail-closed bei fehlenden Rows.
+- Vitest grün inkl. neuer Regressionstests; CSP-Enforce bleibt aktiv (Header 1 / Report-Only 0).
+
+### V8.17 Founder-Entscheidungen (2026-07-07)
+
+- **ISSUE-139:** Blocken + Per-Mail-„Bilder laden"-Button (kein Proxy, kein Global-Aufweichen).
+- **ISSUE-140:** Ansatz (a) — nur geänderte FK-Spalten prüfen (Trigger, OLD vs NEW).
+- **ISSUE-138:** Hotfix (connect-src + Permissions-Policy), NICHT Report-Only-Rollback → In-App-Telefonie bleibt bis V8.17-Deploy im Enforce-Mode gebrochen (Single-Founder akzeptiert).
+
+### V8.17 Reuse-vs-Neu (DEC-Kandidaten für `/architecture`)
+
+- **CSP-Fix (ISSUE-138/139):** eigenes Repo (`cockpit/src/lib/security/csp.ts` + `next.config.ts`), kanonische Prozedur P-089 / Playbook `security-headers-live-smoke.md`. Kein Sibling-Port nötig — BS ist Origin des CSP-Patterns.
+- **MIG-055 changed-FK-only-Trigger (ISSUE-140):** Trigger-Scaffolding + `service_role`-aware Guard analog **P-080** (`profiles`-Column-Level-Trigger, service_role-aware) 1:1 als Bauweise übernehmen; die changed-FK-only-Logik ist neu → wird Cross-Repo-Reuse-Quelle (Pattern-Library-Kandidat). → **DEC-307**.
+- **E-Mail-Bilder-Toggle (ISSUE-139):** neues UI-Pattern (Block+opt-in-Load) im `email-html-iframe.tsx`; BS ist Origin (immoscheckheft portiert später von BS) → Pattern-Library-Kandidat. → **DEC-306**.
+- **ISSUE-141/142:** reine App-Layer-Fixes an BS-eigenem V8.16-Code, kein Reuse-Entscheid.
+
+### V8.17 Open Questions (für `/architecture`)
+
+- **OQ-1 (→ DEC-306):** Bild-Toggle-State pro Mail (session-only vs. persistiert pro Absender)? Empfehlung: session-only, einfachster sicherer Default.
+- **OQ-2 (→ DEC-307):** Trigger vs. WITH-CHECK-Ausdruck mit `IS DISTINCT FROM`-Selbstbezug — welche Mechanik erlaubt „nur geänderte FKs"? (Postgres RLS-WITH-CHECK kann OLD nicht referenzieren → Trigger `BEFORE UPDATE` ist der wahrscheinliche Weg; in /architecture verifizieren.)
+- **OQ-3:** Sind Jitsi-Meetings als iframe auf der App-Origin eingebettet (dann Permissions-Policy-`camera=(self)` nötig) oder eigene Origin? In /architecture gegen Code prüfen.
+
+### V8.17 Delivery Mode
+
+**internal-tool** (BS-Konvention, Internal-Test-Mode). Per module-lifecycle-discipline + IMP-950: kein Customer-Live, NICHT released bis /go-live, NICHT stable bis /post-launch T+24h. Last Stable bleibt V8.16.
+
+**V8.17 Requirements ready for `/architecture`.** (FEAT-927 planned + BL-520 in_progress + roadmap v8-17 status=active.)

@@ -1,5 +1,11 @@
 # Feature Index
 
+## V8.17 Features (Regressions-Fix-Bundle — Code-Review RPT-672 über V8.16-Range, requirements done 2026-07-07)
+
+| ID | Feature | Status | Spec | Created |
+|----|---------|--------|------|---------|
+| FEAT-927 | V8.17 Regressions-Fix-Bundle (CSP-Feature-Flows Telefonie/Mikrofon ISSUE-138 + E-Mail-Bilder-Block+Toggle ISSUE-139 + MIG-055 changed-FK-only UPDATE ISSUE-140 + startMeeting-Dead-Button ISSUE-141 + Consent-Count-Guard ISSUE-142, BL-520) | planned | — | 2026-07-07 |
+
 ## V8.16 Features (Security-Hardening — Fable-5 Re-Audit über deployten V8.15, slice-planning done 2026-07-04)
 
 | ID | Feature | Status | Spec | Created |
