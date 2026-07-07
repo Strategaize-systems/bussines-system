@@ -1271,7 +1271,7 @@
 - Workaround: Admin-seitiger Reset via GoTrue-Admin-API `generate_link` bzw. Direct-SQL auf der Coolify-DB (dokumentierte Prozeduren aus früheren Sessions).
 - Next Action: **1:1-Port aus OP SLC-186** (kanonische Quelle; Branch `v10-3-rollenmodell-p1`, nach Merge OP main): enumeration-sichere `requestPasswordReset`-Server-Action (P-081-Doppel-Rate-Limit, generische Antwort) + GoTrue `generateLink` recovery + Passwort-vergessen-Page + Login-Link + Callback recovery→set-password. P-088-Policy greift auf set-password bereits (SLC-908). Pattern-Reuse-Pflicht (`strategaize-pattern-reuse.md` Klasse Auth/Identity). Backlog: BL-519, Kandidat nächster V8.x-Slot nach V8.16 STABLE.
 
-### ISSUE-136 — Deal-Detail 500 bei Deals ohne Kontakt/Firma (uuid "null"-Cast statt Graceful-Handling)
+### ISSUE-137 — Deal-Detail 500 bei Deals ohne Kontakt/Firma (uuid "null"-Cast statt Graceful-Handling)
 - Status: open
 - Severity: Medium
 - Area: Pipeline / Deal-Workspace / Error-Handling
@@ -1285,6 +1285,7 @@
 - Severity: Low
 - Area: Auth / Session-Hygiene / Input-Validation
 - Summary: Post-Launch-Beobachtung V8.16 T+24h (RPT-671, 2026-07-07 08:18–08:26 UTC): eine noch gültige Session/JWT eines Users, der weder in `auth.users` noch in `profiles` existiert (gelöschter Test-User `3426fc1a-…`), erzeugte 7× `getProfile: profile row missing`-Server-Errors statt eines sauberen Sign-Out/Redirects zu /login. Parallel 2× `invalid input syntax for type uuid: "null"` in `(app)/pipeline/actions.ts` (String "null" als UUID-Parameter, gleiche Session). App blieb healthy, kein Crash. Nicht V8.16-attribuierbar (kein V8.16-Pfad betroffen).
+  **Root-Cause identifiziert (2026-07-07, Design-Referenz-Screenshot-Lauf):** Der beobachtete User war ein von GoTrue `generate_link` STILL mitangelegter Temp-User (immo@ statt BS-Founder richard@ — Default `create_user=true`), der nach ~6 Min per Admin-API gelöscht wurde; die `getProfile`-Errors stammen aus dessen Browser-Session während des Laufs. Die uuid-"null"-Errors sind der davon UNABHÄNGIGE Deal-Detail-Bug → **ISSUE-137** (im selben Lauf durch Navigation auf Test-Deals ohne Kontakt/Firma ausgelöst). Next-Action-Punkte (1) signOut-Fallback und (2) UUID-Validation bleiben unverändert gültig; (2) = Fix von ISSUE-137.
 - Impact: Gering — Error-Log-Noise + verwirrende UX für die betroffene (ohnehin ungültige) Session. Kein Security-Impact (RLS greift, keine Daten sichtbar).
 - Workaround: Browser Hard-Reload + Abmelden/Cookies löschen der betroffenen Session; Test-User-Sessions nach User-Löschung invalidieren.
 - Next Action: (1) getProfile-Fail für nicht-existente User → signOut + Redirect /login statt Error werfen; (2) UUID-Parameter-Validation in pipeline actions ("null"/leer → 400 statt DB-Error); (3) Orphan-Test-User `slc-895-fresh-1780492959@example.com` (auth.users ohne profiles-Row, Juni/SLC-895) aufräumen. Kandidat nächster V8.x-Hygiene-Slot, ggf. gebündelt mit BL-519.
