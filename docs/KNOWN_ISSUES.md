@@ -1270,3 +1270,12 @@
 - Impact: User-Lockout ohne Self-Service-Recovery. Für den Single-Founder-Internal-Test-Mode tolerierbar (Server-Workaround existiert), **blockierend für den Multi-User-Schritt** — gehört als Gate neben die Pre-Customer-Live-Gates (COMPLIANCE §13).
 - Workaround: Admin-seitiger Reset via GoTrue-Admin-API `generate_link` bzw. Direct-SQL auf der Coolify-DB (dokumentierte Prozeduren aus früheren Sessions).
 - Next Action: **1:1-Port aus OP SLC-186** (kanonische Quelle; Branch `v10-3-rollenmodell-p1`, nach Merge OP main): enumeration-sichere `requestPasswordReset`-Server-Action (P-081-Doppel-Rate-Limit, generische Antwort) + GoTrue `generateLink` recovery + Passwort-vergessen-Page + Login-Link + Callback recovery→set-password. P-088-Policy greift auf set-password bereits (SLC-908). Pattern-Reuse-Pflicht (`strategaize-pattern-reuse.md` Klasse Auth/Identity). Backlog: BL-519, Kandidat nächster V8.x-Slot nach V8.16 STABLE.
+
+### ISSUE-136 — Deal-Detail 500 bei Deals ohne Kontakt/Firma (uuid "null"-Cast statt Graceful-Handling)
+- Status: open
+- Severity: Medium
+- Area: Pipeline / Deal-Workspace / Error-Handling
+- Summary: `/deals/[id]` wirft serverseitig `invalid input syntax for type uuid: "null"` (Pipeline-Actions), wenn `contact_id`/`company_id` des Deals NULL sind — Blank-Error-Page statt Graceful-Rendering. Live reproduziert 2026-07-07 mit den Test-Deals "[TEST] Deal 1/2/3" und "Test/Test 2"; Deals mit Kontakt+Firma (z.B. "Test 3") rendern korrekt. Befund aus Playwright-Screenshot-Lauf (Design-Referenzen), nicht aus regulärem QA.
+- Impact: Jeder Deal, der ohne verknüpften Kontakt/Firma angelegt wird, hat eine kaputte Detail-Seite. Im Founder-Betrieb umgehbar (Deals mit Kontakt anlegen), für Multi-User ein sichtbarer Qualitätsmangel.
+- Workaround: Deal-Detail nur für Deals mit verknüpftem Kontakt/Firma öffnen; Test-Deals bereinigen oder verknüpfen.
+- Next Action: In den Pipeline-Actions des Deal-Workspace NULL-`contact_id`/`company_id` vor dem Query abfangen (kein String-"null" in uuid-Filter) + Empty-State im Workspace für fehlende Verknüpfungen. Als Fix-Item in den nächsten V8.x-Slot aufnehmen.
