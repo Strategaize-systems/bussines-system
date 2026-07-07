@@ -1334,3 +1334,11 @@ DROP FUNCTION IF EXISTS is_admin();
 - Affected Areas: dokumentiert; keine Schema-Aenderungen durch dieses Cookbook.
 - Risk: Niedrig — Cookbook ist Doku, nicht ausfuehrbar.
 - Rollback Notes: dieses Cookbook IST das Rollback.
+
+### MIG-055 — V8.17 changed-FK-only UPDATE-Härtung der 9 Klasse-C-Tabellen (RESERVIERT, ISSUE-140 / DEC-307)
+- Date: 2026-07-07
+- Scope: Additive Migration (reserviert in /architecture V8.17; SQL wird in /backend geschrieben). Pro der 9 Multi-Parent-Klasse-C-Tabellen (tasks, signals, calendar_events, handoffs, cadence_enrollments, documents, email_threads, referrals, email_attachments): (1) UPDATE-`WITH CHECK` von MIG-054-AND zurück auf USING-konsistentes OR; INSERT-`WITH CHECK` bleibt MIG-054-AND (strikt). (2) `BEFORE UPDATE`-Trigger (SECURITY INVOKER, service_role-aware `current_user <> 'service_role'`, Scaffolding P-080 / MIG-051): pro FK-Spalte `NEW.<fk> IS DISTINCT FROM OLD.<fk> AND NEW.<fk> IS NOT NULL AND NOT EXISTS(SELECT 1 FROM <parent> p WHERE p.id = NEW.<fk> AND can_see_owner(p.owner_user_id)) → RAISE insufficient_privilege`. FK→Parent-Map: siehe ARCHITECTURE.md V8.17-Addendum.
+- Reason: MIG-054 (AND-Conjunction über alle FKs, auch unveränderte) friert legitime Status-Updates auf mixed-owner-Rows für Non-Admins ein (42501), Multi-User-Blocker. Postgres-RLS-`WITH CHECK` kann `OLD` nicht referenzieren → „nur geänderte FKs" nur per BEFORE-UPDATE-Trigger ausdrückbar (DEC-307, Founder-Ansatz a). Netto identischer Cross-Tenant-Injection-Schutz wie MIG-054, ohne False-Positive-Freeze.
+- Affected Areas: RLS-UPDATE-Policies + neue Trigger/Funktionen der 9 Tabellen. INSERT/SELECT/DELETE-Policies unberührt. Parent-Tabellen (deals/contacts/companies/activities/meetings/emails/proposals) read-only referenziert.
+- Risk: Medium — verhaltensändernd auf dem UPDATE-Pfad. Live-Apply + DB-Verify (positiv + negativ + mixed-owner-Row-Update PASS + geänderter-Fremd-FK-BLOCK) im /deploy gegen Coolify-DB (node:20-Sidecar, Precedent MIG-054). Idempotent (CREATE OR REPLACE FUNCTION + DROP TRIGGER IF EXISTS + DROP/CREATE POLICY).
+- Rollback Notes: `DROP TRIGGER IF EXISTS <name> ON <tabelle>;` + `DROP FUNCTION IF EXISTS <name>();` pro Tabelle; UPDATE-`WITH CHECK` zurück auf MIG-054-AND-Shape (MIG-054 re-applyen stellt den Vorzustand her). `NOTIFY pgrst, 'reload schema';`

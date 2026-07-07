@@ -12778,3 +12778,77 @@ Aus RPT-607 Section 8 sechs Risiken — mit Architecture-Resolutions:
 - Slice-Planning kann ohne Guessing weitermachen: ✓ (OQ-V812-slice-1+2 mit Architecture-Empfehlung, Final-Cut Founder-Vote)
 
 ### V8.12 Architecture ready for `/slice-planning V8.12`.
+
+## V8.17 — Regressions-Fix-Bundle Architecture (Addendum 2026-07-07)
+
+Fix-Bundle für die 5 Code-Review-Regressionen (RPT-672, ISSUE-138..142) aus dem V8.16-Range. Referenz: PRD-Section V8.17, RPT-673. 1 Slice (FEAT-927/BL-520), 1 additive Migration MIG-055. Alle Aussagen unten in dieser Session gegen den realen Code/das Live-Verhalten geprüft (Realitäts-Grounding-Gate) — Quellen je Punkt referenziert.
+
+### Architecture-Summary
+
+Fünf unabhängige, chirurgische Fixes an bestehendem V8.16-Code. Kein neues Subsystem. Zwei tragen echte Design-Entscheidungen (DEC-306 E-Mail-Bild-Toggle, DEC-307 MIG-055 changed-FK-only-Trigger); die übrigen drei sind lokale Korrekturen (CSP-Direktiven, Consent-Count-Guard, Call-Site-Fehlerprüfung + Frontend-res.error).
+
+### Grounding-Befunde (geändert ggü. den Issue-Annahmen)
+
+- **B-1 (OQ-3 aufgelöst):** In-App-Meetings öffnen Jitsi via `window.open(res.hostRedirectUrl, "_blank")` auf **separater Origin** `meet.strategaizetransition.com` (`cockpit/src/lib/meetings/jitsi-jwt.ts:132` `JITSI_PUBLIC_DOMAIN`; Aufruf `cockpit/src/app/(app)/mein-tag/mein-tag-client.tsx:571-576`). Jitsi ist **kein** App-Origin-iframe → unsere `Permissions-Policy` gated es nicht. Nur der In-App-SIP-Softphone (`cockpit/src/hooks/use-sip-phone.ts`) läuft auf der App-Origin und braucht das Mikrofon. **Folge:** `microphone=(self)` genügt; `camera=()` bleibt (kein App-Origin-Kamera-Zugriff gefunden) — enger als ISSUE-138 vermutete.
+- **B-2 (ISSUE-139 Rendering-Pfad):** Das E-Mail-HTML wird **client-seitig** sanitisiert und übergeben (`cockpit/src/app/(app)/emails/email-detail.tsx:231` `<EmailHtmlIframe html={sanitizeEmailHtml(email.body_html)} />`). Der Viewer nutzt `srcDoc` + `sandbox=""` (`cockpit/src/components/email/email-html-iframe.tsx:74-78`). srcDoc-Dokumente **erben** die Embedder-CSP → `<meta>`-CSP im srcDoc kann nur verschärfen, nie lockern. **Folge:** Remote-Bilder können unter der globalen `img-src`-Direktive im srcDoc grundsätzlich nicht rendern; das opt-in-Laden braucht ein **route-scoped-CSP-Dokument** (kein Server-Bild-Proxy).
+
+### Komponenten & Verantwortlichkeiten
+
+| # | Komponente (Datei) | Änderung | Verifikation |
+|---|---|---|---|
+| 1 | `cockpit/src/lib/security/csp.ts` `buildCSP()` | Neuer Param `sipWssOrigin`; wird in `connect-src` aufgenommen (aktuell 'self'/sentry/kong/bedrock, **kein** wss://sip — csp.ts:19-26). `PERMISSIONS_POLICY`-Konstante: `microphone=()` → `microphone=(self)`; `camera=()` bleibt (csp.ts:54-55). | Read csp.ts (55 Z.) |
+| 2 | `cockpit/next.config.ts` | `buildCSP(NEXT_PUBLIC_SUPABASE_URL, sipWss, SENTRY_CSP_REPORT_URI)` — `sipWss = wss://${process.env.NEXT_PUBLIC_SIP_DOMAIN || 'sip.strategaizetransition.com'}`. Header-Key bleibt enforced `Content-Security-Policy` (next.config.ts:9-20). SIP-Domain/Fallback identisch zur Client-Quelle. | Read next.config.ts; `calls/actions.ts:265` |
+| 3 | `cockpit/src/lib/email/sanitize-email-html.ts` | Neuer optionaler Param `blockRemoteImages` (default für Inbound-Viewer true): `uponSanitizeAttribute`-Hook (existiert bereits, Z.93-97) strippt `src` an `<img>` mit http(s)-Scheme (cid:/data:image bleiben), setzt Marker. Rückgabe/Signal für „blockierte Bilder vorhanden". | Read sanitize-email-html.ts (101 Z.) |
+| 4 | `cockpit/src/components/email/email-html-iframe.tsx` | Zwei-Zustand-Viewer: **blocked** (default) = srcDoc mit gestrippten Bildern + Banner „Externe Bilder blockiert (Tracking-Schutz) [Bilder laden]"; **loaded** (opt-in, Session-State) = iframe `src` → neue Route (Punkt 5), `sandbox="allow-same-origin"` (Höhe messbar, **kein** allow-scripts). | Read Komponente + Caller |
+| 5 | **NEU** `cockpit/src/app/api/emails/[id]/body/route.ts` | Same-Origin-GET, lädt `body_html` per **User-Client (RLS-scoped)** an `emails.id`, `sanitizeEmailHtml(body,{blockRemoteImages:false})`, Response mit **route-scoped** `Content-Security-Policy: default-src 'none'; img-src https: data: blob: cid:; style-src 'unsafe-inline'; font-src 'self'`. Globale CSP unberührt. Browser lädt Bilder direkt (kein Proxy). | DEC-306 |
+| 6 | **NEU** `sql/migrations/055_*.sql` (MIG-055) | Pro der 9 Klasse-C-Tabellen: UPDATE-`WITH CHECK` von MIG-054-AND zurück auf USING-konsistentes OR; + `BEFORE UPDATE`-Trigger (service_role-aware, P-080/MIG-051-Scaffolding) der nur **geänderte** FK-Spalten gegen `can_see_owner` prüft. INSERT-`WITH CHECK` bleibt MIG-054-AND (strikt). | DEC-307 |
+| 7 | `cockpit/src/lib/meetings/consent-check.ts` `checkConsentStatus` | Count-Guard: `returnedIds = Set(contacts.map(id))`; jede angeforderte ID ohne Row → synthetischer `missing`-Eintrag ⇒ `allGranted=false` (Z.55-64 heute fail-open). Caller-unabhängig. | Read consent-check.ts (68 Z.) |
+| 8 | `cockpit/src/app/(app)/mein-tag/actions.ts:449` | `contactId: contact?.id ?? (meeting as any).contact_id ?? null` → `contact?.id ?? null` (keine RLS-unsichtbare rohe ID durchreichen). | Read Z.440-452 |
+| 9 | `cockpit/src/app/(app)/mein-tag/mein-tag-client.tsx:571-576` `MeetingPrepCard` | `handleStartMeeting` wertet `res.error` aus (Toast/Meldung) statt nur `res.hostRedirectUrl`. | Read Z.564-580 |
+| 10 | 4 Call-Sites: `followup-actions.ts:126`, `signal-actions.ts:73`, `imap-actions.ts:135`, `meetings/actions.ts:228` | Verschluckte Insert/Update-Fehler prüfen + kompensieren (kein „approved ohne Task"/Thread-Divergenz). | ISSUE-140 (Pfade aus KNOWN_ISSUES; Backend verifiziert exakt) |
+
+### MIG-055 FK→Parent-Map (live aus MIG-054-Policies abgeleitet)
+
+Alle Parents tragen `owner_user_id` (aus MIG-054 EXISTS-Klauseln bestätigt). Trigger-Bedingung pro FK: `NEW.<fk> IS DISTINCT FROM OLD.<fk> AND NEW.<fk> IS NOT NULL AND current_user <> 'service_role' AND NOT EXISTS(SELECT 1 FROM <parent> p WHERE p.id = NEW.<fk> AND can_see_owner(p.owner_user_id)) → RAISE insufficient_privilege`.
+
+| Tabelle | FK-Spalten → Parent |
+|---|---|
+| tasks | deal_id→deals, contact_id→contacts, company_id→companies |
+| signals | + activity_id→activities |
+| calendar_events | + meeting_id→meetings |
+| handoffs | deal_id→deals, company_id→companies |
+| cadence_enrollments | deal_id→deals, contact_id→contacts |
+| documents | contact_id→contacts, company_id→companies, deal_id→deals |
+| email_threads | deal_id→deals, contact_id→contacts, company_id→companies |
+| referrals | deal_id→deals, referrer_id→contacts, referred_company_id→companies, referred_contact_id→contacts |
+| email_attachments | email_id→emails, proposal_id→proposals |
+
+### Datenfluss (geänderte Pfade)
+
+- **Telefonie:** Softphone (`use-sip-phone.ts`) → `wss://sip…/ws` — jetzt in `connect-src` erlaubt; `getUserMedia(audio)` — jetzt via `microphone=(self)` erlaubt. Meetings unverändert (separater Tab/Origin).
+- **E-Mail-Bilder:** default → srcDoc ohne Remote-Bilder (kein Netz-Call an fremde Server, kein Tracking). „Bilder laden" → iframe lädt `/api/emails/[id]/body` (route-scoped-CSP) → Browser holt Remote-Bilder **direkt** (opt-in, pro Mail, Session-State).
+- **RLS-UPDATE:** BEFORE-Trigger prüft geänderte FKs → dann USING (OR, Row-Sichtbarkeit) → dann WITH CHECK (OR). Unveränderte mixed-owner-Row: Trigger no-op (keine FK geändert) → PASS. Geänderter Fremd-FK: Trigger RAISE → BLOCK.
+
+### Security / Privacy
+
+- CSP-Enforce-Härtung (SLC-910) bleibt vollständig: `connect-src` gewinnt genau eine bekannte wss-Origin; `img-src` global unverändert strikt; `microphone` least-privilege `(self)`. Kein `img-src https:` global, kein `microphone=*`.
+- ISSUE-132-Fix (Cross-Tenant-FK-Injection) bleibt intakt: INSERT strikt (AND), UPDATE via Trigger auf geänderte FKs. Netto identischer Injection-Schutz, nur die false-positive-Freeze entfällt.
+- Consent-Gate fail-closed (§201/DSGVO) — Lib caller-unabhängig sicher.
+- Bild-Toggle: opt-in-Tracking-Preisgabe nur für explizit geladene Mails; Default schützt.
+
+### Constraints / Tradeoffs
+
+- **T-1 (DEC-306):** Route-scoped-CSP-iframe für den „loaded"-Zustand ist der aufwändigste Teil neben dem Trigger (neue Route + iframe-src-Umbau + Höhenmessung via `allow-same-origin`). Leichtere Alternative (dokumentiert, falls Founder/Slice-Planning downgraden will): „Original-Mail im neuen Tab öffnen" (Route als Top-Level-Dokument, keine iframe-Höhen-Arbeit) — verliert das Inline-Gefühl. Empfehlung: Inline (Gmail-Modell, Founder-Intent).
+- **T-2:** Trigger über 9 Tabellen = 9 Funktionen/Trigger (explizit, kein Dynamic-SQL, mirror MIG-054-Stil). Regressionsrisiko auf legitime INSERTs = 0 (INSERT-Policy unangetastet).
+
+### Open Technical Questions (für /slice-planning)
+
+- **OQ-A1 (→ DEC-307):** Trigger `SECURITY INVOKER` (default) genügt, da can_see_owner + parent-RLS im Caller-Kontext greifen (mirror MIG-054-Semantik) — im /backend gegen Live-DB verifizieren (parent-RLS-Sichtbarkeit im Trigger-Subquery).
+- **OQ-A2 (→ DEC-306):** `emails.id` + RLS-Read im Body-Route gegen Live-Schema bestätigen; Höhenmessung unter `sandbox="allow-same-origin"` (statt srcDoc-Sonderfall) im /qa Browser-smoken.
+- **OQ-A3:** Marker-Mechanik für „blockierte Bilder vorhanden" (Rückgabe-Shape von `sanitizeEmailHtml` — String bleibt, Count via Pre-Scan-Regex im Caller oder Hook-Side-Channel) — /backend wählt die schlankere Variante.
+
+### Empfohlene Implementierungs-Reihenfolge
+
+ISSUE-138 (CSP, kleinster akuter) → ISSUE-142 (Consent-Guard) → ISSUE-141 (mein-tag) → ISSUE-140 (MIG-055 + 4 Call-Sites) → ISSUE-139 (E-Mail-Toggle, größter). QA mit **funktionalem Feature-Flow-CSP-Smoke** (Telefonie-WSS + Mikrofon; nicht nur Hydration — sonst RPT-672-Trugschluss-Wiederholung).
+
+### V8.17 Architecture ready for `/slice-planning V8.17`.
