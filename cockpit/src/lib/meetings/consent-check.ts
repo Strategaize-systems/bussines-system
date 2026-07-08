@@ -60,6 +60,24 @@ export async function checkConsentStatus(
     }
   }
 
+  // ISSUE-142 / SLC-915 MT-2: fail-closed. Jede angeforderte contactId ohne
+  // zurueckgegebene Row (nicht existent ODER per RLS `can_see_owner` weggefiltert)
+  // zaehlt als fehlende Einwilligung — nie als still uebersprungen. Sonst koennte ein
+  // RLS-unsichtbarer Teilnehmer `allGranted` faelschlich true lassen (Caller-unabhaengig,
+  // greift auch beim durchgereichten User-Client aus startMeeting).
+  const returnedIds = new Set((contacts ?? []).map((c) => c.id));
+  for (const id of contactIds) {
+    if (!returnedIds.has(id)) {
+      missing.push({
+        id,
+        first_name: "",
+        last_name: "",
+        email: "",
+        consent_status: null,
+      });
+    }
+  }
+
   return {
     allGranted: missing.length === 0,
     missing,
