@@ -1338,3 +1338,11 @@
 - Summary: Nebenprodukt des ISSUE-142-Fix (SLC-915 MT-2): synthetische `missing`-Einträge für RLS-weggefilterte Kontakte tragen bewusst leere `first_name`/`last_name`/`email` (die Contact-PII darf nicht geleakt werden). Der Start-Meeting-Modal-Banner (`start-meeting-modal.tsx:121`, `missingConsent.map(c=>c.name).join(", ")`) rendert für solche Einträge einen leeren Namen bzw. führende/anhängende Kommas. Gefunden im /qa RPT-678.
 - Impact: Rein kosmetisch. Die Security-Wirkung (`recordingEnabled=false`, keine Aufnahme ohne Consent-Beweis) ist korrekt; nur die Anzeige „fehlende Einwilligung: , " ist unschön. Nur bei tatsächlich RLS-unsichtbaren Teilnehmern (Multi-User-Reassignment-Edge-Case) sichtbar.
 - Next Action: Im Modal (oder in der `meetings.ts:265`-Map) leere Namen auf einen Platzhalter wie „unbekannter Teilnehmer" mappen. Kein V8.17-Blocker; späterer Micro-Fix.
+
+### ISSUE-144 — Drei weitere ungeprüfte Write-Pfade derselben Klasse wie ISSUE-140 (Multi-User-latent, außerhalb MT-5-Scope)
+- Status: open
+- Severity: Low
+- Area: Security / RLS / Multi-User-Readiness
+- Summary: Beim MT-5-Fix (SLC-915, die 4 in ISSUE-140 benannten Call-Sites) im /qa RPT-681 als Twins gefunden — dieselbe „verschluckter Insert/Update-Fehler auf RLS-latentem Pfad"-Klasse, aber NICHT unter den 4 benannten Call-Sites, daher bewusst außerhalb Scope belassen: (1) `meetings/actions.ts:211` `activities.insert(...)` in `createMeeting` ungeprüft (Meeting ohne Activity möglich, gleiche Funktion wie der gefixte calendar_events-Insert); (2) `fit-assessment/signal-actions.ts:56` `createSignal` gibt weiterhin die rohe RLS-`error.message` an die UI (Schwester von `createSignalForActivity`, das in MT-5 auf klare Meldung umgestellt wurde); (3) `meetings/actions.ts:301` `calendar_events.update(...)` in `updateMeeting` ungeprüft. Pre-existing, nicht durch V8.17 eingeführt.
+- Impact: Heute durch is_admin()-Single-User-Betrieb vollständig maskiert (0 Impact im Founder-Mode). Beim Multi-User-Start: gleiche Symptomatik wie ISSUE-140 (rohe RLS-Fehler / stille Inkonsistenz auf mixed-owner-Rows), nur an drei weiteren Stellen. Kein Datenverlust.
+- Next Action: In einem Konsistenz-Folge-Slot (zusammen mit dem Multi-User-Übergang) dieselbe Fehlerprüfung/Kompensation wie MT-5 auf die 3 Pfade legen. Kein V8.17-Blocker.
