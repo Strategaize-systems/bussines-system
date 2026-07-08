@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { ALLOWED_ATTR, ALLOWED_TAGS, sanitizeEmailHtml } from "./sanitize-email-html";
+import { ALLOWED_ATTR, ALLOWED_TAGS, sanitizeEmailHtml, hasRemoteImages } from "./sanitize-email-html";
 
 describe("sanitizeEmailHtml — OWASP-XSS-Cheatsheet", () => {
   // 20+ adversarial Vektoren — alle muessen ohne JS-executor und ohne block-tag-output sanitiziert werden.
@@ -201,5 +201,68 @@ describe("sanitizeEmailHtml — Edge-Cases", () => {
     const out = sanitizeEmailHtml('<a href="https://example.com" onclick="alert(1)">x</a>');
     expect(out).not.toMatch(/onclick/i);
     expect(out).toMatch(/href="https:\/\/example\.com"/);
+  });
+});
+
+describe("sanitizeEmailHtml — Remote-Bild-Block (blockRemoteImages, SLC-915 MT-6)", () => {
+  it("strippt http(s)-src an <img> wenn blockRemoteImages=true (img-Tag bleibt)", () => {
+    const out = sanitizeEmailHtml(
+      '<img src="https://track.evil.com/pixel.gif" alt="x">',
+      { blockRemoteImages: true },
+    );
+    expect(out).not.toMatch(/https:\/\/track\.evil\.com/);
+    expect(out).toMatch(/<img/i);
+  });
+
+  it("blockiert auch http:-src", () => {
+    const out = sanitizeEmailHtml('<img src="http://x.com/a.png">', {
+      blockRemoteImages: true,
+    });
+    expect(out).not.toMatch(/http:\/\/x\.com/);
+  });
+
+  it("laesst cid:- und data:image-src durch, auch bei blockRemoteImages=true", () => {
+    const out = sanitizeEmailHtml(
+      '<img src="cid:logo123" alt="l"><img src="data:image/png;base64,iVBOR" alt="d">',
+      { blockRemoteImages: true },
+    );
+    expect(out).toMatch(/cid:logo123/);
+    expect(out).toMatch(/data:image\/png/);
+  });
+
+  it("laesst http(s)-Bilder durch wenn blockRemoteImages=false (Default, bestehende Caller)", () => {
+    const out = sanitizeEmailHtml('<img src="https://example.com/a.png" alt="A">');
+    expect(out).toMatch(/src="https:\/\/example\.com\/a\.png"/);
+    const out2 = sanitizeEmailHtml('<img src="https://example.com/a.png" alt="A">', {
+      blockRemoteImages: false,
+    });
+    expect(out2).toMatch(/src="https:\/\/example\.com\/a\.png"/);
+  });
+
+  it("blockRemoteImages beeinflusst <a href> NICHT (nur img-src)", () => {
+    const out = sanitizeEmailHtml('<a href="https://example.com">x</a>', {
+      blockRemoteImages: true,
+    });
+    expect(out).toMatch(/href="https:\/\/example\.com"/);
+  });
+
+  it("setzt das Flag nach dem Aufruf zurueck (naechster Default-Aufruf blockt nicht)", () => {
+    sanitizeEmailHtml('<img src="https://x.com/a.png">', { blockRemoteImages: true });
+    const out = sanitizeEmailHtml('<img src="https://example.com/b.png" alt="b">');
+    expect(out).toMatch(/src="https:\/\/example\.com\/b\.png"/);
+  });
+});
+
+describe("hasRemoteImages (SLC-915 MT-6)", () => {
+  it("true bei <img src=http(s)>", () => {
+    expect(hasRemoteImages('<p>x</p><img src="https://x.com/p.gif">')).toBe(true);
+    expect(hasRemoteImages('<img src="http://x.com/p.gif">')).toBe(true);
+  });
+
+  it("false ohne img / nur cid+data-Bilder / leer", () => {
+    expect(hasRemoteImages("<p>nur Text</p>")).toBe(false);
+    expect(hasRemoteImages('<img src="cid:logo">')).toBe(false);
+    expect(hasRemoteImages('<img src="data:image/png;base64,x">')).toBe(false);
+    expect(hasRemoteImages("")).toBe(false);
   });
 });

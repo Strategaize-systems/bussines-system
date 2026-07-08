@@ -1,7 +1,7 @@
 // EmailHtmlIframe — Defense-in-Depth Sandbox-Layer fuer Email-HTML-Rendering.
 // Pattern P-079, siehe dev-system/docs/PATTERN_LIBRARY/11-html-sanitization.md.
 
-import { render } from "@testing-library/react";
+import { render, fireEvent } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { EmailHtmlIframe } from "./email-html-iframe";
@@ -59,5 +59,51 @@ describe("EmailHtmlIframe", () => {
     const style = iframe?.getAttribute("style") ?? "";
     // Default-Height >= 80px (MIN_HEIGHT-Konstante)
     expect(style).toMatch(/height:\s*\d+px/);
+  });
+});
+
+describe("EmailHtmlIframe — Remote-Bild-Banner + loaded-State (SLC-915 MT-6)", () => {
+  it("zeigt den 'Bilder laden'-Banner wenn hasBlockedImages + emailId", () => {
+    const { getByText } = render(
+      <EmailHtmlIframe html="<p>x</p>" emailId="abc" hasBlockedImages />,
+    );
+    expect(getByText(/Externe Bilder blockiert/i)).toBeTruthy();
+    expect(getByText(/Bilder laden/i)).toBeTruthy();
+  });
+
+  it("zeigt KEINEN Banner ohne emailId (auch wenn hasBlockedImages)", () => {
+    const { queryByText } = render(
+      <EmailHtmlIframe html="<p>x</p>" hasBlockedImages />,
+    );
+    expect(queryByText(/Bilder laden/i)).toBeNull();
+  });
+
+  it("zeigt KEINEN Banner wenn hasBlockedImages=false", () => {
+    const { queryByText } = render(
+      <EmailHtmlIframe html="<p>x</p>" emailId="abc" />,
+    );
+    expect(queryByText(/Bilder laden/i)).toBeNull();
+  });
+
+  it("startet im blocked-State (srcDoc + sandbox='') auch mit emailId", () => {
+    const { container } = render(
+      <EmailHtmlIframe html="<p>Y-INHALT</p>" emailId="abc" hasBlockedImages />,
+    );
+    const iframe = container.querySelector("iframe");
+    expect(iframe?.getAttribute("sandbox")).toBe("");
+    expect(iframe?.getAttribute("srcdoc") ?? "").toContain("Y-INHALT");
+    expect(iframe?.getAttribute("src")).toBeNull();
+  });
+
+  it("wechselt nach Klick auf 'Bilder laden' in den loaded-State (src -> Route, sandbox=allow-same-origin)", () => {
+    const { container, getByText } = render(
+      <EmailHtmlIframe html="<p>x</p>" emailId="abc123" hasBlockedImages />,
+    );
+    fireEvent.click(getByText(/Bilder laden/i));
+    const iframe = container.querySelector("iframe");
+    expect(iframe?.getAttribute("src")).toBe("/api/emails/abc123/body");
+    expect(iframe?.getAttribute("sandbox")).toBe("allow-same-origin");
+    // Banner ist nach dem Laden weg.
+    expect(container.textContent).not.toMatch(/Bilder laden/i);
   });
 });

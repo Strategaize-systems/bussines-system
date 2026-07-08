@@ -1,65 +1,54 @@
 "use client";
 
-// Defense-in-Depth-Layer fuer Email-HTML-Rendering. Sandbox="" blockiert
-// Inline-Scripts, Form-Submits, Top-Frame-Navigation und Same-Origin-Access
-// — selbst wenn DOMPurify (sanitize-email-html.ts) versagt, faengt der
-// Browser-Sandbox-Layer ab. Pattern P-079, siehe
+// Defense-in-Depth-Layer fuer Email-HTML-Rendering. Pattern P-079, siehe
 // dev-system/docs/PATTERN_LIBRARY/11-html-sanitization.md.
+//
+// Zwei Zustaende (SLC-915 MT-6 / DEC-306):
+//  - blocked (default): srcDoc mit bereits gestrippten Remote-Bildern +
+//    sandbox="" (blockiert Inline-Scripts, Form-Submits, Top-Frame-Navigation,
+//    Same-Origin). Selbst wenn DOMPurify (sanitize-email-html.ts) versagt,
+//    faengt der Browser-Sandbox-Layer ab.
+//  - loaded (opt-in, Session-State pro Mail): iframe src -> route-scoped
+//    /api/emails/[id]/body (eigene CSP erlaubt Remote-Bilder, kein Proxy),
+//    sandbox="allow-same-origin" (Hoehenmessung, KEIN allow-scripts).
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { buildEmailDocument } from "@/lib/email/email-frame";
+
 interface EmailHtmlIframeProps {
+  /** Bereits sanitisiertes HTML mit gestrippten Remote-Bildern (blocked-State). */
   html: string;
-}
-
-// Minimaler Style-Reset im Iframe — Tailwind ist NICHT im Iframe verfuegbar
-// (sandbox="" + srcDoc), daher Defaults inline.
-const FRAME_STYLES = `
-  *, *::before, *::after { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
-  body {
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 14px;
-    line-height: 1.5;
-    color: rgb(51 65 85);
-    word-break: break-word;
-    padding: 0;
-  }
-  p { margin: 0 0 0.5rem 0; }
-  h1, h2, h3, h4, h5, h6 { margin: 1rem 0 0.5rem 0; font-weight: 600; }
-  h1 { font-size: 1.5rem; }
-  h2 { font-size: 1.25rem; }
-  h3 { font-size: 1.125rem; }
-  a { color: rgb(37 99 235); text-decoration: underline; }
-  img { max-width: 100%; height: auto; }
-  ul, ol { padding-left: 1.5rem; margin: 0 0 0.5rem 0; }
-  blockquote { border-left: 3px solid rgb(203 213 225); padding-left: 0.75rem; margin: 0.5rem 0; color: rgb(100 116 139); }
-  table { border-collapse: collapse; max-width: 100%; }
-  th, td { padding: 4px 8px; border: 1px solid rgb(226 232 240); text-align: left; }
-  thead { background: rgb(248 250 252); }
-  pre, code { font-family: ui-monospace, monospace; font-size: 0.875rem; background: rgb(248 250 252); padding: 2px 4px; border-radius: 3px; }
-  hr { border: 0; border-top: 1px solid rgb(226 232 240); margin: 1rem 0; }
-`;
-
-function buildSrcDoc(html: string): string {
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${FRAME_STYLES}</style></head><body>${html}</body></html>`;
+  /** E-Mail-ID fuer den loaded-State (route-scoped Body-Route). Ohne emailId
+   *  bleibt der Viewer im blocked-State (kein „Bilder laden"). */
+  emailId?: string;
+  /** Ob im Roh-HTML Remote-Bilder vorhanden waren -> „Bilder laden"-Banner. */
+  hasBlockedImages?: boolean;
 }
 
 const MIN_HEIGHT = 80;
 const MAX_HEIGHT = 8000;
 
-export function EmailHtmlIframe({ html }: EmailHtmlIframeProps) {
+export function EmailHtmlIframe({
+  html,
+  emailId,
+  hasBlockedImages = false,
+}: EmailHtmlIframeProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(MIN_HEIGHT);
+  // Session-State pro Mail: bei Mail-Wechsel wird die Komponente neu gemountet
+  // (Detail-Ansicht), daher startet jede Mail wieder blockiert.
+  const [loaded, setLoaded] = useState(false);
 
-  // Misst die Content-Hoehe und passt das Iframe-Element an. Mit sandbox=""
-  // ist same-origin nicht erlaubt, aber das Parent-Window kann trotzdem auf
-  // contentDocument zugreifen, solange das Doc per srcDoc gesetzt wurde.
+  // Misst die Content-Hoehe und passt das Iframe-Element an. blocked-State:
+  // srcDoc ist parent-lesbar. loaded-State: same-origin (Route) + allow-same-
+  // origin -> contentDocument ebenfalls lesbar.
   const measureAndResize = useCallback(() => {
     const iframe = iframeRef.current;
     const doc = iframe?.contentDocument;
     if (!iframe || !doc?.body) return;
-    const scrollHeight = doc.documentElement.scrollHeight || doc.body.scrollHeight || MIN_HEIGHT;
+    const scrollHeight =
+      doc.documentElement.scrollHeight || doc.body.scrollHeight || MIN_HEIGHT;
     const next = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, scrollHeight + 8));
     setHeight(next);
   }, []);
@@ -68,21 +57,51 @@ export function EmailHtmlIframe({ html }: EmailHtmlIframeProps) {
     // Bei Asset-Late-Load (z.B. Inline-Images) re-measure mit kleinem Delay.
     const timeoutId = window.setTimeout(measureAndResize, 200);
     return () => window.clearTimeout(timeoutId);
-  }, [html, measureAndResize]);
+  }, [html, loaded, measureAndResize]);
+
+  const showBanner = hasBlockedImages && !!emailId && !loaded;
+  const useLoadedRoute = loaded && !!emailId;
+
+  const iframeStyle = {
+    width: "100%",
+    height: `${height}px`,
+    borderWidth: 0,
+    display: "block",
+  } as const;
 
   return (
-    <iframe
-      ref={iframeRef}
-      title="Email Inhalt"
-      sandbox=""
-      srcDoc={buildSrcDoc(html)}
-      onLoad={measureAndResize}
-      style={{
-        width: "100%",
-        height: `${height}px`,
-        borderWidth: 0,
-        display: "block",
-      }}
-    />
+    <div>
+      {showBanner && (
+        <div className="mb-2 flex items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <span>Externe Bilder blockiert (Tracking-Schutz)</span>
+          <button
+            type="button"
+            onClick={() => setLoaded(true)}
+            className="shrink-0 rounded border border-amber-300 bg-white px-2 py-1 font-medium text-amber-900 hover:bg-amber-100"
+          >
+            Bilder laden
+          </button>
+        </div>
+      )}
+      {useLoadedRoute ? (
+        <iframe
+          ref={iframeRef}
+          title="Email Inhalt"
+          sandbox="allow-same-origin"
+          src={`/api/emails/${emailId}/body`}
+          onLoad={measureAndResize}
+          style={iframeStyle}
+        />
+      ) : (
+        <iframe
+          ref={iframeRef}
+          title="Email Inhalt"
+          sandbox=""
+          srcDoc={buildEmailDocument(html)}
+          onLoad={measureAndResize}
+          style={iframeStyle}
+        />
+      )}
+    </div>
   );
 }

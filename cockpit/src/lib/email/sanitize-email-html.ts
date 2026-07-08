@@ -48,6 +48,23 @@ function isUnsafeDataUri(value: string): boolean {
   return !/^data:image\/(?:png|jpeg|gif|webp)[;,]/i.test(value);
 }
 
+// SLC-915 MT-6 (ISSUE-139): Modul-Level-Flag fuer den Remote-Bild-Block. Wird
+// unmittelbar vor DOMPurify.sanitize gesetzt und im finally zurueckgesetzt —
+// DOMPurify.sanitize ist synchron und single-threaded, daher gibt es keine
+// Interleaving-Gefahr zwischen zwei Aufrufen. Der uponSanitizeAttribute-Hook
+// liest dieses Flag.
+let blockRemoteImagesActive = false;
+
+/**
+ * Prueft (Pre-Scan, ohne zu sanitisieren), ob das Roh-HTML mindestens ein
+ * <img> mit http(s)-src enthaelt — Signal fuer den „Externe Bilder blockiert"-
+ * Banner im Viewer (OQ-A3: Pre-Scan-Regex im Caller statt Return-Shape-Aenderung).
+ */
+export function hasRemoteImages(html: string): boolean {
+  if (!html) return false;
+  return /<img\b[^>]*\bsrc\s*=\s*["']?\s*https?:/i.test(html);
+}
+
 /**
  * Sanitisiert untrusted HTML fuer das Email-Rendering.
  * Whitelist-basiert (Tags + Attrs + URL-Schemes), entfernt alle on*-Handler,
@@ -55,11 +72,26 @@ function isUnsafeDataUri(value: string): boolean {
  * javascript:- und data:text/html-URLs.
  *
  * @param html Roh-HTML aus untrusted Quelle (z.B. Inbound-Email body_html).
+ * @param options.blockRemoteImages Wenn true, wird http(s)-`src` an <img>
+ *   entfernt (cid:/data:image bleiben) — Tracking-Pixel-Schutz fuer den
+ *   Inbound-Viewer (DEC-306). Default false (bestehende Caller unveraendert).
  * @returns Whitelist-konformer HTML-String.
  */
-export function sanitizeEmailHtml(html: string): string {
+export function sanitizeEmailHtml(
+  html: string,
+  options?: { blockRemoteImages?: boolean },
+): string {
   if (!html) return "";
 
+  blockRemoteImagesActive = options?.blockRemoteImages ?? false;
+  try {
+    return runSanitize(html);
+  } finally {
+    blockRemoteImagesActive = false;
+  }
+}
+
+function runSanitize(html: string): string {
   const clean = DOMPurify.sanitize(html, {
     ALLOWED_TAGS: [...ALLOWED_TAGS],
     ALLOWED_ATTR: [...ALLOWED_ATTR],
@@ -90,8 +122,20 @@ function installAfterSanitizeAttributesHook() {
     }
   });
   // data:image/svg+xml + andere unsichere data:-URIs auf src/href entfernen.
-  DOMPurify.addHook("uponSanitizeAttribute", (_node, data) => {
+  DOMPurify.addHook("uponSanitizeAttribute", (node, data) => {
     if ((data.attrName === "src" || data.attrName === "href") && isUnsafeDataUri(data.attrValue)) {
+      data.keepAttr = false;
+      return;
+    }
+    // SLC-915 MT-6 (ISSUE-139): Remote-Bild-Block. http(s)-src an <img>
+    // entfernen; cid:/data:image bleiben (Inline-Bilder). Nur aktiv, wenn der
+    // Aufrufer blockRemoteImages:true gesetzt hat.
+    if (
+      blockRemoteImagesActive &&
+      node.nodeName === "IMG" &&
+      data.attrName === "src" &&
+      /^https?:/i.test(data.attrValue)
+    ) {
       data.keepAttr = false;
     }
   });

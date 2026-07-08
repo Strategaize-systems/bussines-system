@@ -6,7 +6,7 @@ import {
   Clock, ChevronDown, ChevronUp, Link2, ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { sanitizeEmailHtml } from "@/lib/email/sanitize-email-html";
+import { sanitizeEmailHtml, hasRemoteImages } from "@/lib/email/sanitize-email-html";
 import { EmailHtmlIframe } from "@/components/email/email-html-iframe";
 import type { InboxEmail } from "./imap-actions";
 import { getEmailThread, assignEmailToContact, assignEmailToCompany, assignEmailToDeal, searchContacts, searchDeals } from "./imap-actions";
@@ -228,7 +228,13 @@ function ThreadMessage({ message, isActive }: { message: InboxEmail; isActive: b
 
 function EmailBody({ email }: { email: InboxEmail }) {
   if (email.body_html) {
-    return <EmailHtmlIframe html={sanitizeEmailHtml(email.body_html)} />;
+    return (
+      <EmailHtmlIframe
+        emailId={email.id}
+        hasBlockedImages={hasRemoteImages(email.body_html)}
+        html={sanitizeEmailHtml(email.body_html, { blockRemoteImages: true })}
+      />
+    );
   }
 
   return (
