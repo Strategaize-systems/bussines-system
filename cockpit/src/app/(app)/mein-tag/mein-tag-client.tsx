@@ -564,12 +564,19 @@ function TaskItem({ item, onDealClick, readOnly = false }: { item: TodayItem; on
 
 function MeetingPrepCard({ meeting, readOnly = false }: { meeting: NonNullable<NextMeetingPrep>; readOnly?: boolean }) {
   const [isStarting, startJitsi] = useTransition();
+  // ISSUE-141 / SLC-915 MT-3: startMeeting-Fehler sichtbar machen (kein Silent-Dead-Button).
+  const [meetingError, setMeetingError] = useState<string | null>(null);
 
   const handleStartMeeting = () => {
     if (!meeting.dealId) return;
+    setMeetingError(null);
     startJitsi(async () => {
       const contactIds = meeting.contactId ? [meeting.contactId] : [];
       const res = await startMeeting(meeting.dealId!, contactIds, meeting.title);
+      if (res.error) {
+        setMeetingError(res.error);
+        return;
+      }
       if (res.hostRedirectUrl) {
         window.open(res.hostRedirectUrl, "_blank");
       }
@@ -597,6 +604,14 @@ function MeetingPrepCard({ meeting, readOnly = false }: { meeting: NonNullable<N
         )}
       </div>
       <div className="p-5 space-y-3">
+        {meetingError && (
+          <div
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"
+          >
+            Meeting konnte nicht gestartet werden: {meetingError}
+          </div>
+        )}
         <div>
           <p className="text-sm font-bold text-slate-900">{meeting.title}</p>
           <p className="text-xs text-slate-500 mt-0.5">{meeting.durationMinutes} Min. · {meeting.timeStr} Uhr</p>

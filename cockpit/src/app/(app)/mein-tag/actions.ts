@@ -446,7 +446,10 @@ export async function getNextMeetingWithContext(): Promise<NextMeetingPrep> {
     dealId: deal?.id ?? null,
     dealValue: deal?.value ?? null,
     dealStage: deal?.pipeline_stages?.name ?? null,
-    contactId: contact?.id ?? (meeting as any).contact_id ?? null,
+    // ISSUE-141 / SLC-915 MT-3: nur die RLS-sichtbare contact.id durchreichen.
+    // Der rohe meeting.contact_id-Fallback leakte eine Contact-ID, die der User per
+    // RLS (can_see_owner) gar nicht sehen darf (contact ist dann null).
+    contactId: contact?.id ?? null,
     contactName: contact ? `${contact.first_name} ${contact.last_name}` : null,
     companyName: company?.name ?? null,
   };
