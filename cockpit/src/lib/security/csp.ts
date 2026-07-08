@@ -14,13 +14,22 @@
 //   <supabase-kong>                                     — Public-Kong-FQDN (NEXT_PUBLIC_SUPABASE_URL),
 //                                                         deckt auch Supabase-Realtime wss:// auf gleichem Host
 //   https://bedrock-runtime.eu-central-1.amazonaws.com  — LLM EU (data-residency.md)
+//   wss://<sip-domain>                                  — In-App-SIP-Softphone-Transport (sip.js
+//                                                         transportOptions.server, use-sip-phone.ts).
+//                                                         ISSUE-138 / SLC-915 MT-1 (V8.17): Phase-B-CSP-Enforce
+//                                                         (SLC-910) blockte den WSS-Connect ohne diese Origin.
 
-export function buildCSP(supabaseKongUrl: string, reportUri = ""): string {
+export function buildCSP(
+  supabaseKongUrl: string,
+  sipWssOrigin: string,
+  reportUri = "",
+): string {
   const connectSrc = [
     "'self'",
     "https://*.sentry.io",
     supabaseKongUrl,
     "https://bedrock-runtime.eu-central-1.amazonaws.com",
+    sipWssOrigin,
   ]
     .filter((s) => s.length > 0)
     .join(" ");
@@ -51,5 +60,9 @@ export function buildCSP(supabaseKongUrl: string, reportUri = ""): string {
   return directives.join("; ");
 }
 
+// ISSUE-138 / SLC-915 MT-1 (V8.17): microphone=(self) fuer das In-App-SIP-Softphone
+// (App-Origin, getUserMedia im Call-Flow). camera=() BLEIBT — In-App-Meetings oeffnen
+// Jitsi via window.open auf separater Origin (meet.strategaizetransition.com), KEIN
+// App-Origin-iframe → Permissions-Policy gated Jitsi nicht (Step-0 DRIFT-1, DEC-306/307).
 export const PERMISSIONS_POLICY =
-  "camera=(), microphone=(), geolocation=(), payment=(), usb=()";
+  "camera=(), microphone=(self), geolocation=(), payment=(), usb=()";

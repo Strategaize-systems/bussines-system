@@ -8,6 +8,11 @@ import { buildCSP, PERMISSIONS_POLICY } from "./src/lib/security/csp";
 // den Header-Namen auf "Content-Security-Policy" (siehe MT-5).
 const CSP_VALUE = buildCSP(
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+  // ISSUE-138 / SLC-915 MT-1 (V8.17): WSS-Origin des In-App-SIP-Softphones (sip.js
+  // transportOptions.server = wss://<sip-domain>/ws, calls/actions.ts). Fallback-Domain
+  // identisch zum Server-Default in calls/actions.ts. Nur die Origin (kein /ws-Pfad) —
+  // CSP connect-src matcht WebSocket-Quellen host-basiert.
+  `wss://${process.env.NEXT_PUBLIC_SIP_DOMAIN || "sip.strategaizetransition.com"}`,
   // Optional: Founder setzt SENTRY_CSP_REPORT_URI in Coolify auf den Sentry
   // Security-Endpoint, damit Phase-A-Violations zentral landen. Leer => browser-console-only.
   process.env.SENTRY_CSP_REPORT_URI ?? "",
