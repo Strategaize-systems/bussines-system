@@ -544,3 +544,11 @@ V8.16 schliesst die 4 offenen Findings aus dem Fable-5 Re-Audit über den deploy
 |----|-------|---------|--------|----------|---------|
 | SLC-914 | [V8.16 Security-Hardening Bundle (startMeeting-IDOR + Class-C WITH-CHECK MIG-054 + Low-Hygiene)](SLC-914-v816-security-hardening.md) | FEAT-926 / BL-518 | deployed | High | 2026-07-04 |
 | SLC-910 | [V8.12 CSP-Headers Phase-B-Close (Report-Only → enforced + Browser-Smoke) — im V8.16-Slot abgeschlossen, deployed 2026-07-06 (REL-051)](SLC-910-v812-csp-headers.md) | FEAT-922 / BL-501 | deployed | Medium | 2026-06-09 |
+
+## V8.17 Slices (Regressions-Fix-Bundle aus Code-Review V8.16-Range — slice-planning done 2026-07-08)
+
+V8.17 schliesst die 5 von allen QA-Stufen übersehenen V8.16-Regressionen (RPT-672, ultrareview-Nachbau über `c9efb41..HEAD`) in EINEM Slice (Founder-Beschluss). ISSUE-138 (High, CSP-Enforce blockt SIP-Telefonie-WSS + Mikrofon), ISSUE-139 (E-Mail-Remote-Bild-Block + opt-in route-scoped-Toggle, DEC-306), ISSUE-140 (Medium/Multi-User-Blocker, MIG-055 changed-FK-only BEFORE-UPDATE-Trigger + 4 Call-Site-Fehlerprüfungen, DEC-307), ISSUE-141 (startMeeting Silent-Dead-Button), ISSUE-142 (checkConsentStatus Count-Guard fail-closed). **1 additive Migration MIG-055.** 6 file-disjunkte MTs, Reihenfolge ISSUE-138→142→141→140→139. Step-0-Drift: `camera=()` bleibt (Jitsi = separater Origin via `window.open`, nicht App-Origin-iframe — Architektur-Grounding B-1/OQ-3 supersedet PRD-`camera=(self)`). Single-Branch main, Internal-Test-Mode (Precedent V8.12/14/15/16). BLOCKING: funktionaler CSP-Feature-Flow-Smoke (Telefonie/Mikrofon/Meeting/E-Mail-Viewer), nicht nur Hydration (IMP-1401, Playbook `security-headers-live-smoke.md`). Per module-lifecycle-discipline + IMP-950: kein Customer-Live, Last Stable bleibt V8.16.
+
+| ID | Slice | Feature | Status | Priority | Created |
+|----|-------|---------|--------|----------|---------|
+| SLC-915 | [V8.17 Regressions-Fix-Bundle (CSP-Feature-Flows + E-Mail-Bild-Toggle + MIG-055 changed-FK-only + startMeeting-Caller + Consent-Guard)](SLC-915-v817-regressions-fix-bundle.md) | FEAT-927 / BL-520 | planned | High | 2026-07-08 |
