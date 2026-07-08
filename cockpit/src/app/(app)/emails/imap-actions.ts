@@ -117,6 +117,15 @@ export async function getEmailThread(threadId: string) {
 export async function assignEmailToContact(emailId: string, contactId: string) {
   await assertNotReadOnlyContext();
   const supabase = await createClient();
+
+  // Aktuellen Stand lesen (thread_id + bisheriger contact_id) fuer die
+  // Kompensation, falls der Thread-Update spaeter fehlschlaegt (ISSUE-140).
+  const { data: emailBefore } = await supabase
+    .from("email_messages")
+    .select("thread_id, contact_id")
+    .eq("id", emailId)
+    .single();
+
   const { error } = await supabase
     .from("email_messages")
     .update({ contact_id: contactId })
@@ -124,18 +133,22 @@ export async function assignEmailToContact(emailId: string, contactId: string) {
 
   if (error) throw new Error(error.message);
 
-  // Also update thread if exists
-  const { data: email } = await supabase
-    .from("email_messages")
-    .select("thread_id")
-    .eq("id", emailId)
-    .single();
-
-  if (email?.thread_id) {
-    await supabase
+  // Thread mitziehen; scheitert der Update, die Message-Zuordnung zuruecksetzen,
+  // damit Message und Thread nicht auf unterschiedliche Kontakte zeigen
+  // (Message/Thread-Divergenz, ISSUE-140).
+  if (emailBefore?.thread_id) {
+    const { error: threadError } = await supabase
       .from("email_threads")
       .update({ contact_id: contactId })
-      .eq("id", email.thread_id);
+      .eq("id", emailBefore.thread_id);
+
+    if (threadError) {
+      await supabase
+        .from("email_messages")
+        .update({ contact_id: emailBefore.contact_id ?? null })
+        .eq("id", emailId);
+      throw new Error(threadError.message);
+    }
   }
 
   revalidatePath("/emails");

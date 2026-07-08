@@ -225,18 +225,27 @@ export async function createMeeting(formData: FormData) {
     const startTime = new Date(scheduledAt);
     const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
 
-    await supabase.from("calendar_events").insert({
-      title,
-      start_time: startTime.toISOString(),
-      end_time: endTime.toISOString(),
-      type: "meeting",
-      location,
-      deal_id: dealId,
-      contact_id: contactId,
-      company_id: companyId,
-      meeting_id: newMeeting.id,
-      created_by: user?.id ?? null,
-    });
+    const { error: calendarError } = await supabase
+      .from("calendar_events")
+      .insert({
+        title,
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        type: "meeting",
+        location,
+        deal_id: dealId,
+        contact_id: contactId,
+        company_id: companyId,
+        meeting_id: newMeeting.id,
+        created_by: user?.id ?? null,
+      });
+
+    // ISSUE-140: Insert-Fehler nicht verwerfen — Meeting + Activity bestehen
+    // bereits, daher ehrliche Teil-Erfolg-Meldung statt stillem Schlucken.
+    if (calendarError)
+      return {
+        error: `Meeting erstellt, aber Kalendereintrag fehlgeschlagen: ${calendarError.message}`,
+      };
   }
 
   revalidatePath("/meetings");

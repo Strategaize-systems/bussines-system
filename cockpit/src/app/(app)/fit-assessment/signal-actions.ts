@@ -77,7 +77,15 @@ export async function createSignalForActivity(
     signal_type: signalType,
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    // ISSUE-140: rohe RLS-Fehlermeldung (42501) durch klare Meldung ersetzen;
+    // andere Fehler behalten ihr Detail.
+    const message =
+      error.code === "42501"
+        ? "Signal konnte nicht gespeichert werden: fehlende Berechtigung fuer einen verknuepften Datensatz."
+        : `Signal konnte nicht gespeichert werden: ${error.message}`;
+    return { error: message };
+  }
 
   if (contactId) revalidatePath(`/contacts/${contactId}`);
   if (companyId) revalidatePath(`/companies/${companyId}`);

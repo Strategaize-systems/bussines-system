@@ -66,7 +66,7 @@ export async function approveFollowup(actionId: string) {
   if (fetchError || !action) return { error: "Aktion nicht gefunden" };
 
   // Update action status to approved
-  await supabase
+  const { error: approveError } = await supabase
     .from("ai_action_queue")
     .update({
       status: "approved",
@@ -74,6 +74,9 @@ export async function approveFollowup(actionId: string) {
       decided_by: user.id,
     })
     .eq("id", actionId);
+
+  if (approveError)
+    return { error: `Freigabe fehlgeschlagen: ${approveError.message}` };
 
   // Create a real task from the suggestion
   // Determine deal_id, contact_id, company_id based on entity_type
@@ -141,10 +144,17 @@ export async function approveFollowup(actionId: string) {
     created_by: user.id,
   });
 
-  if (taskError)
+  if (taskError) {
+    // Kompensation (ISSUE-140): Freigabe zuruecknehmen, damit keine
+    // "approved ohne Task"-Row zurueckbleibt, wenn der Task-Insert scheitert.
+    await supabase
+      .from("ai_action_queue")
+      .update({ status: "pending", decided_at: null, decided_by: null })
+      .eq("id", actionId);
     return {
       error: `Task konnte nicht erstellt werden: ${taskError.message}`,
     };
+  }
 
   revalidatePath("/mein-tag");
   revalidatePath("/aufgaben");
