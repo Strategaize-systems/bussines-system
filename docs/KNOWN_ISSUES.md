@@ -1181,6 +1181,7 @@
 
 ### ISSUE-042 — OpenAI-API-Key in untrackter Datei am Repo-Root
 - Status: open
+- Update 2026-07-09 (/deploy V8.17-Session, Founder-Auftrag "aufraeumen"): (1) Lokale Datei `open AI Business system.txt` (191 B, gitignored/untracked) **GELOESCHT**. (2) Prod-Realitaet geprueft: `TRANSCRIPTION_PROVIDER=openai`, `OPENAI_API_KEY` gesetzt (len 164) — Transkription laeuft ueber **US-OpenAI** (Data-Residency-Verstoss). **Korrektur einer frueheren Annahme:** die Azure-EU-Vars sind NICHT provisioniert — `AZURE_OPENAI_ENDPOINT`/`API_KEY`/`WHISPER_DEPLOYMENT_ID` haben **Laenge 0** (leere Placeholder), nur `API_VERSION` gesetzt. Ein Flip auf `azure` wuerde die Transkription brechen. (3) Nutzung real minimal: 1 Call-Transcript + 1 Recording ueber alle 7 calls, 0 Meeting-Transcripts ueber 14 meetings → Feature de facto ungenutzt. OFFEN (Founder-Entscheidung): Key-Rotation bei OpenAI + Data-Residency-Weg (Fail-closed-Deaktivierung vs. Weiterbetrieb-akzeptiert vs. EU-Azure-Provisionierung).
 - Severity: High
 - Area: Security / Credentials
 - Summary: Datei `open AI Business system.txt` im Repo-Root enthaelt einen produktiven OpenAI-API-Key (`sk-proj-...`). Untracked (NIE in git history), nur lokal im Working-Tree seit ca. 2026-04-06. Risiko: versehentliches Commit via `git add .`, Filesystem-Zugriff durch Dritte, Credential-Leak ueber Backup/Cloud-Sync.
