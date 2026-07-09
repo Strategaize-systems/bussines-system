@@ -23,8 +23,12 @@ import { buildEmailDocument } from "@/lib/email/email-frame";
 
 // Route-scoped CSP: nur Bilder (https/data/blob/cid) + Inline-Styles fuer die
 // Frame-Styles; kein Script, keine sonstige Origin. Verschaerft, nicht globaler.
+// `frame-ancestors 'self'`: das Dokument darf NUR von der eigenen App (same-origin
+// EmailHtmlIframe) eingebettet werden — ersetzt das global entfernte
+// `X-Frame-Options: DENY`/`frame-ancestors 'none'` (ISSUE-145, next.config-Exclusion),
+// ohne die opt-in Bild-Anzeige zu blocken.
 const BODY_CSP =
-  "default-src 'none'; img-src https: data: blob: cid:; style-src 'unsafe-inline'; font-src 'self'";
+  "default-src 'none'; img-src https: data: blob: cid:; style-src 'unsafe-inline'; font-src 'self'; frame-ancestors 'self'";
 
 export async function GET(
   _request: Request,

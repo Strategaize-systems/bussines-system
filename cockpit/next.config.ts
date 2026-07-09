@@ -35,7 +35,20 @@ const SECURITY_HEADERS = [
 const nextConfig: NextConfig = {
   output: "standalone",
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    // ISSUE-145 / SLC-915 Hotfix (V8.17): die globalen SECURITY_HEADERS (u.a.
+    // CSP `frame-ancestors 'none'` + striktes `img-src` + `X-Frame-Options: DENY`)
+    // dürfen NICHT auf `/api/emails/[id]/body` liegen — Next.js `headers()` gewinnt
+    // gegen die route-scoped CSP des Handlers, wodurch der opt-in „Bilder laden"-
+    // iframe (frame-ancestors) geblockt und Remote-Bilder (img-src) unterdrückt
+    // wurden (MT-6 live gebrochen, gefunden im /deploy-Feature-Flow-Smoke, IMP-1401).
+    // Negative-Lookahead schließt genau diese eine Route aus; sie setzt ihre eigene
+    // route-scoped CSP (inkl. `frame-ancestors 'self'`) im Handler.
+    return [
+      {
+        source: "/((?!api/emails/[^/]+/body).*)",
+        headers: SECURITY_HEADERS,
+      },
+    ];
   },
   // pdfmake + fontkit nutzen Native-Asset-Files (z.B. data.trie) und
   // mailparser haben dynamische Requires, die Turbopack nicht sauber bundlet.
