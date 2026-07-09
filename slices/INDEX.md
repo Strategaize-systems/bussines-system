@@ -551,4 +551,4 @@ V8.17 schliesst die 5 von allen QA-Stufen übersehenen V8.16-Regressionen (RPT-6
 
 | ID | Slice | Feature | Status | Priority | Created |
 |----|-------|---------|--------|----------|---------|
-| SLC-915 | [V8.17 Regressions-Fix-Bundle (CSP-Feature-Flows + E-Mail-Bild-Toggle + MIG-055 changed-FK-only + startMeeting-Caller + Consent-Guard)](SLC-915-v817-regressions-fix-bundle.md) | FEAT-927 / BL-520 | in_progress | High | 2026-07-08 |
+| SLC-915 | [V8.17 Regressions-Fix-Bundle (CSP-Feature-Flows + E-Mail-Bild-Toggle + MIG-055 changed-FK-only + startMeeting-Caller + Consent-Guard)](SLC-915-v817-regressions-fix-bundle.md) | FEAT-927 / BL-520 | deployed | High | 2026-07-08 |

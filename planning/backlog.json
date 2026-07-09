@@ -2807,7 +2807,7 @@
       "title": "V8.16-Regressions-Fix-Bundle (CSP-Feature-Flows + MIG-055-UPDATE + startMeeting-Caller + Consent-Guard)",
       "type": "fix",
       "priority": "high",
-      "status": "in_progress",
+      "status": "done",
       "version": "V8.17",
       "description": "FOUNDER-BESCHLUSS 2026-07-07: alle 5 RPT-672-Findings in EINEM V8.17-Fix-Bundle-Slice. ISSUE-138 (High) CSP connect-src um wss://sip + Permissions-Policy microphone/camera=(self) + funktionaler Telefonie/Meeting-Audio-Smoke (Playbook-Feature-Flow-Coverage IMP-1401); ISSUE-139 img-src E-Mail-Viewer (DEC noetig: Tracking-Pixel-Block bewusst vs. img-Proxy); ISSUE-140 MIG-055 UPDATE-WITH-CHECK entschaerfen (nur geaenderte FKs pruefen) + 4 Call-Sites Fehlerpruefung/Kompensation (DEC: Ansatz a/b/c); ISSUE-141 MeetingPrepCard res.error + getNextMeetingWithContext; ISSUE-142 checkConsentStatus Count-Guard fail-closed. Founder waehlte Hotfix statt Report-Only-Rollback -> In-App-Telefonie bleibt bis V8.17-Deploy im Enforce-Mode gebrochen (Single-Founder akzeptiert). NEXT = /requirements V8.17 in frischer Session.",
       "createdAt": "2026-07-07"
